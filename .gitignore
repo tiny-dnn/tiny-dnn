@@ -161,3 +161,12 @@ pip-log.txt
 
 # Mac crap
 .DS_Store
+
+
+
+#################
+## Waf
+#################
+build
+waf3*
+.lock-wafbuild

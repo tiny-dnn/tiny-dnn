@@ -2,5 +2,7 @@ def build(bld):
   bld(features = 'cxx cprogram',
       source = 'main.cpp',
       target = 'main',
-      includes = '. ../include',
-      includes = ['.'])
+      cflags   = ['-Wall'],
+      cxxflags = ['-std=c++0x'],
+      lib      = ['stdc++'],
+      includes = '. ../include')
