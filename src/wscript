@@ -1,0 +1,6 @@
+def build(bld):
+  bld(features = 'cxx cprogram',
+      source = 'main.cpp',
+      target = 'main',
+      includes = '. ../include',
+      includes = ['.'])
