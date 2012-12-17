@@ -5,9 +5,9 @@ namespace nn {
 
 // normal 
 template<int In, int Out, typename Activation = sigmoid_activation>
-class neural_net : public layer {
+class fully_connected_layer : public layer {
 public:
-    neural_net() : layer(In, Out, In*Out+Out){
+    fully_connected_layer() : layer(In, Out, In*Out+Out){
         W_.resize(In*Out);
         b_.resize(Out);
         dW_.resize(In*Out);

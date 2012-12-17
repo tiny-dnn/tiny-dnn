@@ -1,14 +1,15 @@
 #include <iostream>
 #include "cnn.h"
 #include "fully_connected_layer.h"
+#include "convolutional_layer.h"
 
 using namespace nn;
 
 int main(void) {
     cnn nn(0.3, 0.3);
-    neural_net<3, 2> layer;
+    fully_connected_layer<3, 2> layer;
     nn.add(&layer);
-
+    convolutional_layer cn(1, 6, 5, 29, 29);
 
     vec_t a(3, 0.0), t(2, 0.0);
 
