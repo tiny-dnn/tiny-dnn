@@ -37,6 +37,12 @@ public:
     const float_t& at(int x, int y, int z) const {
         return vec_[z * (width_ * height_) + y * (width_) + x];
     }
+    float_t& operator [] (size_t index) {
+        return vec_[index];
+    }
+    const float_t& operator [] (size_t index) const {
+        return vec_[index];
+    }
 private:
     int width_;
     int height_;
@@ -70,10 +76,42 @@ public:
         return 0; // TODO
     }
     const vec_t* back_propagation(const vec_t& in, const vec_t& train_signal) {
-        return 0; // TODO
+        if (!next_) {
+            //for (int i = 0; i < Out; i++)
+            //    delta_[i] = (output_[i] - train_signal[i]) * Activation::df(output_[i]);      
+        }
+
+        const vec_t& prev_out = prev_ ? prev_->output() : in;
+        /*for (int c = 0; c < In; c++) 
+            for (int r = 0; r < Out; r++)
+                dW_[r*In+c] += delta_[r] * prev_out[c];
+        for (int r = 0; r < Out; r++)
+            dB_[r] += delta_[r];*/
+
+        if (!prev_) return &delta_;
+
+        /*for (int c = 0; c < In; c++) {
+            prev_->delta()[c] = 0.0;
+            for (int r = 0; r < Out; r++)
+                prev_->delta()[c] += delta_[r] * W_[r*In+c];
+            prev_->delta()[c] *= Activation::df(prev_->output()[c]);
+        }*/
+
+        return prev_->back_propagation(in, train_signal);
     }
     void unroll(pvec_t *w, pvec_t *dw, pvec_t *b, pvec_t *db) {
-        // TODO
+        for (auto v: W_) {
+            for (size_t i = 0; i < v.size(); i++)
+                w->push_back(&v[i]);
+        }
+        for (auto v: dW_) {
+            for (int i = 0; i < v.size(); i++)
+                dw->push_back(&v[i]);
+        }
+        for (auto v: b_)
+            b->push_back(&v);
+        for (auto v: db_)
+            db->push_back(&v);
     }
 
 private:
