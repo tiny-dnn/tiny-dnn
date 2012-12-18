@@ -12,6 +12,8 @@ public:
         b_.resize(Out);
         dW_.resize(In*Out);
         dB_.resize(Out);
+        uniform_rand(W_.begin(), W_.end(), -0.2, 0.2);
+        uniform_rand(b_.begin(), b_.end(), -0.2, 0.2);
     }
 
     int in_dim() const { return In; }

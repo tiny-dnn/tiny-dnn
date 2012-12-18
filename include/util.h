@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <boost/random.hpp>
 
 namespace nn {
 
@@ -46,6 +47,19 @@ float_t sum_square(const pvec_t& vec) {
     for (auto v : vec)
         sum += *v * *v;
     return sum;
+}
+
+float_t uniform_rand(float_t min, float_t max) {
+    static boost::mt19937 gen(0);
+    boost::uniform_real<float_t> dst(min, max);
+    boost::variate_generator<boost::mt19937&, boost::uniform_real<float_t> > rand(gen, dst);
+    return rand();
+}
+
+template<typename Iter>
+void uniform_rand(Iter begin, Iter end, float_t min, float_t max) {
+    for (Iter it = begin; it != end; ++it) 
+        *it = uniform_rand(min, max);
 }
 
 }
