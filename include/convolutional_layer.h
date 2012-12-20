@@ -39,6 +39,19 @@ private:
     std::vector<int> out2bias_;
 };
 
+struct convolutional_structure {
+    convolutional_structure(int width, int height, int channels) : width_(width), height_(height), channels_(channels) {}
+
+    int get_index(int x, int y, int channel) const {
+        return (width_ * height_) * channel + width_ * y + x;
+    }
+    int size() const {
+        return width_ * height_ * channels_;
+    }
+    int width_;
+    int height_;
+    int channels_;
+};
 
 class convolutional_layer : public partial_connected_layer {
 public:
@@ -48,24 +61,14 @@ public:
     in_(in_width, in_height, in_channels), 
     out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
     window_size_(window_size)
-    {
-        connect();
-    }
+    {}
 
+    convolutional_layer(const convolutional_structure& in, const convolutional_structure& out, int window_size) 
+    : partial_connected_layer(in.size(), out.size(), window_size * window_size, out.channels_), in_(in), out_(out), window_size_(window_size) {}
 
 private:
-    struct convolutional_structure {
-        convolutional_structure(int width, int height, int channels) : width_(width), height_(height), channels_(channels) {}
 
-        int get_index(int x, int y, int channel) const {
-            return (width_ * height_) * channel + width_ * y + x;
-        }
-        int width_;
-        int height_;
-        int channels_;
-    };
-
-    void connect() {
+    void init_connection() {
         for (int inc = 0; inc < in_.channels_; inc++)
             for (int outc = 0; outc < out_.channels_; outc++)
                 for (int y = 0; y < out_.height_; y++)
@@ -77,6 +80,7 @@ private:
                 for (int x = 0; x < out_.width_; x++)
                     connect_bias(outc, out_.get_index(x, y, outc));
     }
+
 
     void connect_kernel(int inc, int outc, int x, int y) {
         for (int dy = 0; dy < window_size_; dy++)

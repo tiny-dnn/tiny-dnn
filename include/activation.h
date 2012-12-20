@@ -27,26 +27,33 @@ public:
 
 class cost_function {
 public:
-    virtual float_t f(const vec_t& y, const vec_t& t) = 0;
-    virtual float_t df(float_t yi, float_t ti) = 0;
+    virtual float_t f(float_t y, float_t t) = 0;
+    virtual float_t df(float_t y, float_t t) = 0;
 };
 
-class mse : public cost_function{
-    float_t f(const vec_t& y, const vec_t& t) {
-        float_t e = 0.0;
-        for (size_t i = 0; i < y.size(); i++) {
-            e += (y[i] - t[i]) * (y[i] - t[i]);
-        }
-        e /= 2.0;
-        return e;
+class mse : public cost_function {
+public:
+    float_t f(float_t y, float_t t) {
+        return (y - t) * (y - t) / 2;
     }
 
-    float_t df(float_t yi, float_t ti) {
-        return yi - ti;
+    float_t df(float_t y, float_t t) {
+        return y - t;
     }
 
 private:
     double lambda_;
+};
+
+class cross_entropy : public cost_function {
+public:
+    float_t f(float_t y, float_t t) {
+        return 0.0;//TODO
+    }
+
+    float_t df(float_t y, float_t t) {
+        return (y - t) / (y * (1 - y));
+    }
 };
 
 }

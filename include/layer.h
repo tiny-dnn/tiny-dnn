@@ -13,7 +13,6 @@ public:
         initialize();
     }
 
-
     void connect(layer* tail) {
         if (this->out_dim() != 0 && tail->in_dim() != this->out_dim())
             throw std::domain_error("dimension mismatch");
@@ -30,7 +29,7 @@ public:
     }
 
     void initialize() {
-        uniform_rand(W_.begin(), W_.end(), -0.2, 0.2);
+        uniform_rand(W_.begin(), W_.end(), -0.2, 0.2); // @todo 乱数の範囲を最適化する
         uniform_rand(b_.begin(), b_.end(), -0.2, 0.2);       
     }
 
@@ -38,17 +37,11 @@ public:
     vec_t& delta() { return prev_delta_; }
     activation& activation_function() { return *activation_; }
 
-    virtual int in_dim() const { return in_; } // 入力次元
-    virtual int out_dim() const { return out_; } // 出力次元
-
+    virtual int in_dim() const { return in_; }
+    virtual int out_dim() const { return out_; }
     virtual void reset() { initialize(); }
 
-    // in: 前層の出力。in.size() == in_dim()
-    // ret: 出力層の出力ベクトル。
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
-
-    // in: 出力層の出力ベクトル。 train_signal: 教師ベクトル
-    // ret: 入力層のδ
     virtual const vec_t& back_propagation(const vec_t& current_delta, bool update = true) = 0;
 
 protected:
