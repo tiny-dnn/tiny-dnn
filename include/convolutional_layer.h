@@ -4,140 +4,89 @@
 
 namespace nn {
 
-struct convolutional_prop {
-    convolutional_prop(int ch, int w, int h) : channels(ch), width(w), height(h) {}
-    int channels;
-    int width;
-    int height;
-    size_t size() const { return channels * width * height; }
-};
-
-template<typename T>
-class vector3d {
+class partial_connected_layer : public layer {
 public:
-    vector3d(int width, int height, int depth)
-     : width_(width), height_(height), depth_(depth), vec_(width * height * depth){}
+    typedef std::vector<std::pair<int, int> > io_connections;
+    typedef std::vector<std::pair<int, int> > wi_connections;
 
-    vector3d(T vec, int width, int height, int depth)
-        : width_(width), height_(height), depth_(depth), vec_(vec){ 
-        if(vec_.size() != size()) 
-            throw std::domain_error("dimension mismatch");
+    partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
+        : layer (in_dim, out_dim, weight_dim, bias_dim), weight2io_(weight_dim), out2wi_(out_dim), bias2out_(bias_dim), out2bias_(out_dim) {}
+
+    void connect_weight(int input_index, int output_index, int weight_index) {
+        weight2io_[weight_index].push_back(std::make_pair(input_index, output_index));
+        out2wi_[output_index].push_back(std::make_pair(weight_index, input_index));
     }
 
-    vector3d(const convolutional_prop& param)
-        : width_(param.width), height_(param.height), depth_(param.channels), vec_(param.size()){}
-
-    size_t size() const {
-        return width_ * height_ * depth_;
+    void connect_bias(int bias_index, int output_index) {
+        out2bias_[output_index] = bias_index;
+        bias2out_[bias_index].push_back(output_index);
     }
 
-    float_t& at(int x, int y, int z) {
-        return vec_[z * (width_ * height_) + y * (width_) + x];
-    }
-    const float_t& at(int x, int y, int z) const {
-        return vec_[z * (width_ * height_) + y * (width_) + x];
-    }
-    float_t& operator [] (size_t index) {
-        return vec_[index];
-    }
-    const float_t& operator [] (size_t index) const {
-        return vec_[index];
-    }
-private:
-    int width_;
-    int height_;
-    int depth_;
-    T vec_;
-};
-
-template<typename Activation = sigmoid_activation>
-class convolutional_layer : public layer{
-public:
-    convolutional_layer(const convolutional_prop& in, const convolutional_prop& out, int window_size)
-     : layer(in.size(), out.size(), window_size * window_size * in.channels * out.channels),
-       in_(in), out_(out), window_size_(window_size), b_(out.channels), db_(out.channels), 
-       W_(in.channels, vector3d<vec_t>(window_size, window_size, out.channels)), 
-       dW_(in.channels, vector3d<vec_t>(window_size, window_size, out.channels)),
-       output_table_(output_, out.width, out.height, out.channels) {
-
+    const vec_t& forward_propagation(const vec_t& in) {
+    // TODO
+        return next_ ? next_->forward_propagation(output_) : output_;
     }
 
-    int in_dim() const { return in_.size(); }
-    int out_dim() const { return out_.size(); }
-    int param_dim() const { return window_size_ * window_size_ * in_.channels * out_.channels; }
-
-    const vec_t* forward_propagation(const vec_t& in) {
-        vector3d<const vec_t&> in_vec(in, in_.width, in_.height, in_.channels);
-
-        for (int outc = 0; outc < out_.channels; outc++)
-            for (int inc = 0; inc < in_.channels; inc++) 
-                convolute(in_vec, W_[inc], inc, outc, &output_table_);
-
-        return 0; // TODO
-    }
-    const vec_t* back_propagation(const vec_t& in, const vec_t& train_signal) {
-        if (!next_) {
-            //for (int i = 0; i < Out; i++)
-            //    delta_[i] = (output_[i] - train_signal[i]) * Activation::df(output_[i]);      
-        }
-
-        const vec_t& prev_out = prev_ ? prev_->output() : in;
-        /*for (int c = 0; c < In; c++) 
-            for (int r = 0; r < Out; r++)
-                dW_[r*In+c] += delta_[r] * prev_out[c];
-        for (int r = 0; r < Out; r++)
-            dB_[r] += delta_[r];*/
-
-        if (!prev_) return &delta_;
-
-        /*for (int c = 0; c < In; c++) {
-            prev_->delta()[c] = 0.0;
-            for (int r = 0; r < Out; r++)
-                prev_->delta()[c] += delta_[r] * W_[r*In+c];
-            prev_->delta()[c] *= Activation::df(prev_->output()[c]);
-        }*/
-
-        return prev_->back_propagation(in, train_signal);
-    }
-    void unroll(pvec_t *w, pvec_t *dw, pvec_t *b, pvec_t *db) {
-        for (auto v: W_) {
-            for (size_t i = 0; i < v.size(); i++)
-                w->push_back(&v[i]);
-        }
-        for (auto v: dW_) {
-            for (int i = 0; i < v.size(); i++)
-                dw->push_back(&v[i]);
-        }
-        for (auto v: b_)
-            b->push_back(&v);
-        for (auto v: db_)
-            db->push_back(&v);
+    const vec_t& back_propagation(const vec_t& current_delta, bool update) {
+    // TODO
+        return prev_->back_propagation(prev_delta_, update);
     }
 
 private:
-    void convolute(const vector3d<const vec_t&>& in, const vector3d<vec_t>& W, int inc, int outc, vector3d<vec_t&> *output) {
-        for (int y = 0; y < out_.height; y++) {
-            for (int x = 0; x < out_.width; x++) {
-                float_t val = 0.0;
+    std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
+    std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
+    std::vector<std::vector<int> > bias2out_;
+    std::vector<int> out2bias_;
+};
 
-                for (int dy = 0; dy < window_size_; dy++)
-                    for (int dx = 0; dx < window_size_; dx++)
-                        val += W.at(dx, dy, outc) * in.at(x + dx, y + dy, inc);
-                val += b_[outc];
-                output->at(x, y, outc) = Activation::f(val);
-            }
-        }
+
+class convolutional_layer : public partial_connected_layer {
+public:
+    convolutional_layer(int in_width, int in_height, int window_size, int in_channels, int out_channels)
+    : partial_connected_layer(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
+    window_size * window_size, out_channels), 
+    in_(in_width, in_height, in_channels), 
+    out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
+    window_size_(window_size)
+    {
+        connect();
     }
 
-    convolutional_prop in_;
-    convolutional_prop out_;
+
+private:
+    struct convolutional_structure {
+        convolutional_structure(int width, int height, int channels) : width_(width), height_(height), channels_(channels) {}
+
+        int get_index(int x, int y, int channel) const {
+            return (width_ * height_) * channel + width_ * y + x;
+        }
+        int width_;
+        int height_;
+        int channels_;
+    };
+
+    void connect() {
+        for (int inc = 0; inc < in_.channels_; inc++)
+            for (int outc = 0; outc < out_.channels_; outc++)
+                for (int y = 0; y < out_.height_; y++)
+                    for (int x = 0; x < out_.width_; x++)
+                        connect_kernel(inc, outc, x, y);
+
+        for (int outc = 0; outc < out_.channels_; outc++)
+            for (int y = 0; y < out_.height_; y++)
+                for (int x = 0; x < out_.width_; x++)
+                    connect_bias(outc, out_.get_index(x, y, outc));
+    }
+
+    void connect_kernel(int inc, int outc, int x, int y) {
+        for (int dy = 0; dy < window_size_; dy++)
+            for (int dx = 0; dx < window_size_; dx++)
+                connect_weight(in_.get_index(x + dx, y + dy, inc), out_.get_index(x, y, outc), dy * window_size_ + dx);
+    }
+
     int window_size_;
-
-    std::vector<vector3d<vec_t> > W_;
-    std::vector<vector3d<vec_t> > dW_;
-    vec_t b_;
-    vec_t db_;
-    vector3d<vec_t&> output_table_;
+    convolutional_structure in_;
+    convolutional_structure out_;
 };
 
 } 
