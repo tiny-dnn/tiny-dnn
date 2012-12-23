@@ -68,6 +68,7 @@ class layer : public layer_base {
 public:
     layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
         : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
+
     activation& activation_function() { return a_; }
 
 protected:
@@ -77,8 +78,7 @@ protected:
 
 class input_layer : public layer<identity_activation> {
 public:
-    input_layer() : layer<identity_activation>(0, 0, 0, 0) {
-    }
+    input_layer() : layer<identity_activation>(0, 0, 0, 0) {}
 
     const vec_t& forward_propagation(const vec_t& in) {
         output_ = in;

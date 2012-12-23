@@ -1,10 +1,12 @@
 #pragma once
 #include <vector>
+#include <limits>
 #include <boost/random.hpp>
 
 namespace nn {
 
 typedef double float_t;
+typedef int label_t;
 typedef std::vector<double> vec_t;
 typedef std::vector<double*> pvec_t;
 typedef std::vector<vec_t> mat_t;
@@ -77,14 +79,33 @@ float_t sum_square(const pvec_t& vec) {
 float_t uniform_rand(float_t min, float_t max) {
     static boost::mt19937 gen(0);
     boost::uniform_real<float_t> dst(min, max);
-    boost::variate_generator<boost::mt19937&, boost::uniform_real<float_t> > rand(gen, dst);
-    return rand();
+    return dst(gen);
 }
 
 template<typename Iter>
 void uniform_rand(Iter begin, Iter end, float_t min, float_t max) {
     for (Iter it = begin; it != end; ++it) 
         *it = uniform_rand(min, max);
+}
+
+template<typename T>
+T* reverse_endian(T* p) {
+    std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));
+    return p;
+}
+
+template<typename T>
+int max_index(const std::vector<T>& vec) {
+    T max_val = std::numeric_limits<T>::min();
+    int max_index = -1;
+
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (vec[i] > max_val) {
+            max_index = i;
+            max_val = vec[i];
+        }
+    }
+    return max_index;
 }
 
 }

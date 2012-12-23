@@ -23,9 +23,6 @@
     <ClInclude Include="..\include\activation.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\cnn.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\convolutional_layer.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -39,6 +36,18 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\util.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\mnist_parser.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\partial_connected_layer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\pooling_layer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\network.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

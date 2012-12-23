@@ -10,11 +10,11 @@ public:
 
 struct gradient_descent : public learner {
 public:
-    gradient_descent() : alpha(0.3){}
-    gradient_descent(double alpha) : alpha(alpha){}
+    gradient_descent() : alpha(0.3), lambda(0.0) {}
+    gradient_descent(double alpha, double lambda) : alpha(alpha), lambda(lambda) {}
 
     void update(float_t dW, float_t *W) {
-        *W = *W - alpha * dW;
+        *W = *W - alpha * (dW + lambda);
     }
 
     double alpha; // learning rate

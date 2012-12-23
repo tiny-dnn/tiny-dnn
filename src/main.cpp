@@ -3,6 +3,7 @@
 #include "fully_connected_layer.h"
 #include "convolutional_layer.h"
 #include "pooling_layer.h"
+#include "mnist_parser.h"
 
 using namespace nn;
 
@@ -24,15 +25,29 @@ int main(void) {
     nn.add(&F6);
     nn.add(&F7);
 
-    vec_t in(1024), train(10);
-    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
-    uniform_rand(train.begin(), train.end(), 0.2, 0.8);
+    std::vector<label_t> train_labels, test_labels;
+    std::vector<vec_t> train_images, test_images;
 
-    for (int i = 0; i < 1000; i++) {
-        nn.train(in, train);
+    parse_labels("train-labels.idx1-ubyte", &train_labels);
+    parse_images("train-images.idx3-ubyte", &train_images);
+    parse_labels("t10k-labels.idx1-ubyte", &test_labels);
+    parse_images("t10k-images.idx3-ubyte", &test_images);
+
+    for (int epoch = 0; epoch < 3; epoch++) {
+        nn.train(train_images, train_labels);
+        nn.learner().alpha *= 0.8;
     }
 
-    vec_t predict;
-    nn.predict(in, &predict);
+    int success = 0;
 
+    for (int i = 0; i < test_labels.size(); i++) {
+        vec_t out;
+        nn.predict(test_images[i], &out);
+
+        const label_t predicted = max_index(out);
+        const label_t actual = test_labels[i];
+
+        if (predicted == actual) success++;
+    }
+    std::cout << "result:" << success << "/" << test_labels.size();
 }

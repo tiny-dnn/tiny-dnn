@@ -7,18 +7,21 @@ class activation {
 public:
     virtual double f(double x) const = 0;
     virtual double df(double f_x) const = 0;
+    virtual std::pair<double, double> scale() const = 0;
 };
 
 class identity_activation : public activation {
 public:
     double f(double x) const { return x; }
     double df(double f_x) const { return 1; }  
+    std::pair<double, double> scale() const { return std::make_pair(0.2, 0.8); }
 };
 
 class sigmoid_activation : public activation {
 public:
     double f(double x) const { return 1.0 / (1.0 + std::exp(-x)); }
     double df(double f_x) const { return f_x * (1.0 - f_x); }
+    std::pair<double, double> scale() const { return std::make_pair(0.2, 0.8); }
 };
 
 class tanh_activation : public activation {
@@ -29,6 +32,7 @@ public:
         return (ep - em) / (ep + em);
     }
     double df(double f_x) const { return f_x * (1.0 - f_x); }
+    std::pair<double, double> scale() const { return std::make_pair(-0.8, 0.8); }
 };
 
 class cost_function {

@@ -15,11 +15,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\activation.h" />
-    <ClInclude Include="..\include\cnn.h" />
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\layer.h" />
     <ClInclude Include="..\include\learner.h" />
+    <ClInclude Include="..\include\mnist_parser.h" />
+    <ClInclude Include="..\include\network.h" />
+    <ClInclude Include="..\include\partial_connected_layer.h" />
+    <ClInclude Include="..\include\pooling_layer.h" />
     <ClInclude Include="..\include\util.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

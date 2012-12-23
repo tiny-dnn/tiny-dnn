@@ -19,12 +19,29 @@ public:
 
     int out_dim() const { return layers_.tail()->out_dim(); }
 
+    float_t min_out() const { return layers_.tail()->activation_function().scale().first; }
+ 
+    float_t max_out() const { return layers_.tail()->activation_function().scale().second; }
+
     LossFunction& loss_function () { return E_; }
 
     LearningAlgorithm& learner() { return learner_; }
 
     void predict(const vec_t& in, vec_t *out) {
         *out = forward_propagation(in);
+    }
+
+    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
+        for (size_t i = 0; i < in.size(); i++)
+            train(in[i], t[i]);
+    }
+
+    void train(const vec_t& in, const label_t& t) {
+        const vec_t& out = forward_propagation(in);
+        vec_t tvec(out.size(), min_out());
+
+        tvec[t] = max_out();
+        back_propagation(out, tvec);
     }
 
     void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
@@ -35,7 +52,7 @@ public:
     void train(const vec_t& in, const vec_t& t) {
         const vec_t& out = forward_propagation(in);
         back_propagation(out, t);
-    }
+    }   
 
 private:
     bool is_canonical_link(const activation& h, const cost_function& E) {
@@ -54,10 +71,10 @@ private:
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = (out[i] - t[i]);  
+                delta[i] = out[i] - t[i];  
         } else {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = E_.df(out[i], t[i]) * h.df(out[i]); 
+                delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
         layers_.tail()->back_propagation(delta, &learner_);
@@ -66,6 +83,7 @@ private:
     LossFunction E_;
     LearningAlgorithm learner_;
     layers layers_;
+    double target_;
 };
 
 }

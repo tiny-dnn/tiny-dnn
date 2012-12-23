@@ -8,13 +8,7 @@ namespace nn {
 template<typename Activation>
 class fully_connected_layer : public layer<Activation> {
 public:
-    fully_connected_layer(int in_dim, int out_dim) : layer<Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {
-
-    }
-
-    ~fully_connected_layer() {
-
-    }
+    fully_connected_layer(int in_dim, int out_dim) : layer<Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {}
 
     int in_dim() const { return in_size_; }
     int out_dim() const { return out_size_; }
@@ -55,9 +49,6 @@ public:
 
         return prev_->back_propagation(prev_delta_, l);
     }
-
-private:
-
 };
 
 }
