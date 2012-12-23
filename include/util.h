@@ -9,6 +9,31 @@ typedef std::vector<double> vec_t;
 typedef std::vector<double*> pvec_t;
 typedef std::vector<vec_t> mat_t;
 
+class nn_error : public std::exception {
+public:
+    nn_error(const std::string& msg) : msg_(msg){}
+    const char* what() const throw() { return msg_.c_str(); }
+private:
+    std::string msg_;
+};
+
+struct tensor3d {
+    tensor3d(int width, int height, int depth) : width_(width), height_(height), depth_(depth) {
+        if (width <= 0 || height <= 0 || depth <= 0)
+            throw nn_error("invalid tensor size");
+    }
+
+    int get_index(int x, int y, int channel) const {
+        return (width_ * height_) * channel + width_ * y + x;
+    }
+    int size() const {
+        return width_ * height_ * depth_;
+    }
+    int width_;
+    int height_;
+    int depth_;
+};
+
 template<typename T, typename U>
 T& operator << (T& os, const std::vector<U>& vec) {
 

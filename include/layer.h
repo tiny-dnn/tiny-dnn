@@ -1,31 +1,25 @@
 #pragma once
 #include "util.h"
+#include "activation.h"
+#include "learner.h"
 
 namespace nn {
 
 class layers;
 
 // base class of all kind of NN layers
-class layer {
+class layer_base {
 public:
-    layer(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0), activation_(0), learner_(0) {
+    layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
         initialize();
     }
 
-    void connect(layer* tail) {
+    void connect(layer_base* tail) {
         if (this->out_dim() != 0 && tail->in_dim() != this->out_dim())
-            throw std::domain_error("dimension mismatch");
+            throw nn_error("dimension mismatch");
         next_ = tail;
         tail->prev_ = this;
-    }
-
-    void set_activation(activation *a) {
-        activation_ = a;
-    }
-
-    void set_learner(learner *l) {
-        learner_ = l;
     }
 
     void initialize() {
@@ -35,32 +29,33 @@ public:
 
     vec_t& output() { return output_; }
     vec_t& delta() { return prev_delta_; }
-    activation& activation_function() { return *activation_; }
+    vec_t& weight() { return W_; }
+    vec_t& bias() { return b_; }
 
-    virtual int in_dim() const { return in_; }
-    virtual int out_dim() const { return out_; }
+    virtual int in_dim() const { return in_size_; }
+    virtual int out_dim() const { return out_size_; }
     virtual void reset() { initialize(); }
 
+    virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, bool update = true) = 0;
+    virtual const vec_t& back_propagation(const vec_t& current_delta, learner *l) = 0;
 
 protected:
-    int in_;
-    int out_;
-    activation *activation_;
-    learner *learner_;
+    int in_size_;
+    int out_size_;
+
     friend class layers;
-    layer* next_;
-    layer* prev_;
-    vec_t output_;
-    vec_t prev_delta_;
-    vec_t W_;
-    vec_t b_;
+    layer_base* next_;
+    layer_base* prev_;
+    vec_t output_;     // last output of current layer, set by fprop
+    vec_t prev_delta_; // last delta of previous layer, set by bprop
+    vec_t W_;          // weight vector
+    vec_t b_;          // bias vector
 
 private:
     void set_size(int in_dim, int out_dim, int weight_dim, int bias_dim) {
-        in_ = in_dim;
-        out_ = out_dim;
+        in_size_ = in_dim;
+        out_size_ = out_dim;
         output_.resize(out_dim);
         prev_delta_.resize(in_dim);
         W_.resize(weight_dim);
@@ -68,19 +63,31 @@ private:
     }
 };
 
-class input_layer : public layer {
+template<typename Activation>
+class layer : public layer_base {
 public:
-    input_layer() : layer(0, 0, 0, 0) {}
+    layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
+        : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
+    activation& activation_function() { return a_; }
+
+protected:
+    Activation a_;
+};
+
+
+class input_layer : public layer<identity_activation> {
+public:
+    input_layer() : layer<identity_activation>(0, 0, 0, 0) {
+    }
 
     const vec_t& forward_propagation(const vec_t& in) {
         output_ = in;
         return next_ ? next_->forward_propagation(in) : output_;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, bool update = true) {
+    const vec_t& back_propagation(const vec_t& current_delta, learner *l) {
         return current_delta;
     }
-
 };
 
 class layers {
@@ -89,16 +96,16 @@ public:
         add(&first_);
     }
 
-    void add(layer * new_tail) {
+    void add(layer_base * new_tail) {
         if (!head_) head_ = new_tail;
         if (tail_)  tail_->connect(new_tail);
         tail_ = new_tail;
     }
     bool empty() const { return head_ == 0; }
-    layer* head() const { return head_; }
-    layer* tail() const { return tail_; }
+    layer_base* head() const { return head_; }
+    layer_base* tail() const { return tail_; }
     void reset() {
-        layer *l = head_;
+        layer_base *l = head_;
         while(l) {
             l->reset();
             l = l->next_;
@@ -106,8 +113,8 @@ public:
     }
 private:
     input_layer first_;
-    layer *head_;
-    layer *tail_;
+    layer_base *head_;
+    layer_base *tail_;
 };
 
 }

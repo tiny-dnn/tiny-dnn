@@ -9,6 +9,12 @@ public:
     virtual double df(double f_x) const = 0;
 };
 
+class identity_activation : public activation {
+public:
+    double f(double x) const { return x; }
+    double df(double f_x) const { return 1; }  
+};
+
 class sigmoid_activation : public activation {
 public:
     double f(double x) const { return 1.0 / (1.0 + std::exp(-x)); }

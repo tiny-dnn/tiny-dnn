@@ -3,21 +3,22 @@
 
 namespace nn {
 
-class learner {
+struct learner {
 public:
     virtual void update(float_t dW, float_t *W) = 0;
 };
 
-class gradient_descent : public learner {
+struct gradient_descent : public learner {
 public:
-    gradient_descent(double alpha) : alpha_(alpha){}
+    gradient_descent() : alpha(0.3){}
+    gradient_descent(double alpha) : alpha(alpha){}
 
     void update(float_t dW, float_t *W) {
-        *W = *W - alpha_ * dW;
+        *W = *W - alpha * dW;
     }
 
-private:
-    double alpha_; // learning rate
+    double alpha; // learning rate
+    double lambda; // weight decay
 };
 
 }
