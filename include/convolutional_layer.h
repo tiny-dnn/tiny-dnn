@@ -4,6 +4,11 @@
 
 namespace nn {
 
+template<int inc, int outc>
+struct convolutional_connection {
+
+};
+
 template<typename Activation>
 class convolutional_layer : public partial_connected_layer<Activation> {
 public:

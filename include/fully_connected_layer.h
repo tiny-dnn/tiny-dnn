@@ -28,10 +28,11 @@ public:
 
     const vec_t& back_propagation(const vec_t& current_delta, learner *l) {
         const vec_t& prev_out = prev_->output();
+        const activation& prev_h = prev_->activation_function();
 
         if (l) {
-            for (int c = 0; c < in_size_; c++) 
-                for (int r = 0; r < out_size_; r++)
+            for (int r = 0; r < out_size_; r++)
+                for (int c = 0; c < in_size_; c++) 
                     l->update(current_delta[r] * prev_out[c], &W_[r*in_size_+c]); 
                      
             for (int r = 0; r < out_size_; r++)
@@ -42,9 +43,9 @@ public:
             prev_delta_[c] = 0.0;
 
             for (int r = 0; r < out_size_; r++) 
-                prev_delta_[c] += current_delta[r] * prev_out[c];
+                prev_delta_[c] += current_delta[r] * W_[r*in_size_+c];
 
-            prev_delta_[c] *=a_.f(prev_out[c]);
+            prev_delta_[c] *= prev_h.df(prev_out[c]);
         }
 
         return prev_->back_propagation(prev_delta_, l);

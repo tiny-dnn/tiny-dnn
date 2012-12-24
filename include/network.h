@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
+#include <boost/progress.hpp>
 
 #include "util.h"
 #include "activation.h"
@@ -32,21 +33,29 @@ public:
     }
 
     void train(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
-        for (size_t i = 0; i < in.size(); i++)
+        boost::progress_display disp(in.size());
+        for (size_t i = 0; i < in.size(); i++) {
             train(in[i], t[i]);
+            ++disp;
+        }
     }
 
     void train(const vec_t& in, const label_t& t) {
         const vec_t& out = forward_propagation(in);
         vec_t tvec(out.size(), min_out());
 
+        double d = max_out();
+        double n = min_out();
         tvec[t] = max_out();
         back_propagation(out, tvec);
     }
 
     void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
-        for (size_t i = 0; i < in.size(); i++)
+        boost::progress_display disp(in.size());
+        for (size_t i = 0; i < in.size(); i++) {
             train(in[i], t[i]);
+            ++disp;
+        }
     }
 
     void train(const vec_t& in, const vec_t& t) {

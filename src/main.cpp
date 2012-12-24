@@ -1,4 +1,6 @@
 #include <iostream>
+#include <iomanip>
+#include <map>
 #include "network.h"
 #include "fully_connected_layer.h"
 #include "convolutional_layer.h"
@@ -33,21 +35,35 @@ int main(void) {
     parse_labels("t10k-labels.idx1-ubyte", &test_labels);
     parse_images("t10k-images.idx3-ubyte", &test_images);
 
-    for (int epoch = 0; epoch < 3; epoch++) {
+    //for (int epoch = 0; epoch < 3; epoch++) {
         nn.train(train_images, train_labels);
-        nn.learner().alpha *= 0.8;
-    }
+    //    nn.learner().alpha *= 0.8;
+    //}
 
     int success = 0;
+
+    std::map<int, std::map<int, int> > confusion_matrix;
 
     for (int i = 0; i < test_labels.size(); i++) {
         vec_t out;
         nn.predict(test_images[i], &out);
 
+        for (auto o : out)
+            std::cout << o << ",";
+        std::cout << std::endl;
         const label_t predicted = max_index(out);
         const label_t actual = test_labels[i];
 
+        confusion_matrix[predicted][actual]++;
         if (predicted == actual) success++;
     }
+
+    for (int i = 0; i < 10; i++) {
+        for (int j = 0; j < 10; j++) {
+            std::cout << std::setw(5) << confusion_matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
     std::cout << "result:" << success << "/" << test_labels.size();
 }
