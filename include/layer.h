@@ -16,7 +16,7 @@ public:
     }
 
     void connect(layer_base* tail) {
-        if (this->out_dim() != 0 && tail->in_dim() != this->out_dim())
+        if (this->out_size() != 0 && tail->in_size() != this->out_size())
             throw nn_error("dimension mismatch");
         next_ = tail;
         tail->prev_ = this;
@@ -32,8 +32,10 @@ public:
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
 
-    virtual int in_dim() const { return in_size_; }
-    virtual int out_dim() const { return out_size_; }
+    virtual int in_size() const { return in_size_; }
+    virtual int out_size() const { return out_size_; }
+    virtual int param_size() const { return W_.size() + b_.size(); }
+    virtual int connection_size() const = 0;
     virtual void reset() { initialize(); }
 
     virtual activation& activation_function() = 0;
@@ -87,6 +89,10 @@ public:
 
     const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
         return current_delta;
+    }
+
+    int connection_size() const {
+        return in_size_;
     }
 };
 

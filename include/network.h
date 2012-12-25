@@ -16,9 +16,9 @@ class network {
 public:
     void add(layer_base *layer) { layers_.add(layer); }
 
-    int in_dim() const { return layers_.head()->in_dim(); }
+    int in_dim() const { return layers_.head()->in_size(); }
 
-    int out_dim() const { return layers_.tail()->out_dim(); }
+    int out_dim() const { return layers_.tail()->out_size(); }
 
     float_t min_out() const { return layers_.tail()->activation_function().scale().first; }
  

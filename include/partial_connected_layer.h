@@ -18,6 +18,24 @@ public:
             throw nn_error("invalid layer size");
     }
 
+    int param_size() const { 
+        int total_param = 0;
+        for (auto w : weight2io_)
+            if (w.size() > 0) total_param++;
+        for (auto b : bias2out_)
+            if (b.size() > 0) total_param++;
+        return total_param;
+    }
+
+    int connection_size() const {
+        int total_size = 0;
+        for (auto io : weight2io_)
+            total_size += io.size();
+        for (auto b : bias2out_)
+            total_size += b.size();
+        return total_size;
+    }
+
     void connect_weight(int input_index, int output_index, int weight_index) {
         weight2io_[weight_index].push_back(std::make_pair(input_index, output_index));
         out2wi_[output_index].push_back(std::make_pair(weight_index, input_index));

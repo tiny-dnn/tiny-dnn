@@ -10,9 +10,9 @@ class fully_connected_layer : public layer<Activation> {
 public:
     fully_connected_layer(int in_dim, int out_dim) : layer<Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {}
 
-    int in_dim() const { return in_size_; }
-    int out_dim() const { return out_size_; }
-    int param_dim() const { return in_size_ * out_size_; }
+    int connection_size() const {
+        return in_size_ * out_size_ + out_size_;
+    }
 
     const vec_t& forward_propagation(const vec_t& in) {
         for (int r = 0; r < out_size_; r++) {
