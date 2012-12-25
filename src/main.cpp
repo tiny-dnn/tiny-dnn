@@ -36,9 +36,15 @@ int main(void) {
     parse_images("t10k-images.idx3-ubyte", &test_images);
 
     //for (int epoch = 0; epoch < 3; epoch++) {
-        nn.train(train_images, train_labels);
+    for (int i = 0; i < 1000; i++) {
+        nn.train(train_images[0], train_labels[0]);
+        nn.train(train_images[1], train_labels[1]);
+    }
+
     //    nn.learner().alpha *= 0.8;
     //}
+    vec_t o;
+    nn.predict(train_images[0], &o);
 
     int success = 0;
 

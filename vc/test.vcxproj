@@ -74,7 +74,7 @@
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\layer.h" />
-    <ClInclude Include="..\include\learner.h" />
+    <ClInclude Include="..\include\updater.h" />
     <ClInclude Include="..\include\network.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
     <ClInclude Include="..\include\picotest.h" />

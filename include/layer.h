@@ -1,7 +1,7 @@
 #pragma once
 #include "util.h"
 #include "activation.h"
-#include "learner.h"
+#include "updater.h"
 
 namespace nn {
 
@@ -38,7 +38,7 @@ public:
 
     virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, learner *l) = 0;
+    virtual const vec_t& back_propagation(const vec_t& current_delta, updater *l) = 0;
 
 protected:
     int in_size_;
@@ -85,7 +85,7 @@ public:
         return next_ ? next_->forward_propagation(in) : output_;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, learner *l) {
+    const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
         return current_delta;
     }
 };

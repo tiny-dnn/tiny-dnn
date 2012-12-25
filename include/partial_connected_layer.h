@@ -43,7 +43,7 @@ public:
         return next_ ? next_->forward_propagation(output_) : output_;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, learner *l) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
         const vec_t& prev_out = prev_->output();
         const activation& prev_h = prev_->activation_function();
 

@@ -29,9 +29,6 @@
     <ClInclude Include="..\include\layer.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\learner.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\network.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -48,6 +45,9 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\include\pooling_layer.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\updater.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>

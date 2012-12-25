@@ -83,24 +83,67 @@ TEST(convolutional, bprop) {
     nn.predict(a, &predicted);
 }
 
+
+TEST(convolutional, bprop2) {
+    network<cross_entropy, gradient_descent> nn;
+    convolutional_layer<sigmoid_activation> layer(5, 5, 3, 1, 1);
+    fully_connected_layer<sigmoid_activation> layer2(9, 3);
+
+    nn.add(&layer);
+    nn.add(&layer2);
+
+    vec_t a(25, 0.0), t(3, 0.0), a2(25, 0.0), t2(3, 0.0);
+
+    for (int y = 0; y < 5; y++) {
+        a[5*y+3] = 1.0;
+    }
+
+
+    t[0] = 0.0;
+    t[1] = 0.5;
+    t[2] = 1.0;
+
+    uniform_rand(a2.begin(), a2.end(), -3, 3);
+    uniform_rand(t2.begin(), t2.end(), 0, 1);
+
+    for (int i = 0; i < 300; i++) {
+        nn.train(a, t);
+        nn.train(a2, t2);
+    }
+
+    vec_t predicted;
+    nn.predict(a, &predicted);
+    nn.predict(a2, &predicted);
+}
+
 TEST(fully_connected, bprop) {
     network<cross_entropy, gradient_descent> nn;
     fully_connected_layer<sigmoid_activation> layer(3, 2);
     nn.add(&layer);
 
-    vec_t a(3, 0.0), t(2, 0.0);
+    vec_t a(3), t(2), a2(3), t2(2);
 
-    a[0] = 3.0; a[2] = -1.0;
+    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
     t[0] = 0.3; t[1] = 0.7;
 
-    for (int i = 0; i < 100; i++)
+    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
+    t2[0] = 0.5; t2[1] = 0.1;
+
+    for (int i = 0; i < 100; i++) {
         nn.train(a, t);
+        nn.train(a2, t2);
+    }
 
     vec_t predicted;
     nn.predict(a, &predicted);
 
     EXPECT_DOUBLE_EQ(predicted[0], t[0]);
     EXPECT_DOUBLE_EQ(predicted[1], t[1]);
+
+    nn.predict(a2, &predicted);
+
+    EXPECT_DOUBLE_EQ(predicted[0], t2[0]);
+    EXPECT_DOUBLE_EQ(predicted[1], t2[1]);
 }
 
 TEST(fully_connected, bprop2) {

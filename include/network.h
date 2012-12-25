@@ -6,7 +6,7 @@
 
 #include "util.h"
 #include "activation.h"
-#include "learner.h"
+#include "updater.h"
 #include "layer.h"
 
 namespace nn {
