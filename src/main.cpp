@@ -24,8 +24,7 @@ int main(void) {
     convolutional_layer<tanh_activation> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
     average_pooling_layer<tanh_activation> S4(10, 10, 16, 2);
     convolutional_layer<tanh_activation> C5(5, 5, 5, 16, 120);
-    fully_connected_layer<tanh_activation> F6(120, 84);
-    fully_connected_layer<tanh_activation> F7(84, 10);
+    fully_connected_layer<tanh_activation> F6(120, 10);
 
     assert(C1.param_size() == 156 && C1.connection_size() == 122304);
     assert(S2.param_size() == 12 && S2.connection_size() == 5880);
@@ -39,8 +38,7 @@ int main(void) {
     nn.add(&S4);
     nn.add(&C5);
     nn.add(&F6);
-    nn.add(&F7);
-
+ 
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
@@ -51,23 +49,12 @@ int main(void) {
 
     nn.init_weight(train_images);
 
+    boost::progress_display disp(train_images.size());
     //for (int epoch = 0; epoch < 3; epoch++) {
-    for (int i = 0; i < 1000; i++) {
-        nn.train(train_images[0], train_labels[0]);
-        nn.train(train_images[1], train_labels[1]);
+    for (int i = 0; i < train_images.size(); i++) {
+        nn.train(train_images[i], train_labels[i]);
+        ++disp;
     }
-
-    //    nn.learner().alpha *= 0.8;
-    //}
-    vec_t o;
-    nn.predict(train_images[0], &o);
-    for (auto v : o)
-        std::cout << v << ",";
-    std::cout << std::endl;
-    nn.predict(train_images[1], &o);
-    for (auto v : o)
-        std::cout << v << ",";
-    std::cout << std::endl;
 
     int success = 0;
 
@@ -77,9 +64,6 @@ int main(void) {
         vec_t out;
         nn.predict(test_images[i], &out);
 
-        for (auto o : out)
-            std::cout << o << ",";
-        std::cout << std::endl;
         const label_t predicted = max_index(out);
         const label_t actual = test_labels[i];
 

@@ -10,7 +10,7 @@ public:
 
 struct gradient_descent : public updater {
 public:
-    gradient_descent() : alpha(0.000085), lambda(0.0), mu(0.02) {}
+    gradient_descent() : alpha(0.00085), lambda(0.0), mu(0.02) {}
     gradient_descent(double alpha, double lambda, double mu) : alpha(alpha), lambda(lambda), mu(mu) {}
 
     void update(float_t dW, float_t H, float_t *W) {

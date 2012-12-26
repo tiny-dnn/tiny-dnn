@@ -95,7 +95,7 @@ private:
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = h.df(out[i]);  
+                delta[i] = max_out() * h.df(out[i]) * h.df(out[i]);  
         } else {
             throw nn_error("not implemented");
         }
@@ -109,7 +109,7 @@ private:
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = out[i] - t[i];  
+                delta[i] = h.df(out[i]) * (out[i] - t[i]); // @note ??  
         } else {
             for (int i = 0; i < out_dim(); i++)
                 delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
