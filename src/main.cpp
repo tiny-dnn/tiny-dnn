@@ -11,8 +11,8 @@ using namespace nn;
 
 int main(void) {
     network<cross_entropy, gradient_descent> nn;
-    convolutional_layer<sigmoid_activation> C1(32, 32, 5, 1, 6);
-    average_pooling_layer<sigmoid_activation> S2(28, 28, 6, 2);
+    convolutional_layer<tanh_activation> C1(32, 32, 5, 1, 6);
+    average_pooling_layer<tanh_activation> S2(28, 28, 6, 2);
     static const bool connection[] = {
         true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,
         true,  true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,
@@ -21,11 +21,11 @@ int main(void) {
         false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,  false, true,
         false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,  true
     };
-    convolutional_layer<sigmoid_activation> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
-    average_pooling_layer<sigmoid_activation> S4(10, 10, 16, 2);
-    convolutional_layer<sigmoid_activation> C5(5, 5, 5, 16, 120);
-    fully_connected_layer<sigmoid_activation> F6(120, 84);
-    fully_connected_layer<sigmoid_activation> F7(84, 10);
+    convolutional_layer<tanh_activation> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
+    average_pooling_layer<tanh_activation> S4(10, 10, 16, 2);
+    convolutional_layer<tanh_activation> C5(5, 5, 5, 16, 120);
+    fully_connected_layer<tanh_activation> F6(120, 84);
+    fully_connected_layer<tanh_activation> F7(84, 10);
 
     assert(C1.param_size() == 156 && C1.connection_size() == 122304);
     assert(S2.param_size() == 12 && S2.connection_size() == 5880);

@@ -14,6 +14,10 @@ public:
         return in_size_ * out_size_ + out_size_;
     }
 
+    int fan_in_size() const {
+        return in_size_;
+    }
+
     const vec_t& forward_propagation(const vec_t& in) {
         for (int r = 0; r < out_size_; r++) {
             float_t z = 0.0;

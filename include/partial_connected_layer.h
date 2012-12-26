@@ -11,9 +11,9 @@ public:
     typedef std::vector<std::pair<int, int> > wi_connections;
     typedef std::vector<std::pair<int, int> > wo_connections;
 
-    partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
+    partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim, float_t scale_factor = 1.0)
         : layer<Activation> (in_dim, out_dim, weight_dim, bias_dim), 
-        weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim) {
+        weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {
         if (in_dim <= 0 || weight_dim <= 0 || weight_dim <= 0 || bias_dim <= 0)
             throw nn_error("invalid layer size");
     }
@@ -36,6 +36,10 @@ public:
         return total_size;
     }
 
+    int fan_in_size() const {
+        return out2wi_[0].size();
+    }
+
     void connect_weight(int input_index, int output_index, int weight_index) {
         weight2io_[weight_index].push_back(std::make_pair(input_index, output_index));
         out2wi_[output_index].push_back(std::make_pair(weight_index, input_index));
@@ -55,6 +59,7 @@ public:
             for (auto connection : connections)
                 a += W_[connection.first] * in[connection.second];
 
+            a *= scale_factor_;
             a += b_[out2bias_[i]];
             output_[i] = a_.f(a);
         }
@@ -73,6 +78,7 @@ public:
                 for (auto connection : connections)
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
+                diff *= scale_factor_;
                 l->update(diff, &W_[i]);
             }
 
@@ -100,6 +106,7 @@ public:
     }
 
 protected:
+    float_t scale_factor_;
     std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
     std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
     std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]

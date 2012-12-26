@@ -12,7 +12,6 @@ class layer_base {
 public:
     layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
-        initialize();
     }
 
     void connect(layer_base* tail) {
@@ -22,9 +21,11 @@ public:
         tail->prev_ = this;
     }
 
-    void initialize() {
-        uniform_rand(W_.begin(), W_.end(), -0.2, 0.2); // @todo —”‚Ì”ÍˆÍ‚ğÅ“K‰»‚·‚é
-        uniform_rand(b_.begin(), b_.end(), -0.2, 0.2);       
+    void init_weight() {
+        const float_t weight_base = 0.5 / std::sqrt(fan_in_size());
+
+        uniform_rand(W_.begin(), W_.end(), -weight_base, weight_base);
+        uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);       
     }
 
     vec_t& output() { return output_; }
@@ -35,8 +36,9 @@ public:
     virtual int in_size() const { return in_size_; }
     virtual int out_size() const { return out_size_; }
     virtual int param_size() const { return W_.size() + b_.size(); }
+    virtual int fan_in_size() const = 0;
     virtual int connection_size() const = 0;
-    virtual void reset() { initialize(); }
+    virtual void reset() { init_weight(); }
 
     virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
@@ -93,6 +95,10 @@ public:
 
     int connection_size() const {
         return in_size_;
+    }
+
+    int fan_in_size() const {
+        return 1;
     }
 };
 

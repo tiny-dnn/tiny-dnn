@@ -12,7 +12,8 @@ public:
     : partial_connected_layer<Activation>(
      in_width * in_height * in_channels, 
      in_width * in_height * in_channels / (pooling_size * pooling_size), 
-     in_channels, in_channels),
+     in_channels, in_channels,
+     1.0 / (pooling_size * pooling_size)),
      in_(in_width, in_height, in_channels), 
      out_(in_width/pooling_size, in_height/pooling_size, in_channels)
     {

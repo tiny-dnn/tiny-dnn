@@ -31,7 +31,7 @@ public:
         const double em = std::exp(-x); 
         return (ep - em) / (ep + em);
     }
-    double df(double f_x) const { return f_x * (1.0 - f_x); }
+    double df(double f_x) const { return 1.0 - f_x * f_x; }
     std::pair<double, double> scale() const { return std::make_pair(-0.8, 0.8); }
 };
 

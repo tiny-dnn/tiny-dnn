@@ -14,6 +14,8 @@ namespace nn {
 template<typename LossFunction, typename LearningAlgorithm>
 class network {
 public:
+    void init_weight() { layers_.reset(); }
+
     void add(layer_base *layer) { layers_.add(layer); }
 
     int in_dim() const { return layers_.head()->in_size(); }
