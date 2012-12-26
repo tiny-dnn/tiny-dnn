@@ -5,16 +5,22 @@
 
 namespace nn {
 
+template<typename N>
 class layers;
 
 // base class of all kind of NN layers
+template<typename N>
 class layer_base {
 public:
+    typedef N Network;
+    typedef typename Network::Updater Updater;
+    typedef typename Network::LossFunction LossFunction;
+
     layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
-    void connect(layer_base* tail) {
+    void connect(layer_base<N>* tail) {
         if (this->out_size() != 0 && tail->in_size() != this->out_size())
             throw nn_error("dimension mismatch");
         next_ = tail;
@@ -49,16 +55,16 @@ public:
 
     virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, updater *l) = 0;
+    virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
 protected:
     int in_size_;
     int out_size_;
 
-    friend class layers;
-    layer_base* next_;
-    layer_base* prev_;
+    friend class layers<N>;
+    layer_base<N>* next_;
+    layer_base<N>* prev_;
     vec_t output_;     // last output of current layer, set by fprop
     vec_t prev_delta_; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
@@ -82,9 +88,12 @@ private:
     }
 };
 
-template<typename Activation>
-class layer : public layer_base {
+template<typename N, typename Activation>
+class layer : public layer_base<N> {
 public:
+    typedef layer_base<N> Base;
+    typedef typename Base::Updater Updater;
+
     layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
         : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
 
@@ -94,17 +103,20 @@ protected:
     Activation a_;
 };
 
-
-class input_layer : public layer<identity_activation> {
+template<typename N>
+class input_layer : public layer<N, identity_activation> {
 public:
-    input_layer() : layer<identity_activation>(0, 0, 0, 0) {}
+    typedef layer<N, identity_activation> Base;
+    typedef typename Base::Updater Updater;
+
+    input_layer() : layer<N, identity_activation>(0, 0, 0, 0) {}
 
     const vec_t& forward_propagation(const vec_t& in) {
         output_ = in;
         return next_ ? next_->forward_propagation(in) : output_;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
+    const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
         return current_delta;
     }
 
@@ -121,38 +133,40 @@ public:
     }
 };
 
+
+template<typename U>
 class layers {
 public:
     layers() : head_(0), tail_(0) {
         add(&first_);
     }
 
-    void add(layer_base * new_tail) {
+    void add(layer_base<U> * new_tail) {
         if (!head_) head_ = new_tail;
         if (tail_)  tail_->connect(new_tail);
         tail_ = new_tail;
     }
     bool empty() const { return head_ == 0; }
-    layer_base* head() const { return head_; }
-    layer_base* tail() const { return tail_; }
+    layer_base<U>* head() const { return head_; }
+    layer_base<U>* tail() const { return tail_; }
     void reset() {
-        layer_base *l = head_;
+        layer_base<U> *l = head_;
         while(l) {
             l->reset();
             l = l->next_;
         }
     }
     void divide_hessian(int denominator) {
-        layer_base *l = head_;
+        layer_base<U> *l = head_;
         while(l) {
             l->divide_hessian(denominator);
             l = l->next_;
         }     
     }
 private:
-    input_layer first_;
-    layer_base *head_;
-    layer_base *tail_;
+    input_layer<U> first_;
+    layer_base<U> *head_;
+    layer_base<U> *tail_;
 };
 
 }

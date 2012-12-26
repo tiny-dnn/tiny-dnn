@@ -32,9 +32,6 @@
     <ClInclude Include="..\include\layer.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\learner.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\util.h">
       <Filter>include</Filter>
     </ClInclude>

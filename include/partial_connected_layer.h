@@ -4,15 +4,17 @@
 
 namespace nn {
 
-template<typename Activation>
-class partial_connected_layer : public layer<Activation> {
+template<typename N, typename Activation>
+class partial_connected_layer : public layer<N, Activation> {
 public:
     typedef std::vector<std::pair<int, int> > io_connections;
     typedef std::vector<std::pair<int, int> > wi_connections;
     typedef std::vector<std::pair<int, int> > wo_connections;
+    typedef layer<N, Activation> Base;
+    typedef typename Base::Updater Updater;
 
     partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim, float_t scale_factor = 1.0)
-        : layer<Activation> (in_dim, out_dim, weight_dim, bias_dim), 
+        : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
         weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {
         if (in_dim <= 0 || weight_dim <= 0 || weight_dim <= 0 || bias_dim <= 0)
             throw nn_error("invalid layer size");
@@ -66,7 +68,7 @@ public:
         return next_ ? next_->forward_propagation(output_) : output_;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
         const vec_t& prev_out = prev_->output();
         const activation& prev_h = prev_->activation_function();
 

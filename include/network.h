@@ -11,15 +11,19 @@
 
 namespace nn {
 
-template<typename LossFunction, typename LearningAlgorithm>
+template<typename L, typename U>
 class network {
 public:
+    typedef L LossFunction;
+    typedef U Updater;
+
     void init_weight(const std::vector<vec_t>& in, int size_initialize_hessian = 500) { 
         layers_.reset(); 
         init_hessian(in, size_initialize_hessian);
     }
 
-    void add(layer_base *layer) { layers_.add(layer); }
+    template<typename T>
+    void add(layer_base<T> *layer) { layers_.add(layer); }
 
     int in_dim() const { return layers_.head()->in_size(); }
 
@@ -31,7 +35,7 @@ public:
 
     LossFunction& loss_function () { return E_; }
 
-    LearningAlgorithm& learner() { return learner_; }
+    Updater& learner() { return updater_; }
 
     void predict(const vec_t& in, vec_t *out) {
         *out = forward_propagation(in);
@@ -115,12 +119,12 @@ private:
                 delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
-        layers_.tail()->back_propagation(delta, &learner_);
+        layers_.tail()->back_propagation(delta, &updater_);
     }
 
     LossFunction E_;
-    LearningAlgorithm learner_;
-    layers layers_;
+    Updater updater_;
+    layers<network<L, U> > layers_;
     double target_;
 };
 

@@ -5,11 +5,14 @@
 namespace nn {
 
 
-template<typename Activation>
-class average_pooling_layer : public partial_connected_layer<Activation> {
+template<typename N, typename Activation>
+class average_pooling_layer : public partial_connected_layer<N, Activation> {
 public:
+    typedef partial_connected_layer<N, Activation> Base;
+    typedef typename Base::Updater Updater;
+
     average_pooling_layer(int in_width, int in_height, int in_channels, int pooling_size)
-    : partial_connected_layer<Activation>(
+    : partial_connected_layer<N, Activation>(
      in_width * in_height * in_channels, 
      in_width * in_height * in_channels / (pooling_size * pooling_size), 
      in_channels, in_channels,

@@ -24,11 +24,14 @@ struct connection_table {
     size_t cols_;
 };
 
-template<typename Activation>
-class convolutional_layer : public partial_connected_layer<Activation> {
+template<typename N, typename Activation>
+class convolutional_layer : public partial_connected_layer<N, Activation> {
 public:
+    typedef partial_connected_layer<N, Activation> Base;
+    typedef typename Base::Updater Updater;
+
     convolutional_layer(int in_width, int in_height, int window_size, int in_channels, int out_channels)
-    : partial_connected_layer<Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
+    : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
     window_size * window_size * in_channels * out_channels, out_channels), 
     in_(in_width, in_height, in_channels), 
     out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
@@ -39,7 +42,7 @@ public:
     }
 
     convolutional_layer(int in_width, int in_height, int window_size, int in_channels, int out_channels, const connection_table& connection_table)
-        : partial_connected_layer<Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
+        : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
         window_size * window_size * in_channels * out_channels, out_channels), 
         in_(in_width, in_height, in_channels), 
         out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),

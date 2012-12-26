@@ -6,7 +6,7 @@
 using namespace nn;
 
 TEST(convolutional, fprop) {
-    convolutional_layer<sigmoid_activation> l(5, 5, 3, 1, 2);
+    convolutional_layer<network<mse, gradient_descent>, sigmoid_activation> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 
@@ -60,7 +60,7 @@ TEST(convolutional, fprop) {
 
 TEST(convolutional, bprop) {
     network<cross_entropy, gradient_descent> nn;
-    convolutional_layer<sigmoid_activation> layer(5, 5, 3, 1, 1);
+    convolutional_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer(5, 5, 3, 1, 1);
 
     nn.add(&layer);
 
@@ -86,8 +86,8 @@ TEST(convolutional, bprop) {
 
 TEST(convolutional, bprop2) {
     network<cross_entropy, gradient_descent> nn;
-    convolutional_layer<sigmoid_activation> layer(5, 5, 3, 1, 1);
-    fully_connected_layer<sigmoid_activation> layer2(9, 3);
+    convolutional_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer(5, 5, 3, 1, 1);
+    fully_connected_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer2(9, 3);
 
     nn.add(&layer);
     nn.add(&layer2);
@@ -118,7 +118,7 @@ TEST(convolutional, bprop2) {
 
 TEST(fully_connected, bprop) {
     network<cross_entropy, gradient_descent> nn;
-    fully_connected_layer<sigmoid_activation> layer(3, 2);
+    fully_connected_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer(3, 2);
     nn.add(&layer);
 
     vec_t a(3), t(2), a2(3), t2(2);
@@ -148,8 +148,8 @@ TEST(fully_connected, bprop) {
 
 TEST(fully_connected, bprop2) {
     network<cross_entropy, gradient_descent> nn;
-    fully_connected_layer<sigmoid_activation> layer(4, 6);
-    fully_connected_layer<sigmoid_activation> layer2(6, 3);
+    fully_connected_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer(4, 6);
+    fully_connected_layer<network<cross_entropy, gradient_descent>, sigmoid_activation> layer2(6, 3);
 
     nn.add(&layer);
     nn.add(&layer2);

@@ -5,10 +5,13 @@
 namespace nn {
 
 // normal 
-template<typename Activation>
-class fully_connected_layer : public layer<Activation> {
+template<typename N, typename Activation>
+class fully_connected_layer : public layer<N, Activation> {
 public:
-    fully_connected_layer(int in_dim, int out_dim) : layer<Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {}
+    typedef layer<N, Activation> Base;
+    typedef typename Base::Updater Updater;
+
+    fully_connected_layer(int in_dim, int out_dim) : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {}
 
     int connection_size() const {
         return in_size_ * out_size_ + out_size_;
@@ -30,7 +33,7 @@ public:
         return next_ ? next_->forward_propagation(output_) : output_;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
+    const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
         const vec_t& prev_out = prev_->output();
         const activation& prev_h = prev_->activation_function();
 
