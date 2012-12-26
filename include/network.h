@@ -14,7 +14,10 @@ namespace nn {
 template<typename LossFunction, typename LearningAlgorithm>
 class network {
 public:
-    void init_weight() { layers_.reset(); }
+    void init_weight(const std::vector<vec_t>& in, int size_initialize_hessian = 500) { 
+        layers_.reset(); 
+        init_hessian(in, size_initialize_hessian);
+    }
 
     void add(layer_base *layer) { layers_.add(layer); }
 
@@ -66,6 +69,16 @@ public:
     }   
 
 private:
+    void init_hessian(const std::vector<vec_t>& in, int size_initialize_hessian) {
+        int size = std::min((int)in.size(), size_initialize_hessian);
+
+        for (int i = 0; i < size; i++) {
+            const vec_t& out = forward_propagation(in[i]);
+            back_propagation_2nd(out);
+        }
+        layers_.divide_hessian(size);
+    }
+
     bool is_canonical_link(const activation& h, const cost_function& E) {
         if (typeid(h) == typeid(sigmoid_activation) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(identity_activation) && typeid(E) == typeid(mse)) return true;
@@ -74,6 +87,20 @@ private:
 
     const vec_t& forward_propagation(const vec_t& in) {
         return layers_.head()->forward_propagation(in);
+    }
+
+    void back_propagation_2nd(const vec_t& out) {
+        vec_t delta(out_dim());
+        const activation& h = layers_.tail()->activation_function();
+
+        if (is_canonical_link(h, E_)) {
+            for (int i = 0; i < out_dim(); i++)
+                delta[i] = h.df(out[i]);  
+        } else {
+            throw nn_error("not implemented");
+        }
+
+        layers_.tail()->back_propagation_2nd(delta);
     }
 
     void back_propagation(const vec_t& out, const vec_t& t) {

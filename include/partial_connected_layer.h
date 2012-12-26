@@ -79,7 +79,7 @@ public:
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
                 diff *= scale_factor_;
-                l->update(diff, &W_[i]);
+                l->update(diff, Whessian_[i], &W_[i]);
             }
 
             for (size_t i = 0; i < b_.size(); i++) {
@@ -89,7 +89,7 @@ public:
                 for (auto o : outs)
                     diff += current_delta[o];    
 
-                l->update(diff, &b_[i]);
+                l->update(diff, bhessian_[i], &b_[i]);
             }
         }
 
@@ -104,6 +104,44 @@ public:
         }
         return prev_->back_propagation(prev_delta_, l);
     }
+
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+        const vec_t& prev_out = prev_->output();
+        const activation& prev_h = prev_->activation_function();
+
+        for (size_t i = 0; i < W_.size(); i++) {
+            const io_connections& connections = weight2io_[i];
+            float_t diff = 0.0;
+
+            for (auto connection : connections)
+                diff += prev_out[connection.first] * prev_out[connection.first] * current_delta2[connection.second];
+
+            diff *= scale_factor_;
+            Whessian_[i] += diff;
+        }
+
+        for (size_t i = 0; i < b_.size(); i++) {
+            std::vector<int>& outs = bias2out_[i];
+            float_t diff = 0.0;
+
+            for (auto o : outs)
+                diff += current_delta2[o];    
+
+            bhessian_[i] += diff;
+        }
+
+        for (int i = 0; i < in_size_; i++) {
+            const wo_connections& connections = in2wo_[i];
+            prev_delta2_[i] = 0.0;
+
+            for (auto connection : connections) 
+                prev_delta2_[i] += W_[connection.first] * W_[connection.first] * current_delta2[connection.second];
+
+            prev_delta2_[i] *= prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
+        }
+        return prev_->back_propagation_2nd(prev_delta2_);
+    }
+
 
 protected:
     float_t scale_factor_;

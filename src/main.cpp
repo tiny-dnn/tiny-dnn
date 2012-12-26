@@ -49,6 +49,8 @@ int main(void) {
     parse_labels("t10k-labels.idx1-ubyte", &test_labels);
     parse_images("t10k-images.idx3-ubyte", &test_images);
 
+    nn.init_weight(train_images);
+
     //for (int epoch = 0; epoch < 3; epoch++) {
     for (int i = 0; i < 1000; i++) {
         nn.train(train_images[0], train_labels[0]);
@@ -59,6 +61,13 @@ int main(void) {
     //}
     vec_t o;
     nn.predict(train_images[0], &o);
+    for (auto v : o)
+        std::cout << v << ",";
+    std::cout << std::endl;
+    nn.predict(train_images[1], &o);
+    for (auto v : o)
+        std::cout << v << ",";
+    std::cout << std::endl;
 
     int success = 0;
 

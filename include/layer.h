@@ -25,13 +25,20 @@ public:
         const float_t weight_base = 0.5 / std::sqrt(fan_in_size());
 
         uniform_rand(W_.begin(), W_.end(), -weight_base, weight_base);
-        uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);       
+        uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);    
+        std::fill(Whessian_.begin(), Whessian_.end(), 0.0);
+        std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
     }
 
     vec_t& output() { return output_; }
     vec_t& delta() { return prev_delta_; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
+
+    void divide_hessian(int denominator) { 
+        for (size_t i = 0; i < Whessian_.size(); i++) Whessian_[i] /= denominator;
+        for (size_t i = 0; i < bhessian_.size(); i++) bhessian_[i] /= denominator;
+    }
 
     virtual int in_size() const { return in_size_; }
     virtual int out_size() const { return out_size_; }
@@ -43,6 +50,7 @@ public:
     virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
     virtual const vec_t& back_propagation(const vec_t& current_delta, updater *l) = 0;
+    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
 protected:
     int in_size_;
@@ -56,6 +64,10 @@ protected:
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
 
+    vec_t Whessian_; // diagonal terms of hessian matrix
+    vec_t bhessian_;
+    vec_t prev_delta2_; // d^2E/da^2
+
 private:
     void set_size(int in_dim, int out_dim, int weight_dim, int bias_dim) {
         in_size_ = in_dim;
@@ -64,6 +76,9 @@ private:
         prev_delta_.resize(in_dim);
         W_.resize(weight_dim);
         b_.resize(bias_dim);     
+        Whessian_.resize(weight_dim);
+        bhessian_.resize(bias_dim);
+        prev_delta2_.resize(in_dim);
     }
 };
 
@@ -91,6 +106,10 @@ public:
 
     const vec_t& back_propagation(const vec_t& current_delta, updater *l) {
         return current_delta;
+    }
+
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+        return current_delta2;
     }
 
     int connection_size() const {
@@ -122,6 +141,13 @@ public:
             l->reset();
             l = l->next_;
         }
+    }
+    void divide_hessian(int denominator) {
+        layer_base *l = head_;
+        while(l) {
+            l->divide_hessian(denominator);
+            l = l->next_;
+        }     
     }
 private:
     input_layer first_;
