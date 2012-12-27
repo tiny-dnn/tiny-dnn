@@ -31,7 +31,7 @@ public:
     }
 
     void init_weight() {
-        const float_t weight_base = 3.0 / std::sqrt(fan_in_size());
+        const float_t weight_base = 0.5 / std::sqrt(fan_in_size());
 
         uniform_rand(W_.begin(), W_.end(), -weight_base, weight_base);
         uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);               
