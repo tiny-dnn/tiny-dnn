@@ -5,4 +5,4 @@ def build(bld):
       cflags   = ['-Wall'],
       cxxflags = ['-std=c++0x'],
       lib      = ['stdc++'],
-      includes = '. ../include')
+      includes = ['.', '../include', 'C:/Program Files/boost/boost_1_51_0'])

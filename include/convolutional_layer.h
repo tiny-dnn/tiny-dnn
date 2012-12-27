@@ -71,13 +71,13 @@ private:
         for (int outc = 0; outc < out_.depth_; outc++)
             for (int y = 0; y < out_.height_; y++)
                 for (int x = 0; x < out_.width_; x++)
-                    connect_bias(outc, out_.get_index(x, y, outc));
+                    this->connect_bias(outc, out_.get_index(x, y, outc));
     }
 
     void connect_kernel(int inc, int outc, int x, int y) {
         for (int dy = 0; dy < window_size_; dy++)
             for (int dx = 0; dx < window_size_; dx++)
-                connect_weight(
+                this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x, y, outc), 
                     weight_.get_index(dx, dy, outc * in_.depth_ + inc));

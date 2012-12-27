@@ -14,6 +14,7 @@ typedef std::vector<vec_t> mat_t;
 class nn_error : public std::exception {
 public:
     nn_error(const std::string& msg) : msg_(msg){}
+    ~nn_error() throw() {}
     const char* what() const throw() { return msg_.c_str(); }
 private:
     std::string msg_;
@@ -44,7 +45,7 @@ T& operator << (T& os, const std::vector<U>& vec) {
     return os;
 }
 
-vec_t operator - (const vec_t& v1, const vec_t& v2) {
+inline vec_t operator - (const vec_t& v1, const vec_t& v2) {
     const int dim = v1.size();
     vec_t v(dim);
 
@@ -53,7 +54,7 @@ vec_t operator - (const vec_t& v1, const vec_t& v2) {
     return v;
 }
 
-vec_t operator + (const vec_t& v1, const vec_t& v2) {
+inline vec_t operator + (const vec_t& v1, const vec_t& v2) {
     const int dim = v1.size();
     vec_t v(dim);
 
@@ -62,21 +63,7 @@ vec_t operator + (const vec_t& v1, const vec_t& v2) {
     return v;
 }
 
-float_t sum_square(const vec_t& vec) {
-    float_t sum = 0.0;
-    for (auto v : vec)
-        sum += v * v;
-    return sum;
-}
-
-float_t sum_square(const pvec_t& vec) {
-    float_t sum = 0.0;
-    for (auto v : vec)
-        sum += *v * *v;
-    return sum;
-}
-
-float_t uniform_rand(float_t min, float_t max) {
+inline float_t uniform_rand(float_t min, float_t max) {
     static boost::mt19937 gen(0);
     boost::uniform_real<float_t> dst(min, max);
     return dst(gen);
@@ -96,7 +83,7 @@ T* reverse_endian(T* p) {
 
 template<typename T>
 int max_index(const std::vector<T>& vec) {
-    T max_val = std::numeric_limits<T>::min();
+    T max_val = -1;
     int max_index = -1;
 
     for (size_t i = 0; i < vec.size(); i++) {

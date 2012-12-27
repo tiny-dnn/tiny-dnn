@@ -16,9 +16,12 @@ public:
     typedef typename Network::Updater Updater;
     typedef typename Network::LossFunction LossFunction;
 
+    layer_base(){}
+
     layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
+
 
     void connect(layer_base<N>* tail) {
         if (this->out_size() != 0 && tail->in_size() != this->out_size())
@@ -58,11 +61,13 @@ public:
     virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
+    layer_base<N>* next() { return next_; }
+    layer_base<N>* prev() { return prev_; }
+
 protected:
     int in_size_;
     int out_size_;
 
-    friend class layers<N>;
     layer_base<N>* next_;
     layer_base<N>* prev_;
     vec_t output_;     // last output of current layer, set by fprop
@@ -95,7 +100,7 @@ public:
     typedef typename Base::Updater Updater;
 
     layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
-        : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
+        : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
 
     activation& activation_function() { return a_; }
 
@@ -112,8 +117,8 @@ public:
     input_layer() : layer<N, identity_activation>(0, 0, 0, 0) {}
 
     const vec_t& forward_propagation(const vec_t& in) {
-        output_ = in;
-        return next_ ? next_->forward_propagation(in) : output_;
+        this->output_ = in;
+        return this->next_ ? this->next_->forward_propagation(in) : this->output_;
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
@@ -125,7 +130,7 @@ public:
     }
 
     int connection_size() const {
-        return in_size_;
+        return this->in_size_;
     }
 
     int fan_in_size() const {
@@ -153,14 +158,14 @@ public:
         layer_base<U> *l = head_;
         while(l) {
             l->reset();
-            l = l->next_;
+            l = l->next();
         }
     }
     void divide_hessian(int denominator) {
         layer_base<U> *l = head_;
         while(l) {
             l->divide_hessian(denominator);
-            l = l->next_;
+            l = l->next();
         }     
     }
 private:

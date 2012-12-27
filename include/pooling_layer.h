@@ -36,13 +36,13 @@ private:
         for (int c = 0; c < in_.depth_; c++) 
             for (int y = 0; y < out_.height_; y++)
                 for (int x = 0; x < out_.width_; x++)
-                    connect_bias(c, out_.get_index(x, y, c));
+                    this->connect_bias(c, out_.get_index(x, y, c));
     }
 
     void connect_kernel(int pooling_size, int x, int y, int inc) {
         for (int dy = 0; dy < pooling_size; dy++)
             for (int dx = 0; dx < pooling_size; dx++)
-                connect_weight(
+                this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x / pooling_size, y / pooling_size, inc),
                     inc);

@@ -54,26 +54,36 @@ public:
     }
 
     virtual const vec_t& forward_propagation(const vec_t& in) {
-        for (int i = 0; i < out_size_; i++) {
+        for (int i = 0; i < this->out_size_; i++) {
             const wi_connections& connections = out2wi_[i];
             float_t a = 0.0;
 
             for (auto connection : connections)
-                a += W_[connection.first] * in[connection.second];
+                a += this->W_[connection.first] * in[connection.second];
 
             a *= scale_factor_;
-            a += b_[out2bias_[i]];
-            output_[i] = a_.f(a);
+            a += this->b_[out2bias_[i]];
+            this->output_[i] = this->a_.f(a);
         }
-        return next_ ? next_->forward_propagation(output_) : output_;
+        return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_;
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
-        const vec_t& prev_out = prev_->output();
-        const activation& prev_h = prev_->activation_function();
+        const vec_t& prev_out = this->prev_->output();
+        const activation& prev_h = this->prev_->activation_function();
+
+        for (int i = 0; i < this->in_size_; i++) {
+            const wo_connections& connections = in2wo_[i];
+            this->prev_delta_[i] = 0.0;
+
+            for (auto connection : connections) 
+                this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second];
+
+            this->prev_delta_[i] *= prev_h.df(prev_out[i]);
+        }
 
         if (l) {
-            for (size_t i = 0; i < W_.size(); i++) {
+            for (size_t i = 0; i < this->W_.size(); i++) {
                 const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
 
@@ -81,67 +91,58 @@ public:
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
                 diff *= scale_factor_;
-                l->update(diff, Whessian_[i], &W_[i]);
+                l->update(diff, this->Whessian_[i], &this->W_[i]);
             }
 
-            for (size_t i = 0; i < b_.size(); i++) {
+            for (size_t i = 0; i < this->b_.size(); i++) {
                 std::vector<int>& outs = bias2out_[i];
                 float_t diff = 0.0;
 
                 for (auto o : outs)
                     diff += current_delta[o];    
 
-                l->update(diff, bhessian_[i], &b_[i]);
+                l->update(diff, this->bhessian_[i], &this->b_[i]);
             }
         }
 
-        for (int i = 0; i < in_size_; i++) {
-            const wo_connections& connections = in2wo_[i];
-            prev_delta_[i] = 0.0;
-
-            for (auto connection : connections) 
-                prev_delta_[i] += W_[connection.first] * current_delta[connection.second];
-
-            prev_delta_[i] *= prev_h.df(prev_out[i]);
-        }
-        return prev_->back_propagation(prev_delta_, l);
+        return this->prev_->back_propagation(this->prev_delta_, l);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = prev_->output();
-        const activation& prev_h = prev_->activation_function();
+        const vec_t& prev_out = this->prev_->output();
+        const activation& prev_h = this->prev_->activation_function();
 
-        for (size_t i = 0; i < W_.size(); i++) {
+        for (size_t i = 0; i < this->W_.size(); i++) {
             const io_connections& connections = weight2io_[i];
             float_t diff = 0.0;
 
             for (auto connection : connections)
                 diff += prev_out[connection.first] * prev_out[connection.first] * current_delta2[connection.second];
 
-            diff *= scale_factor_;
-            Whessian_[i] += diff;
+            diff *= scale_factor_ * scale_factor_;
+            this->Whessian_[i] += diff;
         }
 
-        for (size_t i = 0; i < b_.size(); i++) {
+        for (size_t i = 0; i < this->b_.size(); i++) {
             std::vector<int>& outs = bias2out_[i];
             float_t diff = 0.0;
 
             for (auto o : outs)
                 diff += current_delta2[o];    
 
-            bhessian_[i] += diff;
+            this->bhessian_[i] += diff;
         }
 
-        for (int i = 0; i < in_size_; i++) {
+        for (int i = 0; i < this->in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
-            prev_delta2_[i] = 0.0;
+            this->prev_delta2_[i] = 0.0;
 
             for (auto connection : connections) 
-                prev_delta2_[i] += W_[connection.first] * W_[connection.first] * current_delta2[connection.second];
+                this->prev_delta2_[i] += this->W_[connection.first] * this->W_[connection.first] * current_delta2[connection.second];
 
-            prev_delta2_[i] *= prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
+            this->prev_delta2_[i] *= prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
         }
-        return prev_->back_propagation_2nd(prev_delta2_);
+        return this->prev_->back_propagation_2nd(this->prev_delta2_);
     }
 
 
