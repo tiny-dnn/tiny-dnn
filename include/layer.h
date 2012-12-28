@@ -56,6 +56,18 @@ public:
     virtual int connection_size() const = 0;
     virtual void reset() { init_weight(); }
 
+    void save(std::ostream& os) {
+        for (auto w : W_) os << w;
+        for (auto b : b_) os << b;
+    }
+
+    void load(std::istream& is) {
+        for (size_t i = 0; i < W_.size(); i++) 
+            is >> W_[i];
+        for (size_t i = 0; i < b_.size(); i++)
+            is >> b_[i];
+    }
+
     virtual activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in) = 0;
     virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) = 0;
@@ -142,36 +154,34 @@ public:
 template<typename U>
 class layers {
 public:
-    layers() : head_(0), tail_(0) {
+    layers() {
         add(&first_);
     }
 
     void add(layer_base<U> * new_tail) {
-        if (!head_) head_ = new_tail;
-        if (tail_)  tail_->connect(new_tail);
-        tail_ = new_tail;
+        if (tail())  tail()->connect(new_tail);
+        layers_.push_back(new_tail);
     }
-    bool empty() const { return head_ == 0; }
-    layer_base<U>* head() const { return head_; }
-    layer_base<U>* tail() const { return tail_; }
+
+    bool empty() const { return layers_.size() == 0; }
+
+    layer_base<U>* head() const { return empty() ? 0 : layers_[0]; }
+
+    layer_base<U>* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
+
     void reset() {
-        layer_base<U> *l = head_;
-        while(l) {
-            l->reset();
-            l = l->next();
-        }
+        for (auto pl : layers_)
+            pl->reset();
     }
+
     void divide_hessian(int denominator) {
-        layer_base<U> *l = head_;
-        while(l) {
-            l->divide_hessian(denominator);
-            l = l->next();
-        }     
+        for (auto pl : layers_)
+            pl->divide_hessian(denominator);
     }
+
 private:
+    std::vector<layer_base<U>*> layers_;
     input_layer<U> first_;
-    layer_base<U> *head_;
-    layer_base<U> *tail_;
 };
 
 }

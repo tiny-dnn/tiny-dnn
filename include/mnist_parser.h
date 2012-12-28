@@ -24,7 +24,7 @@ void parse_labels(const std::string& label_file, std::vector<label_t> *labels) {
     if (magic_number != 0x00000801 || num_items <= 0) 
         throw nn_error("MNIST label-file format error");
 
-    for (int i = 0; i < num_items; i++) {
+    for (size_t i = 0; i < num_items; i++) {
         uint8_t label;
         ifs.read((char*)&label, 1);
         labels->push_back((label_t)label);
@@ -56,14 +56,14 @@ void parse_images(const std::string& image_file, std::vector<vec_t> *images, flo
     const int width = num_cols + 2 * x_padding;
     const int height = num_rows + 2 * y_padding;
 
-    for (int i = 0; i < num_items; i++) {
+    for (size_t i = 0; i < num_items; i++) {
         vec_t image(width * height, scale_min);
         std::vector<uint8_t> image_vec(num_rows * num_cols);
 
         ifs.read((char*)&image_vec[0], num_rows * num_cols);
 
-        for (int y = 0; y < num_rows; y++)
-            for (int x = 0; x < num_cols; x++)
+        for (size_t y = 0; y < num_rows; y++)
+            for (size_t x = 0; x < num_cols; x++)
             image[width * (y + y_padding) + x + x_padding]
               = (image_vec[y * num_cols + x] / 255.0) * (scale_max - scale_min) + scale_min;
 

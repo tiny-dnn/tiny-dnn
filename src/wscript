@@ -3,6 +3,6 @@ def build(bld):
       source = 'main.cpp',
       target = 'main',
       cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x'],
+      cxxflags = ['-std=c++0x', '-Wall', '-s', '-O2'],
       lib      = ['stdc++'],
       includes = ['.', '../include', 'C:/Program Files/boost/boost_1_51_0'])

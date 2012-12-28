@@ -7,8 +7,8 @@ namespace nn {
 
 typedef double float_t;
 typedef int label_t;
-typedef std::vector<double> vec_t;
-typedef std::vector<double*> pvec_t;
+typedef std::vector<float_t> vec_t;
+typedef std::vector<float_t*> pvec_t;
 typedef std::vector<vec_t> mat_t;
 
 class nn_error : public std::exception {

@@ -58,14 +58,14 @@ public:
             const wi_connections& connections = out2wi_[i];
             float_t a = 0.0;
 
-            for (auto connection : connections)
-                a += this->W_[connection.first] * in[connection.second];
+            for (auto connection : connections)// 13.1%
+                a += this->W_[connection.first] * in[connection.second]; // 3.2%
 
             a *= scale_factor_;
             a += this->b_[out2bias_[i]];
-            this->output_[i] = this->a_.f(a);
+            this->output_[i] = this->a_.f(a); // 9.6%
         }
-        return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_;
+        return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_; // 15.6%
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
@@ -77,9 +77,9 @@ public:
             this->prev_delta_[i] = 0.0;
 
             for (auto connection : connections) 
-                this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second];
+                this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
 
-            this->prev_delta_[i] *= prev_h.df(prev_out[i]);
+            this->prev_delta_[i] *= prev_h.df(prev_out[i]); // 2.1%
         }
 
         if (l) {
@@ -87,11 +87,11 @@ public:
                 const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
 
-                for (auto connection : connections)
+                for (auto connection : connections) // 11.9%
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
                 diff *= scale_factor_;
-                l->update(diff, this->Whessian_[i], &this->W_[i]);
+                l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
             }
 
             for (size_t i = 0; i < this->b_.size(); i++) {
@@ -101,7 +101,7 @@ public:
                 for (auto o : outs)
                     diff += current_delta[o];    
 
-                l->update(diff, this->bhessian_[i], &this->b_[i]);
+                l->update(diff, this->bhessian_[i], &this->b_[i]); 
             }
         }
 
@@ -145,14 +145,40 @@ public:
         return this->prev_->back_propagation_2nd(this->prev_delta2_);
     }
 
+    // remove unused weight to improve cache hits
+    void remap() {
+        std::map<int, int> swaps;
+        int n = 0;
+
+        for (size_t i = 0; i < weight2io_.size(); i++)
+            swaps[i] = weight2io_[i].empty() ? -1 : n++;
+
+        for (int i = 0; i < this->out_size_; i++) {
+            wi_connections& wi = out2wi_[i];
+            for (size_t j = 0; j < wi.size(); j++)
+                wi[j].first = swaps[wi[j].first];
+        }
+
+        for (int i = 0; i < this->in_size_; i++) {
+            wo_connections& wo = in2wo_[i];
+            for (size_t j = 0; j < wo.size(); j++)
+                wo[j].first = swaps[wo[j].first];
+        }
+
+        std::vector<io_connections> weight2io_new(n);
+        for (size_t i = 0; i < weight2io_.size(); i++)
+            if(swaps[i] >= 0) weight2io_new[swaps[i]] = weight2io_[i];
+
+        weight2io_ = weight2io_new;
+    }
 
 protected:
-    float_t scale_factor_;
-    std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
     std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
     std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
+    std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
     std::vector<std::vector<int> > bias2out_;
     std::vector<int> out2bias_;
+    float_t scale_factor_;
 };
 
 } 

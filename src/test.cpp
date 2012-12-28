@@ -6,7 +6,10 @@
 using namespace nn;
 
 TEST(convolutional, fprop) {
-    convolutional_layer<network<mse, gradient_descent>, sigmoid_activation> l(5, 5, 3, 1, 2);
+    typedef network<mse, gradient_descent> CNN;
+    CNN nn;
+
+    convolutional_layer<network<mse, gradient_descent>, tanh_activation> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 

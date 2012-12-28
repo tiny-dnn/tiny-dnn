@@ -7,10 +7,13 @@
 #include "pooling_layer.h"
 #include "mnist_parser.h"
 
+#include <boost/timer.hpp>
+#include <boost/progress.hpp>
+
 using namespace nn;
 
 int main(void) {
-    typedef network<cross_entropy, gradient_descent> CNN;
+    typedef network<mse, gradient_descent> CNN;
     CNN nn;
     convolutional_layer<CNN, tanh_activation> C1(32, 32, 5, 1, 6);
     average_pooling_layer<CNN, tanh_activation> S2(28, 28, 6, 2);
@@ -51,17 +54,20 @@ int main(void) {
     nn.init_weight(train_images);
 
     boost::progress_display disp(train_images.size());
+    boost::timer t;
     //for (int epoch = 0; epoch < 3; epoch++) {
-    for (int i = 0; i < train_images.size(); i++) {
+    for (size_t i = 0; i < train_images.size(); i++) {
         nn.train(train_images[i], train_labels[i]);
         ++disp;
     }
+
+    std::cout << t.elapsed() << "s elapsed." << std::endl;
 
     int success = 0;
 
     std::map<int, std::map<int, int> > confusion_matrix;
 
-    for (int i = 0; i < test_labels.size(); i++) {
+    for (size_t i = 0; i < test_labels.size(); i++) {
         vec_t out;
         nn.predict(test_images[i], &out);
 

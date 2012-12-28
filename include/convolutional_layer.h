@@ -4,7 +4,6 @@
 
 namespace nn {
 
-
 struct connection_table {
     connection_table() : rows_(0), cols_(0) {}
     connection_table(const bool *ar, size_t rows, size_t cols) : connected_(rows * cols), rows_(rows), cols_(cols) {
@@ -50,6 +49,7 @@ public:
         window_size_(window_size)
     {
         init_connection(connection_table);
+        this->remap();
     }
 
 private:
@@ -83,10 +83,10 @@ private:
                     weight_.get_index(dx, dy, outc * in_.depth_ + inc));
     }
 
-    int window_size_;
     tensor3d in_;
     tensor3d out_;
     tensor3d weight_;
+    int window_size_;
 };
 
 } 
