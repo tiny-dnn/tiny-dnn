@@ -170,3 +170,10 @@ pip-log.txt
 build
 waf3*
 .lock-wafbuild
+
+
+#################
+## Other
+#################
+*.exe
+*.dll

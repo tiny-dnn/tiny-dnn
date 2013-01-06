@@ -16,12 +16,9 @@ public:
     typedef typename Network::Updater Updater;
     typedef typename Network::LossFunction LossFunction;
 
-    layer_base(){}
-
     layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
-
 
     void connect(layer_base<N>* tail) {
         if (this->out_size() != 0 && tail->in_size() != this->out_size())
@@ -30,6 +27,8 @@ public:
         tail->prev_ = this;
     }
 
+    // cannot call from ctor because of pure virtual function call fan_in_size().
+    // so should call this function explicitly after ctor
     void init_weight() {
         const float_t weight_base = 0.5 / std::sqrt(fan_in_size());
 
@@ -39,14 +38,14 @@ public:
         std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
     }
 
-    vec_t& output() { return output_; }
-    vec_t& delta() { return prev_delta_; }
+    const vec_t& output() const { return output_; }
+    const vec_t& delta() const { return prev_delta_; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
 
     void divide_hessian(int denominator) { 
-        for (size_t i = 0; i < Whessian_.size(); i++) Whessian_[i] /= denominator;
-        for (size_t i = 0; i < bhessian_.size(); i++) bhessian_[i] /= denominator;
+        for (auto& w : Whessian_) w /= denominator;
+        for (auto& b : bhessian_) b /= denominator;
     }
 
     virtual int in_size() const { return in_size_; }
@@ -54,18 +53,15 @@ public:
     virtual int param_size() const { return W_.size() + b_.size(); }
     virtual int fan_in_size() const = 0;
     virtual int connection_size() const = 0;
-    virtual void reset() { init_weight(); }
 
-    void save(std::ostream& os) {
+    void save(std::ostream& os) const {
         for (auto w : W_) os << w;
         for (auto b : b_) os << b;
     }
 
     void load(std::istream& is) {
-        for (size_t i = 0; i < W_.size(); i++) 
-            is >> W_[i];
-        for (size_t i = 0; i < b_.size(); i++)
-            is >> b_[i];
+        for (auto& w : W_) is >> w;
+        for (auto& b : b_) is >> b;
     }
 
     virtual activation& activation_function() = 0;
@@ -171,7 +167,7 @@ public:
 
     void reset() {
         for (auto pl : layers_)
-            pl->reset();
+            pl->init_weight();
     }
 
     void divide_hessian(int denominator) {

@@ -2,6 +2,11 @@
 #include <vector>
 #include <limits>
 #include <boost/random.hpp>
+#ifdef CNN_USE_TBB
+#define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
+#include <tbb/tbb.h>
+#endif
+#include "fixed_point.h"
 
 namespace nn {
 
@@ -45,27 +50,16 @@ T& operator << (T& os, const std::vector<U>& vec) {
     return os;
 }
 
-inline vec_t operator - (const vec_t& v1, const vec_t& v2) {
-    const int dim = v1.size();
-    vec_t v(dim);
-
-    for (int i = 0; i < dim; i++)
-        v[i] = v1[i] - v2[i];
-    return v;
-}
-
-inline vec_t operator + (const vec_t& v1, const vec_t& v2) {
-    const int dim = v1.size();
-    vec_t v(dim);
-
-    for (int i = 0; i < dim; i++)
-        v[i] = v1[i] + v2[i];
-    return v;
-}
-
-inline float_t uniform_rand(float_t min, float_t max) {
+template<int Q>
+inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
     static boost::mt19937 gen(0);
-    boost::uniform_real<float_t> dst(min, max);
+    boost::uniform_real<double> dst(min.to_real(), max.to_real());
+    return dst(gen);
+}
+
+inline double uniform_rand(double min, double max) {
+    static boost::mt19937 gen(0);
+    boost::uniform_real<double> dst(min, max);
     return dst(gen);
 }
 
@@ -94,5 +88,42 @@ int max_index(const std::vector<T>& vec) {
     }
     return max_index;
 }
+
+inline void nop() {
+    // do nothing
+}
+
+#ifdef CNN_USE_TBB
+
+typedef tbb::blocked_range<int> blocked_range;
+
+template<typename Func>
+void parallel_for(int begin, int end, Func f) {
+    tbb::parallel_for(tbb::blocked_range<int>(begin, end, 100), f);
+}
+
+#else
+
+struct blocked_range {
+    typedef int const_iterator;
+
+    blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+
+    const_iterator begin() const { return begin_; }
+    const_iterator end() const { return end_; }
+private:
+    int begin_;
+    int end_;
+};
+
+
+template<typename Func>
+void parallel_for(int begin, int end, Func f) {
+    blocked_range r(begin, end);
+    f(r);
+}
+
+#endif // CNN_USE_TBB
+
 
 }

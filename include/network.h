@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
+#include <map>
 
 #include "util.h"
 #include "activation.h"
@@ -10,15 +11,25 @@
 
 namespace nn {
 
+struct result {
+    result() : num_success(0), num_total(0) {}
+
+    int num_success;
+    int num_total;
+    std::map<label_t, std::map<label_t, int> > confusion_matrix;
+};
+
 template<typename L, typename U>
 class network {
 public:
     typedef L LossFunction;
     typedef U Updater;
+    typedef std::function<void()> Listener;
 
-    void init_weight(const std::vector<vec_t>& in, int size_initialize_hessian = 500) { 
+    network(const std::string& name = "") : on_epoch_enumerate(nop), on_data_enumerate(nop) {}
+
+    void init_weight() { 
         layers_.reset(); 
-        init_hessian(in, size_initialize_hessian);
     }
 
     template<typename T>
@@ -28,47 +39,94 @@ public:
 
     int out_dim() const { return layers_.tail()->out_size(); }
 
-    float_t min_out() const { return layers_.tail()->activation_function().scale().first; }
- 
-    float_t max_out() const { return layers_.tail()->activation_function().scale().second; }
+    std::string name() const { return name_; }
 
-    LossFunction& loss_function () { return E_; }
+    LossFunction& loss_function() { return E_; }
 
     Updater& learner() { return updater_; }
+
+    void set_epoch_enumerate_listener(Listener listener) {
+        on_epoch_enumerate = listener;
+    }
+
+    void set_data_enumerate_listener(Listener listener) {
+        on_data_enumerate = listener;
+    }
 
     void predict(const vec_t& in, vec_t *out) {
         *out = forward_propagation(in);
     }
 
-    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
-        for (size_t i = 0; i < in.size(); i++) 
-            train(in[i], t[i]);
+    // classification
+    template <typename OnDataEnumerate, typename OnEpochEnumerate>
+    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t, int epoch, OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+        for (int iter = 0; iter < epoch; iter++) {
+            calc_hessian(in);
+            for (size_t i = 0; i < in.size(); i++) {
+                train_once(in[i], t[i]);
+                on_data_enumerate();
+            }
+            on_epoch_enumerate();
+        }
     }
 
-    void train(const vec_t& in, const label_t& t) {
+    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t, int epoch = 1) {
+        train(in, t, epoch, nop, nop);
+    }
+
+    result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
+        result test_result;
+
+        for (size_t i = 0; i < in.size(); i++) {
+            vec_t out;
+            predict(in[i], &out);
+
+            const label_t predicted = max_index(out);
+            const label_t actual = t[i];
+
+            if (predicted == actual) test_result.num_success++;
+            test_result.num_total++;
+            test_result.confusion_matrix[predicted][actual]++;
+        }
+        return test_result;
+    }
+
+    // regression
+    template <typename OnDataEnumerate, typename OnEpochEnumerate>
+    void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t, int epoch,  OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+        for (int iter = 0; iter < epoch; iter++) {
+            calc_hessian(in);
+            for (size_t i = 0; i < in.size(); i++) {
+                train_once(in[i], t[i]);
+                //on_data_enumerate();
+            }
+            on_epoch_enumerate();
+        }
+    }
+
+    void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t, int epoch = 1) {
+        train(in, t, epoch, nop, nop);
+    }
+
+private:
+
+    void train_once(const vec_t& in, const label_t& t) {
         const vec_t& out = forward_propagation(in);
-        vec_t tvec(out.size(), min_out());
+        vec_t tvec(out.size(), target_value_min());
 
         if (static_cast<size_t>(t) >= out.size())
             throw nn_error("training label must be less than output neurons");
 
-        tvec[t] = max_out();
+        tvec[t] = target_value_max();
         back_propagation(out, tvec);
     }
 
-    void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
-        for (size_t i = 0; i < in.size(); i++) {
-            train(in[i], t[i]);
-        }
-    }
-
-    void train(const vec_t& in, const vec_t& t) {
+    void train_once(const vec_t& in, const vec_t& t) {
         const vec_t& out = forward_propagation(in);
         back_propagation(out, t);
     }   
 
-private:
-    void init_hessian(const std::vector<vec_t>& in, int size_initialize_hessian) {
+    void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
 
         for (int i = 0; i < size; i++) {
@@ -96,10 +154,10 @@ private:
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = max_out() * h.df(out[i]);  
+                delta[i] = target_value_max() * h.df(out[i]);  
         } else {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = max_out() * h.df(out[i]) * h.df(out[i]);  
+                delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);  
         }
 
         layers_.tail()->back_propagation_2nd(delta);
@@ -120,9 +178,17 @@ private:
         layers_.tail()->back_propagation(delta, &updater_);
     }
 
+    float_t target_value_min() const { return layers_.tail()->activation_function().scale().first; }
+    float_t target_value_max() const { return layers_.tail()->activation_function().scale().second; }
+
+    std::string name_;
     LossFunction E_;
     Updater updater_;
     layers<network<L, U> > layers_;
+
+    // event listeners
+    Listener on_epoch_enumerate; // called for each epoch ends
+    Listener on_data_enumerate; // called for each data trained
 };
 
 }

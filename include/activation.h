@@ -26,18 +26,30 @@ public:
 
 class tanh_activation : public activation {
 public:
-    /*float_t f(float_t x) const {
-        const double ep = std::exp(x);
-        const double em = std::exp(-x); 
-        return (ep - em) / (ep + em);
-    }*/
     float_t f(float_t x) const {
+        const float_t ep = std::exp(x);
+        const float_t em = std::exp(-x); 
+        return (ep - em) / (ep + em);
+    }
+
+    /*float_t f(float_t x) const {
         const float_t x2 = x * x;
         x *= 1.0 + x2 * (0.1653 + x2 * 0.0097);
-        return x / std::sqrt(1.0 + x * x);
-    }
+        return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
+    }*/
     float_t df(float_t f_x) const { return 1.0 - f_x * f_x; }
     std::pair<float_t, float_t> scale() const { return std::make_pair(-0.8, 0.8); }
+
+private:
+    /*float invsqrt(float x) const {
+        float x2 = x * 0.5f;
+        long i = *reinterpret_cast<long*>(&x);
+
+        i = 0x5f3759df - (i >> 1);
+        x = *reinterpret_cast<float*>(&i);
+        x = x * (1.5f - (x2 * x * x));
+        return x;
+    }*/
 };
 
 class cost_function {
@@ -60,7 +72,7 @@ public:
 class cross_entropy {
 public:
     float_t f(float_t y, float_t t) {
-        return 0.0;//TODO
+        throw nn_error("not implemented");
     }
 
     float_t df(float_t y, float_t t) {

@@ -1,11 +1,15 @@
 #include <iostream>
 #include <iomanip>
 #include <map>
+
 #include "network.h"
 #include "fully_connected_layer.h"
 #include "convolutional_layer.h"
+
 #include "pooling_layer.h"
 #include "mnist_parser.h"
+
+#include "fixed_point.h"
 
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
@@ -32,7 +36,7 @@ int main(void) {
 
     assert(C1.param_size() == 156 && C1.connection_size() == 122304);
     assert(S2.param_size() == 12 && S2.connection_size() == 5880);
-    //assert(C3.param_size() == 1516 && C3.connection_size() == 156000);
+    assert(C3.param_size() == 1516 && C3.connection_size() == 151600);
     assert(S4.param_size() == 32 && S4.connection_size() == 2000);
     assert(C5.param_size() == 48120 && C5.connection_size() == 48120);
 
@@ -42,6 +46,7 @@ int main(void) {
     nn.add(&S4);
     nn.add(&C5);
     nn.add(&F6);
+    nn.init_weight();
  
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
@@ -51,19 +56,28 @@ int main(void) {
     parse_labels("t10k-labels.idx1-ubyte", &test_labels);
     parse_images("t10k-images.idx3-ubyte", &test_images);
 
-    nn.init_weight(train_images);
-
     boost::progress_display disp(train_images.size());
     boost::timer t;
-    //for (int epoch = 0; epoch < 3; epoch++) {
-    for (size_t i = 0; i < train_images.size(); i++) {
-        nn.train(train_images[i], train_labels[i]);
-        ++disp;
-    }
 
-    std::cout << t.elapsed() << "s elapsed." << std::endl;
+    auto on_enumerate_epoch = [&](){
+        std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-    int success = 0;
+        nn::result res = nn.test(test_images, test_labels);
+
+        std::cout << nn.learner().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+
+        nn.learner().alpha *= 0.85;
+        nn.learner().alpha = std::max(0.00001, nn.learner().alpha);
+
+        disp.restart(train_images.size());
+        t.restart();
+    };
+
+    auto on_enumerate_data = [&]() { ++disp; };
+
+    nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
+    
+    /*int success = 0;
 
     std::map<int, std::map<int, int> > confusion_matrix;
 
@@ -85,5 +99,5 @@ int main(void) {
         std::cout << std::endl;
     }
 
-    std::cout << "result:" << success << "/" << test_labels.size();
+    std::cout << "result:" << success << "/" << test_labels.size();*/
 }

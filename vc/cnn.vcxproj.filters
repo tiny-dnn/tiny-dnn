@@ -47,5 +47,11 @@
     <ClInclude Include="..\include\network.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\fixed_point.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\updater.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

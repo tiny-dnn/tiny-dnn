@@ -22,6 +22,7 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in) {
+
         for (int r = 0; r < this->out_size_; r++) {
             float_t z = 0.0;
             for (int c = 0; c < this->in_size_; c++) 
@@ -47,12 +48,14 @@ public:
         }
 
         if (l) {
-            for (int r = 0; r < this->out_size_; r++)
-                for (int c = 0; c < this->in_size_; c++) 
-                    l->update(current_delta[r] * prev_out[c], this->Whessian_[r*this->in_size_+c], &this->W_[r*this->in_size_+c]); 
-                     
-            for (int r = 0; r < this->out_size_; r++)
-                l->update(current_delta[r], this->bhessian_[r], &this->b_[r]);   
+            parallel_for(0,this->out_size_, [&](const blocked_range& r) {
+                for (int i = r.begin(); i < r.end(); i++) 
+                    for (int c = 0; c < this->in_size_; c++) 
+                        l->update(current_delta[i] * prev_out[c], this->Whessian_[i*this->in_size_+c], &this->W_[i*this->in_size_+c]); 
+
+                for (int i = r.begin(); i < r.end(); i++) 
+                    l->update(current_delta[i], this->bhessian_[i], &this->b_[i]);   
+            });
         }
 
         return this->prev_->back_propagation(this->prev_delta_, l);

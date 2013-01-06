@@ -54,17 +54,21 @@ public:
     }
 
     virtual const vec_t& forward_propagation(const vec_t& in) {
-        for (int i = 0; i < this->out_size_; i++) {
-            const wi_connections& connections = out2wi_[i];
-            float_t a = 0.0;
 
-            for (auto connection : connections)// 13.1%
-                a += this->W_[connection.first] * in[connection.second]; // 3.2%
+        parallel_for(0, this->out_size_, [&](const blocked_range& r) {
+            for (int i = r.begin(); i < r.end(); i++) {
+                const wi_connections& connections = out2wi_[i];
+                float_t a = 0.0;
 
-            a *= scale_factor_;
-            a += this->b_[out2bias_[i]];
-            this->output_[i] = this->a_.f(a); // 9.6%
-        }
+                for (auto& connection : connections)// 13.1%
+                    a += this->W_[connection.first] * in[connection.second]; // 3.2%
+
+                a *= scale_factor_;
+                a += this->b_[out2bias_[i]];
+                this->output_[i] = this->a_.f(a); // 9.6%
+            }
+        });
+
         return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_; // 15.6%
     }
 
@@ -72,30 +76,34 @@ public:
         const vec_t& prev_out = this->prev_->output();
         const activation& prev_h = this->prev_->activation_function();
 
-        for (int i = 0; i < this->in_size_; i++) {
-            const wo_connections& connections = in2wo_[i];
-            this->prev_delta_[i] = 0.0;
+        parallel_for(0, this->in_size_, [&](const blocked_range& r) {
+            for (int i = r.begin(); i != r.end(); i++) {
+                const wo_connections& connections = in2wo_[i];
+                this->prev_delta_[i] = 0.0;
 
-            for (auto connection : connections) 
-                this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
+                for (auto connection : connections) 
+                    this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
 
-            this->prev_delta_[i] *= prev_h.df(prev_out[i]); // 2.1%
-        }
+                this->prev_delta_[i] *= scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
+            }
+        });
 
         if (l) {
-            for (size_t i = 0; i < this->W_.size(); i++) {
-                const io_connections& connections = weight2io_[i];
-                float_t diff = 0.0;
+            parallel_for(0, weight2io_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i < r.end(); i++) {
+                    const io_connections& connections = weight2io_[i];
+                    float_t diff = 0.0;
 
-                for (auto connection : connections) // 11.9%
-                    diff += prev_out[connection.first] * current_delta[connection.second];
+                    for (auto connection : connections) // 11.9%
+                        diff += prev_out[connection.first] * current_delta[connection.second];
 
-                diff *= scale_factor_;
-                l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
-            }
+                    diff *= scale_factor_;
+                    l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
+                }
+            });
 
-            for (size_t i = 0; i < this->b_.size(); i++) {
-                std::vector<int>& outs = bias2out_[i];
+            for (size_t i = 0; i < bias2out_.size(); i++) {
+                const std::vector<int>& outs = bias2out_[i];
                 float_t diff = 0.0;
 
                 for (auto o : outs)
@@ -112,7 +120,7 @@ public:
         const vec_t& prev_out = this->prev_->output();
         const activation& prev_h = this->prev_->activation_function();
 
-        for (size_t i = 0; i < this->W_.size(); i++) {
+        for (size_t i = 0; i < weight2io_.size(); i++) {
             const io_connections& connections = weight2io_[i];
             float_t diff = 0.0;
 
@@ -123,8 +131,8 @@ public:
             this->Whessian_[i] += diff;
         }
 
-        for (size_t i = 0; i < this->b_.size(); i++) {
-            std::vector<int>& outs = bias2out_[i];
+        for (size_t i = 0; i < bias2out_.size(); i++) {
+            const std::vector<int>& outs = bias2out_[i];
             float_t diff = 0.0;
 
             for (auto o : outs)
@@ -140,7 +148,7 @@ public:
             for (auto connection : connections) 
                 this->prev_delta2_[i] += this->W_[connection.first] * this->W_[connection.first] * current_delta2[connection.second];
 
-            this->prev_delta2_[i] *= prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
+            this->prev_delta2_[i] *= scale_factor_ * scale_factor_ * prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
         }
         return this->prev_->back_propagation_2nd(this->prev_delta2_);
     }

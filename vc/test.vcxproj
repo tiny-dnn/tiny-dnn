@@ -46,10 +46,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include;C:\Program Files\boost\boost_1_51_0;C:\Program Files\eigen-eigen-5097c01bcdc4</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;C:\Program Files\boost\boost_1_51_0;C:\Program Files\eigen-eigen-5097c01bcdc4;C:\Program Files\tbb41_20121003oss\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Program Files\tbb41_20121003oss\lib\ia32\vc11</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -58,12 +59,13 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\include;C:\Program Files\boost\boost_1_51_0;C:\Program Files\eigen-eigen-5097c01bcdc4</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\include;C:\Program Files\boost\boost_1_51_0;C:\Program Files\eigen-eigen-5097c01bcdc4;C:\Program Files\tbb41_20121003oss\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>C:\Program Files\tbb41_20121003oss\lib\ia32\vc11</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

@@ -28,8 +28,6 @@ TEST(convolutional, fprop) {
 
     }
 
-
-
     l.weight()[0] = 0.3;  l.weight()[1] = 0.1; l.weight()[2] = 0.2;
     l.weight()[3] = 0.0;  l.weight()[4] =-0.1; l.weight()[5] =-0.1;
     l.weight()[6] = 0.05; l.weight()[7] =-0.2; l.weight()[8] = 0.05;
@@ -68,6 +66,7 @@ TEST(convolutional, bprop) {
     nn.add(&layer);
 
     vec_t a(25, 0.0), t(9, 0.0);
+    std::vector<vec_t> data, train;
 
     for (int y = 0; y < 5; y++) {
         a[5*y+3] = 1.0;
@@ -79,8 +78,12 @@ TEST(convolutional, bprop) {
         t[3*y+2] = 1.0;
     }
 
-    for (int i = 0; i < 100; i++)
-        nn.train(a, t);
+    for (int i = 0; i < 100; i++) {
+        data.push_back(a);
+        train.push_back(t);
+    }
+
+    nn.train(data, train);
 
     vec_t predicted;
     nn.predict(a, &predicted);
@@ -109,10 +112,15 @@ TEST(convolutional, bprop2) {
     uniform_rand(a2.begin(), a2.end(), -3, 3);
     uniform_rand(t2.begin(), t2.end(), 0, 1);
 
+    std::vector<vec_t> data, train;
+
     for (int i = 0; i < 300; i++) {
-        nn.train(a, t);
-        nn.train(a2, t2);
+        data.push_back(a);
+        data.push_back(a2);
+        train.push_back(t);
+        train.push_back(t2);
     }
+    nn.train(data, train);
 
     vec_t predicted;
     nn.predict(a, &predicted);
@@ -132,10 +140,15 @@ TEST(fully_connected, bprop) {
     a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
     t2[0] = 0.5; t2[1] = 0.1;
 
+    std::vector<vec_t> data, train;
+
     for (int i = 0; i < 100; i++) {
-        nn.train(a, t);
-        nn.train(a2, t2);
+        data.push_back(a);
+        data.push_back(a2);
+        train.push_back(t);
+        train.push_back(t2);
     }
+    nn.train(data, train);
 
     vec_t predicted;
     nn.predict(a, &predicted);
@@ -165,10 +178,15 @@ TEST(fully_connected, bprop2) {
     a2[0] = 1.0; a2[1] = 0.0; a2[2] = 4.0; a2[3] = 2.0;
     t2[0] = 0.6; t2[1] = 0.0; t2[2] = 0.1;
 
+    std::vector<vec_t> data, train;
+
     for (int i = 0; i < 100; i++) {
-        nn.train(a, t);
-        nn.train(a2, t2);
+        data.push_back(a);
+        data.push_back(a2);
+        train.push_back(t);
+        train.push_back(t2);
     }
+    nn.train(data, train);
 
     vec_t predicted;
     nn.predict(a, &predicted);

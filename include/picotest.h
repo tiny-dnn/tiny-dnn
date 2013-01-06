@@ -42,6 +42,7 @@
 
 #if defined _WIN32 
 #define PICOTEST_WINDOWS
+#define NOMINMAX
 #include <Windows.h>
 #elif defined __linux__
 #define PICOTEST_LINUX
