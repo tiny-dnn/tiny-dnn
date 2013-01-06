@@ -2,7 +2,7 @@
 #include "layer.h"
 #include "updater.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 // normal 
 template<typename N, typename Activation>

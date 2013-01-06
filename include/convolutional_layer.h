@@ -2,7 +2,7 @@
 #include "util.h"
 #include "partial_connected_layer.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 struct connection_table {
     connection_table() : rows_(0), cols_(0) {}

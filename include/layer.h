@@ -3,7 +3,7 @@
 #include "activation.h"
 #include "updater.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 template<typename N>
 class layers;

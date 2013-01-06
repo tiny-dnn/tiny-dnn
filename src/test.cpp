@@ -3,7 +3,7 @@
 #include "fully_connected_layer.h"
 #include "network.h"
 
-using namespace nn;
+using namespace tiny_cnn;
 
 TEST(convolutional, fprop) {
     typedef network<mse, gradient_descent> CNN;

@@ -8,7 +8,7 @@
 #endif
 #include "fixed_point.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 typedef double float_t;
 typedef int label_t;

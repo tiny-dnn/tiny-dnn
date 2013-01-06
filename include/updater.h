@@ -1,7 +1,7 @@
 #pragma once
 #include "util.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 /*struct updater {
 public:

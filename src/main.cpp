@@ -14,7 +14,7 @@
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
 
-using namespace nn;
+using namespace tiny_cnn;
 
 int main(void) {
     typedef network<mse, gradient_descent> CNN;

@@ -2,7 +2,7 @@
 #include "util.h"
 #include "partial_connected_layer.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 
 template<typename N, typename Activation>

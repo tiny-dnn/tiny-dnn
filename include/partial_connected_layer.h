@@ -2,7 +2,7 @@
 #include "util.h"
 #include "layer.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 template<typename N, typename Activation>
 class partial_connected_layer : public layer<N, Activation> {

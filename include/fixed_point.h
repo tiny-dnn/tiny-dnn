@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <limits>
 
-namespace nn {
+namespace tiny_cnn {
 
 template<int Q>
 class fixed_point {
@@ -168,12 +168,12 @@ fixed_point<Q> operator / (const T& lhs, const fixed_point<Q>& rhs) {
 namespace std {
 
 template<int Q>
-nn::fixed_point<Q> exp(const nn::fixed_point<Q>& f) {
+tiny_cnn::fixed_point<Q> exp(const tiny_cnn::fixed_point<Q>& f) {
     return std::exp(f.to_real());
 }
 
 template<int Q>
-nn::fixed_point<Q> sqrt(const nn::fixed_point<Q>& f) {
+tiny_cnn::fixed_point<Q> sqrt(const tiny_cnn::fixed_point<Q>& f) {
     return std::sqrt(f.to_real());
 }
 

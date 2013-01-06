@@ -9,7 +9,7 @@
 #include "updater.h"
 #include "layer.h"
 
-namespace nn {
+namespace tiny_cnn {
 
 struct result {
     result() : num_success(0), num_total(0) {}
@@ -35,8 +35,10 @@ public:
     template<typename T>
     void add(layer_base<T> *layer) { layers_.add(layer); }
 
+    // input data dimension of whole networks
     int in_dim() const { return layers_.head()->in_size(); }
 
+    // output data dimension of whole networks
     int out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }

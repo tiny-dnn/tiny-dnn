@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <boost/detail/endian.hpp>
 
-namespace nn {
+namespace tiny_cnn {
 
 void parse_labels(const std::string& label_file, std::vector<label_t> *labels) {
     std::ifstream ifs(label_file.c_str(), std::ios::in | std::ios::binary);
