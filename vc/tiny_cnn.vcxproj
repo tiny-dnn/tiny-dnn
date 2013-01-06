@@ -32,6 +32,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C7B38F22-F235-45A5-834A-DE2167849C4C}</ProjectGuid>
     <RootNamespace>cnn</RootNamespace>
+    <ProjectName>tiny_cnn</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
