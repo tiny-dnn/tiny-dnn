@@ -3,16 +3,16 @@ tiny-cnn
 
 convolutional neural networks in C++11
 
-build(gcc, without TBB)
+build
 ------
-## gcc, without TBB
+### gcc, without TBB
     ./waf configure
     ./waf build
 
-## vc, with TBB
+### vc, with TBB
 open vc/tiny_cnn.sln and build in release mode.
 
-## gcc, with TBB
+### gcc, with TBB
 build tiny-cnn with -d CNN_USE_TBB.
 
 dependency
