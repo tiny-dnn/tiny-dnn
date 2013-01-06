@@ -26,7 +26,7 @@ public:
     typedef U Updater;
     typedef std::function<void()> Listener;
 
-    network(const std::string& name = "") : on_epoch_enumerate(nop), on_data_enumerate(nop) {}
+    network(const std::string& name = "") {}
 
     void init_weight() { 
         layers_.reset(); 
@@ -46,14 +46,6 @@ public:
     LossFunction& loss_function() { return E_; }
 
     Updater& learner() { return updater_; }
-
-    void set_epoch_enumerate_listener(Listener listener) {
-        on_epoch_enumerate = listener;
-    }
-
-    void set_data_enumerate_listener(Listener listener) {
-        on_data_enumerate = listener;
-    }
 
     void predict(const vec_t& in, vec_t *out) {
         *out = forward_propagation(in);
@@ -187,10 +179,6 @@ private:
     LossFunction E_;
     Updater updater_;
     layers<network<L, U> > layers_;
-
-    // event listeners
-    Listener on_epoch_enumerate; // called for each epoch ends
-    Listener on_data_enumerate; // called for each data trained
 };
 
 }
