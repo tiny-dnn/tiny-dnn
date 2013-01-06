@@ -100,7 +100,7 @@ public:
             calc_hessian(in);
             for (size_t i = 0; i < in.size(); i++) {
                 train_once(in[i], t[i]);
-                //on_data_enumerate();
+                on_data_enumerate();
             }
             on_epoch_enumerate();
         }

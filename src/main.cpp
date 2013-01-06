@@ -62,7 +62,7 @@ int main(void) {
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-        nn::result res = nn.test(test_images, test_labels);
+        tiny_cnn::result res = nn.test(test_images, test_labels);
 
         std::cout << nn.learner().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
