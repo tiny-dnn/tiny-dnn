@@ -139,6 +139,8 @@ private:
     }
 
     const vec_t& forward_propagation(const vec_t& in) {
+        if (in.size() != in_dim())
+            throw nn_error("input dimension mismatch");
         return layers_.head()->forward_propagation(in);
     }
 

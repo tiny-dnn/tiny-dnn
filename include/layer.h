@@ -124,6 +124,8 @@ public:
 
     input_layer() : layer<N, identity_activation>(0, 0, 0, 0) {}
 
+    int in_size() const { return this->next_ ? this->next_->in_size(): 0; }
+
     const vec_t& forward_propagation(const vec_t& in) {
         this->output_ = in;
         return this->next_ ? this->next_->forward_propagation(in) : this->output_;
