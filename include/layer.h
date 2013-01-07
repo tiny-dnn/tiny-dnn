@@ -148,7 +148,6 @@ public:
     }
 };
 
-
 template<typename U>
 class layers {
 public:
@@ -181,5 +180,18 @@ private:
     std::vector<layer_base<U>*> layers_;
     input_layer<U> first_;
 };
+
+template <typename Char, typename CharTraits, typename N>
+std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const layer_base<N>& v) {
+    v.save(os);
+    return os;
+}
+
+template <typename Char, typename CharTraits, typename N>
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, const layer_base<N>& v) {
+    v.load(os);
+    return os;
+}
+
 
 }

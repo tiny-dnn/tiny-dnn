@@ -17,6 +17,7 @@
 using namespace tiny_cnn;
 
 int main(void) {
+    // construct LeNet-5 architecture
     typedef network<mse, gradient_descent> CNN;
     CNN nn;
     convolutional_layer<CNN, tanh_activation> C1(32, 32, 5, 1, 6);
@@ -46,8 +47,8 @@ int main(void) {
     nn.add(&S4);
     nn.add(&C5);
     nn.add(&F6);
-    nn.init_weight();
- 
+
+    // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
@@ -59,6 +60,7 @@ int main(void) {
     boost::progress_display disp(train_images.size());
     boost::timer t;
 
+    // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
@@ -73,31 +75,16 @@ int main(void) {
         t.restart();
     };
 
-    auto on_enumerate_data = [&]() { ++disp; };
-
-    nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
+    auto on_enumerate_data = [&](){ ++disp; };
     
-    /*int success = 0;
+    // training
+    nn.init_weight();
+    nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
 
-    std::map<int, std::map<int, int> > confusion_matrix;
+    // test and show results
+    nn.test(test_images, test_labels).print_detail(std::cout);
 
-    for (size_t i = 0; i < test_labels.size(); i++) {
-        vec_t out;
-        nn.predict(test_images[i], &out);
-
-        const label_t predicted = max_index(out);
-        const label_t actual = test_labels[i];
-
-        confusion_matrix[predicted][actual]++;
-        if (predicted == actual) success++;
-    }
-
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            std::cout << std::setw(5) << confusion_matrix[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << "result:" << success << "/" << test_labels.size();*/
+    // save networks
+    std::ofstream ofs("LeNet-weights");
+    ofs << C1 << S2 << C3 << S4 << C5 << F6;
 }

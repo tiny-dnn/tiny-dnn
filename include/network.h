@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <set>
 
 #include "util.h"
 #include "activation.h"
@@ -13,6 +14,43 @@ namespace tiny_cnn {
 
 struct result {
     result() : num_success(0), num_total(0) {}
+
+    double accuracy() const {
+        return num_success * 100.0 / num_total;
+    }
+
+    template <typename Char, typename CharTraits>
+    void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
+        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << std::endl;
+    }
+
+    template <typename Char, typename CharTraits>
+    void print_detail(std::basic_ostream<Char, CharTraits>& os) {
+        print_summary(os);
+        auto all_labels = labels();
+
+        os << std::setw(5) << "*" << " ";
+        for (auto c : all_labels) 
+            os << std::setw(5) << c << " ";
+        os << std::endl;
+
+        for (auto r : all_labels) {
+            os << std::setw(5) << r << " ";           
+            for (auto c : all_labels) 
+                os << std::setw(5) << confusion_matrix[r][c] << " ";
+            os << std::endl;
+        }
+    }
+
+    std::set<label_t> labels() const {
+        std::set<label_t> all_labels;
+        for (auto r : confusion_matrix) {
+            all_labels.insert(r.first);
+            for (auto c : r.second)
+                all_labels.insert(c.first);
+        }
+        return all_labels;
+    }
 
     int num_success;
     int num_total;
