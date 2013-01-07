@@ -191,7 +191,7 @@ private:
                 delta[i] = target_value_max() * h.df(out[i]);  
         } else {
             for (int i = 0; i < out_dim(); i++)
-                delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);  
+                delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
         }
 
         layers_.tail()->back_propagation_2nd(delta);

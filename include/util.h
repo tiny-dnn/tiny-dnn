@@ -13,8 +13,6 @@ namespace tiny_cnn {
 typedef double float_t;
 typedef int label_t;
 typedef std::vector<float_t> vec_t;
-typedef std::vector<float_t*> pvec_t;
-typedef std::vector<vec_t> mat_t;
 
 class nn_error : public std::exception {
 public:
@@ -34,21 +32,15 @@ struct tensor3d {
     int get_index(int x, int y, int channel) const {
         return (width_ * height_) * channel + width_ * y + x;
     }
+
     int size() const {
         return width_ * height_ * depth_;
     }
+
     int width_;
     int height_;
     int depth_;
 };
-
-template<typename T, typename U>
-T& operator << (T& os, const std::vector<U>& vec) {
-
-    for (size_t i = 0; i < vec.size(); i++) 
-        os << vec[i] << (i == vec.size() - 1 ? ',' : ' ');
-    return os;
-}
 
 template<int Q>
 inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
@@ -57,9 +49,10 @@ inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
     return dst(gen);
 }
 
-inline double uniform_rand(double min, double max) {
+template<typename T>
+inline double uniform_rand(T min, T max) {
     static boost::mt19937 gen(0);
-    boost::uniform_real<double> dst(min, max);
+    boost::uniform_real<T> dst(min, max);
     return dst(gen);
 }
 

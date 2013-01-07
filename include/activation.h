@@ -32,11 +32,13 @@ public:
         return (ep - em) / (ep + em);
     }
 
+    // fast approximation of tanh (improve 2-3% speed in LeNet-5)
     /*float_t f(float_t x) const {
         const float_t x2 = x * x;
         x *= 1.0 + x2 * (0.1653 + x2 * 0.0097);
         return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
     }*/
+
     float_t df(float_t f_x) const { return 1.0 - f_x * f_x; }
     std::pair<float_t, float_t> scale() const { return std::make_pair(-0.8, 0.8); }
 

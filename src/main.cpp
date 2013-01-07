@@ -22,6 +22,7 @@ int main(void) {
     CNN nn;
     convolutional_layer<CNN, tanh_activation> C1(32, 32, 5, 1, 6);
     average_pooling_layer<CNN, tanh_activation> S2(28, 28, 6, 2);
+    // connection table [Y.Lecun, 1998 Table.1]
     static const bool connection[] = {
         true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,
         true,  true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,
