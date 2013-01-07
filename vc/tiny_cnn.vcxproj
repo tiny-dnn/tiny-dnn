@@ -23,6 +23,7 @@
     <ClInclude Include="..\include\network.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
     <ClInclude Include="..\include\pooling_layer.h" />
+    <ClInclude Include="..\include\tiny_cnn.h" />
     <ClInclude Include="..\include\updater.h" />
     <ClInclude Include="..\include\util.h" />
   </ItemGroup>

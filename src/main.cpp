@@ -1,18 +1,8 @@
 #include <iostream>
-#include <iomanip>
-#include <map>
-
-#include "network.h"
-#include "fully_connected_layer.h"
-#include "convolutional_layer.h"
-
-#include "pooling_layer.h"
-#include "mnist_parser.h"
-
-#include "fixed_point.h"
-
 #include <boost/timer.hpp>
 #include <boost/progress.hpp>
+
+#include "tiny_cnn.h"
 
 using namespace tiny_cnn;
 
