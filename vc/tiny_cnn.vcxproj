@@ -18,6 +18,7 @@
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\fixed_point.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
+    <ClInclude Include="..\include\image.h" />
     <ClInclude Include="..\include\layer.h" />
     <ClInclude Include="..\include\mnist_parser.h" />
     <ClInclude Include="..\include\network.h" />

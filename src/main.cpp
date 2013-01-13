@@ -3,6 +3,8 @@
 #include <boost/progress.hpp>
 
 #include "tiny_cnn.h"
+//#define NOMINMAX
+//#include "imdebug.h"
 
 using namespace tiny_cnn;
 
@@ -66,7 +68,18 @@ int main(void) {
         t.restart();
     };
 
-    auto on_enumerate_data = [&](){ ++disp; };
+    auto on_enumerate_data = [&](){ 
+		static int n = 0;
+		++disp; 
+	
+		n++;
+		if (n == 1000) {
+			image img;
+			C3.weight_to_image(img);
+			//imdebug("lum b=8 w=%d h=%d %p", img.width(), img.height(), &img.data()[0]);
+			n = 0;
+		}
+	};
     
     // training
     nn.init_weight();

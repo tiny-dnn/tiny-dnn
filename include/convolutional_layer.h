@@ -1,6 +1,8 @@
 #pragma once
 #include "util.h"
 #include "partial_connected_layer.h"
+#include "image.h"
+#include <assert.h>
 
 namespace tiny_cnn {
 
@@ -46,19 +48,49 @@ public:
         in_(in_width, in_height, in_channels), 
         out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
         weight_(window_size, window_size, in_channels*out_channels),
-        window_size_(window_size)
+        window_size_(window_size),
+		connection_(connection_table)
     {
         init_connection(connection_table);
         this->remap();
     }
 
+	void weight_to_image(image& img) {
+		const int border_width = 1;
+		const int pitch = window_size_ + border_width;
+		const int width = out_.depth_ * pitch + border_width;
+		const int height = in_.depth_ * pitch + border_width;
+		const image::intensity_t bg_color = 255;
+
+		img.resize(width, height);
+		img.fill(bg_color);
+
+		auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
+
+		for (int r = 0; r < in_.depth_; r++) {
+			for (int c = 0; c < out_.depth_; c++) {
+				if (!connection_.is_connected(c, r)) continue;
+
+				const int top = r * pitch + border_width;
+				const int left = c * pitch + border_width;
+
+				for (int y = 0; y < window_size_; y++) {
+					for (int x = 0; x < window_size_; x++) {
+						const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
+
+						img.at(left + x, top + y)
+							= (image::intensity_t)rescale<float_t, int>(w, *minmax.first, *minmax.second, 0, 255);
+					}
+				}
+			}
+		}
+	}
+
 private:
     void init_connection(const connection_table& table) {
-        int n = 0;
         for (int inc = 0; inc < in_.depth_; inc++) {
             for (int outc = 0; outc < out_.depth_; outc++) {
                 if (!table.is_connected(outc, inc)) {
-                    n++;
                     continue;
                 }
 
@@ -86,6 +118,7 @@ private:
     tensor3d in_;
     tensor3d out_;
     tensor3d weight_;
+	connection_table connection_;
     int window_size_;
 };
 

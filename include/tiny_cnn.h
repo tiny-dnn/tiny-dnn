@@ -9,3 +9,4 @@
 #include "updater.h"
 
 #include "mnist_parser.h"
+#include "image.h"

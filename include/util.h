@@ -82,6 +82,12 @@ int max_index(const std::vector<T>& vec) {
     return max_index;
 }
 
+template<typename T, typename U>
+U rescale(T x, T src_min, T src_max, U dst_min, U dst_max) {
+	U value =  static_cast<U>(((x - src_min) * (dst_max - dst_min)) / (src_max - src_min) + dst_min);
+	return std::min(dst_max, std::max(value, dst_min));
+}
+
 inline void nop() {
     // do nothing
 }
