@@ -105,13 +105,13 @@ public:
 		std::fill(data_.begin(), data_.end(), value);
 	}
 
-	intensity_t& at(int x, int y) {
+	intensity_t& at(size_t x, size_t y) {
 		assert(x >= 0 && x < width_);
 		assert(y >= 0 && y < height_);
 		return data_[y * width_ + x];
 	}
 
-	const intensity_t& at(int x, int y) const {
+	const intensity_t& at(size_t x, size_t y) const {
 		assert(x >= 0 && x < width_);
 		assert(y >= 0 && y < height_);
 		return data_[y * width_ + x];

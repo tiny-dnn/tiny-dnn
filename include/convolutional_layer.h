@@ -74,8 +74,8 @@ public:
         in_(in_width, in_height, in_channels), 
         out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
         weight_(window_size, window_size, in_channels*out_channels),
-        window_size_(window_size),
-		connection_(connection_table)
+		connection_(connection_table),
+        window_size_(window_size)
     {
         init_connection(connection_table);
         this->remap();
@@ -102,7 +102,7 @@ public:
 
 				for (int y = 0; y < window_size_; y++) {
 					for (int x = 0; x < window_size_; x++) {
-						const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
+						const float_t w = this->W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
 						img.at(left + x, top + y)
 							= (image::intensity_t)rescale<float_t, int>(w, *minmax.first, *minmax.second, 0, 255);
