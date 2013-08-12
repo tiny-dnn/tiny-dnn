@@ -15,6 +15,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+waf-*
 
 # External tool builders
 .externalToolBuilders/
