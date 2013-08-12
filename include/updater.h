@@ -29,15 +29,15 @@
 
 namespace tiny_cnn {
 
-/*struct updater {
-public:
-    virtual void update(float_t dW, float_t H, float_t *W) = 0;
-};*/
+struct updater {
+	virtual bool requires_hessian() const { return true; }
+};
 
-struct gradient_descent {
+// gradient descent with 2nd-order update(LeCun,1998)
+struct gradient_descent_levenberg_marquardt : public updater {
 public:
-    gradient_descent() : alpha(0.00085), mu(0.02) {}
-    gradient_descent(float_t alpha, float_t lambda, float_t mu) : alpha(alpha), mu(mu) {}
+    gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
+    gradient_descent_levenberg_marquardt(float_t alpha, float_t lambda, float_t mu) : alpha(alpha), mu(mu) {}
 
     void update(float_t dW, float_t H, float_t *W) {
         *W -= (alpha / (H + mu)) * (dW); // 7.2%
@@ -47,5 +47,25 @@ public:
     //const float_t lambda; // weight decay
     float_t mu;
 };
+
+
+// simple SGD algorithm
+struct gradient_descent : public updater {
+public:
+    gradient_descent() : alpha(0.01), lambda(0.0) {}
+    gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
+
+    void update(float_t dW, float_t H, float_t *W) {
+        *W -= alpha * ((dW) + *W * lambda); // 7.2%
+    }
+
+	bool requires_hessian() const {
+		return false;
+	}
+
+    float_t alpha; // learning rate
+    float_t lambda; // weight decay
+};
+
 
 }

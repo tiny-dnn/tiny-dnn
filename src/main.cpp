@@ -32,23 +32,29 @@
 //#define NOMINMAX
 //#include "imdebug.h"
 
+void sample1_3layerNN();
+
 using namespace tiny_cnn;
 
 int main(void) {
     // construct LeNet-5 architecture
-    typedef network<mse, gradient_descent> CNN;
+    typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
     convolutional_layer<CNN, tanh_activation> C1(32, 32, 5, 1, 6);
     average_pooling_layer<CNN, tanh_activation> S2(28, 28, 6, 2);
     // connection table [Y.Lecun, 1998 Table.1]
-    static const bool connection[] = {
-        true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,
-        true,  true,  false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,
-        true,  true,  true,  false, false, false, true,  true,  true,  false, false, true,  false, true,  true,  true,
-        false, true,  true,  true,  false, false, true,  true,  true,  true,  false, false, true,  false, true,  true,
-        false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,  false, true,
-        false, false, false, true,  true,  true,  false, false, true,  true,  true,  true,  false, true,  true,  true
-    };
+#define O true
+#define X false
+	static const bool connection[] = {
+		O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
+		O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
+		O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
+		X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
+		X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
+		X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
+	};
+#undef O
+#undef X
     convolutional_layer<CNN, tanh_activation> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
     average_pooling_layer<CNN, tanh_activation> S4(10, 10, 16, 2);
     convolutional_layer<CNN, tanh_activation> C5(5, 5, 5, 16, 120);
@@ -67,14 +73,18 @@ int main(void) {
     nn.add(&C5);
     nn.add(&F6);
 
+	std::cout << "load models..." << std::endl;
+
     // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_labels("train-labels.idx1-ubyte", &train_labels);
-    parse_images("train-images.idx3-ubyte", &train_images);
-    parse_labels("t10k-labels.idx1-ubyte", &test_labels);
-    parse_images("t10k-images.idx3-ubyte", &test_images);
+    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("train-images.idx3-ubyte", &train_images);
+    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("t10k-images.idx3-ubyte", &test_images);
+
+	std::cout << "start learning" << std::endl;
 
     boost::progress_display disp(train_images.size());
     boost::timer t;
@@ -87,7 +97,7 @@ int main(void) {
 
         std::cout << nn.learner().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
-        nn.learner().alpha *= 0.85;
+        nn.learner().alpha *= 0.85; // decay learning rate
         nn.learner().alpha = std::max(0.00001, nn.learner().alpha);
 
         disp.restart(train_images.size());
@@ -95,21 +105,24 @@ int main(void) {
     };
 
     auto on_enumerate_data = [&](){ 
-		static int n = 0;
 		++disp; 
-	
+
+		/*
+		// weight visualization in imdebug
+		static int n = 0;	
 		n++;
 		if (n == 1000) {
 			image img;
 			C3.weight_to_image(img);
-			//imdebug("lum b=8 w=%d h=%d %p", img.width(), img.height(), &img.data()[0]);
+			imdebug("lum b=8 w=%d h=%d %p", img.width(), img.height(), &img.data()[0]);
 			n = 0;
-		}
+		}*/
 	};
     
     // training
-    nn.init_weight();
     nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
+
+	std::cout << "end training." << std::endl;
 
     // test and show results
     nn.test(test_images, test_labels).print_detail(std::cout);
@@ -117,4 +130,51 @@ int main(void) {
     // save networks
     std::ofstream ofs("LeNet-weights");
     ofs << C1 << S2 << C3 << S4 << C5 << F6;
+}
+
+// learning 3-Layer Networks
+void sample1_3layerNN()
+{
+	const int num_hidden_units = 500;
+	typedef network<mse, gradient_descent> neuralnet;
+    neuralnet nn;
+	fully_connected_layer<neuralnet, tanh_activation> L1(28*28, num_hidden_units);
+	fully_connected_layer<neuralnet, tanh_activation> L2(num_hidden_units, 10);
+
+	// load MNIST dataset
+    std::vector<label_t> train_labels, test_labels;
+    std::vector<vec_t> train_images, test_images;
+
+    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+
+	nn.add(&L1);
+	nn.add(&L2);
+	nn.learner().alpha = 0.001;
+	
+	boost::progress_display disp(train_images.size());
+    boost::timer t;
+
+    // create callback
+    auto on_enumerate_epoch = [&](){
+        std::cout << t.elapsed() << "s elapsed." << std::endl;
+
+        tiny_cnn::result res = nn.test(test_images, test_labels);
+
+        std::cout << nn.learner().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+
+        nn.learner().alpha *= 0.85; // decay learning rate
+        nn.learner().alpha = std::max(0.00001, nn.learner().alpha);
+
+        disp.restart(train_images.size());
+        t.restart();
+    };
+
+    auto on_enumerate_data = [&](){ 
+		++disp; 
+	};  
+
+	nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
 }

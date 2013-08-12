@@ -32,7 +32,7 @@
 
 namespace tiny_cnn {
 
-void parse_labels(const std::string& label_file, std::vector<label_t> *labels) {
+void parse_mnist_labels(const std::string& label_file, std::vector<label_t> *labels) {
     std::ifstream ifs(label_file.c_str(), std::ios::in | std::ios::binary);
 
     if (ifs.bad() || ifs.fail())
@@ -57,7 +57,12 @@ void parse_labels(const std::string& label_file, std::vector<label_t> *labels) {
     }
 }
 
-void parse_images(const std::string& image_file, std::vector<vec_t> *images, float_t scale_min = -1.0, float_t scale_max = 1.0, int x_padding = 2, int y_padding = 2) {
+void parse_mnist_images(const std::string& image_file,
+						std::vector<vec_t> *images,
+						float_t scale_min = -1.0,
+						float_t scale_max = 1.0,
+						int x_padding = 2,
+						int y_padding = 2) {
     std::ifstream ifs(image_file.c_str(), std::ios::in | std::ios::binary);
 
     if (ifs.bad() || ifs.fail())

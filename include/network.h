@@ -115,11 +115,21 @@ public:
         *out = forward_propagation(in);
     }
 
-    // classification
-    template <typename OnDataEnumerate, typename OnEpochEnumerate>
-    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t, int epoch, OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+    /**
+	 * training conv-net
+	 *
+	 * @param in                 array of input data
+	 * @param t                  array of training signals(label or vector)
+	 * @param epoch              number of training epochs
+	 * @param on_data_enumerate  callback for each data enumerate
+	 * @param on_epoch_enumerate callback for each epoch 
+	 */
+    template <typename OnDataEnumerate, typename OnEpochEnumerate, typename T>
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, int epoch, OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+		init_weight();
         for (int iter = 0; iter < epoch; iter++) {
-            calc_hessian(in);
+			if (updater_.requires_hessian())
+	            calc_hessian(in);
             for (size_t i = 0; i < in.size(); i++) {
                 train_once(in[i], t[i]);
                 on_data_enumerate();
@@ -128,7 +138,9 @@ public:
         }
     }
 
-    void train(const std::vector<vec_t>& in, const std::vector<label_t>& t, int epoch = 1) {
+	template<typename T>
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, int epoch = 1) {
+		init_weight();
         train(in, t, epoch, nop, nop);
     }
 
@@ -147,23 +159,6 @@ public:
             test_result.confusion_matrix[predicted][actual]++;
         }
         return test_result;
-    }
-
-    // regression
-    template <typename OnDataEnumerate, typename OnEpochEnumerate>
-    void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t, int epoch,  OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
-        for (int iter = 0; iter < epoch; iter++) {
-            calc_hessian(in);
-            for (size_t i = 0; i < in.size(); i++) {
-                train_once(in[i], t[i]);
-                on_data_enumerate();
-            }
-            on_epoch_enumerate();
-        }
-    }
-
-    void train(const std::vector<vec_t>& in, const std::vector<vec_t>& t, int epoch = 1) {
-        train(in, t, epoch, nop, nop);
     }
 
 private:
