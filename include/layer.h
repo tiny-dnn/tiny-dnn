@@ -62,10 +62,11 @@ public:
         uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);               
         std::fill(Whessian_.begin(), Whessian_.end(), 0.0);
         std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
+		clear_diff(TASK_SIZE);
     }
 
-    const vec_t& output() const { return output_; }
-    const vec_t& delta() const { return prev_delta_; }
+    const vec_t& output(int worker_index) const { return output_[worker_index]; }
+    const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
 
@@ -91,12 +92,30 @@ public:
     }
 
     virtual activation& activation_function() = 0;
-    virtual const vec_t& forward_propagation(const vec_t& in) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) = 0;
+    virtual const vec_t& forward_propagation(const vec_t& in, int index) = 0;
+    virtual const vec_t& back_propagation(const vec_t& current_delta, int index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
     layer_base<N>* next() { return next_; }
     layer_base<N>* prev() { return prev_; }
+
+	void update_weight(Updater *l, int worker_size, int batch_size) {
+		merge(worker_size, batch_size);
+
+		int dim_w = W_.size();
+		for (int i = 0; i < dim_w; i++)
+			l->update(dW_[0][i], Whessian_[i], &W_[i]);
+
+		int dim_b = b_.size();
+		for (int i = 0; i < dim_b; i++)
+			l->update(db_[0][i], bhessian_[i], &b_[i]);
+
+		clear_diff(worker_size);
+	}
+
+
+	vec_t& get_weight(int index) { return dW_[index]; }
+	vec_t& get_bias(int index) { return db_[index]; }
 
 protected:
     int in_size_;
@@ -104,26 +123,53 @@ protected:
 
     layer_base<N>* next_;
     layer_base<N>* prev_;
-    vec_t output_;     // last output of current layer, set by fprop
-    vec_t prev_delta_; // last delta of previous layer, set by bprop
+    vec_t output_[TASK_SIZE];     // last output of current layer, set by fprop
+    vec_t prev_delta_[TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
+	vec_t dW_[TASK_SIZE];
+	vec_t db_[TASK_SIZE];
 
     vec_t Whessian_; // diagonal terms of hessian matrix
     vec_t bhessian_;
     vec_t prev_delta2_; // d^2E/da^2
 
 private:
+	void clear_diff(int worker_size) {
+		for (int i = 0; i < worker_size; i++) {
+			std::fill(dW_[i].begin(), dW_[i].end(), 0.0);
+			std::fill(db_[i].begin(), db_[i].end(), 0.0);
+		}
+	}
+
+	void merge(int worker_size, int batch_size) {
+		for (int i = 1; i < worker_size; i++) {
+			std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());
+			std::transform(db_[0].begin(), db_[0].end(), db_[i].begin(), db_[0].begin(), std::plus<float_t>());
+		}
+		std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
+		std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
+	}
+
     void set_size(int in_dim, int out_dim, int weight_dim, int bias_dim) {
         in_size_ = in_dim;
         out_size_ = out_dim;
-        output_.resize(out_dim);
-        prev_delta_.resize(in_dim);
+
+		for (auto& o : output_)
+			o.resize(out_dim);
+        for (auto& p : prev_delta_)
+			p.resize(in_dim);
         W_.resize(weight_dim);
         b_.resize(bias_dim);     
         Whessian_.resize(weight_dim);
         bhessian_.resize(bias_dim);
         prev_delta2_.resize(in_dim);
+
+		for (auto& dw : dW_)
+			dw.resize(weight_dim);
+
+		for (auto& db : db_)
+			db.resize(bias_dim);
     }
 };
 
@@ -152,12 +198,12 @@ public:
 
     int in_size() const { return this->next_ ? this->next_->in_size(): 0; }
 
-    const vec_t& forward_propagation(const vec_t& in) {
-        this->output_ = in;
-        return this->next_ ? this->next_->forward_propagation(in) : this->output_;
+    const vec_t& forward_propagation(const vec_t& in, int index) {
+        this->output_[index] = in;
+        return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
+    const vec_t& back_propagation(const vec_t& current_delta, int index) {
         return current_delta;
     }
 
@@ -174,23 +220,25 @@ public:
     }
 };
 
-template<typename U>
+template<typename N>
 class layers {
 public:
+	typedef typename N::Updater Updater;
+
     layers() {
         add(&first_);
     }
 
-    void add(layer_base<U> * new_tail) {
+    void add(layer_base<N> * new_tail) {
         if (tail())  tail()->connect(new_tail);
         layers_.push_back(new_tail);
     }
 
     bool empty() const { return layers_.size() == 0; }
 
-    layer_base<U>* head() const { return empty() ? 0 : layers_[0]; }
+    layer_base<N>* head() const { return empty() ? 0 : layers_[0]; }
 
-    layer_base<U>* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
+    layer_base<N>* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
 
     void reset() {
         for (auto pl : layers_)
@@ -202,9 +250,14 @@ public:
             pl->divide_hessian(denominator);
     }
 
+	void update_weights(Updater *l, int worker_size, int batch_size) {
+		for (auto pl : layers_)
+			pl->update_weight(l, worker_size, batch_size);
+	}
+
 private:
-    std::vector<layer_base<U>*> layers_;
-    input_layer<U> first_;
+    std::vector<layer_base<N>*> layers_;
+    input_layer<N> first_;
 };
 
 template <typename Char, typename CharTraits, typename N>

@@ -79,7 +79,7 @@ public:
         bias2out_[bias_index].push_back(output_index);
     }
 
-    virtual const vec_t& forward_propagation(const vec_t& in) {
+    virtual const vec_t& forward_propagation(const vec_t& in, int index) {
 
         parallel_for(0, this->out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
@@ -91,59 +91,62 @@ public:
 
                 a *= scale_factor_;
                 a += this->b_[out2bias_[i]];
-                this->output_[i] = this->a_.f(a); // 9.6%
+                this->output_[index][i] = this->a_.f(a); // 9.6%
             }
         });
 
-        return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_; // 15.6%
+        return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
-        const vec_t& prev_out = this->prev_->output();
+    virtual const vec_t& back_propagation(const vec_t& current_delta, int index) {
+        const vec_t& prev_out = this->prev_->output(index);
         const activation& prev_h = this->prev_->activation_function();
+		vec_t& prev_delta = this->prev_delta_[index];
 
         parallel_for(0, this->in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
-                this->prev_delta_[i] = 0.0;
+                prev_delta[i] = 0.0;
 
                 for (auto connection : connections) 
-                    this->prev_delta_[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
+                    prev_delta[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
 
-                this->prev_delta_[i] *= scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
+                prev_delta[i] *= scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
             }
         });
 
-        if (l) {
-            parallel_for(0, weight2io_.size(), [&](const blocked_range& r) {
-                for (int i = r.begin(); i < r.end(); i++) {
-                    const io_connections& connections = weight2io_[i];
-                    float_t diff = 0.0;
-
-                    for (auto connection : connections) // 11.9%
-                        diff += prev_out[connection.first] * current_delta[connection.second];
-
-                    diff *= scale_factor_;
-                    l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
-                }
-            });
-
-            for (size_t i = 0; i < bias2out_.size(); i++) {
-                const std::vector<int>& outs = bias2out_[i];
+        
+        parallel_for(0, weight2io_.size(), [&](const blocked_range& r) {
+            for (int i = r.begin(); i < r.end(); i++) {
+                const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
 
-                for (auto o : outs)
-                    diff += current_delta[o];    
+                for (auto connection : connections) // 11.9%
+                    diff += prev_out[connection.first] * current_delta[connection.second];
 
-                l->update(diff, this->bhessian_[i], &this->b_[i]); 
+                //diff *= scale_factor_;
+				this->dW_[index][i] += diff * scale_factor_;
+                //l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
             }
-        }
+        });
 
-        return this->prev_->back_propagation(this->prev_delta_, l);
+        for (size_t i = 0; i < bias2out_.size(); i++) {
+            const std::vector<int>& outs = bias2out_[i];
+            float_t diff = 0.0;
+
+            for (auto o : outs)
+                diff += current_delta[o];    
+
+			this->db_[index][i] += diff;
+            //l->update(diff, this->bhessian_[i], &this->b_[i]); 
+        }
+        
+
+        return this->prev_->back_propagation(this->prev_delta_[index], index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = this->prev_->output();
+        const vec_t& prev_out = this->prev_->output(0);
         const activation& prev_h = this->prev_->activation_function();
 
         for (size_t i = 0; i < weight2io_.size(); i++) {

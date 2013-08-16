@@ -47,7 +47,7 @@ TEST(convolutional, fprop) {
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
     {
-        const vec_t& out = l.forward_propagation(in);
+        const vec_t& out = l.forward_propagation(in, 0);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, 0.5);
@@ -69,7 +69,7 @@ TEST(convolutional, fprop) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        const vec_t& out = l.forward_propagation(in);
+        const vec_t& out = l.forward_propagation(in, 0);
 
         EXPECT_DOUBLE_EQ(0.4875026, out[0]);
         EXPECT_DOUBLE_EQ(0.8388910, out[1]);

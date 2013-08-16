@@ -83,6 +83,7 @@ struct result {
     std::map<label_t, std::map<label_t, int> > confusion_matrix;
 };
 
+
 template<typename L, typename U>
 class network {
 public:
@@ -121,27 +122,28 @@ public:
 	 * @param in                 array of input data
 	 * @param t                  array of training signals(label or vector)
 	 * @param epoch              number of training epochs
-	 * @param on_data_enumerate  callback for each data enumerate
+	 * @param on_batch_enumerate callback for each mini-batch enumerate
 	 * @param on_epoch_enumerate callback for each epoch 
 	 */
-    template <typename OnDataEnumerate, typename OnEpochEnumerate, typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, int epoch, OnDataEnumerate on_data_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+    template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+
 		init_weight();
         for (int iter = 0; iter < epoch; iter++) {
 			if (updater_.requires_hessian())
 	            calc_hessian(in);
-            for (size_t i = 0; i < in.size(); i++) {
-                train_once(in[i], t[i]);
-                on_data_enumerate();
+            for (size_t i = 0; i < in.size(); i+=batch_size) {
+                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i));
+                on_batch_enumerate();
             }
             on_epoch_enumerate();
         }
     }
 
 	template<typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, int epoch = 1) {
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
 		init_weight();
-        train(in, t, epoch, nop, nop);
+        train(in, t, epoch, batch_size, nop, nop);
     }
 
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
@@ -163,21 +165,56 @@ public:
 
 private:
 
-    void train_once(const vec_t& in, const label_t& t) {
-        const vec_t& out = forward_propagation(in);
-        vec_t tvec(out.size(), target_value_min());
+	void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
+		assert(num > 0);
+		int outdim = out_dim();
 
-        if (static_cast<size_t>(t) >= out.size())
-            throw nn_error("training label must be less than output neurons");
+		vec->reserve(num);
 
-        tvec[t] = target_value_max();
-        back_propagation(out, tvec);
+		for (int i = 0; i < num; i++) {
+			vec->emplace_back(outdim, target_value_min());
+			vec->back()[t[i]] = target_value_max();
+		}
+	}
+
+    void train_once(const vec_t* in, const label_t* t, int size) {
+		std::vector<vec_t> v;
+		label2vector(t, size, &v);
+		train_once(in, &v[0], size);
     }
 
-    void train_once(const vec_t& in, const vec_t& t) {
-        const vec_t& out = forward_propagation(in);
-        back_propagation(out, t);
+    void train_once(const vec_t* in, const vec_t* t, int size) {
+		if (size == 1) {
+			const vec_t& out = forward_propagation(in[0]);
+			back_propagation(out, t[0]);
+			layers_.update_weights(&updater_, 1, 1);
+		} else {
+			task_group g;
+			int num_tasks = size < TASK_SIZE ? 1 : TASK_SIZE;
+			int data_per_thread = size / num_tasks;
+			int remaining = size;
+
+			for (int i = 0; i < num_tasks; i++) {
+				int num = i == num_tasks - 1 ? remaining : data_per_thread;
+				
+				g.run([=]{					
+					for (int j = 0; j < num; j++) {
+						const vec_t& out = this->forward_propagation(in[j], i);
+						this->back_propagation(out, t[j], i);
+					}
+				});
+
+				remaining -= num;
+				in += num;
+				t += num;
+			}
+
+			assert(remaining == 0);
+			g.wait();
+			layers_.update_weights(&updater_, num_tasks, size);
+		}
     }   
+
 
     void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
@@ -197,10 +234,10 @@ private:
         return false;
     }
 
-    const vec_t& forward_propagation(const vec_t& in) {
+    const vec_t& forward_propagation(const vec_t& in, int idx = 0) {
         if (in.size() != (size_t)in_dim())
             throw nn_error("input dimension mismatch");
-        return layers_.head()->forward_propagation(in);
+        return layers_.head()->forward_propagation(in, idx);
     }
 
     void back_propagation_2nd(const vec_t& out) {
@@ -218,7 +255,7 @@ private:
         layers_.tail()->back_propagation_2nd(delta);
     }
 
-    void back_propagation(const vec_t& out, const vec_t& t) {
+    void back_propagation(const vec_t& out, const vec_t& t, int idx = 0) {
         vec_t delta(out_dim());
         const activation& h = layers_.tail()->activation_function();
 
@@ -230,7 +267,7 @@ private:
                 delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
-        layers_.tail()->back_propagation(delta, &updater_);
+        layers_.tail()->back_propagation(delta, idx);
     }
 
     float_t target_value_min() const { return layers_.tail()->activation_function().scale().first; }

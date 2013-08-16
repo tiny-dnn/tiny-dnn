@@ -88,6 +88,9 @@ int main(void) {
 
     boost::progress_display disp(train_images.size());
     boost::timer t;
+	int minibatch_size = 1;
+
+	//nn.learner().alpha *= std::sqrt((float_t)minibatch_size);
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -104,14 +107,13 @@ int main(void) {
         t.restart();
     };
 
-    auto on_enumerate_data = [&](){ 
-		++disp; 
-
-		/*
+    auto on_enumerate_minibatch = [&](){ 
+		disp += minibatch_size; 
+	
 		// weight visualization in imdebug
-		static int n = 0;	
-		n++;
-		if (n == 1000) {
+		/*static int n = 0;	
+		n+=minibatch_size;
+		if (n >= 1000) {
 			image img;
 			C3.weight_to_image(img);
 			imdebug("lum b=8 w=%d h=%d %p", img.width(), img.height(), &img.data()[0]);
@@ -120,7 +122,7 @@ int main(void) {
 	};
     
     // training
-    nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
+    nn.train(train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
 
 	std::cout << "end training." << std::endl;
 
@@ -176,5 +178,5 @@ void sample1_3layerNN()
 		++disp; 
 	};  
 
-	nn.train(train_images, train_labels, 20, on_enumerate_data, on_enumerate_epoch);
+	nn.train(train_images, train_labels, 1, 20, on_enumerate_data, on_enumerate_epoch);
 }

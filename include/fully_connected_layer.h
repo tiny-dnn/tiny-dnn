@@ -47,49 +47,50 @@ public:
         return this->in_size_;
     }
 
-    const vec_t& forward_propagation(const vec_t& in) {
+    const vec_t& forward_propagation(const vec_t& in, int index) {
 
         for (int r = 0; r < this->out_size_; r++) {
             float_t z = 0.0;
             for (int c = 0; c < this->in_size_; c++) 
                 z += this->W_[r*this->in_size_+c] * in[c];
             z += this->b_[r];
-            this->output_[r] = this->a_.f(z);
+            this->output_[index][r] = this->a_.f(z);
         }
 
-        return this->next_ ? this->next_->forward_propagation(this->output_) : this->output_;
+        return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, Updater *l) {
-        const vec_t& prev_out = this->prev_->output();
+    const vec_t& back_propagation(const vec_t& current_delta, int index) {
+        const vec_t& prev_out = this->prev_->output(index);
         const activation& prev_h = this->prev_->activation_function();
+		vec_t& prev_delta = this->prev_delta_[index];
+		vec_t& dW = this->dW_[index];
+		vec_t& db = this->db_[index];
 
         for (int c = 0; c < this->in_size_; c++) { 
-            this->prev_delta_[c] = 0.0;
+            prev_delta[c] = 0.0;
 
             for (int r = 0; r < this->out_size_; r++) 
-                this->prev_delta_[c] += current_delta[r] * this->W_[r*this->in_size_+c];
+                prev_delta[c] += current_delta[r] * this->W_[r*this->in_size_+c];
 
-            this->prev_delta_[c] *= prev_h.df(prev_out[c]);
+            prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
-        if (l) {
-            parallel_for(0,this->out_size_, [&](const blocked_range& r) {
-                for (int i = r.begin(); i < r.end(); i++) 
-                    for (int c = 0; c < this->in_size_; c++) 
-                        l->update(current_delta[i] * prev_out[c], this->Whessian_[i*this->in_size_+c], &this->W_[i*this->in_size_+c]); 
+        parallel_for(0,this->out_size_, [&](const blocked_range& r) {
+            for (int i = r.begin(); i < r.end(); i++) 
+                for (int c = 0; c < this->in_size_; c++) 
+					dW[i*this->in_size_+c] += current_delta[i] * prev_out[c];
 
-                for (int i = r.begin(); i < r.end(); i++) 
-                    l->update(current_delta[i], this->bhessian_[i], &this->b_[i]);   
-            });
-        }
+            for (int i = r.begin(); i < r.end(); i++) 
+				db[i] += current_delta[i]; 
+        });
 
-        return this->prev_->back_propagation(this->prev_delta_, l);
+        return this->prev_->back_propagation(this->prev_delta_[index], index);
     }
 
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = this->prev_->output();
+        const vec_t& prev_out = this->prev_->output(0);
         const activation& prev_h = this->prev_->activation_function();
 
         for (int r = 0; r < this->out_size_; r++)

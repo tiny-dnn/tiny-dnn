@@ -29,10 +29,15 @@
 #include <limits>
 #include <boost/random.hpp>
 #ifdef CNN_USE_TBB
+#ifndef NOMINMAX
 #define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
+#endif
 #include <tbb/tbb.h>
+#include <tbb/task_group.h>
 #endif
 #include "fixed_point.h"
+
+#define TASK_SIZE 8 // number of task in batch-gradient-descent. @todo dynamic task size optimization
 
 namespace tiny_cnn {
 
@@ -95,8 +100,8 @@ T* reverse_endian(T* p) {
 }
 
 template<typename T>
-int max_index(const std::vector<T>& vec) {
-    T max_val = -1;
+int max_index(const T& vec) {
+    typename T::value_type max_val = -1;
     int max_index = -1;
 
     for (size_t i = 0; i < vec.size(); i++) {
@@ -121,6 +126,7 @@ inline void nop() {
 #ifdef CNN_USE_TBB
 
 typedef tbb::blocked_range<int> blocked_range;
+typedef tbb::task_group task_group;
 
 template<typename Func>
 void parallel_for(int begin, int end, Func f) {
@@ -141,12 +147,26 @@ private:
     int end_;
 };
 
-
 template<typename Func>
 void parallel_for(int begin, int end, Func f) {
     blocked_range r(begin, end);
     f(r);
 }
+
+class task_group {
+public:
+	template<typename Func>
+	void run(Func f) {
+		functions_.push_back(f);
+	}
+
+	void wait() {
+		for (auto f : functions_)
+			f();
+	}
+private:
+	std::vector<std::function<void()>> functions_;
+};
 
 #endif // CNN_USE_TBB
 
