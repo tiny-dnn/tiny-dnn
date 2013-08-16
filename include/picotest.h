@@ -559,6 +559,20 @@ bool compare(const T1& expected, const T2& actual, OP op,
 	return test_success;
 }
 
+template<typename T1, typename T2, typename T3>
+bool compare_near(const T1& expected, const T2& actual, const T3& abs_error, 
+			 const char* expected_str, const char* actual_str, const char* file, int line) {
+	bool test_success = std::abs(expected - actual) <= abs_error;
+
+	if (!test_success) {
+		framework::TestState::getCurrentTest()->setFailure(
+			framework::Failure(file, line,
+			detail::makeExpressionStr(expected_str, actual_str, picotest::FLOATEQ()),
+			detail::makeExpressionStr(expected, actual, picotest::FLOATEQ())));		
+	}
+	return test_success;
+}
+
 inline bool evaluate(bool expected, bool actual, const char* expression, const char* file, int line) {
 	bool test_success = expected == actual;
 
@@ -639,6 +653,8 @@ void PICOTEST_IDENITY(test_case_name, test_name)::test_method()
 	picotest::evaluate(expected, expression, #expression, __FILE__, __LINE__)
 #define EXPECT_BINARY(lhs, rhs, OP) \
 	picotest::compare(lhs, rhs, OP(), #lhs, #rhs, __FILE__, __LINE__)
+#define EXPECT_BINARY_NEAR(lhs, rhs, abs_error) \
+	picotest::compare_near(lhs, rhs, abs_error, #lhs, #rhs, __FILE__, __LINE__)
 
 #define EXPECT_TRUE(cond) EXPECT_BOOL(true, cond)
 #define EXPECT_FALSE(cond) EXPECT_BOOL(false, cond)
@@ -656,6 +672,7 @@ void PICOTEST_IDENITY(test_case_name, test_name)::test_method()
 #define EXPECT_DOUBLE_EQ(expected, actual) EXPECT_BINARY(expected, actual, picotest::FLOATEQ)
 #define EXPECT_FLOAT_NE(expected, actual)  EXPECT_BINARY(expected, actual, picotest::FLOATNE)
 #define EXPECT_DOUBLE_NE(expected, actual) EXPECT_BINARY(expected, actual, picotest::FLOATNE)
+#define EXPECT_NEAR(expected, actual, abs_error) EXPECT_BINARY_NEAR(expected, actual, abs_error)
 
 /////////////////////////////////////////////////////////////////
 // ASSERT_XX

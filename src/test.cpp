@@ -25,9 +25,7 @@
 	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "picotest.h"
-#include "convolutional_layer.h"
-#include "fully_connected_layer.h"
-#include "network.h"
+#include "tiny_cnn.h"
 
 using namespace tiny_cnn;
 
@@ -35,7 +33,7 @@ TEST(convolutional, fprop) {
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
 
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, tanh_activation> l(5, 5, 3, 1, 2);
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid_activation> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 
@@ -71,15 +69,15 @@ TEST(convolutional, fprop) {
     {
         const vec_t& out = l.forward_propagation(in, 0);
 
-        EXPECT_DOUBLE_EQ(0.4875026, out[0]);
-        EXPECT_DOUBLE_EQ(0.8388910, out[1]);
-        EXPECT_DOUBLE_EQ(0.8099984, out[2]);
-        EXPECT_DOUBLE_EQ(0.7407749, out[3]);
-        EXPECT_DOUBLE_EQ(0.5000000, out[4]);
-        EXPECT_DOUBLE_EQ(0.1192029, out[5]);
-        EXPECT_DOUBLE_EQ(0.5986877, out[6]);
-        EXPECT_DOUBLE_EQ(0.7595109, out[7]);
-        EXPECT_DOUBLE_EQ(0.6899745, out[8]);
+        EXPECT_NEAR(0.4875026, out[0], 1E-5);
+        EXPECT_NEAR(0.8388910, out[1], 1E-5);
+        EXPECT_NEAR(0.8099984, out[2], 1E-5);
+        EXPECT_NEAR(0.7407749, out[3], 1E-5);
+        EXPECT_NEAR(0.5000000, out[4], 1E-5);
+        EXPECT_NEAR(0.1192029, out[5], 1E-5);
+        EXPECT_NEAR(0.5986877, out[6], 1E-5);
+        EXPECT_NEAR(0.7595109, out[7], 1E-5);
+        EXPECT_NEAR(0.6899745, out[8], 1E-5);
     }
 
 
@@ -115,6 +113,70 @@ TEST(convolutional, bprop) {
     nn.predict(a, &predicted);
 }
 
+TEST(convolutional, gradient_check) { // tanh - mse
+    network<mse, gradient_descent_levenberg_marquardt> nn;
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, tanh_activation> layer(5, 5, 3, 1, 1);
+	nn.add(&layer);
+
+	vec_t a(25, 0.0);
+	label_t t = 3;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check2) { // sigmoid - mse
+    network<mse, gradient_descent_levenberg_marquardt> nn;
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(5, 5, 3, 1, 1);
+	nn.add(&layer);
+
+	vec_t a(25, 0.0);
+	label_t t = 3;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check3) { // rectified - mse
+    network<mse, gradient_descent_levenberg_marquardt> nn;
+	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, rectified_linear> layer(5, 5, 3, 1, 1);
+	nn.add(&layer);
+
+	vec_t a(25, 0.0);
+	label_t t = 3;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check4) { // identity - mse
+    network<mse, gradient_descent_levenberg_marquardt> nn;
+	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, identity_activation> layer(5, 5, 3, 1, 1);
+	nn.add(&layer);
+
+	vec_t a(25, 0.0);
+	label_t t = 3;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
+    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
+    convolutional_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(5, 5, 3, 1, 1);
+	nn.add(&layer);
+
+	vec_t a(25, 0.0);
+	label_t t = 3;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
 
 TEST(convolutional, bprop2) {
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
@@ -174,24 +236,25 @@ TEST(fully_connected, bprop) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.train(data, train);
+	nn.learner().alpha = 0.1;
+    nn.train(data, train, 1, 10);
 
     vec_t predicted;
     nn.predict(a, &predicted);
 
-    EXPECT_DOUBLE_EQ(predicted[0], t[0]);
-    EXPECT_DOUBLE_EQ(predicted[1], t[1]);
+    EXPECT_NEAR(predicted[0], t[0], 1E-5);
+    EXPECT_NEAR(predicted[1], t[1], 1E-5);
 
     nn.predict(a2, &predicted);
 
-    EXPECT_DOUBLE_EQ(predicted[0], t2[0]);
-    EXPECT_DOUBLE_EQ(predicted[1], t2[1]);
+    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
+    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
 }
 
 TEST(fully_connected, bprop2) {
-    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    fully_connected_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(4, 6);
-    fully_connected_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer2(6, 3);
+    network<mse, gradient_descent> nn;
+    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer(4, 6);
+    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer2(6, 3);
 
     nn.add(&layer);
     nn.add(&layer2);
@@ -212,18 +275,90 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.train(data, train);
+	nn.learner().alpha = 0.1;
+    nn.train(data, train, 1, 10);
 
     vec_t predicted;
     nn.predict(a, &predicted);
 
-    EXPECT_DOUBLE_EQ(predicted[0], t[0]);
-    EXPECT_DOUBLE_EQ(predicted[1], t[1]);
+    EXPECT_NEAR(predicted[0], t[0], 1E-4);
+    EXPECT_NEAR(predicted[1], t[1], 1E-4);
 
     nn.predict(a2, &predicted);
 
-    EXPECT_DOUBLE_EQ(predicted[0], t2[0]);
-    EXPECT_DOUBLE_EQ(predicted[1], t2[1]);
+    EXPECT_NEAR(predicted[0], t2[0], 1E-4);
+    EXPECT_NEAR(predicted[1], t2[1], 1E-4);
+}
+
+TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
+	typedef cross_entropy loss_func;
+	typedef sigmoid_activation activation;
+	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+	fully_connected_layer<network, activation> l1(10, 14*14*3);
+    convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
+	average_pooling_layer<network, activation> l3(10, 10, 6, 2);
+	fully_connected_layer<network, activation> l4(5*5*6, 3);
+
+	nn.add(&l1);
+	nn.add(&l2);
+	nn.add(&l3);
+	nn.add(&l4);
+
+	vec_t a(10, 0.0);
+	label_t t = 2;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+}
+
+TEST(multi_layer, gradient_check2) { // tanh - mse
+	typedef mse loss_func;
+	typedef tanh_activation activation;
+	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+	fully_connected_layer<network, activation> l1(10, 14*14*3);
+    convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
+	average_pooling_layer<network, activation> l3(10, 10, 6, 2);
+	fully_connected_layer<network, activation> l4(5*5*6, 3);
+
+	nn.add(&l1);
+	nn.add(&l2);
+	nn.add(&l3);
+	nn.add(&l4);
+
+	vec_t a(10, 0.0);
+	label_t t = 2;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+}
+
+TEST(multi_layer, gradient_check3) { // mixture - mse
+	typedef mse loss_func;
+	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+	fully_connected_layer<network, tanh_activation>     l1(10, 14*14*3);
+    convolutional_layer<network, sigmoid_activation>    l2(14, 14, 5, 3, 6);
+	average_pooling_layer<network, rectified_linear>    l3(10, 10, 6, 2);
+	fully_connected_layer<network, identity_activation> l4(5*5*6, 3);
+
+	nn.add(&l1);
+	nn.add(&l2);
+	nn.add(&l3);
+	nn.add(&l4);
+
+	vec_t a(10, 0.0);
+	label_t t = 2;
+
+	uniform_rand(a.begin(), a.end(), -1, 1);
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
 int main(void) {

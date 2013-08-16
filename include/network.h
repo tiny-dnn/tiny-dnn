@@ -210,7 +210,7 @@ public:
 
 		auto current = layers_.head();
 
-		while (current = current->next()) { // ignore first input layer
+		while ((current = current->next()) != 0) { // ignore first input layer
 			vec_t& w = current->weight();
 			vec_t& b = current->bias();
 			vec_t& dw = current->weight_diff(0);
