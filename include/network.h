@@ -83,6 +83,11 @@ struct result {
     std::map<label_t, std::map<label_t, int> > confusion_matrix;
 };
 
+enum grad_check_mode {
+	GRAD_CHECK_ALL, ///< check all elements of weights
+	GRAD_CHECK_FIRST, ///< check first element of weights
+	GRAD_CHECK_RANDOM ///< check 10 randomly selected weights
+};
 
 template<typename L, typename U>
 class network {
@@ -142,8 +147,7 @@ public:
 
 	template<typename T>
     void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
-		init_weight();
-        train(in, t, epoch, batch_size, nop, nop);
+        train(in, t, batch_size, epoch, nop, nop);
     }
 
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
@@ -163,15 +167,99 @@ public:
         return test_result;
     }
 
+
+	float_t calc_delta_diff(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
+		static const float_t delta = 1e-10;
+
+		std::fill(dw.begin(), dw.end(), 0.0);
+
+		// calculate dw/dE by bprop
+		for (int i = 0; i < data_size; i++) {
+			const vec_t& out = forward_propagation(in[i]);
+			back_propagation(out, v[i]);
+		}
+		float_t delta_by_bprop = dw[check_index];
+
+		// calculate dw/dE by numeric
+		float_t prev_w = w[check_index];
+		w[check_index] = prev_w + delta;
+		float_t f_p = 0.0;
+		for (int i = 0; i < data_size; i++) {
+			const vec_t& out = forward_propagation(in[i]);
+			f_p += get_loss(out, v[i]);
+		}
+
+		float_t f_m = 0.0;
+		w[check_index] = prev_w - delta;
+		for (int i = 0; i < data_size; i++) {
+			const vec_t& out = forward_propagation(in[i]);
+			f_m += get_loss(out, v[i]);
+		}
+
+		float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
+
+		w[check_index] = prev_w;
+
+		return std::abs(delta_by_bprop - delta_by_numerical);
+	}
+
+	bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode = GRAD_CHECK_FIRST) {
+		assert(!layers_.empty());
+		std::vector<vec_t> v;
+		label2vector(t, data_size, &v);
+
+		auto current = layers_.head();
+
+		while (current = current->next()) { // ignore first input layer
+			vec_t& w = current->weight();
+			vec_t& b = current->bias();
+			vec_t& dw = current->weight_diff(0);
+			vec_t& db = current->bias_diff(0);
+
+			if (w.empty()) continue;
+			
+			switch (mode) {
+			case GRAD_CHECK_ALL:
+				for (int i = 0; i < (int)w.size(); i++) {
+					if (calc_delta_diff(in, &v[0], data_size, w, dw, i) > eps) return false;
+				}
+				for (int i = 0; i < (int)b.size(); i++) {
+					if (calc_delta_diff(in, &v[0], data_size, b, db, i) > eps) return false;
+				}
+				break;
+			case GRAD_CHECK_FIRST:
+				if (calc_delta_diff(in, &v[0], data_size, w, dw, 0) > eps) return false;
+				if (calc_delta_diff(in, &v[0], data_size, b, db, 0) > eps) return false;
+				break;
+			case GRAD_CHECK_RANDOM:
+				for (int i = 0; i < 10; i++) {
+					int index = uniform_rand(0, (int)w.size() - 1);
+					if (calc_delta_diff(in, &v[0], data_size, w, dw, index) > eps) return false;
+				}
+				for (int i = 0; i < 10; i++) {
+					int index = uniform_rand(0, (int)b.size() - 1);
+					if (calc_delta_diff(in, &v[0], data_size, b, db, index) > eps) return false;
+				}
+				break;
+			default:
+				throw nn_error("unknown grad-check type");
+			}
+
+		}
+		return true;
+	}
+
 private:
 
 	void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-		assert(num > 0);
 		int outdim = out_dim();
 
-		vec->reserve(num);
+		assert(num > 0);
+		assert(outdim > 0);
 
+		vec->reserve(num);
 		for (int i = 0; i < num; i++) {
+			assert(t[i] < outdim);
 			vec->emplace_back(outdim, target_value_min());
 			vec->back()[t[i]] = target_value_max();
 		}
@@ -215,7 +303,6 @@ private:
 		}
     }   
 
-
     void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
 
@@ -239,6 +326,18 @@ private:
             throw nn_error("input dimension mismatch");
         return layers_.head()->forward_propagation(in, idx);
     }
+
+	float_t get_loss(const vec_t& out, const vec_t& t) {
+		int dim = out.size();
+		float_t e = 0.0;
+
+		assert(dim == (int)t.size());
+
+		for (int i = 0; i < dim; i++)
+			e += E_.f(out[i], t[i]);
+
+		return e;
+	}
 
     void back_propagation_2nd(const vec_t& out) {
         vec_t delta(out_dim());

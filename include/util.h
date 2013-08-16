@@ -80,8 +80,14 @@ inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
     return dst(gen);
 }
 
+inline int uniform_rand(int min, int max) {
+    static boost::mt19937 gen(0);
+    boost::uniform_smallint<> dst(min, max);
+    return dst(gen);
+}
+
 template<typename T>
-inline double uniform_rand(T min, T max) {
+inline T uniform_rand(T min, T max) {
     static boost::mt19937 gen(0);
     boost::uniform_real<T> dst(min, max);
     return dst(gen);

@@ -113,9 +113,15 @@ public:
 		clear_diff(worker_size);
 	}
 
+	vec_t& weight_diff(int index) { return dW_[index]; }
+	vec_t& bias_diff(int index) { return db_[index]; }
 
-	vec_t& get_weight(int index) { return dW_[index]; }
-	vec_t& get_bias(int index) { return db_[index]; }
+	void clear_diff(int worker_size) {
+		for (int i = 0; i < worker_size; i++) {
+			std::fill(dW_[i].begin(), dW_[i].end(), 0.0);
+			std::fill(db_[i].begin(), db_[i].end(), 0.0);
+		}
+	}
 
 protected:
     int in_size_;
@@ -135,13 +141,6 @@ protected:
     vec_t prev_delta2_; // d^2E/da^2
 
 private:
-	void clear_diff(int worker_size) {
-		for (int i = 0; i < worker_size; i++) {
-			std::fill(dW_[i].begin(), dW_[i].end(), 0.0);
-			std::fill(db_[i].begin(), db_[i].end(), 0.0);
-		}
-	}
-
 	void merge(int worker_size, int batch_size) {
 		for (int i = 1; i < worker_size; i++) {
 			std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());

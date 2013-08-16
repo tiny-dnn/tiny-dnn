@@ -53,7 +53,7 @@ public:
 class rectified_linear : public activation {
 public:
     float_t f(float_t x) const { return std::max(0.0, x); }
-    float_t df(float_t f_x) const { return f_x == 0.0 ? 0.0 : 1.0; }
+    float_t df(float_t f_x) const { return f_x > 0.0 ? 1.0 : 0.0; }
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
