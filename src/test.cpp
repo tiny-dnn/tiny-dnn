@@ -215,6 +215,61 @@ TEST(convolutional, bprop2) {
     nn.predict(a2, &predicted);
 }
 
+TEST(convolutional, serialize) {
+    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
+    convolutional_layer<NN, tanh_activation> layer1(14, 14, 5, 1, 2);
+    convolutional_layer<NN, tanh_activation> layer2(14, 14, 5, 1, 2);
+
+    vec_t v(14*14);
+
+    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+    layer1.init_weight();
+
+    std::ostringstream os;
+    layer1.save(os);
+
+    std::istringstream is(os.str());
+    layer2.load(is);
+
+    const vec_t& out1 = layer1.forward_propagation(v, 0);
+    const vec_t& out2 = layer2.forward_propagation(v, 0);
+
+    for (size_t i = 0; i < out1.size(); i++)
+        EXPECT_NEAR(out1[i], out2[i], 1e-4);
+}
+
+TEST(convolutional, serialize2) {
+    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
+#define O true
+#define X false
+    static const bool connection[] = {
+        O, X, X, X, O, O, 
+        O, O, X, X, X, O, 
+        O, O, O, X, X, X
+    };
+#undef O
+#undef X
+    convolutional_layer<NN, tanh_activation> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    convolutional_layer<NN, tanh_activation> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+
+    vec_t v(14*14*3);
+
+    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+    layer1.init_weight();
+
+    std::ostringstream os;
+    layer1.save(os);
+
+    std::istringstream is(os.str());
+    layer2.load(is);
+
+    const vec_t& out1 = layer1.forward_propagation(v, 0);
+    const vec_t& out2 = layer2.forward_propagation(v, 0);
+
+    for (size_t i = 0; i < out1.size(); i++)
+        EXPECT_NEAR(out1[i], out2[i], 1e-4);
+}
+
 TEST(fully_connected, bprop) {
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
     fully_connected_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(3, 2);
@@ -252,9 +307,9 @@ TEST(fully_connected, bprop) {
 }
 
 TEST(fully_connected, serialize) {
-    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer1(10, 10);
-    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer2(10, 10);
+    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
+    fully_connected_layer<NN, tanh_activation> layer1(10, 10);
+    fully_connected_layer<NN, tanh_activation> layer2(10, 10);
 
     vec_t v(10);
 
@@ -270,7 +325,8 @@ TEST(fully_connected, serialize) {
     const vec_t& out1 = layer1.forward_propagation(v, 0);
     const vec_t& out2 = layer2.forward_propagation(v, 0);
 
-    ASSERT_EQ(out1, out2);
+    for (size_t i = 0; i < out1.size(); i++)
+        EXPECT_NEAR(out1[i], out2[i], 1e-4);
 }
 
 TEST(fully_connected, bprop2) {
@@ -297,7 +353,7 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.optimizer().alpha = 0.1;
+    nn.optimizer().alpha = 0.01;
     nn.train(data, train, 1, 10);
 
     vec_t predicted;

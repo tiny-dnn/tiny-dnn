@@ -1,8 +1,10 @@
 def build(bld):
-  bld(features = 'cxx cprogram',
+    bld(features = 'cxx cprogram',
       source = 'main.cpp',
       target = 'main',
       cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x', '-Wall', '-s', '-O2', '-march=native'],
-      lib      = ['stdc++'],
-      includes = ['.', '../include', 'C:/Program Files/boost/boost_1_51_0'])
+      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast', '-march=native'],
+      lib      = ['stdc++','tbb'],
+      libpath  = ['../'],
+      defines  = [bld.env.DEFINES],
+      includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT+'/include'])

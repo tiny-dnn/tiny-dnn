@@ -29,9 +29,6 @@
 
 namespace tiny_cnn {
 
-template<typename N>
-class layers;
-
 // base class of all kind of NN layers
 template<typename N>
 class layer_base {
