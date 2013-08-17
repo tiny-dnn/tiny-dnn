@@ -25,15 +25,31 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "util.h"
 
-#include "network.h"
-#include "average_pooling_layer.h"
-#include "convolutional_layer.h"
-#include "fully_connected_layer.h"
+namespace tiny_cnn {
 
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
+// mean-squared-error loss function
+class mse {
+public:
+    float_t f(float_t y, float_t t) {
+        return (y - t) * (y - t) / 2;
+    }
 
-#include "mnist_parser.h"
-#include "image.h"
+    float_t df(float_t y, float_t t) {
+        return y - t;
+    }
+};
+
+class cross_entropy {
+public:
+    float_t f(float_t y, float_t t) {
+        return -t * std::log(y) - (1.0 - t) * std::log(1.0 - y);
+    }
+
+    float_t df(float_t y, float_t t) {
+        return (y - t) / (y * (1 - y));
+    }
+};
+
+} // namespace tiny_cnn

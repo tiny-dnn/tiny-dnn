@@ -75,15 +75,16 @@
     <ClCompile Include="..\src\test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\activation.h" />
+    <ClInclude Include="..\include\activation_function.h" />
+    <ClInclude Include="..\include\average_pooling_layer.h" />
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\layer.h" />
-    <ClInclude Include="..\include\updater.h" />
+    <ClInclude Include="..\include\loss_function.h" />
     <ClInclude Include="..\include\network.h" />
+    <ClInclude Include="..\include\optimizer.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
     <ClInclude Include="..\include\picotest.h" />
-    <ClInclude Include="..\include\pooling_layer.h" />
     <ClInclude Include="..\include\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

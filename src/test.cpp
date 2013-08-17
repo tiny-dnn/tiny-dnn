@@ -1,28 +1,28 @@
 /*
     Copyright (c) 2013, Taiga Nomi
-	All rights reserved.
-	
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions are met:
-	* Redistributions of source code must retain the above copyright
-	notice, this list of conditions and the following disclaimer.
-	* Redistributions in binary form must reproduce the above copyright
-	notice, this list of conditions and the following disclaimer in the
-	documentation and/or other materials provided with the distribution.
-	* Neither the name of the <organization> nor the
-	names of its contributors may be used to endorse or promote products
-	derived from this software without specific prior written permission.
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+    names of its contributors may be used to endorse or promote products
+    derived from this software without specific prior written permission.
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-	EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-	DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "picotest.h"
 #include "tiny_cnn.h"
@@ -116,66 +116,66 @@ TEST(convolutional, bprop) {
 TEST(convolutional, gradient_check) { // tanh - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
     convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, tanh_activation> layer(5, 5, 3, 1, 1);
-	nn.add(&layer);
+    nn.add(&layer);
 
-	vec_t a(25, 0.0);
-	label_t t = 3;
+    vec_t a(25, 0.0);
+    label_t t = 3;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check2) { // sigmoid - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
     convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(5, 5, 3, 1, 1);
-	nn.add(&layer);
+    nn.add(&layer);
 
-	vec_t a(25, 0.0);
-	label_t t = 3;
+    vec_t a(25, 0.0);
+    label_t t = 3;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check3) { // rectified - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, rectified_linear> layer(5, 5, 3, 1, 1);
-	nn.add(&layer);
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, rectified_linear> layer(5, 5, 3, 1, 1);
+    nn.add(&layer);
 
-	vec_t a(25, 0.0);
-	label_t t = 3;
+    vec_t a(25, 0.0);
+    label_t t = 3;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check4) { // identity - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, identity_activation> layer(5, 5, 3, 1, 1);
-	nn.add(&layer);
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, identity_activation> layer(5, 5, 3, 1, 1);
+    nn.add(&layer);
 
-	vec_t a(25, 0.0);
-	label_t t = 3;
+    vec_t a(25, 0.0);
+    label_t t = 3;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
     convolutional_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid_activation> layer(5, 5, 3, 1, 1);
-	nn.add(&layer);
+    nn.add(&layer);
 
-	vec_t a(25, 0.0);
-	label_t t = 3;
+    vec_t a(25, 0.0);
+    label_t t = 3;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, bprop2) {
@@ -236,7 +236,7 @@ TEST(fully_connected, bprop) {
         train.push_back(t);
         train.push_back(t2);
     }
-	nn.learner().alpha = 0.1;
+    nn.optimizer().alpha = 0.1;
     nn.train(data, train, 1, 10);
 
     vec_t predicted;
@@ -249,6 +249,28 @@ TEST(fully_connected, bprop) {
 
     EXPECT_NEAR(predicted[0], t2[0], 1E-5);
     EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+}
+
+TEST(fully_connected, serialize) {
+    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
+    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer1(10, 10);
+    fully_connected_layer<network<mse, gradient_descent>, tanh_activation> layer2(10, 10);
+
+    vec_t v(10);
+
+    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+    layer1.init_weight();
+
+    std::ostringstream os;
+    layer1.save(os);
+
+    std::istringstream is(os.str());
+    layer2.load(is);
+
+    const vec_t& out1 = layer1.forward_propagation(v, 0);
+    const vec_t& out2 = layer2.forward_propagation(v, 0);
+
+    ASSERT_EQ(out1, out2);
 }
 
 TEST(fully_connected, bprop2) {
@@ -275,7 +297,7 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-	nn.learner().alpha = 0.1;
+    nn.optimizer().alpha = 0.1;
     nn.train(data, train, 1, 10);
 
     vec_t predicted;
@@ -291,74 +313,74 @@ TEST(fully_connected, bprop2) {
 }
 
 TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
-	typedef cross_entropy loss_func;
-	typedef sigmoid_activation activation;
-	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+    typedef cross_entropy loss_func;
+    typedef sigmoid_activation activation;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-	fully_connected_layer<network, activation> l1(10, 14*14*3);
+    fully_connected_layer<network, activation> l1(10, 14*14*3);
     convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
-	average_pooling_layer<network, activation> l3(10, 10, 6, 2);
-	fully_connected_layer<network, activation> l4(5*5*6, 3);
+    average_pooling_layer<network, activation> l3(10, 10, 6, 2);
+    fully_connected_layer<network, activation> l4(5*5*6, 3);
 
-	nn.add(&l1);
-	nn.add(&l2);
-	nn.add(&l3);
-	nn.add(&l4);
+    nn.add(&l1);
+    nn.add(&l2);
+    nn.add(&l3);
+    nn.add(&l4);
 
-	vec_t a(10, 0.0);
-	label_t t = 2;
+    vec_t a(10, 0.0);
+    label_t t = 2;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
 TEST(multi_layer, gradient_check2) { // tanh - mse
-	typedef mse loss_func;
-	typedef tanh_activation activation;
-	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+    typedef mse loss_func;
+    typedef tanh_activation activation;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-	fully_connected_layer<network, activation> l1(10, 14*14*3);
+    fully_connected_layer<network, activation> l1(10, 14*14*3);
     convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
-	average_pooling_layer<network, activation> l3(10, 10, 6, 2);
-	fully_connected_layer<network, activation> l4(5*5*6, 3);
+    average_pooling_layer<network, activation> l3(10, 10, 6, 2);
+    fully_connected_layer<network, activation> l4(5*5*6, 3);
 
-	nn.add(&l1);
-	nn.add(&l2);
-	nn.add(&l3);
-	nn.add(&l4);
+    nn.add(&l1);
+    nn.add(&l2);
+    nn.add(&l3);
+    nn.add(&l4);
 
-	vec_t a(10, 0.0);
-	label_t t = 2;
+    vec_t a(10, 0.0);
+    label_t t = 2;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
 TEST(multi_layer, gradient_check3) { // mixture - mse
-	typedef mse loss_func;
-	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+    typedef mse loss_func;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-	fully_connected_layer<network, tanh_activation>     l1(10, 14*14*3);
+    fully_connected_layer<network, tanh_activation>     l1(10, 14*14*3);
     convolutional_layer<network, sigmoid_activation>    l2(14, 14, 5, 3, 6);
-	average_pooling_layer<network, rectified_linear>    l3(10, 10, 6, 2);
-	fully_connected_layer<network, identity_activation> l4(5*5*6, 3);
+    average_pooling_layer<network, rectified_linear>    l3(10, 10, 6, 2);
+    fully_connected_layer<network, identity_activation> l4(5*5*6, 3);
 
-	nn.add(&l1);
-	nn.add(&l2);
-	nn.add(&l3);
-	nn.add(&l4);
+    nn.add(&l1);
+    nn.add(&l2);
+    nn.add(&l3);
+    nn.add(&l4);
 
-	vec_t a(10, 0.0);
-	label_t t = 2;
+    vec_t a(10, 0.0);
+    label_t t = 2;
 
-	uniform_rand(a.begin(), a.end(), -1, 1);
-	nn.init_weight();
-	EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
 int main(void) {

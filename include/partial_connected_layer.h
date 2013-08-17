@@ -1,28 +1,28 @@
 /*
     Copyright (c) 2013, Taiga Nomi
-	All rights reserved.
-	
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions are met:
-	* Redistributions of source code must retain the above copyright
-	notice, this list of conditions and the following disclaimer.
-	* Redistributions in binary form must reproduce the above copyright
-	notice, this list of conditions and the following disclaimer in the
-	documentation and/or other materials provided with the distribution.
-	* Neither the name of the <organization> nor the
-	names of its contributors may be used to endorse or promote products
-	derived from this software without specific prior written permission.
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+    names of its contributors may be used to endorse or promote products
+    derived from this software without specific prior written permission.
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-	EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-	DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "util.h"
@@ -37,7 +37,7 @@ public:
     typedef std::vector<std::pair<int, int> > wi_connections;
     typedef std::vector<std::pair<int, int> > wo_connections;
     typedef layer<N, Activation> Base;
-    typedef typename Base::Updater Updater;
+    typedef typename Base::Optimizer Optimizer;
 
     partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim, float_t scale_factor = 1.0)
         : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
@@ -81,7 +81,7 @@ public:
 
     virtual const vec_t& forward_propagation(const vec_t& in, int index) {
 
-        parallel_for(0, this->out_size_, [&](const blocked_range& r) {
+        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const wi_connections& connections = out2wi_[i];
                 float_t a = 0.0;
@@ -101,9 +101,9 @@ public:
     virtual const vec_t& back_propagation(const vec_t& current_delta, int index) {
         const vec_t& prev_out = this->prev_->output(index);
         const activation& prev_h = this->prev_->activation_function();
-		vec_t& prev_delta = this->prev_delta_[index];
+        vec_t& prev_delta = this->prev_delta_[index];
 
-        parallel_for(0, this->in_size_, [&](const blocked_range& r) {
+        for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 prev_delta[i] = 0.0;
@@ -115,8 +115,7 @@ public:
             }
         });
 
-        
-        parallel_for(0, weight2io_.size(), [&](const blocked_range& r) {
+        for_(this->parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
@@ -124,9 +123,7 @@ public:
                 for (auto connection : connections) // 11.9%
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
-                //diff *= scale_factor_;
-				this->dW_[index][i] += diff * scale_factor_;
-                //l->update(diff, this->Whessian_[i], &this->W_[i]);// 9.8%
+                this->dW_[index][i] += diff * scale_factor_;
             }
         });
 
@@ -137,10 +134,8 @@ public:
             for (auto o : outs)
                 diff += current_delta[o];    
 
-			this->db_[index][i] += diff;
-            //l->update(diff, this->bhessian_[i], &this->b_[i]); 
-        }
-        
+            this->db_[index][i] += diff;
+        } 
 
         return this->prev_->back_propagation(this->prev_delta_[index], index);
     }
@@ -218,4 +213,4 @@ protected:
     float_t scale_factor_;
 };
 
-} 
+} // namespace tiny_cnn

@@ -1,32 +1,31 @@
 /*
     Copyright (c) 2013, Taiga Nomi
-	All rights reserved.
-	
-	Redistribution and use in source and binary forms, with or without
-	modification, are permitted provided that the following conditions are met:
-	* Redistributions of source code must retain the above copyright
-	notice, this list of conditions and the following disclaimer.
-	* Redistributions in binary form must reproduce the above copyright
-	notice, this list of conditions and the following disclaimer in the
-	documentation and/or other materials provided with the distribution.
-	* Neither the name of the <organization> nor the
-	names of its contributors may be used to endorse or promote products
-	derived from this software without specific prior written permission.
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+    names of its contributors may be used to endorse or promote products
+    derived from this software without specific prior written permission.
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-	EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-	DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-	DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-	LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-	ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-	SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "layer.h"
-#include "updater.h"
 
 namespace tiny_cnn {
 
@@ -35,7 +34,7 @@ template<typename N, typename Activation>
 class fully_connected_layer : public layer<N, Activation> {
 public:
     typedef layer<N, Activation> Base;
-    typedef typename Base::Updater Updater;
+    typedef typename Base::Optimizer Optimizer;
 
     fully_connected_layer(int in_dim, int out_dim) : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim) {}
 
@@ -63,9 +62,9 @@ public:
     const vec_t& back_propagation(const vec_t& current_delta, int index) {
         const vec_t& prev_out = this->prev_->output(index);
         const activation& prev_h = this->prev_->activation_function();
-		vec_t& prev_delta = this->prev_delta_[index];
-		vec_t& dW = this->dW_[index];
-		vec_t& db = this->db_[index];
+        vec_t& prev_delta = this->prev_delta_[index];
+        vec_t& dW = this->dW_[index];
+        vec_t& db = this->db_[index];
 
         for (int c = 0; c < this->in_size_; c++) { 
             prev_delta[c] = 0.0;
@@ -76,13 +75,13 @@ public:
             prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
-        parallel_for(0,this->out_size_, [&](const blocked_range& r) {
+        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) 
                 for (int c = 0; c < this->in_size_; c++) 
-					dW[i*this->in_size_+c] += current_delta[i] * prev_out[c];
+                    dW[i*this->in_size_+c] += current_delta[i] * prev_out[c];
 
             for (int i = r.begin(); i < r.end(); i++) 
-				db[i] += current_delta[i]; 
+                db[i] += current_delta[i]; 
         });
 
         return this->prev_->back_propagation(this->prev_delta_[index], index);
@@ -113,4 +112,4 @@ public:
     }
 };
 
-}
+} // namespace tiny_cnn
