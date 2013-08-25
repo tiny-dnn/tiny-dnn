@@ -26,18 +26,23 @@
 */
 #pragma once
 
-#include "config.h"
+/**
+ * define if you want to use intel TBB library
+ */
+//#define CNN_USE_TBB
 
-#include "network.h"
-#include "average_pooling_layer.h"
-#include "convolutional_layer.h"
-#include "fully_connected_layer.h"
+/**
+ * define to enable avx vectorization
+ */
+//#define CNN_USE_AVX
 
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
+/**
+ * define to enable sse2 vectorization
+ */
+//#define CNN_USE_SSE
 
-#include "mnist_parser.h"
-#include "image.h"
-#include "deform.h"
-#include "product.h"
+/**
+ * number of task in batch-gradient-descent.
+ * @todo automatic optimization
+ */
+#define CNN_TASK_SIZE 8

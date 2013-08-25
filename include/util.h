@@ -38,8 +38,6 @@
 #endif
 #include "fixed_point.h"
 
-#define TASK_SIZE 8 // number of task in batch-gradient-descent. @todo dynamic task size optimization
-
 namespace tiny_cnn {
 
 typedef double float_t;

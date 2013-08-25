@@ -80,5 +80,17 @@ with tbb
     ./waf configure --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
     ./waf build
 
+with tbb and SSE/AVX
+
+    ./waf configure --AVX --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
+    ./waf build
+
+
+    ./waf configure --SSE --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
+    ./waf build
+
+
+or edit inlude/config.h to customize default behavior.
+
 ### vc(2012~)
 open vc/tiny_cnn.sln and build in release mode.

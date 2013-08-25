@@ -25,7 +25,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#if defined(CNN_USE_SSE) || defined(CNN_USE_AVX)
 #include <immintrin.h>
+#endif
 #include <cstdint>
 #include <cassert>
 #include <numeric>
@@ -72,7 +74,7 @@ struct generic {
     static value_type resemble(const register_type& x) { return x; }
 };
 
-#ifdef USE_SSE
+#ifdef CNN_USE_SSE
 
 struct float_sse {
     typedef __m128 register_type;
@@ -128,9 +130,9 @@ inline bool is_aligned(sse<T>, const typename sse<T>::value_type* p) {
     return reinterpret_cast<size_t>(p) % 16 == 0;
 }
 
-#endif // USE_SSE
+#endif // CNN_USE_SSE
 
-#ifdef USE_AVX
+#ifdef CNN_USE_AVX
 
 struct float_avx {
     typedef __m256 register_type;
@@ -186,7 +188,7 @@ inline bool is_aligned(avx<T>, const typename avx<T>::value_type* p) {
     return reinterpret_cast<size_t>(p) % 32 == 0;
 }
 
-#endif // USE_AVX
+#endif // CNN_USE_AVX
 
 // generic dot-product
 template<typename T>
@@ -278,9 +280,9 @@ inline void reduce_aligned(const typename T::value_type* src, unsigned int size,
 
 } // namespace detail
 
-#if defined(USE_AVX)
+#if defined(CNN_USE_AVX)
 #define VECTORIZE_TYPE detail::avx<T>
-#elif defined(USE_SSE)
+#elif defined(CNN_USE_SSE)
 #define VECTORIZE_TYPE detail::sse<T>
 #else
 #define VECTORIZE_TYPE detail::generic<T>

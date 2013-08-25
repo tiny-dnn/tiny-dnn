@@ -135,7 +135,7 @@ public:
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
     void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
         init_weight();
-        layers_.set_parallelize(batch_size < TASK_SIZE);
+        layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
 
         for (int iter = 0; iter < epoch; iter++) {
             if (optimizer_.requires_hessian())
@@ -246,7 +246,7 @@ private:
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
             task_group g;
-            int num_tasks = size < TASK_SIZE ? 1 : TASK_SIZE;
+            int num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
             int data_per_thread = size / num_tasks;
             int remaining = size;
 

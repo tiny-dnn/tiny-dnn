@@ -62,7 +62,7 @@ public:
         uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);               
         std::fill(Whessian_.begin(), Whessian_.end(), 0.0);
         std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
-        clear_diff(TASK_SIZE);
+        clear_diff(CNN_TASK_SIZE);
     }
 
     const vec_t& output(int worker_index) const { return output_[worker_index]; }
@@ -125,12 +125,12 @@ protected:
 
     layer_base<N>* next_;
     layer_base<N>* prev_;
-    vec_t output_[TASK_SIZE];     // last output of current layer, set by fprop
-    vec_t prev_delta_[TASK_SIZE]; // last delta of previous layer, set by bprop
+    vec_t output_[CNN_TASK_SIZE];     // last output of current layer, set by fprop
+    vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
-    vec_t dW_[TASK_SIZE];
-    vec_t db_[TASK_SIZE];
+    vec_t dW_[CNN_TASK_SIZE];
+    vec_t db_[CNN_TASK_SIZE];
 
     vec_t Whessian_; // diagonal terms of hessian matrix
     vec_t bhessian_;

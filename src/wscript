@@ -6,5 +6,4 @@ def build(bld):
       cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast', '-march=native'],
       lib      = ['stdc++','tbb'],
       libpath  = ['../'],
-      defines  = [bld.env.DEFINES],
       includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT+'/include'])

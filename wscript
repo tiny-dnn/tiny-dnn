@@ -11,6 +11,14 @@ def options(opt):
                    action = 'store_true',
                    default = False,
                    help='enable TBB parallelization [default:False]')
+    opt.add_option('--AVX',
+                   action = 'store_true',
+                   default = False,
+                   help='enable AVX vectorization [default:False]')
+    opt.add_option('--SSE',
+                   action = 'store_true',
+                   default = False,
+                   help='enable AVX vectorization [default:False]')
     opt.add_option('--BOOST_ROOT',
                    action = 'store',
                    default = 'C:/Program Files/boost/boost_1_51_0',
@@ -24,9 +32,11 @@ def configure(conf):
     conf.env.CXX = 'g++'
     conf.load('g++')
     if conf.options.TBB:
-       conf.env.DEFINES = 'CNN_USE_TBB'
-    else:
-       conf.env.DEFINES = ''
+       conf.define("CNN_USE_TBB", "")
+    if conf.options.SSE:
+       conf.define("CNN_USE_AVX", "")
+    if conf.options.SSE:
+       conf.define("CNN_USE_SSE", "")
     conf.env.TBB_ROOT = conf.options.TBB_ROOT
     conf.env.BOOST_ROOT = conf.options.BOOST_ROOT
 
