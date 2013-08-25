@@ -33,9 +33,9 @@ namespace tiny_cnn {
 template<typename N, typename Activation>
 class partial_connected_layer : public layer<N, Activation> {
 public:
-    typedef std::vector<std::pair<int, int> > io_connections;
-    typedef std::vector<std::pair<int, int> > wi_connections;
-    typedef std::vector<std::pair<int, int> > wo_connections;
+    typedef std::vector<std::pair<unsigned short, unsigned short> > io_connections;
+    typedef std::vector<std::pair<unsigned short, unsigned short> > wi_connections;
+    typedef std::vector<std::pair<unsigned short, unsigned short> > wo_connections;
     typedef layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
@@ -86,7 +86,7 @@ public:
                 const wi_connections& connections = out2wi_[i];
                 float_t a = 0.0;
 
-                for (auto& connection : connections)// 13.1%
+                for (auto connection : connections)// 13.1%
                     a += this->W_[connection.first] * in[connection.second]; // 3.2%
 
                 a *= scale_factor_;
@@ -106,12 +106,12 @@ public:
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
-                prev_delta[i] = 0.0;
+                float_t delta = 0.0;
 
                 for (auto connection : connections) 
-                    prev_delta[i] += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
+                    delta += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
 
-                prev_delta[i] *= scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
+                prev_delta[i] = delta * scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
             }
         });
 

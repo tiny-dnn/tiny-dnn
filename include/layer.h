@@ -26,6 +26,7 @@
 */
 #pragma once
 #include "util.h"
+#include "product.h"
 
 namespace tiny_cnn {
 
@@ -101,9 +102,11 @@ public:
     void update_weight(Optimizer *o, int worker_size, int batch_size) {
         merge(worker_size, batch_size);
 
-        int dim_w = W_.size();
-        for (int i = 0; i < dim_w; i++)
-            o->update(dW_[0][i], Whessian_[i], &W_[i]);
+        for_(true, 0, W_.size(), [&](const blocked_range& r){
+            for (int i = r.begin(); i < r.end(); i++)
+                o->update(dW_[0][i], Whessian_[i], &W_[i]);
+        });
+
 
         int dim_b = b_.size();
         for (int i = 0; i < dim_b; i++)
@@ -135,10 +138,15 @@ protected:
 
 private:
     void merge(int worker_size, int batch_size) {
-        for (int i = 1; i < worker_size; i++) {
-            std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());
-            std::transform(db_[0].begin(), db_[0].end(), db_[i].begin(), db_[0].begin(), std::plus<float_t>());
-        }
+        for (int i = 1; i < worker_size; i++)
+            vectorize::reduce<float_t>(&dW_[i][0], dW_[i].size(), &dW_[0][0]);
+        for (int i = 1; i < worker_size; i++) 
+            vectorize::reduce<float_t>(&db_[i][0], db_[i].size(), &db_[0][0]);
+        //for (int i = 1; i < worker_size; i++) {
+        //    std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());
+        //    std::transform(db_[0].begin(), db_[0].end(), db_[i].begin(), db_[0].begin(), std::plus<float_t>());
+        //}
+
         std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
     }

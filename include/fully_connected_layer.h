@@ -26,6 +26,7 @@
 */
 #pragma once
 #include "layer.h"
+#include "product.h"
 
 namespace tiny_cnn {
 
@@ -51,7 +52,8 @@ public:
         for (int r = 0; r < this->out_size_; r++) {
             float_t z = 0.0;
             for (int c = 0; c < this->in_size_; c++) 
-                z += this->W_[r*this->in_size_+c] * in[c];
+                z += this->W_[c*this->out_size_+r] * in[c];
+
             z += this->b_[r];
             this->output_[index][r] = this->a_.f(z);
         }
@@ -67,18 +69,22 @@ public:
         vec_t& db = this->db_[index];
 
         for (int c = 0; c < this->in_size_; c++) { 
-            prev_delta[c] = 0.0;
+            //prev_delta[c] = 0.0;
+            //for (int r = 0; r < this->out_size_; r++)
+            //    prev_delta[c] += current_delta[r] * this->W_[c*this->out_size_+r];
 
-            for (int r = 0; r < this->out_size_; r++) 
-                prev_delta[c] += current_delta[r] * this->W_[r*this->in_size_+c];
-
+            prev_delta[c] = vectorize::dot(&current_delta[0], &this->W_[c*this->out_size_], this->out_size_);
             prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) 
-                for (int c = 0; c < this->in_size_; c++) 
-                    dW[i*this->in_size_+c] += current_delta[i] * prev_out[c];
+            /*for (int c = 0; c < this->in_size_; c++) 
+                for (int i = r.begin(); i < r.end(); i++) 
+                    dW[c*this->out_size_+i] += current_delta[i] * prev_out[c];*/
+
+            for (int c = 0; c < this->in_size_; c++) {
+                vectorize::muladd(&current_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*this->out_size_ + r.begin()]);
+            }
 
             for (int i = r.begin(); i < r.end(); i++) 
                 db[i] += current_delta[i]; 
@@ -92,9 +98,10 @@ public:
         const vec_t& prev_out = this->prev_->output(0);
         const activation& prev_h = this->prev_->activation_function();
 
-        for (int r = 0; r < this->out_size_; r++)
-            for (int c = 0; c < this->in_size_; c++) 
-                this->Whessian_[r*this->in_size_+c] += current_delta2[r] * prev_out[c] * prev_out[c];
+
+        for (int c = 0; c < this->in_size_; c++) 
+            for (int r = 0; r < this->out_size_; r++)
+                this->Whessian_[c*this->out_size_+r] += current_delta2[r] * prev_out[c] * prev_out[c];
 
         for (int r = 0; r < this->out_size_; r++)
             this->bhessian_[r] += current_delta2[r];
@@ -103,7 +110,7 @@ public:
             this->prev_delta2_[c] = 0.0;
 
             for (int r = 0; r < this->out_size_; r++) 
-                this->prev_delta2_[c] += current_delta2[r] * this->W_[r*this->in_size_+c] * this->W_[r*this->in_size_+c];
+                this->prev_delta2_[c] += current_delta2[r] * this->W_[c*this->out_size_+r] * this->W_[c*this->out_size_+r];
 
             this->prev_delta2_[c] *= prev_h.df(prev_out[c]) * prev_h.df(prev_out[c]);
         }

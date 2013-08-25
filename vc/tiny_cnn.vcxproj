@@ -16,6 +16,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\activation_function.h" />
     <ClInclude Include="..\include\convolutional_layer.h" />
+    <ClInclude Include="..\include\deform.h" />
     <ClInclude Include="..\include\fixed_point.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\image.h" />
@@ -25,6 +26,7 @@
     <ClInclude Include="..\include\network.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
     <ClInclude Include="..\include\average_pooling_layer.h" />
+    <ClInclude Include="..\include\product.h" />
     <ClInclude Include="..\include\tiny_cnn.h" />
     <ClInclude Include="..\include\optimizer.h" />
     <ClInclude Include="..\include\util.h" />
@@ -72,6 +74,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -90,7 +93,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <PreprocessorDefinitions>_MBCS;CNN_USE_TBB;_NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>

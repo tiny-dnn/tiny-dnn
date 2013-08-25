@@ -48,7 +48,7 @@ TEST(convolutional, fprop) {
         const vec_t& out = l.forward_propagation(in, 0);
 
         for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, 0.5);
+            EXPECT_DOUBLE_EQ(o, (float_t)0.5);
 
     }
 
