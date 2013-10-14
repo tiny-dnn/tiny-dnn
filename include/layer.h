@@ -100,6 +100,10 @@ public:
     layer_base<N>* prev() { return prev_; }
 
     void update_weight(Optimizer *o, int worker_size, int batch_size) {
+		if (W_.empty()) {
+			return;
+		}
+
         merge(worker_size, batch_size);
 
         for_(true, 0, W_.size(), [&](const blocked_range& r){
