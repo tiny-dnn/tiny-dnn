@@ -82,8 +82,8 @@ public:
     virtual int connection_size() const = 0;
 
     virtual void save(std::ostream& os) const {
-        for (auto w : W_) os << w;
-        for (auto b : b_) os << b;
+        for (auto w : W_) os << w << " ";
+        for (auto b : b_) os << b << " ";
     }
 
     virtual void load(std::istream& is) {
@@ -111,7 +111,6 @@ public:
                 o->update(dW_[0][i], Whessian_[i], &W_[i]);
         });
 
-
         int dim_b = b_.size();
         for (int i = 0; i < dim_b; i++)
             o->update(db_[0][i], bhessian_[i], &b_[i]);
@@ -121,6 +120,18 @@ public:
 
     vec_t& weight_diff(int index) { return dW_[index]; }
     vec_t& bias_diff(int index) { return db_[index]; }
+
+	bool has_same_weights(const layer_base& rhs, float_t eps) const {
+        if (W_.size() != rhs.W_.size() || b_.size() != rhs.b_.size())
+            return false;
+
+        for (size_t i = 0; i < W_.size(); i++)
+          if (std::abs(W_[i] - rhs.W_[i]) > eps) return false;
+        for (size_t i = 0; i < b_.size(); i++)
+          if (std::abs(b_[i] - rhs.b_[i]) > eps) return false;
+
+        return true;
+	}
 
 protected:
     int in_size_;
@@ -283,7 +294,7 @@ std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, Char
 }
 
 template <typename Char, typename CharTraits, typename N>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, const layer_base<N>& v) {
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, layer_base<N>& v) {
     v.load(os);
     return os;
 }

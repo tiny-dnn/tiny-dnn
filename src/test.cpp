@@ -26,6 +26,7 @@
 */
 #include "picotest.h"
 #include "tiny_cnn.h"
+#include <boost/filesystem.hpp>
 
 using namespace tiny_cnn;
 
@@ -48,7 +49,7 @@ TEST(convolutional, fprop) {
         const vec_t& out = l.forward_propagation(in, 0);
 
         for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, (float_t)0.5);
+            EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
 
     }
 
@@ -437,6 +438,63 @@ TEST(multi_layer, gradient_check3) { // mixture - mse
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
+}
+
+template <typename N>
+void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
+{
+    EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
+
+    boost::filesystem::path tmp_path = boost::filesystem::unique_path();
+
+    if (boost::filesystem::exists(tmp_path))
+        throw nn_error("file exists");
+
+    std::string tmp_file_path = tmp_path.string();
+
+    // write
+    {
+        std::ofstream ofs(tmp_file_path.c_str());
+        ofs << src;
+    }
+
+    // read
+    {
+        std::ifstream ifs(tmp_file_path.c_str());
+        ifs >> dst;
+    }
+
+    boost::filesystem::remove(tmp_path); // remove temporary file
+
+    EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
+}
+
+TEST(read_write, fully_connected)
+{
+	typedef mse loss_func;
+	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+	fully_connected_layer<network, tanh_activation> l1(100, 100);
+	fully_connected_layer<network, tanh_activation> l2(100, 100);
+
+	l1.init_weight();
+	l2.init_weight();
+
+    serialization_test(l1, l2);
+}
+
+TEST(read_write, convolutional)
+{
+    typedef mse loss_func;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    convolutional_layer<network, tanh_activation> l1(5, 5, 3, 1, 1);
+    convolutional_layer<network, tanh_activation> l2(5, 5, 3, 1, 1);
+
+    l1.init_weight();
+    l2.init_weight();
+
+    serialization_test(l1, l2);
 }
 
 int main(void) {
