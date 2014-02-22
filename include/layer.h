@@ -225,7 +225,7 @@ public:
         return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, int index) {
+    const vec_t& back_propagation(const vec_t& current_delta, int /*index*/) {
         return current_delta;
     }
 

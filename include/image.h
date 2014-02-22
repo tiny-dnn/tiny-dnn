@@ -79,7 +79,7 @@ public:
 
         // color palette (256*3byte)
         for (int i = 0; i < 256; i++) {
-            const char v = i;
+            const char v = static_cast<const char>(i);
             ofs.write(&v, 1);//R
             ofs.write(&v, 1);//G
             ofs.write(&v, 1);//B

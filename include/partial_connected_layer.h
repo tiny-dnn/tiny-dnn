@@ -188,13 +188,13 @@ public:
         for (int i = 0; i < this->out_size_; i++) {
             wi_connections& wi = out2wi_[i];
             for (size_t j = 0; j < wi.size(); j++)
-                wi[j].first = swaps[wi[j].first];
+                wi[j].first = static_cast<unsigned short>(swaps[wi[j].first]);
         }
 
         for (int i = 0; i < this->in_size_; i++) {
             wo_connections& wo = in2wo_[i];
             for (size_t j = 0; j < wo.size(); j++)
-                wo[j].first = swaps[wo[j].first];
+                wo[j].first = static_cast<unsigned short>(swaps[wo[j].first]);
         }
 
         std::vector<io_connections> weight2io_new(n);

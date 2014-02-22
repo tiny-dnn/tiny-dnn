@@ -45,7 +45,7 @@ namespace detail {
 
 
 template<typename T>
-inline bool is_aligned(T, const typename T::value_type* p) {
+inline bool is_aligned(T, const typename T::value_type* /*p*/) {
     return true;
 }
 

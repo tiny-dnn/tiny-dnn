@@ -38,6 +38,8 @@
 #endif
 #include "fixed_point.h"
 
+#define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
+
 namespace tiny_cnn {
 
 typedef double float_t;
@@ -168,7 +170,7 @@ void parallel_for(int begin, int end, const Func& f) {
 }
 
 template<typename Func>
-void for_(bool parallelize, int begin, int end, Func f) {
+void for_(bool /*parallelize*/, int begin, int end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
     parallel_for(begin, end, f);
 }
 

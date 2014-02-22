@@ -37,7 +37,7 @@ struct optimizer {
 struct gradient_descent_levenberg_marquardt : public optimizer {
 public:
     gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
-    gradient_descent_levenberg_marquardt(float_t alpha, float_t lambda, float_t mu) : alpha(alpha), mu(mu) {}
+    gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
 
     void update(float_t dW, float_t H, float_t *W) {
         *W -= (alpha / (H + mu)) * (dW); // 7.2%
@@ -55,7 +55,7 @@ public:
     gradient_descent() : alpha(0.01), lambda(0.0) {}
     gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
 
-    void update(float_t dW, float_t H, float_t *W) {
+    void update(float_t dW, float_t /*H*/, float_t *W) {
         *W -= alpha * ((dW) + *W * lambda); // 7.2%
     }
 

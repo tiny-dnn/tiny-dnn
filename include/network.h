@@ -283,6 +283,7 @@ private:
 
     template<typename Activation, typename Loss>
     bool is_canonical_link(const Activation& h, const Loss& E) {
+        CNN_UNREFERENCED_PARAMETER(E);
         if (typeid(h) == typeid(sigmoid_activation) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(tanh_activation) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(identity_activation) && typeid(E) == typeid(mse)) return true;
