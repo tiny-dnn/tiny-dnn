@@ -36,6 +36,7 @@
 #include "activation_function.h"
 #include "loss_function.h"
 #include "optimizer.h"
+#include "fully_connected_layer.h"
 #include "layer.h"
 
 namespace tiny_cnn {
@@ -382,5 +383,20 @@ private:
     Optimizer optimizer_;
     layers<Self> layers_;
 };
+
+/**
+ * create multi-layer perceptron
+ */
+template<typename loss_func, typename algorithm, typename activation>
+network<loss_func, algorithm> make_mlp(const std::vector<int>& units)
+{
+    typedef network<loss_func, algorithm> net_t;
+    net_t n;
+
+    int depth = units.size();
+    for (int i = 0; i < depth - 1; i++)
+        n.add(new fully_connected_layer<net_t, activation>(units[i], units[i + 1]));
+    return n;
+}
 
 } // namespace tiny_cnn
