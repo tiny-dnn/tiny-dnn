@@ -32,11 +32,19 @@
 //#define NOMINMAX
 //#include "imdebug.h"
 
-void sample1_3layerNN();
+void sample1_convnet();
+void sample2_mlp();
+void sample3_dae();
 
 using namespace tiny_cnn;
 
 int main(void) {
+    sample1_convnet();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// learning convolutional neural networks (LeNet-5 like architecture)
+void sample1_convnet(void) {
     // construct LeNet-5 architecture
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
@@ -134,14 +142,20 @@ int main(void) {
     ofs << C1 << S2 << C3 << S4 << C5 << F6;
 }
 
+
+///////////////////////////////////////////////////////////////////////////////
 // learning 3-Layer Networks
-void sample1_3layerNN()
+void sample2_mlp()
 {
     const int num_hidden_units = 500;
-    typedef network<mse, gradient_descent> neuralnet;
-    neuralnet nn;
-    fully_connected_layer<neuralnet, tanh_activation> L1(28*28, num_hidden_units);
-    fully_connected_layer<neuralnet, tanh_activation> L2(num_hidden_units, 10);
+
+#if defined(_MSC_VER) && _MSC_VER < 1800
+    // initializer-list is not supported
+    int num_units[] = { 28 * 28, num_hidden_units, 10 };
+    auto nn = make_mlp<mse, gradient_descent, tanh_activation>(num_units, num_units + 3);
+#else
+    auto nn = make_mlp<mse, gradient_descent, tanh_activation>({ 28 * 28, num_hidden_units, 10 });
+#endif
 
     // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
@@ -152,8 +166,6 @@ void sample1_3layerNN()
     parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
     parse_mnist_images("t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
-    nn.add(&L1);
-    nn.add(&L2);
     nn.optimizer().alpha = 0.001;
     
     boost::progress_display disp(train_images.size());
@@ -180,3 +192,30 @@ void sample1_3layerNN()
 
     nn.train(train_images, train_labels, 1, 20, on_enumerate_data, on_enumerate_epoch);
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// denoising auto-encoder
+void sample3_dae()
+{
+#if defined(_MSC_VER) && _MSC_VER < 1800
+    // initializer-list is not supported
+    int num_units[] = { 100, 400, 100 };
+    auto nn = make_mlp<mse, gradient_descent, tanh_activation>(num_units, num_units + 3);
+#else
+    auto nn = make_mlp<mse, gradient_descent, tanh_activation>({ 100, 400, 100 });
+#endif
+
+    std::vector<vec_t> train_data_original;
+
+    // load train-data
+
+    std::vector<vec_t> train_data_corrupted(train_data_original);
+
+    for (auto& d : train_data_corrupted) {
+        corrupt(d, 0.1, 0.0, &d); // corrupt 10% data
+    }
+
+    // learning 100-400-100 denoising auto-encoder
+    nn.train(train_data_corrupted, train_data_original);
+}
+
