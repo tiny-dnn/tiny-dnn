@@ -251,6 +251,16 @@ public:
         add(&first_);
     }
 
+    layers(const layers& rhs) {
+        construct(rhs);
+    }
+
+    layers<N>& operator = (const layers<N>& rhs) {
+        layers_.clear();
+        construct(rhs);
+        return *this;
+    }
+
     void add(layer_base<N> * new_tail) {
         if (tail())  tail()->connect(new_tail);
         layers_.push_back(new_tail);
@@ -283,6 +293,12 @@ public:
     }
 
 private:
+    void construct(const layers<N>& rhs) {
+        add(&first_);
+        for (int i = 1; i < (int) rhs.layers_.size(); i++)
+            add(rhs.layers_[i]);
+    }
+
     std::vector<layer_base<N>*> layers_;
     input_layer<N> first_;
 };
