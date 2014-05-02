@@ -73,10 +73,14 @@ construct multi-layer perceptron(mlp)
 using namespace tiny_cnn;
 
 typedef network<mse, gradient_descent> MLP;
-fully_connected_layer<CNN, sigmoid_activation> F1(32*32, 300);
-fully_connected_layer<CNN, identity_activation> F2(300, 10);
+fully_connected_layer<MLP, sigmoid_activation> F1(32*32, 300);
+fully_connected_layer<MLP, identity_activation> F2(300, 10);
+
 MLP mynet;
 mynet.add(&F1); mynet.add(&F2);
+
+assert(mynet.in_dim() == 32*32);
+assert(mynet.out_dim() == 10);
 ```
 
 another way to construct mlp
@@ -86,6 +90,9 @@ another way to construct mlp
 using namespace tiny_cnn;
 
 auto mynet = make_mlp<mse, gradient_descent, tanh_activation>({ 32*32, 300, 10 });
+
+assert(mynet.in_dim() == 32*32);
+assert(mynet.out_dim() == 10);
 ```
 
 more sample, read main.cpp
