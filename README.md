@@ -40,6 +40,8 @@ dependencies
 sample code
 ------
 
+construct convolutional neural networks
+
 ```cpp
 #include "tiny_cnn.h"
 using namespace tiny_cnn;
@@ -63,6 +65,27 @@ mynet.add(&C1); mynet.add(&S2); mynet.add(&F3); mynet.add(&F4);
 
 assert(mynet.in_dim() == 32*32);
 assert(mynet.out_dim() == 10);
+```
+construct multi-layer perceptron(mlp)
+
+```cpp
+#include "tiny_cnn.h"
+using namespace tiny_cnn;
+
+typedef network<mse, gradient_descent> MLP;
+fully_connected_layer<CNN, sigmoid_activation> F1(32*32, 300);
+fully_connected_layer<CNN, identity_activation> F2(300, 10);
+MLP mynet;
+mynet.add(&F1); mynet.add(&F2);
+```
+
+another way to construct mlp
+
+```cpp
+#include "tiny_cnn.h"
+using namespace tiny_cnn;
+
+auto mynet = make_mlp<mse, gradient_descent, tanh_activation>({ 32*32, 300, 10 });
 ```
 
 more sample, read main.cpp
