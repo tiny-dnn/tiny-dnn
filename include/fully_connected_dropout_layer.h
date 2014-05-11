@@ -25,20 +25,38 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-
-#include "config.h"
-
-#include "network.h"
-#include "average_pooling_layer.h"
-#include "convolutional_layer.h"
 #include "fully_connected_layer.h"
-#include "fully_connected_dropout_layer.h"
 
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
+namespace tiny_cnn {
 
-#include "mnist_parser.h"
-#include "image.h"
-#include "deform.h"
-#include "product.h"
+// normal 
+template<typename N, typename Activation>
+class fully_connected_dropout_layer : public fully_connected_layer<N, Activation, dropout> {
+public:
+    typedef fully_connected_layer<N, Activation, dropout> Base;
+    typedef typename Base::Optimizer Optimizer;
+
+    fully_connected_dropout_layer(int in_dim, int out_dim, dropout::dropout_mode mode = dropout::per_data)
+        : Base(in_dim, out_dim)
+    {
+        this->filter_.set_mode(mode);
+    }
+
+    void set_dropout_rate(double rate) {
+        this->filter_.set_dropout_rate(rate);
+    }
+
+    /**
+     * set dropout-context (training-phase or test-phase)
+     **/
+    void set_context(dropout::context ctx) {
+        this->filter_.set_context(ctx);
+    }
+
+private:
+    void post_update() {
+        this->filter_.end_batch();
+    }
+};
+
+} // namespace tiny_cnn

@@ -86,6 +86,7 @@
     <ClInclude Include="..\include\partial_connected_layer.h" />
     <ClInclude Include="..\include\picotest.h" />
     <ClInclude Include="..\include\util.h" />
+    <ClInclude Include="..\include\dropout.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

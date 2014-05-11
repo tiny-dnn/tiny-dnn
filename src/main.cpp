@@ -35,6 +35,7 @@
 void sample1_convnet();
 void sample2_mlp();
 void sample3_dae();
+void sample4_dropout();
 
 using namespace tiny_cnn;
 
@@ -219,3 +220,33 @@ void sample3_dae()
     nn.train(train_data_corrupted, train_data_original);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// dropout-learning
+
+void sample4_dropout()
+{
+    typedef network<mse, gradient_descent> Network;
+    Network nn;
+    int input_dim    = 10;
+    int hidden_units = 100;
+    int output_dim   = 10;
+
+    fully_connected_dropout_layer<Network, tanh_activation> f1(input_dim, hidden_units, dropout::per_data);
+    fully_connected_layer<Network, tanh_activation> f2(hidden_units, output_dim);
+    nn.add(&f1); nn.add(&f2);
+
+    std::vector<vec_t> train_data, test_data;
+    std::vector<label_t> train_label, test_label;
+
+    // load train-data, label_data
+
+    // learning
+    nn.train(train_data, train_label);
+
+    // change context to enable all hidden-units
+    f1.set_context(dropout::test_phase);
+
+    tiny_cnn::result res = nn.test(test_data, test_label);
+
+    std::cout << res.num_success << "/" << res.num_total << std::endl;
+}

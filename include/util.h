@@ -94,6 +94,10 @@ inline T uniform_rand(T min, T max) {
     return dst(gen);
 }
 
+inline bool bernoulli(double p) {
+    return uniform_rand(0.0, 1.0) <= p;
+}
+
 template<typename Iter>
 void uniform_rand(Iter begin, Iter end, float_t min, float_t max) {
     for (Iter it = begin; it != end; ++it) 

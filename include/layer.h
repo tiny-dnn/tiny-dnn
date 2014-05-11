@@ -96,6 +96,9 @@ public:
     virtual const vec_t& back_propagation(const vec_t& current_delta, int worker_index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
+    // called afrer updating weight
+    virtual void post_update() {}
+
     layer_base<N>* next() { return next_; }
     layer_base<N>* prev() { return prev_; }
 
@@ -116,6 +119,7 @@ public:
             o->update(db_[0][i], bhessian_[i], &b_[i]);
 
         clear_diff(worker_size);
+        post_update();
     }
 
     vec_t& weight_diff(int index) { return dW_[index]; }

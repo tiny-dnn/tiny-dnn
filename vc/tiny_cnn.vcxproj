@@ -31,6 +31,7 @@
     <ClInclude Include="..\include\tiny_cnn.h" />
     <ClInclude Include="..\include\optimizer.h" />
     <ClInclude Include="..\include\util.h" />
+    <ClInclude Include="..\include\dropout.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and '$(VisualStudioVersion)' == ''">$(VCTargetsPath11)</VCTargetsPath>
