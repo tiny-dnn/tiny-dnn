@@ -5,16 +5,17 @@ tiny-cnn is a C++11 implementation of convolutional neural networks.
 
 design principle
 -----
-* fast, without GPU
-
- 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
-
-* header only, policy-based design
+- fast, without GPU
+    - with TBB threading and SSE/AVX vectorization
+    - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
+- header only, policy-based design
+- keep small & simple
 
 supported networks
 -----
 ### layer-types
 * fully-connected layer
+* fully-connected layer (with dropout)
 * convolutional layer
 * average pooling layer
 
