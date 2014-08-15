@@ -51,14 +51,16 @@ public:
 
     const vec_t& forward_propagation(const vec_t& in, int index) {
 
-        for (int r = 0; r < this->out_size_; r++) {
-            float_t z = 0.0;
-            for (int c = 0; c < this->in_size_; c++) 
-                z += this->W_[c*this->out_size_+r] * in[c];
+        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
+            for (int i = r.begin(); i < r.end(); i++) {
+                float_t z = 0.0;
+                for (int c = 0; c < this->in_size_; c++)
+                    z += this->W_[c*this->out_size_ + i] * in[c];
 
-            z += this->b_[r];
-            this->output_[index][r] = this->a_.f(z);
-        }
+                z += this->b_[i];
+                this->output_[index][i] = this->a_.f(z);
+            }
+        });
 
         auto& this_out = this->filter_.filter_fprop(this->output_[index], index);
 
