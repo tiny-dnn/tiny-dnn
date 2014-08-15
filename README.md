@@ -9,7 +9,7 @@ design principle
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
 - header only, policy-based design
-- keep small & simple
+- small dependency & simple implementation
 
 supported networks
 -----
