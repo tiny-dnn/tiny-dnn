@@ -227,26 +227,55 @@ void sample4_dropout()
 {
     typedef network<mse, gradient_descent> Network;
     Network nn;
-    int input_dim    = 10;
-    int hidden_units = 100;
+    int input_dim    = 28*28;
+    int hidden_units = 800;
     int output_dim   = 10;
 
     fully_connected_dropout_layer<Network, tanh_activation> f1(input_dim, hidden_units, dropout::per_data);
     fully_connected_layer<Network, tanh_activation> f2(hidden_units, output_dim);
     nn.add(&f1); nn.add(&f2);
 
-    std::vector<vec_t> train_data, test_data;
-    std::vector<label_t> train_label, test_label;
+    nn.optimizer().alpha = 0.003; // TODO: not optimized
+    nn.optimizer().lambda = 0.0;
+
+    // load MNIST dataset
+    std::vector<label_t> train_labels, test_labels;
+    std::vector<vec_t> train_images, test_images;
+
+    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     // load train-data, label_data
+    boost::progress_display disp(train_images.size());
+    boost::timer t;
 
-    // learning
-    nn.train(train_data, train_label);
+    // create callback
+    auto on_enumerate_epoch = [&](){
+        std::cout << t.elapsed() << "s elapsed." << std::endl;
+
+        f1.set_context(dropout::test_phase);
+        tiny_cnn::result res = nn.test(test_images, test_labels);
+        f1.set_context(dropout::train_phase);
+
+
+        std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+
+        nn.optimizer().alpha *= 0.99; // decay learning rate
+        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+
+        disp.restart(train_images.size());
+        t.restart();
+    };
+
+    auto on_enumerate_data = [&](){
+        ++disp;
+    };
+
+    nn.train(train_images, train_labels, 1, 100, on_enumerate_data, on_enumerate_epoch);
 
     // change context to enable all hidden-units
-    f1.set_context(dropout::test_phase);
-
-    tiny_cnn::result res = nn.test(test_data, test_label);
-
-    std::cout << res.num_success << "/" << res.num_total << std::endl;
+    //f1.set_context(dropout::test_phase);
+    //std::cout << res.num_success << "/" << res.num_total << std::endl;
 }
