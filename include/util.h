@@ -27,7 +27,7 @@
 #pragma once
 #include <vector>
 #include <limits>
-#include <boost/random.hpp>
+#include <random>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -76,21 +76,21 @@ struct tensor3d {
 
 template<int Q>
 inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
-    static boost::mt19937 gen(0);
-    boost::uniform_real<double> dst(min.to_real(), max.to_real());
+    static std::mt19937 gen(0);
+    std::uniform_real_distribution<double> dst(min.to_real(), max.to_real());
     return dst(gen);
 }
 
 inline int uniform_rand(int min, int max) {
-    static boost::mt19937 gen(0);
-    boost::uniform_smallint<> dst(min, max);
+    static std::mt19937 gen(0);
+    std::uniform_int_distribution<> dst(min, max);
     return dst(gen);
 }
 
 template<typename T>
 inline T uniform_rand(T min, T max) {
-    static boost::mt19937 gen(0);
-    boost::uniform_real<T> dst(min, max);
+    static std::mt19937 gen(0);
+    std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
 }
 
