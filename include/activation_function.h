@@ -29,6 +29,7 @@
 #include <algorithm>
 
 namespace tiny_cnn {
+namespace activation {
 
 class activation {
 public:
@@ -37,14 +38,14 @@ public:
     virtual std::pair<float_t, float_t> scale() const = 0;
 };
 
-class identity_activation : public activation {
+class identity : public activation {
 public:
     float_t f(float_t x) const { return x; }
     float_t df(float_t /*f_x*/) const { return 1; }  
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
-class sigmoid_activation : public activation {
+class sigmoid : public activation {
 public:
     float_t f(float_t x) const { return 1.0 / (1.0 + std::exp(-x)); }
     float_t df(float_t f_x) const { return f_x * (1.0 - f_x); }
@@ -58,7 +59,7 @@ public:
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
-class tanh_activation : public activation {
+class tanh : public activation {
 public:
     float_t f(float_t x) const {
         const float_t ep = std::exp(x);
@@ -88,10 +89,5 @@ private:
     }*/
 };
 
-class softmax_activation : public activation {
-public:
-
-private:
-};
-
+} // namespace activation
 } // namespace tiny_cnn

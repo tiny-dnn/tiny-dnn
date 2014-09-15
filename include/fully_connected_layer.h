@@ -70,7 +70,7 @@ public:
     const vec_t& back_propagation(const vec_t& current_delta, int index) {
         const vec_t& curr_delta = this->filter_.filter_bprop(current_delta, index);
         const vec_t& prev_out = this->prev_->output(index);
-        const activation& prev_h = this->prev_->activation_function();
+        const activation::activation& prev_h = this->prev_->activation_function();
         vec_t& prev_delta = this->prev_delta_[index];
         vec_t& dW = this->dW_[index];
         vec_t& db = this->db_[index];
@@ -103,7 +103,7 @@ public:
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
         const vec_t& prev_out = this->prev_->output(0);
-        const activation& prev_h = this->prev_->activation_function();
+        const activation::activation& prev_h = this->prev_->activation_function();
 
 
         for (int c = 0; c < this->in_size_; c++) 

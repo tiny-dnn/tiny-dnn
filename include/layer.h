@@ -91,7 +91,7 @@ public:
         for (auto& b : b_) is >> b;
     }
 
-    virtual activation& activation_function() = 0;
+    virtual activation::activation& activation_function() = 0;
     virtual const vec_t& forward_propagation(const vec_t& in, int worker_index) = 0;
     virtual const vec_t& back_propagation(const vec_t& current_delta, int worker_index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
@@ -208,19 +208,19 @@ public:
     layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
         : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
 
-    activation& activation_function() { return a_; }
+    activation::activation& activation_function() { return a_; }
 
 protected:
     Activation a_;
 };
 
 template<typename N>
-class input_layer : public layer<N, identity_activation> {
+class input_layer : public layer<N, activation::identity> {
 public:
-    typedef layer<N, identity_activation> Base;
+    typedef layer<N, activation::identity> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    input_layer() : layer<N, identity_activation>(0, 0, 0, 0) {}
+    input_layer() : layer<N, activation::identity>(0, 0, 0, 0) {}
 
     int in_size() const { return this->next_ ? this->next_->in_size(): 0; }
 
