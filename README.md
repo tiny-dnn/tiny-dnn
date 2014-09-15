@@ -46,42 +46,51 @@ construct convolutional neural networks
 ```cpp
 #include "tiny_cnn.h"
 using namespace tiny_cnn;
+using namespace tiny_cnn::activation;
 
-// specify loss-function and optimization-algorithm
-typedef network<mse, gradient_descent> CNN;
+void cunstruct_cnn() {
+    using namespace tiny_cnn;
 
-// tanh, 32x32 input, 5x5 window, 1-6 feature-maps convolution
-convolutional_layer<CNN, tanh_activation> C1(32, 32, 5, 1, 6);
+    // specify loss-function and optimization-algorithm
+    typedef network<mse, gradient_descent> CNN;
+    CNN mynet;
 
-// tanh, 28x28 input, 6 feature-maps, 2x2 subsampling
-average_pooling_layer<CNN, tanh_activation> S2(28, 28, 6, 2);
+    // tanh, 32x32 input, 5x5 window, 1-6 feature-maps convolution
+    convolutional_layer<CNN, tan_h> C1(32, 32, 5, 1, 6);
 
-// fully-connected layers
-fully_connected_layer<CNN, sigmoid_activation> F3(14*14*6, 120);
-fully_connected_layer<CNN, identity_activation> F4(120, 10);
+    // tanh, 28x28 input, 6 feature-maps, 2x2 subsampling
+    average_pooling_layer<CNN, tan_h> S2(28, 28, 6, 2);
 
-// connect all
-CNN mynet;
-mynet.add(&C1); mynet.add(&S2); mynet.add(&F3); mynet.add(&F4);
+    // fully-connected layers
+    fully_connected_layer<CNN, sigmoid> F3(14 * 14 * 6, 120);
+    fully_connected_layer<CNN, identity> F4(120, 10);
 
-assert(mynet.in_dim() == 32*32);
-assert(mynet.out_dim() == 10);
+    // connect all
+    mynet.add(&C1); mynet.add(&S2); mynet.add(&F3); mynet.add(&F4);
+
+    assert(mynet.in_dim() == 32 * 32);
+    assert(mynet.out_dim() == 10);
+}
 ```
 construct multi-layer perceptron(mlp)
 
 ```cpp
 #include "tiny_cnn.h"
 using namespace tiny_cnn;
+using namespace tiny_cnn::activation;
 
-typedef network<mse, gradient_descent> MLP;
-fully_connected_layer<MLP, sigmoid_activation> F1(32*32, 300);
-fully_connected_layer<MLP, identity_activation> F2(300, 10);
+void cunstruct_mlp() {
+    typedef network<mse, gradient_descent> MLP;
+    MLP mynet;
 
-MLP mynet;
-mynet.add(&F1); mynet.add(&F2);
+    fully_connected_layer<MLP, sigmoid> F1(32 * 32, 300);
+    fully_connected_layer<MLP, identity> F2(300, 10);
 
-assert(mynet.in_dim() == 32*32);
-assert(mynet.out_dim() == 10);
+    mynet.add(&F1); mynet.add(&F2);
+
+    assert(mynet.in_dim() == 32 * 32);
+    assert(mynet.out_dim() == 10);
+}
 ```
 
 another way to construct mlp
@@ -89,11 +98,14 @@ another way to construct mlp
 ```cpp
 #include "tiny_cnn.h"
 using namespace tiny_cnn;
+using namespace tiny_cnn::activation;
 
-auto mynet = make_mlp<mse, gradient_descent, tanh_activation>({ 32*32, 300, 10 });
+void cunstruct_mlp() {
+    auto mynet = make_mlp<mse, gradient_descent, tan_h>({ 32 * 32, 300, 10 });
 
-assert(mynet.in_dim() == 32*32);
-assert(mynet.out_dim() == 10);
+    assert(mynet.in_dim() == 32 * 32);
+    assert(mynet.out_dim() == 10);
+}
 ```
 
 more sample, read main.cpp
