@@ -100,7 +100,7 @@ public:
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, int index) {
         const vec_t& prev_out = this->prev_->output(index);
-        const activation::activation& prev_h = this->prev_->activation_function();
+        const activation::function& prev_h = this->prev_->activation_function();
         vec_t& prev_delta = this->prev_delta_[index];
 
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
@@ -142,7 +142,7 @@ public:
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
         const vec_t& prev_out = this->prev_->output(0);
-        const activation::activation& prev_h = this->prev_->activation_function();
+        const activation::function& prev_h = this->prev_->activation_function();
 
         for (size_t i = 0; i < weight2io_.size(); i++) {
             const io_connections& connections = weight2io_[i];

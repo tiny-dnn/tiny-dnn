@@ -287,7 +287,7 @@ private:
     bool is_canonical_link(const Activation& h, const Loss& E) {
         CNN_UNREFERENCED_PARAMETER(E);
         if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
-        if (typeid(h) == typeid(activation::tanh) && typeid(E) == typeid(cross_entropy)) return true;
+        if (typeid(h) == typeid(activation::tan_h) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(activation::identity) && typeid(E) == typeid(mse)) return true;
         return false;
     }
@@ -312,7 +312,7 @@ private:
 
     void back_propagation_2nd(const vec_t& out) {
         vec_t delta(out_dim());
-        const activation::activation& h = layers_.tail()->activation_function();
+        const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)
@@ -327,7 +327,7 @@ private:
 
     void back_propagation(const vec_t& out, const vec_t& t, int idx = 0) {
         vec_t delta(out_dim());
-        const activation::activation& h = layers_.tail()->activation_function();
+        const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
             for (int i = 0; i < out_dim(); i++)

@@ -31,35 +31,35 @@
 namespace tiny_cnn {
 namespace activation {
 
-class activation {
+class function {
 public:
     virtual float_t f(float_t x) const = 0;
     virtual float_t df(float_t f_x) const = 0;
     virtual std::pair<float_t, float_t> scale() const = 0;
 };
 
-class identity : public activation {
+class identity : public function {
 public:
     float_t f(float_t x) const { return x; }
     float_t df(float_t /*f_x*/) const { return 1; }  
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
-class sigmoid : public activation {
+class sigmoid : public function {
 public:
     float_t f(float_t x) const { return 1.0 / (1.0 + std::exp(-x)); }
     float_t df(float_t f_x) const { return f_x * (1.0 - f_x); }
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
-class rectified_linear : public activation {
+class rectified_linear : public function {
 public:
     float_t f(float_t x) const { return std::max((float_t)0.0, x); }
     float_t df(float_t f_x) const { return f_x > 0.0 ? 1.0 : 0.0; }
     std::pair<float_t, float_t> scale() const { return std::make_pair(0.1, 0.9); }
 };
 
-class tanh : public activation {
+class tan_h : public function {
 public:
     float_t f(float_t x) const {
         const float_t ep = std::exp(x);

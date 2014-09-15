@@ -38,6 +38,7 @@ void sample3_dae();
 void sample4_dropout();
 
 using namespace tiny_cnn;
+using namespace tiny_cnn::activation;
 
 int main(void) {
     sample1_convnet();
@@ -49,8 +50,8 @@ void sample1_convnet(void) {
     // construct LeNet-5 architecture
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
-    convolutional_layer<CNN, activation::tanh> C1(32, 32, 5, 1, 6);
-    average_pooling_layer<CNN, activation::tanh> S2(28, 28, 6, 2);
+    convolutional_layer<CNN, tan_h> C1(32, 32, 5, 1, 6);
+    average_pooling_layer<CNN, tan_h> S2(28, 28, 6, 2);
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -64,10 +65,10 @@ void sample1_convnet(void) {
     };
 #undef O
 #undef X
-    convolutional_layer<CNN, activation::tanh> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
-    average_pooling_layer<CNN, activation::tanh> S4(10, 10, 16, 2);
-    convolutional_layer<CNN, activation::tanh> C5(5, 5, 5, 16, 120);
-    fully_connected_layer<CNN, activation::tanh> F6(120, 10);
+    convolutional_layer<CNN, tan_h> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
+    average_pooling_layer<CNN, tan_h> S4(10, 10, 16, 2);
+    convolutional_layer<CNN, tan_h> C5(5, 5, 5, 16, 120);
+    fully_connected_layer<CNN, tan_h> F6(120, 10);
 
     assert(C1.param_size() == 156 && C1.connection_size() == 122304);
     assert(S2.param_size() == 12 && S2.connection_size() == 5880);
@@ -153,9 +154,9 @@ void sample2_mlp()
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
     int num_units[] = { 28 * 28, num_hidden_units, 10 };
-    auto nn = make_mlp<mse, gradient_descent, activation::tanh>(num_units, num_units + 3);
+    auto nn = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
 #else
-    auto nn = make_mlp<mse, gradient_descent, activation::tanh>({ 28 * 28, num_hidden_units, 10 });
+    auto nn = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
 #endif
 
     // load MNIST dataset
@@ -201,9 +202,9 @@ void sample3_dae()
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
     int num_units[] = { 100, 400, 100 };
-    auto nn = make_mlp<mse, gradient_descent, activation::tanh>(num_units, num_units + 3);
+    auto nn = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
 #else
-    auto nn = make_mlp<mse, gradient_descent, activation::tanh>({ 100, 400, 100 });
+    auto nn = make_mlp<mse, gradient_descent, tan_h>({ 100, 400, 100 });
 #endif
 
     std::vector<vec_t> train_data_original;
@@ -231,8 +232,8 @@ void sample4_dropout()
     int hidden_units = 800;
     int output_dim   = 10;
 
-    fully_connected_dropout_layer<Network, activation::tanh> f1(input_dim, hidden_units, dropout::per_data);
-    fully_connected_layer<Network, activation::tanh> f2(hidden_units, output_dim);
+    fully_connected_dropout_layer<Network, tan_h> f1(input_dim, hidden_units, dropout::per_data);
+    fully_connected_layer<Network, tan_h> f2(hidden_units, output_dim);
     nn.add(&f1); nn.add(&f2);
 
     nn.optimizer().alpha = 0.003; // TODO: not optimized
