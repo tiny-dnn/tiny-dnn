@@ -27,6 +27,7 @@
 #pragma once
 #include <vector>
 #include <limits>
+#include <functional>
 #include <random>
 
 #ifdef CNN_USE_TBB
