@@ -26,7 +26,6 @@
 */
 #pragma once
 #include <vector>
-#include <limits>
 #include <functional>
 #include <random>
 
@@ -44,35 +43,31 @@
 namespace tiny_cnn {
 
 typedef double float_t;
-typedef int label_t;
+typedef size_t label_t;
 typedef std::vector<float_t> vec_t;
 
 class nn_error : public std::exception {
 public:
-    nn_error(const std::string& msg) : msg_(msg){}
-    ~nn_error() throw() {}
-    const char* what() const throw() { return msg_.c_str(); }
+    explicit nn_error(const std::string& msg) : msg_(msg) {}
+    const char* what() const throw() override { return msg_.c_str(); }
 private:
     std::string msg_;
 };
 
-struct tensor3d {
-    tensor3d(int width, int height, int depth) : width_(width), height_(height), depth_(depth) {
-        if (width <= 0 || height <= 0 || depth <= 0)
-            throw nn_error("invalid tensor size");
-    }
+struct index3d {
+    index3d(size_t width, size_t height, size_t depth) noexcept : width_(width), height_(height), depth_(depth) {}
 
     int get_index(int x, int y, int channel) const {
-        return (width_ * height_) * channel + width_ * y + x;
+        return (height_ * channel + y) * width_ + x;
     }
 
-    int size() const {
+    size_t size() const {
         return width_ * height_ * depth_;
     }
 
-    int width_;
-    int height_;
-    int depth_;
+	size_t width_;
+	size_t height_;
+	size_t depth_;
 };
 
 template<int Q>
@@ -82,14 +77,13 @@ inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
     return dst(gen);
 }
 
-inline int uniform_rand(int min, int max) {
+inline size_t uniform_rand(size_t min, size_t max) {
     static std::mt19937 gen(0);
-    std::uniform_int_distribution<> dst(min, max);
+    std::uniform_int_distribution<size_t> dst(min, max);
     return dst(gen);
 }
 
-template<typename T>
-inline T uniform_rand(T min, T max) {
+template<typename T> inline T uniform_rand(T min, T max) {
     static std::mt19937 gen(0);
     std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
@@ -157,25 +151,25 @@ void for_(bool parallelize, int begin, int end, Func f) {
 #else
 
 struct blocked_range {
-    typedef int const_iterator;
+    typedef size_t const_iterator;
 
-    blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+    blocked_range(size_t begin, size_t end) : begin_(begin), end_(end) {}
 
     const_iterator begin() const { return begin_; }
     const_iterator end() const { return end_; }
 private:
-    int begin_;
-    int end_;
+	size_t begin_;
+	size_t end_;
 };
 
 template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
+void parallel_for(size_t begin, size_t end, const Func& f) {
     blocked_range r(begin, end);
     f(r);
 }
 
 template<typename Func>
-void for_(bool /*parallelize*/, int begin, int end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
+void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
     parallel_for(begin, end, f);
 }
 

@@ -33,7 +33,9 @@ namespace activation {
 
 class function {
 public:
-    virtual float_t f(float_t x) const = 0;
+	virtual ~function() {}
+
+	virtual float_t f(float_t x) const = 0;
     virtual float_t df(float_t f_x) const = 0;
     virtual std::pair<float_t, float_t> scale() const = 0;
 };

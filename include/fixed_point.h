@@ -54,11 +54,11 @@ public:
     }
 
     void operator *= (const fixed_point<Q>& rhs) {
-        v_ = static_cast<in_type>(((sin_type)rhs.v_ * v_) >> Q);
+        v_ = static_cast<in_type>((static_cast<sin_type>(rhs.v_) * v_) >> Q);
     }
 
     void operator /= (const fixed_point<Q>& rhs) {
-        v_ = static_cast<in_type>(((sin_type)v_ << Q) / rhs.v_);
+        v_ = static_cast<in_type>((static_cast<sin_type>(v_) << Q) / rhs.v_);
     }
 
     fixed_point<Q> operator - () const {

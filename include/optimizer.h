@@ -30,7 +30,9 @@
 namespace tiny_cnn {
 
 struct optimizer {
-    virtual bool requires_hessian() const { return true; }
+	virtual ~optimizer() {}
+
+	virtual bool requires_hessian() const { return true; }
 };
 
 // gradient descent with 2nd-order update(LeCun,1998)
@@ -59,7 +61,7 @@ public:
         *W -= alpha * ((dW) + *W * lambda); // 7.2%
     }
 
-    bool requires_hessian() const {
+    bool requires_hessian() const override {
         return false;
     }
 

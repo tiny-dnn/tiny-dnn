@@ -38,23 +38,23 @@ public:
     typedef layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    fully_connected_layer(int in_dim, int out_dim)
+    fully_connected_layer(size_t in_dim, size_t out_dim)
         : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim), filter_(out_dim) {}
 
-    int connection_size() const {
+    size_t connection_size() const override {
         return this->in_size_ * this->out_size_ + this->out_size_;
     }
 
-    int fan_in_size() const {
+	size_t fan_in_size() const override {
         return this->in_size_;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, int index) {
+    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
+            for (size_t i = r.begin(); i < r.end(); i++) {
                 float_t z = 0.0;
-                for (int c = 0; c < this->in_size_; c++)
+                for (size_t c = 0; c < this->in_size_; c++)
                     z += this->W_[c*this->out_size_ + i] * in[c];
 
                 z += this->b_[i];
@@ -62,20 +62,20 @@ public:
             }
         });
 
-        auto& this_out = this->filter_.filter_fprop(this->output_[index], index);
+        auto this_out = this->filter_.filter_fprop(this->output_[index]);
 
         return this->next_ ? this->next_->forward_propagation(this_out, index) : this_out;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, int index) {
-        const vec_t& curr_delta = this->filter_.filter_bprop(current_delta, index);
+    const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+        vec_t curr_delta = this->filter_.filter_bprop(current_delta);
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
         vec_t& prev_delta = this->prev_delta_[index];
         vec_t& dW = this->dW_[index];
         vec_t& db = this->db_[index];
 
-        for (int c = 0; c < this->in_size_; c++) { 
+        for (size_t c = 0; c < this->in_size_; c++) {
             //prev_delta[c] = 0.0;
             //for (int r = 0; r < this->out_size_; r++)
             //    prev_delta[c] += current_delta[r] * this->W_[c*this->out_size_+r];
@@ -89,11 +89,11 @@ public:
                 for (int i = r.begin(); i < r.end(); i++) 
                     dW[c*this->out_size_+i] += current_delta[i] * prev_out[c];*/
 
-            for (int c = 0; c < this->in_size_; c++) {
+            for (size_t c = 0; c < this->in_size_; c++) {
                 vectorize::muladd(&curr_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*this->out_size_ + r.begin()]);
             }
 
-            for (int i = r.begin(); i < r.end(); i++) 
+            for (size_t i = r.begin(); i < r.end(); i++)
                 db[i] += curr_delta[i];
         });
 
@@ -101,22 +101,22 @@ public:
     }
 
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = this->prev_->output(0);
         const activation::function& prev_h = this->prev_->activation_function();
 
 
-        for (int c = 0; c < this->in_size_; c++) 
-            for (int r = 0; r < this->out_size_; r++)
+        for (size_t c = 0; c < this->in_size_; c++)
+            for (size_t r = 0; r < this->out_size_; r++)
                 this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * prev_out[c] * prev_out[c];
 
-        for (int r = 0; r < this->out_size_; r++)
+        for (size_t r = 0; r < this->out_size_; r++)
             this->bhessian_[r] += current_delta2[r];
 
-        for (int c = 0; c < this->in_size_; c++) { 
+        for (size_t c = 0; c < this->in_size_; c++) {
             this->prev_delta2_[c] = 0.0;
 
-            for (int r = 0; r < this->out_size_; r++) 
+            for (size_t r = 0; r < this->out_size_; r++)
                 this->prev_delta2_[c] += current_delta2[r] * this->W_[c*this->out_size_ + r] * this->W_[c*this->out_size_ + r];
 
             this->prev_delta2_[c] *= prev_h.df(prev_out[c]) * prev_h.df(prev_out[c]);

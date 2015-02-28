@@ -200,7 +200,7 @@ inline typename T::value_type dot_product_nonaligned(const typename T::value_typ
 
     typename T::value_type sum = T::resemble(result);
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         sum += f1[i] * f2[i];
 
     return sum;
@@ -219,7 +219,7 @@ inline typename T::value_type dot_product_aligned(const typename T::value_type* 
     
     typename T::value_type sum = T::resemble(result);
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         sum += f1[i] * f2[i];
 
     return sum;
@@ -235,7 +235,7 @@ inline void muladd_aligned(const typename T::value_type* src, typename T::value_
         T::store(&dst[i*T::unroll_size], T::add(d, T::mul(s, factor)));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         dst[i] += src[i] * c;
 }
 
@@ -250,7 +250,7 @@ inline void muladd_nonaligned(const typename T::value_type* src, typename T::val
         T::storeu(&dst[i*T::unroll_size], T::add(d, T::mul(s, factor)));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         dst[i] += src[i] * c;
 }
 
@@ -262,7 +262,7 @@ inline void reduce_nonaligned(const typename T::value_type* src, unsigned int si
         T::storeu(&dst[i*T::unroll_size], T::add(d, s));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         dst[i] += src[i];
 }
 
@@ -274,7 +274,7 @@ inline void reduce_aligned(const typename T::value_type* src, unsigned int size,
         T::storeu(&dst[i*T::unroll_size], T::add(d, s));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; ++i)
         dst[i] += src[i];
 }
 

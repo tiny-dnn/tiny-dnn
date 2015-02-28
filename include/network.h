@@ -27,7 +27,6 @@
 #pragma once
 #include <stdexcept>
 #include <algorithm>
-#include <iterator>
 #include <iomanip>
 #include <map>
 #include <set>
@@ -35,7 +34,6 @@
 #include "util.h"
 #include "activation_function.h"
 #include "loss_function.h"
-#include "optimizer.h"
 #include "fully_connected_layer.h"
 #include "layer.h"
 
@@ -110,10 +108,10 @@ public:
     void add(layer_base<T> *layer) { layers_.add(layer); }
 
     // input data dimension of whole networks
-    int in_dim() const { return layers_.head()->in_size(); }
+    size_t in_dim() const { return layers_.head()->in_size(); }
 
     // output data dimension of whole networks
-    int out_dim() const { return layers_.tail()->out_size(); }
+	size_t out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }
 
@@ -135,11 +133,11 @@ public:
      * @param on_epoch_enumerate callback for each epoch 
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, size_t epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
         init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
 
-        for (int iter = 0; iter < epoch; iter++) {
+        for (size_t iter = 0; iter < epoch; iter++) {
             if (optimizer_.requires_hessian())
                 calc_hessian(in);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
@@ -151,7 +149,7 @@ public:
     }
 
     template<typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, size_t epoch = 1) {
         train(in, t, batch_size, epoch, nop, nop);
     }
 
@@ -173,7 +171,7 @@ public:
     }
 
 
-    bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode = GRAD_CHECK_FIRST) {
+    bool gradient_check(const vec_t* in, const label_t* t, size_t data_size, float_t eps, grad_check_mode mode = GRAD_CHECK_FIRST) {
         assert(!layers_.empty());
         std::vector<vec_t> v;
         label2vector(t, data_size, &v);
@@ -190,10 +188,10 @@ public:
             
             switch (mode) {
             case GRAD_CHECK_ALL:
-                for (int i = 0; i < (int)w.size(); i++) {
+                for (size_t i = 0; i < w.size(); i++) {
                     if (calc_delta_diff(in, &v[0], data_size, w, dw, i) > eps) return false;
                 }
-                for (int i = 0; i < (int)b.size(); i++) {
+                for (size_t i = 0; i < b.size(); i++) {
                     if (calc_delta_diff(in, &v[0], data_size, b, db, i) > eps) return false;
                 }
                 break;
@@ -202,12 +200,12 @@ public:
                 if (calc_delta_diff(in, &v[0], data_size, b, db, 0) > eps) return false;
                 break;
             case GRAD_CHECK_RANDOM:
-                for (int i = 0; i < 10; i++) {
-                    int index = uniform_rand(0, (int)w.size() - 1);
+                for (size_t i = 0; i < 10; i++) {
+	                auto index = uniform_rand<size_t>(0, w.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, w, dw, index) > eps) return false;
                 }
-                for (int i = 0; i < 10; i++) {
-                    int index = uniform_rand(0, (int)b.size() - 1);
+                for (size_t i = 0; i < 10; i++) {
+	                auto index = uniform_rand<size_t>(0, b.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, b, db, index) > eps) return false;
                 }
                 break;
@@ -221,42 +219,42 @@ public:
 
 private:
 
-    void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        int outdim = out_dim();
+    void label2vector(const label_t* t, size_t num, std::vector<vec_t> *vec) const {
+		size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);
 
         vec->reserve(num);
-        for (int i = 0; i < num; i++) {
+        for (size_t i = 0; i < num; i++) {
             assert(t[i] < outdim);
             vec->emplace_back(outdim, target_value_min());
             vec->back()[t[i]] = target_value_max();
         }
     }
 
-    void train_once(const vec_t* in, const label_t* t, int size) {
+    void train_once(const vec_t* in, const label_t* t, size_t size) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
         train_once(in, &v[0], size);
     }
 
-    void train_once(const vec_t* in, const vec_t* t, int size) {
+    void train_once(const vec_t* in, const vec_t* t, size_t size) {
         if (size == 1) {
             const vec_t& out = forward_propagation(in[0]);
             back_propagation(out, t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
             task_group g;
-            int num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
-            int data_per_thread = size / num_tasks;
-            int remaining = size;
+			size_t num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
+			auto data_per_thread = size / num_tasks;
+			auto remaining = size;
 
-            for (int i = 0; i < num_tasks; i++) {
-                int num = i == num_tasks - 1 ? remaining : data_per_thread;
+            for (size_t i = 0; i < num_tasks; i++) {
+				auto num = i == num_tasks - 1 ? remaining : data_per_thread;
                 
                 g.run([=]{                    
-                    for (int j = 0; j < num; j++) {
+                    for (size_t j = 0; j < num; j++) {
                         const vec_t& out = this->forward_propagation(in[j], i);
                         this->back_propagation(out, t[j], i);
                     }
@@ -273,11 +271,11 @@ private:
         }
     }   
 
-    void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
-        int size = std::min((int)in.size(), size_initialize_hessian);
+    void calc_hessian(const std::vector<vec_t>& in, size_t size_initialize_hessian = 500) {
+		auto size = std::min(in.size(), size_initialize_hessian);
 
-        for (int i = 0; i < size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
+        for (size_t i = 0; i < size; i++) {
+            const auto& out = forward_propagation(in[i]);
             back_propagation_2nd(out);
         }
         layers_.divide_hessian(size);
@@ -292,19 +290,19 @@ private:
         return false;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, int idx = 0) {
-        if (in.size() != (size_t)in_dim())
+    const vec_t& forward_propagation(const vec_t& in, size_t idx = 0) {
+        if (in.size() != in_dim())
             throw nn_error("input dimension mismatch");
         return layers_.head()->forward_propagation(in, idx);
     }
 
     float_t get_loss(const vec_t& out, const vec_t& t) {
-        int dim = out.size();
+		size_t dim = out.size();
         float_t e = 0.0;
 
-        assert(dim == (int)t.size());
+        assert(dim == t.size());
 
-        for (int i = 0; i < dim; i++)
+        for (size_t i = 0; i < dim; i++)
             e += E_.f(out[i], t[i]);
 
         return e;
@@ -315,38 +313,38 @@ private:
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
-            for (int i = 0; i < out_dim(); i++)
+            for (size_t i = 0; i < out_dim(); i++)
                 delta[i] = target_value_max() * h.df(out[i]);  
         } else {
-            for (int i = 0; i < out_dim(); i++)
+            for (size_t i = 0; i < out_dim(); i++)
                 delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
         }
 
         layers_.tail()->back_propagation_2nd(delta);
     }
 
-    void back_propagation(const vec_t& out, const vec_t& t, int idx = 0) {
+    void back_propagation(const vec_t& out, const vec_t& t, size_t idx = 0) {
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
-            for (int i = 0; i < out_dim(); i++)
+            for (size_t i = 0; i < out_dim(); i++)
                 delta[i] = out[i] - t[i];  
         } else {
-            for (int i = 0; i < out_dim(); i++)
+            for (size_t i = 0; i < out_dim(); i++)
                 delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
         layers_.tail()->back_propagation(delta, idx);
     }
 
-    float_t calc_delta_diff(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
+    float_t calc_delta_diff(const vec_t* in, const vec_t* v, size_t data_size, vec_t& w, vec_t& dw, size_t check_index) {
         static const float_t delta = 1e-10;
 
         std::fill(dw.begin(), dw.end(), 0.0);
 
         // calculate dw/dE by bprop
-        for (int i = 0; i < data_size; i++) {
+        for (size_t i = 0; i < data_size; i++) {
             const vec_t& out = forward_propagation(in[i]);
             back_propagation(out, v[i]);
         }
@@ -356,14 +354,14 @@ private:
         float_t prev_w = w[check_index];
         w[check_index] = prev_w + delta;
         float_t f_p = 0.0;
-        for (int i = 0; i < data_size; i++) {
+        for (size_t i = 0; i < data_size; i++) {
             const vec_t& out = forward_propagation(in[i]);
             f_p += get_loss(out, v[i]);
         }
 
         float_t f_m = 0.0;
         w[check_index] = prev_w - delta;
-        for (int i = 0; i < data_size; i++) {
+        for (size_t i = 0; i < data_size; i++) {
             const vec_t& out = forward_propagation(in[i]);
             f_m += get_loss(out, v[i]);
         }

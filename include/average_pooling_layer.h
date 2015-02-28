@@ -37,7 +37,7 @@ public:
     typedef partial_connected_layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    average_pooling_layer(int in_width, int in_height, int in_channels, int pooling_size)
+    average_pooling_layer(size_t in_width, size_t in_height, size_t in_channels, size_t pooling_size)
     : partial_connected_layer<N, Activation>(
      in_width * in_height * in_channels, 
      in_width * in_height * in_channels / (pooling_size * pooling_size), 
@@ -51,30 +51,30 @@ public:
     }
 
 private:
-    void init_connection(int pooling_size) {
-        for (int c = 0; c < in_.depth_; c++) 
-            for (int y = 0; y < in_.height_; y += pooling_size)
-                for (int x = 0; x < in_.width_; x += pooling_size)
+    void init_connection(size_t pooling_size) {
+        for (size_t c = 0; c < in_.depth_; c++)
+            for (size_t y = 0; y < in_.height_; y += pooling_size)
+                for (size_t x = 0; x < in_.width_; x += pooling_size)
                     connect_kernel(pooling_size, x, y, c);
 
 
-        for (int c = 0; c < in_.depth_; c++) 
-            for (int y = 0; y < out_.height_; y++)
-                for (int x = 0; x < out_.width_; x++)
+        for (size_t c = 0; c < in_.depth_; c++)
+            for (size_t y = 0; y < out_.height_; y++)
+                for (size_t x = 0; x < out_.width_; x++)
                     this->connect_bias(c, out_.get_index(x, y, c));
     }
 
-    void connect_kernel(int pooling_size, int x, int y, int inc) {
-        for (int dy = 0; dy < pooling_size; dy++)
-            for (int dx = 0; dx < pooling_size; dx++)
+    void connect_kernel(size_t pooling_size, size_t x, size_t y, size_t inc) {
+        for (size_t dy = 0; dy < pooling_size; dy++)
+            for (size_t dx = 0; dx < pooling_size; dx++)
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x / pooling_size, y / pooling_size, inc),
                     inc);
     }
 
-    tensor3d in_;
-    tensor3d out_;
+    index3d in_;
+    index3d out_;
 };
 
 } // namespace tiny_cnn

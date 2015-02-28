@@ -39,15 +39,12 @@ public:
     typedef layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    partial_connected_layer(int in_dim, int out_dim, int weight_dim, int bias_dim, float_t scale_factor = 1.0)
+    partial_connected_layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
         : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
-        weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {
-        if (in_dim <= 0 || weight_dim <= 0 || weight_dim <= 0 || bias_dim <= 0)
-            throw nn_error("invalid layer size");
-    }
+        weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {}
 
-    int param_size() const { 
-        int total_param = 0;
+	size_t param_size() const override {
+		size_t total_param = 0;
         for (auto w : weight2io_)
             if (w.size() > 0) total_param++;
         for (auto b : bias2out_)
@@ -55,8 +52,8 @@ public:
         return total_param;
     }
 
-    int connection_size() const {
-        int total_size = 0;
+	size_t connection_size() const override {
+		size_t total_size = 0;
         for (auto io : weight2io_)
             total_size += io.size();
         for (auto b : bias2out_)
@@ -64,25 +61,25 @@ public:
         return total_size;
     }
 
-    int fan_in_size() const {
+	size_t fan_in_size() const override {
         return out2wi_[0].size();
     }
 
-    void connect_weight(int input_index, int output_index, int weight_index) {
+    void connect_weight(size_t input_index, size_t output_index, size_t weight_index) {
         weight2io_[weight_index].push_back(std::make_pair(input_index, output_index));
         out2wi_[output_index].push_back(std::make_pair(weight_index, input_index));
         in2wo_[input_index].push_back(std::make_pair(weight_index, output_index));
     }
 
-    void connect_bias(int bias_index, int output_index) {
+    void connect_bias(size_t bias_index, size_t output_index) {
         out2bias_[output_index] = bias_index;
         bias2out_[bias_index].push_back(output_index);
     }
 
-    virtual const vec_t& forward_propagation(const vec_t& in, int index) {
+    virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
+            for (size_t i = r.begin(); i < r.end(); i++) {
                 const wi_connections& connections = out2wi_[i];
                 float_t a = 0.0;
 
@@ -98,13 +95,13 @@ public:
         return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, int index) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
         vec_t& prev_delta = this->prev_delta_[index];
 
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
-            for (int i = r.begin(); i != r.end(); i++) {
+            for (size_t i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = 0.0;
 
@@ -116,7 +113,7 @@ public:
         });
 
         for_(this->parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
+            for (size_t i = r.begin(); i < r.end(); i++) {
                 const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
 
@@ -140,7 +137,7 @@ public:
         return this->prev_->back_propagation(this->prev_delta_[index], index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = this->prev_->output(0);
         const activation::function& prev_h = this->prev_->activation_function();
 
@@ -165,7 +162,7 @@ public:
             this->bhessian_[i] += diff;
         }
 
-        for (int i = 0; i < this->in_size_; i++) {
+        for (size_t i = 0; i < this->in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
             this->prev_delta2_[i] = 0.0;
 
@@ -180,18 +177,18 @@ public:
     // remove unused weight to improve cache hits
     void remap() {
         std::map<int, int> swaps;
-        int n = 0;
+		size_t n = 0;
 
         for (size_t i = 0; i < weight2io_.size(); i++)
             swaps[i] = weight2io_[i].empty() ? -1 : n++;
 
-        for (int i = 0; i < this->out_size_; i++) {
+        for (size_t i = 0; i < this->out_size_; i++) {
             wi_connections& wi = out2wi_[i];
             for (size_t j = 0; j < wi.size(); j++)
                 wi[j].first = static_cast<unsigned short>(swaps[wi[j].first]);
         }
 
-        for (int i = 0; i < this->in_size_; i++) {
+        for (size_t i = 0; i < this->in_size_; i++) {
             wo_connections& wo = in2wo_[i];
             for (size_t j = 0; j < wo.size(); j++)
                 wo[j].first = static_cast<unsigned short>(swaps[wo[j].first]);
