@@ -33,11 +33,11 @@ namespace tiny_cnn {
 template<typename N, typename Activation>
 class partial_connected_layer : public layer<N, Activation> {
 public:
-    typedef std::vector<std::pair<unsigned short, unsigned short> > io_connections;
-    typedef std::vector<std::pair<unsigned short, unsigned short> > wi_connections;
-    typedef std::vector<std::pair<unsigned short, unsigned short> > wo_connections;
-    typedef layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    using io_connections = std::vector<std::pair<unsigned short, unsigned short>>;
+    using wi_connections = std::vector<std::pair<unsigned short, unsigned short>> ;
+    using wo_connections = std::vector<std::pair<unsigned short, unsigned short>>;
+    using Base = layer<N, Activation>;
+    using Optimizer = typename layer<N, Activation>::Optimizer;
 
     partial_connected_layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
         : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 

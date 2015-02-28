@@ -93,9 +93,9 @@ enum grad_check_mode {
 template<typename L, typename O>
 class network {
 public:
-    typedef L LossFunction;
-    typedef O Optimizer;
-    typedef network<L, O> Self;
+    using LossFunction = L;
+    using Optimizer = O;
+    using Self = network<L, O>;
     typedef std::function<void()> Listener;
 
     explicit network(const std::string& name = "") : name_(name) {}
@@ -201,11 +201,11 @@ public:
                 break;
             case GRAD_CHECK_RANDOM:
                 for (size_t i = 0; i < 10; i++) {
-	                auto index = uniform_rand<size_t>(0, w.size() - 1);
+	                auto index = uniform_rand(0, w.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, w, dw, index) > eps) return false;
                 }
                 for (size_t i = 0; i < 10; i++) {
-	                auto index = uniform_rand<size_t>(0, b.size() - 1);
+	                auto index = uniform_rand(0, b.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, b, db, index) > eps) return false;
                 }
                 break;

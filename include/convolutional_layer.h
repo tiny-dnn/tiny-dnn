@@ -53,8 +53,8 @@ struct connection_table {
 template<typename N, typename Activation>
 class convolutional_layer : public partial_connected_layer<N, Activation> {
 public:
-    typedef partial_connected_layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    using Base = partial_connected_layer<N, Activation>;
+    using Optimizer = typename partial_connected_layer<N, Activation>::Optimizer;
 
     convolutional_layer(size_t in_width, size_t in_height, size_t window_size, size_t in_channels, size_t out_channels)
     : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 

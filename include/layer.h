@@ -34,12 +34,11 @@ namespace tiny_cnn {
 template<typename N>
 class layer_base {
 public:
-	virtual ~layer_base() {
-	}
+	virtual ~layer_base() {}
 
-	typedef N Network;
-    typedef typename Network::Optimizer Optimizer;
-    typedef typename Network::LossFunction LossFunction;
+	using Network = N;
+    using Optimizer = typename N::Optimizer;
+    using LossFunction = typename N::LossFunction;
 
     layer_base(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(0), prev_(0) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
@@ -204,13 +203,13 @@ private:
 template<typename N, typename Activation>
 class layer : public layer_base<N> {
 public:
-    typedef layer_base<N> Base;
-    typedef typename Base::Optimizer Optimizer;
+    using Base = layer_base<N>;
+    using Optimizer = typename layer_base<N>::Optimizer;
 
     layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
 
-    activation::function& activation_function() { return a_; }
+    activation::function& activation_function() override { return a_; }
 
 protected:
     Activation a_;
@@ -219,8 +218,8 @@ protected:
 template<typename N>
 class input_layer : public layer<N, activation::identity> {
 public:
-    typedef layer<N, activation::identity> Base;
-    typedef typename Base::Optimizer Optimizer;
+    using Base = layer<N, activation::identity>;
+    using Optimizer = typename Base::Optimizer;
 
     input_layer() : layer<N, activation::identity>(0, 0, 0, 0) {}
 
