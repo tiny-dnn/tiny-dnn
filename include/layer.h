@@ -68,7 +68,7 @@ public:
     }
 
     const vec_t& output(int worker_index) const { return output_[worker_index]; }
-    const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
+
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
 
@@ -146,7 +146,6 @@ protected:
     layer_base<N>* next_;
     layer_base<N>* prev_;
     vec_t output_[CNN_TASK_SIZE];     // last output of current layer, set by fprop
-    vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
     vec_t dW_[CNN_TASK_SIZE];
@@ -227,7 +226,7 @@ public:
 
     vec_t forward_propagation(const vec_t& in, size_t index) override {
         this->output_[index] = in;
-        return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
+        return this->next_ ? this->next_->forward_propagation(in, index) : in;
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) override {

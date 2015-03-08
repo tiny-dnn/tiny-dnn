@@ -255,7 +255,7 @@ private:
                 
                 g.run([=]{                    
                     for (size_t j = 0; j < num; j++) {
-                        const vec_t& out = this->forward_propagation(in[j], i);
+                        vec_t out = this->forward_propagation(in[j], i);
                         this->back_propagation(out, t[j], i);
                     }
                 });

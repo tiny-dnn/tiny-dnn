@@ -98,7 +98,7 @@ public:
     const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
-        vec_t& prev_delta = this->prev_delta_[index];
+        vec_t prev_delta(this->in_size_);
 
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i != r.end(); i++) {
@@ -134,7 +134,7 @@ public:
             this->db_[index][i] += diff;
         } 
 
-        return this->prev_->back_propagation(this->prev_delta_[index], index);
+        return this->prev_->back_propagation(prev_delta, index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {

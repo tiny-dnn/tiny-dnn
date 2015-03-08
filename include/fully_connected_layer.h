@@ -71,7 +71,7 @@ public:
         vec_t curr_delta = this->filter_.filter_bprop(current_delta);
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
-        vec_t& prev_delta = this->prev_delta_[index];
+        vec_t prev_delta(this->in_size_);
         vec_t& dW = this->dW_[index];
         vec_t& db = this->db_[index];
 
@@ -97,7 +97,7 @@ public:
                 db[i] += curr_delta[i];
         });
 
-        return this->prev_->back_propagation(this->prev_delta_[index], index);
+        return this->prev_->back_propagation(prev_delta, index);
     }
 
 
