@@ -40,8 +40,8 @@ public:
     average_pooling_layer(size_t in_width, size_t in_height, size_t in_channels, size_t pooling_size)
     : partial_connected_layer<N, Activation>(
      in_width * in_height * in_channels, 
-     in_width * in_height * in_channels / (pooling_size * pooling_size), 
-     in_channels, in_channels, 1.0 / (pooling_size * pooling_size)),
+     in_width * in_height * in_channels / sqr(pooling_size), 
+     in_channels, in_channels, 1.0 / sqr(pooling_size)),
      in_(in_width, in_height, in_channels), 
      out_(in_width/pooling_size, in_height/pooling_size, in_channels)
     {

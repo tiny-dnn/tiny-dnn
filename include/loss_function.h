@@ -33,7 +33,7 @@ namespace tiny_cnn {
 class mse {
 public:
     float_t f(float_t y, float_t t) {
-        return (y - t) * (y - t) / 2;
+        return sqr(y - t) / 2;
     }
 
     float_t df(float_t y, float_t t) {

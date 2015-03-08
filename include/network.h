@@ -111,7 +111,7 @@ public:
     size_t in_dim() const { return layers_.head()->in_size(); }
 
     // output data dimension of whole networks
-	size_t out_dim() const { return layers_.tail()->out_size(); }
+    size_t out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }
 
@@ -201,11 +201,11 @@ public:
                 break;
             case GRAD_CHECK_RANDOM:
                 for (size_t i = 0; i < 10; i++) {
-	                auto index = uniform_rand(0, w.size() - 1);
+                    auto index = uniform_rand(0, w.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, w, dw, index) > eps) return false;
                 }
                 for (size_t i = 0; i < 10; i++) {
-	                auto index = uniform_rand(0, b.size() - 1);
+                    auto index = uniform_rand(0, b.size() - 1);
                     if (calc_delta_diff(in, &v[0], data_size, b, db, index) > eps) return false;
                 }
                 break;
@@ -220,7 +220,7 @@ public:
 private:
 
     void label2vector(const label_t* t, size_t num, std::vector<vec_t> *vec) const {
-		size_t outdim = out_dim();
+        size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);
@@ -246,14 +246,14 @@ private:
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
             task_group g;
-			size_t num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
-			auto data_per_thread = size / num_tasks;
-			auto remaining = size;
+            size_t num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
+            auto data_per_thread = size / num_tasks;
+            auto remaining = size;
 
             for (size_t i = 0; i < num_tasks; i++) {
-				auto num = i == num_tasks - 1 ? remaining : data_per_thread;
+                auto num = i == num_tasks - 1 ? remaining : data_per_thread;
                 
-                g.run([=]{                    
+                g.run([=]{
                     for (size_t j = 0; j < num; j++) {
                         vec_t out = this->forward_propagation(in[j], i);
                         this->back_propagation(out, t[j], i);
@@ -272,11 +272,10 @@ private:
     }   
 
     void calc_hessian(const std::vector<vec_t>& in, size_t size_initialize_hessian = 500) {
-		auto size = std::min(in.size(), size_initialize_hessian);
+       auto size = std::min(in.size(), size_initialize_hessian);
 
         for (size_t i = 0; i < size; i++) {
-            auto out = forward_propagation(in[i]);
-            back_propagation_2nd(out);
+            back_propagation_2nd(forward_propagation(in[i]));
         }
         layers_.divide_hessian(size);
     }
@@ -297,7 +296,7 @@ private:
     }
 
     float_t get_loss(const vec_t& out, const vec_t& t) {
-		size_t dim = out.size();
+        size_t dim = out.size();
         float_t e = 0.0;
 
         assert(dim == t.size());
@@ -308,19 +307,18 @@ private:
         return e;
     }
 
-    void back_propagation_2nd(const vec_t& out) {
-        vec_t delta(out_dim());
+    void back_propagation_2nd(vec_t&& out) {
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
             for (size_t i = 0; i < out_dim(); i++)
-                delta[i] = target_value_max() * h.df(out[i]);  
+                out[i] = target_value_max() * h.df(out[i]);  
         } else {
             for (size_t i = 0; i < out_dim(); i++)
-                delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
+                out[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
         }
 
-        layers_.tail()->back_propagation_2nd(delta);
+        layers_.tail()->back_propagation_2nd(move(out));
     }
 
     void back_propagation(const vec_t& out, const vec_t& t, size_t idx = 0) {
@@ -335,7 +333,7 @@ private:
                 delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
-        layers_.tail()->back_propagation(delta, idx);
+        layers_.tail()->back_propagation(move(delta), idx);
     }
 
     float_t calc_delta_diff(const vec_t* in, const vec_t* v, size_t data_size, vec_t& w, vec_t& dw, size_t check_index) {

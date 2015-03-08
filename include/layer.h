@@ -95,8 +95,8 @@ public:
 
     virtual activation::function& activation_function() = 0;
     virtual vec_t forward_propagation(const vec_t& in, size_t worker_index) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) = 0;
-    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
+    virtual vec_t back_propagation(vec_t&& current_delta, size_t worker_index) = 0;
+    virtual vec_t back_propagation_2nd(vec_t&& current_delta2) = 0;
 
     // called afrer updating weight
     virtual void post_update() {}
@@ -105,9 +105,9 @@ public:
     layer_base<N>* prev() { return prev_; }
 
     void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
-		if (W_.empty()) {
-			return;
-		}
+        if (W_.empty()) {
+            return;
+        }
 
         merge(worker_size, batch_size);
 
@@ -126,7 +126,7 @@ public:
     vec_t& weight_diff(int index) { return dW_[index]; }
     vec_t& bias_diff(int index) { return db_[index]; }
 
-	bool has_same_weights(const layer_base& rhs, float_t eps) const {
+    bool has_same_weights(const layer_base& rhs, float_t eps) const {
         if (W_.size() != rhs.W_.size() || b_.size() != rhs.b_.size())
             return false;
 
@@ -136,11 +136,11 @@ public:
           if (std::abs(b_[i] - rhs.b_[i]) > eps) return false;
 
         return true;
-	}
+    }
 
 protected:
     size_t in_size_;
-	size_t out_size_;
+    size_t out_size_;
     bool parallelize_;
 
     layer_base<N>* next_;
@@ -153,7 +153,6 @@ protected:
 
     vec_t Whessian_; // diagonal terms of hessian matrix
     vec_t bhessian_;
-    vec_t prev_delta2_; // d^2E/da^2
 
 private:
     void merge(size_t worker_size, size_t batch_size) {
@@ -183,13 +182,10 @@ private:
 
         for (auto& o : output_)
             o.resize(out_dim);
-        for (auto& p : prev_delta_)
-            p.resize(in_dim);
         W_.resize(weight_dim);
         b_.resize(bias_dim);     
         Whessian_.resize(weight_dim);
         bhessian_.resize(bias_dim);
-        prev_delta2_.resize(in_dim);
 
         for (auto& dw : dW_)
             dw.resize(weight_dim);
@@ -229,19 +225,19 @@ public:
         return this->next_ ? this->next_->forward_propagation(in, index) : in;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) override {
+    vec_t back_propagation(vec_t&& current_delta, size_t /*index*/) override {
         return current_delta;
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
+    vec_t back_propagation_2nd(vec_t&& current_delta2) override {
         return current_delta2;
     }
 
-	size_t connection_size() const override {
+    size_t connection_size() const override {
         return this->in_size_;
     }
 
-	size_t fan_in_size() const override {
+    size_t fan_in_size() const override {
         return 1;
     }
 };

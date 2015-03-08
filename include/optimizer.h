@@ -30,9 +30,9 @@
 namespace tiny_cnn {
 
 struct optimizer {
-	virtual ~optimizer() {}
+    virtual ~optimizer() {}
 
-	virtual bool requires_hessian() const { return true; }
+    virtual bool requires_hessian() const { return true; }
 };
 
 // gradient descent with 2nd-order update(LeCun,1998)
@@ -42,7 +42,7 @@ public:
     gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
 
     void update(float_t dW, float_t H, float_t *W) {
-        *W -= (alpha / (H + mu)) * (dW); // 7.2%
+        *W -= alpha * dW / (H + mu); // 7.2%
     }
 
     float_t alpha; // learning rate
@@ -58,7 +58,7 @@ public:
     gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
 
     void update(float_t dW, float_t /*H*/, float_t *W) {
-        *W -= alpha * ((dW) + *W * lambda); // 7.2%
+        *W -= alpha * (dW + *W * lambda); // 7.2%
     }
 
     bool requires_hessian() const override {

@@ -43,8 +43,8 @@ public:
         : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
         weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {}
 
-	size_t param_size() const override {
-		size_t total_param = 0;
+    size_t param_size() const override {
+        size_t total_param = 0;
         for (auto w : weight2io_)
             if (w.size() > 0) total_param++;
         for (auto b : bias2out_)
@@ -52,8 +52,8 @@ public:
         return total_param;
     }
 
-	size_t connection_size() const override {
-		size_t total_size = 0;
+    size_t connection_size() const override {
+        size_t total_size = 0;
         for (auto io : weight2io_)
             total_size += io.size();
         for (auto b : bias2out_)
@@ -95,7 +95,7 @@ public:
         return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+    vec_t back_propagation(vec_t&& current_delta, size_t index) override {
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
         vec_t prev_delta(this->in_size_);
@@ -134,10 +134,10 @@ public:
             this->db_[index][i] += diff;
         } 
 
-        return this->prev_->back_propagation(prev_delta, index);
+        return this->prev_->back_propagation(move(prev_delta), index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
+    vec_t back_propagation_2nd(vec_t&& current_delta2) override {
         const vec_t& prev_out = this->prev_->output(0);
         const activation::function& prev_h = this->prev_->activation_function();
 
@@ -146,38 +146,35 @@ public:
             float_t diff = 0.0;
 
             for (auto connection : connections)
-                diff += prev_out[connection.first] * prev_out[connection.first] * current_delta2[connection.second];
+                diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
 
-            diff *= scale_factor_ * scale_factor_;
-            this->Whessian_[i] += diff;
+            this->Whessian_[i] += diff * sqr(scale_factor_);
         }
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
-            const std::vector<int>& outs = bias2out_[i];
             float_t diff = 0.0;
-
-            for (auto o : outs)
+            for (auto o : bias2out_[i])
                 diff += current_delta2[o];    
 
             this->bhessian_[i] += diff;
         }
 
+        vec_t prev_delta2;
+        prev_delta2.reserve(this->in_size_);
         for (size_t i = 0; i < this->in_size_; i++) {
-            const wo_connections& connections = in2wo_[i];
-            this->prev_delta2_[i] = 0.0;
+            float_t pvd2 = 0.0;
+            for (auto connection : in2wo_[i])
+                pvd2 += sqr(this->W_[connection.first]) * current_delta2[connection.second];
 
-            for (auto connection : connections) 
-                this->prev_delta2_[i] += this->W_[connection.first] * this->W_[connection.first] * current_delta2[connection.second];
-
-            this->prev_delta2_[i] *= scale_factor_ * scale_factor_ * prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
+            prev_delta2.push_back(pvd2 * sqr(scale_factor_ * prev_h.df(prev_out[i])));
         }
-        return this->prev_->back_propagation_2nd(this->prev_delta2_);
+        return this->prev_->back_propagation_2nd(move(prev_delta2));
     }
 
     // remove unused weight to improve cache hits
     void remap() {
         std::map<int, int> swaps;
-		size_t n = 0;
+        size_t n = 0;
 
         for (size_t i = 0; i < weight2io_.size(); i++)
             swaps[i] = weight2io_[i].empty() ? -1 : n++;

@@ -76,7 +76,7 @@ public:
     //    return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
     //}
 
-    float_t df(float_t f_x) const override { return 1.0 - f_x * f_x; }
+    float_t df(float_t f_x) const override { return 1.0 - sqr(f_x); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(-0.8, 0.8); }
 
 //private:

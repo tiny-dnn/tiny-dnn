@@ -158,8 +158,8 @@ struct blocked_range {
     const_iterator begin() const { return begin_; }
     const_iterator end() const { return end_; }
 private:
-	size_t begin_;
-	size_t end_;
+    size_t begin_;
+    size_t end_;
 };
 
 template<typename Func>
@@ -187,6 +187,8 @@ public:
 private:
     std::vector<std::function<void()>> functions_;
 };
+
+template <typename T> T sqr(T value) { return value*value; }
 
 #endif // CNN_USE_TBB
 

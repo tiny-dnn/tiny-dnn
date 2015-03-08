@@ -67,7 +67,7 @@ public:
         return this->next_ ? this->next_->forward_propagation(this_out, index) : this_out;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+    vec_t back_propagation(vec_t&& current_delta, size_t index) override {
         vec_t curr_delta = this->filter_.filter_bprop(current_delta);
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
@@ -97,32 +97,31 @@ public:
                 db[i] += curr_delta[i];
         });
 
-        return this->prev_->back_propagation(prev_delta, index);
+        return this->prev_->back_propagation(move(prev_delta), index);
     }
 
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
+    vec_t back_propagation_2nd(vec_t&& current_delta2) override {
         const vec_t& prev_out = this->prev_->output(0);
         const activation::function& prev_h = this->prev_->activation_function();
 
 
         for (size_t c = 0; c < this->in_size_; c++)
             for (size_t r = 0; r < this->out_size_; r++)
-                this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * prev_out[c] * prev_out[c];
+                this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
 
         for (size_t r = 0; r < this->out_size_; r++)
             this->bhessian_[r] += current_delta2[r];
 
+        vec_t prev_delta2(this->in_size_, 0.0);
         for (size_t c = 0; c < this->in_size_; c++) {
-            this->prev_delta2_[c] = 0.0;
-
             for (size_t r = 0; r < this->out_size_; r++)
-                this->prev_delta2_[c] += current_delta2[r] * this->W_[c*this->out_size_ + r] * this->W_[c*this->out_size_ + r];
+                prev_delta2[c] += current_delta2[r] * sqr(this->W_[c*this->out_size_ + r]);
 
-            this->prev_delta2_[c] *= prev_h.df(prev_out[c]) * prev_h.df(prev_out[c]);
+            prev_delta2[c] *= sqr(prev_h.df(prev_out[c]));
         }
 
-        return this->prev_->back_propagation_2nd(this->prev_delta2_);
+        return this->prev_->back_propagation_2nd(move(prev_delta2));
     }
 
 protected:
