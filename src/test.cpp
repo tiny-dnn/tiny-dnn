@@ -32,10 +32,10 @@ using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
 TEST(convolutional, fprop) {
-    typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
-    CNN nn;
+	typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
+	CNN nn;
 
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> l(5, 5, 3, 1, 2);
+	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 
@@ -47,7 +47,7 @@ TEST(convolutional, fprop) {
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
     {
-        const vec_t& out = l.forward_propagation(in, 0);
+        auto out = l.forward_propagation(in, 0);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -69,7 +69,7 @@ TEST(convolutional, fprop) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        const vec_t& out = l.forward_propagation(in, 0);
+        auto out = l.forward_propagation(in, 0);
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);
@@ -233,8 +233,8 @@ TEST(convolutional, serialize) {
     std::istringstream is(os.str());
     layer2.load(is);
 
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
+    auto out1 = layer1.forward_propagation(v, 0);
+    auto out2 = layer2.forward_propagation(v, 0);
 
     for (size_t i = 0; i < out1.size(); i++)
         EXPECT_NEAR(out1[i], out2[i], 1e-4);
@@ -265,8 +265,8 @@ TEST(convolutional, serialize2) {
     std::istringstream is(os.str());
     layer2.load(is);
 
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
+    auto out1 = layer1.forward_propagation(v, 0);
+    auto out2 = layer2.forward_propagation(v, 0);
 
     for (size_t i = 0; i < out1.size(); i++)
         EXPECT_NEAR(out1[i], out2[i], 1e-4);
@@ -324,8 +324,8 @@ TEST(fully_connected, serialize) {
     std::istringstream is(os.str());
     layer2.load(is);
 
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
+    auto out1 = layer1.forward_propagation(v, 0);
+    auto out2 = layer2.forward_propagation(v, 0);
 
     for (size_t i = 0; i < out1.size(); i++)
         EXPECT_NEAR(out1[i], out2[i], 1e-4);
@@ -470,7 +470,7 @@ void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
 {
     EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
-    boost::filesystem::path tmp_path = boost::filesystem::unique_path();
+	auto tmp_path = boost::filesystem::unique_path();
 
     if (boost::filesystem::exists(tmp_path))
         throw nn_error("file exists");

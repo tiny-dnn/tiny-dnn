@@ -40,7 +40,7 @@ public:
     using Optimizer = typename N::Optimizer;
     using LossFunction = typename N::LossFunction;
 
-    layer_base(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(0), prev_(0) {
+    layer_base(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
@@ -94,7 +94,7 @@ public:
     }
 
     virtual activation::function& activation_function() = 0;
-    virtual const vec_t& forward_propagation(const vec_t& in, size_t worker_index) = 0;
+    virtual vec_t forward_propagation(const vec_t& in, size_t worker_index) = 0;
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
@@ -225,7 +225,7 @@ public:
 
     size_t in_size() const override { return this->next_ ? this->next_->in_size(): 0; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
+    vec_t forward_propagation(const vec_t& in, size_t index) override {
         this->output_[index] = in;
         return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
     }

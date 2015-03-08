@@ -49,7 +49,7 @@ public:
         return this->in_size_;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
+    vec_t forward_propagation(const vec_t& in, size_t index) override {
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {

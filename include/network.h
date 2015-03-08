@@ -241,7 +241,7 @@ private:
 
     void train_once(const vec_t* in, const vec_t* t, size_t size) {
         if (size == 1) {
-            const vec_t& out = forward_propagation(in[0]);
+            auto out = forward_propagation(in[0]);
             back_propagation(out, t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
@@ -275,7 +275,7 @@ private:
 		auto size = std::min(in.size(), size_initialize_hessian);
 
         for (size_t i = 0; i < size; i++) {
-            const auto& out = forward_propagation(in[i]);
+            auto out = forward_propagation(in[i]);
             back_propagation_2nd(out);
         }
         layers_.divide_hessian(size);
@@ -290,7 +290,7 @@ private:
         return false;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t idx = 0) {
+    vec_t forward_propagation(const vec_t& in, size_t idx = 0) {
         if (in.size() != in_dim())
             throw nn_error("input dimension mismatch");
         return layers_.head()->forward_propagation(in, idx);
@@ -345,7 +345,7 @@ private:
 
         // calculate dw/dE by bprop
         for (size_t i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
+            auto out = forward_propagation(in[i]);
             back_propagation(out, v[i]);
         }
         float_t delta_by_bprop = dw[check_index];
@@ -355,14 +355,14 @@ private:
         w[check_index] = prev_w + delta;
         float_t f_p = 0.0;
         for (size_t i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
+            auto out = forward_propagation(in[i]);
             f_p += get_loss(out, v[i]);
         }
 
         float_t f_m = 0.0;
         w[check_index] = prev_w - delta;
         for (size_t i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
+            auto out = forward_propagation(in[i]);
             f_m += get_loss(out, v[i]);
         }
 

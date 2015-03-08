@@ -76,7 +76,7 @@ public:
         bias2out_[bias_index].push_back(output_index);
     }
 
-    virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
+    vec_t forward_propagation(const vec_t& in, size_t index) override {
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {
@@ -95,7 +95,7 @@ public:
         return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+    const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
         vec_t& prev_delta = this->prev_delta_[index];
