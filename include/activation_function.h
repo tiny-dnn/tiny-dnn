@@ -79,16 +79,16 @@ public:
     float_t df(float_t f_x) const override { return 1.0 - sqr(f_x); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(-0.8, 0.8); }
 
-//private:
-//	float invsqrt(float x) const {
-//		float x2 = x * 0.5f;
-//		long i = *reinterpret_cast<long*>(&x);
+////private:
+//    float invsqrt(float x) const {
+//        float x2 = x * 0.5f;
+//        long i = *reinterpret_cast<long*>(&x);
 //
-//		i = 0x5f3759df - (i >> 1);
-//		x = *reinterpret_cast<float*>(&i);
-//		x = x * (1.5f - (x2 * x * x));
-//		return x;
-//	}
+//        i = 0x5f3759df - (i >> 1);
+//        x = *reinterpret_cast<float*>(&i);
+//        x = x * (1.5f - (x2 * x * x));
+//        return x;
+//    }
 };
 
 } // namespace activation

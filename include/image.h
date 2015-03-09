@@ -35,7 +35,7 @@ namespace tiny_cnn {
 
 class image {
 public:
-    typedef unsigned char intensity_t;
+    using intensity_t = unsigned char;
 
     image() : width_(0), height_(0) {}
 

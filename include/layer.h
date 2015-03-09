@@ -34,9 +34,9 @@ namespace tiny_cnn {
 template<typename N>
 class layer_base {
 public:
-	virtual ~layer_base() {}
+    virtual ~layer_base() {}
 
-	using Network = N;
+    using Network = N;
     using Optimizer = typename N::Optimizer;
     using LossFunction = typename N::LossFunction;
 
@@ -199,7 +199,7 @@ template<typename N, typename Activation>
 class layer : public layer_base<N> {
 public:
     using Base = layer_base<N>;
-    using Optimizer = typename layer_base<N>::Optimizer;
+    using Optimizer = typename Base::Optimizer;
 
     layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
@@ -245,7 +245,7 @@ public:
 template<typename N>
 class layers {
 public:
-    typedef typename N::Optimizer Optimizer;
+    using Optimizer = typename N::Optimizer;
 
     layers() {
         add(&first_);

@@ -32,10 +32,10 @@ using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
 TEST(convolutional, fprop) {
-	typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
-	CNN nn;
+    typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
+    CNN nn;
 
-	convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> l(5, 5, 3, 1, 2);
+    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 
@@ -50,7 +50,7 @@ TEST(convolutional, fprop) {
         auto out = l.forward_propagation(in, 0);
 
         for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
+            EXPECT_DOUBLE_EQ(o, static_cast<tiny_cnn::float_t>(0.5));
 
     }
 
@@ -470,7 +470,7 @@ void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
 {
     EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
-	auto tmp_path = boost::filesystem::unique_path();
+    auto tmp_path = boost::filesystem::unique_path();
 
     if (boost::filesystem::exists(tmp_path))
         throw nn_error("file exists");
@@ -496,14 +496,14 @@ void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
 
 TEST(read_write, fully_connected)
 {
-	typedef mse loss_func;
-	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+    typedef mse loss_func;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
-	fully_connected_layer<network, tan_h> l1(100, 100);
-	fully_connected_layer<network, tan_h> l2(100, 100);
+    fully_connected_layer<network, tan_h> l1(100, 100);
+    fully_connected_layer<network, tan_h> l2(100, 100);
 
-	l1.init_weight();
-	l2.init_weight();
+    l1.init_weight();
+    l2.init_weight();
 
     serialization_test(l1, l2);
 }

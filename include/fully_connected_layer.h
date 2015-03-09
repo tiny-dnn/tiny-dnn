@@ -41,11 +41,11 @@ public:
     fully_connected_layer(size_t in_dim, size_t out_dim)
         : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim), filter_(out_dim) {}
 
-	size_t connection_size() const override {
+    size_t connection_size() const override {
         return this->in_size_ * this->out_size_ + this->out_size_;
     }
 
-	size_t fan_in_size() const override {
+    size_t fan_in_size() const override {
         return this->in_size_;
     }
 
@@ -64,11 +64,11 @@ public:
 
         auto this_out = this->filter_.filter_fprop(this->output_[index]);
 
-        return this->next_ ? this->next_->forward_propagation(this_out, index) : this_out;
+        return this->next_ ? this->next_->forward_propagation(this_out, index) : move(this_out);
     }
 
     vec_t back_propagation(vec_t&& current_delta, size_t index) override {
-        vec_t curr_delta = this->filter_.filter_bprop(current_delta);
+        vec_t curr_delta = this->filter_.filter_bprop(move(current_delta));
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();
         vec_t prev_delta(this->in_size_);

@@ -54,11 +54,11 @@ template<typename N, typename Activation>
 class convolutional_layer : public partial_connected_layer<N, Activation> {
 public:
     using Base = partial_connected_layer<N, Activation>;
-    using Optimizer = typename partial_connected_layer<N, Activation>::Optimizer;
+    using Optimizer = typename Base::Optimizer;
 
     convolutional_layer(size_t in_width, size_t in_height, size_t window_size, size_t in_channels, size_t out_channels)
     : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
-    window_size * window_size * in_channels * out_channels, out_channels), 
+    sqr(window_size) * in_channels * out_channels, out_channels), 
     in_(in_width, in_height, in_channels), 
     out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
     weight_(window_size, window_size, in_channels*out_channels),
@@ -69,7 +69,7 @@ public:
 
     convolutional_layer(size_t in_width, size_t in_height, size_t window_size, size_t in_channels, size_t out_channels, const connection_table& connection_table)
         : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
-        window_size * window_size * in_channels * out_channels, out_channels), 
+        sqr(window_size) * in_channels * out_channels, out_channels), 
         in_(in_width, in_height, in_channels), 
         out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
         weight_(window_size, window_size, in_channels*out_channels),

@@ -31,24 +31,20 @@ namespace tiny_cnn {
 
     class filter_none {
     public:
-		explicit filter_none(size_t) {} // for compatibility
+        explicit filter_none(size_t) {} // for compatibility
 
-		vec_t filter_fprop(vec_t&& out) {
-			return out;
-		}
+        vec_t filter_fprop(vec_t&& out) {
+            return out;
+        }
 
-		const vec_t &filter_fprop(const vec_t& out) {
-			return out;
-		}
+        const vec_t &filter_fprop(const vec_t& out) {
+            return out;
+        }
 
-		vec_t filter_bprop(vec_t&& delta) {
-			return delta;
-		}
-	
-		const vec_t &filter_bprop(const vec_t& delta) {
-			return delta;
-		}
-	};
+        vec_t filter_bprop(vec_t&& delta) {
+            return delta;
+        }
+    };
 
     class dropout {
     public:
@@ -81,59 +77,50 @@ namespace tiny_cnn {
         }
 
         // mask output vector
-		vec_t filter_fprop(vec_t&& out) {
-			if (ctx_ == train_phase) {
-				for (size_t i = 0; i < out_dim_; i++)
-					if (!mask_[i])
-						out[i] = 0.0;
-			}
-			else if (ctx_ == test_phase) {
-				for (size_t i = 0; i < out_dim_; i++)
-					out[i] *= dropout_rate_;
-			}
-			else {
-				throw nn_error("invalid context");
-			}
-			return out;
-		}
+        vec_t filter_fprop(vec_t&& out) {
+            if (ctx_ == train_phase) {
+                for (size_t i = 0; i < out_dim_; i++)
+                    if (!mask_[i])
+                        out[i] = 0.0;
+            }
+            else if (ctx_ == test_phase) {
+                for (size_t i = 0; i < out_dim_; i++)
+                    out[i] *= dropout_rate_;
+            }
+            else {
+                throw nn_error("invalid context");
+            }
+            return out;
+        }
 
-		vec_t filter_fprop(const vec_t& out) {
-			vec_t result;
-			result.reserve(out_dim_);
-			if (ctx_ == train_phase) {
-				for (size_t i = 0; i < out_dim_; i++)
-					result.push_back(mask_[i] ? out[i] : 0.0);
-			}
-			else if (ctx_ == test_phase) {
-				for (size_t i = 0; i < out_dim_; i++)
-					result.push_back(out[i] * dropout_rate_);
-			}
-			else {
-				throw nn_error("invalid context");
-			}
-			return out;
-		}
+        vec_t filter_fprop(const vec_t& out) {
+            vec_t result;
+            result.reserve(out_dim_);
+            if (ctx_ == train_phase) {
+                for (size_t i = 0; i < out_dim_; i++)
+                    result.push_back(mask_[i] ? out[i] : 0.0);
+            }
+            else if (ctx_ == test_phase) {
+                for (size_t i = 0; i < out_dim_; i++)
+                    result.push_back(out[i] * dropout_rate_);
+            }
+            else {
+                throw nn_error("invalid context");
+            }
+            return out;
+        }
 
-		// mask delta
-		vec_t filter_bprop(vec_t&& delta) {
-			for (size_t i = 0; i < out_dim_; i++)
-				if (!mask_[i])
-					delta[i] = 0.0;
-			if (mode_ == per_data) shuffle();
-			return delta;
-		}
+        // mask delta
+        vec_t filter_bprop(vec_t&& delta) {
+            for (size_t i = 0; i < out_dim_; i++)
+                if (!mask_[i])
+                    delta[i] = 0.0;
+            if (mode_ == per_data) shuffle();
+            return delta;
+        }
 
-		vec_t filter_bprop(const vec_t& delta) {
-			vec_t result;
-			result.reserve(out_dim_);
-			for (size_t i = 0; i < out_dim_; i++)
-				result.push_back(mask_[i] ? delta[i] : 0.0);
-			if (mode_ == per_data) shuffle();
-			return result;
-		}
-
-		void shuffle() {
-			for (size_t i = 0; i != mask_.size(); ++i)
+        void shuffle() {
+            for (size_t i = 0; i != mask_.size(); ++i)
                 mask_[i] = bernoulli(1.0 - dropout_rate_);
         }
 
@@ -142,7 +129,7 @@ namespace tiny_cnn {
         }
 
     private:
-		size_t out_dim_;
+        size_t out_dim_;
         std::vector<bool> mask_;
         context ctx_;
         dropout_mode mode_;

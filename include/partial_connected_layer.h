@@ -61,7 +61,7 @@ public:
         return total_size;
     }
 
-	size_t fan_in_size() const override {
+    size_t fan_in_size() const override {
         return out2wi_[0].size();
     }
 
@@ -101,7 +101,7 @@ public:
         vec_t prev_delta(this->in_size_);
 
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
-            for (size_t i = r.begin(); i != r.end(); i++) {
+            for (size_t i = r.begin(); i < r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = 0.0;
 

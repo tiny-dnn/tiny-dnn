@@ -96,7 +96,7 @@ public:
     using LossFunction = L;
     using Optimizer = O;
     using Self = network<L, O>;
-    typedef std::function<void()> Listener;
+    using Listener = std::function<void()>;
 
     explicit network(const std::string& name = "") : name_(name) {}
 
@@ -241,8 +241,7 @@ private:
 
     void train_once(const vec_t* in, const vec_t* t, size_t size) {
         if (size == 1) {
-            auto out = forward_propagation(in[0]);
-            back_propagation(out, t[0]);
+            back_propagation(forward_propagation(in[0]), t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
             task_group g;
@@ -255,8 +254,7 @@ private:
                 
                 g.run([=]{
                     for (size_t j = 0; j < num; j++) {
-                        vec_t out = this->forward_propagation(in[j], i);
-                        this->back_propagation(out, t[j], i);
+                        this->back_propagation(this->forward_propagation(in[j], i), t[j], i);
                     }
                 });
 
@@ -315,25 +313,24 @@ private:
                 out[i] = target_value_max() * h.df(out[i]);  
         } else {
             for (size_t i = 0; i < out_dim(); i++)
-                out[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
+                out[i] = target_value_max() * sqr(h.df(out[i]));
         }
 
         layers_.tail()->back_propagation_2nd(move(out));
     }
 
-    void back_propagation(const vec_t& out, const vec_t& t, size_t idx = 0) {
-        vec_t delta(out_dim());
+    void back_propagation(vec_t&& out, const vec_t& t, size_t idx = 0) {
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
             for (size_t i = 0; i < out_dim(); i++)
-                delta[i] = out[i] - t[i];  
+                out[i] -= t[i];  
         } else {
             for (size_t i = 0; i < out_dim(); i++)
-                delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
+                out[i] = E_.df(out[i], t[i]) * h.df(out[i]);
         }
 
-        layers_.tail()->back_propagation(move(delta), idx);
+        layers_.tail()->back_propagation(move(out), idx);
     }
 
     float_t calc_delta_diff(const vec_t* in, const vec_t* v, size_t data_size, vec_t& w, vec_t& dw, size_t check_index) {
@@ -343,8 +340,7 @@ private:
 
         // calculate dw/dE by bprop
         for (size_t i = 0; i < data_size; i++) {
-            auto out = forward_propagation(in[i]);
-            back_propagation(out, v[i]);
+            back_propagation(forward_propagation(in[i]), v[i]);
         }
         float_t delta_by_bprop = dw[check_index];
 
@@ -353,15 +349,13 @@ private:
         w[check_index] = prev_w + delta;
         float_t f_p = 0.0;
         for (size_t i = 0; i < data_size; i++) {
-            auto out = forward_propagation(in[i]);
-            f_p += get_loss(out, v[i]);
+            f_p += get_loss(forward_propagation(in[i]), v[i]);
         }
 
         float_t f_m = 0.0;
         w[check_index] = prev_w - delta;
         for (size_t i = 0; i < data_size; i++) {
-            auto out = forward_propagation(in[i]);
-            f_m += get_loss(out, v[i]);
+            f_m += get_loss(forward_propagation(in[i]), v[i]);
         }
 
         float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
@@ -387,7 +381,7 @@ private:
 template<typename loss_func, typename algorithm, typename activation, typename Iter>
 network<loss_func, algorithm> make_mlp(Iter first, Iter last)
 {
-    typedef network<loss_func, algorithm> net_t;
+    using net_t = network<loss_func, algorithm>;
     net_t n;
 
     Iter next = first + 1;
@@ -402,7 +396,6 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last)
 template<typename loss_func, typename algorithm, typename activation>
 network<loss_func, algorithm> make_mlp(const std::vector<int>& units)
 {
-    typedef std::vector<int>::const_iterator iter;
     return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
 }
 

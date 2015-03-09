@@ -214,7 +214,7 @@ void sample3_dae()
     std::vector<vec_t> train_data_corrupted(train_data_original);
 
     for (auto& d : train_data_corrupted) {
-        corrupt(d, 0.1, 0.0, &d); // corrupt 10% data
+        d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
     }
 
     // learning 100-400-100 denoising auto-encoder

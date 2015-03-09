@@ -42,9 +42,9 @@
 
 namespace tiny_cnn {
 
-typedef double float_t;
-typedef size_t label_t;
-typedef std::vector<float_t> vec_t;
+using float_t = double;
+using label_t = size_t;
+using vec_t = std::vector<float_t>;
 
 class nn_error : public std::exception {
 public:
@@ -65,9 +65,9 @@ struct index3d {
         return width_ * height_ * depth_;
     }
 
-	size_t width_;
-	size_t height_;
-	size_t depth_;
+    size_t width_;
+    size_t height_;
+    size_t depth_;
 };
 
 template<int Q>
@@ -131,8 +131,8 @@ inline void nop() {
 
 #ifdef CNN_USE_TBB
 
-typedef tbb::blocked_range<int> blocked_range;
-typedef tbb::task_group task_group;
+using blocked_range = tbb::blocked_range<int>;
+using task_group = tbb::task_group;
 
 template<typename Func>
 void parallel_for(int begin, int end, const Func& f) {
@@ -188,7 +188,7 @@ private:
     std::vector<std::function<void()>> functions_;
 };
 
-template <typename T> T sqr(T value) { return value*value; }
+template <typename T> inline T sqr(T value) { return value*value; }
 
 #endif // CNN_USE_TBB
 

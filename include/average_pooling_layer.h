@@ -34,8 +34,8 @@ namespace tiny_cnn {
 template<typename N, typename Activation>
 class average_pooling_layer : public partial_connected_layer<N, Activation> {
 public:
-    typedef partial_connected_layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    using Base = partial_connected_layer<N, Activation>;
+    using Optimizer = typename Base::Optimizer;
 
     average_pooling_layer(size_t in_width, size_t in_height, size_t in_channels, size_t pooling_size)
     : partial_connected_layer<N, Activation>(

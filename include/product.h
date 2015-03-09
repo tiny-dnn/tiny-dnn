@@ -58,8 +58,8 @@ inline bool is_aligned(T, const typename T::value_type* p1, const typename T::va
 
 template <typename T>
 struct generic {
-    typedef T register_type;
-    typedef T value_type;
+    using register_type = T;
+    using value_type = T;
     enum {
         unroll_size = 1
     };
@@ -77,8 +77,8 @@ struct generic {
 #ifdef CNN_USE_SSE
 
 struct float_sse {
-    typedef __m128 register_type;
-    typedef float value_type;
+    using register_type = __m128;
+    using value_type = float;
     enum {
         unroll_size = 4
     };
@@ -98,8 +98,8 @@ struct float_sse {
 };
 
 struct double_sse {
-    typedef __m128d register_type;
-    typedef double value_type;
+    using register_type = __m128d;
+    using value_type = double;
     enum {
         unroll_size = 2
     };
@@ -135,8 +135,8 @@ inline bool is_aligned(sse<T>, const typename sse<T>::value_type* p) {
 #ifdef CNN_USE_AVX
 
 struct float_avx {
-    typedef __m256 register_type;
-    typedef float value_type;
+    using register_type = __m256;
+    using value_type = float;
     enum {
         unroll_size = 8
     };
@@ -156,8 +156,8 @@ struct float_avx {
 };
 
 struct double_avx {
-    typedef __m256d register_type;
-    typedef double value_type;
+    using register_type = __m256d;
+    using value_type = double;
     enum {
         unroll_size = 4
     };
