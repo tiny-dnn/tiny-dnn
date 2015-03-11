@@ -133,7 +133,7 @@ with tbb and SSE/AVX
     ./waf build
 
 
-or edit inlude/config.h to customize default behavior.
+or edit include/config.h to customize default behavior.
 
 ### vc(2012~)
 open vc/tiny_cnn.sln and build in release mode.
