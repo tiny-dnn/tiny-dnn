@@ -119,8 +119,8 @@ public:
 
     Optimizer& optimizer() { return optimizer_; }
 
-    void predict(const vec_t& in, vec_t *out) {
-        *out = forward_propagation(in);
+    vec_t predict(const vec_t& in) {
+        return forward_propagation(in); // return will use move semantics
     }
 
     /**
@@ -157,8 +157,7 @@ public:
         result test_result;
 
         for (size_t i = 0; i < in.size(); i++) {
-            vec_t out;
-            predict(in[i], &out);
+            vec_t out = predict(in[i]);
 
             const label_t predicted = max_index(out);
             const label_t actual = t[i];
@@ -394,9 +393,9 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last)
  * create multi-layer perceptron
  */
 template<typename loss_func, typename algorithm, typename activation>
-network<loss_func, algorithm> make_mlp(const std::vector<int>& units)
+network<loss_func, algorithm> make_mlp(const std::vector<layer_size_t> units)
 {
-    return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
+    return make_mlp<loss_func, algorithm, activation>(cbegin(units), cend(units));
 }
 
 } // namespace tiny_cnn

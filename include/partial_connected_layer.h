@@ -33,45 +33,39 @@ namespace tiny_cnn {
 template<typename N, typename Activation>
 class partial_connected_layer : public layer<N, Activation> {
 public:
-    using io_connections = std::vector<std::pair<unsigned short, unsigned short>>;
-    using wi_connections = std::vector<std::pair<unsigned short, unsigned short>> ;
-    using wo_connections = std::vector<std::pair<unsigned short, unsigned short>>;
+    using io_connections = std::vector<std::pair<layer_size_t, layer_size_t>>;
+    using wi_connections = std::vector<std::pair<layer_size_t, layer_size_t>>;
+    using wo_connections = std::vector<std::pair<layer_size_t, layer_size_t>>;
     using Base = layer<N, Activation>;
     using Optimizer = typename layer<N, Activation>::Optimizer;
 
-    partial_connected_layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
+    partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
         : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
         weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {}
 
     size_t param_size() const override {
-        size_t total_param = 0;
-        for (auto w : weight2io_)
-            if (w.size() > 0) total_param++;
-        for (auto b : bias2out_)
-            if (b.size() > 0) total_param++;
-        return total_param;
+        return
+            std::accumulate(cbegin(weight2io_), cend(weight2io_), size_t{}, [](auto value, const auto &io) { return io.size() > 0 ? value + 1 : value; }) +
+            std::accumulate(cbegin(bias2out_), cend(bias2out_), size_t{}, [](auto value, const auto &b) { return b.size() > 0 ? value + 1 : value; });
     }
 
     size_t connection_size() const override {
-        size_t total_size = 0;
-        for (auto io : weight2io_)
-            total_size += io.size();
-        for (auto b : bias2out_)
-            total_size += b.size();
-        return total_size;
+        return
+            std::accumulate(cbegin(weight2io_), cend(weight2io_), size_t{}, [](auto value, const auto &io) { return value + io.size(); }) +
+            std::accumulate(cbegin(bias2out_), cend(bias2out_), size_t{}, [](auto value, const auto &b) { return value + b.size(); });
     }
 
     size_t fan_in_size() const override {
         return out2wi_[0].size();
     }
 
-    void connect_weight(size_t input_index, size_t output_index, size_t weight_index) {
-        weight2io_[weight_index].push_back(std::make_pair(input_index, output_index));
-        out2wi_[output_index].push_back(std::make_pair(weight_index, input_index));
-        in2wo_[input_index].push_back(std::make_pair(weight_index, output_index));
+    void connect_weight(layer_size_t input_index, layer_size_t output_index, layer_size_t weight_index) {
+        weight2io_[weight_index].emplace_back(input_index, output_index);
+        out2wi_[output_index].emplace_back(weight_index, input_index);
+        in2wo_[input_index].emplace_back(weight_index, output_index);
     }
 
-    void connect_bias(size_t bias_index, size_t output_index) {
+    void connect_bias(layer_size_t bias_index, layer_size_t output_index) {
         out2bias_[output_index] = bias_index;
         bias2out_[bias_index].push_back(output_index);
     }
@@ -80,15 +74,7 @@ public:
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {
-                const wi_connections& connections = out2wi_[i];
-                float_t a = 0.0;
-
-                for (auto connection : connections)// 13.1%
-                    a += this->W_[connection.first] * in[connection.second]; // 3.2%
-
-                a *= scale_factor_;
-                a += this->b_[out2bias_[i]];
-                this->output_[index][i] = this->a_.f(a); // 9.6%
+                this->output_[index][i] = this->a_.f(this->b_[out2bias_[i]] + scale_factor_ * std::accumulate(cbegin(out2wi_[i]), cend(out2wi_[i]), float_t{}, [&](auto value, const auto &connection) { return value + this->W_[connection.first] * in[connection.second]; }));
             }
         });
 
@@ -102,36 +88,18 @@ public:
 
         for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {
-                const wo_connections& connections = in2wo_[i];
-                float_t delta = 0.0;
-
-                for (auto connection : connections) 
-                    delta += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
-
-                prev_delta[i] = delta * scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
+                prev_delta[i] = scale_factor_ * prev_h.df(prev_out[i]) * std::accumulate(cbegin(in2wo_[i]), cend(in2wo_[i]), float_t{}, [&](auto value, auto connection) { return value + this->W_[connection.first] * current_delta[connection.second]; });
             }
         });
 
         for_(this->parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {
-                const io_connections& connections = weight2io_[i];
-                float_t diff = 0.0;
-
-                for (auto connection : connections) // 11.9%
-                    diff += prev_out[connection.first] * current_delta[connection.second];
-
-                this->dW_[index][i] += diff * scale_factor_;
+                this->dW_[index][i] += scale_factor_ * std::accumulate(cbegin(weight2io_[i]), cend(weight2io_[i]), float_t{}, [&](auto value, auto connection) { return value + prev_out[connection.first] * current_delta[connection.second]; });
             }
         });
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
-            const std::vector<int>& outs = bias2out_[i];
-            float_t diff = 0.0;
-
-            for (auto o : outs)
-                diff += current_delta[o];    
-
-            this->db_[index][i] += diff;
+            this->db_[index][i] += std::accumulate(cbegin(bias2out_[i]), cend(bias2out_[i]), float_t{}, [&](auto value, auto o) { return value + current_delta[o]; });
         } 
 
         return this->prev_->back_propagation(move(prev_delta), index);
@@ -142,31 +110,18 @@ public:
         const activation::function& prev_h = this->prev_->activation_function();
 
         for (size_t i = 0; i < weight2io_.size(); i++) {
-            const io_connections& connections = weight2io_[i];
-            float_t diff = 0.0;
-
-            for (auto connection : connections)
-                diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
-
-            this->Whessian_[i] += diff * sqr(scale_factor_);
+            this->Whessian_[i] += sqr(scale_factor_)*std::accumulate(cbegin(weight2io_[i]), cend(weight2io_[i]), float_t{}, [&](auto value, auto weightio) { return value + sqr(prev_out[weightio.first]) * current_delta2[weightio.second]; });
         }
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
-            float_t diff = 0.0;
-            for (auto o : bias2out_[i])
-                diff += current_delta2[o];    
-
-            this->bhessian_[i] += diff;
+            this->bhessian_[i] += std::accumulate(cbegin(bias2out_[i]), cend(bias2out_[i]), float_t{}, [&](auto value, auto index) { return value + current_delta2[index]; });
         }
 
         vec_t prev_delta2;
         prev_delta2.reserve(this->in_size_);
         for (size_t i = 0; i < this->in_size_; i++) {
-            float_t pvd2 = 0.0;
-            for (auto connection : in2wo_[i])
-                pvd2 += sqr(this->W_[connection.first]) * current_delta2[connection.second];
-
-            prev_delta2.push_back(pvd2 * sqr(scale_factor_ * prev_h.df(prev_out[i])));
+            
+            prev_delta2.push_back(std::accumulate(cbegin(in2wo_[i]), cend(in2wo_[i]), float_t{}, [&](auto value, auto connection) { return value + sqr(this->W_[connection.first]) * current_delta2[connection.second]; }) * sqr(scale_factor_ * prev_h.df(prev_out[i])));
         }
         return this->prev_->back_propagation_2nd(move(prev_delta2));
     }
@@ -195,15 +150,15 @@ public:
         for (size_t i = 0; i < weight2io_.size(); i++)
             if(swaps[i] >= 0) weight2io_new[swaps[i]] = weight2io_[i];
 
-        weight2io_ = weight2io_new;
+        weight2io_.swap(weight2io_new);
     }
 
 protected:
     std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
     std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
     std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
-    std::vector<std::vector<int> > bias2out_;
-    std::vector<int> out2bias_;
+    std::vector<std::vector<layer_size_t> > bias2out_;
+    std::vector<size_t> out2bias_;
     float_t scale_factor_;
 };
 

@@ -40,7 +40,7 @@ public:
     using Optimizer = typename N::Optimizer;
     using LossFunction = typename N::LossFunction;
 
-    layer_base(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
+    layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
@@ -77,8 +77,8 @@ public:
         for (auto& b : bhessian_) b /= denominator;
     }
 
-    virtual size_t in_size() const { return in_size_; }
-    virtual size_t out_size() const { return out_size_; }
+    virtual layer_size_t in_size() const { return in_size_; }
+    virtual layer_size_t out_size() const { return out_size_; }
     virtual size_t param_size() const { return W_.size() + b_.size(); }
     virtual size_t fan_in_size() const = 0;
     virtual size_t connection_size() const = 0;
@@ -139,8 +139,8 @@ public:
     }
 
 protected:
-    size_t in_size_;
-    size_t out_size_;
+    layer_size_t in_size_;
+    layer_size_t out_size_;
     bool parallelize_;
 
     layer_base<N>* next_;
@@ -176,7 +176,7 @@ private:
         }
     }
 
-    void set_size(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim) {
+    void set_size(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) {
         in_size_ = in_dim;
         out_size_ = out_dim;
 
@@ -199,9 +199,8 @@ template<typename N, typename Activation>
 class layer : public layer_base<N> {
 public:
     using Base = layer_base<N>;
-    using Optimizer = typename Base::Optimizer;
 
-    layer(size_t in_dim, size_t out_dim, size_t weight_dim, size_t bias_dim)
+    layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
 
     activation::function& activation_function() override { return a_; }
@@ -214,23 +213,26 @@ template<typename N>
 class input_layer : public layer<N, activation::identity> {
 public:
     using Base = layer<N, activation::identity>;
-    using Optimizer = typename Base::Optimizer;
 
     input_layer() : layer<N, activation::identity>(0, 0, 0, 0) {}
 
-    size_t in_size() const override { return this->next_ ? this->next_->in_size(): 0; }
+    layer_size_t in_size() const override { return this->next_ ? this->next_->in_size(): layer_size_t{0}; }
 
     vec_t forward_propagation(const vec_t& in, size_t index) override {
-        this->output_[index] = in;
-        return this->next_ ? this->next_->forward_propagation(in, index) : in;
+        this->output_[index] = in; // copy to a same-sized vector (no reallocation required)
+        if (this->next_)
+        {
+            return this->next_->forward_propagation(in, index); // return will use move semantics
+        }
+        return in; // this will copy (unless we change the parameter type to &&, and use move() - this is not an issue, since it happens only when an input layer has no next() layer)
     }
 
     vec_t back_propagation(vec_t&& current_delta, size_t /*index*/) override {
-        return current_delta;
+        return move(current_delta);
     }
 
     vec_t back_propagation_2nd(vec_t&& current_delta2) override {
-        return current_delta2;
+        return move(current_delta2);
     }
 
     size_t connection_size() const override {

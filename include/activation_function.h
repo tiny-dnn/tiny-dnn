@@ -91,5 +91,17 @@ public:
 //    }
 };
 
+// s tan_h, but scaled to match the other functions
+class tan_hp1m2 : public function {
+public:
+    float_t f(float_t x) const override {
+        const float_t ep = std::exp(x);
+        return ep / (ep + std::exp(-x));
+    }
+
+    float_t df(float_t f_x) const override { return 2 * (f_x *(1.0 - f_x)); }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
+};
+
 } // namespace activation
 } // namespace tiny_cnn

@@ -19,6 +19,7 @@
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\deform.h" />
     <ClInclude Include="..\include\fixed_point.h" />
+    <ClInclude Include="..\include\fully_connected_dropout_layer.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\image.h" />
     <ClInclude Include="..\include\layer.h" />

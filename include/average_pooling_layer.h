@@ -37,7 +37,7 @@ public:
     using Base = partial_connected_layer<N, Activation>;
     using Optimizer = typename Base::Optimizer;
 
-    average_pooling_layer(size_t in_width, size_t in_height, size_t in_channels, size_t pooling_size)
+    average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
     : partial_connected_layer<N, Activation>(
      in_width * in_height * in_channels, 
      in_width * in_height * in_channels / sqr(pooling_size), 
@@ -51,30 +51,30 @@ public:
     }
 
 private:
-    void init_connection(size_t pooling_size) {
-        for (size_t c = 0; c < in_.depth_; c++)
-            for (size_t y = 0; y < in_.height_; y += pooling_size)
-                for (size_t x = 0; x < in_.width_; x += pooling_size)
+    void init_connection(layer_size_t pooling_size) {
+        for (layer_size_t c = 0; c < in_.depth_; ++c)
+            for (layer_size_t y = 0; y < in_.height_; y += pooling_size)
+                for (layer_size_t x = 0; x < in_.width_; x += pooling_size)
                     connect_kernel(pooling_size, x, y, c);
 
 
-        for (size_t c = 0; c < in_.depth_; c++)
-            for (size_t y = 0; y < out_.height_; y++)
-                for (size_t x = 0; x < out_.width_; x++)
+        for (layer_size_t c = 0; c < in_.depth_; ++c)
+            for (layer_size_t y = 0; y < out_.height_; ++y)
+                for (layer_size_t x = 0; x < out_.width_; ++x)
                     this->connect_bias(c, out_.get_index(x, y, c));
     }
 
-    void connect_kernel(size_t pooling_size, size_t x, size_t y, size_t inc) {
-        for (size_t dy = 0; dy < pooling_size; dy++)
-            for (size_t dx = 0; dx < pooling_size; dx++)
+    void connect_kernel(layer_size_t pooling_size, layer_size_t x, layer_size_t y, layer_size_t inc) {
+        for (layer_size_t dy = 0; dy < pooling_size; ++dy)
+            for (layer_size_t dx = 0; dx < pooling_size; ++dx)
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x / pooling_size, y / pooling_size, inc),
                     inc);
     }
 
-    index3d in_;
-    index3d out_;
+    index3d<layer_size_t> in_;
+    index3d<layer_size_t> out_;
 };
 
 } // namespace tiny_cnn

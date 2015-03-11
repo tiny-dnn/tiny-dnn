@@ -43,6 +43,7 @@
 namespace tiny_cnn {
 
 using float_t = double;
+using layer_size_t = unsigned short;
 using label_t = size_t;
 using vec_t = std::vector<float_t>;
 
@@ -54,20 +55,21 @@ private:
     std::string msg_;
 };
 
+template <typename T>
 struct index3d {
-    index3d(size_t width, size_t height, size_t depth) noexcept : width_(width), height_(height), depth_(depth) {}
+    index3d(T width, T height, T depth) noexcept : width_(width), height_(height), depth_(depth) {}
 
-    int get_index(int x, int y, int channel) const {
+    T get_index(T x, T y, T channel) const {
         return (height_ * channel + y) * width_ + x;
     }
 
-    size_t size() const {
+    T size() const {
         return width_ * height_ * depth_;
     }
 
-    size_t width_;
-    size_t height_;
-    size_t depth_;
+    T width_;
+    T height_;
+    T depth_;
 };
 
 template<int Q>

@@ -149,7 +149,7 @@ void sample1_convnet(void) {
 // learning 3-Layer Networks
 void sample2_mlp()
 {
-    const int num_hidden_units = 500;
+    const unsigned short num_hidden_units = 500;
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
@@ -228,9 +228,9 @@ void sample4_dropout()
 {
     typedef network<mse, gradient_descent> Network;
     Network nn;
-    int input_dim    = 28*28;
-    int hidden_units = 800;
-    int output_dim   = 10;
+    layer_size_t input_dim    = 28*28;
+    layer_size_t hidden_units = 800;
+    layer_size_t output_dim   = 10;
 
     fully_connected_dropout_layer<Network, tan_h> f1(input_dim, hidden_units, dropout::per_data);
     fully_connected_layer<Network, tan_h> f2(hidden_units, output_dim);

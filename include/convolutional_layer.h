@@ -56,7 +56,7 @@ public:
     using Base = partial_connected_layer<N, Activation>;
     using Optimizer = typename Base::Optimizer;
 
-    convolutional_layer(size_t in_width, size_t in_height, size_t window_size, size_t in_channels, size_t out_channels)
+    convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels)
     : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
     sqr(window_size) * in_channels * out_channels, out_channels), 
     in_(in_width, in_height, in_channels), 
@@ -67,7 +67,7 @@ public:
         init_connection(connection_table());
     }
 
-    convolutional_layer(size_t in_width, size_t in_height, size_t window_size, size_t in_channels, size_t out_channels, const connection_table& connection_table)
+    convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels, const connection_table& connection_table)
         : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
         sqr(window_size) * in_channels * out_channels, out_channels), 
         in_(in_width, in_height, in_channels), 
@@ -81,7 +81,7 @@ public:
     }
 
     void weight_to_image(image& img) {
-        const size_t border_width = 1;
+        const layer_size_t border_width = 1;
         const auto pitch = window_size_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
@@ -92,15 +92,15 @@ public:
 
         auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
 
-        for (size_t r = 0; r < in_.depth_; r++) {
-            for (size_t c = 0; c < out_.depth_; c++) {
+        for (layer_size_t r = 0; r < in_.depth_; ++r) {
+            for (layer_size_t c = 0; c < out_.depth_; ++c) {
                 if (!connection_.is_connected(c, r)) continue;
 
                 const auto top = r * pitch + border_width;
                 const auto left = c * pitch + border_width;
 
-                for (size_t y = 0; y < window_size_; y++) {
-                    for (size_t x = 0; x < window_size_; x++) {
+                for (layer_size_t y = 0; y < window_size_; ++y) {
+                    for (layer_size_t x = 0; x < window_size_; ++x) {
                         const float_t w = this->W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
@@ -113,36 +113,36 @@ public:
 
 private:
     void init_connection(const connection_table& table) {
-        for (size_t inc = 0; inc < in_.depth_; inc++) {
-            for (size_t outc = 0; outc < out_.depth_; outc++) {
+        for (layer_size_t inc = 0; inc < in_.depth_; ++inc) {
+            for (layer_size_t outc = 0; outc < out_.depth_; ++outc) {
                 if (!table.is_connected(outc, inc)) {
                     continue;
                 }
 
-                for (size_t y = 0; y < out_.height_; y++)
-                    for (size_t x = 0; x < out_.width_; x++)
+                for (layer_size_t y = 0; y < out_.height_; ++y)
+                    for (layer_size_t x = 0; x < out_.width_; ++x)
                         connect_kernel(inc, outc, x, y);
             }
         }
 
-        for (size_t outc = 0; outc < out_.depth_; outc++)
-            for (size_t y = 0; y < out_.height_; y++)
-                for (size_t x = 0; x < out_.width_; x++)
+        for (layer_size_t outc = 0; outc < out_.depth_; ++outc)
+            for (layer_size_t y = 0; y < out_.height_; ++y)
+                for (layer_size_t x = 0; x < out_.width_; ++x)
                     this->connect_bias(outc, out_.get_index(x, y, outc));
     }
 
-    void connect_kernel(size_t inc, size_t outc, size_t x, size_t y) {
-        for (size_t dy = 0; dy < window_size_; dy++)
-            for (size_t dx = 0; dx < window_size_; dx++)
+    void connect_kernel(layer_size_t inc, layer_size_t outc, layer_size_t x, layer_size_t y) {
+        for (layer_size_t dy = 0; dy < window_size_; ++dy)
+            for (layer_size_t dx = 0; dx < window_size_; ++dx)
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x, y, outc), 
                     weight_.get_index(dx, dy, outc * in_.depth_ + inc));
     }
 
-    index3d in_;
-    index3d out_;
-    index3d weight_;
+    index3d<layer_size_t> in_;
+    index3d<layer_size_t> out_;
+    index3d<layer_size_t> weight_;
     connection_table connection_;
 	size_t window_size_;
 };

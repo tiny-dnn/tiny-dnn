@@ -38,11 +38,11 @@ public:
     using Base = layer<N, Activation>;
     using Optimizer = typename Base::Optimizer;
 
-    fully_connected_layer(size_t in_dim, size_t out_dim)
-        : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim), filter_(out_dim) {}
+    fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
+        : layer<N, Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
     size_t connection_size() const override {
-        return this->in_size_ * this->out_size_ + this->out_size_;
+        return size_t(this->in_size_) * this->out_size_ + this->out_size_;
     }
 
     size_t fan_in_size() const override {
@@ -50,21 +50,24 @@ public:
     }
 
     vec_t forward_propagation(const vec_t& in, size_t index) override {
-
+        vec_t &curr_output = this->output_[index];
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (size_t i = r.begin(); i < r.end(); i++) {
                 float_t z = 0.0;
                 for (size_t c = 0; c < this->in_size_; c++)
                     z += this->W_[c*this->out_size_ + i] * in[c];
 
-                z += this->b_[i];
-                this->output_[index][i] = this->a_.f(z);
+                curr_output[i] = this->a_.f(z + this->b_[i]);
             }
         });
 
-        auto this_out = this->filter_.filter_fprop(this->output_[index]);
+        auto this_out = this->filter_.filter_fprop(curr_output);
 
-        return this->next_ ? this->next_->forward_propagation(this_out, index) : move(this_out);
+        if (this->next_)
+        {
+            return this->next_->forward_propagation(this_out, index); // move
+        }
+        return move(this_out); // move
     }
 
     vec_t back_propagation(vec_t&& current_delta, size_t index) override {
