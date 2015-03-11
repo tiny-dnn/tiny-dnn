@@ -111,8 +111,7 @@ TEST(convolutional, bprop) {
 
     nn.train(data, train);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 }
 
 TEST(convolutional, gradient_check) { // tanh - mse
@@ -212,9 +211,8 @@ TEST(convolutional, bprop2) {
     }
     nn.train(data, train);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
-    nn.predict(a2, &predicted);
+    vec_t predicted = nn.predict(a);
+    vec_t predicted2 = nn.predict(a2);
 }
 
 TEST(convolutional, serialize) {
@@ -296,16 +294,15 @@ TEST(fully_connected, bprop) {
     nn.optimizer().alpha = 0.1;
     nn.train(data, train, 1, 10);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 
     EXPECT_NEAR(predicted[0], t[0], 1E-5);
     EXPECT_NEAR(predicted[1], t[1], 1E-5);
 
-    nn.predict(a2, &predicted);
+    vec_t predicted2 = nn.predict(a2);
 
-    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+    EXPECT_NEAR(predicted2[0], t2[0], 1E-5);
+    EXPECT_NEAR(predicted2[1], t2[1], 1E-5);
 }
 
 TEST(fully_connected, serialize) {
@@ -358,16 +355,15 @@ TEST(fully_connected, bprop2) {
     nn.optimizer().alpha = 0.01;
     nn.train(data, train, 1, 10);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 
     EXPECT_NEAR(predicted[0], t[0], 1E-4);
     EXPECT_NEAR(predicted[1], t[1], 1E-4);
 
-    nn.predict(a2, &predicted);
+    vec_t predicted2 = nn.predict(a2);
 
-    EXPECT_NEAR(predicted[0], t2[0], 1E-4);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-4);
+    EXPECT_NEAR(predicted2[0], t2[0], 1E-4);
+    EXPECT_NEAR(predicted2[1], t2[1], 1E-4);
 }
 
 TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
