@@ -39,13 +39,20 @@ public:
     gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
     gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
 
-    void update(float_t dW, float_t H, float_t *W) {
-        *W -= (alpha / (H + mu)) * (dW); // 7.2%
+    void update(const vec_t& dW, const vec_t& Hessian, vec_t *W) {
+        for_(true, 0, W->size(), [&](const blocked_range& r){
+            for (int i = r.begin(); i < r.end(); i++)
+                update_(dW[i], Hessian[i], &(*W)[i]);
+        });
     }
 
     float_t alpha; // learning rate
-    //const float_t lambda; // weight decay
     float_t mu;
+
+private:
+    void update_(float_t dW, float_t H, float_t *W) {
+        *W -= (alpha / (H + mu)) * (dW); // 7.2%
+    }
 };
 
 
@@ -55,8 +62,11 @@ public:
     gradient_descent() : alpha(0.01), lambda(0.0) {}
     gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
 
-    void update(float_t dW, float_t /*H*/, float_t *W) {
-        *W -= alpha * ((dW) + *W * lambda); // 7.2%
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+        for_(true, 0, W->size(), [&](const blocked_range& r){
+            for (int i = r.begin(); i < r.end(); i++)
+                update_(dW[i], &(*W)[i]);
+        });
     }
 
     bool requires_hessian() const {
@@ -65,6 +75,11 @@ public:
 
     float_t alpha; // learning rate
     float_t lambda; // weight decay
+
+private:
+    void update_(float_t dW, float_t *W) {
+        *W -= alpha * ((dW) +*W * lambda); // 7.2%
+    }
 };
 
 } // namespace tiny_cnn

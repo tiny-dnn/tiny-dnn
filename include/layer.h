@@ -109,14 +109,8 @@ public:
 
         merge(worker_size, batch_size);
 
-        for_(true, 0, W_.size(), [&](const blocked_range& r){
-            for (int i = r.begin(); i < r.end(); i++)
-                o->update(dW_[0][i], Whessian_[i], &W_[i]);
-        });
-
-        int dim_b = b_.size();
-        for (int i = 0; i < dim_b; i++)
-            o->update(db_[0][i], bhessian_[i], &b_[i]);
+        o->update(dW_[0], Whessian_, &W_);
+        o->update(db_[0], bhessian_, &b_);
 
         clear_diff(worker_size);
         post_update();
