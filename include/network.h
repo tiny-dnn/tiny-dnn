@@ -138,6 +138,7 @@ public:
     void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
         init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
+        optimizer_.reset();
 
         for (int iter = 0; iter < epoch; iter++) {
             if (optimizer_.requires_hessian())

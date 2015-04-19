@@ -26,11 +26,13 @@
 */
 #pragma once
 #include "util.h"
+#include <unordered_map>
 
 namespace tiny_cnn {
 
 struct optimizer {
     virtual bool requires_hessian() const { return true; }
+    virtual void reset() {}
 };
 
 // gradient descent with 2nd-order update(LeCun,1998)
@@ -55,6 +57,36 @@ private:
     }
 };
 
+struct adagrad : public optimizer {
+    adagrad() : alpha(0.01) {}
+    explicit adagrad(float_t alpha) : alpha(alpha) {}
+
+    bool requires_hessian() const {
+        return false;
+    }
+
+    void reset() {
+        E_.clear();
+    }
+
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+        vec_t& E = E_[&dW];
+        if (E.empty()) {
+            E.resize(dW.size(), float_t());
+        }
+
+        for_(true, 0, W->size(), [&](const blocked_range& r){
+            for (int i = r.begin(); i < r.end(); i++) {
+                E[i] += dW[i] * dW[i];
+                (*W)[i] -= alpha * dW[i] / std::sqrt(E[i]);
+            }
+        });
+    }
+
+    float_t alpha; // learning rate
+private:
+    std::unordered_map<const vec_t*, vec_t> E_; // sum of squares of gradients for each layer
+};
 
 // simple SGD algorithm
 struct gradient_descent : public optimizer {
