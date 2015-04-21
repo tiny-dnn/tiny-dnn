@@ -196,4 +196,13 @@ private:
 
 #endif // CNN_USE_TBB
 
+template <typename Func>
+void for_i(int size, Func f)
+{
+    for_(true, 0, size, [&](const blocked_range& r) {
+        for (int i = r.begin(); i < r.end(); i++)
+            f(i);
+    });
+}
+
 } // namespace tiny_cnn

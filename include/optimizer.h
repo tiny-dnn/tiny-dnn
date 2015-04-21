@@ -42,10 +42,7 @@ public:
     gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
 
     void update(const vec_t& dW, const vec_t& Hessian, vec_t *W) {
-        for_(true, 0, W->size(), [&](const blocked_range& r){
-            for (int i = r.begin(); i < r.end(); i++)
-                update_(dW[i], Hessian[i], &(*W)[i]);
-        });
+        for_i(W->size(), [&](int i){ update_(dW[i], Hessian[i], &(*W)[i]); });
     }
 
     float_t alpha; // learning rate
@@ -70,20 +67,49 @@ struct adagrad : public optimizer {
     }
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
-        vec_t& E = E_[&dW];
+        vec_t& E = E_[W];
         if (E.empty()) {
             E.resize(dW.size(), float_t());
         }
 
-        for_(true, 0, W->size(), [&](const blocked_range& r){
-            for (int i = r.begin(); i < r.end(); i++) {
-                E[i] += dW[i] * dW[i];
-                (*W)[i] -= alpha * dW[i] / std::sqrt(E[i]);
-            }
+        for_i(W->size(), [&](int i) {
+            E[i] += dW[i] * dW[i];
+            (*W)[i] -= alpha * dW[i] / std::sqrt(E[i]);
         });
     }
 
     float_t alpha; // learning rate
+private:
+    std::unordered_map<const vec_t*, vec_t> E_; // sum of squares of gradients for each layer
+};
+
+struct RMSprop : public optimizer {
+    RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
+    explicit RMSprop(float_t alpha, float_t mu) : alpha(alpha), mu(mu), eps(1e-8) {}
+
+    bool requires_hessian() const {
+        return false;
+    }
+
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+        vec_t& E = E_[W];
+        if (E.empty())
+            E.resize(dW.size(), float_t());
+
+        for_i(W->size(), [&](int i){
+            E[i] = mu * E[i] + (1 - mu) * dW[i] * dW[i];
+            (*W)[i] -= alpha * dW[i] / std::sqrt(E[i] + eps);
+        });
+    }
+
+    void reset() {
+        E_.clear();
+    }
+
+
+    float_t alpha; // learning rate
+    float_t mu; // decay term
+    float_t eps;
 private:
     std::unordered_map<const vec_t*, vec_t> E_; // sum of squares of gradients for each layer
 };
@@ -95,10 +121,7 @@ public:
     gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
-        for_(true, 0, W->size(), [&](const blocked_range& r){
-            for (int i = r.begin(); i < r.end(); i++)
-                update_(dW[i], &(*W)[i]);
-        });
+        for_i(W->size(), [&](int i){ update_(dW[i], &(*W)[i]); });
     }
 
     bool requires_hessian() const {
