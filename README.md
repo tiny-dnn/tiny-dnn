@@ -32,6 +32,8 @@ supported networks
 ### optimization algorithm
 * stochastic gradient descent (with/without L2 normalization)
 * stochastic gradient levenberg marquardt
+* adagrad
+* rmsprop
 
 dependencies
 -----
