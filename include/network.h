@@ -110,10 +110,10 @@ public:
     void add(layer_base<T> *layer) { layers_.add(layer); }
 
     // input data dimension of whole networks
-    int in_dim() const { return layers_.head()->in_size(); }
+    layer_size_t in_dim() const { return layers_.head()->in_size(); }
 
     // output data dimension of whole networks
-    int out_dim() const { return layers_.tail()->out_size(); }
+    layer_size_t out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }
 
@@ -223,7 +223,7 @@ public:
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        int outdim = out_dim();
+        layer_size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);

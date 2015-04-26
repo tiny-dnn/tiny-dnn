@@ -34,11 +34,13 @@ namespace tiny_cnn {
 template<typename N>
 class layer_base {
 public:
+    virtual ~layer_base() {}
+
     typedef N Network;
     typedef typename Network::Optimizer Optimizer;
     typedef typename Network::LossFunction LossFunction;
 
-    layer_base(int in_dim, int out_dim, int weight_dim, int bias_dim) : parallelize_(true), next_(0), prev_(0) {
+    layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
@@ -75,11 +77,11 @@ public:
         for (auto& b : bhessian_) b /= denominator;
     }
 
-    virtual int in_size() const { return in_size_; }
-    virtual int out_size() const { return out_size_; }
-    virtual int param_size() const { return W_.size() + b_.size(); }
-    virtual int fan_in_size() const = 0;
-    virtual int connection_size() const = 0;
+    virtual layer_size_t in_size() const { return in_size_; }
+    virtual layer_size_t out_size() const { return out_size_; }
+    virtual size_t param_size() const { return W_.size() + b_.size(); }
+    virtual size_t fan_in_size() const = 0;
+    virtual size_t connection_size() const = 0;
 
     virtual void save(std::ostream& os) const {
         for (auto w : W_) os << w << " ";
@@ -92,8 +94,8 @@ public:
     }
 
     virtual activation::function& activation_function() = 0;
-    virtual const vec_t& forward_propagation(const vec_t& in, int worker_index) = 0;
-    virtual const vec_t& back_propagation(const vec_t& current_delta, int worker_index) = 0;
+    virtual const vec_t& forward_propagation(const vec_t& in, size_t worker_index) = 0;
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
     // called afrer updating weight
@@ -102,10 +104,10 @@ public:
     layer_base<N>* next() { return next_; }
     layer_base<N>* prev() { return prev_; }
 
-    void update_weight(Optimizer *o, int worker_size, int batch_size) {
-		if (W_.empty()) {
-			return;
-		}
+    void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
+        if (W_.empty()) {
+            return;
+        }
 
         merge(worker_size, batch_size);
 
@@ -119,7 +121,7 @@ public:
     vec_t& weight_diff(int index) { return dW_[index]; }
     vec_t& bias_diff(int index) { return db_[index]; }
 
-	bool has_same_weights(const layer_base& rhs, float_t eps) const {
+    bool has_same_weights(const layer_base& rhs, float_t eps) const {
         if (W_.size() != rhs.W_.size() || b_.size() != rhs.b_.size())
             return false;
 
@@ -129,11 +131,11 @@ public:
           if (std::abs(b_[i] - rhs.b_[i]) > eps) return false;
 
         return true;
-	}
+    }
 
 protected:
-    int in_size_;
-    int out_size_;
+    layer_size_t in_size_;
+    layer_size_t out_size_;
     bool parallelize_;
 
     layer_base<N>* next_;
@@ -150,10 +152,10 @@ protected:
     vec_t prev_delta2_; // d^2E/da^2
 
 private:
-    void merge(int worker_size, int batch_size) {
-        for (int i = 1; i < worker_size; i++)
+    void merge(size_t worker_size, size_t batch_size) {
+        for (size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&dW_[i][0], dW_[i].size(), &dW_[0][0]);
-        for (int i = 1; i < worker_size; i++) 
+        for (size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&db_[i][0], db_[i].size(), &db_[0][0]);
         //for (int i = 1; i < worker_size; i++) {
         //    std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());
@@ -164,14 +166,14 @@ private:
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
     }
 
-    void clear_diff(int worker_size) {
-        for (int i = 0; i < worker_size; i++) {
+    void clear_diff(size_t worker_size) {
+        for (size_t i = 0; i < worker_size; i++) {
             std::fill(dW_[i].begin(), dW_[i].end(), 0.0);
             std::fill(db_[i].begin(), db_[i].end(), 0.0);
         }
     }
 
-    void set_size(int in_dim, int out_dim, int weight_dim, int bias_dim) {
+    void set_size(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) {
         in_size_ = in_dim;
         out_size_ = out_dim;
 
@@ -199,10 +201,10 @@ public:
     typedef layer_base<N> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    layer(int in_dim, int out_dim, int weight_dim, int bias_dim)
+    layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
 
-    activation::function& activation_function() { return a_; }
+    activation::function& activation_function() override { return a_; }
 
 protected:
     Activation a_;
@@ -212,18 +214,17 @@ template<typename N>
 class input_layer : public layer<N, activation::identity> {
 public:
     typedef layer<N, activation::identity> Base;
-    typedef typename Base::Optimizer Optimizer;
 
     input_layer() : layer<N, activation::identity>(0, 0, 0, 0) {}
 
-    int in_size() const { return this->next_ ? this->next_->in_size(): 0; }
+    layer_size_t in_size() const override { return this->next_ ? this->next_->in_size(): static_cast<layer_size_t>(0); }
 
-    const vec_t& forward_propagation(const vec_t& in, int index) {
+    const vec_t& forward_propagation(const vec_t& in, size_t index) {
         this->output_[index] = in;
         return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, int /*index*/) {
+    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) {
         return current_delta;
     }
 
@@ -231,11 +232,11 @@ public:
         return current_delta2;
     }
 
-    int connection_size() const {
+    size_t connection_size() const override {
         return this->in_size_;
     }
 
-    int fan_in_size() const {
+    size_t fan_in_size() const override {
         return 1;
     }
 };
@@ -280,7 +281,7 @@ public:
             pl->divide_hessian(denominator);
     }
 
-    void update_weights(Optimizer *o, int worker_size, int batch_size) {
+    void update_weights(Optimizer *o, size_t worker_size, size_t batch_size) {
         for (auto pl : layers_)
             pl->update_weight(o, worker_size, batch_size);
     }
@@ -293,7 +294,7 @@ public:
 private:
     void construct(const layers<N>& rhs) {
         add(&first_);
-        for (int i = 1; i < (int) rhs.layers_.size(); i++)
+        for (size_t i = 1; i < rhs.layers_.size(); i++)
             add(rhs.layers_[i]);
     }
 
