@@ -30,13 +30,42 @@
 
 namespace tiny_cnn {
 
+/**
+ * base class of optimizer
+ * usesHessian : true if an optimizer uses hessian (2nd order derivative of loss function)
+ **/
+template <bool usesHessian>
 struct optimizer {
-    virtual bool requires_hessian() const { return true; }
-    virtual void reset() {}
+    bool requires_hessian() const { return usesHessian; } // vc2012 doesn't support constexpr
+    virtual void reset() {} // override to implement pre-learning action
 };
 
-// gradient descent with 2nd-order update(LeCun,1998)
-struct gradient_descent_levenberg_marquardt : public optimizer {
+// helper class to hold N values for each weight
+template <typename value_t, int N, bool usesHessian>
+struct stateful_optimizer : public optimizer<usesHessian> {
+    void reset() override {
+        for (auto& e : E_) e.clear();
+    }
+
+protected:
+    template <int Index>
+    std::vector<value_t>& get(const vec_t* key) {
+        static_assert(Index < N, "index out of range");
+        if (E_[Index][key].empty())
+            E_[Index][key].resize(key->size(), value_t());
+        return E_[Index][key];
+    }
+    std::unordered_map<const vec_t*, std::vector<value_t>> E_[N];
+};
+
+/**
+ * Stochastic Diagonal Levenberg-Marquardt
+ *
+ * Y LeCun, L Bottou, Y Bengio, and P Haffner,
+ * Gradient-based learning applied to document recognition
+ * Proceedings of the IEEE, 86, 2278-2324.
+ **/
+struct gradient_descent_levenberg_marquardt : public optimizer<true> {
 public:
     gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
     gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
@@ -46,31 +75,26 @@ public:
     }
 
     float_t alpha; // learning rate
-    float_t mu;
-
+    float_t mu; // constant to prevent step size from becoming too large when H is small
 private:
     void update_(float_t dW, float_t H, float_t *W) {
         *W -= (alpha / (H + mu)) * (dW); // 7.2%
     }
 };
 
-struct adagrad : public optimizer {
+/**
+ * adaptive gradient method
+ *
+ * J Duchi, E Hazan and Y Singer,
+ * Adaptive subgradient methods for online learning and stochastic optimization
+ * The Journal of Machine Learning Research, pages 2121-2159, 2011.
+ **/
+struct adagrad : public stateful_optimizer<float_t, 2, false> {
     adagrad() : alpha(0.01) {}
     explicit adagrad(float_t alpha) : alpha(alpha) {}
 
-    bool requires_hessian() const {
-        return false;
-    }
-
-    void reset() {
-        E_.clear();
-    }
-
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
-        vec_t& E = E_[W];
-        if (E.empty()) {
-            E.resize(dW.size(), float_t());
-        }
+        vec_t& E = get<0>(W);
 
         for_i(W->size(), [&](int i) {
             E[i] += dW[i] * dW[i];
@@ -79,22 +103,20 @@ struct adagrad : public optimizer {
     }
 
     float_t alpha; // learning rate
-private:
-    std::unordered_map<const vec_t*, vec_t> E_; // sum of squares of gradients for each layer
 };
 
-struct RMSprop : public optimizer {
+/**
+ * RMSprop
+ *
+ * T Tieleman, and G E Hinton,
+ * Lecture 6.5 - rmsprop, COURSERA: Neural Networks for Machine Learning (2012)
+ **/
+struct RMSprop : public stateful_optimizer<float_t, 1, false> {
     RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
     explicit RMSprop(float_t alpha, float_t mu) : alpha(alpha), mu(mu), eps(1e-8) {}
 
-    bool requires_hessian() const {
-        return false;
-    }
-
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
-        vec_t& E = E_[W];
-        if (E.empty())
-            E.resize(dW.size(), float_t());
+        vec_t& E = get<0>(W);
 
         for_i(W->size(), [&](int i){
             E[i] = mu * E[i] + (1 - mu) * dW[i] * dW[i];
@@ -102,20 +124,14 @@ struct RMSprop : public optimizer {
         });
     }
 
-    void reset() {
-        E_.clear();
-    }
-
-
     float_t alpha; // learning rate
     float_t mu; // decay term
-    float_t eps;
 private:
-    std::unordered_map<const vec_t*, vec_t> E_; // sum of squares of gradients for each layer
+    float_t eps; // constant value to avoid zero-division
 };
 
-// simple SGD algorithm
-struct gradient_descent : public optimizer {
+// SGD without momentum
+struct gradient_descent : public optimizer<false> {
 public:
     gradient_descent() : alpha(0.01), lambda(0.0) {}
     gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
@@ -124,13 +140,8 @@ public:
         for_i(W->size(), [&](int i){ update_(dW[i], &(*W)[i]); });
     }
 
-    bool requires_hessian() const {
-        return false;
-    }
-
     float_t alpha; // learning rate
     float_t lambda; // weight decay
-
 private:
     void update_(float_t dW, float_t *W) {
         *W -= alpha * ((dW) +*W * lambda); // 7.2%
