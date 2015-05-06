@@ -130,7 +130,12 @@ private:
     float_t eps; // constant value to avoid zero-division
 };
 
-// SGD without momentum
+
+/**
+ * SGD without momentum
+ *
+ * slightly faster than tiny_cnn::momentum
+ **/
 struct gradient_descent : public optimizer<false> {
 public:
     gradient_descent() : alpha(0.01), lambda(0.0) {}
@@ -145,6 +150,35 @@ public:
 private:
     void update_(float_t dW, float_t *W) {
         *W -= alpha * ((dW) +*W * lambda); // 7.2%
+    }
+};
+
+/**
+ * SGD with momentum
+ *
+ * B T Polyak,
+ * Some methods of speeding up the convergence of iteration methods
+ * USSR Computational Mathematics and Mathematical Physics, 4(5):1-17, 1964.
+ **/
+struct momentum : public stateful_optimizer<float_t, 1, false> {
+public:
+    momentum() : alpha(0.01), lambda(0.0), mu(0.9) {}
+    momentum(float_t alpha, float_t lambda, float_t mu) : alpha(alpha), lambda(lambda), mu(mu) {}
+
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+        vec_t& dWprev = get<0>(W);
+        for_i(W->size(), [&](int i){ update_(dW[i], &(*W)[i], &dWprev[i]); });
+    }
+
+    float_t alpha; // learning rate
+    float_t lambda; // weight decay
+    float_t mu; // momentum
+
+private:
+    void update_(float_t dW, float_t *W, float_t *dWprev) {
+        dW = mu * *dWprev - alpha * (dW + *W * lambda);
+        *W += dW;
+        *dWprev = dW;
     }
 };
 
