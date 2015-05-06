@@ -30,7 +30,7 @@ supported networks
 * mean-squared-error
 
 ### optimization algorithm
-* stochastic gradient descent (with/without L2 normalization)
+* stochastic gradient descent (with/without L2 normalization and momentum)
 * stochastic gradient levenberg marquardt
 * adagrad
 * rmsprop
