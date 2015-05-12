@@ -28,6 +28,7 @@
 #include <vector>
 #include <functional>
 #include <random>
+#include <type_traits>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
