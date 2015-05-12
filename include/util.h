@@ -79,13 +79,17 @@ inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
     return dst(gen);
 }
 
-inline size_t uniform_rand(size_t min, size_t max) {
+template<typename T> inline
+typename std::enable_if<std::is_integral<T>::value, T>::type
+uniform_rand(T min, T max) {
     static std::mt19937 gen(0);
-    std::uniform_int_distribution<size_t> dst(min, max);
+    std::uniform_int_distribution<T> dst(min, max);
     return dst(gen);
 }
 
-template<typename T> inline T uniform_rand(T min, T max) {
+template<typename T> inline
+typename std::enable_if<std::is_floating_point<T>::value, T>::type
+uniform_rand(T min, T max) {
     static std::mt19937 gen(0);
     std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
