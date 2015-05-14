@@ -75,7 +75,9 @@ struct index3d {
 
 template<int Q>
 inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
-    static std::mt19937 gen(0);
+    // avoid gen(0) for MSVC known issue
+    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+    static std::mt19937 gen(1);
     std::uniform_real_distribution<double> dst(min.to_real(), max.to_real());
     return dst(gen);
 }
@@ -83,7 +85,7 @@ inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
-    static std::mt19937 gen(0);
+    static std::mt19937 gen(1);
     std::uniform_int_distribution<T> dst(min, max);
     return dst(gen);
 }
@@ -91,7 +93,7 @@ uniform_rand(T min, T max) {
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 uniform_rand(T min, T max) {
-    static std::mt19937 gen(0);
+    static std::mt19937 gen(1);
     std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
 }
