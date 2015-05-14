@@ -346,13 +346,6 @@ private:
 
         std::fill(dw.begin(), dw.end(), 0.0);
 
-        // calculate dw/dE by bprop
-        for (int i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            back_propagation(out, v[i]);
-        }
-        float_t delta_by_bprop = dw[check_index];
-
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
         w[check_index] = prev_w + delta;
@@ -370,8 +363,14 @@ private:
         }
 
         float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
-
         w[check_index] = prev_w;
+
+        // calculate dw/dE by bprop
+        for (int i = 0; i < data_size; i++) {
+            const vec_t& out = forward_propagation(in[i]);
+            back_propagation(out, v[i]);
+        }
+        float_t delta_by_bprop = dw[check_index];
 
         return std::abs(delta_by_bprop - delta_by_numerical);
     }
