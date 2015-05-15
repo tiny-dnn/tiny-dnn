@@ -35,6 +35,7 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 * fully-connected layer with dropout
 * convolutional layer
 * average pooling layer
+* max pooling layer
 
 ### activation functions
 * tanh
