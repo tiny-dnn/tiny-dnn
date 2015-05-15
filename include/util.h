@@ -29,6 +29,7 @@
 #include <functional>
 #include <random>
 #include <type_traits>
+#include <limits>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -116,7 +117,7 @@ T* reverse_endian(T* p) {
 
 template<typename T>
 int max_index(const T& vec) {
-    typename T::value_type max_val = -1;
+    typename T::value_type max_val = std::numeric_limits<typename T::value_type>::lowest();
     int max_index = -1;
 
     for (size_t i = 0; i < vec.size(); i++) {
