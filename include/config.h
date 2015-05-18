@@ -51,7 +51,7 @@
  * @todo automatic optimization
  */
 #ifdef CNN_USE_OMP
-#define CNN_TASK_SIZE 10000
+#define CNN_TASK_SIZE 100
 #else
 #define CNN_TASK_SIZE 8
 #endif
