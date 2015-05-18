@@ -42,7 +42,16 @@
 //#define CNN_USE_SSE
 
 /**
+ * define to enable OMP parallelization
+ */
+#define CNN_USE_OMP
+
+/**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
+#ifdef CNN_USE_OMP
+#define CNN_TASK_SIZE 10000
+#else
 #define CNN_TASK_SIZE 8
+#endif
