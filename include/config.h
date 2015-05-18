@@ -44,7 +44,7 @@
 /**
  * define to enable OMP parallelization
  */
-#define CNN_USE_OMP
+//#define CNN_USE_OMP
 
 /**
  * number of task in batch-gradient-descent.
