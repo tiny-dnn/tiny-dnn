@@ -38,18 +38,18 @@ public:
     typedef layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    fully_connected_layer(int in_dim, int out_dim)
-        : layer<N, Activation>(in_dim, out_dim, in_dim * out_dim, out_dim), filter_(out_dim) {}
+    fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
+        : layer<N, Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
-    int connection_size() const {
-        return this->in_size_ * this->out_size_ + this->out_size_;
+    size_t connection_size() const override {
+        return size_t(this->in_size_) * this->out_size_ + this->out_size_;
     }
 
-    int fan_in_size() const {
+    size_t fan_in_size() const override {
         return this->in_size_;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, int index) {
+    const vec_t& forward_propagation(const vec_t& in, size_t index) {
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
@@ -67,7 +67,7 @@ public:
         return this->next_ ? this->next_->forward_propagation(this_out, index) : this_out;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, int index) {
+    const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
         const vec_t& curr_delta = this->filter_.filter_bprop(current_delta, index);
         const vec_t& prev_out = this->prev_->output(index);
         const activation::function& prev_h = this->prev_->activation_function();

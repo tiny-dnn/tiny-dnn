@@ -37,11 +37,11 @@ public:
     typedef partial_connected_layer<N, Activation> Base;
     typedef typename Base::Optimizer Optimizer;
 
-    average_pooling_layer(int in_width, int in_height, int in_channels, int pooling_size)
+    average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
     : partial_connected_layer<N, Activation>(
      in_width * in_height * in_channels, 
-     in_width * in_height * in_channels / (pooling_size * pooling_size), 
-     in_channels, in_channels, 1.0 / (pooling_size * pooling_size)),
+     in_width * in_height * in_channels / sqr(pooling_size), 
+     in_channels, in_channels, 1.0 / sqr(pooling_size)),
      in_(in_width, in_height, in_channels), 
      out_(in_width/pooling_size, in_height/pooling_size, in_channels)
     {
@@ -51,30 +51,30 @@ public:
     }
 
 private:
-    void init_connection(int pooling_size) {
-        for (int c = 0; c < in_.depth_; c++) 
-            for (int y = 0; y < in_.height_; y += pooling_size)
-                for (int x = 0; x < in_.width_; x += pooling_size)
+    void init_connection(layer_size_t pooling_size) {
+        for (layer_size_t c = 0; c < in_.depth_; ++c)
+            for (layer_size_t y = 0; y < in_.height_; y += pooling_size)
+                for (layer_size_t x = 0; x < in_.width_; x += pooling_size)
                     connect_kernel(pooling_size, x, y, c);
 
 
-        for (int c = 0; c < in_.depth_; c++) 
-            for (int y = 0; y < out_.height_; y++)
-                for (int x = 0; x < out_.width_; x++)
+        for (layer_size_t c = 0; c < in_.depth_; ++c)
+            for (layer_size_t y = 0; y < out_.height_; ++y)
+                for (layer_size_t x = 0; x < out_.width_; ++x)
                     this->connect_bias(c, out_.get_index(x, y, c));
     }
 
-    void connect_kernel(int pooling_size, int x, int y, int inc) {
-        for (int dy = 0; dy < pooling_size; dy++)
-            for (int dx = 0; dx < pooling_size; dx++)
+    void connect_kernel(layer_size_t pooling_size, layer_size_t x, layer_size_t y, layer_size_t inc) {
+        for (layer_size_t dy = 0; dy < pooling_size; ++dy)
+            for (layer_size_t dx = 0; dx < pooling_size; ++dx)
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
                     out_.get_index(x / pooling_size, y / pooling_size, inc),
                     inc);
     }
 
-    tensor3d in_;
-    tensor3d out_;
+    index3d<layer_size_t> in_;
+    index3d<layer_size_t> out_;
 };
 
 } // namespace tiny_cnn

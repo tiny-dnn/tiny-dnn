@@ -26,9 +26,10 @@
 */
 #pragma once
 #include <vector>
-#include <limits>
 #include <functional>
 #include <random>
+#include <type_traits>
+#include <limits>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -44,53 +45,56 @@
 namespace tiny_cnn {
 
 typedef double float_t;
-typedef int label_t;
+typedef unsigned short layer_size_t;
+typedef size_t label_t;
 typedef std::vector<float_t> vec_t;
 
 class nn_error : public std::exception {
 public:
-    nn_error(const std::string& msg) : msg_(msg){}
-    ~nn_error() throw() {}
-    const char* what() const throw() { return msg_.c_str(); }
+    explicit nn_error(const std::string& msg) : msg_(msg) {}
+    const char* what() const throw() override { return msg_.c_str(); }
 private:
     std::string msg_;
 };
 
-struct tensor3d {
-    tensor3d(int width, int height, int depth) : width_(width), height_(height), depth_(depth) {
-        if (width <= 0 || height <= 0 || depth <= 0)
-            throw nn_error("invalid tensor size");
+template <typename T>
+struct index3d {
+    index3d(T width, T height, T depth) : width_(width), height_(height), depth_(depth) {}
+
+    T get_index(T x, T y, T channel) const {
+        return (height_ * channel + y) * width_ + x;
     }
 
-    int get_index(int x, int y, int channel) const {
-        return (width_ * height_) * channel + width_ * y + x;
-    }
-
-    int size() const {
+    T size() const {
         return width_ * height_ * depth_;
     }
 
-    int width_;
-    int height_;
-    int depth_;
+    T width_;
+    T height_;
+    T depth_;
 };
 
 template<int Q>
 inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
-    static std::mt19937 gen(0);
+    // avoid gen(0) for MSVC known issue
+    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+    static std::mt19937 gen(1);
     std::uniform_real_distribution<double> dst(min.to_real(), max.to_real());
     return dst(gen);
 }
 
-inline int uniform_rand(int min, int max) {
-    static std::mt19937 gen(0);
-    std::uniform_int_distribution<> dst(min, max);
+template<typename T> inline
+typename std::enable_if<std::is_integral<T>::value, T>::type
+uniform_rand(T min, T max) {
+    static std::mt19937 gen(1);
+    std::uniform_int_distribution<T> dst(min, max);
     return dst(gen);
 }
 
-template<typename T>
-inline T uniform_rand(T min, T max) {
-    static std::mt19937 gen(0);
+template<typename T> inline
+typename std::enable_if<std::is_floating_point<T>::value, T>::type
+uniform_rand(T min, T max) {
+    static std::mt19937 gen(1);
     std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
 }
@@ -113,7 +117,7 @@ T* reverse_endian(T* p) {
 
 template<typename T>
 int max_index(const T& vec) {
-    typename T::value_type max_val = -1;
+    typename T::value_type max_val = std::numeric_limits<typename T::value_type>::lowest();
     int max_index = -1;
 
     for (size_t i = 0; i < vec.size(); i++) {
@@ -169,13 +173,13 @@ private:
 };
 
 template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
+void parallel_for(size_t begin, size_t end, const Func& f) {
     blocked_range r(begin, end);
     f(r);
 }
 
 template<typename Func>
-void for_(bool /*parallelize*/, int begin, int end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
+void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
     parallel_for(begin, end, f);
 }
 
@@ -195,5 +199,16 @@ private:
 };
 
 #endif // CNN_USE_TBB
+
+template <typename Func>
+void for_i(int size, Func f)
+{
+    for_(true, 0, size, [&](const blocked_range& r) {
+        for (int i = r.begin(); i < r.end(); i++)
+            f(i);
+    });
+}
+
+template <typename T> inline T sqr(T value) { return value*value; }
 
 } // namespace tiny_cnn

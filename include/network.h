@@ -110,10 +110,10 @@ public:
     void add(layer_base<T> *layer) { layers_.add(layer); }
 
     // input data dimension of whole networks
-    int in_dim() const { return layers_.head()->in_size(); }
+    layer_size_t in_dim() const { return layers_.head()->in_size(); }
 
     // output data dimension of whole networks
-    int out_dim() const { return layers_.tail()->out_size(); }
+    layer_size_t out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }
 
@@ -138,6 +138,7 @@ public:
     void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
         init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
+        optimizer_.reset();
 
         for (int iter = 0; iter < epoch; iter++) {
             if (optimizer_.requires_hessian())
@@ -222,7 +223,7 @@ public:
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        int outdim = out_dim();
+        layer_size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);
@@ -345,13 +346,6 @@ private:
 
         std::fill(dw.begin(), dw.end(), 0.0);
 
-        // calculate dw/dE by bprop
-        for (int i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            back_propagation(out, v[i]);
-        }
-        float_t delta_by_bprop = dw[check_index];
-
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
         w[check_index] = prev_w + delta;
@@ -369,8 +363,14 @@ private:
         }
 
         float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
-
         w[check_index] = prev_w;
+
+        // calculate dw/dE by bprop
+        for (int i = 0; i < data_size; i++) {
+            const vec_t& out = forward_propagation(in[i]);
+            back_propagation(out, v[i]);
+        }
+        float_t delta_by_bprop = dw[check_index];
 
         return std::abs(delta_by_bprop - delta_by_numerical);
     }

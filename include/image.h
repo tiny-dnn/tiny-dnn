@@ -25,9 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include <assert.h>
 #include <vector>
-#include <string>
 #include <fstream>
 #include <cstdint>
 #include <boost/detail/endian.hpp>
@@ -43,7 +41,7 @@ public:
 
     image(size_t width, size_t height) : width_(width), height_(height), data_(width * height, 0) {}
 
-    void write(const std::string& path) const {
+    void write(const std::string& path) const { // WARNING: This is OS dependent (writes of bytes with reinterpret_cast depend on endianness)
         std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
 #ifndef BOOST_LITTLE_ENDIAN
         throw nn_error("not implemented");
@@ -59,10 +57,10 @@ public:
         const uint32_t reserved = 0;
         const uint32_t offset_bytes = header_size;
 
-        ofs.write((const char*)&file_type, 2);
-        ofs.write((const char*)&file_size, 4);
-        ofs.write((const char*)&reserved, 4);
-        ofs.write((const char*)&offset_bytes, 4);
+        ofs.write(reinterpret_cast<const char*>(&file_type), 2);
+        ofs.write(reinterpret_cast<const char*>(&file_size), 4);
+        ofs.write(reinterpret_cast<const char*>(&reserved), 4);
+        ofs.write(reinterpret_cast<const char*>(&offset_bytes), 4);
 
         // info header(12byte)
         const uint32_t info_header_size = 12;
@@ -71,15 +69,15 @@ public:
         const uint16_t planes = 1;
         const uint16_t bit_count = 8;
 
-        ofs.write((const char*)&info_header_size, 4);
-        ofs.write((const char*)&width, 2);
-        ofs.write((const char*)&height, 2);
-        ofs.write((const char*)&planes, 2);
-        ofs.write((const char*)&bit_count, 2);
+        ofs.write(reinterpret_cast<const char*>(&info_header_size), 4);
+        ofs.write(reinterpret_cast<const char*>(&width), 2);
+        ofs.write(reinterpret_cast<const char*>(&height), 2);
+        ofs.write(reinterpret_cast<const char*>(&planes), 2);
+        ofs.write(reinterpret_cast<const char*>(&bit_count), 2);
 
         // color palette (256*3byte)
         for (int i = 0; i < 256; i++) {
-            const char v = static_cast<const char>(i);
+            const auto v = static_cast<const char>(i);
             ofs.write(&v, 1);//R
             ofs.write(&v, 1);//G
             ofs.write(&v, 1);//B
@@ -87,10 +85,10 @@ public:
 
         // data
         for (size_t i = 0; i < height_; i++) {
-            ofs.write((const char*)&data_[i * width_], width_);
+            ofs.write(reinterpret_cast<const char*>(&data_[i * width_]), width_);
             if (line_pitch != width_) {
                 uint32_t dummy = 0;
-                ofs.write((const char*)&dummy, line_pitch - width_);
+                ofs.write(reinterpret_cast<const char*>(&dummy), line_pitch - width_);
             }
         }
     }
