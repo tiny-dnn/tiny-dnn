@@ -465,6 +465,28 @@ TEST(multi_layer4, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
+TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
+    typedef cross_entropy loss_func;
+    typedef sigmoid activation;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+    fully_connected_layer<network, activation> l1(3, 8);
+    max_pooling_layer<network, activation> l2(4, 2, 1, 2); // 4x2 => 2x1
+
+    nn.add(&l1);
+    nn.add(&l2);
+
+    vec_t a(3, 0.0);
+    for (int i = 0; i < 3; i++) a[i] = i;
+    label_t t = 0;
+
+    nn.init_weight();
+    for (int i = 0; i < 24; i++) l1.weight()[i] = i;
+
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
+}
+
 template <typename N>
 void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
 {
