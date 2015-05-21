@@ -32,14 +32,13 @@
 namespace tiny_cnn {
 
 // normal 
-template<typename N, typename Activation, typename Filter = filter_none>
-class fully_connected_layer : public layer<N, Activation> {
+template<typename Activation, typename Filter = filter_none>
+class fully_connected_layer : public layer<Activation> {
 public:
-    typedef layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef layer<Activation> Base;
 
     fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
-        : layer<N, Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
+        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
     size_t connection_size() const override {
         return size_t(this->in_size_) * this->out_size_ + this->out_size_;

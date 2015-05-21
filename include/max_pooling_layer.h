@@ -31,14 +31,13 @@
 
 namespace tiny_cnn {
     
-template <typename N, typename Activation>
-class max_pooling_layer : public layer<N, Activation> {
+template <typename Activation>
+class max_pooling_layer : public layer<Activation> {
 public:
-    typedef layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef layer<Activation> Base;
 
     max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
-        : layer<N, Activation>(
+        : layer<Activation>(
         in_width * in_height * in_channels,
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),

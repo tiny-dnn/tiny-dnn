@@ -97,8 +97,6 @@ class network {
 public:
     typedef L LossFunction;
     typedef O Optimizer;
-    typedef network<L, O> Self;
-    typedef std::function<void()> Listener;
 
     explicit network(const std::string& name = "") : name_(name) {}
 
@@ -106,8 +104,7 @@ public:
         layers_.reset(); 
     }
 
-    template<typename T>
-    void add(layer_base<T> *layer) { layers_.add(layer); }
+    void add(layer_base *layer) { layers_.add(layer); }
 
     // input data dimension of whole networks
     layer_size_t in_dim() const { return layers_.head()->in_size(); }
@@ -116,8 +113,6 @@ public:
     layer_size_t out_dim() const { return layers_.tail()->out_size(); }
 
     std::string name() const { return name_; }
-
-    //LossFunction& loss_function() { return E_; }
 
     Optimizer& optimizer() { return optimizer_; }
 
@@ -381,7 +376,7 @@ private:
     std::string name_;
     LossFunction E_;
     Optimizer optimizer_;
-    layers<Self> layers_;
+    layers layers_;
 };
 
 
@@ -396,7 +391,7 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last)
 
     Iter next = first + 1;
     for (; next != last; ++first, ++next)
-        n.add(new fully_connected_layer<net_t, activation>(*first, *next));
+        n.add(new fully_connected_layer<activation>(*first, *next));
     return n;
 }
 

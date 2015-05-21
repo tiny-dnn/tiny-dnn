@@ -50,14 +50,13 @@ struct connection_table {
     size_t cols_;
 };
 
-template<typename N, typename Activation>
-class convolutional_layer : public partial_connected_layer<N, Activation> {
+template<typename Activation>
+class convolutional_layer : public partial_connected_layer<Activation> {
 public:
-    typedef partial_connected_layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef partial_connected_layer<Activation> Base;
 
     convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels)
-    : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
+    : partial_connected_layer<Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
     sqr(window_size) * in_channels * out_channels, out_channels), 
     in_(in_width, in_height, in_channels), 
     out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),
@@ -68,7 +67,7 @@ public:
     }
 
     convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels, const connection_table& connection_table)
-        : partial_connected_layer<N, Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
+        : partial_connected_layer<Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
         sqr(window_size) * in_channels * out_channels, out_channels), 
         in_(in_width, in_height, in_channels), 
         out_((in_width - window_size + 1), (in_height - window_size + 1), out_channels),

@@ -27,6 +27,7 @@
 #include "picotest.h"
 #include "tiny_cnn.h"
 #include <boost/filesystem.hpp>
+#include <boost/program_options.hpp>
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -35,7 +36,7 @@ TEST(convolutional, fprop) {
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
 
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> l(5, 5, 3, 1, 2);
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
     vec_t in(25);
 
@@ -87,7 +88,7 @@ TEST(convolutional, fprop) {
 
 TEST(convolutional, bprop) {
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid> layer(5, 5, 3, 1, 1);
+    convolutional_layer<sigmoid> layer(5, 5, 3, 1, 1);
 
     nn.add(&layer);
 
@@ -117,7 +118,7 @@ TEST(convolutional, bprop) {
 
 TEST(convolutional, gradient_check) { // tanh - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, tan_h> layer(5, 5, 3, 1, 1);
+    convolutional_layer<tan_h> layer(5, 5, 3, 1, 1);
     nn.add(&layer);
 
     vec_t a(25, 0.0);
@@ -130,7 +131,7 @@ TEST(convolutional, gradient_check) { // tanh - mse
 
 TEST(convolutional, gradient_check2) { // sigmoid - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, sigmoid> layer(5, 5, 3, 1, 1);
+    convolutional_layer<sigmoid> layer(5, 5, 3, 1, 1);
     nn.add(&layer);
 
     vec_t a(25, 0.0);
@@ -143,7 +144,7 @@ TEST(convolutional, gradient_check2) { // sigmoid - mse
 
 TEST(convolutional, gradient_check3) { // rectified - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, rectified_linear> layer(5, 5, 3, 1, 1);
+    convolutional_layer<rectified_linear> layer(5, 5, 3, 1, 1);
     nn.add(&layer);
 
     vec_t a(25, 0.0);
@@ -156,7 +157,7 @@ TEST(convolutional, gradient_check3) { // rectified - mse
 
 TEST(convolutional, gradient_check4) { // identity - mse
     network<mse, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<mse, gradient_descent_levenberg_marquardt>, identity> layer(5, 5, 3, 1, 1);
+    convolutional_layer<identity> layer(5, 5, 3, 1, 1);
     nn.add(&layer);
 
     vec_t a(25, 0.0);
@@ -169,7 +170,7 @@ TEST(convolutional, gradient_check4) { // identity - mse
 
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid> layer(5, 5, 3, 1, 1);
+    convolutional_layer<sigmoid> layer(5, 5, 3, 1, 1);
     nn.add(&layer);
 
     vec_t a(25, 0.0);
@@ -182,8 +183,8 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
 
 TEST(convolutional, bprop2) {
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid> layer(5, 5, 3, 1, 1);
-    fully_connected_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid> layer2(9, 3);
+    convolutional_layer<sigmoid> layer(5, 5, 3, 1, 1);
+    fully_connected_layer<sigmoid> layer2(9, 3);
 
     nn.add(&layer);
     nn.add(&layer2);
@@ -218,9 +219,8 @@ TEST(convolutional, bprop2) {
 }
 
 TEST(convolutional, serialize) {
-    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
-    convolutional_layer<NN, tan_h> layer1(14, 14, 5, 1, 2);
-    convolutional_layer<NN, tan_h> layer2(14, 14, 5, 1, 2);
+    convolutional_layer<tan_h> layer1(14, 14, 5, 1, 2);
+    convolutional_layer<tan_h> layer2(14, 14, 5, 1, 2);
 
     vec_t v(14*14);
 
@@ -241,7 +241,6 @@ TEST(convolutional, serialize) {
 }
 
 TEST(convolutional, serialize2) {
-    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
 #define O true
 #define X false
     static const bool connection[] = {
@@ -251,8 +250,8 @@ TEST(convolutional, serialize2) {
     };
 #undef O
 #undef X
-    convolutional_layer<NN, tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    convolutional_layer<NN, tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    convolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    convolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
 
     vec_t v(14*14*3);
 
@@ -274,7 +273,7 @@ TEST(convolutional, serialize2) {
 
 TEST(fully_connected, bprop) {
     network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    fully_connected_layer<network<cross_entropy, gradient_descent_levenberg_marquardt>, sigmoid> layer(3, 2);
+    fully_connected_layer<sigmoid> layer(3, 2);
     nn.add(&layer);
 
     vec_t a(3), t(2), a2(3), t2(2);
@@ -309,9 +308,8 @@ TEST(fully_connected, bprop) {
 }
 
 TEST(fully_connected, serialize) {
-    typedef network<mse, gradient_descent_levenberg_marquardt> NN;
-    fully_connected_layer<NN, tan_h> layer1(10, 10);
-    fully_connected_layer<NN, tan_h> layer2(10, 10);
+    fully_connected_layer<tan_h> layer1(10, 10);
+    fully_connected_layer<tan_h> layer2(10, 10);
 
     vec_t v(10);
 
@@ -333,8 +331,8 @@ TEST(fully_connected, serialize) {
 
 TEST(fully_connected, bprop2) {
     network<mse, gradient_descent> nn;
-    fully_connected_layer<network<mse, gradient_descent>, tan_h> layer(4, 6);
-    fully_connected_layer<network<mse, gradient_descent>, tan_h> layer2(6, 3);
+    fully_connected_layer<tan_h> layer(4, 6);
+    fully_connected_layer<tan_h> layer2(6, 3);
 
     nn.add(&layer);
     nn.add(&layer2);
@@ -376,10 +374,10 @@ TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-    fully_connected_layer<network, activation> l1(10, 14*14*3);
-    convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
-    average_pooling_layer<network, activation> l3(10, 10, 6, 2);
-    fully_connected_layer<network, activation> l4(5*5*6, 3);
+    fully_connected_layer<activation> l1(10, 14*14*3);
+    convolutional_layer<activation>   l2(14, 14, 5, 3, 6);
+    average_pooling_layer<activation> l3(10, 10, 6, 2);
+    fully_connected_layer<activation> l4(5*5*6, 3);
 
     nn.add(&l1);
     nn.add(&l2);
@@ -400,10 +398,10 @@ TEST(multi_layer, gradient_check2) { // tan_h - mse
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-    fully_connected_layer<network, activation> l1(10, 14*14*3);
-    convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
-    average_pooling_layer<network, activation> l3(10, 10, 6, 2);
-    fully_connected_layer<network, activation> l4(5*5*6, 3);
+    fully_connected_layer<activation> l1(10, 14*14*3);
+    convolutional_layer<activation>   l2(14, 14, 5, 3, 6);
+    average_pooling_layer<activation> l3(10, 10, 6, 2);
+    fully_connected_layer<activation> l4(5*5*6, 3);
 
     nn.add(&l1);
     nn.add(&l2);
@@ -423,10 +421,10 @@ TEST(multi_layer, gradient_check3) { // mixture - mse
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-    fully_connected_layer<network, tan_h>     l1(10, 14*14*3);
-    convolutional_layer<network, sigmoid>    l2(14, 14, 5, 3, 6);
-    average_pooling_layer<network, rectified_linear>    l3(10, 10, 6, 2);
-    fully_connected_layer<network, identity> l4(5*5*6, 3);
+    fully_connected_layer<tan_h>            l1(10, 14*14*3);
+    convolutional_layer<sigmoid>            l2(14, 14, 5, 3, 6);
+    average_pooling_layer<rectified_linear> l3(10, 10, 6, 2);
+    fully_connected_layer<identity>         l4(5*5*6, 3);
 
     nn.add(&l1);
     nn.add(&l2);
@@ -447,10 +445,10 @@ TEST(multi_layer4, gradient_check) { // sigmoid - cross-entropy
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-    fully_connected_layer<network, activation> l1(10, 14 * 14 * 3);
-    convolutional_layer<network, activation>   l2(14, 14, 5, 3, 6);
-    average_pooling_layer<network, activation> l3(10, 10, 6, 2);
-    fully_connected_dropout_layer<network, activation> l4(5 * 5 * 6, 3);
+    fully_connected_layer<activation>         l1(10, 14 * 14 * 3);
+    convolutional_layer<activation>           l2(14, 14, 5, 3, 6);
+    average_pooling_layer<activation>         l3(10, 10, 6, 2);
+    fully_connected_dropout_layer<activation> l4(5 * 5 * 6, 3);
 
     nn.add(&l1);
     nn.add(&l2);
@@ -471,8 +469,8 @@ TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
     network nn;
-    fully_connected_layer<network, activation> l1(3, 8);
-    max_pooling_layer<network, activation> l2(4, 2, 1, 2); // 4x2 => 2x1
+    fully_connected_layer<activation> l1(3, 8);
+    max_pooling_layer<activation>     l2(4, 2, 1, 2); // 4x2 => 2x1
 
     nn.add(&l1);
     nn.add(&l2);
@@ -487,8 +485,7 @@ TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
 }
 
-template <typename N>
-void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
+void serialization_test(const layer_base& src, layer_base& dst)
 {
     EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
@@ -518,11 +515,8 @@ void serialization_test(const layer_base<N>& src, layer_base<N>& dst)
 
 TEST(read_write, fully_connected)
 {
-	typedef mse loss_func;
-	typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
-
-	fully_connected_layer<network, tan_h> l1(100, 100);
-	fully_connected_layer<network, tan_h> l2(100, 100);
+	fully_connected_layer<tan_h> l1(100, 100);
+	fully_connected_layer<tan_h> l2(100, 100);
 
 	l1.init_weight();
 	l2.init_weight();
@@ -535,8 +529,8 @@ TEST(read_write, convolutional)
     typedef mse loss_func;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
-    convolutional_layer<network, tan_h> l1(5, 5, 3, 1, 1);
-    convolutional_layer<network, tan_h> l2(5, 5, 3, 1, 1);
+    convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
+    convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();

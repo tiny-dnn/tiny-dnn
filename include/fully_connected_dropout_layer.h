@@ -30,11 +30,10 @@
 namespace tiny_cnn {
 
 // normal 
-template<typename N, typename Activation>
-class fully_connected_dropout_layer : public fully_connected_layer<N, Activation, dropout> {
+template<typename Activation>
+class fully_connected_dropout_layer : public fully_connected_layer<Activation, dropout> {
 public:
-    typedef fully_connected_layer<N, Activation, dropout> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef fully_connected_layer<Activation, dropout> Base;
 
     fully_connected_dropout_layer(layer_size_t in_dim, layer_size_t out_dim, dropout::dropout_mode mode = dropout::per_data)
         : Base(in_dim, out_dim)

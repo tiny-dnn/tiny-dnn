@@ -30,17 +30,16 @@
 
 namespace tiny_cnn {
 
-template<typename N, typename Activation>
-class partial_connected_layer : public layer<N, Activation> {
+template<typename Activation>
+class partial_connected_layer : public layer<Activation> {
 public:
     typedef std::vector<std::pair<unsigned short, unsigned short> > io_connections;
     typedef std::vector<std::pair<unsigned short, unsigned short> > wi_connections;
     typedef std::vector<std::pair<unsigned short, unsigned short> > wo_connections;
-    typedef layer<N, Activation> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef layer<Activation> Base;
 
     partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
-        : layer<N, Activation> (in_dim, out_dim, weight_dim, bias_dim), 
+        : layer<Activation> (in_dim, out_dim, weight_dim, bias_dim), 
         weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {}
 
     size_t param_size() const override {

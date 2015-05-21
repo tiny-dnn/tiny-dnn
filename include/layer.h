@@ -31,20 +31,15 @@
 namespace tiny_cnn {
 
 // base class of all kind of NN layers
-template<typename N>
 class layer_base {
 public:
     virtual ~layer_base() {}
-
-    typedef N Network;
-    typedef typename Network::Optimizer Optimizer;
-    typedef typename Network::LossFunction LossFunction;
 
     layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
-    void connect(layer_base<N>* tail) {
+    void connect(layer_base* tail) {
         if (this->out_size() != 0 && tail->in_size() != this->out_size())
             throw nn_error("dimension mismatch");
         next_ = tail;
@@ -101,9 +96,10 @@ public:
     // called afrer updating weight
     virtual void post_update() {}
 
-    layer_base<N>* next() { return next_; }
-    layer_base<N>* prev() { return prev_; }
+    layer_base* next() { return next_; }
+    layer_base* prev() { return prev_; }
 
+    template <typename Optimizer>
     void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
         if (W_.empty()) {
             return;
@@ -138,8 +134,8 @@ protected:
     layer_size_t out_size_;
     bool parallelize_;
 
-    layer_base<N>* next_;
-    layer_base<N>* prev_;
+    layer_base* next_;
+    layer_base* prev_;
     vec_t output_[CNN_TASK_SIZE];     // last output of current layer, set by fprop
     vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
@@ -195,14 +191,13 @@ private:
     }
 };
 
-template<typename N, typename Activation>
-class layer : public layer_base<N> {
+template<typename Activation>
+class layer : public layer_base {
 public:
-    typedef layer_base<N> Base;
-    typedef typename Base::Optimizer Optimizer;
+    typedef layer_base Base;
 
     layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
-        : layer_base<N>(in_dim, out_dim, weight_dim, bias_dim) {}
+        : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
 
     activation::function& activation_function() override { return a_; }
 
@@ -210,12 +205,11 @@ protected:
     Activation a_;
 };
 
-template<typename N>
-class input_layer : public layer<N, activation::identity> {
+class input_layer : public layer<activation::identity> {
 public:
-    typedef layer<N, activation::identity> Base;
+    typedef layer<activation::identity> Base;
 
-    input_layer() : layer<N, activation::identity>(0, 0, 0, 0) {}
+    input_layer() : layer<activation::identity>(0, 0, 0, 0) {}
 
     layer_size_t in_size() const override { return this->next_ ? this->next_->in_size(): static_cast<layer_size_t>(0); }
 
@@ -241,11 +235,8 @@ public:
     }
 };
 
-template<typename N>
 class layers {
 public:
-    typedef typename N::Optimizer Optimizer;
-
     layers() {
         add(&first_);
     }
@@ -254,22 +245,22 @@ public:
         construct(rhs);
     }
 
-    layers<N>& operator = (const layers<N>& rhs) {
+    layers& operator = (const layers& rhs) {
         layers_.clear();
         construct(rhs);
         return *this;
     }
 
-    void add(layer_base<N> * new_tail) {
+    void add(layer_base * new_tail) {
         if (tail())  tail()->connect(new_tail);
         layers_.push_back(new_tail);
     }
 
     bool empty() const { return layers_.size() == 0; }
 
-    layer_base<N>* head() const { return empty() ? 0 : layers_[0]; }
+    layer_base* head() const { return empty() ? 0 : layers_[0]; }
 
-    layer_base<N>* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
+    layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
 
     void reset() {
         for (auto pl : layers_)
@@ -281,6 +272,7 @@ public:
             pl->divide_hessian(denominator);
     }
 
+    template <typename Optimizer>
     void update_weights(Optimizer *o, size_t worker_size, size_t batch_size) {
         for (auto pl : layers_)
             pl->update_weight(o, worker_size, batch_size);
@@ -292,24 +284,24 @@ public:
     }
 
 private:
-    void construct(const layers<N>& rhs) {
+    void construct(const layers& rhs) {
         add(&first_);
         for (size_t i = 1; i < rhs.layers_.size(); i++)
             add(rhs.layers_[i]);
     }
 
-    std::vector<layer_base<N>*> layers_;
-    input_layer<N> first_;
+    std::vector<layer_base*> layers_;
+    input_layer first_;
 };
 
-template <typename Char, typename CharTraits, typename N>
-std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const layer_base<N>& v) {
+template <typename Char, typename CharTraits>
+std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const layer_base& v) {
     v.save(os);
     return os;
 }
 
-template <typename Char, typename CharTraits, typename N>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, layer_base<N>& v) {
+template <typename Char, typename CharTraits>
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, layer_base& v) {
     v.load(os);
     return os;
 }
