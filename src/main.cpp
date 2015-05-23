@@ -50,12 +50,10 @@ void sample1_convnet(void) {
     // construct LeNet-5 architecture
     network<mse, gradient_descent_levenberg_marquardt> nn;
 
-    convolutional_layer<tan_h> C1(32, 32, 5, 1, 6);
-    average_pooling_layer<tan_h> S2(28, 28, 6, 2);
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
-    static const bool connection[] = {
+    static const bool connection [] = {
         O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
         O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
         O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
@@ -65,24 +63,15 @@ void sample1_convnet(void) {
     };
 #undef O
 #undef X
-    convolutional_layer<tan_h> C3(14, 14, 5, 6, 16, connection_table(connection, 6, 16));
-    average_pooling_layer<tan_h> S4(10, 10, 16, 2);
-    convolutional_layer<tan_h> C5(5, 5, 5, 16, 120);
-    fully_connected_layer<tan_h> F6(120, 10);
 
-    assert(C1.param_size() == 156 && C1.connection_size() == 122304);
-    assert(S2.param_size() == 12 && S2.connection_size() == 5880);
-    assert(C3.param_size() == 1516 && C3.connection_size() == 151600);
-    assert(S4.param_size() == 32 && S4.connection_size() == 2000);
-    assert(C5.param_size() == 48120 && C5.connection_size() == 48120);
-
-    nn.add(&C1);
-    nn.add(&S2);
-    nn.add(&C3);
-    nn.add(&S4);
-    nn.add(&C5);
-    nn.add(&F6);
-
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32 in, 5x5 kernel, 1-6 fmaps conv
+       << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28 in, 6 fmaps, 2x2 subsampling
+       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
+                                     connection_table(connection, 6, 16)) // with connection-table
+       << average_pooling_layer<tan_h>(10, 10, 16, 2)
+       << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
+       << fully_connected_layer<tan_h>(120, 10);
+ 
     std::cout << "load models..." << std::endl;
 
     // load MNIST dataset
@@ -141,7 +130,7 @@ void sample1_convnet(void) {
 
     // save networks
     std::ofstream ofs("LeNet-weights");
-    ofs << C1 << S2 << C3 << S4 << C5 << F6;
+    ofs << nn;
 }
 
 

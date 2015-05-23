@@ -215,6 +215,16 @@ public:
         return true;
     }
 
+    void save(std::ostream& os) const {
+        auto l = layers_.head();
+        while (l) { l->save(os); l = l->next(); }
+    }
+
+    void load(std::istream& is) {
+        auto l = layers_.head();
+        while (l) { l->load(is); l = l->next(); }
+    }
+
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
@@ -403,6 +413,31 @@ network<loss_func, algorithm> make_mlp(const std::vector<int>& units)
 {
     typedef std::vector<int>::const_iterator iter;
     return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
+}
+
+
+template <typename L, typename O, typename Layer>
+network<L, O>& operator << (network<L, O>& n, const Layer&& l) {
+    n.add(new Layer(l));
+    return n;
+}
+
+template <typename L, typename O, typename Layer>
+network<L, O>& operator << (network<L, O>& n, Layer& l) {
+    n.add(&l);
+    return n;
+}
+
+template <typename L, typename O, typename Char, typename CharTraits>
+std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const network<L, O>& n) {
+    n.save(os);
+    return os;
+}
+
+template <typename L, typename O, typename Char, typename CharTraits>
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, const network<L, O>& n) {
+    n.load(os);
+    return os;
 }
 
 } // namespace tiny_cnn
