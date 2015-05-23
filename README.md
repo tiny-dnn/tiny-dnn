@@ -46,7 +46,7 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 * Intel TBB
 
 ## building sample project
-### gcc(4.6~)
+### gcc(4.7~)
 without tbb
 
     ./waf configure --BOOST_ROOT=your-boost-root
