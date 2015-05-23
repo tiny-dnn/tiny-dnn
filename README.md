@@ -83,24 +83,35 @@ void cunstruct_cnn() {
     using namespace tiny_cnn;
 
     // specify loss-function and optimization-algorithm
-    network<mse, gradient_descent> mynet;
-    // network<cross_entropy, adagrad> mynet; 
+    network<mse, adagrad> net;
+    //network<cross_entropy, RMSprop> net;
 
-    // tanh, 32x32 input, 5x5 window, 1-6 feature-maps convolution
-    convolutional_layer<tan_h> C1(32, 32, 5, 1, 6);
+    // add layers
+    net << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32in, conv5x5, 1-6 f-maps
+        << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28in, 6 f-maps, pool2x2
+        << fully_connected_layer<tan_h>(14 * 14 * 6, 120)
+        << fully_connected_layer<identity>(120, 10);
 
-    // tanh, 28x28 input, 6 feature-maps, 2x2 subsampling
-    average_pooling_layer<tan_h> S2(28, 28, 6, 2);
-
-    // fully-connected layers
-    fully_connected_layer<sigmoid> F3(14 * 14 * 6, 120);
-    fully_connected_layer<identity> F4(120, 10);
-
-    // connect all
-    mynet.add(&C1); mynet.add(&S2); mynet.add(&F3); mynet.add(&F4);
-
-    assert(mynet.in_dim() == 32 * 32);
-    assert(mynet.out_dim() == 10);
+    assert(net.in_dim() == 32 * 32);
+    assert(net.out_dim() == 10);
+    
+    // load MNIST dataset
+    std::vector<label_t> train_labels;
+    std::vector<vec_t> train_images;
+    
+    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("train-images.idx3-ubyte", &train_images);
+    
+    // train (50-epoch, 30-minibatch)
+    net.train(train_images, train_labels, 30, 50);
+    
+    // save
+    std::ofstream ofs("weights");
+    ofs << net;
+    
+    // load
+    // std::ifstream ifs("weights");
+    // ifs >> net;
 }
 ```
 construct multi-layer perceptron(mlp)
@@ -111,15 +122,13 @@ using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
 void cunstruct_mlp() {
-    network<mse, gradient_descent> mynet;
+    network<mse, gradient_descent> net;
 
-    fully_connected_layer<sigmoid> F1(32 * 32, 300);
-    fully_connected_layer<identity> F2(300, 10);
+    net << fully_connected_layer<sigmoid>(32 * 32, 300);
+        << fully_connected_layer<identity>(300, 10);
 
-    mynet.add(&F1); mynet.add(&F2);
-
-    assert(mynet.in_dim() == 32 * 32);
-    assert(mynet.out_dim() == 10);
+    assert(net.in_dim() == 32 * 32);
+    assert(net.out_dim() == 10);
 }
 ```
 
