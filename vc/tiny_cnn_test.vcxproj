@@ -72,7 +72,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\test.cpp" />
+    <ClCompile Include="..\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\activation_function.h" />
@@ -84,9 +84,9 @@
     <ClInclude Include="..\include\network.h" />
     <ClInclude Include="..\include\optimizer.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
-    <ClInclude Include="..\include\picotest.h" />
     <ClInclude Include="..\include\util.h" />
     <ClInclude Include="..\include\dropout.h" />
+    <ClInclude Include="..\test\picotest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
