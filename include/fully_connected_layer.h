@@ -31,14 +31,11 @@
 
 namespace tiny_cnn {
 
-// normal 
 template<typename Activation, typename Filter = filter_none>
 class fully_connected_layer : public layer<Activation> {
 public:
-    typedef layer<Activation> Base;
-
     fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
-        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
+        : layer<Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
     size_t connection_size() const override {
         return size_t(this->in_size_) * this->out_size_ + this->out_size_;
@@ -74,23 +71,18 @@ public:
         vec_t& dW = this->dW_[index];
         vec_t& db = this->db_[index];
 
-        for (int c = 0; c < this->in_size_; c++) { 
-            //prev_delta[c] = 0.0;
-            //for (int r = 0; r < this->out_size_; r++)
-            //    prev_delta[c] += current_delta[r] * this->W_[c*this->out_size_+r];
-
+        for (int c = 0; c < this->in_size_; c++) {
+            // propagate delta to previous layer
+            // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
             prev_delta[c] = vectorize::dot(&curr_delta[0], &this->W_[c*this->out_size_], this->out_size_);
             prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
         for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
-            /*for (int c = 0; c < this->in_size_; c++) 
-                for (int i = r.begin(); i < r.end(); i++) 
-                    dW[c*this->out_size_+i] += current_delta[i] * prev_out[c];*/
-
-            for (int c = 0; c < this->in_size_; c++) {
+            // accumulate weight-step using delta
+            // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+            for (int c = 0; c < this->in_size_; c++)
                 vectorize::muladd(&curr_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*this->out_size_ + r.begin()]);
-            }
 
             for (int i = r.begin(); i < r.end(); i++) 
                 db[i] += curr_delta[i];
@@ -99,15 +91,13 @@ public:
         return this->prev_->back_propagation(this->prev_delta_[index], index);
     }
 
-
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
         const vec_t& prev_out = this->prev_->output(0);
         const activation::function& prev_h = this->prev_->activation_function();
 
-
         for (int c = 0; c < this->in_size_; c++) 
             for (int r = 0; r < this->out_size_; r++)
-                this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * prev_out[c] * prev_out[c];
+                this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
 
         for (int r = 0; r < this->out_size_; r++)
             this->bhessian_[r] += current_delta2[r];
@@ -116,9 +106,9 @@ public:
             this->prev_delta2_[c] = 0.0;
 
             for (int r = 0; r < this->out_size_; r++) 
-                this->prev_delta2_[c] += current_delta2[r] * this->W_[c*this->out_size_ + r] * this->W_[c*this->out_size_ + r];
+                this->prev_delta2_[c] += current_delta2[r] * sqr(this->W_[c*this->out_size_ + r]);
 
-            this->prev_delta2_[c] *= prev_h.df(prev_out[c]) * prev_h.df(prev_out[c]);
+            this->prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
         }
 
         return this->prev_->back_propagation_2nd(this->prev_delta2_);

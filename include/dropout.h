@@ -46,8 +46,6 @@ namespace tiny_cnn {
             CNN_UNREFERENCED_PARAMETER(index);
             return delta;
         }
-
-    private:
     };
 
     class dropout {
@@ -57,7 +55,7 @@ namespace tiny_cnn {
             test_phase
         };
 
-        enum dropout_mode {
+        enum mode {
             per_data,
             per_batch
         };
@@ -77,7 +75,7 @@ namespace tiny_cnn {
             dropout_rate_ = rate;
         }
 
-        void set_mode(dropout_mode mode) {
+        void set_mode(mode mode) {
             mode_ = mode;
         }
 
@@ -126,7 +124,7 @@ namespace tiny_cnn {
         vec_t masked_out_[CNN_TASK_SIZE];
         vec_t masked_delta_[CNN_TASK_SIZE];
         context ctx_;
-        dropout_mode mode_;
+        mode mode_;
         double dropout_rate_;
     };
 

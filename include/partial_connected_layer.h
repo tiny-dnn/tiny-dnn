@@ -145,9 +145,9 @@ public:
             float_t diff = 0.0;
 
             for (auto connection : connections)
-                diff += prev_out[connection.first] * prev_out[connection.first] * current_delta2[connection.second];
+                diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
 
-            diff *= scale_factor_ * scale_factor_;
+            diff *= sqr(scale_factor_);
             this->Whessian_[i] += diff;
         }
 
@@ -166,9 +166,9 @@ public:
             this->prev_delta2_[i] = 0.0;
 
             for (auto connection : connections) 
-                this->prev_delta2_[i] += this->W_[connection.first] * this->W_[connection.first] * current_delta2[connection.second];
+                this->prev_delta2_[i] += sqr(this->W_[connection.first]) * current_delta2[connection.second];
 
-            this->prev_delta2_[i] *= scale_factor_ * scale_factor_ * prev_h.df(prev_out[i]) * prev_h.df(prev_out[i]);
+            this->prev_delta2_[i] *= sqr(scale_factor_ * prev_h.df(prev_out[i]));
         }
         return this->prev_->back_propagation_2nd(this->prev_delta2_);
     }

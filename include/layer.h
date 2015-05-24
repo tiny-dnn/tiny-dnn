@@ -27,6 +27,7 @@
 #pragma once
 #include "util.h"
 #include "product.h"
+#include "activation_function.h"
 
 namespace tiny_cnn {
 
@@ -62,15 +63,20 @@ public:
         clear_diff(CNN_TASK_SIZE);
     }
 
+    void divide_hessian(int denominator) {
+        for (auto& w : Whessian_) w /= denominator;
+        for (auto& b : bhessian_) b /= denominator;
+    }
+
+    // getter
     const vec_t& output(int worker_index) const { return output_[worker_index]; }
     const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
-
-    void divide_hessian(int denominator) { 
-        for (auto& w : Whessian_) w /= denominator;
-        for (auto& b : bhessian_) b /= denominator;
-    }
+    vec_t& weight_diff(int index) { return dW_[index]; }
+    vec_t& bias_diff(int index) { return db_[index]; }
+    layer_base* next() { return next_; }
+    layer_base* prev() { return prev_; }
 
     virtual layer_size_t in_size() const { return in_size_; }
     virtual layer_size_t out_size() const { return out_size_; }
@@ -96,14 +102,9 @@ public:
     // called afrer updating weight
     virtual void post_update() {}
 
-    layer_base* next() { return next_; }
-    layer_base* prev() { return prev_; }
-
     template <typename Optimizer>
     void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
-        if (W_.empty()) {
-            return;
-        }
+        if (W_.empty()) return;
 
         merge(worker_size, batch_size);
 
@@ -113,9 +114,6 @@ public:
         clear_diff(worker_size);
         post_update();
     }
-
-    vec_t& weight_diff(int index) { return dW_[index]; }
-    vec_t& bias_diff(int index) { return db_[index]; }
 
     bool has_same_weights(const layer_base& rhs, float_t eps) const {
         if (W_.size() != rhs.W_.size() || b_.size() != rhs.b_.size())
@@ -153,10 +151,6 @@ private:
             vectorize::reduce<float_t>(&dW_[i][0], dW_[i].size(), &dW_[0][0]);
         for (size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&db_[i][0], db_[i].size(), &db_[0][0]);
-        //for (int i = 1; i < worker_size; i++) {
-        //    std::transform(dW_[0].begin(), dW_[0].end(), dW_[i].begin(), dW_[0].begin(), std::plus<float_t>());
-        //    std::transform(db_[0].begin(), db_[0].end(), db_[i].begin(), db_[0].begin(), std::plus<float_t>());
-        //}
 
         std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
@@ -173,42 +167,32 @@ private:
         in_size_ = in_dim;
         out_size_ = out_dim;
 
-        for (auto& o : output_)
-            o.resize(out_dim);
-        for (auto& p : prev_delta_)
-            p.resize(in_dim);
         W_.resize(weight_dim);
-        b_.resize(bias_dim);     
+        b_.resize(bias_dim);
         Whessian_.resize(weight_dim);
         bhessian_.resize(bias_dim);
         prev_delta2_.resize(in_dim);
 
-        for (auto& dw : dW_)
-            dw.resize(weight_dim);
-
-        for (auto& db : db_)
-            db.resize(bias_dim);
+        for (auto& o : output_)     o.resize(out_dim);
+        for (auto& p : prev_delta_) p.resize(in_dim);
+        for (auto& dw : dW_) dw.resize(weight_dim);
+        for (auto& db : db_) db.resize(bias_dim);
     }
 };
 
 template<typename Activation>
 class layer : public layer_base {
 public:
-    typedef layer_base Base;
-
     layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
 
     activation::function& activation_function() override { return a_; }
-
 protected:
     Activation a_;
 };
 
 class input_layer : public layer<activation::identity> {
 public:
-    typedef layer<activation::identity> Base;
-
     input_layer() : layer<activation::identity>(0, 0, 0, 0) {}
 
     layer_size_t in_size() const override { return this->next_ ? this->next_->in_size(): static_cast<layer_size_t>(0); }
@@ -237,13 +221,9 @@ public:
 
 class layers {
 public:
-    layers() {
-        add(&first_);
-    }
+    layers() { add(&first_); }
 
-    layers(const layers& rhs) {
-        construct(rhs);
-    }
+    layers(const layers& rhs) { construct(rhs); }
 
     layers& operator = (const layers& rhs) {
         layers_.clear();
