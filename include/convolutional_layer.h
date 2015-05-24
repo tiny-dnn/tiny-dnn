@@ -143,7 +143,7 @@ private:
     index3d<layer_size_t> out_;
     index3d<layer_size_t> weight_;
     connection_table connection_;
-	size_t window_size_;
+    size_t window_size_;
 };
 
 } // namespace tiny_cnn

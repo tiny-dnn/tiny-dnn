@@ -515,11 +515,11 @@ void serialization_test(const layer_base& src, layer_base& dst)
 
 TEST(read_write, fully_connected)
 {
-	fully_connected_layer<tan_h> l1(100, 100);
-	fully_connected_layer<tan_h> l2(100, 100);
+    fully_connected_layer<tan_h> l1(100, 100);
+    fully_connected_layer<tan_h> l2(100, 100);
 
-	l1.init_weight();
-	l2.init_weight();
+    l1.init_weight();
+    l2.init_weight();
 
     serialization_test(l1, l2);
 }
