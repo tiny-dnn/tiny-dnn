@@ -112,8 +112,7 @@ TEST(convolutional, bprop) {
 
     nn.train(data, train);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 }
 
 TEST(convolutional, gradient_check) { // tanh - mse
@@ -179,43 +178,6 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, bprop2) {
-    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
-    convolutional_layer<sigmoid> layer(5, 5, 3, 1, 1);
-    fully_connected_layer<sigmoid> layer2(9, 3);
-
-    nn.add(&layer);
-    nn.add(&layer2);
-
-    vec_t a(25, 0.0), t(3, 0.0), a2(25, 0.0), t2(3, 0.0);
-
-    for (int y = 0; y < 5; y++) {
-        a[5*y+3] = 1.0;
-    }
-
-
-    t[0] = 0.0;
-    t[1] = 0.5;
-    t[2] = 1.0;
-
-    uniform_rand(a2.begin(), a2.end(), -3, 3);
-    uniform_rand(t2.begin(), t2.end(), 0, 1);
-
-    std::vector<vec_t> data, train;
-
-    for (int i = 0; i < 300; i++) {
-        data.push_back(a);
-        data.push_back(a2);
-        train.push_back(t);
-        train.push_back(t2);
-    }
-    nn.train(data, train);
-
-    vec_t predicted;
-    nn.predict(a, &predicted);
-    nn.predict(a2, &predicted);
 }
 
 TEST(convolutional, serialize) {
@@ -295,13 +257,12 @@ TEST(fully_connected, bprop) {
     nn.optimizer().alpha = 0.1;
     nn.train(data, train, 1, 10);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 
     EXPECT_NEAR(predicted[0], t[0], 1E-5);
     EXPECT_NEAR(predicted[1], t[1], 1E-5);
 
-    nn.predict(a2, &predicted);
+    predicted = nn.predict(a2);
 
     EXPECT_NEAR(predicted[0], t2[0], 1E-5);
     EXPECT_NEAR(predicted[1], t2[1], 1E-5);
@@ -356,13 +317,12 @@ TEST(fully_connected, bprop2) {
     nn.optimizer().alpha = 0.01;
     nn.train(data, train, 1, 10);
 
-    vec_t predicted;
-    nn.predict(a, &predicted);
+    vec_t predicted = nn.predict(a);
 
     EXPECT_NEAR(predicted[0], t[0], 1E-4);
     EXPECT_NEAR(predicted[1], t[1], 1E-4);
 
-    nn.predict(a2, &predicted);
+    predicted = nn.predict(a2);
 
     EXPECT_NEAR(predicted[0], t2[0], 1E-4);
     EXPECT_NEAR(predicted[1], t2[1], 1E-4);

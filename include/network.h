@@ -88,37 +88,23 @@ struct result {
 
 enum grad_check_mode {
     GRAD_CHECK_ALL, ///< check all elements of weights
-    GRAD_CHECK_FIRST, ///< check first element of weights
     GRAD_CHECK_RANDOM ///< check 10 randomly selected weights
 };
 
-template<typename L, typename O>
+template<typename LossFunction, typename Optimizer>
 class network {
 public:
-    typedef L LossFunction;
-    typedef O Optimizer;
-
     explicit network(const std::string& name = "") : name_(name) {}
 
-    void init_weight() { 
-        layers_.reset(); 
-    }
+    // getter
+    layer_size_t in_dim() const         { return layers_.head()->in_size(); }
+    layer_size_t out_dim() const        { return layers_.tail()->out_size(); }
+    std::string  name() const           { return name_; }
+    Optimizer&   optimizer()            { return optimizer_; }
 
-    void add(layer_base *layer) { layers_.add(layer); }
-
-    // input data dimension of whole networks
-    layer_size_t in_dim() const { return layers_.head()->in_size(); }
-
-    // output data dimension of whole networks
-    layer_size_t out_dim() const { return layers_.tail()->out_size(); }
-
-    std::string name() const { return name_; }
-
-    Optimizer& optimizer() { return optimizer_; }
-
-    void predict(const vec_t& in, vec_t *out) {
-        *out = forward_propagation(in);
-    }
+    void         init_weight()          { layers_.reset(); }
+    void         add(layer_base *layer) { layers_.add(layer); }
+    vec_t        predict(const vec_t& in) { return fprop(in); }
 
     /**
      * training conv-net
@@ -130,7 +116,13 @@ public:
      * @param on_epoch_enumerate callback for each epoch 
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size, int epoch, OnBatchEnumerate on_batch_enumerate, OnEpochEnumerate on_epoch_enumerate) {
+    void train(const std::vector<vec_t>& in,
+               const std::vector<T>&     t,
+               size_t                    batch_size,
+               int                       epoch,
+               OnBatchEnumerate          on_batch_enumerate,
+               OnEpochEnumerate          on_epoch_enumerate)
+    {
         init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
@@ -146,19 +138,22 @@ public:
         }
     }
 
+    /**
+     * training conv-net without callback
+     **/
     template<typename T>
     void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
         train(in, t, batch_size, epoch, nop, nop);
     }
 
+    /**
+     * test and generate confusion-matrix
+     **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
         result test_result;
 
         for (size_t i = 0; i < in.size(); i++) {
-            vec_t out;
-            predict(in[i], &out);
-
-            const label_t predicted = max_index(out);
+            const label_t predicted = max_index(predict(in[i]));
             const label_t actual = t[i];
 
             if (predicted == actual) test_result.num_success++;
@@ -168,8 +163,17 @@ public:
         return test_result;
     }
 
+    void save(std::ostream& os) const {
+        auto l = layers_.head();
+        while (l) { l->save(os); l = l->next(); }
+    }
 
-    bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode = GRAD_CHECK_FIRST) {
+    void load(std::istream& is) {
+        auto l = layers_.head();
+        while (l) { l->load(is); l = l->next(); }
+    }
+
+    bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode) {
         assert(!layers_.empty());
         std::vector<vec_t> v;
         label2vector(t, data_size, &v);
@@ -186,43 +190,22 @@ public:
             
             switch (mode) {
             case GRAD_CHECK_ALL:
-                for (int i = 0; i < (int)w.size(); i++) {
-                    if (calc_delta_diff(in, &v[0], data_size, w, dw, i) > eps) return false;
-                }
-                for (int i = 0; i < (int)b.size(); i++) {
-                    if (calc_delta_diff(in, &v[0], data_size, b, db, i) > eps) return false;
-                }
-                break;
-            case GRAD_CHECK_FIRST:
-                if (calc_delta_diff(in, &v[0], data_size, w, dw, 0) > eps) return false;
-                if (calc_delta_diff(in, &v[0], data_size, b, db, 0) > eps) return false;
+                for (int i = 0; i < (int)w.size(); i++)
+                    if (calc_delta(in, &v[0], data_size, w, dw, i) > eps) return false;
+                for (int i = 0; i < (int)b.size(); i++)
+                    if (calc_delta(in, &v[0], data_size, b, db, i) > eps) return false;
                 break;
             case GRAD_CHECK_RANDOM:
-                for (int i = 0; i < 10; i++) {
-                    int index = uniform_rand(0, (int)w.size() - 1);
-                    if (calc_delta_diff(in, &v[0], data_size, w, dw, index) > eps) return false;
-                }
-                for (int i = 0; i < 10; i++) {
-                    int index = uniform_rand(0, (int)b.size() - 1);
-                    if (calc_delta_diff(in, &v[0], data_size, b, db, index) > eps) return false;
-                }
+                for (int i = 0; i < 10; i++)
+                    if (calc_delta(in, &v[0], data_size, w, dw, uniform_idx(w)) > eps) return false;
+                for (int i = 0; i < 10; i++)
+                    if (calc_delta(in, &v[0], data_size, b, db, uniform_idx(b)) > eps) return false;
                 break;
             default:
                 throw nn_error("unknown grad-check type");
             }
-
         }
         return true;
-    }
-
-    void save(std::ostream& os) const {
-        auto l = layers_.head();
-        while (l) { l->save(os); l = l->next(); }
-    }
-
-    void load(std::istream& is) {
-        auto l = layers_.head();
-        while (l) { l->load(is); l = l->next(); }
     }
 
 private:
@@ -249,8 +232,7 @@ private:
 
     void train_once(const vec_t* in, const vec_t* t, int size) {
         if (size == 1) {
-            const vec_t& out = forward_propagation(in[0]);
-            back_propagation(out, t[0]);
+            bprop(fprop(in[0]), t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
             task_group g;
@@ -262,10 +244,7 @@ private:
                 int num = i == num_tasks - 1 ? remaining : data_per_thread;
                 
                 g.run([=]{                    
-                    for (int j = 0; j < num; j++) {
-                        const vec_t& out = this->forward_propagation(in[j], i);
-                        this->back_propagation(out, t[j], i);
-                    }
+                    for (int j = 0; j < num; j++) bprop(fprop(in[j], i), t[j], i);
                 });
 
                 remaining -= num;
@@ -282,99 +261,80 @@ private:
     void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
 
-        for (int i = 0; i < size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            back_propagation_2nd(out);
-        }
+        for (int i = 0; i < size; i++)
+            bprop_2nd(fprop(in[i]));
+
         layers_.divide_hessian(size);
     }
 
     template<typename Activation, typename Loss>
     bool is_canonical_link(const Activation& h, const Loss& E) {
-        CNN_UNREFERENCED_PARAMETER(E);
         if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(activation::tan_h) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(activation::identity) && typeid(E) == typeid(mse)) return true;
         return false;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, int idx = 0) {
+    const vec_t& fprop(const vec_t& in, int idx = 0) {
         if (in.size() != (size_t)in_dim())
             throw nn_error("input dimension mismatch");
         return layers_.head()->forward_propagation(in, idx);
     }
 
     float_t get_loss(const vec_t& out, const vec_t& t) {
-        int dim = out.size();
         float_t e = 0.0;
-
-        assert(dim == (int)t.size());
-
-        for (int i = 0; i < dim; i++)
-            e += E_.f(out[i], t[i]);
-
+        assert(out.size() == t.size());
+        for_i(out.size(), [&](int i){ e += E_.f(out[i], t[i]); });
         return e;
     }
 
-    void back_propagation_2nd(const vec_t& out) {
+    void bprop_2nd(const vec_t& out) {
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h, E_)) {
-            for (int i = 0; i < out_dim(); i++)
-                delta[i] = target_value_max() * h.df(out[i]);  
+            for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]);});
         } else {
-            for (int i = 0; i < out_dim(); i++)
-                delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]); // FIXME
+            for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);}); // FIXME
         }
 
         layers_.tail()->back_propagation_2nd(delta);
     }
 
-    void back_propagation(const vec_t& out, const vec_t& t, int idx = 0) {
+    void bprop(const vec_t& out, const vec_t& t, int idx = 0) {
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
-        if (is_canonical_link(h, E_)) {
-            for (int i = 0; i < out_dim(); i++)
-                delta[i] = out[i] - t[i];  
-        } else {
-            for (int i = 0; i < out_dim(); i++)
-                delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);
-        }
+        if (is_canonical_link(h, E_))
+            for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
+        else
+            for_i(out_dim(), [&](int i){ delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);});
 
         layers_.tail()->back_propagation(delta, idx);
     }
 
-    float_t calc_delta_diff(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
+    float_t calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
         static const float_t delta = 1e-10;
 
         std::fill(dw.begin(), dw.end(), 0.0);
 
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
+
         w[check_index] = prev_w + delta;
         float_t f_p = 0.0;
-        for (int i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            f_p += get_loss(out, v[i]);
-        }
+        for_i(data_size, [&](int i){ f_p += get_loss(fprop(in[i]), v[i]); });
 
         float_t f_m = 0.0;
         w[check_index] = prev_w - delta;
-        for (int i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            f_m += get_loss(out, v[i]);
-        }
+        for_i(data_size, [&](int i){ f_m += get_loss(fprop(in[i]), v[i]); });
 
         float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        for (int i = 0; i < data_size; i++) {
-            const vec_t& out = forward_propagation(in[i]);
-            back_propagation(out, v[i]);
-        }
+        for_i(data_size, [&](int i){ bprop(fprop(in[i]), v[i]); });
+
         float_t delta_by_bprop = dw[check_index];
 
         return std::abs(delta_by_bprop - delta_by_numerical);
@@ -389,13 +349,11 @@ private:
     layers layers_;
 };
 
-
 /**
 * create multi-layer perceptron
 */
 template<typename loss_func, typename algorithm, typename activation, typename Iter>
-network<loss_func, algorithm> make_mlp(Iter first, Iter last)
-{
+network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
     typedef network<loss_func, algorithm> net_t;
     net_t n;
 
@@ -409,12 +367,9 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last)
  * create multi-layer perceptron
  */
 template<typename loss_func, typename algorithm, typename activation>
-network<loss_func, algorithm> make_mlp(const std::vector<int>& units)
-{
-    typedef std::vector<int>::const_iterator iter;
+network<loss_func, algorithm> make_mlp(const std::vector<int>& units) {
     return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
 }
-
 
 template <typename L, typename O, typename Layer>
 network<L, O>& operator << (network<L, O>& n, const Layer&& l) {

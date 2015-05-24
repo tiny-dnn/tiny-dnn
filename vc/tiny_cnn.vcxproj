@@ -18,11 +18,11 @@
     <ClInclude Include="..\include\config.h" />
     <ClInclude Include="..\include\convolutional_layer.h" />
     <ClInclude Include="..\include\deform.h" />
-    <ClInclude Include="..\include\fixed_point.h" />
     <ClInclude Include="..\include\fully_connected_layer.h" />
     <ClInclude Include="..\include\image.h" />
     <ClInclude Include="..\include\layer.h" />
     <ClInclude Include="..\include\loss_function.h" />
+    <ClInclude Include="..\include\max_pooling_layer.h" />
     <ClInclude Include="..\include\mnist_parser.h" />
     <ClInclude Include="..\include\network.h" />
     <ClInclude Include="..\include\partial_connected_layer.h" />
@@ -45,7 +45,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -97,7 +97,7 @@
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
-      <PreprocessorDefinitions>_MBCS;CNN_USE_AVX;_NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;CNN_USE_AVX;CNN_USE_TBB;_NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ExceptionHandling>Sync</ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>

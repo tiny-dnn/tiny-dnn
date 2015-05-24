@@ -38,7 +38,6 @@
 #include <tbb/tbb.h>
 #include <tbb/task_group.h>
 #endif
-#include "fixed_point.h"
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
 
@@ -74,18 +73,11 @@ struct index3d {
     T depth_;
 };
 
-template<int Q>
-inline fixed_point<Q> uniform_rand(fixed_point<Q> min, fixed_point<Q> max) {
-    // avoid gen(0) for MSVC known issue
-    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
-    static std::mt19937 gen(1);
-    std::uniform_real_distribution<double> dst(min.to_real(), max.to_real());
-    return dst(gen);
-}
-
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
+    // avoid gen(0) for MSVC known issue
+    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
     static std::mt19937 gen(1);
     std::uniform_int_distribution<T> dst(min, max);
     return dst(gen);
@@ -97,6 +89,11 @@ uniform_rand(T min, T max) {
     static std::mt19937 gen(1);
     std::uniform_real_distribution<T> dst(min, max);
     return dst(gen);
+}
+
+template<typename Container>
+inline int uniform_idx(const Container& t) {
+    return uniform_rand(0, (int) t.size() - 1);
 }
 
 inline bool bernoulli(double p) {
