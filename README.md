@@ -91,7 +91,7 @@ construct convolutional neural networks
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void cunstruct_cnn() {
+void construct_cnn() {
     using namespace tiny_cnn;
 
     // specify loss-function and optimization-algorithm
@@ -133,7 +133,7 @@ construct multi-layer perceptron(mlp)
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void cunstruct_mlp() {
+void construct_mlp() {
     network<mse, gradient_descent> net;
 
     net << fully_connected_layer<sigmoid>(32 * 32, 300);
@@ -151,7 +151,7 @@ another way to construct mlp
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void cunstruct_mlp() {
+void construct_mlp() {
     auto mynet = make_mlp<mse, gradient_descent, tan_h>({ 32 * 32, 300, 10 });
 
     assert(mynet.in_dim() == 32 * 32);
@@ -162,10 +162,10 @@ void cunstruct_mlp() {
 more sample, read main.cpp
 
 ## references
-[1] Y Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
+[1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
     arXiv:1206.5533v2, 2012
 
-[2] Y LeCun, L Bottou, Y Bengio, and P Haffner, [Gradient-based learning applied to document recognition.](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf)
+[2] Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, [Gradient-based learning applied to document recognition.](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf)
     Proceedings of the IEEE, 86, 2278-2324.
     
 other useful reference lists:
