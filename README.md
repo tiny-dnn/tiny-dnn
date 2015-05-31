@@ -12,6 +12,8 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 * [references](#references)
 * [license](#license)
 
+see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
+
 ## designing principles
 - fast, without GPU
     - with TBB threading and SSE/AVX vectorization
