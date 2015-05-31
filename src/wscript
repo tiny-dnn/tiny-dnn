@@ -1,9 +1,15 @@
+import sys
 def build(bld):
+    if sys.platform == 'Darwin':
+      libcxx = 'c++'
+    else:
+      libcxx = 'stdc++'
+    
     bld(features = 'cxx cprogram',
       source = 'main.cpp',
       target = 'main',
       cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast', '-march=native'],
-      lib      = ['stdc++','tbb'],
+      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
+      lib      = [libcxx, 'boost_timer-mt', 'tbb'],
       libpath  = ['../'],
-      includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT+'/include'])
+      includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT])
