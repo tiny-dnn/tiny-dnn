@@ -41,8 +41,6 @@ def options(opt):
 
 def configure(conf):
     conf.load('compiler_cxx')
-    from waflib.Tools.compiler_cxx import cxx_compiler
-    print cxx_compiler
     if conf.options.TBB:
        conf.define("CNN_USE_TBB", "")
     if conf.options.AVX:
