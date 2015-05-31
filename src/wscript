@@ -9,7 +9,7 @@ def build(bld):
       source = 'main.cpp',
       target = 'main',
       cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast', '--march=native'],
-      lib      = [libcxx, 'boost_time', 'tbb'],
+      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
+      lib      = [libcxx, 'boost_timer-mt', 'tbb'],
       libpath  = ['../'],
       includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT])
