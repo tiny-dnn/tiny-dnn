@@ -25,7 +25,7 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 
 | |Language|Lines Of Code|License|Prerequisites|Platforms|Modeling By|GPU Support|Installing|Pre-Trained model|
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|tiny-cnn|C++|3.1K|BSD(3-clause)|Boost,TBB|Linux/OS-X/Windows|C++ code|No|Unnecessary|No|
+|tiny-cnn|C++|3.1K|BSD(3-clause)|Boost(optional:TBB)|Linux/OS-X/Windows|C++ code|No|Unnecessary|No|
 |[caffe](https://github.com/BVLC/caffe)|C++(Python/Matlab interfaces available)|58.7K|BSD(2-clause)|CUDA,BLAS,Boost,OpenCV,protobuf,etc|Linux/OS-X|Config File|Yes|Necessary|Yes|
 |[Theano](https://github.com/Theano/Theano)|Python|134K|BSD(3-clause)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|Linux/OS-X/Windows|Python Code|Yes|Necessary|No|
 
