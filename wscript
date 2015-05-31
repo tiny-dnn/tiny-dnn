@@ -5,6 +5,7 @@ APPNAME='tiny-cnn'
 srcdir = '.'
 blddir = 'build'
 
+import sys
 def options(opt):
     opt.load('compiler_cxx')
     opt.add_option('--TBB',
@@ -18,22 +19,33 @@ def options(opt):
     opt.add_option('--SSE',
                    action = 'store_true',
                    default = False,
-                   help='enable AVX vectorization [default:False]')
+                   help='enable SSE vectorization [default:False]')
+
+    if sys.platform.startswith('win'):
+        BOOST_ROOT_DEFAULT = 'C:/Program Files/boost/boost_1_51_0/'
+    else:
+        BOOST_ROOT_DEFAULT = '/usr/local/include/boost/'
     opt.add_option('--BOOST_ROOT',
                    action = 'store',
-                   default = 'C:/Program Files/boost/boost_1_51_0',
-                   help='root directory of boost [default:\'C:/Program Files/boost/boost_1_51_0\']')
+                   default = BOOST_ROOT_DEFAULT,
+                   help='root directory of boost [default:%s]' % BOOST_ROOT_DEFAULT)
+
+    if sys.platform.startswith('win'):
+        TBB_ROOT_DEFAULT = 'C:/Program Files/tbb/include'
+    else:
+        TBB_ROOT_DEFAULT = '/usr/local/include/tbb/'
     opt.add_option('--TBB_ROOT',
                    action = 'store',
-                   default = 'C:/Program Files/tbb41_20121003oss',
-                   help='root directory of TBB [default:\'C:/Program Files/tbb41_20121003oss\']')
+                   default = TBB_ROOT_DEFAULT,
+                   help='root directory of TBB [default:%s]' % TBB_ROOT_DEFAULT)
 
 def configure(conf):
-    conf.env.CXX = 'g++'
-    conf.load('g++')
+    conf.load('compiler_cxx')
+    from waflib.Tools.compiler_cxx import cxx_compiler
+    print cxx_compiler
     if conf.options.TBB:
        conf.define("CNN_USE_TBB", "")
-    if conf.options.SSE:
+    if conf.options.AVX:
        conf.define("CNN_USE_AVX", "")
     if conf.options.SSE:
        conf.define("CNN_USE_SSE", "")
