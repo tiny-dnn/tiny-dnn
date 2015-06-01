@@ -91,7 +91,7 @@ namespace tiny_cnn {
             }
             else if (ctx_ == test_phase) {
                 for (int i = 0; i < out_dim_; i++)
-                    masked_out_[index][i] = out[i] * dropout_rate_;
+                    masked_out_[index][i] = out[i] * (1.0 - dropout_rate_);
             }
             else {
                 throw nn_error("invalid context");

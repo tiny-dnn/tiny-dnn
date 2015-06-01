@@ -21,8 +21,8 @@ def options(opt):
                    help='enable AVX vectorization [default:False]')
     opt.add_option('--BOOST_ROOT',
                    action = 'store',
-                   default = 'C:/Program Files/boost/boost_1_51_0',
-                   help='root directory of boost [default:\'C:/Program Files/boost/boost_1_51_0\']')
+                   default = 'C:/Program Files/boost/boost_1_55_0',
+                   help='root directory of boost [default:\'C:/Program Files/boost/boost_1_55_0\']')
     opt.add_option('--TBB_ROOT',
                    action = 'store',
                    default = 'C:/Program Files/tbb41_20121003oss',
