@@ -90,19 +90,21 @@ private:
  * The Journal of Machine Learning Research, pages 2121-2159, 2011.
  **/
 struct adagrad : public stateful_optimizer<float_t, 2, false> {
-    adagrad() : alpha(0.01) {}
-    explicit adagrad(float_t alpha) : alpha(alpha) {}
+    adagrad() : alpha(0.01), eps(1e-8) {}
+    explicit adagrad(float_t alpha) : alpha(alpha), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
         vec_t& E = get<0>(W);
 
         for_i(W->size(), [&](int i) {
             E[i] += dW[i] * dW[i];
-            (*W)[i] -= alpha * dW[i] / std::sqrt(E[i]);
+            (*W)[i] -= alpha * dW[i] / (std::sqrt(E[i]) + eps);
         });
     }
 
     float_t alpha; // learning rate
+private:
+    float_t eps;
 };
 
 /**
