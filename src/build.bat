@@ -1,0 +1,1 @@
+g++ -std=c++11 -Wall -Werror -Wextra -pedantic -I "C:/Program Files/boost/boost_1_55_0" -I ../include -O3 main.cpp

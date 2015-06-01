@@ -78,10 +78,10 @@ void sample1_convnet(void) {
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("train-images.idx3-ubyte", &train_images);
-    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("t10k-images.idx3-ubyte", &test_images);
+    parse_mnist_labels("../../data/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("../../data/train-images.idx3-ubyte", &train_images);
+    parse_mnist_labels("../../data/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images);
 
     std::cout << "start learning" << std::endl;
 
@@ -152,10 +152,10 @@ void sample2_mlp()
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
-    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("../../data/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("../../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("../../data/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     nn.optimizer().alpha = 0.001;
     
@@ -232,10 +232,10 @@ void sample4_dropout()
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
-    parse_mnist_labels("t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("../../data/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images("../../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels("../../data/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     // load train-data, label_data
     boost::progress_display disp(train_images.size());
