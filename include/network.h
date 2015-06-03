@@ -396,7 +396,7 @@ std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, Char
 }
 
 template <typename L, typename O, typename Char, typename CharTraits>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, const network<L, O>& n) {
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, network<L, O>& n) {
     n.load(os);
     return os;
 }
