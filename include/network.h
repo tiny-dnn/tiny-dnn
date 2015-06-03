@@ -116,7 +116,7 @@ public:
      * @param on_epoch_enumerate callback for each epoch 
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
-    void train(const std::vector<vec_t>& in,
+    bool train(const std::vector<vec_t>& in,
                const std::vector<T>&     t,
                size_t                    batch_size,
                int                       epoch,
@@ -133,17 +133,23 @@ public:
             for (size_t i = 0; i < in.size(); i+=batch_size) {
                 train_once(&in[i], &t[i], std::min(batch_size, in.size() - i));
                 on_batch_enumerate();
+
+                if (i % 100 == 0 && layers_.is_exploded()) {
+                    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
+                    return false;
+                }
             }
             on_epoch_enumerate();
         }
+        return true;
     }
 
     /**
      * training conv-net without callback
      **/
     template<typename T>
-    void train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
-        train(in, t, batch_size, epoch, nop, nop);
+    bool train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+        return train(in, t, batch_size, epoch, nop, nop);
     }
 
     /**

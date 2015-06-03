@@ -30,6 +30,7 @@
 #include <random>
 #include <type_traits>
 #include <limits>
+#include <boost/math/special_functions.hpp>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -236,5 +237,11 @@ void for_i(int size, Func f)
 }
 
 template <typename T> inline T sqr(T value) { return value*value; }
+
+template <typename Container> inline bool has_infinite(const Container& c) {
+    for (auto v : c)
+        if (!boost::math::isfinite(v)) return true;
+    return false;
+}
 
 } // namespace tiny_cnn

@@ -75,6 +75,7 @@ public:
     vec_t& bias() { return b_; }
     vec_t& weight_diff(int index) { return dW_[index]; }
     vec_t& bias_diff(int index) { return db_[index]; }
+    bool is_exploded() const { return has_infinite(W_) || has_infinite(b_); }
     layer_base* next() { return next_; }
     layer_base* prev() { return prev_; }
 
@@ -85,6 +86,7 @@ public:
     virtual size_t connection_size() const = 0;
 
     virtual void save(std::ostream& os) const {
+        if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
         for (auto w : W_) os << w << " ";
         for (auto b : b_) os << b << " ";
     }
@@ -245,6 +247,12 @@ public:
     void reset() {
         for (auto pl : layers_)
             pl->init_weight();
+    }
+
+    bool is_exploded() const {
+        for (auto pl : layers_)
+            if (pl->is_exploded()) return true;
+        return false;
     }
 
     void divide_hessian(int denominator) {
