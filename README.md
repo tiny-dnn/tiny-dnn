@@ -25,11 +25,11 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
 ## comparison with other libraries
 
-| |Language|Lines Of Code|License|Prerequisites|Platforms|Modeling By|GPU Support|Installing|Pre-Trained model|
+| |Lines Of Code|Prerequisites|Modeling By|GPU Support|Installing|Pre-Trained model|
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|tiny-cnn|C++|3.1K|BSD(3-clause)|Boost(optional:TBB)|Linux/OS-X/Windows|C++ code|No|Unnecessary|No|
-|[caffe](https://github.com/BVLC/caffe)|C++(Python/Matlab interfaces available)|58.7K|BSD(2-clause)|CUDA,BLAS,Boost,OpenCV,protobuf,etc|Linux/OS-X|Config File|Yes|Necessary|Yes|
-|[Theano](https://github.com/Theano/Theano)|Python|134K|BSD(3-clause)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|Linux/OS-X/Windows|Python Code|Yes|Necessary|No|
+|tiny-cnn|3.1K|Boost(optional:TBB)|C++ code|No|Unnecessary|No|
+|[caffe](https://github.com/BVLC/caffe)|58.7K|CUDA,BLAS,Boost,OpenCV,protobuf,etc|Config File|Yes|Necessary|Yes|
+|[Theano](https://github.com/Theano/Theano)|134K|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|Python Code|Yes|Necessary|No|
 
 ## supported networks
 ### layer-types
