@@ -39,6 +39,10 @@ public:
     float_t df(float_t y, float_t t) {
         return y - t;
     }
+
+    vec_t df(const vec_t& y, const vec_t& t) {
+        return transform(y, t, [this](float_t l, float_t r) { return df(l, r); });
+    }
 };
 
 class cross_entropy {
@@ -49,6 +53,10 @@ public:
 
     float_t df(float_t y, float_t t) {
         return (y - t) / (y * (1 - y));
+    }
+
+    vec_t df(const vec_t& y, const vec_t& t) {
+        return transform(y, t, [this](float_t l, float_t r) { return df(l, r);});
     }
 };
 

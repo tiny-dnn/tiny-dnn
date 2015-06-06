@@ -35,37 +35,65 @@ class function {
 public:
     virtual ~function() {}
 
-    virtual float_t f(float_t x) const = 0;
-    virtual float_t df(float_t f_x) const = 0;
+    virtual float_t f(const vec_t& v, size_t index) const = 0;
+    virtual float_t df(float_t y) const = 0;
+    virtual vec_t df(const vec_t& y, size_t index) const { vec_t v(y.size(), 0); v[index] = df(y[index]); return v; }
     virtual std::pair<float_t, float_t> scale() const = 0;
 };
 
 class identity : public function {
 public:
-    float_t f(float_t x) const override { return x; }
-    float_t df(float_t /*f_x*/) const override { return 1; }  
+    float_t f(const vec_t& v, size_t i) const override { return v[i]; }
+    float_t df(float_t /*y*/) const override { return 1; }  
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
 class sigmoid : public function {
 public:
-    float_t f(float_t x) const override { return 1.0 / (1.0 + std::exp(-x)); }
-    float_t df(float_t f_x) const override { return f_x * (1.0 - f_x); }
+    float_t f(const vec_t& v, size_t i) const override { return 1.0 / (1.0 + std::exp(-v[i])); }
+    float_t df(float_t y) const override { return y * (1.0 - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
 class rectified_linear : public function {
 public:
-    float_t f(float_t x) const override { return std::max(static_cast<float_t>(0.0), x); }
-    float_t df(float_t f_x) const override { return f_x > 0.0 ? 1.0 : 0.0; }
+    float_t f(const vec_t& v, size_t i) const override { return std::max(static_cast<float_t>(0.0), v[i]); }
+    float_t df(float_t y) const override { return y > 0.0 ? 1.0 : 0.0; }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
+};
+
+
+class softmax : public function {
+public:
+    float_t f(const vec_t& v, size_t i) const override {
+        float_t alpha = *std::max_element(v.begin(), v.end());
+        float_t numer = std::exp(v[i] - alpha);
+        float_t denom = 0.0;
+        for (auto x : v)
+            denom += std::exp(x - alpha);
+        return numer / denom;
+    }
+
+    float_t df(float_t y) const override {
+        return y * (1.0 - y);
+    }
+
+    virtual vec_t df(const vec_t& y, size_t index) const override {
+        vec_t v(y.size(), 0);
+        for (size_t i = 0; i < y.size(); i++)
+            v[i] = (i == index) ? df(y[index]) : -y[i] * y[index];
+
+        return v;
+    }
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
 class tan_h : public function {
 public:
-    float_t f(float_t x) const override {
-        const float_t ep = std::exp(x);
-        const float_t em = std::exp(-x); 
+    float_t f(const vec_t& v, size_t i) const override {
+        const float_t ep = std::exp(v[i]);
+        const float_t em = std::exp(-v[i]); 
         return (ep - em) / (ep + em);
     }
 
@@ -76,7 +104,7 @@ public:
         return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
     }*/
 
-    float_t df(float_t f_x) const override { return 1.0 - sqr(f_x); }
+    float_t df(float_t y) const override { return 1.0 - sqr(y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(-0.8, 0.8); }
 
 private:
@@ -94,12 +122,12 @@ private:
 // s tan_h, but scaled to match the other functions
 class tan_hp1m2 : public function {
 public:
-    float_t f(float_t x) const override {
-        const float_t ep = std::exp(x);
-        return ep / (ep + std::exp(-x));
+    float_t f(const vec_t& v, size_t i) const override {
+        const float_t ep = std::exp(v[i]);
+        return ep / (ep + std::exp(-v[i]));
     }
 
-    float_t df(float_t f_x) const override { return 2 * (f_x *(1.0 - f_x)); }
+    float_t df(float_t y) const override { return 2 * y *(1.0 - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 

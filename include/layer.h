@@ -136,6 +136,7 @@ protected:
 
     layer_base* next_;
     layer_base* prev_;
+    vec_t a_[CNN_TASK_SIZE];          // w * x
     vec_t output_[CNN_TASK_SIZE];     // last output of current layer, set by fprop
     vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
@@ -176,6 +177,7 @@ private:
         prev_delta2_.resize(in_dim);
 
         for (auto& o : output_)     o.resize(out_dim);
+        for (auto& a : a_)          a.resize(out_dim);
         for (auto& p : prev_delta_) p.resize(in_dim);
         for (auto& dw : dW_) dw.resize(weight_dim);
         for (auto& db : db_) db.resize(bias_dim);
@@ -188,9 +190,9 @@ public:
     layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
 
-    activation::function& activation_function() override { return a_; }
+    activation::function& activation_function() override { return h_; }
 protected:
-    Activation a_;
+    Activation h_;
 };
 
 class input_layer : public layer<activation::identity> {

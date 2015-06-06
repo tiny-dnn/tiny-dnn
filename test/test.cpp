@@ -423,6 +423,30 @@ TEST(multi_layer4, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
+TEST(multi_layer5, gradient_check) { // softmax - cross-entropy
+    typedef cross_entropy loss_func;
+    typedef softmax activation;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+    fully_connected_layer<activation>         l1(10, 14 * 14 * 3);
+    convolutional_layer<activation>           l2(14, 14, 5, 3, 6);
+    average_pooling_layer<activation>         l3(10, 10, 6, 2);
+    fully_connected_layer<activation> l4(5 * 5 * 6, 3);
+
+    nn.add(&l1);
+    nn.add(&l2);
+    nn.add(&l3);
+    nn.add(&l4);
+
+    vec_t a(10, 0.0);
+    label_t t = 2;
+
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-3, GRAD_CHECK_RANDOM));
+}
+
 TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;

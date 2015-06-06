@@ -225,9 +225,9 @@ private:
 #endif // CNN_USE_TBB
 
 template <typename Func>
-void for_i(int size, Func f)
+void for_i(bool parallelize, int size, Func f)
 {
-    for_(true, 0, size, [&](const blocked_range& r) {
+    for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
 #endif
@@ -236,12 +236,26 @@ void for_i(int size, Func f)
     });
 }
 
+template <typename Func>
+void for_i(int size, Func f) {
+    for_i(true, size, f);
+}
+
 template <typename T> inline T sqr(T value) { return value*value; }
 
 template <typename Container> inline bool has_infinite(const Container& c) {
     for (auto v : c)
         if (!boost::math::isfinite(v)) return true;
     return false;
+}
+
+template <typename Pred>
+vec_t transform(const vec_t& l, const vec_t& r, Pred p) {
+    vec_t v(r.size());
+    assert(l.size() == r.size());
+    for (size_t i = 0; i < l.size(); i++)
+        v[i] = p(l[i], r[i]);
+    return v;
 }
 
 } // namespace tiny_cnn

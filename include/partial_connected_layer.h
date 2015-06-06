@@ -76,19 +76,22 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
+        vec_t& a = this->a_[index];
+     
+        for_i(this->parallelize_, this->out_size_, [&](int i) {
+            const wi_connections& connections = out2wi_[i];
 
-        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
-                const wi_connections& connections = out2wi_[i];
-                float_t a = 0.0;
+            a[i] = 0.0;
 
-                for (auto connection : connections)// 13.1%
-                    a += this->W_[connection.first] * in[connection.second]; // 3.2%
+            for (auto connection : connections)// 13.1%
+                a[i] += this->W_[connection.first] * in[connection.second]; // 3.2%
 
-                a *= scale_factor_;
-                a += this->b_[out2bias_[i]];
-                this->output_[index][i] = this->a_.f(a); // 9.6%
-            }
+            a[i] *= scale_factor_;
+            a[i] += this->b_[out2bias_[i]];
+        });
+
+        for_i(this->parallelize_, this->out_size_, [&](int i) {
+            this->output_[index][i] = this->h_.f(a, i);
         });
 
         return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%

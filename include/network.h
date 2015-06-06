@@ -311,10 +311,17 @@ private:
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
-        if (is_canonical_link(h, E_))
+        if (is_canonical_link(h, E_)) {
             for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
-        else
-            for_i(out_dim(), [&](int i){ delta[i] = E_.df(out[i], t[i]) * h.df(out[i]);});
+        } else {
+            vec_t dE_dy = E_.df(out, t);
+
+            // delta = dE/da = (dE/dy) * (dy/da)
+            for (size_t i = 0; i < out_dim(); i++) {
+                vec_t dy_da = h.df(out, i);
+                delta[i] = vectorize::dot(&dE_dy[0], &dy_da[0], out_dim());
+            }
+        }
 
         layers_.tail()->back_propagation(delta, idx);
     }
