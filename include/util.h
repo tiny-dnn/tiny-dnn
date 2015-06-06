@@ -249,13 +249,4 @@ template <typename Container> inline bool has_infinite(const Container& c) {
     return false;
 }
 
-template <typename Pred>
-vec_t transform(const vec_t& l, const vec_t& r, Pred p) {
-    vec_t v(r.size());
-    assert(l.size() == r.size());
-    for (size_t i = 0; i < l.size(); i++)
-        v[i] = p(l[i], r[i]);
-    return v;
-}
-
 } // namespace tiny_cnn

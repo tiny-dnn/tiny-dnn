@@ -29,35 +29,51 @@
 
 namespace tiny_cnn {
 
-// mean-squared-error loss function
+// mean-squared-error loss function for regression
 class mse {
 public:
-    float_t f(float_t y, float_t t) {
+    static float_t f(float_t y, float_t t) {
         return (y - t) * (y - t) / 2;
     }
 
-    float_t df(float_t y, float_t t) {
+    static float_t df(float_t y, float_t t) {
         return y - t;
-    }
-
-    vec_t df(const vec_t& y, const vec_t& t) {
-        return transform(y, t, [this](float_t l, float_t r) { return df(l, r); });
     }
 };
 
+// cross-entropy loss function for (multiple independent) binary classifications
 class cross_entropy {
 public:
-    float_t f(float_t y, float_t t) {
+    static float_t f(float_t y, float_t t) {
         return -t * std::log(y) - (1.0 - t) * std::log(1.0 - y);
     }
 
-    float_t df(float_t y, float_t t) {
+    static float_t df(float_t y, float_t t) {
         return (y - t) / (y * (1 - y));
     }
+};
 
-    vec_t df(const vec_t& y, const vec_t& t) {
-        return transform(y, t, [this](float_t l, float_t r) { return df(l, r);});
+// cross-entropy loss function for multi-class classification
+class cross_entropy_multiclass {
+public:
+    static float_t f(float_t y, float_t t) {
+        return -t * std::log(y);
+    }
+
+    static float_t df(float_t y, float_t t) {
+        return - t / y;
     }
 };
+
+template <typename E>
+vec_t gradient(const vec_t& y, const vec_t& t) {
+    vec_t grad(y.size());
+    assert(y.size() == t.size());
+
+    for (size_t i = 0; i < y.size(); i++)
+        grad[i] = E::df(y[i], t[i]);
+
+    return grad;
+}
 
 } // namespace tiny_cnn

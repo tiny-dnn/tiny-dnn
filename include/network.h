@@ -94,6 +94,8 @@ enum grad_check_mode {
 template<typename LossFunction, typename Optimizer>
 class network {
 public:
+    typedef LossFunction E;
+
     explicit network(const std::string& name = "") : name_(name) {}
 
     // getter
@@ -273,11 +275,12 @@ private:
         layers_.divide_hessian(size);
     }
 
-    template<typename Activation, typename Loss>
-    bool is_canonical_link(const Activation& h, const Loss& E) {
+    template<typename Activation>
+    bool is_canonical_link(const Activation& h) {
         if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(activation::tan_h) && typeid(E) == typeid(cross_entropy)) return true;
         if (typeid(h) == typeid(activation::identity) && typeid(E) == typeid(mse)) return true;
+        if (typeid(h) == typeid(activation::softmax) && typeid(E) == typeid(cross_entropy_multiclass)) return true;
         return false;
     }
 
@@ -290,7 +293,7 @@ private:
     float_t get_loss(const vec_t& out, const vec_t& t) {
         float_t e = 0.0;
         assert(out.size() == t.size());
-        for_i(out.size(), [&](int i){ e += E_.f(out[i], t[i]); });
+        for_i(out.size(), [&](int i){ e += E::f(out[i], t[i]); });
         return e;
     }
 
@@ -298,7 +301,7 @@ private:
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
-        if (is_canonical_link(h, E_)) {
+        if (is_canonical_link(h)) {
             for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]);});
         } else {
             for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);}); // FIXME
@@ -311,10 +314,10 @@ private:
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
-        if (is_canonical_link(h, E_)) {
+        if (is_canonical_link(h)) {
             for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
         } else {
-            vec_t dE_dy = E_.df(out, t);
+            vec_t dE_dy = gradient<E>(out, t);
 
             // delta = dE/da = (dE/dy) * (dy/da)
             for (size_t i = 0; i < out_dim(); i++) {
@@ -357,7 +360,6 @@ private:
     float_t target_value_max() const { return layers_.tail()->activation_function().scale().second; }
 
     std::string name_;
-    LossFunction E_;
     Optimizer optimizer_;
     layers layers_;
 };
