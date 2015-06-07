@@ -41,7 +41,7 @@ public:
     }
 
     void connect(layer_base* tail) {
-        if (this->out_size() != 0 && tail->in_size() != this->out_size())
+        if (out_size() != 0 && tail->in_size() != out_size())
             throw nn_error("dimension mismatch");
         next_ = tail;
         tail->prev_ = this;
@@ -197,13 +197,16 @@ protected:
 
 class input_layer : public layer<activation::identity> {
 public:
+    typedef activation::identity Activation;
+    CNN_USE_LAYER_MEMBERS;
+
     input_layer() : layer<activation::identity>(0, 0, 0, 0) {}
 
-    layer_size_t in_size() const override { return this->next_ ? this->next_->in_size(): static_cast<layer_size_t>(0); }
+    layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) {
-        this->output_[index] = in;
-        return this->next_ ? this->next_->forward_propagation(in, index) : this->output_[index];
+        output_[index] = in;
+        return next_ ? next_->forward_propagation(in, index) : output_[index];
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) {
@@ -215,7 +218,7 @@ public:
     }
 
     size_t connection_size() const override {
-        return this->in_size_;
+        return in_size_;
     }
 
     size_t fan_in_size() const override {

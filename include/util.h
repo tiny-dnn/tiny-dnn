@@ -249,4 +249,23 @@ template <typename Container> inline bool has_infinite(const Container& c) {
     return false;
 }
 
+// boilerplate to resolve dependent name
+#define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
+    using layer_base::out_size_; \
+    using layer_base::parallelize_; \
+    using layer_base::next_; \
+    using layer_base::prev_; \
+    using layer_base::a_; \
+    using layer_base::output_; \
+    using layer_base::prev_delta_; \
+    using layer_base::W_; \
+    using layer_base::b_; \
+    using layer_base::dW_; \
+    using layer_base::db_; \
+    using layer_base::Whessian_; \
+    using layer_base::bhessian_; \
+    using layer_base::prev_delta2_; \
+    using layer<Activation>::h_
+
+
 } // namespace tiny_cnn

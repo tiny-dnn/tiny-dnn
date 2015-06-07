@@ -33,6 +33,8 @@ namespace tiny_cnn {
 template<typename Activation>
 class partial_connected_layer : public layer<Activation> {
 public:
+    CNN_USE_LAYER_MEMBERS;
+
     typedef std::vector<std::pair<unsigned short, unsigned short> > io_connections;
     typedef std::vector<std::pair<unsigned short, unsigned short> > wi_connections;
     typedef std::vector<std::pair<unsigned short, unsigned short> > wo_connections;
@@ -76,45 +78,45 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        vec_t& a = this->a_[index];
+        vec_t& a = a_[index];
      
-        for_i(this->parallelize_, this->out_size_, [&](int i) {
+        for_i(parallelize_, out_size_, [&](int i) {
             const wi_connections& connections = out2wi_[i];
 
             a[i] = 0.0;
 
             for (auto connection : connections)// 13.1%
-                a[i] += this->W_[connection.first] * in[connection.second]; // 3.2%
+                a[i] += W_[connection.first] * in[connection.second]; // 3.2%
 
             a[i] *= scale_factor_;
-            a[i] += this->b_[out2bias_[i]];
+            a[i] += b_[out2bias_[i]];
         });
 
-        for_i(this->parallelize_, this->out_size_, [&](int i) {
-            this->output_[index][i] = this->h_.f(a, i);
+        for_i(parallelize_, out_size_, [&](int i) {
+            output_[index][i] = h_.f(a, i);
         });
 
-        return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index]; // 15.6%
+        return next_ ? next_->forward_propagation(output_[index], index) : output_[index]; // 15.6%
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
-        const vec_t& prev_out = this->prev_->output(index);
-        const activation::function& prev_h = this->prev_->activation_function();
-        vec_t& prev_delta = this->prev_delta_[index];
+        const vec_t& prev_out = prev_->output(index);
+        const activation::function& prev_h = prev_->activation_function();
+        vec_t& prev_delta = prev_delta_[index];
 
-        for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = 0.0;
 
                 for (auto connection : connections) 
-                    delta += this->W_[connection.first] * current_delta[connection.second]; // 40.6%
+                    delta += W_[connection.first] * current_delta[connection.second]; // 40.6%
 
                 prev_delta[i] = delta * scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
             }
         });
 
-        for_(this->parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
+        for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const io_connections& connections = weight2io_[i];
                 float_t diff = 0.0;
@@ -122,7 +124,7 @@ public:
                 for (auto connection : connections) // 11.9%
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
-                this->dW_[index][i] += diff * scale_factor_;
+                dW_[index][i] += diff * scale_factor_;
             }
         });
 
@@ -133,15 +135,15 @@ public:
             for (auto o : outs)
                 diff += current_delta[o];    
 
-            this->db_[index][i] += diff;
+            db_[index][i] += diff;
         } 
 
-        return this->prev_->back_propagation(this->prev_delta_[index], index);
+        return prev_->back_propagation(prev_delta_[index], index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = this->prev_->output(0);
-        const activation::function& prev_h = this->prev_->activation_function();
+        const vec_t& prev_out = prev_->output(0);
+        const activation::function& prev_h = prev_->activation_function();
 
         for (size_t i = 0; i < weight2io_.size(); i++) {
             const io_connections& connections = weight2io_[i];
@@ -151,7 +153,7 @@ public:
                 diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
 
             diff *= sqr(scale_factor_);
-            this->Whessian_[i] += diff;
+            Whessian_[i] += diff;
         }
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
@@ -161,19 +163,19 @@ public:
             for (auto o : outs)
                 diff += current_delta2[o];    
 
-            this->bhessian_[i] += diff;
+            bhessian_[i] += diff;
         }
 
-        for (int i = 0; i < this->in_size_; i++) {
+        for (int i = 0; i < in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
-            this->prev_delta2_[i] = 0.0;
+            prev_delta2_[i] = 0.0;
 
             for (auto connection : connections) 
-                this->prev_delta2_[i] += sqr(this->W_[connection.first]) * current_delta2[connection.second];
+                prev_delta2_[i] += sqr(W_[connection.first]) * current_delta2[connection.second];
 
-            this->prev_delta2_[i] *= sqr(scale_factor_ * prev_h.df(prev_out[i]));
+            prev_delta2_[i] *= sqr(scale_factor_ * prev_h.df(prev_out[i]));
         }
-        return this->prev_->back_propagation_2nd(this->prev_delta2_);
+        return prev_->back_propagation_2nd(prev_delta2_);
     }
 
     // remove unused weight to improve cache hits
@@ -184,13 +186,13 @@ public:
         for (size_t i = 0; i < weight2io_.size(); i++)
             swaps[i] = weight2io_[i].empty() ? -1 : n++;
 
-        for (size_t i = 0; i < this->out_size_; i++) {
+        for (size_t i = 0; i < out_size_; i++) {
             wi_connections& wi = out2wi_[i];
             for (size_t j = 0; j < wi.size(); j++)
                 wi[j].first = static_cast<unsigned short>(swaps[wi[j].first]);
         }
 
-        for (size_t i = 0; i < this->in_size_; i++) {
+        for (size_t i = 0; i < in_size_; i++) {
             wo_connections& wo = in2wo_[i];
             for (size_t j = 0; j < wo.size(); j++)
                 wo[j].first = static_cast<unsigned short>(swaps[wo[j].first]);

@@ -54,6 +54,7 @@ template<typename Activation>
 class convolutional_layer : public partial_connected_layer<Activation> {
 public:
     typedef partial_connected_layer<Activation> Base;
+    CNN_USE_LAYER_MEMBERS;
 
     convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels)
     : partial_connected_layer<Activation>(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
@@ -89,7 +90,7 @@ public:
         img.resize(width, height);
         img.fill(bg_color);
 
-        auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
+        auto minmax = std::minmax_element(W_.begin(), W_.end());
 
         for (layer_size_t r = 0; r < in_.depth_; ++r) {
             for (layer_size_t c = 0; c < out_.depth_; ++c) {
@@ -100,7 +101,7 @@ public:
 
                 for (layer_size_t y = 0; y < window_size_; ++y) {
                     for (layer_size_t x = 0; x < window_size_; ++x) {
-                        const float_t w = this->W_[weight_.get_index(x, y, c * in_.depth_ + r)];
+                        const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
                             = static_cast<image::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));

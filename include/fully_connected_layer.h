@@ -34,86 +34,89 @@ namespace tiny_cnn {
 template<typename Activation, typename Filter = filter_none>
 class fully_connected_layer : public layer<Activation> {
 public:
+    CNN_USE_LAYER_MEMBERS;
+
     fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
         : layer<Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
     size_t connection_size() const override {
-        return size_t(this->in_size_) * this->out_size_ + this->out_size_;
+        return size_t(in_size_) * out_size_ + out_size_;
     }
 
     size_t fan_in_size() const override {
-        return this->in_size_;
+        return in_size_;
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) {
-        vec_t &a = this->a_[index];
+        vec_t &a = a_[index];
+        vec_t &out = output_[index];
 
-        for_i(this->parallelize_, this->out_size_, [&](int i) {
+        for_i(parallelize_, out_size_, [&](int i) {
             a[i] = 0.0;
-            for (int c = 0; c < this->in_size_; c++)
-                a[i] += this->W_[c*this->out_size_ + i] * in[c];
+            for (int c = 0; c < in_size_; c++)
+                a[i] += W_[c*out_size_ + i] * in[c];
 
-            a[i] += this->b_[i];
+            a[i] += b_[i];
         });
 
-        for_i(this->parallelize_, this->out_size_, [&](int i) {
-            this->output_[index][i] = this->h_.f(a, i);
+        for_i(parallelize_, out_size_, [&](int i) {
+            out[i] = h_.f(a, i);
         });
 
-        auto& this_out = this->filter_.filter_fprop(this->output_[index], index);
+        auto& this_out = filter_.filter_fprop(out, index);
 
-        return this->next_ ? this->next_->forward_propagation(this_out, index) : this_out;
+        return next_ ? next_->forward_propagation(this_out, index) : this_out;
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
-        const vec_t& curr_delta = this->filter_.filter_bprop(current_delta, index);
-        const vec_t& prev_out = this->prev_->output(index);
-        const activation::function& prev_h = this->prev_->activation_function();
-        vec_t& prev_delta = this->prev_delta_[index];
-        vec_t& dW = this->dW_[index];
-        vec_t& db = this->db_[index];
+        const vec_t& curr_delta = filter_.filter_bprop(current_delta, index);
+        const vec_t& prev_out = prev_->output(index);
+        const activation::function& prev_h = prev_->activation_function();
+        vec_t& prev_delta = prev_delta_[index];
+        vec_t& dW = dW_[index];
+        vec_t& db = db_[index];
 
         for (int c = 0; c < this->in_size_; c++) {
             // propagate delta to previous layer
             // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-            prev_delta[c] = vectorize::dot(&curr_delta[0], &this->W_[c*this->out_size_], this->out_size_);
+            prev_delta[c] = vectorize::dot(&curr_delta[0], &W_[c*out_size_], out_size_);
             prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
-        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
             // accumulate weight-step using delta
             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-            for (int c = 0; c < this->in_size_; c++)
-                vectorize::muladd(&curr_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*this->out_size_ + r.begin()]);
+            for (int c = 0; c < in_size_; c++)
+                vectorize::muladd(&curr_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
 
             for (int i = r.begin(); i < r.end(); i++) 
                 db[i] += curr_delta[i];
         });
 
-        return this->prev_->back_propagation(this->prev_delta_[index], index);
+        return prev_->back_propagation(prev_delta_[index], index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = this->prev_->output(0);
-        const activation::function& prev_h = this->prev_->activation_function();
+        const vec_t& prev_out = prev_->output(0);
+        const activation::function& prev_h = prev_->activation_function();
 
-        for (int c = 0; c < this->in_size_; c++) 
-            for (int r = 0; r < this->out_size_; r++)
-                this->Whessian_[c*this->out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
+        for (int c = 0; c < in_size_; c++) 
+            for (int r = 0; r < out_size_; r++)
+                Whessian_[c*out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
 
-        for (int r = 0; r < this->out_size_; r++)
-            this->bhessian_[r] += current_delta2[r];
+        for (int r = 0; r < out_size_; r++)
+            bhessian_[r] += current_delta2[r];
 
-        for (int c = 0; c < this->in_size_; c++) { 
-            this->prev_delta2_[c] = 0.0;
+        for (int c = 0; c < in_size_; c++) { 
+            prev_delta2_[c] = 0.0;
 
-            for (int r = 0; r < this->out_size_; r++) 
-                this->prev_delta2_[c] += current_delta2[r] * sqr(this->W_[c*this->out_size_ + r]);
+            for (int r = 0; r < out_size_; r++) 
+                prev_delta2_[c] += current_delta2[r] * sqr(W_[c*out_size_ + r]);
 
-            this->prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
+            prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
         }
 
-        return this->prev_->back_propagation_2nd(this->prev_delta2_);
+        return prev_->back_propagation_2nd(prev_delta2_);
     }
 
 protected:

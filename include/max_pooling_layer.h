@@ -34,6 +34,7 @@ namespace tiny_cnn {
 template <typename Activation>
 class max_pooling_layer : public layer<Activation> {
 public:
+    CNN_USE_LAYER_MEMBERS;
     typedef layer<Activation> Base;
 
     max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
@@ -58,7 +59,7 @@ public:
     }
 
     virtual const vec_t& forward_propagation(const vec_t& in, size_t index) {
-        for_(this->parallelize_, 0, this->out_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const auto& in_index = out2in_[i];
                 float_t max_value = std::numeric_limits<float_t>::lowest();
@@ -69,35 +70,35 @@ public:
                         out2inmax_[i] = j;
                     }
                 }
-                this->output_[index][i] = max_value;
+                output_[index][i] = max_value;
             }
         });
-        return this->next_ ? this->next_->forward_propagation(this->output_[index], index) : this->output_[index];
+        return next_ ? next_->forward_propagation(output_[index], index) : output_[index];
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
-        const vec_t& prev_out = this->prev_->output(index);
-        const activation::function& prev_h = this->prev_->activation_function();
-        vec_t& prev_delta = this->prev_delta_[index];
+        const vec_t& prev_out = prev_->output(index);
+        const activation::function& prev_h = prev_->activation_function();
+        vec_t& prev_delta = prev_delta_[index];
 
-        for_(this->parallelize_, 0, this->in_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 int outi = in2out_[i];
                 prev_delta[i] = (out2inmax_[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : 0.0;
             }
         });
-        return this->prev_->back_propagation(this->prev_delta_[index], index);
+        return prev_->back_propagation(prev_delta_[index], index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = this->prev_->output(0);
-        const activation::function& prev_h = this->prev_->activation_function();
+        const vec_t& prev_out = prev_->output(0);
+        const activation::function& prev_h = prev_->activation_function();
 
-        for (int i = 0; i < this->in_size_; i++) {
+        for (int i = 0; i < in_size_; i++) {
             int outi = in2out_[i];
-            this->prev_delta2_[i] = (out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
+            prev_delta2_[i] = (out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
         }
-        return this->prev_->back_propagation_2nd(this->prev_delta2_);
+        return prev_->back_propagation_2nd(prev_delta2_);
     }
 private:
     std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
