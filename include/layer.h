@@ -110,8 +110,8 @@ public:
 
         merge(worker_size, batch_size);
 
-        o->update(dW_[0], Whessian_, &W_);
-        o->update(db_[0], bhessian_, &b_);
+        o->update(dW_[0], Whessian_, W_);
+        o->update(db_[0], bhessian_, b_);
 
         clear_diff(worker_size);
         post_update();

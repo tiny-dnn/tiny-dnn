@@ -49,11 +49,11 @@ struct stateful_optimizer : public optimizer<usesHessian> {
 
 protected:
     template <int Index>
-    std::vector<value_t>& get(const vec_t* key) {
+    std::vector<value_t>& get(const vec_t& key) {
         static_assert(Index < N, "index out of range");
-        if (E_[Index][key].empty())
-            E_[Index][key].resize(key->size(), value_t());
-        return E_[Index][key];
+        if (E_[Index][&key].empty())
+            E_[Index][&key].resize(key.size(), value_t());
+        return E_[Index][&key];
     }
     std::unordered_map<const vec_t*, std::vector<value_t>> E_[N];
 };
@@ -68,18 +68,15 @@ protected:
 struct gradient_descent_levenberg_marquardt : public optimizer<true> {
 public:
     gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
-    gradient_descent_levenberg_marquardt(float_t alpha, float_t mu) : alpha(alpha), mu(mu) {}
 
-    void update(const vec_t& dW, const vec_t& Hessian, vec_t *W) {
-        for_i(W->size(), [&](int i){ update_(dW[i], Hessian[i], &(*W)[i]); });
+    void update(const vec_t& dW, const vec_t& Hessian, vec_t& W) {
+        for_i(W.size(), [&](int i){
+            W[i] = W[i] - (alpha / (Hessian[i] + mu)) * dW[i];
+        });
     }
 
     float_t alpha; // learning rate
     float_t mu; // constant to prevent step size from becoming too large when H is small
-private:
-    void update_(float_t dW, float_t H, float_t *W) {
-        *W -= (alpha / (H + mu)) * (dW); // 7.2%
-    }
 };
 
 /**
@@ -89,16 +86,15 @@ private:
  * Adaptive subgradient methods for online learning and stochastic optimization
  * The Journal of Machine Learning Research, pages 2121-2159, 2011.
  **/
-struct adagrad : public stateful_optimizer<float_t, 2, false> {
+struct adagrad : public stateful_optimizer<float_t, 1, false> {
     adagrad() : alpha(0.01), eps(1e-8) {}
-    explicit adagrad(float_t alpha) : alpha(alpha), eps(1e-8) {}
 
-    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t &W) {
         vec_t& E = get<0>(W);
 
-        for_i(W->size(), [&](int i) {
+        for_i(W.size(), [&](int i) {
             E[i] += dW[i] * dW[i];
-            (*W)[i] -= alpha * dW[i] / (std::sqrt(E[i]) + eps);
+            W[i] -= alpha * dW[i] / (std::sqrt(E[i]) + eps);
         });
     }
 
@@ -115,14 +111,13 @@ private:
  **/
 struct RMSprop : public stateful_optimizer<float_t, 1, false> {
     RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
-    explicit RMSprop(float_t alpha, float_t mu) : alpha(alpha), mu(mu), eps(1e-8) {}
 
-    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& E = get<0>(W);
 
-        for_i(W->size(), [&](int i){
+        for_i(W.size(), [&](int i){
             E[i] = mu * E[i] + (1 - mu) * dW[i] * dW[i];
-            (*W)[i] -= alpha * dW[i] / std::sqrt(E[i] + eps);
+            W[i] -= alpha * dW[i] / std::sqrt(E[i] + eps);
         });
     }
 
@@ -139,20 +134,16 @@ private:
  * slightly faster than tiny_cnn::momentum
  **/
 struct gradient_descent : public optimizer<false> {
-public:
     gradient_descent() : alpha(0.01), lambda(0.0) {}
-    gradient_descent(float_t alpha, float_t lambda) : alpha(alpha), lambda(lambda) {}
 
-    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
-        for_i(W->size(), [&](int i){ update_(dW[i], &(*W)[i]); });
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
+        for_i(W.size(), [&](int i){
+            W[i] = W[i] - alpha * (dW[i] + lambda * W[i]);
+        });
     }
 
     float_t alpha; // learning rate
     float_t lambda; // weight decay
-private:
-    void update_(float_t dW, float_t *W) {
-        *W -= alpha * ((dW) +*W * lambda); // 7.2%
-    }
 };
 
 /**
@@ -165,23 +156,20 @@ private:
 struct momentum : public stateful_optimizer<float_t, 1, false> {
 public:
     momentum() : alpha(0.01), lambda(0.0), mu(0.9) {}
-    momentum(float_t alpha, float_t lambda, float_t mu) : alpha(alpha), lambda(lambda), mu(mu) {}
 
-    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t *W) {
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& dWprev = get<0>(W);
-        for_i(W->size(), [&](int i){ update_(dW[i], &(*W)[i], &dWprev[i]); });
+
+        for_i(W.size(), [&](int i){
+            float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
+            W[i]      += V;
+            dWprev[i] =  V;
+        });
     }
 
     float_t alpha; // learning rate
     float_t lambda; // weight decay
     float_t mu; // momentum
-
-private:
-    void update_(float_t dW, float_t *W, float_t *dWprev) {
-        dW = mu * *dWprev - alpha * (dW + *W * lambda);
-        *W += dW;
-        *dWprev = dW;
-    }
 };
 
 } // namespace tiny_cnn
