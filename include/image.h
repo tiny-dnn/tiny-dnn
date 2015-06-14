@@ -28,7 +28,6 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
-#include <boost/detail/endian.hpp>
 
 namespace tiny_cnn {
 
@@ -43,9 +42,9 @@ public:
 
     void write(const std::string& path) const { // WARNING: This is OS dependent (writes of bytes with reinterpret_cast depend on endianness)
         std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
-#ifndef BOOST_LITTLE_ENDIAN
-        throw nn_error("not implemented");
-#endif
+
+        if (!is_little_endian())
+            throw nn_error("image::write for bit-endian is not supported");
 
         const uint32_t line_pitch = ((width_ + 3) / 4) * 4;
         const uint32_t header_size = 14 + 12 + 256 * 3;

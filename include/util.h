@@ -30,7 +30,7 @@
 #include <random>
 #include <type_traits>
 #include <limits>
-#include <boost/math/special_functions.hpp>
+#include <cassert>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -112,6 +112,12 @@ T* reverse_endian(T* p) {
     std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));
     return p;
 }
+
+inline bool is_little_endian() {
+    int x = 1;
+    return *(char*) &x != 0;
+}
+
 
 template<typename T>
 int max_index(const T& vec) {
@@ -243,9 +249,13 @@ void for_i(int size, Func f) {
 
 template <typename T> inline T sqr(T value) { return value*value; }
 
+inline bool isfinite(float_t x) {
+    return x == x;
+}
+
 template <typename Container> inline bool has_infinite(const Container& c) {
     for (auto v : c)
-        if (!boost::math::isfinite(v)) return true;
+        if (!isfinite(v)) return true;
     return false;
 }
 

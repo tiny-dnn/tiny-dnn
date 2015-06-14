@@ -28,7 +28,6 @@
 #include "util.h"
 #include <fstream>
 #include <cstdint>
-#include <boost/detail/endian.hpp>
 
 namespace tiny_cnn {
 
@@ -42,10 +41,11 @@ void parse_mnist_labels(const std::string& label_file, std::vector<label_t> *lab
 
     ifs.read((char*) &magic_number, 4);
     ifs.read((char*) &num_items, 4);
-#if defined(BOOST_LITTLE_ENDIAN)
-    reverse_endian(&magic_number);
-    reverse_endian(&num_items);
-#endif
+
+    if (is_little_endian()) { // MNIST data is big-endian format
+        reverse_endian(&magic_number);
+        reverse_endian(&num_items);
+    }
 
     if (magic_number != 0x00000801 || num_items <= 0)
         throw nn_error("MNIST label-file format error");
@@ -69,12 +69,13 @@ void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
     ifs.read((char*) &header.num_items, 4);
     ifs.read((char*) &header.num_rows, 4);
     ifs.read((char*) &header.num_cols, 4);
-#if defined(BOOST_LITTLE_ENDIAN)
-    reverse_endian(&header.magic_number);
-    reverse_endian(&header.num_items);
-    reverse_endian(&header.num_rows);
-    reverse_endian(&header.num_cols);
-#endif
+
+    if (is_little_endian()) {
+        reverse_endian(&header.magic_number);
+        reverse_endian(&header.num_items);
+        reverse_endian(&header.num_rows);
+        reverse_endian(&header.num_cols);
+    }
 
     if (header.magic_number != 0x00000803 || header.num_items <= 0)
         throw nn_error("MNIST label-file format error");

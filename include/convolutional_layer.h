@@ -90,7 +90,7 @@ public:
         img.resize(width, height);
         img.fill(bg_color);
 
-        auto minmax = std::minmax_element(W_.begin(), W_.end());
+        auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
 
         for (layer_size_t r = 0; r < in_.depth_; ++r) {
             for (layer_size_t c = 0; c < out_.depth_; ++c) {
