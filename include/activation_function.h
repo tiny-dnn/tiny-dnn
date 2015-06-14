@@ -36,8 +36,14 @@ public:
     virtual ~function() {}
 
     virtual float_t f(const vec_t& v, size_t index) const = 0;
+
+    // dfi/dyi
     virtual float_t df(float_t y) const = 0;
-    virtual vec_t df(const vec_t& y, size_t index) const { vec_t v(y.size(), 0); v[index] = df(y[index]); return v; }
+
+    // dfi/dyk (k=0,1,..n)
+    virtual vec_t df(const vec_t& y, size_t i) const { vec_t v(y.size(), 0); v[i] = df(y[i]); return v; }
+
+    // target value range for learning
     virtual std::pair<float_t, float_t> scale() const = 0;
 };
 
