@@ -61,13 +61,21 @@ public:
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
-class rectified_linear : public function {
+class relu : public function {
 public:
     float_t f(const vec_t& v, size_t i) const override { return std::max(static_cast<float_t>(0.0), v[i]); }
     float_t df(float_t y) const override { return y > 0.0 ? 1.0 : 0.0; }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
+typedef relu rectified_linear; // for compatibility
+
+class leaky_relu : public function {
+public:
+    float_t f(const vec_t& v, size_t i) const override { return (v[i] > 0) ? v[i] : 0.01 * v[i]; }
+    float_t df(float_t y) const override { return y > 0.0 ? 1.0 : 0.01; }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
+};
 
 class softmax : public function {
 public:
