@@ -27,7 +27,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
 | |Lines Of Code|Prerequisites|Modeling By|GPU Support|Installing|Pre-Trained model|
 |:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|tiny-cnn|3.1K|Boost(optional:TBB)|C++ code|No|Unnecessary|No|
+|tiny-cnn|3.1K|__Nothing__(optional:TBB,Boost)|C++ code|No|Unnecessary|No|
 |[caffe](https://github.com/BVLC/caffe)|58.7K|CUDA,BLAS,Boost,OpenCV,protobuf,etc|Config File|Yes|Necessary|Yes|
 |[Theano](https://github.com/Theano/Theano)|134K|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|Python Code|Yes|Necessary|No|
 
@@ -42,6 +42,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 ### activation functions
 * tanh
 * sigmoid
+* softmax
 * rectified linear
 * identity
 
@@ -56,8 +57,9 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * rmsprop
 
 ## dependencies
-* [boost C++ library](http://www.boost.org/)
-* [Intel TBB](https://www.threadingbuildingblocks.org/)
+- \[Minimum requirements\]...Nothing.All you need is a C++11 compiler.
+- \[Requirements to enable parallelization\] (*recommended*)...[Intel TBB](https://www.threadingbuildingblocks.org/)
+- \[Requirements to build sample/test programs\]...[boost C++ library](http://www.boost.org/)
 
 ## building sample project
 ### gcc(4.7~)
