@@ -43,7 +43,8 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * tanh
 * sigmoid
 * softmax
-* rectified linear
+* rectified linear(relu)
+* leaky relu
 * identity
 
 ### loss functions
