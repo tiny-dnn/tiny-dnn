@@ -58,9 +58,14 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * rmsprop
 
 ## dependencies
-- \[Minimum requirements\]...Nothing.All you need is a C++11 compiler.
-- \[Requirements to enable parallelization\] (*recommended*)...[Intel TBB](https://www.threadingbuildingblocks.org/)
-- \[Requirements to build sample/test programs\]...[boost C++ library](http://www.boost.org/)
+##### Minimum requirements
+Nothing.All you need is a C++11 compiler.
+
+##### Requirements to enable parallelization (*recommended*)
+[Intel TBB](https://www.threadingbuildingblocks.org/)
+
+##### Requirements to build sample/test programs
+[boost C++ library](http://www.boost.org/)
 
 ## building sample project
 ### gcc(4.7~)
