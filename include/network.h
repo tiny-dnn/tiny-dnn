@@ -243,28 +243,34 @@ private:
             bprop(fprop(in[0]), t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
-            task_group g;
-            int num_tasks = size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
-            int data_per_thread = size / num_tasks;
-            int remaining = size;
-
-            for (int i = 0; i < num_tasks; i++) {
-                int num = i == num_tasks - 1 ? remaining : data_per_thread;
-                
-                g.run([=]{                    
-                    for (int j = 0; j < num; j++) bprop(fprop(in[j], i), t[j], i);
-                });
-
-                remaining -= num;
-                in += num;
-                t += num;
-            }
-
-            assert(remaining == 0);
-            g.wait();
-            layers_.update_weights(&optimizer_, num_tasks, size);
+            train_onebatch(in, t, size);
         }
     }   
+
+    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size) {
+        task_group g;
+        int num_tasks = batch_size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
+        int data_per_thread = batch_size / num_tasks;
+        int remaining = batch_size;
+
+        // divide batch data and invoke [num_tasks] tasks
+        for (int i = 0; i < num_tasks; i++) {
+            int num = i == num_tasks - 1 ? remaining : data_per_thread;
+
+            g.run([=]{
+                for (int j = 0; j < num; j++) bprop(fprop(in[j], i), t[j], i);
+            });
+
+            remaining -= num;
+            in += num;
+            t += num;
+        }
+
+        assert(remaining == 0);
+        g.wait();
+        // merge all dW and update W by optimizer
+        layers_.update_weights(&optimizer_, num_tasks, batch_size);
+    }
 
     void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
