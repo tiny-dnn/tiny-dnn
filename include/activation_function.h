@@ -92,7 +92,7 @@ public:
         return v;
     }
 
-    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.0, 1.0); }
 };
 
 class tan_h : public function {
