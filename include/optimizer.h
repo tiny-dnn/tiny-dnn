@@ -41,7 +41,7 @@ struct optimizer {
 };
 
 // helper class to hold N values for each weight
-template <typename value_t, int N, bool usesHessian>
+template <typename value_t, int N, bool usesHessian = false>
 struct stateful_optimizer : public optimizer<usesHessian> {
     void reset() override {
         for (auto& e : E_) e.clear();
@@ -90,11 +90,11 @@ struct adagrad : public stateful_optimizer<float_t, 1, false> {
     adagrad() : alpha(0.01), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t &W) {
-        vec_t& E = get<0>(W);
+        vec_t& g = get<0>(W);
 
         for_i(W.size(), [&](int i) {
-            E[i] += dW[i] * dW[i];
-            W[i] -= alpha * dW[i] / (std::sqrt(E[i]) + eps);
+            g[i] += dW[i] * dW[i];
+            W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
         });
     }
 
@@ -113,11 +113,11 @@ struct RMSprop : public stateful_optimizer<float_t, 1, false> {
     RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
-        vec_t& E = get<0>(W);
+        vec_t& g = get<0>(W);
 
         for_i(W.size(), [&](int i){
-            E[i] = mu * E[i] + (1 - mu) * dW[i] * dW[i];
-            W[i] -= alpha * dW[i] / std::sqrt(E[i] + eps);
+            g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
+            W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
         });
     }
 
