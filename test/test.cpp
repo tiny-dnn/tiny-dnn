@@ -32,6 +32,7 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
+
 TEST(convolutional, fprop) {
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
@@ -469,7 +470,8 @@ TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
 }
 
-void serialization_test(const layer_base& src, layer_base& dst)
+template <typename T>
+void serialization_test(const T& src, T& dst)
 {
     EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
@@ -520,6 +522,49 @@ TEST(read_write, convolutional)
     l2.init_weight();
 
     serialization_test(l1, l2);
+}
+
+TEST(read_write, network)
+{
+    typedef mse loss_func;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network n1, n2;
+
+    n1 << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // C1, 1@32x32-in, 6@28x28-out
+        << average_pooling_layer<tan_h>(28, 28, 6, 2) // S2, 6@28x28-in, 6@14x14-out
+        << convolutional_layer<tan_h>(14, 14, 5, 6, 16) // C3, 6@14x14-in, 16@10x10-in
+        << average_pooling_layer<tan_h>(10, 10, 16, 2) // S4, 16@10x10-in, 16@5x5-out
+        << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
+        << fully_connected_layer<tan_h>(120, 10); // F6, 120-in, 10-out
+
+    n2 << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // C1, 1@32x32-in, 6@28x28-out
+        << average_pooling_layer<tan_h>(28, 28, 6, 2) // S2, 6@28x28-in, 6@14x14-out
+        << convolutional_layer<tan_h>(14, 14, 5, 6, 16) // C3, 6@14x14-in, 16@10x10-in
+        << average_pooling_layer<tan_h>(10, 10, 16, 2) // S4, 16@10x10-in, 16@5x5-out
+        << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
+        << fully_connected_layer<tan_h>(120, 10); // F6, 120-in, 10-out
+
+    n1.init_weight();
+    n2.init_weight();
+
+    std::vector<vec_t> t;
+    std::vector<label_t> l;
+    t.push_back(vec_t(32*32, 0.0));
+    l.push_back(3);
+    n1.train(t, l, 1, 1);
+
+    serialization_test(n1, n2);
+
+    vec_t in(32*32, 0.0);
+
+    auto res1 = n1.predict(in);
+    auto res2 = n2.predict(in);
+
+    for (int i = 0; i < 10; i++) {
+        float_t eps = std::abs(res1[i]) * 1e-5;
+        ASSERT_TRUE(std::abs(res1[i] - res2[i]) < eps);
+    }
 }
 
 int main(void) {

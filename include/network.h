@@ -216,6 +216,21 @@ public:
         return true;
     }
 
+    template <typename L, typename O>
+    bool has_same_weights(const network<L, O>& others, float_t eps) const
+    {
+        auto h1 = layers_.head();
+        auto h2 = others.layers_.head();
+
+        while (h1 && h2) {
+            if (!h1->has_same_weights(*h2, eps))
+                return false;
+            h1 = h1->next();
+            h2 = h2->next();
+        }
+        return true;
+    }
+
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
