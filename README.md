@@ -169,7 +169,7 @@ void construct_mlp() {
 }
 ```
 
-more sample, read main.cpp
+more sample, read main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/wiki/MNIST-Example) page.
 
 ## references
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
