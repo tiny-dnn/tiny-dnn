@@ -47,7 +47,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\tiny_cnn</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -61,7 +61,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <AdditionalIncludeDirectories>..\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\tiny_cnn</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -75,17 +75,17 @@
     <ClCompile Include="..\test\test.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\activation_function.h" />
-    <ClInclude Include="..\include\average_pooling_layer.h" />
-    <ClInclude Include="..\include\convolutional_layer.h" />
-    <ClInclude Include="..\include\fully_connected_layer.h" />
-    <ClInclude Include="..\include\layer.h" />
-    <ClInclude Include="..\include\loss_function.h" />
-    <ClInclude Include="..\include\network.h" />
-    <ClInclude Include="..\include\optimizer.h" />
-    <ClInclude Include="..\include\partial_connected_layer.h" />
-    <ClInclude Include="..\include\util.h" />
-    <ClInclude Include="..\include\dropout.h" />
+    <ClInclude Include="..\tiny_cnn\activation_function.h" />
+    <ClInclude Include="..\tiny_cnn\average_pooling_layer.h" />
+    <ClInclude Include="..\tiny_cnn\convolutional_layer.h" />
+    <ClInclude Include="..\tiny_cnn\fully_connected_layer.h" />
+    <ClInclude Include="..\tiny_cnn\layer.h" />
+    <ClInclude Include="..\tiny_cnn\loss_function.h" />
+    <ClInclude Include="..\tiny_cnn\network.h" />
+    <ClInclude Include="..\tiny_cnn\optimizer.h" />
+    <ClInclude Include="..\tiny_cnn\partial_connected_layer.h" />
+    <ClInclude Include="..\tiny_cnn\util.h" />
+    <ClInclude Include="..\tiny_cnn\dropout.h" />
     <ClInclude Include="..\test\picotest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

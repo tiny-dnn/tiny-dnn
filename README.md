@@ -97,7 +97,7 @@ You can edit include/config.h to customize default behavior.
 construct convolutional neural networks
 
 ```cpp
-#include "tiny_cnn.h"
+#include "tiny_cnn/tiny_cnn.h"
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
@@ -139,7 +139,7 @@ void construct_cnn() {
 construct multi-layer perceptron(mlp)
 
 ```cpp
-#include "tiny_cnn.h"
+#include "tiny_cnn/tiny_cnn.h"
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
@@ -157,7 +157,7 @@ void construct_mlp() {
 another way to construct mlp
 
 ```cpp
-#include "tiny_cnn.h"
+#include "tiny_cnn/tiny_cnn.h"
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
