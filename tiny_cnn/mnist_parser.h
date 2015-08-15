@@ -31,7 +31,7 @@
 
 namespace tiny_cnn {
 
-void parse_mnist_labels(const std::string& label_file, std::vector<label_t> *labels) {
+inline void parse_mnist_labels(const std::string& label_file, std::vector<label_t> *labels) {
     std::ifstream ifs(label_file.c_str(), std::ios::in | std::ios::binary);
 
     if (ifs.bad() || ifs.fail())
@@ -64,7 +64,7 @@ struct mnist_header {
     uint32_t num_cols;
 };
 
-void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
+inline void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
     ifs.read((char*) &header.magic_number, 4);
     ifs.read((char*) &header.num_items, 4);
     ifs.read((char*) &header.num_rows, 4);
@@ -83,7 +83,7 @@ void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
         throw nn_error("file error");
 }
 
-void parse_mnist_image(std::ifstream& ifs,
+inline void parse_mnist_image(std::ifstream& ifs,
     const mnist_header& header,
     float_t scale_min,
     float_t scale_max,
@@ -105,7 +105,7 @@ void parse_mnist_image(std::ifstream& ifs,
         = (image_vec[y * header.num_cols + x] / 255.0) * (scale_max - scale_min) + scale_min;
 }
 
-void parse_mnist_images(const std::string& image_file,
+inline void parse_mnist_images(const std::string& image_file,
     std::vector<vec_t> *images,
     float_t scale_min = -1.0,
     float_t scale_max = 1.0,
