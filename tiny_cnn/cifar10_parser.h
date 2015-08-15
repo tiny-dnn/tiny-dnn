@@ -25,22 +25,37 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "util.h"
+#include <fstream>
+#include <cstdint>
+#include <algorithm>
 
-#include "config.h"
+#define CIFAR10_IMAGE_SIZE (3072)
 
-#include "network.h"
-#include "average_pooling_layer.h"
-#include "convolutional_layer.h"
-#include "fully_connected_layer.h"
-#include "fully_connected_dropout_layer.h"
-#include "max_pooling_layer.h"
 
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
+namespace tiny_cnn {
 
-#include "mnist_parser.h"
-#include "cifar10_parser.h"
-#include "image.h"
-#include "deform.h"
-#include "product.h"
+inline void parse_cifar10(const std::string& filename, std::vector<vec_t>& train_images, std::vector<label_t>& train_labels)
+{
+    tiny_cnn::float_t scale_min = -1.0;
+    tiny_cnn::float_t scale_max = 1.0;
+    std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
+    if (ifs.fail() || ifs.bad())
+        throw nn_error("failed to open file");
+
+    uint8_t label;
+    std::vector<unsigned char> buf(CIFAR10_IMAGE_SIZE);
+
+    while (ifs.read((char*) &label, 1)) {
+        vec_t img;
+
+        if (!ifs.read((char*) &buf[0], CIFAR10_IMAGE_SIZE)) break;
+        std::transform(buf.begin(), buf.end(), std::back_inserter(img),
+            [=](unsigned char c) { return scale_min + (scale_max - scale_min) * c / 255; });
+
+        train_images.push_back(img);
+        train_labels.push_back(label);
+    }
+}
+
+} // namespace tiny_cnn
