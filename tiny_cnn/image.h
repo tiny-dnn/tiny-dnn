@@ -63,8 +63,8 @@ public:
 
         // info header(12byte)
         const uint32_t info_header_size = 12;
-        const uint16_t width = static_cast<uint16_t>(width_);
-        const uint16_t height = static_cast<uint16_t>(height_);
+        const int16_t width = static_cast<int16_t>(width_);
+        const int16_t height = static_cast<int16_t>(height_);
         const uint16_t planes = 1;
         const uint16_t bit_count = 8;
 
@@ -84,7 +84,7 @@ public:
 
         // data
         for (size_t i = 0; i < height_; i++) {
-            ofs.write(reinterpret_cast<const char*>(&data_[i * width_]), width_);
+            ofs.write(reinterpret_cast<const char*>(&data_[(height_ - 1 - i) * width_]), width_);
             if (line_pitch != width_) {
                 uint32_t dummy = 0;
                 ofs.write(reinterpret_cast<const char*>(&dummy), line_pitch - width_);
