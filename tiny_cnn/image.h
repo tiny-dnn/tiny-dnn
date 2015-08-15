@@ -28,6 +28,7 @@
 #include <vector>
 #include <fstream>
 #include <cstdint>
+#include <algorithm>
 
 namespace tiny_cnn {
 
@@ -122,5 +123,33 @@ private:
     size_t height_;
     std::vector<intensity_t> data_;
 };
+
+
+inline void vec2image(const vec_t& vec, image& img, const index3d<layer_size_t>& maps) {
+    const layer_size_t border_width = 1;
+    const auto pitch = maps.width_ + border_width;
+    const auto width = maps.depth_ * pitch + border_width;
+    const auto height = maps.height_ + border_width;
+    const image::intensity_t bg_color = 255;
+
+    img.resize(width, height);
+    img.fill(bg_color);
+
+    auto minmax = std::minmax_element(vec.begin(), vec.end());
+
+    for (layer_size_t c = 0; c < maps.depth_; ++c) {
+        const auto top = 1;
+        const auto left = c * pitch + border_width;
+
+        for (layer_size_t y = 0; y < maps.height_; ++y) {
+            for (layer_size_t x = 0; x < maps.width_; ++x) {
+                const float_t val = vec[maps.get_index(x, y, c)];
+
+                img.at(left + x, top + y)
+                    = static_cast<image::intensity_t>(rescale(val, *minmax.first, *minmax.second, 0, 255));
+            }
+        }
+    }
+}
 
 } // namespace tiny_cnn
