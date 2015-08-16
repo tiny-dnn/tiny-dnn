@@ -168,7 +168,7 @@ inline image vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
     const auto width = pitch * cols + border_width;
     const auto height = pitch * rows + border_width;
     const image::intensity_t bg_color = 255;
-    int current_idx = 0;
+    size_t current_idx = 0;
 
     img.resize(width, height);
     img.fill(bg_color);
