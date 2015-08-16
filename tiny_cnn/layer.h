@@ -27,6 +27,7 @@
 #pragma once
 #include "util.h"
 #include "product.h"
+#include "image.h"
 #include "activation_function.h"
 
 namespace tiny_cnn {
@@ -94,6 +95,10 @@ public:
     virtual void load(std::istream& is) {
         for (auto& w : W_) is >> w;
         for (auto& b : b_) is >> b;
+    }
+
+    virtual image output_to_image(size_t worker_index = 0) const {
+        return vec2image(output_[worker_index]);
     }
 
     virtual activation::function& activation_function() = 0;
@@ -250,11 +255,14 @@ public:
     layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
 
     template <typename T>
-    const T& at(size_t index) const
-    {
+    const T& at(size_t index) const {
         const T* v = dynamic_cast<const T*>(layers_[index + 1]);
         if (v) return *v;
         throw nn_error("failed to cast");
+    }
+
+    const layer_base* operator [] (size_t index) const {
+        return layers_[index + 1];
     }
 
     void reset() {
@@ -282,6 +290,11 @@ public:
     void set_parallelize(bool parallelize) {
         for (auto pl : layers_)
             pl->set_parallelize(parallelize);
+    }
+
+    // get depth(number of layers) of networks
+    size_t depth() const {
+        return layers_.size() - 1; // except input-layer
     }
 
 private:

@@ -36,6 +36,7 @@ template<typename Activation>
 class average_pooling_layer : public partial_connected_layer<Activation> {
 public:
     typedef partial_connected_layer<Activation> Base;
+    CNN_USE_LAYER_MEMBERS;
 
     average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
     : partial_connected_layer<Activation>(
@@ -50,12 +51,8 @@ public:
         init_connection(pooling_size);
     }
 
-    void input_to_image(image& img, int idx = 0) const {
-        vec2image(prev_->output(idx), img, in_);
-    }
-
-    void output_to_image(image& img, int idx = 0) const {
-        vec2image(output_[idx], img, out_);
+    image output_to_image(size_t worker_index = 0) const {
+        return vec2image(output_[worker_index], out_);
     }
 private:
     void init_connection(layer_size_t pooling_size) {

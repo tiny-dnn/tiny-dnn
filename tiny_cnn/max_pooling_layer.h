@@ -102,12 +102,8 @@ public:
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
-    void input_to_image(image& img, int idx = 0) const {
-        vec2image(prev_->output(idx), img, in_);
-    }
-
-    void output_to_image(image& img, int idx = 0) const {
-        vec2image(output_[idx], img, out_);
+    image output_to_image(size_t worker_index = 0) const {
+        return vec2image(output_[worker_index], out_);
     }
 
 private:

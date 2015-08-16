@@ -41,6 +41,24 @@ public:
 
     image(size_t width, size_t height) : width_(width), height_(height), data_(width * height, 0) {}
 
+    image(const image& rhs) : width_(rhs.width_), height_(rhs.height_), data_(rhs.data_) {}
+
+    image(const image&& rhs) : width_(rhs.width_), height_(rhs.height_), data_(std::move(rhs.data_)) {}
+
+    image& operator = (const image& rhs) {
+        width_ = rhs.width_;
+        height_ = rhs.height_;
+        data_ = rhs.data_;
+        return *this;
+    }
+
+    image& operator = (const image&& rhs) {
+        width_ = rhs.width_;
+        height_ = rhs.height_;
+        data_ = std::move(rhs.data_);
+        return *this;
+    }
+
     void write(const std::string& path) const { // WARNING: This is OS dependent (writes of bytes with reinterpret_cast depend on endianness)
         std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
 
@@ -124,13 +142,84 @@ private:
     std::vector<intensity_t> data_;
 };
 
+/**
+ * visualize 1d-vector
+ *
+ * @example
+ *
+ * vec:[1,5,3]
+ *
+ * img:
+ *   ----------
+ *   -11-55-33-
+ *   -11-55-33-
+ *   ----------
+ **/
+inline image vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
+{
+    if (vec.empty())
+        throw nn_error("failed to visialize image: vector is empty");
 
-inline void vec2image(const vec_t& vec, image& img, const index3d<layer_size_t>& maps) {
+    image img;
+    const layer_size_t border_width = 1;
+    const auto cols = vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
+    const auto rows = (vec.size() - 1) / cols + 1;
+    const auto pitch = block_size + border_width;
+    const auto width = pitch * cols + border_width;
+    const auto height = pitch * rows + border_width;
+    const image::intensity_t bg_color = 255;
+    int current_idx = 0;
+
+    img.resize(width, height);
+    img.fill(bg_color);
+
+    auto minmax = std::minmax_element(vec.begin(), vec.end());
+
+    for (unsigned int r = 0; r < rows; r++) {
+        int topy = pitch * r + border_width;
+
+        for (unsigned int c = 0; c < cols; c++, current_idx++) {
+            int leftx = pitch * c + border_width;
+            const float_t src = vec[current_idx];
+            image::intensity_t dst
+                = static_cast<image::intensity_t>(rescale(src, *minmax.first, *minmax.second, 0, 255));
+
+            for (int y = 0; y < block_size; y++)
+              for (int x = 0; x < block_size; x++)
+                img.at(x + leftx, y + topy) = dst;
+
+            if (current_idx == vec.size()) return img;
+        }
+    }
+    return img;
+}
+
+/**
+ * visualize 1d-vector
+ *
+ * @example
+ *
+ * vec:[5,2,1,3,6,3,0,9,8,7,4,2] maps:[width=2,height=3,depth=2]
+ *
+ * img:
+ *  -------
+ *  -52-09-
+ *  -13-87-
+ *  -63-42-
+ *  -------
+ **/
+inline image vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
+    if (vec.empty())
+        throw nn_error("failed to visualize image: vector is empty");
+    if (vec.size() != maps.size())
+        throw nn_error("failed to visualize image: vector size invalid");
+
     const layer_size_t border_width = 1;
     const auto pitch = maps.width_ + border_width;
     const auto width = maps.depth_ * pitch + border_width;
-    const auto height = maps.height_ + border_width;
+    const auto height = maps.height_ + 2 * border_width;
     const image::intensity_t bg_color = 255;
+    image img;
 
     img.resize(width, height);
     img.fill(bg_color);
@@ -138,7 +227,7 @@ inline void vec2image(const vec_t& vec, image& img, const index3d<layer_size_t>&
     auto minmax = std::minmax_element(vec.begin(), vec.end());
 
     for (layer_size_t c = 0; c < maps.depth_; ++c) {
-        const auto top = 1;
+        const auto top = border_width;
         const auto left = c * pitch + border_width;
 
         for (layer_size_t y = 0; y < maps.height_; ++y) {
@@ -150,6 +239,7 @@ inline void vec2image(const vec_t& vec, image& img, const index3d<layer_size_t>&
             }
         }
     }
+    return img;
 }
 
 } // namespace tiny_cnn

@@ -217,8 +217,7 @@ public:
     }
 
     template <typename L, typename O>
-    bool has_same_weights(const network<L, O>& others, float_t eps) const
-    {
+    bool has_same_weights(const network<L, O>& others, float_t eps) const {
         auto h1 = layers_.head();
         auto h2 = others.layers_.head();
 
@@ -232,9 +231,16 @@ public:
     }
 
     template <typename T>
-    const T& at(size_t index) const
-    {
+    const T& at(size_t index) const {
         return layers_.at<T>(index);
+    }
+
+    const layer_base* operator [] (size_t index) const {
+        return layers_[index];
+    }
+
+    size_t depth() const {
+        return layers_.depth();
     }
 
 private:

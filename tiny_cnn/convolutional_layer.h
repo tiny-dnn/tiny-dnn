@@ -80,16 +80,12 @@ public:
         this->remap();
     }
 
-
-    void input_to_image(image& img, int idx = 0) const {
-        vec2image(prev_->output(idx), img, in_);
+    image output_to_image(size_t worker_index = 0) const {
+        return vec2image(output_[worker_index], out_);
     }
 
-    void output_to_image(image& img, int idx = 0) const {
-        vec2image(output_[idx], img, out_);
-    }
-
-    void weight_to_image(image& img) const {
+    image weight_to_image() const {
+        image img;
         const layer_size_t border_width = 1;
         const auto pitch = window_size_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
@@ -118,6 +114,7 @@ public:
                 }
             }
         }
+        return img;
     }
 
 private:
