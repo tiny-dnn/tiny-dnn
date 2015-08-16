@@ -249,6 +249,14 @@ public:
 
     layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
 
+    template <typename T>
+    const T& at(size_t index) const
+    {
+        const T* v = dynamic_cast<const T*>(layers_[index + 1]);
+        if (v) return *v;
+        throw nn_error("failed to cast");
+    }
+
     void reset() {
         for (auto pl : layers_)
             pl->init_weight();

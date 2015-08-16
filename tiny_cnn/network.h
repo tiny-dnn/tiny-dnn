@@ -231,6 +231,12 @@ public:
         return true;
     }
 
+    template <typename T>
+    const T& at(size_t index) const
+    {
+        return layers_.at<T>(index);
+    }
+
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
