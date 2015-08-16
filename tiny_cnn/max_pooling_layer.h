@@ -28,6 +28,7 @@
 #include "util.h"
 #include "partial_connected_layer.h"
 #include "activation_function.h"
+#include "image.h"
 
 namespace tiny_cnn {
     
@@ -100,6 +101,15 @@ public:
         }
         return prev_->back_propagation_2nd(prev_delta2_);
     }
+
+    void input_to_image(image& img, int idx = 0) const {
+        vec2image(prev_->output(idx), img, in_);
+    }
+
+    void output_to_image(image& img, int idx = 0) const {
+        vec2image(output_[idx], img, out_);
+    }
+
 private:
     std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
     std::vector<int> in2out_; // mapping in => out (N:1)

@@ -81,15 +81,15 @@ public:
     }
 
 
-    void input_to_image(image& img, int idx = 0) {
+    void input_to_image(image& img, int idx = 0) const {
         vec2image(prev_->output(idx), img, in_);
     }
 
-    void output_to_image(image& img, int idx = 0) {
+    void output_to_image(image& img, int idx = 0) const {
         vec2image(output_[idx], img, out_);
     }
 
-    void weight_to_image(image& img) {
+    void weight_to_image(image& img) const {
         const layer_size_t border_width = 1;
         const auto pitch = window_size_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;

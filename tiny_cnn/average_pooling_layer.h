@@ -27,6 +27,7 @@
 #pragma once
 #include "util.h"
 #include "partial_connected_layer.h"
+#include "image.h"
 
 namespace tiny_cnn {
 
@@ -49,6 +50,13 @@ public:
         init_connection(pooling_size);
     }
 
+    void input_to_image(image& img, int idx = 0) const {
+        vec2image(prev_->output(idx), img, in_);
+    }
+
+    void output_to_image(image& img, int idx = 0) const {
+        vec2image(output_[idx], img, out_);
+    }
 private:
     void init_connection(layer_size_t pooling_size) {
         for (layer_size_t c = 0; c < in_.depth_; ++c)
