@@ -47,7 +47,7 @@ public:
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             throw nn_error("width/height must be multiples of pooling size");
-        init_connection(in_width, in_height, in_channels, pooling_size);
+        init_connection(pooling_size);
     }
 
     size_t fan_in_size() const override {
@@ -119,7 +119,7 @@ private:
         }
     }
 
-    void init_connection(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
+    void init_connection(layer_size_t pooling_size)
     {
         in2out_.resize(in_.size());
         out2in_.resize(out_.size());
