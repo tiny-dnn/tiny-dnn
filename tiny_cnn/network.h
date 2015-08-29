@@ -318,7 +318,7 @@ private:
     }
 
     const vec_t& fprop(const vec_t& in, int idx = 0) {
-		if (in.size() != (size_t)in_dim())
+        if (in.size() != (size_t)in_dim())
             data_mismatch(*layers_[0], in);
         return layers_.head()->forward_propagation(in, idx);
     }
