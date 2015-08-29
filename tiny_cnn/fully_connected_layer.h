@@ -119,6 +119,8 @@ public:
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
+    std::string layer_type() const override { return "fully-connected"; }
+
 protected:
     Filter filter_;
 };

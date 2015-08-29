@@ -74,6 +74,12 @@ struct index3d {
     T depth_;
 };
 
+template <typename Stream, typename T>
+Stream& operator << (Stream& s, const index3d<T>& d) {
+    s << d.width_ << "x" << d.height_ << "x" << d.depth_;
+    return s;
+}
+
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {

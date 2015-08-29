@@ -46,14 +46,20 @@ public:
      in_(in_width, in_height, in_channels), 
      out_(in_width/pooling_size, in_height/pooling_size, in_channels)
     {
-        if ((in_width % pooling_size) || (in_height % pooling_size)) 
-            throw nn_error("width/height must be multiples of pooling size");
+        if ((in_width % pooling_size) || (in_height % pooling_size))
+            pooling_size_mismatch(in_width, in_height, pooling_size);
+
         init_connection(pooling_size);
     }
 
     image output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index], out_);
     }
+
+    index3d<layer_size_t> in_shape() const override { return in_; }
+    index3d<layer_size_t> out_shape() const override { return out_; }
+    std::string layer_type() const override { return "ave-pool"; }
+
 private:
     void init_connection(layer_size_t pooling_size) {
         for (layer_size_t c = 0; c < in_.depth_; ++c)

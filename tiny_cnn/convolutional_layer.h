@@ -117,6 +117,10 @@ public:
         return img;
     }
 
+    index3d<layer_size_t> in_shape() const override { return in_; }
+    index3d<layer_size_t> out_shape() const override { return out_; }
+    std::string layer_type() const override { return "conv"; }
+
 private:
     void init_connection(const connection_table& table) {
         for (layer_size_t inc = 0; inc < in_.depth_; ++inc) {

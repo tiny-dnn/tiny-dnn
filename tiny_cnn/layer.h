@@ -25,6 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include <sstream>
+#include <iomanip>
 #include "util.h"
 #include "product.h"
 #include "image.h"
@@ -32,9 +34,12 @@
 
 namespace tiny_cnn {
 
+
 // base class of all kind of NN layers
 class layer_base {
 public:
+    friend void connection_mismatch(const layer_base& from, const layer_base& to);
+
     virtual ~layer_base() {}
 
     layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
@@ -43,7 +48,7 @@ public:
 
     void connect(layer_base* tail) {
         if (out_size() != 0 && tail->in_size() != out_size())
-            throw nn_error("dimension mismatch");
+            connection_mismatch(*this, *tail);
         next_ = tail;
         tail->prev_ = this;
     }
@@ -85,6 +90,9 @@ public:
     virtual size_t param_size() const { return W_.size() + b_.size(); }
     virtual size_t fan_in_size() const = 0;
     virtual size_t connection_size() const = 0;
+    virtual index3d<layer_size_t> in_shape() const { return index3d<layer_size_t>(in_size(), 1, 1); }
+    virtual index3d<layer_size_t> out_shape() const { return index3d<layer_size_t>(out_size(), 1, 1); }
+    virtual std::string layer_type() const = 0;
 
     virtual void save(std::ostream& os) const {
         if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
@@ -209,6 +217,10 @@ public:
 
     layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
 
+    index3d<layer_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<layer_size_t>(0, 0, 0); }
+    index3d<layer_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<layer_size_t>(0, 0, 0); }
+    std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
+
     const vec_t& forward_propagation(const vec_t& in, size_t index) {
         output_[index] = in;
         return next_ ? next_->forward_propagation(in, index) : output_[index];
@@ -318,6 +330,47 @@ template <typename Char, typename CharTraits>
 std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, layer_base& v) {
     v.load(os);
     return os;
+}
+
+// error message functions
+
+inline void connection_mismatch(const layer_base& from, const layer_base& to) {
+    std::ostringstream os;
+
+    os << std::endl;
+    os << "output size of Nth layer must be equal to input of (N+1)th layer" << std::endl;
+    os << "layerN:   " << std::setw(12) << from.layer_type() << " in:" << from.in_size() << "(" << from.in_shape() << "), " << 
+                                                "out:" << from.out_size() << "(" << from.out_shape() << ")" << std::endl;
+    os << "layerN+1: " << std::setw(12) << to.layer_type() << " in:" << to.in_size() << "(" << to.in_shape() << "), " <<
+                                             "out:" << to.out_size() << "(" << to.out_shape() << ")" << std::endl;
+    os << from.out_size() << " != " << to.in_size() << std::endl;
+    std::string detail_info = os.str();
+
+    throw nn_error("layer dimension mismatch!" + detail_info);
+}
+
+inline void data_mismatch(const layer_base& layer, const vec_t& data) {
+    std::ostringstream os;
+
+    os << std::endl;
+    os << "data dimension:    " << data.size() << std::endl;
+    os << "network dimension: " << layer.in_size() << "(" << layer.layer_type() << ":" << layer.in_shape() << ")" << std::endl;
+
+    std::string detail_info = os.str();
+
+    throw nn_error("input dimension mismath!" + detail_info);
+}
+
+inline void pooling_size_mismatch(layer_size_t in_width, layer_size_t in_height, layer_size_t pooling_size) {
+    std::ostringstream os;
+
+    os << std::endl;
+    os << "WxH:" << in_width << "x" << in_height << std::endl;
+    os << "pooling-size:" << pooling_size << std::endl;
+
+    std::string detail_info = os.str();
+
+    throw nn_error("width/height must be multiples of pooling size" + detail_info);
 }
 
 } // namespace tiny_cnn

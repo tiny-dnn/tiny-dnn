@@ -51,6 +51,8 @@ public:
         this->filter_.set_context(ctx);
     }
 
+    std::string layer_type() const override { return "dropout"; }
+
 private:
     void post_update() override {
         this->filter_.end_batch();

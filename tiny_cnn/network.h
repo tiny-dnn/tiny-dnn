@@ -318,8 +318,8 @@ private:
     }
 
     const vec_t& fprop(const vec_t& in, int idx = 0) {
-        if (in.size() != (size_t)in_dim())
-            throw nn_error("input dimension mismatch");
+		if (in.size() != (size_t)in_dim())
+            data_mismatch(*layers_[0], in);
         return layers_.head()->forward_propagation(in, idx);
     }
 
@@ -388,6 +388,7 @@ private:
 
         return std::abs(delta_by_bprop - delta_by_numerical);
     }
+
 
     float_t target_value_min() const { return layers_.tail()->activation_function().scale().first; }
     float_t target_value_max() const { return layers_.tail()->activation_function().scale().second; }
