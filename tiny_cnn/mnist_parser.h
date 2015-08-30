@@ -143,6 +143,12 @@ inline void parse_mnist_images(const std::string& image_file,
     float_t scale_max,
     int x_padding,
     int y_padding) {
+
+    if (x_padding < 0 || y_padding < 0)
+        throw nn_error("padding size must not be negative");
+    if (scale_min >= scale_max)
+        throw nn_error("scale_max must be greater than scale_min");
+
     std::ifstream ifs(image_file.c_str(), std::ios::in | std::ios::binary);
 
     if (ifs.bad() || ifs.fail())
