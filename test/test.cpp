@@ -32,7 +32,6 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-
 TEST(convolutional, fprop) {
     typedef network<mse, gradient_descent_levenberg_marquardt> CNN;
     CNN nn;
@@ -562,7 +561,7 @@ TEST(read_write, network)
     auto res2 = n2.predict(in);
 
     for (int i = 0; i < 10; i++) {
-        float_t eps = std::abs(res1[i]) * 1e-5;
+        tiny_cnn::float_t eps = std::abs(res1[i]) * 1e-5;
         ASSERT_TRUE(std::abs(res1[i] - res2[i]) < eps);
     }
 }
