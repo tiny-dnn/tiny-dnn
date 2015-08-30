@@ -15,12 +15,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tiny_cnn\activation_function.h" />
+    <ClInclude Include="..\tiny_cnn\cifar10_parser.h" />
     <ClInclude Include="..\tiny_cnn\config.h" />
     <ClInclude Include="..\tiny_cnn\convolutional_layer.h" />
     <ClInclude Include="..\tiny_cnn\deform.h" />
     <ClInclude Include="..\tiny_cnn\fully_connected_layer.h" />
     <ClInclude Include="..\tiny_cnn\image.h" />
+    <ClInclude Include="..\tiny_cnn\input_layer.h" />
     <ClInclude Include="..\tiny_cnn\layer.h" />
+    <ClInclude Include="..\tiny_cnn\layers.h" />
     <ClInclude Include="..\tiny_cnn\loss_function.h" />
     <ClInclude Include="..\tiny_cnn\max_pooling_layer.h" />
     <ClInclude Include="..\tiny_cnn\mnist_parser.h" />

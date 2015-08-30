@@ -36,8 +36,9 @@
 #include "activation_function.h"
 #include "loss_function.h"
 #include "optimizer.h"
-#include "fully_connected_layer.h"
 #include "layer.h"
+#include "layers.h"
+#include "fully_connected_layer.h"
 
 namespace tiny_cnn {
 
