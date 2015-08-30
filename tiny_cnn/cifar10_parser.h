@@ -35,13 +35,25 @@
 
 namespace tiny_cnn {
 
-inline void parse_cifar10(const std::string& filename, std::vector<vec_t>& train_images, std::vector<label_t>& train_labels)
+
+/**
+ * parse CIFAR-10 database format images
+ *
+ * @param filename [in] filename of database(binary version)
+ * @param train_images [out] parsed images
+ * @param train_labels [out] parsed labels
+ * @param scale_min  [in]  min-value of output
+ * @param scale_max  [in]  max-value of output
+ **/
+inline void parse_cifar10(const std::string& filename,
+                          std::vector<vec_t> *train_images,
+                          std::vector<label_t> *train_labels,
+                          float_t scale_min,
+                          float_t scale_max)
 {
-    tiny_cnn::float_t scale_min = -1.0;
-    tiny_cnn::float_t scale_max = 1.0;
     std::ifstream ifs(filename.c_str(), std::ios::in | std::ios::binary);
     if (ifs.fail() || ifs.bad())
-        throw nn_error("failed to open file");
+        throw nn_error("failed to open file:" + filename);
 
     uint8_t label;
     std::vector<unsigned char> buf(CIFAR10_IMAGE_SIZE);
@@ -50,11 +62,12 @@ inline void parse_cifar10(const std::string& filename, std::vector<vec_t>& train
         vec_t img;
 
         if (!ifs.read((char*) &buf[0], CIFAR10_IMAGE_SIZE)) break;
+
         std::transform(buf.begin(), buf.end(), std::back_inserter(img),
             [=](unsigned char c) { return scale_min + (scale_max - scale_min) * c / 255; });
 
-        train_images.push_back(img);
-        train_labels.push_back(label);
+        train_images->push_back(img);
+        train_labels->push_back(label);
     }
 }
 

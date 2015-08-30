@@ -79,9 +79,9 @@ void sample1_convnet(void) {
     std::vector<vec_t> train_images, test_images;
 
     parse_mnist_labels("../../data/train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("../../data/train-images.idx3-ubyte", &train_images);
+    parse_mnist_images("../../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 2, 2);
     parse_mnist_labels("../../data/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images);
+    parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
 
     std::cout << "start learning" << std::endl;
 
