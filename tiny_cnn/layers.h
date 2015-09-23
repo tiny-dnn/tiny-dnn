@@ -64,7 +64,11 @@ public:
         return layers_[index + 1];
     }
 
-    void reset() {
+    layer_base* operator [] (size_t index) {
+        return layers_[index + 1];
+    }
+
+    void init_weight() {
         for (auto pl : layers_)
             pl->init_weight();
     }

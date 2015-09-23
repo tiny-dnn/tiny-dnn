@@ -27,10 +27,12 @@
 #pragma once
 #include <sstream>
 #include <iomanip>
+#include <memory>
 #include "util.h"
 #include "product.h"
 #include "image.h"
 #include "activation_function.h"
+#include "weight_init.h"
 
 namespace tiny_cnn {
 
@@ -42,7 +44,10 @@ public:
 
     virtual ~layer_base() {}
 
-    layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) : parallelize_(true), next_(nullptr), prev_(nullptr) {
+    layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
+        : parallelize_(true), next_(nullptr), prev_(nullptr),
+          weight_init_(std::make_shared<weight_init::xavier>()),
+          bias_init_(std::make_shared<weight_init::constant>(0.0)) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
@@ -60,10 +65,9 @@ public:
     // cannot call from ctor because of pure virtual function call fan_in_size().
     // so should call this function explicitly after ctor
     void init_weight() {
-        const float_t weight_base = 0.5 / std::sqrt(fan_in_size());
+        weight_init_->fill(&W_, fan_in_size(), fan_out_size());
+        bias_init_->fill(&b_, fan_in_size(), fan_out_size());
 
-        uniform_rand(W_.begin(), W_.end(), -weight_base, weight_base);
-        uniform_rand(b_.begin(), b_.end(), -weight_base, weight_base);               
         std::fill(Whessian_.begin(), Whessian_.end(), 0.0);
         std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
         clear_diff(CNN_TASK_SIZE);
@@ -89,11 +93,21 @@ public:
     virtual layer_size_t out_size() const { return out_size_; }
     virtual size_t param_size() const { return W_.size() + b_.size(); }
     virtual size_t fan_in_size() const = 0;
+    virtual size_t fan_out_size() const = 0;
     virtual size_t connection_size() const = 0;
     virtual index3d<layer_size_t> in_shape() const { return index3d<layer_size_t>(in_size(), 1, 1); }
     virtual index3d<layer_size_t> out_shape() const { return index3d<layer_size_t>(out_size(), 1, 1); }
     virtual std::string layer_type() const = 0;
+    virtual activation::function& activation_function() = 0;
 
+    // setter
+    template <typename WeightInit>
+    layer_base& weight_init(const WeightInit& f) { weight_init_ = std::make_shared<WeightInit>(f); return *this; }
+
+    template <typename BiasInit>
+    layer_base& bias_init(const BiasInit& f) { bias_init_ = std::make_shared<BiasInit>(f); return *this; }
+
+    // save/load
     virtual void save(std::ostream& os) const {
         if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
         for (auto w : W_) os << w << " ";
@@ -105,11 +119,12 @@ public:
         for (auto& b : b_) is >> b;
     }
 
+    // visualize
     virtual image output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index]);
     }
 
-    virtual activation::function& activation_function() = 0;
+    // fprop/bprop
     virtual const vec_t& forward_propagation(const vec_t& in, size_t worker_index) = 0;
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) = 0;
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
@@ -160,6 +175,8 @@ protected:
     vec_t Whessian_; // diagonal terms of hessian matrix
     vec_t bhessian_;
     vec_t prev_delta2_; // d^2E/da^2
+    std::shared_ptr<weight_init::function> weight_init_;
+    std::shared_ptr<weight_init::function> bias_init_;
 
 private:
     void merge(size_t worker_size, size_t batch_size) {

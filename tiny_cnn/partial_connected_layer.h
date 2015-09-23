@@ -41,8 +41,9 @@ public:
     typedef layer<Activation> Base;
 
     partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
-        : layer<Activation> (in_dim, out_dim, weight_dim, bias_dim), 
-        weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim), scale_factor_(scale_factor) {}
+        : Base(in_dim, out_dim, weight_dim, bias_dim), 
+          weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim),
+          scale_factor_(scale_factor) {}
 
     size_t param_size() const override {
         size_t total_param = 0;
@@ -63,7 +64,11 @@ public:
     }
 
     size_t fan_in_size() const override {
-        return out2wi_[0].size();
+        return max_size(out2wi_);
+    }
+
+    size_t fan_out_size() const override {
+        return max_size(in2wo_);
     }
 
     void connect_weight(layer_size_t input_index, layer_size_t output_index, layer_size_t weight_index) {

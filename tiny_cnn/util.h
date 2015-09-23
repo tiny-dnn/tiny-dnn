@@ -265,6 +265,13 @@ template <typename Container> inline bool has_infinite(const Container& c) {
     return false;
 }
 
+template <typename Container>
+size_t max_size(const Container& c) {
+    typedef typename Container::value_type value_t;
+    return std::max_element(c.begin(), c.end(),
+        [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
+}
+
 // boilerplate to resolve dependent name
 #define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
     using layer_base::out_size_; \

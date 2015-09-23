@@ -39,8 +39,7 @@ public:
     typedef layer<Activation> Base;
 
     max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
-        : layer<Activation>(
-        in_width * in_height * in_channels,
+        : Base(in_width * in_height * in_channels,
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),
         in_(in_width, in_height, in_channels),
@@ -54,6 +53,10 @@ public:
 
     size_t fan_in_size() const override {
         return out2in_[0].size();
+    }
+
+    size_t fan_out_size() const override {
+        return 1;
     }
 
     size_t connection_size() const override {

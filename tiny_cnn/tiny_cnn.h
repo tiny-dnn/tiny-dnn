@@ -38,6 +38,7 @@
 #include "activation_function.h"
 #include "loss_function.h"
 #include "optimizer.h"
+#include "weight_init.h"
 
 #include "mnist_parser.h"
 #include "cifar10_parser.h"

@@ -34,10 +34,11 @@ namespace tiny_cnn {
 template<typename Activation, typename Filter = filter_none>
 class fully_connected_layer : public layer<Activation> {
 public:
+    typedef layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
     fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
-        : layer<Activation>(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
+        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
 
     size_t connection_size() const override {
         return size_t(in_size_) * out_size_ + out_size_;
@@ -45,6 +46,10 @@ public:
 
     size_t fan_in_size() const override {
         return in_size_;
+    }
+
+    size_t fan_out_size() const override {
+        return out_size_;
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) {

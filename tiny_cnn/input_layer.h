@@ -32,9 +32,10 @@ namespace tiny_cnn {
 class input_layer : public layer<activation::identity> {
 public:
     typedef activation::identity Activation;
+    typedef layer<activation::identity> Base;
     CNN_USE_LAYER_MEMBERS;
 
-    input_layer() : layer<activation::identity>(0, 0, 0, 0) {}
+    input_layer() : Base(0, 0, 0, 0) {}
 
     layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
 
@@ -60,6 +61,10 @@ public:
     }
 
     size_t fan_in_size() const override {
+        return 1;
+    }
+
+    size_t fan_out_size() const override {
         return 1;
     }
 };

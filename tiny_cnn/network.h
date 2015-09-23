@@ -105,7 +105,7 @@ public:
     std::string  name() const           { return name_; }
     Optimizer&   optimizer()            { return optimizer_; }
 
-    void         init_weight()          { layers_.reset(); }
+    void         init_weight()          { layers_.init_weight(); }
     void         add(layer_base *layer) { layers_.add(layer); }
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
@@ -237,6 +237,10 @@ public:
     }
 
     const layer_base* operator [] (size_t index) const {
+        return layers_[index];
+    }
+
+    layer_base* operator [] (size_t index) {
         return layers_[index];
     }
 

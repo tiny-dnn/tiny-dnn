@@ -19,6 +19,7 @@
     <ClInclude Include="..\tiny_cnn\config.h" />
     <ClInclude Include="..\tiny_cnn\convolutional_layer.h" />
     <ClInclude Include="..\tiny_cnn\deform.h" />
+    <ClInclude Include="..\tiny_cnn\weight_init.h" />
     <ClInclude Include="..\tiny_cnn\fully_connected_layer.h" />
     <ClInclude Include="..\tiny_cnn\image.h" />
     <ClInclude Include="..\tiny_cnn\input_layer.h" />
