@@ -106,7 +106,7 @@ public:
     Optimizer&   optimizer()            { return optimizer_; }
 
     void         init_weight()          { layers_.init_weight(); }
-    void         add(layer_base *layer) { layers_.add(layer); }
+    void         add(std::shared_ptr<layer_base> layer) { layers_.add(layer); }
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
     /**
@@ -429,7 +429,7 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
 
     Iter next = first + 1;
     for (; next != last; ++first, ++next)
-        n.add(new fully_connected_layer<activation>(*first, *next));
+        n << fully_connected_layer<activation>(*first, *next);
     return n;
 }
 
@@ -443,13 +443,13 @@ network<loss_func, algorithm> make_mlp(const std::vector<int>& units) {
 
 template <typename L, typename O, typename Layer>
 network<L, O>& operator << (network<L, O>& n, const Layer&& l) {
-    n.add(new Layer(l));
+    n.add(std::make_shared<Layer>(l));
     return n;
 }
 
 template <typename L, typename O, typename Layer>
 network<L, O>& operator << (network<L, O>& n, Layer& l) {
-    n.add(&l);
+    n.add(std::make_shared<Layer>(l));
     return n;
 }
 

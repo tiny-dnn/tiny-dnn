@@ -223,7 +223,7 @@ void sample4_dropout()
 
     fully_connected_dropout_layer<tan_h> f1(input_dim, hidden_units, dropout::per_data);
     fully_connected_layer<tan_h> f2(hidden_units, output_dim);
-    nn.add(&f1); nn.add(&f2);
+    nn << f1 << f2;
 
     nn.optimizer().alpha = 0.003; // TODO: not optimized
     nn.optimizer().lambda = 0.0;

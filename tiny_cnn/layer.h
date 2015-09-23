@@ -51,10 +51,10 @@ public:
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
-    void connect(layer_base* tail) {
+    void connect(std::shared_ptr<layer_base>& tail) {
         if (out_size() != 0 && tail->in_size() != out_size())
             connection_mismatch(*this, *tail);
-        next_ = tail;
+        next_ = tail.get();
         tail->prev_ = this;
     }
 

@@ -32,7 +32,7 @@ namespace tiny_cnn {
 
 class layers {
 public:
-    layers() { add(&first_); }
+    layers() { add(std::make_shared<input_layer>()); }
 
     layers(const layers& rhs) { construct(rhs); }
 
@@ -42,16 +42,16 @@ public:
         return *this;
     }
 
-    void add(layer_base * new_tail) {
+    void add(std::shared_ptr<layer_base> new_tail) {
         if (tail())  tail()->connect(new_tail);
         layers_.push_back(new_tail);
     }
 
     bool empty() const { return layers_.size() == 0; }
 
-    layer_base* head() const { return empty() ? 0 : layers_[0]; }
+    layer_base* head() const { return empty() ? 0 : layers_[0].get(); }
 
-    layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1]; }
+    layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1].get(); }
 
     template <typename T>
     const T& at(size_t index) const {
@@ -61,11 +61,11 @@ public:
     }
 
     const layer_base* operator [] (size_t index) const {
-        return layers_[index + 1];
+        return layers_[index + 1].get();
     }
 
     layer_base* operator [] (size_t index) {
-        return layers_[index + 1];
+        return layers_[index + 1].get();
     }
 
     void init_weight() {
@@ -102,13 +102,12 @@ public:
 
 private:
     void construct(const layers& rhs) {
-        add(&first_);
+        add(std::make_shared<input_layer>());
         for (size_t i = 1; i < rhs.layers_.size(); i++)
             add(rhs.layers_[i]);
     }
 
-    std::vector<layer_base*> layers_;
-    input_layer first_;
+    std::vector<std::shared_ptr<layer_base>> layers_;
 };
 
 } // namespace tiny_cnn
