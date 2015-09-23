@@ -248,6 +248,22 @@ public:
         return layers_.depth();
     }
 
+    template <typename WeightInit>
+    network& weight_init(const WeightInit& f) {
+        auto ptr = std::make_shared<WeightInit>(f);
+        for (size_t i = 0; i < depth(); i++)
+          layers_[i]->weight_init(ptr);
+        return *this;
+    }
+
+    template <typename BiasInit>
+    network& bias_init(const BiasInit& f) { 
+        auto ptr = std::make_shared<BiasInit>(f);
+        for (size_t i = 0; i < depth(); i++)
+            layers_[i]->bias_init(ptr);
+        return *this;
+    }
+
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {

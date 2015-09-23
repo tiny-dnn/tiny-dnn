@@ -107,6 +107,12 @@ public:
     template <typename BiasInit>
     layer_base& bias_init(const BiasInit& f) { bias_init_ = std::make_shared<BiasInit>(f); return *this; }
 
+    template <typename WeightInit>
+    layer_base& weight_init(std::shared_ptr<WeightInit> f) { weight_init_ = f; return *this; }
+
+    template <typename BiasInit>
+    layer_base& bias_init(std::shared_ptr<BiasInit> f) { bias_init_ = f; return *this; }
+
     // save/load
     virtual void save(std::ostream& os) const {
         if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
