@@ -1,7 +1,7 @@
 tiny-cnn: A C++11 implementation of deep learning (convolutional neural networks)
 ========
 
-tiny-cnn is a C++11 implementation of deep learning (convolutional neural networks). 
+tiny-cnn is a C++11 implementation of deep learning (convolutional neural networks). It is suitable for deep learning on  limited computational resource, embedded systems and IoT devices.
 
 * [designing principles](#designing-principles)
 * [comparison with other libraries](#comparison-with-other-libraries)
