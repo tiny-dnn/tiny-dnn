@@ -126,6 +126,7 @@ public:
                OnBatchEnumerate          on_batch_enumerate,
                OnEpochEnumerate          on_epoch_enumerate)
     {
+        check_training_data(in, t);
         init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
@@ -410,6 +411,40 @@ private:
         return std::abs(delta_by_bprop - delta_by_numerical);
     }
 
+    void check_t(size_t i, label_t t, layer_size_t dim_out) {
+        if (t >= dim_out) {
+            std::ostringstream os;
+            os << format_str("t[%u]=%u, dim(network output)=%u", i, t, dim_out) << std::endl;
+            os << "in classification task, dim(network output) must be greater than max class id." << std::endl;
+            if (dim_out == 1)
+                os << std::endl << "(for regression, use vector<vec_t> instead of vector<label_t> for training signal)" << std::endl;
+
+            throw nn_error("output dimension mismatch!\n " + os.str());
+        }
+    }
+
+    void check_t(size_t i, const vec_t& t, layer_size_t dim_out) {
+        if (t.size() != dim_out)
+            throw nn_error(format_str("output dimension mismatch!\n dim(target[%u])=%u, dim(network output size=%u", i, t.size(), dim_out));
+    }
+
+    template <typename T>
+    void check_training_data(const std::vector<vec_t>& in, const std::vector<T>& t) {
+        layer_size_t dim_in = in_dim();
+        layer_size_t dim_out = out_dim();
+
+        if (in.size() != t.size())
+            throw nn_error("number of training data must be equal to label data");
+
+        size_t num = in.size();
+
+        for (size_t i = 0; i < num; i++) {
+            if (in[i].size() != dim_in)
+                throw nn_error(format_str("input dimension mismatch!\n dim(data[%u])=%d, dim(network input)=%u", i, in[i].size(), dim_in));
+
+            check_t(i, t[i], dim_out);
+        }
+    }
 
     float_t target_value_min() const { return layers_.tail()->activation_function().scale().first; }
     float_t target_value_max() const { return layers_.tail()->activation_function().scale().second; }

@@ -31,6 +31,8 @@
 #include <type_traits>
 #include <limits>
 #include <cassert>
+#include <cstdio>
+#include <cstdarg>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -270,6 +272,22 @@ size_t max_size(const Container& c) {
     typedef typename Container::value_type value_t;
     return std::max_element(c.begin(), c.end(),
         [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
+}
+
+inline std::string format_str(const char *fmt, ...) {
+    static char buf[2048];
+
+#ifdef _MSC_VER
+#pragma warning(disable:4996)
+#endif
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+#ifdef _MSC_VER
+#pragma warning(default:4996)
+#endif
+    return std::string(buf);
 }
 
 // boilerplate to resolve dependent name
