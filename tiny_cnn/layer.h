@@ -78,7 +78,9 @@ public:
         for (auto& b : bhessian_) b /= denominator;
     }
 
+    /////////////////////////////////////////////////////////////////////////
     // getter
+
     const vec_t& output(int worker_index) const { return output_[worker_index]; }
     const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
     vec_t& weight() { return W_; }
@@ -89,17 +91,36 @@ public:
     layer_base* next() { return next_; }
     layer_base* prev() { return prev_; }
 
+    ///< input dimension
     virtual layer_size_t in_size() const { return in_size_; }
+
+    ///< output dimension
     virtual layer_size_t out_size() const { return out_size_; }
+
+    ///< number of parameters
     virtual size_t param_size() const { return W_.size() + b_.size(); }
+
+    ///< number of incoming connections for each output unit
     virtual size_t fan_in_size() const = 0;
+
+    ///< number of outgoing connections for each input unit
     virtual size_t fan_out_size() const = 0;
+
+    ///< number of connections
     virtual size_t connection_size() const = 0;
+
+    ///< input shape(width x height x depth)
     virtual index3d<layer_size_t> in_shape() const { return index3d<layer_size_t>(in_size(), 1, 1); }
+
+    ///< output shape(width x height x depth)
     virtual index3d<layer_size_t> out_shape() const { return index3d<layer_size_t>(out_size(), 1, 1); }
+
+    ///< name of layer. should be unique for each concrete class
     virtual std::string layer_type() const = 0;
+
     virtual activation::function& activation_function() = 0;
 
+    /////////////////////////////////////////////////////////////////////////
     // setter
     template <typename WeightInit>
     layer_base& weight_init(const WeightInit& f) { weight_init_ = std::make_shared<WeightInit>(f); return *this; }
@@ -113,6 +134,7 @@ public:
     template <typename BiasInit>
     layer_base& bias_init(std::shared_ptr<BiasInit> f) { bias_init_ = f; return *this; }
 
+    /////////////////////////////////////////////////////////////////////////
     // save/load
     virtual void save(std::ostream& os) const {
         if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
@@ -125,14 +147,35 @@ public:
         for (auto& b : b_) is >> b;
     }
 
+    /////////////////////////////////////////////////////////////////////////
     // visualize
+
+    ///< visualize latest output of this layer
+    ///< default implementation interpret output as 1d-vector,
+    ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index]);
     }
 
+    /////////////////////////////////////////////////////////////////////////
     // fprop/bprop
+
+    /**
+     * return output vector
+     * output vector must be stored to output_[worker_index]
+     **/
     virtual const vec_t& forward_propagation(const vec_t& in, size_t worker_index) = 0;
+
+    /**
+     * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
+     * delta must be stored to prev_delta_[worker_index]
+     **/
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) = 0;
+
+    /**
+     * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of hessian matrix)
+     * it is never called if optimizer is hessian-free
+     **/
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) = 0;
 
     // called afrer updating weight

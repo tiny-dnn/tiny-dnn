@@ -157,7 +157,7 @@ public:
     }
 
     /**
-     * test and generate confusion-matrix
+     * test and generate confusion-matrix for classification task
      **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
         result test_result;
@@ -196,6 +196,11 @@ public:
         while (l) { l->load(is); l = l->next(); }
     }
 
+    /**
+     * checking gradients calculated by bprop
+     * detail information:
+     * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
+     **/
     bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode) {
         assert(!layers_.empty());
         std::vector<vec_t> v;
