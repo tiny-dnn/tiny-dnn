@@ -173,6 +173,19 @@ public:
         return test_result;
     }
 
+    /**
+     * calculate loss value (the smaller, the better) for regression task
+     **/
+    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
+        float_t sum_loss = (float_t)0.0;
+
+        for (size_t i = 0; i < in.size(); i++) {
+            const vec_t predicted = predict(in[i]);
+            sum_loss += get_loss(predict(in[i]), t[i]);
+        }
+        return sum_loss;
+    }
+
     void save(std::ostream& os) const {
         auto l = layers_.head();
         while (l) { l->save(os); l = l->next(); }
