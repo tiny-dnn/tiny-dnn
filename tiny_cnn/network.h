@@ -124,10 +124,13 @@ public:
                size_t                    batch_size,
                int                       epoch,
                OnBatchEnumerate          on_batch_enumerate,
-               OnEpochEnumerate          on_epoch_enumerate)
+               OnEpochEnumerate          on_epoch_enumerate,
+               bool                      _init_weight = true
+               )
     {
         check_training_data(in, t);
-        init_weight();
+        if (_init_weight)
+            init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
 
@@ -172,6 +175,13 @@ public:
         }
         return test_result;
     }
+
+    // float_t get_loss(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
+    //     float_t sum_loss = (float_t)0.0;
+    //     assert(in.size() == t.size());
+    //     for_i(in.size(), [&](int i){ sum_loss += E::f(predict(in[i])[0], t[i]); });
+    //     return sum_loss;
+    // }
 
     /**
      * calculate loss value (the smaller, the better) for regression task

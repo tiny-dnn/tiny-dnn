@@ -153,6 +153,8 @@ inline void nop() {
 
 #ifdef CNN_USE_TBB
 
+static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::deferred);
+
 typedef tbb::blocked_range<int> blocked_range;
 typedef tbb::task_group task_group;
 
