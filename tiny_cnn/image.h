@@ -32,22 +32,31 @@
 
 namespace tiny_cnn {
 
-
+//TODO finish update this class with 'depth'
+template<typename T = unsigned char>
 class image {
 public:
-    typedef unsigned char intensity_t;
+    typedef T intensity_t;
 
-    image() : width_(0), height_(0) {}
+    image() : width_(0), height_(0), depth_(1) {}
 
-    image(size_t width, size_t height) : width_(width), height_(height), data_(width * height, 0) {}
+    image(const T* data, size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(depth_ * width_ * height_, 0) 
+    {
+        memcpy(&data_[0],data, depth_ * width * height*sizeof(T));
+    }
 
-    image(const image& rhs) : width_(rhs.width_), height_(rhs.height_), data_(rhs.data_) {}
+    image(index3d<layer_size_t> rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(depth_ * width_ * height_, 0) {}
 
-    image(const image&& rhs) : width_(rhs.width_), height_(rhs.height_), data_(std::move(rhs.data_)) {}
+    image(size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(width * height, 0) {}
+
+    image(const image& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(rhs.data_) {}
+
+    image(const image&& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(std::move(rhs.data_)) {}
 
     image& operator = (const image& rhs) {
         width_ = rhs.width_;
         height_ = rhs.height_;
+        depth_ = rhs.depth_;
         data_ = rhs.data_;
         return *this;
     }
@@ -55,6 +64,7 @@ public:
     image& operator = (const image&& rhs) {
         width_ = rhs.width_;
         height_ = rhs.height_;
+        depth_ = rhs.depth_;
         data_ = std::move(rhs.data_);
         return *this;
     }
@@ -111,34 +121,43 @@ public:
         }
     }
 
-    void resize(size_t width, size_t height) {
+    void resize(size_t width, size_t height) 
+    {
         data_.resize(width * height);
         width_ = width;
         height_ = height;
+        //depth_ = depth;
     }
 
     void fill(intensity_t value) {
         std::fill(data_.begin(), data_.end(), value);
     }
 
-    intensity_t& at(size_t x, size_t y) {
+    intensity_t& at(size_t x, size_t y, size_t z = 0) {
         assert(x < width_);
         assert(y < height_);
-        return data_[y * width_ + x];
+        assert(z < depth_);
+        return data_[z * width_ * height_ + y * width_ + x];
     }
 
-    const intensity_t& at(size_t x, size_t y) const {
+    const intensity_t& at(size_t x, size_t y, size_t z = 0) const {
         assert(x < width_);
         assert(y < height_);
-        return data_[y * width_ + x];
+        assert(z < depth_);
+        return data_[z * width_ * height_ + y * width_ + x];
     }
+
+    intensity_t& operator[](std::size_t idx)       { return data_[idx]; };
+    const intensity_t& operator[](std::size_t idx) const { return data_[idx]; };
 
     size_t width() const { return width_; }
     size_t height() const { return height_; }
+    size_t depth() const {return depth_;}
     const std::vector<intensity_t>& data() const { return data_; }
 private:
     size_t width_;
     size_t height_;
+    size_t depth_;
     std::vector<intensity_t> data_;
 };
 
@@ -155,19 +174,20 @@ private:
  *   -11-55-33-
  *   ----------
  **/
-inline image vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
+ template<typename T = unsigned char>
+inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
 {
     if (vec.empty())
         throw nn_error("failed to visialize image: vector is empty");
 
-    image img;
+    image<T> img;
     const layer_size_t border_width = 1;
     const auto cols = vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
     const auto rows = (vec.size() - 1) / cols + 1;
     const auto pitch = block_size + border_width;
     const auto width = pitch * cols + border_width;
     const auto height = pitch * rows + border_width;
-    const image::intensity_t bg_color = 255;
+    const typename image<T>::intensity_t bg_color = 255;
     size_t current_idx = 0;
 
     img.resize(width, height);
@@ -181,8 +201,8 @@ inline image vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
         for (unsigned int c = 0; c < cols; c++, current_idx++) {
             int leftx = pitch * c + border_width;
             const float_t src = vec[current_idx];
-            image::intensity_t dst
-                = static_cast<image::intensity_t>(rescale(src, *minmax.first, *minmax.second, 0, 255));
+            image<>::intensity_t dst
+                = static_cast<typename image<T>::intensity_t>(rescale(src, *minmax.first, *minmax.second, 0, 255));
 
             for (int y = 0; y < block_size; y++)
               for (int x = 0; x < block_size; x++)
@@ -208,7 +228,8 @@ inline image vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
  *  -63-42-
  *  -------
  **/
-inline image vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
+template<typename T = unsigned char>
+inline image<T> vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
     if (vec.empty())
         throw nn_error("failed to visualize image: vector is empty");
     if (vec.size() != maps.size())
@@ -218,8 +239,8 @@ inline image vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
     const auto pitch = maps.width_ + border_width;
     const auto width = maps.depth_ * pitch + border_width;
     const auto height = maps.height_ + 2 * border_width;
-    const image::intensity_t bg_color = 255;
-    image img;
+    const typename image<T>::intensity_t bg_color = 255;
+    image<T> img;
 
     img.resize(width, height);
     img.fill(bg_color);
@@ -235,7 +256,7 @@ inline image vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
                 const float_t val = vec[maps.get_index(x, y, c)];
 
                 img.at(left + x, top + y)
-                    = static_cast<image::intensity_t>(rescale(val, *minmax.first, *minmax.second, 0, 255));
+                    = static_cast<typename image<T>::intensity_t>(rescale(val, *minmax.first, *minmax.second, 0, 255));
             }
         }
     }

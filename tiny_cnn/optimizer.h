@@ -115,7 +115,8 @@ struct RMSprop : public stateful_optimizer<float_t, 1, false> {
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& g = get<0>(W);
 
-        for_i(W.size(), [&](int i){
+        for_i(W.size(), [&](int i)
+        {
             g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
             W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
         });
@@ -126,6 +127,40 @@ struct RMSprop : public stateful_optimizer<float_t, 1, false> {
 private:
     float_t eps; // constant value to avoid zero-division
 };
+
+
+/**
+ * @brief [a new optimizer (2015)]
+ * @details [see Adam: A Method for Stochastic Optimization (Algorithm 1)
+ *               http://arxiv.org/abs/1412.6980]
+ * 
+ */
+struct Adam : public stateful_optimizer<float_t, 2, false> {
+    Adam() : alpha(0.001), b1(0.9), b2(0.999) , b1_t(0.9), b2_t(0.999), eps(1e-8) {}
+
+    void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
+        vec_t& mt = get<0>(W);
+        vec_t& vt = get<1>(W);
+
+        b1_t*=b1;b2_t*=b2;
+
+        for_i(W.size(), [&](int i){
+            mt[i] = b1 * mt[i] + (1 - b1) * dW[i];
+            vt[i] = b2 * vt[i] + (1 - b2) * dW[i] * dW[i];
+
+            W[i] -= alpha * ( mt[i]/(1-b1_t) ) / std::sqrt( (vt[i]/(1-b2_t)) + eps);
+        });
+    }
+
+    float_t alpha; // learning rate
+    float_t b1; // decay term
+    float_t b2; // decay term
+    float_t b1_t; // decay term power t
+    float_t b2_t; // decay term power t   
+private:
+    float_t eps; // constant value to avoid zero-division
+};
+
 
 
 /**

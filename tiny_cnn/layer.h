@@ -153,7 +153,7 @@ public:
     ///< visualize latest output of this layer
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
-    virtual image output_to_image(size_t worker_index = 0) const {
+    virtual image<> output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index]);
     }
 
