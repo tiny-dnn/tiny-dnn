@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include <iostream>
 #include <stdexcept>
 #include <algorithm>
 #include <iterator>
