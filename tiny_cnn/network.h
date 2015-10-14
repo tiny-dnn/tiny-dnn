@@ -93,7 +93,8 @@ enum grad_check_mode {
 };
 
 template<typename LossFunction, typename Optimizer>
-class network {
+class network 
+{
 public:
     typedef LossFunction E;
 
@@ -124,10 +125,15 @@ public:
                size_t                    batch_size,
                int                       epoch,
                OnBatchEnumerate          on_batch_enumerate,
-               OnEpochEnumerate          on_epoch_enumerate)
+               OnEpochEnumerate          on_epoch_enumerate,
+
+               const bool                _init_weight = true,
+               const int                 nbThreads = CNN_TASK_SIZE
+               )
     {
         check_training_data(in, t);
-        init_weight();
+        if (_init_weight)
+            init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
 
@@ -135,7 +141,7 @@ public:
             if (optimizer_.requires_hessian())
                 calc_hessian(in);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i));
+                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), nbThreads);
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
@@ -173,6 +179,138 @@ public:
         return test_result;
     }
 
+
+    std::vector<vec_t> test(const std::vector<vec_t>& in)
+     {
+            std::vector<vec_t> test_result(in.size());
+
+            for_i(in.size(), [&](int i)
+            {
+                test_result[i] = predict(in[i]);
+            });
+            return test_result;
+    }
+
+    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in)
+    {
+            std::vector<float_t> test_result(in.size());
+
+            for_i(in.size(), [&](int i)
+            {
+                test_result[i] = predict(in[i])[0];
+            });
+            return test_result;
+    }
+
+
+#ifdef CODE_READY
+/**
+ * @brief [TODO--------- NOT FINISHED]
+ * @details [long description]
+ * 
+ * @param data [description]
+ * @return [description]
+ */
+    image<float_t> fast_scoreRegressor(const float_t* data, const int rows, const int cols)
+     {
+        return test_image(image<float_t>(data, cols, rows));
+     }
+
+    image<float_t> fast_scoreRegressor(const image<float_t>& data)
+    {
+        int cols, rows, depth;
+        image<float_t> res(data.width(),data.height());
+        auto current = layers_.head();
+
+        //int count = 0;
+        image<float_t> in;
+        image<float_t> out(data);
+        //image<float_t> output = current->forward_propagation(in,0);
+
+        while ((current = current->next()) != 0) 
+        { 
+            in = out;//transfer out of previous layer to in of current
+
+            //format out image
+            index3d<layer_size_t> shape =  current->out_shape();
+            out = image<float_>(shape);
+
+            cols = in.width(); rows = in.height();depth = in.depth();
+            //std::cout<<++count<<std::endl;
+            if (!current->layer_type().compare("conv"))
+            {
+
+                //convolve all the image (instead of the patch, so faster)
+                vec_t& kernel = current->weight();//w
+                vec_t& b = current->bias();
+                
+                //depth = out.depth();
+                //convolution
+                //for_i((cols-kernel_size)*(rows-kernel_size), [&](int count)
+                for (int count = 0; count < (cols-kernel_size)*(rows-kernel_size); ++count)
+                {
+                    int mm, nn, ii, jj, m, n;
+                    const int j = count / (cols-kernel_size) + kernel_size/2;
+                    const int i = count % (cols-kernel_size) + kernel_size/2;
+
+                    for_i(out.depth(), [&](int k)
+                    {
+                        //convolve
+                        float sum = 0;
+                        for (m = 0; m < kernel_size; ++m)
+                        {
+                            mm = kernel_size - 1 - m;
+                            for (n = 0; n < kernel_size; ++n) {
+                                nn = kernel_size - 1 - n;
+
+                                ii = i + (m - kernel_size / 2);
+                                jj = j + (n - kernel_size / 2);
+
+                                //if (ii >= 0 && ii < rows && jj >= 0 && jj < cols) 
+                                {
+                                    float val = (in[ii * cols +jj]);
+                                    //for (k=0;k<depth_;k++)
+                                    sum += val *  kernel[shape.getIndex(nn,mm,k)];//+mm * kernel_size + nn];
+                                }
+                            }
+                        }
+
+                        //add the bias
+                         for (m = 0; m < kernel_size; ++m)
+                            for (n = 0; n < kernel_size; ++n)
+                                out[k * (rows*cols) + i * cols + j] = sum + b[k * (kernel_size*kernel_size) + m * kernel_size + n];
+                    }
+                    );
+                }
+                //);
+
+            }
+
+            if (!current->layer_type().compare("max-pool"))
+            {
+                size_t size = current->pool_size();
+
+                for_i(depth, [&](int k)
+                {
+                    for (int count = 0; count < out.width()*out.height(); ++count)
+                    {
+                        int mm, nn, ii, jj, m, n;
+                        const int j = count / out.width();
+                        const int i = count % out.width();
+                        out[k * out.width()*out.height() + i  * out.width() + j] = in[k * width * height + i * size * width + j * size];    
+                }
+                );
+
+            }
+
+
+         }
+
+        return res;
+
+    }
+#endif
+    
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
@@ -299,24 +437,24 @@ private:
         }
     }
 
-    void train_once(const vec_t* in, const label_t* t, int size) {
+    void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
-        train_once(in, &v[0], size);
+        train_once(in, &v[0], size, nbThreads );
     }
 
-    void train_once(const vec_t* in, const vec_t* t, int size) {
+    void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         if (size == 1) {
             bprop(fprop(in[0]), t[0]);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
-            train_onebatch(in, t, size);
+            train_onebatch(in, t, size, nbThreads);
         }
     }   
 
-    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size) {
+    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
         task_group g;
-        int num_tasks = batch_size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
+        //int num_tasks = batch_size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
         int data_per_thread = batch_size / num_tasks;
         int remaining = batch_size;
 
@@ -471,6 +609,54 @@ private:
     Optimizer optimizer_;
     layers layers_;
 };
+
+/**
+ * @brief [cut an image in samples to be tested (slow)]
+ * @details [long description]
+ * 
+ * @param data [pointer to the data]
+ * @param rows [self explained]
+ * @param cols [self explained]
+ * @param sizepatch [size of the patch, such as the total number of pixel in the patch is sizepatch*sizepatch ]
+ * @return [vector of vec_c (sample) to be passed to test function]
+ */
+std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, const unsigned int cols, const unsigned int sizepatch, const unsigned int step=1)
+{
+    assert(step>0);
+    std::vector<vec_t> res((cols-sizepatch)*(rows-sizepatch)/(step*step),vec_t(sizepatch*sizepatch));
+        for_i((cols-sizepatch)*(rows-sizepatch)/(step*step), [&](int count)
+        {
+            const int j = step*(count / ((cols-sizepatch)/step));
+            const int i = step*(count % ((cols-sizepatch)/step));
+
+            //vec_t sample(sizepatch*sizepatch);
+
+            if (i+sizepatch < cols && j+sizepatch < rows)
+            for (int k=0;k<sizepatch*sizepatch;k++)
+            //for_i(sizepatch*sizepatch, [&](int k)
+            {
+                int y = k / sizepatch + j;
+                int x = k % sizepatch + i;
+                res[count][k] = data[x+y*cols];
+            }
+            //);
+            //res[count] = (sample);
+        });
+
+
+    return res;
+}
+
+// void vec2image(const std::vector<vec_t> &in, float_t* out)
+// {
+//     //printf("%d\n",in.size());
+//     for (int i=0;i<in.size();i++)
+//     //for_i(in.size(), [&](int i)
+//     {
+//         out[i] = in[i][0];
+//     }
+//     //);
+// }
 
 /**
 * create multi-layer perceptron

@@ -147,11 +147,15 @@ U rescale(T x, T src_min, T src_max, U dst_min, U dst_max) {
     return std::min(dst_max, std::max(value, dst_min));
 }
 
-inline void nop() {
+inline void nop() 
+{
     // do nothing
 }
 
+
 #ifdef CNN_USE_TBB
+
+static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
 
 typedef tbb::blocked_range<int> blocked_range;
 typedef tbb::task_group task_group;

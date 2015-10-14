@@ -80,17 +80,17 @@ public:
         this->remap();
     }
 
-    image output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index], out_);
     }
 
-    image weight_to_image() const {
-        image img;
+    image<> weight_to_image() const {
+        image<> img;
         const layer_size_t border_width = 1;
         const auto pitch = window_size_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
-        const image::intensity_t bg_color = 255;
+        const image<>::intensity_t bg_color = 255;
 
         img.resize(width, height);
         img.fill(bg_color);
@@ -109,7 +109,7 @@ public:
                         const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
-                            = static_cast<image::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));
+                            = static_cast<image<>::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));
                     }
                 }
             }

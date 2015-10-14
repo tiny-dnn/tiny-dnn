@@ -45,3 +45,5 @@
 #include "image.h"
 #include "deform.h"
 #include "product.h"
+
+#include "display.h"

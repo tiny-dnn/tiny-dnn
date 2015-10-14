@@ -51,7 +51,7 @@ public:
         init_connection(pooling_size);
     }
 
-    image output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index], out_);
     }
 

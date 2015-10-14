@@ -43,7 +43,8 @@ public:
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),
         in_(in_width, in_height, in_channels),
-        out_(in_width / pooling_size, in_height / pooling_size, in_channels)
+        out_(in_width / pooling_size, in_height / pooling_size, in_channels),
+        pool_size_(pooling_size)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
@@ -106,15 +107,17 @@ public:
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
-    image output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const {
         return vec2image(output_[worker_index], out_);
     }
 
     index3d<layer_size_t> in_shape() const override { return in_; }
     index3d<layer_size_t> out_shape() const override { return out_; }
     std::string layer_type() const override { return "max-pool"; }
+    size_t pool_size() const {return pool_size_;}
 
 private:
+    size_t pool_size_;
     std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
     std::vector<int> in2out_; // mapping in => out (N:1)
     std::vector<int> out2inmax_; // mapping out => max_index(in) (1:1)
