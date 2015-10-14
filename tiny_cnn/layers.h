@@ -55,7 +55,7 @@ public:
 
     template <typename T>
     const T& at(size_t index) const {
-        const T* v = dynamic_cast<const T*>(layers_[index + 1]);
+        const T* v = dynamic_cast<const T*>(layers_[index + 1].get());
         if (v) return *v;
         throw nn_error("failed to cast");
     }
