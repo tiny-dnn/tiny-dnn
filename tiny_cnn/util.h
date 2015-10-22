@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdarg>
+#include <float.h>
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -262,7 +263,7 @@ void for_i(int size, Func f) {
 template <typename T> inline T sqr(T value) { return value*value; }
 
 inline bool isfinite(float_t x) {
-    return x == x;
+    return !_isnan(x) && _finite(x);
 }
 
 template <typename Container> inline bool has_infinite(const Container& c) {
