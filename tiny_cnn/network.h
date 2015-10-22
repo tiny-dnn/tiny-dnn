@@ -52,7 +52,7 @@ struct result {
 
     template <typename Char, typename CharTraits>
     void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
-        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << std::endl;
+        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << ")" << std::endl;
     }
 
     template <typename Char, typename CharTraits>
