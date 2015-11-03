@@ -12,4 +12,4 @@ def build(bld):
       cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
       lib      = [libcxx, 'boost_timer-mt', 'tbb'],
       libpath  = ['../'],
-      includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT])
+      includes = ['.', '../tiny_cnn', bld.env.BOOST_ROOT, bld.env.TBB_ROOT])
