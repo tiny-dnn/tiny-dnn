@@ -59,29 +59,6 @@ private:
     std::string msg_;
 };
 
-template <typename T>
-struct index3d {
-    index3d(T width, T height, T depth) : width_(width), height_(height), depth_(depth) {}
-
-    T get_index(T x, T y, T channel) const {
-        return (height_ * channel + y) * width_ + x;
-    }
-
-    T size() const {
-        return width_ * height_ * depth_;
-    }
-
-    T width_;
-    T height_;
-    T depth_;
-};
-
-template <typename Stream, typename T>
-Stream& operator << (Stream& s, const index3d<T>& d) {
-    s << d.width_ << "x" << d.height_ << "x" << d.depth_;
-    return s;
-}
-
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
@@ -293,6 +270,35 @@ inline std::string format_str(const char *fmt, ...) {
 #endif
     return std::string(buf);
 }
+
+template <typename T>
+struct index3d {
+    index3d(T width, T height, T depth) : width_(width), height_(height), depth_(depth) {
+        if ((long long) width * height * depth > std::numeric_limits<T>::max())
+          throw nn_error(
+            format_str("error while constructing layer: layer size too large for tiny-cnn\nWidthxHeightxChannels=%dx%dx%d >= max size of [%s](=%d)",
+                        width, height, depth, typeid(T).name(), std::numeric_limits<T>::max()));
+    }
+
+    T get_index(T x, T y, T channel) const {
+        return (height_ * channel + y) * width_ + x; 
+    }
+
+    T size() const {
+        return width_ * height_ * depth_;
+    }
+
+    T width_;
+    T height_;
+    T depth_;
+};
+
+template <typename Stream, typename T>
+Stream& operator << (Stream& s, const index3d<T>& d) {
+    s << d.width_ << "x" << d.height_ << "x" << d.depth_;
+    return s;
+}
+
 
 // boilerplate to resolve dependent name
 #define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
