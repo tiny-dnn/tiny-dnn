@@ -35,9 +35,9 @@ class partial_connected_layer : public layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef std::vector<std::pair<unsigned short, unsigned short> > io_connections;
-    typedef std::vector<std::pair<unsigned short, unsigned short> > wi_connections;
-    typedef std::vector<std::pair<unsigned short, unsigned short> > wo_connections;
+    typedef std::vector<std::pair<layer_size_t, layer_size_t> > io_connections;
+    typedef std::vector<std::pair<layer_size_t, layer_size_t> > wi_connections;
+    typedef std::vector<std::pair<layer_size_t, layer_size_t> > wo_connections;
     typedef layer<Activation> Base;
 
     partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
@@ -194,13 +194,13 @@ public:
         for (size_t i = 0; i < out_size_; i++) {
             wi_connections& wi = out2wi_[i];
             for (size_t j = 0; j < wi.size(); j++)
-                wi[j].first = static_cast<unsigned short>(swaps[wi[j].first]);
+                wi[j].first = static_cast<layer_size_t>(swaps[wi[j].first]);
         }
 
         for (size_t i = 0; i < in_size_; i++) {
             wo_connections& wo = in2wo_[i];
             for (size_t j = 0; j < wo.size(); j++)
-                wo[j].first = static_cast<unsigned short>(swaps[wo[j].first]);
+                wo[j].first = static_cast<layer_size_t>(swaps[wo[j].first]);
         }
 
         std::vector<io_connections> weight2io_new(n);
