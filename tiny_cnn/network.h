@@ -52,7 +52,7 @@ struct result {
 
     template <typename Char, typename CharTraits>
     void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
-        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << std::endl;
+        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << ")" << std::endl;
     }
 
     template <typename Char, typename CharTraits>
@@ -633,11 +633,11 @@ std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, cons
             //vec_t sample(sizepatch*sizepatch);
 
             if (i+sizepatch < cols && j+sizepatch < rows)
-            for (int k=0;k<sizepatch*sizepatch;k++)
+            for (unsigned int k=0;k<sizepatch*sizepatch;k++)
             //for_i(sizepatch*sizepatch, [&](int k)
             {
-                int y = k / sizepatch + j;
-                int x = k % sizepatch + i;
+                unsigned int y = k / sizepatch + j;
+                unsigned int x = k % sizepatch + i;
                 res[count][k] = data[x+y*cols];
             }
             //);

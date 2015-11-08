@@ -56,6 +56,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * stochastic gradient levenberg marquardt
 * adagrad
 * rmsprop
+* adam
 
 ## dependencies
 ##### Minimum requirements
