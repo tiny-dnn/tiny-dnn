@@ -81,7 +81,7 @@ public:
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image(output_[worker_index], out_);
+        return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
     image<> weight_to_image() const {
