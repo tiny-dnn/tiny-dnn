@@ -1,3 +1,9 @@
+#Command line options
+#-DUSE_TBB=ON/OFF  (default off)
+#-DUSE_OMP=ON/OFF  (default off)
+#-DUSE_SSE=ON/OFF  (default on)
+#-DUSE_AVX=ON/OFF  (default on)
+
 # ----------------------------------------------------------------------------
 #   Basic Configuration
 # ----------------------------------------------------------------------------
@@ -36,60 +42,63 @@ else()
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
- OPTION(USE_TBB 	"Set to ON to use boost" OFF)
-OPTION(USE_SSE 	"Set to ON to use sse" OFF)
-OPTION(USE_AVX 	"Set to ON to use avx" OFF)
-OPTION(USE_ALL 	"Set to ON to use all" OFF)
+OPTION(USE_TBB 	"Set to ON to use boost" OFF)
+OPTION(USE_OMP 	"Set to ON to use boost" OFF)
+OPTION(USE_SSE 	"Set to ON to use sse" ON)
+OPTION(USE_AVX 	"Set to ON to use avx" ON)
 
 # ----------------------------------------------------------------------------
 #   Find Dependencies
 # ----------------------------------------------------------------------------
 
- #define CNN_USE_OMP
-######BOOST
-        set(Boost_USE_STATIC_LIBS        OFF)
-        find_package( Boost   COMPONENTS   timer   ) #thread iostreams
-    if(Boost_FOUND)
+######BOOST (NOT REQUIRED)
+set(Boost_USE_STATIC_LIBS        OFF)
+find_package( Boost   COMPONENTS   timer   ) #thread iostreams
+if(Boost_FOUND)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
-        SET(REQUIRED_LIBRARIES  ${REQUIRED_} ${Boost_TIMER_LIBRARY} ${Boost_FILESYSTEM_LIBRARY}  )
-	if(UNIX)
-		SET(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ) #${Boost_THREAD_LIBRARY}  ${Boost_IOSTREAMS_LIBRARY}
-	endif()
+        SET(REQUIRED_LIBRARIES  ${REQUIRED_} ${Boost_TIMER_LIBRARY}  )
 ENDIF()
 
-IF(USE_TBB OR USE_ALL)
+
+IF(USE_TBB)
     find_package(TBB REQUIRED)
     add_definitions(-DCNN_USE_TBB)
     include_directories(${TBB_INCLUDE_DIRS})
     link_directories(${TBB_LIBRARY_DIRS})
     SET(REQUIRED_LIBRARIES  ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES}  )
+ELSEIF(USE_OMP)
+find_package(OpenMP  REQUIRED)
+        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        add_definitions( -DCNN_USE_OMP)
 ENDIF()
 # ----------------------------------------------------------------------------
-#   Uninstall target, for "make uninstall" and configuration files
+# COMPILER OPTIONS
 # ----------------------------------------------------------------------------
-CONFIGURE_FILE( "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake" IMMEDIATE @ONLY)
-ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake") 
 
-
-
-#define
-
-#define CNN_USE_SSE
-
-IF(NOT WIN32)
-    IF(USE_SSE OR USE_ALL)
+IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
+    IF(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
         SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3 ")
     ENDIF()
-    IF(USE_AVX OR USE_ALL)
+    IF(USE_AVX)
         add_definitions(-DCNN_USE_AVX)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx ")
     ENDIF()
     SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 ")
     SET(CMAKE_CXX_FLAGS_RELEASE " -O3 ")
     SET(CMAKE_CXX_FLAGS_DEBUG " -g3 ")
+ELSE()#MSVC
+    IF(USE_SSE )
+        add_definitions(-DCNN_USE_SSE)
+        SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} /arch:SSE2 ")
+    ENDIF()
+    IF(USE_AVX  )
+        add_definitions(-DCNN_USE_AVX)
+        SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
+    ENDIF()
 ENDIF()
 
  
@@ -107,11 +116,14 @@ ENDIF()
 #------------------------------------------------
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tiny_cnn )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
+
+SET( tiny_cnn_hrds tiny_cnn/activation_function.h    tiny_cnn/cifar10_parser.h  tiny_cnn/convolutional_layer.h  tiny_cnn/display.h  tiny_cnn/fully_connected_dropout_layer.h  tiny_cnn/image.h        tiny_cnn/layer.h   tiny_cnn/loss_function.h      tiny_cnn/mnist_parser.h  tiny_cnn/optimizer.h                tiny_cnn/product.h   tiny_cnn/util.h
+tiny_cnn/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/deform.h               tiny_cnn/dropout.h  tiny_cnn/fully_connected_layer.h          tiny_cnn/input_layer.h  tiny_cnn/layers.h  tiny_cnn/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/weight_init.h)
+
 IF(Boost_FOUND)
-ADD_EXECUTABLE(main example/main.cpp  tiny_cnn/tiny_cnn.h)
+    ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
 ENDIF()
-ADD_EXECUTABLE(train example/train.cpp  tiny_cnn/tiny_cnn.h)
-ADD_EXECUTABLE(test example/test.cpp  tiny_cnn/tiny_cnn.h)
+ADD_EXECUTABLE(test example/test.cpp  ${tiny_cnn_hrds})
 
 
 
@@ -124,9 +136,8 @@ MESSAGE( STATUS "---------------------------------------------------------------
 message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
-message( STATUS "USE_BOOST=${USE_BOOST}")
-message( STATUS "USE_TBB=${USE_TBB}")
-message( STATUS "USE_SSE=${USE_SSE}")
+
+message( STATUS "Boost_FOUND=${Boost_FOUND}   USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
 
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
