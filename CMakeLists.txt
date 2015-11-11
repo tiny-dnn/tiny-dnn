@@ -22,7 +22,7 @@ set(PROJECT_SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
 #------------------------------------------------------
 
 IF(NOT CMAKE_BUILD_TYPE )
-   SET( CMAKE_BUILD_TYPE "Debug" )
+   SET( CMAKE_BUILD_TYPE "Release" )
 ENDIF()
 
 #------------------------------------------------------
@@ -88,8 +88,8 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx ")
     ENDIF()
     SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 ")
-    SET(CMAKE_CXX_FLAGS_RELEASE " -O3 ")
-    SET(CMAKE_CXX_FLAGS_DEBUG " -g3 ")
+    SET(EXTRA_C_FLAGS_RELEASE " -O3 ")
+    SET(EXTRA_C_FLAGS_DEBUG " -g3 ")
 ELSE()#MSVC
     IF(USE_SSE )
         add_definitions(-DCNN_USE_SSE)
@@ -99,6 +99,9 @@ ELSE()#MSVC
         add_definitions(-DCNN_USE_AVX)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     ENDIF()
+    SET(EXTRA_C_FLAGS_RELEASE " /Ox ")
+
+
 ENDIF()
 
  
