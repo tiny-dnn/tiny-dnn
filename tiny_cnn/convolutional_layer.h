@@ -56,6 +56,15 @@ public:
     typedef partial_connected_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
+    /**
+     * constructing convolutional layer
+     *
+     * @param in_width     [in] input image width
+     * @param in_height    [in] input image height
+     * @param window_size  [in] window(kernel) size of convolution
+     * @param in_channels  [in] input image channels (grayscale=1, rgb=3)
+     * @param out_channels [in] output image channels
+     **/
     convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels)
     : Base(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
            sqr(window_size) * in_channels * out_channels, out_channels), 
@@ -67,6 +76,16 @@ public:
         init_connection(connection_table());
     }
 
+    /**
+     * constructing convolutional layer
+     *
+     * @param in_width         [in] input image width
+     * @param in_height        [in] input image height
+     * @param window_size      [in] window(kernel) size of convolution
+     * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+     * @param out_channels     [in] output image channels
+     * @param connection_table [in] definition of connections between in-channels and out-channels
+     **/
     convolutional_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t in_channels, layer_size_t out_channels, const connection_table& connection_table)
         : Base(in_width * in_height * in_channels, (in_width - window_size + 1) * (in_height - window_size + 1) * out_channels, 
                sqr(window_size) * in_channels * out_channels, out_channels), 
@@ -81,7 +100,7 @@ public:
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image(output_[worker_index], out_);
+        return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
     image<> weight_to_image() const {

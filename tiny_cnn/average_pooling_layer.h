@@ -52,7 +52,7 @@ public:
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image(output_[worker_index], out_);
+        return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
     index3d<layer_size_t> in_shape() const override { return in_; }

@@ -11,6 +11,7 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 * [examples](#examples)
 * [references](#references)
 * [license](#license)
+* [mailing list](#mailing-list)
 
 see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
@@ -56,6 +57,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * stochastic gradient levenberg marquardt
 * adagrad
 * rmsprop
+* adam
 
 ## dependencies
 ##### Minimum requirements
@@ -90,6 +92,12 @@ with tbb and SSE/AVX
 
 ### vc(2012~)
 open vc/tiny_cnn.sln and build in release mode.
+
+### using CMake
+```
+cmake .
+make
+```
 
 You can edit include/config.h to customize default behavior.
 
@@ -184,3 +192,8 @@ other useful reference lists:
 
 ## license
 The BSD 3-Clause License
+
+## mailing list
+google group for questions and discussions:
+
+https://groups.google.com/forum/#!forum/tiny-cnn-users

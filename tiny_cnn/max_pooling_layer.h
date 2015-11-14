@@ -106,7 +106,7 @@ public:
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image(output_[worker_index], out_);
+        return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
     index3d<layer_size_t> in_shape() const override { return in_; }
@@ -128,6 +128,11 @@ private:
             for (layer_size_t dx = 0; dx < pooling_size; dx++) {
                 layer_size_t in_index = in_.get_index(outx * pooling_size + dx, outy * pooling_size + dy, c);
                 layer_size_t out_index = out_.get_index(outx, outy, c);
+
+                if (in_index >= in2out_.size())
+                    throw nn_error("index overflow");
+                if (out_index >= out2in_.size())
+                    throw nn_error("index overflow");
                 in2out_[in_index] = out_index;
                 out2in_[out_index].push_back(in_index);
             }

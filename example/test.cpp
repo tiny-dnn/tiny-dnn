@@ -31,7 +31,11 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-int main(void) {
+int main(int argc,char **argv) {
+    if (argc!=2){
+        std::cerr<<"Usage : "<<argv[0]<<" path_to_data (example:../data)"<<std::endl;
+        return -1;
+    }
      // construct LeNet-5 architecture
     network<mse, gradient_descent_levenberg_marquardt> nn;
 
@@ -59,8 +63,8 @@ int main(void) {
     std::vector<label_t> test_labels;
       std::vector<vec_t> test_images;
 
-    parse_mnist_labels("../data/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
+    parse_mnist_labels(std::string(argv[1])+"/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images(std::string(argv[1])+"/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
    
 
  // load

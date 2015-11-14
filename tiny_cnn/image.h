@@ -174,7 +174,7 @@ private:
  *   -11-55-33-
  *   ----------
  **/
- template<typename T = unsigned char>
+ template<typename T>
 inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
 {
     if (vec.empty())
@@ -228,7 +228,7 @@ inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 2
  *  -63-42-
  *  -------
  **/
-template<typename T = unsigned char>
+template<typename T>
 inline image<T> vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
     if (vec.empty())
         throw nn_error("failed to visualize image: vector is empty");

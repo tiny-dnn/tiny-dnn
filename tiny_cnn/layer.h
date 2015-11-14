@@ -160,7 +160,7 @@ public:
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image(output_[worker_index]);
+        return vec2image<unsigned char>(output_[worker_index]);
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -252,20 +252,26 @@ private:
     }
 
     void set_size(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) {
-        in_size_ = in_dim;
-        out_size_ = out_dim;
+        try {
+            in_size_ = in_dim;
+            out_size_ = out_dim;
 
-        W_.resize(weight_dim);
-        b_.resize(bias_dim);
-        Whessian_.resize(weight_dim);
-        bhessian_.resize(bias_dim);
-        prev_delta2_.resize(in_dim);
+            W_.resize(weight_dim);
+            b_.resize(bias_dim);
+            Whessian_.resize(weight_dim);
+            bhessian_.resize(bias_dim);
+            prev_delta2_.resize(in_dim);
 
-        for (auto& o : output_)     o.resize(out_dim);
-        for (auto& a : a_)          a.resize(out_dim);
-        for (auto& p : prev_delta_) p.resize(in_dim);
-        for (auto& dw : dW_) dw.resize(weight_dim);
-        for (auto& db : db_) db.resize(bias_dim);
+            for (auto& o : output_)     o.resize(out_dim);
+            for (auto& a : a_)          a.resize(out_dim);
+            for (auto& p : prev_delta_) p.resize(in_dim);
+            for (auto& dw : dW_) dw.resize(weight_dim);
+            for (auto& db : db_) db.resize(bias_dim);
+        } catch (const std::bad_alloc&) {
+            throw nn_error(
+                format_str("memory allocation failed: layer size too large!\nin:%d,out:%d,weights:%d,biases:%d",
+                           in_dim, out_dim, weight_dim, bias_dim));
+        }
     }
 };
 

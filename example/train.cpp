@@ -32,21 +32,25 @@
 //#define NOMINMAX
 //#include "imdebug.h"
 
-void sample1_convnet();
-void sample2_mlp();
-void sample3_dae();
-void sample4_dropout();
+void sample1_convnet(std::string data_dir_path);
+void sample2_mlp(std::string data_dir_path);
+void sample3_dae( );
+void sample4_dropout(std::string data_dir_path);
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-int main(void) {
-    sample1_convnet();
+int main(int argc,char **argv) {
+    if (argc!=2){
+        std::cerr<<"Usage : "<<argv[0]<<" path_to_data (example:../data)"<<std::endl;
+        return -1;
+    }
+    sample1_convnet(argv[1]);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // learning convolutional neural networks (LeNet-5 like architecture)
-void sample1_convnet(void) {
+void sample1_convnet(std::string data_dir_path) {
     // construct LeNet-5 architecture
     network<mse, gradient_descent_levenberg_marquardt> nn;
 
@@ -77,10 +81,10 @@ void sample1_convnet(void) {
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("../data/train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 2, 2);
-    parse_mnist_labels("../data/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
+    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 2, 2);
+    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
 
     std::cout << "start learning" << std::endl;
 
@@ -135,7 +139,7 @@ void sample1_convnet(void) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // learning 3-Layer Networks
-void sample2_mlp()
+void sample2_mlp(std::string data_dir_path)
 {
     const int num_hidden_units = 500;
 
@@ -151,10 +155,10 @@ void sample2_mlp()
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("../data/train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
-    parse_mnist_labels("../data/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     nn.optimizer().alpha = 0.001;
     
@@ -212,7 +216,7 @@ void sample3_dae()
 ///////////////////////////////////////////////////////////////////////////////
 // dropout-learning
 
-void sample4_dropout()
+void sample4_dropout(std::string data_dir_path)
 {
     typedef network<mse, gradient_descent> Network;
     Network nn;
@@ -231,10 +235,10 @@ void sample4_dropout()
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels("../data/train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("../data/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
-    parse_mnist_labels("../data/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images("../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     // load train-data, label_data
     boost::progress_display disp(train_images.size());
