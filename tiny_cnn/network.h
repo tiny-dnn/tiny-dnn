@@ -128,20 +128,47 @@ public:
                OnEpochEnumerate          on_epoch_enumerate,
 
                const bool                _init_weight = true,
-               const int                 nbThreads = CNN_TASK_SIZE
+               const int                 nbTasks = CNN_TASK_SIZE
                )
     {
         check_training_data(in, t);
-        if (_init_weight)
-            init_weight();
+        if (_init_weight) init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
 
-        for (int iter = 0; iter < epoch; iter++) {
+
+// #ifdef CNN_USE_THRUST
+//         thrust::device_ptr<int> dev_ptr = thrust::device_malloc<int>(N);
+
+//         //transfer to device
+//         thrust::device_vector<float_t> dev_in(in.size()*in[0].size());
+//         auto where = std::begin(dev_in);
+//         for( auto const& v : in )
+//             where = thrust::copy(std::begin(v), std::end(v), where);
+
+//         thrust::device_vector<T> dev_t = t;
+// #else
+//         std::vector<vec_t> dev_in(in.size()*in[0].size());
+//         auto where = std::begin(dev_in);
+//         for( auto const& v : in )
+//             where = std::copy(std::begin(v), std::end(v), where);
+
+//         std::vector<T> dev_t = t;
+// #endif
+
+        for (int iter = 0; iter < epoch; iter++) 
+        {
             if (optimizer_.requires_hessian())
+            {
+                #ifdef CNN_USE_THRUST
+                    error("not done yet, use another optimizer");
+                #endif
                 calc_hessian(in);
+            }
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), nbThreads);
+
+                train_once(&in[i],&t[i], std::min(batch_size, in.size() - i), nbTasks);
+
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
@@ -191,14 +218,21 @@ public:
             return test_result;
     }
 
-    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in)
+    template <typename OnBatchEnumerate>
+    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in, size_t batch_size, OnBatchEnumerate          on_batch_enumerate)
     {
             std::vector<float_t> test_result(in.size());
-
-            for_i(in.size(), [&](int i)
+            int nbSamples;
+            for (int batch = 0;batch < ceil(in.size()/batch_size);batch++)
             {
-                test_result[i] = predict(in[i])[0];
-            });
+                nbSamples = std::min(in.size() - batch*batch_size, batch_size);
+                for_i(nbSamples, [&](int i)
+                {
+                    test_result[i+batch*batch_size] = predict(in[i+batch*batch_size])[0];
+                    //
+                });
+                on_batch_enumerate();
+            }
             return test_result;
     }
 
@@ -314,7 +348,8 @@ public:
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
-    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
+    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t)
+    {
         float_t sum_loss = (float_t)0.0;
 
         for (size_t i = 0; i < in.size(); i++) {
@@ -324,14 +359,17 @@ public:
         return sum_loss;
     }
 
-    void save(std::ostream& os) const {
+    void save(std::ostream& os) const 
+    {
         auto l = layers_.head();
         while (l) { l->save(os); l = l->next(); }
     }
 
-    void load(std::istream& is) {
+    void load(std::istream& is) 
+    {
         auto l = layers_.head();
         while (l) { l->load(is); l = l->next(); }
+        // layers_.update_weights(&optimizer_, 1, 1);
     }
 
     /**
@@ -541,7 +579,7 @@ private:
     }
 
     float_t calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
-        static const float_t delta = 1e-10;
+        static const float_t delta = 1e-3;
 
         std::fill(dw.begin(), dw.end(), 0.0);
 
@@ -632,7 +670,7 @@ std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, cons
             //vec_t sample(sizepatch*sizepatch);
 
             if (i+sizepatch < cols && j+sizepatch < rows)
-            for (int k=0;k<sizepatch*sizepatch;k++)
+            for (unsigned int k=0;k<sizepatch*sizepatch;k++)
             //for_i(sizepatch*sizepatch, [&](int k)
             {
                 int y = k / sizepatch + j;

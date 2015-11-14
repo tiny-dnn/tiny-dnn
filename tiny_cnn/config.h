@@ -46,6 +46,8 @@
  */
 //#define CNN_USE_OMP
 
+//#define CNN_USE_THRUST
+
 /**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
