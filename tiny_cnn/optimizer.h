@@ -135,8 +135,8 @@ private:
  *               http://arxiv.org/abs/1412.6980]
  * 
  */
-struct Adam : public stateful_optimizer<float_t, 2, false> {
-    Adam() : alpha(0.001), b1(0.9), b2(0.999) , b1_t(0.9), b2_t(0.999), eps(1e-8) {}
+struct adam : public stateful_optimizer<float_t, 2, false> {
+    adam() : alpha(0.001), b1(0.9), b2(0.999) , b1_t(0.9), b2_t(0.999), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& mt = get<0>(W);
