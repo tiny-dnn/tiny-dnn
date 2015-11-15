@@ -42,9 +42,9 @@ public:
         : Base(in_width * in_height * in_channels,
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),
+        pool_size_(pooling_size),
         in_(in_width, in_height, in_channels),
-        out_(in_width / pooling_size, in_height / pooling_size, in_channels),
-        pool_size_(pooling_size)
+        out_(in_width / pooling_size, in_height / pooling_size, in_channels)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
