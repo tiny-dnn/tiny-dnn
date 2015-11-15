@@ -273,11 +273,21 @@ inline std::string format_str(const char *fmt, ...) {
 
 template <typename T>
 struct index3d {
-    index3d(T width, T height, T depth) : width_(width), height_(height), depth_(depth) {
+    index3d(T width, T height, T depth) {
+        reshape(width, height, depth);
+    }
+
+    index3d() : width_(0), height_(0), depth_(0) {}
+
+    void reshape(T width, T height, T depth) {
+        width_ = width;
+        height_ = height;
+        depth_ = depth;
+
         if ((long long) width * height * depth > std::numeric_limits<T>::max())
-          throw nn_error(
+            throw nn_error(
             format_str("error while constructing layer: layer size too large for tiny-cnn\nWidthxHeightxChannels=%dx%dx%d >= max size of [%s](=%d)",
-                        width, height, depth, typeid(T).name(), std::numeric_limits<T>::max()));
+            width, height, depth, typeid(T).name(), std::numeric_limits<T>::max()));
     }
 
     T get_index(T x, T y, T channel) const {
