@@ -32,7 +32,7 @@
 
 namespace tiny_cnn {
     
-template <typename Activation>
+template <typename Activation = activation::identity>
 class max_pooling_layer : public layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;

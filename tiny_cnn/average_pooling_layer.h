@@ -28,11 +28,12 @@
 #include "util.h"
 #include "partial_connected_layer.h"
 #include "image.h"
+#include "activation_function.h"
 
 namespace tiny_cnn {
 
 
-template<typename Activation>
+template<typename Activation = activation::identity>
 class average_pooling_layer : public partial_connected_layer<Activation> {
 public:
     typedef partial_connected_layer<Activation> Base;
