@@ -28,6 +28,8 @@
 #include "util.h"
 #include "partial_connected_layer.h"
 #include "image.h"
+#include "activation_function.h"
+
 
 namespace tiny_cnn {
 
@@ -50,12 +52,12 @@ struct connection_table {
     size_t cols_;
 };
 
-enum class padding_type {
+enum class padding {
     valid, ///< use valid pixels of input
     same   ///< add zero-padding around input so as to keep image size
 };
 
-template<typename Activation, typename Filter = filter_none>
+template<typename Activation = activation::identity, typename Filter = filter_none>
 class convolutional_layer : public partial_connected_layer<Activation> {
 public:
     typedef partial_connected_layer<Activation> Base;
@@ -78,15 +80,15 @@ public:
                         layer_size_t window_size,
                         layer_size_t in_channels,
                         layer_size_t out_channels,
-                        padding_type padding = padding_type::valid)
-    : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, padding) * out_channels, 
+                        padding pad_type = padding::valid)
+    : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
            sqr(window_size) * in_channels * out_channels, out_channels), 
       in_(in_width, in_height, in_channels), 
-      out_(out_length(in_width, window_size, padding), out_length(in_height, window_size, padding), out_channels),
+      out_(out_length(in_width, window_size, pad_type), out_length(in_height, window_size, pad_type), out_channels),
       weight_(window_size, window_size, in_channels*out_channels),
       window_size_(window_size)
     {
-        init_connection(connection_table(), padding);
+        init_connection(connection_table(), pad_type);
     }
 
     /**
@@ -98,7 +100,7 @@ public:
      * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
      * @param out_channels     [in] output image channels
      * @param connection_table [in] definition of connections between in-channels and out-channels
-     * @param padding          [in] rounding strategy 
+     * @param pad_type         [in] rounding strategy 
      *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
      *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
      **/
@@ -108,16 +110,16 @@ public:
                         layer_size_t in_channels,
                         layer_size_t out_channels,
                         const connection_table& connection_table,
-                        padding_type padding = padding_type::valid)
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, padding) * out_channels, 
+                        padding pad_type = padding::valid)
+        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
                sqr(window_size) * in_channels * out_channels, out_channels), 
           in_(in_width, in_height, in_channels), 
-          out_(out_length(in_width, window_size, padding), out_length(in_height, window_size, padding), out_channels),
+          out_(out_length(in_width, window_size, pad_type), out_length(in_height, window_size, pad_type), out_channels),
           weight_(window_size, window_size, in_channels*out_channels),
           connection_(connection_table),
           window_size_(window_size)
     {
-        init_connection(connection_table, padding);
+        init_connection(connection_table, pad_type);
         this->remap();
     }
 
@@ -163,17 +165,16 @@ public:
     std::string layer_type() const override { return "conv"; }
 
 private:
-
-    layer_size_t out_length(layer_size_t in_length, layer_size_t window_size, padding_type padding) const {
-        return padding == padding_type::same ? in_length : (in_length - window_size + 1);
+    layer_size_t out_length(layer_size_t in_length, layer_size_t window_size, padding pad_type) const {
+        return pad_type == padding::same ? in_length : (in_length - window_size + 1);
     }
 
-    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, padding_type padding) const {
-        return out_length(in_width, window_size, padding) * out_length(in_height, window_size, padding);
+    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, padding pad_type) const {
+        return out_length(in_width, window_size, pad_type) * out_length(in_height, window_size, pad_type);
     }
 
-    void init_connection(const connection_table& table, padding_type padding) {
-        layer_size_t pad = (padding == padding_type::valid) ? 0 : window_size_ / 2;
+    void init_connection(const connection_table& table, padding pad_type) {
+        layer_size_t pad = (pad_type == padding::valid) ? 0 : window_size_ / 2;
 
         for (layer_size_t inc = 0; inc < in_.depth_; ++inc) {
             for (layer_size_t outc = 0; outc < out_.depth_; ++outc) {
