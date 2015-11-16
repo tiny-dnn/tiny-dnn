@@ -80,7 +80,7 @@ public:
     lecun() : scalable((float_t)1.0) {}
     explicit lecun(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
         const float_t weight_base = scale_ / std::sqrt(fan_in);
@@ -96,7 +96,7 @@ public:
     constant() : scalable((float_t)0.0) {}
     explicit constant(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
