@@ -125,9 +125,7 @@ LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 SET( tiny_cnn_hrds tiny_cnn/activation_function.h    tiny_cnn/cifar10_parser.h  tiny_cnn/convolutional_layer.h  tiny_cnn/display.h  tiny_cnn/fully_connected_dropout_layer.h  tiny_cnn/image.h        tiny_cnn/layer.h   tiny_cnn/loss_function.h      tiny_cnn/mnist_parser.h  tiny_cnn/optimizer.h                tiny_cnn/product.h   tiny_cnn/util.h
 tiny_cnn/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/deform.h               tiny_cnn/dropout.h  tiny_cnn/fully_connected_layer.h          tiny_cnn/input_layer.h  tiny_cnn/layers.h  tiny_cnn/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/weight_init.h)
 
-#IF(Boost_FOUND)
-#    ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
-#ENDIF()
+ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
 ADD_EXECUTABLE(test example/test.cpp  ${tiny_cnn_hrds})
 
 

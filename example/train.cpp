@@ -103,7 +103,7 @@ void sample1_convnet(std::string data_dir_path) {
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((float_t)(0.00001), nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -174,7 +174,7 @@ void sample2_mlp(std::string data_dir_path)
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((float_t)(0.00001), nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -256,7 +256,7 @@ void sample4_dropout(std::string data_dir_path)
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.99; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((float_t)(0.00001), nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();
