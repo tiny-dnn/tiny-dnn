@@ -25,8 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <boost/timer.hpp>
-#include <boost/progress.hpp>
+// #include <boost/timer.hpp>
+// #include <boost/progress.hpp>
 
 #include "tiny_cnn.h"
 //#define NOMINMAX
@@ -85,8 +85,8 @@ void sample1_convnet(void) {
 
     std::cout << "start learning" << std::endl;
 
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    tiny_cnn::progress_display disp(train_images.size());
+    tiny_cnn::timer t;
     int minibatch_size = 10;
 
     nn.optimizer().alpha *= std::sqrt(minibatch_size);
@@ -159,8 +159,8 @@ void sample2_mlp()
 
     nn.optimizer().alpha = 0.001;
     
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    tiny_cnn::progress_display disp(train_images.size());
+    tiny_cnn::timer t;
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -238,8 +238,8 @@ void sample4_dropout()
     parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     // load train-data, label_data
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    tiny_cnn::progress_display disp(train_images.size());
+    tiny_cnn::timer t;
 
     // create callback
     auto on_enumerate_epoch = [&](){

@@ -52,14 +52,14 @@ OPTION(USE_AVX 	"Set to ON to use avx" ON)
 # ----------------------------------------------------------------------------
 
 ######BOOST (NOT REQUIRED)
-set(Boost_USE_STATIC_LIBS        OFF)
-find_package( Boost   COMPONENTS   timer   ) #thread iostreams
-if(Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
-        SET(REQUIRED_LIBRARIES  ${REQUIRED_} ${Boost_TIMER_LIBRARY}  )
-ENDIF()
+#set(Boost_USE_STATIC_LIBS        OFF)
+#find_package( Boost   COMPONENTS   timer   ) #thread iostreams
+#if(Boost_FOUND)
+#	include_directories(${Boost_INCLUDE_DIRS})
+#	link_directories(${Boost_LIBRARY_DIRS})
+#	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
+#        SET(REQUIRED_LIBRARIES  ${REQUIRED_} ${Boost_TIMER_LIBRARY}  )
+#ENDIF()
 
 
 IF(USE_TBB)
@@ -78,7 +78,19 @@ ENDIF()
 # COMPILER OPTIONS
 # ----------------------------------------------------------------------------
 
-IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
+if (MSVC)
+    IF(USE_SSE )
+        add_definitions(-DCNN_USE_SSE)
+        SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} /arch:SSE2 ")
+    ENDIF()
+    IF(USE_AVX  )
+        add_definitions(-DCNN_USE_AVX)
+        SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
+    ENDIF()
+
+ELSE()#MSVC
+
+    SET(EXTRA_C_FLAGS_RELEASE " /Ox ")
     IF(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
         SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3 ")
@@ -90,16 +102,6 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
     SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 ")
     SET(EXTRA_C_FLAGS_RELEASE " -O3 ")
     SET(EXTRA_C_FLAGS_DEBUG " -g3 ")
-ELSE()#MSVC
-    IF(USE_SSE )
-        add_definitions(-DCNN_USE_SSE)
-        SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} /arch:SSE2 ")
-    ENDIF()
-    IF(USE_AVX  )
-        add_definitions(-DCNN_USE_AVX)
-        SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
-    ENDIF()
-    SET(EXTRA_C_FLAGS_RELEASE " /Ox ")
 
 
 ENDIF()
@@ -123,9 +125,9 @@ LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 SET( tiny_cnn_hrds tiny_cnn/activation_function.h    tiny_cnn/cifar10_parser.h  tiny_cnn/convolutional_layer.h  tiny_cnn/display.h  tiny_cnn/fully_connected_dropout_layer.h  tiny_cnn/image.h        tiny_cnn/layer.h   tiny_cnn/loss_function.h      tiny_cnn/mnist_parser.h  tiny_cnn/optimizer.h                tiny_cnn/product.h   tiny_cnn/util.h
 tiny_cnn/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/deform.h               tiny_cnn/dropout.h  tiny_cnn/fully_connected_layer.h          tiny_cnn/input_layer.h  tiny_cnn/layers.h  tiny_cnn/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/weight_init.h)
 
-IF(Boost_FOUND)
-    ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
-ENDIF()
+#IF(Boost_FOUND)
+#    ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
+#ENDIF()
 ADD_EXECUTABLE(test example/test.cpp  ${tiny_cnn_hrds})
 
 
@@ -140,7 +142,7 @@ message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
 
-message( STATUS "Boost_FOUND=${Boost_FOUND}   USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
+#message( STATUS "Boost_FOUND=${Boost_FOUND}   USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
 
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
