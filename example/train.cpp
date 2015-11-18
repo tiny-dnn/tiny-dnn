@@ -280,7 +280,8 @@ void sample4_dropout(std::string data_dir_path)
 // using ghh_activation
 void sample5_convnet_ghh(std::string data_dir_path) {
     // construct LeNet-5 architecture
-    network<mse, Adam> nn;
+    // network<mse, Adam> nn;
+    network<cross_entropy_multiclass, Adam> nn;
 
     // connection table [Y.Lecun, 1998 Table.1]
 // #define O true
@@ -309,15 +310,15 @@ void sample5_convnet_ghh(std::string data_dir_path) {
 	//------------ testing different activations for the last  FC layer -----------
 	// fully_connected_layer<relu> out_layer(160, 10); // ReLU activation
 	
-	ghh_activation_layer<relu> out_layer(10,4,4);   // ghh activation without dropout (relu at end just to have same cost functions)
+	ghh_activation_layer<identity> out_layer(10,4,4);   // ghh activation without dropout
 	
 	// ghh_activation_dropout_layer<identity> out_layer(10,4,4);   // ghh activation with dropout
 	// fc1_ghh.set_dropout_rate(0.3);
 	//------------------------------------------------------------------------------
 
-	// max_pooling_layer<softmax> softmax_layer(1, 1, 10, 1); // just to do soft max at the end to form as multiclass problem
+	max_pooling_layer<softmax> softmax_layer(1, 1, 10, 1); // just to do soft max at the end to form as multiclass problem
 	
-    nn << conv1 << maxpool1 << conv2 << maxpool2 << conv3 << fc << out_layer;
+    nn << conv1 << maxpool1 << conv2 << maxpool2 << conv3 << fc << out_layer << softmax_layer;
 
 	
     std::cout << "load models..." << std::endl;
