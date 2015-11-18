@@ -345,8 +345,10 @@ void sample5_convnet_ghh(std::string data_dir_path) {
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
         tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_cnn::result res_train = nn.test(train_images, train_labels);
 
-        std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+        std::cout << nn.optimizer().alpha << ",\t" << res.num_success << "/" << res.num_total
+		<< ",\t"<< res_train.num_success << "/" << res_train.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.85; // decay learning rate
         nn.optimizer().alpha = std::max((float_t)(0.00001), nn.optimizer().alpha);
