@@ -296,25 +296,28 @@ void sample5_convnet_ghh(std::string data_dir_path) {
 // #undef O
 // #undef X
 
-	convolutional_layer<identity> conv1(32, 32, 5, 1, 6*4*4); // 32x32 in, 5x5 kernel, 1-6 fmaps conv
-	ghh_activation_layer<identity> conv1_ghh(28*28*6,4,4);	  // ghh activation
+	convolutional_layer<relu> conv1(32, 32, 5, 1, 6); // 32x32 in, 5x5 kernel, 1-6 fmaps conv
 	max_pooling_layer<identity> maxpool1(28, 28, 6, 2);		  // 28x28 in, 6 fmaps, 2x2 subsampling
 
-	convolutional_layer<identity> conv2(14, 14, 5, 6, 16*4*4); //
-	ghh_activation_layer<identity> conv2_ghh(10*10*16,4,4);	   //
-	max_pooling_layer<identity> maxpool2(10, 10, 16, 2);	   //
+	convolutional_layer<relu> conv2(14, 14, 5, 6, 16);
+	max_pooling_layer<identity> maxpool2(10, 10, 16, 2);
 
-	convolutional_layer<identity> conv3(5, 5, 5, 16, 200*4*4); // 
-	ghh_activation_layer<identity> conv3_ghh(200,4,4);		   //
+	convolutional_layer<relu> conv3(5, 5, 5, 16, 100);
 
-	fully_connected_layer<identity> fc1(200, 100*4*4); // fully connected
-	ghh_activation_dropout_layer<identity> fc1_ghh(100,4,4);   // ghh activation with dropout
-	fc1_ghh.set_dropout_rate(0.3);
+	fully_connected_layer<identity> fc(100, 160); // fully connected
 
-	fully_connected_layer<identity> fc2(100, 10); // fully connected
-	// ghh_activation_layer<identity> fc1_ghh(10,4,4);	  // ghh activation
+	//------------ testing different activations for the last  FC layer -----------
+	// fully_connected_layer<relu> out_layer(160, 10); // ReLU activation
 	
-    nn << conv1 << conv1_ghh << maxpool1 << conv2 << conv2_ghh << maxpool2 << conv3 << conv3_ghh << fc1 << fc1_ghh << fc2;
+	ghh_activation_layer<relu> out_layer(10,4,4);   // ghh activation without dropout (relu at end just to have same cost functions)
+	
+	// ghh_activation_dropout_layer<identity> out_layer(10,4,4);   // ghh activation with dropout
+	// fc1_ghh.set_dropout_rate(0.3);
+	//------------------------------------------------------------------------------
+
+	// max_pooling_layer<softmax> softmax_layer(1, 1, 10, 1); // just to do soft max at the end to form as multiclass problem
+	
+    nn << conv1 << maxpool1 << conv2 << maxpool2 << conv3 << fc << out_layer;
 
 	
     std::cout << "load models..." << std::endl;

@@ -97,7 +97,7 @@ public:
     const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& curr_delta = filter_.filter_bprop(current_delta, index);
         const vec_t& prev_out = prev_->output(index);
-        const vec_t& in = prev_->output(0); // note that this works only with identity!
+        const vec_t& in = prev_->output(index); // note that this works only with identity!
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
         vec_t& dW = dW_[index];
