@@ -34,6 +34,7 @@
 #include "fully_connected_layer.h"
 #include "fully_connected_dropout_layer.h"
 #include "max_pooling_layer.h"
+#include "ghh_activation_layer.h"
 
 #include "activation_function.h"
 #include "loss_function.h"
