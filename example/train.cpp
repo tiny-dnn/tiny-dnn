@@ -36,6 +36,7 @@ void sample1_convnet(std::string data_dir_path);
 void sample2_mlp(std::string data_dir_path);
 void sample3_dae( );
 void sample4_dropout(std::string data_dir_path);
+void sample5_convnet_ghh(std::string data_dir_path);
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -295,16 +296,25 @@ void sample5_convnet_ghh(std::string data_dir_path) {
 // #undef O
 // #undef X
 
-    nn << convolutional_layer<relu>(32, 32, 5, 1, 6) // 32x32 in, 5x5 kernel, 1-6 fmaps conv
-       << average_pooling_layer<relu>(28, 28, 6, 2) // 28x28 in, 6 fmaps, 2x2 subsampling
-       << convolutional_layer<relu>(14, 14, 5, 6, 16) // with connection-table
-       << average_pooling_layer<relu>(10, 10, 16, 2)
-       << convolutional_layer<relu>(5, 5, 5, 16, 500)
-       << fully_connected_layer<identity>(500, 160)
-	   << ghh_activation_layer<identity>(10,4,4);
+	convolutional_layer<identity> conv1(32, 32, 5, 1, 6*4*4); // 32x32 in, 5x5 kernel, 1-6 fmaps conv
+	ghh_activation_layer<identity> conv1_ghh(28*28*6,4,4);	  // ghh activation
+	max_pooling_layer<identity> maxpool1(28, 28, 6, 2);		  // 28x28 in, 6 fmaps, 2x2 subsampling
 
-       // << convolutional_layer<relu>(5, 5, 5, 16, 500*16)
-       // << fully_connected_layer<relu>(500*16, 10);
+	convolutional_layer<identity> conv2(14, 14, 5, 6, 16*4*4); //
+	ghh_activation_layer<identity> conv2_ghh(10*10*16,4,4);	   //
+	max_pooling_layer<identity> maxpool2(10, 10, 16, 2);	   //
+
+	convolutional_layer<identity> conv3(5, 5, 5, 16, 200*4*4); // 
+	ghh_activation_layer<identity> conv3_ghh(200,4,4);		   //
+
+	fully_connected_layer<identity> fc1(200, 100*4*4); // fully connected
+	ghh_activation_dropout_layer<identity> fc1_ghh(100,4,4);   // ghh activation with dropout
+	fc1_ghh.set_dropout_rate(0.3);
+
+	fully_connected_layer<identity> fc2(100, 10); // fully connected
+	// ghh_activation_layer<identity> fc1_ghh(10,4,4);	  // ghh activation
+	
+    nn << conv1 << conv1_ghh << maxpool1 << conv2 << conv2_ghh << maxpool2 << conv3 << conv3_ghh << fc1 << fc1_ghh << fc2;
 
 	
     std::cout << "load models..." << std::endl;
