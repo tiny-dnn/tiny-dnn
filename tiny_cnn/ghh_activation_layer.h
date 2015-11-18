@@ -125,8 +125,8 @@ public:
 					if (max_out < in[idx]){
 						max_out = in[idx];
 						max_idx = idx;
-						idx += step_size;
 					}
+					idx += step_size;
 				}
 				bp_coeff[max_idx] = sum_sign; // save the coefficient to be multiplied
 				sum_sign = -sum_sign; // flip sign
@@ -204,8 +204,8 @@ public:
 					if (max_out < in[idx]){
 						max_out = in[idx];
 						max_idx = idx;
-						idx += step_size;
 					}
+					idx += step_size;
 				}
 				bp_coeff[max_idx] = sum_sign; // save the coefficient to be multiplied
 				sum_sign = -sum_sign; // flip sign
