@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi, Kwang Moo Yi, Yannick Verdie
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,6 +24,15 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+/*
+    This  is an  implementation of  the  GHH activation  function  proposed in  "Learning to  Assign
+    Orientations to Feature Points", Kwang Moo Yi,  Yannick Verdie, Pascal Fua, and Vincent Lepetit,
+    2015. For details, please see arXiv:1511.04273. Also, when using this activation layer, please
+    cite the paper.
+
+ */
+
 #pragma once
 #include "layer.h"
 #include "product.h"
