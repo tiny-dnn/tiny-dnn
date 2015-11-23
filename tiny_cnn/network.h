@@ -326,11 +326,15 @@ public:
     }
 
     void save(std::ostream& os) const {
+        os.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
+
         auto l = layers_.head();
         while (l) { l->save(os); l = l->next(); }
     }
 
     void load(std::istream& is) {
+        is.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
+
         auto l = layers_.head();
         while (l) { l->load(is); l = l->next(); }
     }
