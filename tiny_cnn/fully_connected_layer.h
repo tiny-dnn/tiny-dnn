@@ -92,7 +92,7 @@ public:
             // accumulate weight-step using delta
             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
             for (int c = 0; c < in_size_; c++)
-                vectorize::muladd(&curr_delta[0], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
+                vectorize::muladd(&curr_delta[r.begin()], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
 
             for (int i = r.begin(); i < r.end(); i++) 
                 db[i] += curr_delta[i];
