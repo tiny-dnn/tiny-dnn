@@ -32,14 +32,16 @@
 
 namespace tiny_cnn {
     
-template <typename Activation>
+template <typename Activation = activation::identity>
 class max_pooling_layer : public layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
     typedef layer<Activation> Base;
 
     max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
-        : Base(in_width * in_height * in_channels, in_width * in_height * in_channels / sqr(pooling_size), 0, 0),
+        : Base(in_width * in_height * in_channels,
+        in_width * in_height * in_channels / sqr(pooling_size),
+        0, 0),
         pool_size_(pooling_size),
         in_(in_width, in_height, in_channels),
         out_(in_width / pooling_size, in_height / pooling_size, in_channels)

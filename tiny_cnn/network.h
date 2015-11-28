@@ -138,32 +138,10 @@ public:
         optimizer_.reset();
 
 
-// #ifdef CNN_USE_THRUST
-//         thrust::device_ptr<int> dev_ptr = thrust::device_malloc<int>(N);
-
-//         //transfer to device
-//         thrust::device_vector<float_t> dev_in(in.size()*in[0].size());
-//         auto where = std::begin(dev_in);
-//         for( auto const& v : in )
-//             where = thrust::copy(std::begin(v), std::end(v), where);
-
-//         thrust::device_vector<T> dev_t = t;
-// #else
-//         std::vector<vec_t> dev_in(in.size()*in[0].size());
-//         auto where = std::begin(dev_in);
-//         for( auto const& v : in )
-//             where = std::copy(std::begin(v), std::end(v), where);
-
-//         std::vector<T> dev_t = t;
-// #endif
-
         for (int iter = 0; iter < epoch; iter++) 
         {
             if (optimizer_.requires_hessian())
             {
-                #ifdef CNN_USE_THRUST
-                    error("not done yet, use another optimizer");
-                #endif
                 calc_hessian(in);
             }
             for (size_t i = 0; i < in.size(); i+=batch_size) {
@@ -251,14 +229,15 @@ public:
         return sum_loss;
     }
 
-    void save(std::ostream& os) const 
-    {
+    void save(std::ostream& os) const {
+        os.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
         auto l = layers_.head();
         while (l) { l->save(os); l = l->next(); }
     }
 
-    void load(std::istream& is) 
-    {
+    void load(std::istream& is) {
+        is.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
+
         auto l = layers_.head();
         while (l) { l->load(is); l = l->next(); }
         // layers_.update_weights(&optimizer_, 1, 1);

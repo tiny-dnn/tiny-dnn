@@ -417,6 +417,24 @@ TEST(multi_layer5, gradient_check) { // softmax - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 5e-3, GRAD_CHECK_RANDOM));
 }
 
+
+TEST(multi_layer6, gradient_check) { // sigmoid - cross-entropy
+    typedef cross_entropy loss_func;
+    typedef sigmoid activation;
+    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
+
+    network nn;
+    nn << fully_connected_layer<activation>(3, 201)
+        << fully_connected_layer<activation>(201, 2);
+
+    vec_t a(3, 0.0);
+    label_t t = 1;
+
+    uniform_rand(a.begin(), a.end(), 0, 3);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
 TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
@@ -527,6 +545,8 @@ TEST(read_write, network)
 
     auto res1 = n1.predict(in);
     auto res2 = n2.predict(in);
+
+    ASSERT_TRUE(n1.has_same_weights(n2, 1e-6));
 
     for (int i = 0; i < 10; i++) {
         tiny_cnn::float_t eps = std::abs(res1[i]) * 1e-4;
