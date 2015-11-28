@@ -26,8 +26,6 @@
 */
 #include "picotest.h"
 #include "tiny_cnn.h"
-//#include <boost/filesystem.hpp>
-//#include <boost/program_options.hpp>
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -161,7 +159,7 @@ TEST(convolutional, gradient_check4) { // identity - mse
 
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-3, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
@@ -432,7 +430,7 @@ TEST(multi_layer6, gradient_check) { // sigmoid - cross-entropy
 
     uniform_rand(a.begin(), a.end(), 0, 3);
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-3, GRAD_CHECK_ALL));
 }
 
 TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
@@ -546,7 +544,7 @@ TEST(read_write, network)
     auto res1 = n1.predict(in);
     auto res2 = n2.predict(in);
 
-    ASSERT_TRUE(n1.has_same_weights(n2, 1e-6));
+    ASSERT_TRUE(n1.has_same_weights(n2, 1e-5));
 
     for (int i = 0; i < 10; i++) {
         tiny_cnn::float_t eps = std::abs(res1[i]) * 1e-4;

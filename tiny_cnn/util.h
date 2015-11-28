@@ -43,12 +43,6 @@
     #include <tbb/task_group.h>
 #endif // CNN_USE_TBB
 
-#ifdef CNN_USE_THRUST
-    #include <thrust/host_vector.h>
-    //#include <thrust/system/omp/vector.h>
-    #include <thrust/sort.h>
-    #include <thrust/copy.h>
-#endif
 
 #if !defined(CNN_USE_OMP) && !defined(CNN_USE_TBB)
 #define NO_THREADS
@@ -174,28 +168,6 @@ inline void nop()
     void for_(bool parallelize, int begin, int end, Func f) {
         parallelize ? parallel_for(begin, end, f) : xparallel_for(begin, end, f);
     }
-#endif // CNN_USE_TBB
-
-#ifdef CNN_USE_ARRAYFIRE
-    //static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
-
-    // typedef tbb::blocked_range<int> blocked_range;
-    // typedef tbb::task_group task_group;
-
-    template<typename Func>
-    void parallel_for(int begin, int end, const Func& f) {
-        //tbb::parallel_for(blocked_range(begin, end, 100), f);
-    }
-    template<typename Func>
-    void xparallel_for(int begin, int end, const Func& f) {
-        f(blocked_range(begin, end, 100));
-    }
-
-    template<typename Func>
-    void for_(bool parallelize, int begin, int end, Func f) {
-        parallelize ? parallel_for(begin, end, f) : xparallel_for(begin, end, f);
-    }
-
 #endif // CNN_USE_TBB
 
 
