@@ -215,6 +215,26 @@ public:
             return test_result;
     }
     
+    template <typename OnBatchEnumerate>
+    void scoreRegressor(const std::vector<vec_t>& in, size_t batch_size, OnBatchEnumerate on_batch_enumerate, std::vector<vec_t>* test_result)
+    {
+    int nTests = in.size();
+    if (test_result->size() != nTests)
+        test_result->resize(nTests);
+
+            int nbSamples;
+            for (int batch = 0;batch < ceil(in.size()/batch_size);batch++)
+            {
+                nbSamples = std::min(in.size() - batch*batch_size, batch_size);
+                for_i(nbSamples, [&](int i)
+                {
+                    (*test_result)[i+batch*batch_size] = predict(in[i+batch*batch_size]);
+                    
+                });
+                on_batch_enumerate();
+            }
+    }
+
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
