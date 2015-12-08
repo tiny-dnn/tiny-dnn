@@ -112,8 +112,8 @@ public:
         vec_t& dW = dW_[index];
         vec_t& db = db_[index];
 
-		if (!W_.empty())
-			throw nn_error("Weights not empty for GHH!");
+		// if (W_.size() > 0)
+		// 	throw nn_error("Weights not empty for GHH!");
 
 		int step_size = out_size_; // we move channel-wise to be compatible (might break cache!)
 		
