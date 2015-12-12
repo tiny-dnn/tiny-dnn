@@ -51,7 +51,7 @@ class identity : public function {
 public:
     float_t f(const vec_t& v, size_t i) const override { return v[i]; }
     float_t df(float_t /*y*/) const override { return 1; }  
-    std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(-0.8, 0.8); }
 };
 
 class sigmoid : public function {

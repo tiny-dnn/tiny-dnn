@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi, Kwang Moo Yi, Yannick Verdie
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,28 +24,48 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+/*
+    This  is an  implementation of  the  GHH activation  function  proposed in  "Learning to  Assign
+    Orientations to Feature Points", Kwang Moo Yi,  Yannick Verdie, Pascal Fua, and Vincent Lepetit,
+    2015. For details, please see arXiv:1511.04273. Also, when using this activation layer, please
+    cite the paper.
+
+ */
+
 #pragma once
-
-#include "config.h"
-
-#include "network.h"
-#include "average_pooling_layer.h"
-#include "convolutional_layer.h"
-#include "fully_connected_layer.h"
-#include "fully_connected_dropout_layer.h"
-#include "max_pooling_layer.h"
 #include "ghh_activation_layer.h"
-#include "ghh_activation_dropout_layer.h"
+#include "dropout.h"
 
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
-#include "weight_init.h"
+namespace tiny_cnn {
 
-#include "mnist_parser.h"
-#include "cifar10_parser.h"
-#include "image.h"
-#include "deform.h"
-#include "product.h"
+// normal 
+template<typename Activation>
+class ghh_activation_dropout_layer : public ghh_activation_layer<Activation, dropout> {
+public:
+    ghh_activation_dropout_layer(layer_size_t out_dim, size_t num_in_sum, size_t num_in_max, dropout::mode mode = dropout::per_data)
+        : ghh_activation_layer<Activation, dropout>(out_dim, num_in_sum, num_in_max)
+    {
+        this->filter_.set_mode(mode);
+    }
 
-#include "display.h"
+    void set_dropout_rate(double rate) {
+        this->filter_.set_dropout_rate(rate);
+    }
+
+    /**
+     * set dropout-context (training-phase or test-phase)
+     **/
+    void set_context(dropout::context ctx) {
+        this->filter_.set_context(ctx);
+    }
+
+    std::string layer_type() const override { return "ghh_dropout"; }
+
+private:
+    void post_update() override {
+        this->filter_.end_batch();
+    }
+};
+
+} // namespace tiny_cnn

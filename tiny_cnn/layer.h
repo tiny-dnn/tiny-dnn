@@ -140,11 +140,17 @@ public:
         if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
         for (auto w : W_) os << w << " ";
         for (auto b : b_) os << b << " ";
+        // for (auto wh : Whessian_) os << wh << " ";
+        // for (auto bh : bhessian_) os << bh << " "; 
     }
 
     virtual void load(std::istream& is) {
         for (auto& w : W_) is >> w;
         for (auto& b : b_) is >> b;
+        // for (auto& wh : Whessian_) is >> wh ;
+        // for (auto& bh : bhessian_) is >> bh ; 
+        // clear_diff(CNN_TASK_SIZE);
+        // post_update();
     }
 
     /////////////////////////////////////////////////////////////////////////

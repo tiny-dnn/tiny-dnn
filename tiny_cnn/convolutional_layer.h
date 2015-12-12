@@ -123,7 +123,7 @@ public:
         this->remap();
     }
 
-    image<> output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const override {
         return vec2image<unsigned char>(output_[worker_index], out_);
     }
 

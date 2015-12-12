@@ -161,9 +161,10 @@ pip-log.txt
 #Mr Developer
 .mr.developer.cfg
 
+
 # Mac crap
 .DS_Store
-
+build #usual folder made for cmake...
 
 
 #################

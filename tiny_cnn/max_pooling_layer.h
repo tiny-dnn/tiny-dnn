@@ -64,7 +64,7 @@ public:
         return out2in_[0].size() * out2in_.size();
     }
 
-    virtual const vec_t& forward_propagation(const vec_t& in, size_t index) {
+    virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
         for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const auto& in_index = out2in_[i];
@@ -82,7 +82,7 @@ public:
         return next_ ? next_->forward_propagation(output_[index], index) : output_[index];
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
@@ -96,7 +96,7 @@ public:
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
@@ -107,7 +107,7 @@ public:
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
-    image<> output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const override {
         return vec2image<unsigned char>(output_[worker_index], out_);
     }
 

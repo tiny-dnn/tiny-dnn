@@ -129,20 +129,25 @@ public:
                OnEpochEnumerate          on_epoch_enumerate,
 
                const bool                _init_weight = true,
-               const int                 nbThreads = CNN_TASK_SIZE
+               const int                 nbTasks = CNN_TASK_SIZE
                )
     {
         check_training_data(in, t);
-        if (_init_weight)
-            init_weight();
+        if (_init_weight) init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
 
-        for (int iter = 0; iter < epoch; iter++) {
+
+        for (int iter = 0; iter < epoch; iter++) 
+        {
             if (optimizer_.requires_hessian())
+            {
                 calc_hessian(in);
+            }
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), nbThreads);
+
+                train_once(&in[i],&t[i], std::min(batch_size, in.size() - i), nbTasks);
+
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
@@ -192,130 +197,49 @@ public:
             return test_result;
     }
 
-    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in)
+    template <typename OnBatchEnumerate>
+    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in, size_t batch_size, OnBatchEnumerate          on_batch_enumerate)
     {
             std::vector<float_t> test_result(in.size());
-
-            for_i(in.size(), [&](int i)
+            int nbSamples;
+            for (int batch = 0;batch < ceil(in.size()/batch_size);batch++)
             {
-                test_result[i] = predict(in[i])[0];
-            });
+                nbSamples = std::min(in.size() - batch*batch_size, batch_size);
+                for_i(nbSamples, [&](int i)
+                {
+                    test_result[i+batch*batch_size] = predict(in[i+batch*batch_size])[0];
+                    //
+                });
+                on_batch_enumerate();
+            }
             return test_result;
     }
-
-
-#ifdef CODE_READY
-/**
- * @brief [TODO--------- NOT FINISHED]
- * @details [long description]
- * 
- * @param data [description]
- * @return [description]
- */
-    image<float_t> fast_scoreRegressor(const float_t* data, const int rows, const int cols)
-     {
-        return test_image(image<float_t>(data, cols, rows));
-     }
-
-    image<float_t> fast_scoreRegressor(const image<float_t>& data)
-    {
-        int cols, rows, depth;
-        image<float_t> res(data.width(),data.height());
-        auto current = layers_.head();
-
-        //int count = 0;
-        image<float_t> in;
-        image<float_t> out(data);
-        //image<float_t> output = current->forward_propagation(in,0);
-
-        while ((current = current->next()) != 0) 
-        { 
-            in = out;//transfer out of previous layer to in of current
-
-            //format out image
-            index3d<layer_size_t> shape =  current->out_shape();
-            out = image<float_>(shape);
-
-            cols = in.width(); rows = in.height();depth = in.depth();
-            //std::cout<<++count<<std::endl;
-            if (!current->layer_type().compare("conv"))
-            {
-
-                //convolve all the image (instead of the patch, so faster)
-                vec_t& kernel = current->weight();//w
-                vec_t& b = current->bias();
-                
-                //depth = out.depth();
-                //convolution
-                //for_i((cols-kernel_size)*(rows-kernel_size), [&](int count)
-                for (int count = 0; count < (cols-kernel_size)*(rows-kernel_size); ++count)
-                {
-                    int mm, nn, ii, jj, m, n;
-                    const int j = count / (cols-kernel_size) + kernel_size/2;
-                    const int i = count % (cols-kernel_size) + kernel_size/2;
-
-                    for_i(out.depth(), [&](int k)
-                    {
-                        //convolve
-                        float sum = 0;
-                        for (m = 0; m < kernel_size; ++m)
-                        {
-                            mm = kernel_size - 1 - m;
-                            for (n = 0; n < kernel_size; ++n) {
-                                nn = kernel_size - 1 - n;
-
-                                ii = i + (m - kernel_size / 2);
-                                jj = j + (n - kernel_size / 2);
-
-                                //if (ii >= 0 && ii < rows && jj >= 0 && jj < cols) 
-                                {
-                                    float val = (in[ii * cols +jj]);
-                                    //for (k=0;k<depth_;k++)
-                                    sum += val *  kernel[shape.getIndex(nn,mm,k)];//+mm * kernel_size + nn];
-                                }
-                            }
-                        }
-
-                        //add the bias
-                         for (m = 0; m < kernel_size; ++m)
-                            for (n = 0; n < kernel_size; ++n)
-                                out[k * (rows*cols) + i * cols + j] = sum + b[k * (kernel_size*kernel_size) + m * kernel_size + n];
-                    }
-                    );
-                }
-                //);
-
-            }
-
-            if (!current->layer_type().compare("max-pool"))
-            {
-                size_t size = current->pool_size();
-
-                for_i(depth, [&](int k)
-                {
-                    for (int count = 0; count < out.width()*out.height(); ++count)
-                    {
-                        int mm, nn, ii, jj, m, n;
-                        const int j = count / out.width();
-                        const int i = count % out.width();
-                        out[k * out.width()*out.height() + i  * out.width() + j] = in[k * width * height + i * size * width + j * size];    
-                }
-                );
-
-            }
-
-
-         }
-
-        return res;
-
-    }
-#endif
     
+    template <typename OnBatchEnumerate>
+    void scoreRegressor(const std::vector<vec_t>& in, size_t batch_size, OnBatchEnumerate on_batch_enumerate, std::vector<vec_t>* test_result)
+    {
+    int nTests = in.size();
+    if (test_result->size() != nTests)
+        test_result->resize(nTests);
+
+            int nbSamples;
+            for (int batch = 0;batch < ceil(in.size()/batch_size);batch++)
+            {
+                nbSamples = std::min(in.size() - batch*batch_size, batch_size);
+                for_i(nbSamples, [&](int i)
+                {
+                    (*test_result)[i+batch*batch_size] = predict(in[i+batch*batch_size]);
+                    
+                });
+                on_batch_enumerate();
+            }
+    }
+
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
-    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
+    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t)
+    {
         float_t sum_loss = (float_t)0.0;
 
         for (size_t i = 0; i < in.size(); i++) {
@@ -327,7 +251,6 @@ public:
 
     void save(std::ostream& os) const {
         os.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
-
         auto l = layers_.head();
         while (l) { l->save(os); l = l->next(); }
     }
@@ -337,6 +260,7 @@ public:
 
         auto l = layers_.head();
         while (l) { l->load(is); l = l->next(); }
+        // layers_.update_weights(&optimizer_, 1, 1);
     }
 
     /**
@@ -546,7 +470,7 @@ private:
     }
 
     float_t calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
-        static const float_t delta = 1e-10;
+        static const float_t delta = 1e-3;
 
         std::fill(dw.begin(), dw.end(), 0.0);
 

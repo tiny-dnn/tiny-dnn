@@ -35,19 +35,38 @@
 #include <cstdarg>
 
 #ifdef CNN_USE_TBB
-#ifndef NOMINMAX
-#define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
+    #ifndef NOMINMAX
+        #define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
+    #endif
+
+    #include <tbb/tbb.h>
+    #include <tbb/task_group.h>
+#endif // CNN_USE_TBB
+
+
+#if !defined(CNN_USE_OMP) && !defined(CNN_USE_TBB)
+#define NO_THREADS
 #endif
-#include <tbb/tbb.h>
-#include <tbb/task_group.h>
+#if defined(CNN_USE_OMP) && defined(CNN_USE_TBB)
+    #undef CNN_USE_OMP
+    #if _MSC_VER
+        #pragma message ("Warning : Both CNN_USE_OMP and CNN_USE_TBB were defined, we kept TBB.")
+    #elif   __GNUC__
+        #warning ("Warning : Both CNN_USE_OMP and CNN_USE_TBB were defined, we kept TBB.")
+    #endif
 #endif
+
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
 
+
+
 namespace tiny_cnn {
 
-typedef double float_t;
-typedef unsigned short layer_size_t;
+//typedef double float_t;
+typedef float float_t;
+// typedef unsigned short layer_size_t;
+typedef unsigned long layer_size_t;
 typedef size_t label_t;
 typedef std::vector<float_t> vec_t;
 
@@ -131,93 +150,95 @@ inline void nop()
 
 
 #ifdef CNN_USE_TBB
+    static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
 
-static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
+    typedef tbb::blocked_range<int> blocked_range;
+    typedef tbb::task_group task_group;
 
-typedef tbb::blocked_range<int> blocked_range;
-typedef tbb::task_group task_group;
+    template<typename Func>
+    void parallel_for(int begin, int end, const Func& f) {
+        tbb::parallel_for(blocked_range(begin, end, 100), f);
+    }
+    template<typename Func>
+    void xparallel_for(int begin, int end, const Func& f) {
+        f(blocked_range(begin, end, 100));
+    }
 
-template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
-    tbb::parallel_for(blocked_range(begin, end, 100), f);
-}
-template<typename Func>
-void xparallel_for(int begin, int end, const Func& f) {
-    f(blocked_range(begin, end, 100));
-}
+    template<typename Func>
+    void for_(bool parallelize, int begin, int end, Func f) {
+        parallelize ? parallel_for(begin, end, f) : xparallel_for(begin, end, f);
+    }
+#endif // CNN_USE_TBB
 
-template<typename Func>
-void for_(bool parallelize, int begin, int end, Func f) {
-    parallelize ? parallel_for(begin, end, f) : xparallel_for(begin, end, f);
-}
 
-#else
+#if !defined(CNN_USE_TBB)
+    
+    struct blocked_range {
+        typedef int const_iterator;
 
-struct blocked_range {
-    typedef int const_iterator;
+        blocked_range(int begin, int end) : begin_(begin), end_(end) {}
 
-    blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+        const_iterator begin() const { return begin_; }
+        const_iterator end() const { return end_; }
+    private:
+        int begin_;
+        int end_;
+    };
 
-    const_iterator begin() const { return begin_; }
-    const_iterator end() const { return end_; }
-private:
-    int begin_;
-    int end_;
-};
+    template<typename Func>
+    void xparallel_for(size_t begin, size_t end, const Func& f) {
+        blocked_range r(begin, end);
+        f(r);
+    }
 
-template<typename Func>
-void xparallel_for(size_t begin, size_t end, const Func& f) {
-    blocked_range r(begin, end);
-    f(r);
-}
+    class task_group {
+    public:
+        template<typename Func>
+        void run(Func f) {
+            functions_.push_back(f);
+        }
+
+        void wait() {
+            for (auto f : functions_)
+                f();
+        }
+    private:
+        std::vector<std::function<void()>> functions_;
+    };
+#endif 
+
 
 #ifdef CNN_USE_OMP
 
-template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
-    #pragma omp parallel for
-    for (int i=begin; i<end; ++i)
-        f(blocked_range(i,i+1));
-}
+    template<typename Func>
+    void parallel_for(int begin, int end, const Func& f) {
+        #pragma omp parallel for
+        for (int i=begin; i<end; ++i)
+            f(blocked_range(i,i+1));
+    }
 
-template<typename T, typename U>
-bool const value_representation(U const &value)
-{
-    return static_cast<U>(static_cast<T>(value)) == value;
-}
+    template<typename T, typename U>
+    bool const value_representation(U const &value)
+    {
+        return static_cast<U>(static_cast<T>(value)) == value;
+    }
 
-template<typename Func>
-void for_(bool parallelize, size_t begin, size_t end, Func f) {
-    parallelize = parallelize && value_representation<int>(begin);
-    parallelize = parallelize && value_representation<int>(end);
-    parallelize? parallel_for(static_cast<int>(begin), static_cast<int>(end), f) : xparallel_for(begin, end, f);
-}
-
-#else
-
-template<typename Func>
-void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
-    xparallel_for(begin, end, f);
-}
+    template<typename Func>
+    void for_(bool parallelize, size_t begin, size_t end, Func f) {
+        parallelize = parallelize && value_representation<int>(begin);
+        parallelize = parallelize && value_representation<int>(end);
+        parallelize? parallel_for(static_cast<int>(begin), static_cast<int>(end), f) : xparallel_for(begin, end, f);
+    }
 
 #endif
 
-class task_group {
-public:
+#ifdef NO_THREADS
     template<typename Func>
-    void run(Func f) {
-        functions_.push_back(f);
+    void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
+        xparallel_for(begin, end, f);
     }
+#endif
 
-    void wait() {
-        for (auto f : functions_)
-            f();
-    }
-private:
-    std::vector<std::function<void()>> functions_;
-};
-
-#endif // CNN_USE_TBB
 
 template <typename Func>
 void for_i(bool parallelize, int size, Func f)

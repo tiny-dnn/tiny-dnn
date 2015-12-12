@@ -157,7 +157,7 @@ namespace detail {
     template <typename Char, typename CharTraits>
     ::std::basic_ostream<Char, CharTraits>& operator<<(
         ::std::basic_ostream<Char, CharTraits>& os, const bool& b) {
-            os << b ? "true" : "false";
+            os << (b ? "true" : "false");
             return os;
     }
 
@@ -562,7 +562,7 @@ bool compare(const T1& expected, const T2& actual, OP op,
 template<typename T1, typename T2, typename T3>
 bool compare_near(const T1& expected, const T2& actual, const T3& abs_error, 
              const char* expected_str, const char* actual_str, const char* file, int line) {
-    bool test_success = std::abs(expected - actual) <= abs_error;
+    bool test_success = std::abs((long long) (expected - actual)) <= abs_error;
 
     if (!test_success) {
         framework::TestState::getCurrentTest()->setFailure(
