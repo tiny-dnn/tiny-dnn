@@ -37,11 +37,11 @@ public:
     typedef layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
-    fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim)
-        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, out_dim), filter_(out_dim) {}
+    fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim, bool has_bias = true)
+        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, has_bias ? out_dim : 0), filter_(out_dim), has_bias_(has_bias) {}
 
     size_t connection_size() const override {
-        return size_t(in_size_) * out_size_ + out_size_;
+        return size_t(in_size_) * out_size_ + size_t(has_bias_) * out_size_;
     }
 
     size_t fan_in_size() const override {
@@ -58,10 +58,12 @@ public:
 
         for_i(parallelize_, out_size_, [&](int i) {
             a[i] = 0.0;
-            for (int c = 0; c < in_size_; c++)
+            for (int c = 0; c < in_size_; c++) {
                 a[i] += W_[c*out_size_ + i] * in[c];
+            }
 
-            a[i] += b_[i];
+            if (has_bias_)
+                a[i] += b_[i];
         });
 
         for_i(parallelize_, out_size_, [&](int i) {
@@ -94,8 +96,10 @@ public:
             for (int c = 0; c < in_size_; c++)
                 vectorize::muladd(&curr_delta[r.begin()], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
 
-            for (int i = r.begin(); i < r.end(); i++) 
-                db[i] += curr_delta[i];
+            if (has_bias_) {
+                for (int i = r.begin(); i < r.end(); i++)
+                    db[i] += curr_delta[i];
+            }
         });
 
         return prev_->back_propagation(prev_delta_[index], index);
@@ -109,8 +113,10 @@ public:
             for (int r = 0; r < out_size_; r++)
                 Whessian_[c*out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
 
-        for (int r = 0; r < out_size_; r++)
-            bhessian_[r] += current_delta2[r];
+        if (has_bias_) {
+            for (int r = 0; r < out_size_; r++)
+                bhessian_[r] += current_delta2[r];
+        }
 
         for (int c = 0; c < in_size_; c++) { 
             prev_delta2_[c] = 0.0;
@@ -128,6 +134,7 @@ public:
 
 protected:
     Filter filter_;
+    bool has_bias_;
 };
 
 } // namespace tiny_cnn
