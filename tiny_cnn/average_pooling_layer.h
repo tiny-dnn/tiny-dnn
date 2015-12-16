@@ -43,11 +43,26 @@ public:
     : Base(in_width * in_height * in_channels, 
            in_width * in_height * in_channels / sqr(pooling_size), 
            in_channels, in_channels, 1.0 / sqr(pooling_size)),
+      stride_(pooling_size),
       in_(in_width, in_height, in_channels), 
       out_(in_width/pooling_size, in_height/pooling_size, in_channels)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
+
+        init_connection(pooling_size);
+    }
+
+    average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size, layer_size_t stride)
+        : Base(in_width * in_height * in_channels,
+            out_size(in_width, pooling_size, stride) * out_size(in_height, pooling_size, stride) * in_channels,
+            in_channels, in_channels, 1.0 / sqr(pooling_size)),
+        stride_(stride),
+        in_(in_width, in_height, in_channels),
+        out_(out_size(in_width, pooling_size, stride), out_size(in_height, pooling_size, stride), in_channels)
+    {
+       // if ((in_width % pooling_size) || (in_height % pooling_size))
+       //     pooling_size_mismatch(in_width, in_height, pooling_size);
 
         init_connection(pooling_size);
     }
@@ -61,10 +76,16 @@ public:
     std::string layer_type() const override { return "ave-pool"; }
 
 private:
+    size_t stride_;
+
+    layer_size_t out_size(layer_size_t in_size, layer_size_t pooling_size, layer_size_t stride) const {
+        return (int)std::ceil(((double)in_size - pooling_size) / stride) + 1;
+    }
+
     void init_connection(layer_size_t pooling_size) {
         for (layer_size_t c = 0; c < in_.depth_; ++c)
-            for (layer_size_t y = 0; y < in_.height_; y += pooling_size)
-                for (layer_size_t x = 0; x < in_.width_; x += pooling_size)
+            for (layer_size_t y = 0; y < in_.height_; y += stride_)
+                for (layer_size_t x = 0; x < in_.width_; x += stride_)
                     connect_kernel(pooling_size, x, y, c);
 
 
@@ -75,11 +96,16 @@ private:
     }
 
     void connect_kernel(layer_size_t pooling_size, layer_size_t x, layer_size_t y, layer_size_t inc) {
-        for (layer_size_t dy = 0; dy < pooling_size; ++dy)
-            for (layer_size_t dx = 0; dx < pooling_size; ++dx)
+        layer_size_t dymax = std::min(pooling_size, in_.height_ - y);
+        layer_size_t dxmax = std::min(pooling_size, in_.width_ - x);
+        layer_size_t dstx = x / stride_;
+        layer_size_t dsty = y / stride_;
+
+        for (layer_size_t dy = 0; dy < dymax; ++dy)
+            for (layer_size_t dx = 0; dx < dxmax; ++dx)
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc), 
-                    out_.get_index(x / pooling_size, y / pooling_size, inc),
+                    out_.get_index(dstx, dsty, inc),
                     inc);
     }
 
