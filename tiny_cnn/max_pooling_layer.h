@@ -43,13 +43,26 @@ public:
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),
         pool_size_(pooling_size),
+        stride_(pooling_size),
         in_(in_width, in_height, in_channels),
         out_(in_width / pooling_size, in_height / pooling_size, in_channels)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
 
-        init_connection(pooling_size);
+        init_connection();
+    }
+
+    max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size, layer_size_t stride)
+        : Base(in_width * in_height * in_channels,
+        out_size(in_width, pooling_size, stride) * out_size(in_height, pooling_size, stride) * in_channels,
+        0, 0),
+        pool_size_(pooling_size),
+        stride_(stride),
+        in_(in_width, in_height, in_channels),
+        out_(out_size(in_width, pooling_size, stride), out_size(in_height, pooling_size, stride), in_channels)
+    {
+        init_connection();
     }
 
     size_t fan_in_size() const override {
@@ -65,6 +78,10 @@ public:
     }
 
     virtual const vec_t& forward_propagation(const vec_t& in, size_t index) {
+        vec_t& out = output_[index];
+        vec_t& a = a_[index];
+        std::vector<int>& max_idx = out2inmax_[index];
+
         for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const auto& in_index = out2in_[i];
@@ -73,24 +90,29 @@ public:
                 for (auto j : in_index) {
                     if (in[j] > max_value) {
                         max_value = in[j];
-                        out2inmax_[i] = j;
+                        max_idx[i] = j;
                     }
                 }
-                output_[index][i] = max_value;
+                a[i] = max_value;
             }
         });
-        return next_ ? next_->forward_propagation(output_[index], index) : output_[index];
+
+        for_i(parallelize_, out_size_, [&](int i) {
+            out[i] = h_.f(a, i);
+        });
+        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
+        std::vector<int>& max_idx = out2inmax_[index];
 
         for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 int outi = in2out_[i];
-                prev_delta[i] = (out2inmax_[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : 0.0;
+                prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : 0.0;
             }
         });
         return prev_->back_propagation(prev_delta_[index], index);
@@ -102,7 +124,7 @@ public:
 
         for (int i = 0; i < in_size_; i++) {
             int outi = in2out_[i];
-            prev_delta2_[i] = (out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
+            prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
         }
         return prev_->back_propagation_2nd(prev_delta2_);
     }
@@ -118,17 +140,25 @@ public:
 
 private:
     size_t pool_size_;
+    size_t stride_;
     std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
     std::vector<int> in2out_; // mapping in => out (N:1)
-    std::vector<int> out2inmax_; // mapping out => max_index(in) (1:1)
+    std::vector<int> out2inmax_[CNN_TASK_SIZE]; // mapping out => max_index(in) (1:1)
     index3d<layer_size_t> in_;
     index3d<layer_size_t> out_;
 
+    layer_size_t out_size(layer_size_t in_size, layer_size_t pooling_size, layer_size_t stride) const {
+        return (int) std::ceil(((double)in_size - pooling_size) / stride) + 1;
+    }
+
     void connect_kernel(layer_size_t pooling_size, layer_size_t outx, layer_size_t outy, layer_size_t  c)
     {
-        for (layer_size_t dy = 0; dy < pooling_size; dy++) {
-            for (layer_size_t dx = 0; dx < pooling_size; dx++) {
-                layer_size_t in_index = in_.get_index(outx * pooling_size + dx, outy * pooling_size + dy, c);
+        layer_size_t dxmax = std::min((size_t)pooling_size, in_.width_ - outx * stride_);
+        layer_size_t dymax = std::min((size_t)pooling_size, in_.height_ - outy * stride_);
+
+        for (layer_size_t dy = 0; dy < dymax; dy++) {
+            for (layer_size_t dx = 0; dx < dxmax; dx++) {
+                layer_size_t in_index = in_.get_index(outx * stride_ + dx, outy * stride_ + dy, c);
                 layer_size_t out_index = out_.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size())
@@ -141,15 +171,17 @@ private:
         }
     }
 
-    void init_connection(layer_size_t pooling_size)
+    void init_connection()
     {
         in2out_.resize(in_.size());
         out2in_.resize(out_.size());
-        out2inmax_.resize(out_.size());
+        for (int i = 0; i < CNN_TASK_SIZE; i++)
+            out2inmax_[i].resize(out_.size());
+
         for (layer_size_t c = 0; c < in_.depth_; ++c)
             for (layer_size_t y = 0; y < out_.height_; ++y)
                 for (layer_size_t x = 0; x < out_.width_; ++x)
-                    connect_kernel(pooling_size, x, y, c);
+                    connect_kernel(pool_size_, x, y, c);
     }
 
 };
