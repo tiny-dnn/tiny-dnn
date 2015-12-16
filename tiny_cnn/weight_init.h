@@ -91,6 +91,20 @@ public:
     virtual lecun* clone() const override { return new lecun(scale_); }
 };
 
+class gaussian : public scalable {
+public:
+    gaussian() : scalable(1.0) {}
+    explicit gaussian(float_t sigma) : scalable(sigma) {}
+
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+        CNN_UNREFERENCED_PARAMETER(fan_out);
+
+        gaussian_rand(weight->begin(), weight->end(), 0.0, scale_);
+    }
+
+    virtual gaussian* clone() const override { return new gaussian(scale_); }
+};
+
 class constant : public scalable {
 public:
     constant() : scalable((float_t)0.0) {}
