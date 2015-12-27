@@ -25,48 +25,16 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "layer.h"
+#include "tiny_cnn/util/util.h"
 
 namespace tiny_cnn {
 
-class input_layer : public layer<activation::identity> {
-public:
-    typedef activation::identity Activation;
-    typedef layer<activation::identity> Base;
-    CNN_USE_LAYER_MEMBERS;
+inline vec_t corrupt(vec_t&& in, float_t corruption_level, float_t min_value) {
+    for (size_t i = 0; i < in.size(); i++)
+        if (bernoulli(corruption_level))
+            in[i] = min_value;
+    return in;
+}
 
-    input_layer() : Base(0, 0, 0, 0) {}
-
-    layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
-
-    index3d<layer_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<layer_size_t>(0, 0, 0); }
-    index3d<layer_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<layer_size_t>(0, 0, 0); }
-    std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
-
-    const vec_t& forward_propagation(const vec_t& in, size_t index) {
-        output_[index] = in;
-        return next_ ? next_->forward_propagation(in, index) : output_[index];
-    }
-
-    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) {
-        return current_delta;
-    }
-
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        return current_delta2;
-    }
-
-    size_t connection_size() const override {
-        return in_size_;
-    }
-
-    size_t fan_in_size() const override {
-        return 1;
-    }
-
-    size_t fan_out_size() const override {
-        return 1;
-    }
-};
 
 } // namespace tiny_cnn

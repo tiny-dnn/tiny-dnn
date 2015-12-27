@@ -25,20 +25,20 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "layer.h"
-#include "product.h"
+#include "tiny_cnn/layers/layer.h"
+#include "tiny_cnn/util/product.h"
 #include "dropout.h"
 
 namespace tiny_cnn {
 
-template<typename Activation, typename Filter = filter_none>
+template<typename Activation>//, typename Filter = filter_none> // filter is removed, use dropout_layer instead.
 class fully_connected_layer : public layer<Activation> {
 public:
     typedef layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
     fully_connected_layer(layer_size_t in_dim, layer_size_t out_dim, bool has_bias = true)
-        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, has_bias ? out_dim : 0), filter_(out_dim), has_bias_(has_bias) {}
+        : Base(in_dim, out_dim, size_t(in_dim) * out_dim, has_bias ? out_dim : 0), has_bias_(has_bias) {}
 
     size_t connection_size() const override {
         return size_t(in_size_) * out_size_ + size_t(has_bias_) * out_size_;
@@ -58,7 +58,7 @@ public:
 
         for_i(parallelize_, out_size_, [&](int i) {
             a[i] = 0.0;
-            for (int c = 0; c < in_size_; c++) {
+            for (layer_size_t c = 0; c < in_size_; c++) {
                 a[i] += W_[c*out_size_ + i] * in[c];
             }
 
@@ -70,20 +70,17 @@ public:
             out[i] = h_.f(a, i);
         });
 
-        auto& this_out = filter_.filter_fprop(out, index);
-
-        return next_ ? next_->forward_propagation(this_out, index) : this_out;
+        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
-        const vec_t& curr_delta = filter_.filter_bprop(current_delta, index);
+    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) {
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
         vec_t& dW = dW_[index];
         vec_t& db = db_[index];
 
-        for (int c = 0; c < this->in_size_; c++) {
+        for (layer_size_t c = 0; c < this->in_size_; c++) {
             // propagate delta to previous layer
             // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
             prev_delta[c] = vectorize::dot(&curr_delta[0], &W_[c*out_size_], out_size_);
@@ -93,7 +90,7 @@ public:
         for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
             // accumulate weight-step using delta
             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-            for (int c = 0; c < in_size_; c++)
+            for (layer_size_t c = 0; c < in_size_; c++)
                 vectorize::muladd(&curr_delta[r.begin()], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
 
             if (has_bias_) {
@@ -109,19 +106,19 @@ public:
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
-        for (int c = 0; c < in_size_; c++) 
-            for (int r = 0; r < out_size_; r++)
+        for (layer_size_t c = 0; c < in_size_; c++) 
+            for (layer_size_t r = 0; r < out_size_; r++)
                 Whessian_[c*out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
 
         if (has_bias_) {
-            for (int r = 0; r < out_size_; r++)
+            for (layer_size_t r = 0; r < out_size_; r++)
                 bhessian_[r] += current_delta2[r];
         }
 
-        for (int c = 0; c < in_size_; c++) { 
+        for (layer_size_t c = 0; c < in_size_; c++) { 
             prev_delta2_[c] = 0.0;
 
-            for (int r = 0; r < out_size_; r++) 
+            for (layer_size_t r = 0; r < out_size_; r++) 
                 prev_delta2_[c] += current_delta2[r] * sqr(W_[c*out_size_ + r]);
 
             prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
@@ -133,7 +130,6 @@ public:
     std::string layer_type() const override { return "fully-connected"; }
 
 protected:
-    Filter filter_;
     bool has_bias_;
 };
 

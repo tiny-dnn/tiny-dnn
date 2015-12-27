@@ -33,13 +33,10 @@
 #include <map>
 #include <set>
 
-#include "util.h"
-#include "activation_function.h"
-#include "loss_function.h"
-#include "optimizer.h"
-#include "layer.h"
-#include "layers.h"
-#include "fully_connected_layer.h"
+#include "tiny_cnn/util/util.h"
+#include "tiny_cnn/layers/layers.h"
+#include "tiny_cnn/lossfunctions/loss_function.h"
+#include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
 
@@ -662,28 +659,6 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
 //     }
 //     //);
 // }
-
-/**
-* create multi-layer perceptron
-*/
-template<typename loss_func, typename algorithm, typename activation, typename Iter>
-network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
-    typedef network<loss_func, algorithm> net_t;
-    net_t n;
-
-    Iter next = first + 1;
-    for (; next != last; ++first, ++next)
-        n << fully_connected_layer<activation>(*first, *next);
-    return n;
-}
-
-/**
- * create multi-layer perceptron
- */
-template<typename loss_func, typename algorithm, typename activation>
-network<loss_func, algorithm> make_mlp(const std::vector<int>& units) {
-    return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
-}
 
 template <typename L, typename O, typename Layer>
 network<L, O>& operator << (network<L, O>& n, const Layer&& l) {

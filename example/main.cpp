@@ -25,10 +25,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <boost/timer.hpp>
-#include <boost/progress.hpp>
+#include <memory>
 
-#include "tiny_cnn.h"
+#include "tiny_cnn/tiny_cnn.h"
 //#define NOMINMAX
 //#include "imdebug.h"
 
@@ -41,7 +40,14 @@ using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
 int main(void) {
+    try {
     sample1_convnet();
+    }
+    catch (const nn_error& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -71,7 +77,7 @@ void sample1_convnet(void) {
        << average_pooling_layer<tan_h>(10, 10, 16, 2)
        << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
        << fully_connected_layer<tan_h>(120, 10);
- 
+
     std::cout << "load models..." << std::endl;
 
     // load MNIST dataset
@@ -85,8 +91,8 @@ void sample1_convnet(void) {
 
     std::cout << "start learning" << std::endl;
 
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    progress_display disp(train_images.size());
+    timer t;
     int minibatch_size = 10;
 
     nn.optimizer().alpha *= std::sqrt(minibatch_size);
@@ -100,7 +106,7 @@ void sample1_convnet(void) {
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -159,8 +165,8 @@ void sample2_mlp()
 
     nn.optimizer().alpha = 0.001;
     
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    progress_display disp(train_images.size());
+    timer t;
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -171,7 +177,7 @@ void sample2_mlp()
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -221,9 +227,10 @@ void sample4_dropout()
     int hidden_units = 800;
     int output_dim   = 10;
 
-    fully_connected_dropout_layer<tan_h> f1(input_dim, hidden_units, dropout::per_data);
+    fully_connected_layer<tan_h> f1(input_dim, hidden_units);
+    dropout_layer dropout(hidden_units, 0.5);
     fully_connected_layer<tan_h> f2(hidden_units, output_dim);
-    nn << f1 << f2;
+    nn << f1 << dropout << f2;
 
     nn.optimizer().alpha = 0.003; // TODO: not optimized
     nn.optimizer().lambda = 0.0;
@@ -238,22 +245,22 @@ void sample4_dropout()
     parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
     // load train-data, label_data
-    boost::progress_display disp(train_images.size());
-    boost::timer t;
+    progress_display disp(train_images.size());
+    timer t;
 
     // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
-
-        f1.set_context(dropout::test_phase);
+  
+        dropout.set_context(net_phase::test);
         tiny_cnn::result res = nn.test(test_images, test_labels);
-        f1.set_context(dropout::train_phase);
+        dropout.set_context(net_phase::train);
 
 
         std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         nn.optimizer().alpha *= 0.99; // decay learning rate
-        nn.optimizer().alpha = std::max(0.00001, nn.optimizer().alpha);
+        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
 
         disp.restart(train_images.size());
         t.restart();

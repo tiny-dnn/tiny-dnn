@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "util.h"
+#include "tiny_cnn/util/util.h"
 
 namespace tiny_cnn {
 namespace weight_init {
@@ -33,7 +33,6 @@ namespace weight_init {
 class function {
 public:
     virtual void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) = 0;
-    virtual function* clone() const = 0;
 };
 
 class scalable : public function {
@@ -64,8 +63,6 @@ public:
 
         uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);     
     }
-
-    virtual xavier* clone() const override { return new xavier(scale_); }
 };
 
 /**
@@ -87,8 +84,6 @@ public:
 
         uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
     }
-
-    virtual lecun* clone() const override { return new lecun(scale_); }
 };
 
 class gaussian : public scalable {
@@ -97,12 +92,11 @@ public:
     explicit gaussian(float_t sigma) : scalable(sigma) {}
 
     void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+        CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
         gaussian_rand(weight->begin(), weight->end(), 0.0, scale_);
     }
-
-    virtual gaussian* clone() const override { return new gaussian(scale_); }
 };
 
 class constant : public scalable {
@@ -116,8 +110,6 @@ public:
 
         std::fill(weight->begin(), weight->end(), scale_);
     }
-
-    virtual constant* clone() const override { return new constant(scale_); }
 };
 
 } // namespace weight_init

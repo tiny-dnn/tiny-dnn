@@ -25,27 +25,32 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "tiny_cnn/util/util.h"
+#include "tiny_cnn/layers/fully_connected_layer.h"
 
-#include "config.h"
-#include "network.h"
+namespace tiny_cnn {
 
-#include "layers/average_pooling_layer.h"
-#include "layers/convolutional_layer.h"
-#include "layers/fully_connected_layer.h"
-#include "layers/max_pooling_layer.h"
-#include "layers/dropout_layer.h"
-#include "layers/linear_layer.h"
+/**
+* create multi-layer perceptron
+*/
+template<typename loss_func, typename algorithm, typename activation, typename Iter>
+network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
+    typedef network<loss_func, algorithm> net_t;
+    net_t n;
 
-#include "activations/activation_function.h"
-#include "lossfunctions/loss_function.h"
-#include "optimizers/optimizer.h"
+    Iter next = first + 1;
+    for (; next != last; ++first, ++next)
+        n << fully_connected_layer<activation>(*first, *next);
+    return n;
+}
 
-#include "util/weight_init.h"
-#include "util/image.h"
-#include "util/deform.h"
-#include "util/product.h"
+/**
+ * create multi-layer perceptron
+ */
+template<typename loss_func, typename algorithm, typename activation>
+network<loss_func, algorithm> make_mlp(const std::vector<int>& units) {
+    return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
+}
 
-#include "io/mnist_parser.h"
-#include "io/cifar10_parser.h"
-#include "io/display.h"
-#include "io/layer_factory.h"
+
+} // namespace tiny_cnn

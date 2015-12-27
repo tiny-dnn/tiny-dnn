@@ -33,7 +33,6 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdarg>
-#include "picojson.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX

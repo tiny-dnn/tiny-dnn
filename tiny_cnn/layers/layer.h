@@ -28,11 +28,12 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
-#include "util.h"
-#include "product.h"
-#include "image.h"
-#include "activation_function.h"
-#include "weight_init.h"
+#include "tiny_cnn/util/util.h"
+#include "tiny_cnn/util/product.h"
+#include "tiny_cnn/util/image.h"
+#include "tiny_cnn/util/weight_init.h"
+
+#include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
 

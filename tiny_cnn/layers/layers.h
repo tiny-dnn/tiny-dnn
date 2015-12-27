@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "layer.h"
+#include "tiny_cnn/layers/layer.h"
 #include "input_layer.h"
 
 namespace tiny_cnn {

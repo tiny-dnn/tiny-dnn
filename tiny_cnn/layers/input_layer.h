@@ -25,55 +25,48 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "util.h"
+#include "tiny_cnn/layers/layer.h"
 
 namespace tiny_cnn {
 
-// mean-squared-error loss function for regression
-class mse {
+class input_layer : public layer<activation::identity> {
 public:
-    static float_t f(float_t y, float_t t) {
-        return (y - t) * (y - t) / 2;
+    typedef activation::identity Activation;
+    typedef layer<activation::identity> Base;
+    CNN_USE_LAYER_MEMBERS;
+
+    input_layer() : Base(0, 0, 0, 0) {}
+
+    layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
+
+    index3d<layer_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<layer_size_t>(0, 0, 0); }
+    index3d<layer_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<layer_size_t>(0, 0, 0); }
+    std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
+
+    const vec_t& forward_propagation(const vec_t& in, size_t index) {
+        output_[index] = in;
+        return next_ ? next_->forward_propagation(in, index) : output_[index];
     }
 
-    static float_t df(float_t y, float_t t) {
-        return y - t;
+    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) {
+        return current_delta;
+    }
+
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+        return current_delta2;
+    }
+
+    size_t connection_size() const override {
+        return in_size_;
+    }
+
+    size_t fan_in_size() const override {
+        return 1;
+    }
+
+    size_t fan_out_size() const override {
+        return 1;
     }
 };
-
-// cross-entropy loss function for (multiple independent) binary classifications
-class cross_entropy {
-public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y) - (1.0 - t) * std::log(1.0 - y);
-    }
-
-    static float_t df(float_t y, float_t t) {
-        return (y - t) / (y * (1 - y));
-    }
-};
-
-// cross-entropy loss function for multi-class classification
-class cross_entropy_multiclass {
-public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y);
-    }
-
-    static float_t df(float_t y, float_t t) {
-        return - t / y;
-    }
-};
-
-template <typename E>
-vec_t gradient(const vec_t& y, const vec_t& t) {
-    vec_t grad(y.size());
-    assert(y.size() == t.size());
-
-    for (size_t i = 0; i < y.size(); i++)
-        grad[i] = E::df(y[i], t[i]);
-
-    return grad;
-}
 
 } // namespace tiny_cnn

@@ -25,8 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "util.h"
-#include "layer.h"
+#include "tiny_cnn/util/util.h"
+#include "tiny_cnn/layers/layer.h"
 
 namespace tiny_cnn {
 
@@ -74,11 +74,14 @@ public:
 
     const vec_t& back_propagation_2nd(const vec_t& in_raw) override 
     {
+        CNN_UNREFERENCED_PARAMETER(in_raw);
         throw nn_error("not implemented");
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) override 
     {
+        CNN_UNREFERENCED_PARAMETER(current_delta);
+        CNN_UNREFERENCED_PARAMETER(worker_index);
         throw nn_error("not implemented");
     }
 

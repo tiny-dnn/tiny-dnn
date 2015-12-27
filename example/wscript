@@ -5,11 +5,19 @@ def build(bld):
     else:
       libcxx = 'stdc++'
     
-    bld(features = 'cxx cprogram',
-      source = 'main.cpp',
-      target = 'main',
-      cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
-      lib      = [libcxx, 'boost_timer-mt', 'tbb'],
-      libpath  = ['../'],
-      includes = ['.', '../tiny_cnn', bld.env.BOOST_ROOT, bld.env.TBB_ROOT])
+    if sys.platform.startswith('win'):
+      bld(features = 'cxx cprogram',
+        source = 'main.cpp',
+        target = 'main',
+        lib      = ['tbb'],
+        libpath  = ['../'],
+        includes = ['.', '../', bld.env.TBB_ROOT])
+    else:
+      bld(features = 'cxx cprogram',
+        source = 'main.cpp',
+        target = 'main',
+        cflags   = ['-Wall'],
+        cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
+        lib      = [libcxx, 'tbb'],
+        libpath  = ['../'],
+        includes = ['.', '../', bld.env.TBB_ROOT])

@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "picotest.h"
-#include "tiny_cnn.h"
+#include "tiny_cnn/tiny_cnn.h"
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 

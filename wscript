@@ -43,10 +43,13 @@ def configure(conf):
     conf.load('compiler_cxx')
     if conf.options.TBB:
        conf.define("CNN_USE_TBB", "")
+       print "enable option:TBB(root=%s)" % conf.options.TBB_ROOT
     if conf.options.AVX:
        conf.define("CNN_USE_AVX", "")
+       print("enable option:AVX")
     if conf.options.SSE:
        conf.define("CNN_USE_SSE", "")
+       print("enable option:SSE")
     conf.env.TBB_ROOT = conf.options.TBB_ROOT
     conf.env.BOOST_ROOT = conf.options.BOOST_ROOT
 
