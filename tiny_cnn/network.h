@@ -625,7 +625,7 @@ private:
  * @param sizepatch [size of the patch, such as the total number of pixel in the patch is sizepatch*sizepatch ]
  * @return [vector of vec_c (sample) to be passed to test function]
  */
-std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, const unsigned int cols, const unsigned int sizepatch, const unsigned int step=1)
+inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, const unsigned int cols, const unsigned int sizepatch, const unsigned int step=1)
 {
     assert(step>0);
     std::vector<vec_t> res((cols-sizepatch)*(rows-sizepatch)/(step*step),vec_t(sizepatch*sizepatch));
