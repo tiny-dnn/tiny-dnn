@@ -29,10 +29,13 @@
 #include "config.h"
 #include "network.h"
 
-#include "layers/average_pooling_layer.h"
+
 #include "layers/convolutional_layer.h"
 #include "layers/fully_connected_layer.h"
+#include "layers/average_pooling_layer.h"
 #include "layers/max_pooling_layer.h"
+#include "layers/linear_layer.h"
+#include "layers/lrn_layer.h"
 #include "layers/dropout_layer.h"
 #include "layers/linear_layer.h"
 

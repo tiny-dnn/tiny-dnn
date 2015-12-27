@@ -316,6 +316,10 @@ struct index3d {
         return (height_ * channel + y) * width_ + x; 
     }
 
+    T area() const {
+        return width_ * height_;
+    }
+
     T size() const {
         return width_ * height_ * depth_;
     }

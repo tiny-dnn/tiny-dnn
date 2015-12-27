@@ -28,82 +28,124 @@
 #include "tiny_cnn/util/util.h"
 #include <algorithm>
 
-extern bool g_log_softmax;
-
-
 namespace tiny_cnn {
 
+    enum class norm_region {
+        across_channels,
+        within_channels
+    };
+
 /**
- * f(x) = h(scale*x+bias)
+ * local response normalization
  */
 template<typename Activation>
-class linear_layer : public layer<Activation> {
+class lrn_layer : public layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
     typedef layer<Activation> Base;
 
-    explicit linear_layer(layer_size_t dim, float_t scale = 1.0, float_t bias = 0.0)
-        : Base(dim, dim, 0, 0),
-        scale_(scale), bias_(bias) {}
+    lrn_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t local_size, layer_size_t in_channels,
+                       float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
+        : Base(in_width*in_height*in_channels, in_width*in_height*in_channels, 0, 0),
+        in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
 
     size_t param_size() const override {
         return 0;
     }
 
     size_t connection_size() const override {
-        return in_size();
+        return in_size() * size_;
     }
 
     size_t fan_in_size() const override {
-        return 1;
+        return size_;
     }
 
     size_t fan_out_size() const override {
-        return 1;
+        return size_;
     }
 
-    std::string layer_type() const override { return "linear"; }
+    std::string layer_type() const override { return "norm"; }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
         vec_t& a = a_[index];
         vec_t& out = output_[index];
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            a[i] = scale_ * in[i] + bias_;
-        });
+        if (region_ == norm_region::across_channels) {
+            forward_across(in, a);
+        }
+        else {
+            forward_within(in, a);
+        }
+
         for_i(parallelize_, out_size_, [&](int i) {
             out[i] = h_.f(a, i);
         });
-
         return next_ ? next_->forward_propagation(out, index) : out;
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
-        const vec_t& prev_out = prev_->output(index);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = prev_delta_[index];
-
-        for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta[i] = current_delta[i] * scale_ * prev_h.df(prev_out[i]);
-        });
-
-        return prev_->back_propagation(prev_delta_[index], index);
+        CNN_UNREFERENCED_PARAMETER(current_delta);
+        CNN_UNREFERENCED_PARAMETER(index);
+        throw nn_error("not implemented");
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta2_[i] = current_delta2[i] * sqr(scale_ * prev_h.df(prev_out[i]));
-        });
-
-        return prev_->back_propagation_2nd(prev_delta2_);
+        CNN_UNREFERENCED_PARAMETER(current_delta2);
+        throw nn_error("not implemented");
     }
 
-protected:
-    float_t scale_, bias_;
+private:
+    void forward_across(const vec_t& in, vec_t& out) {
+        std::fill(in_square_.begin(), in_square_.end(), (float_t)0.0);
+
+        for (layer_size_t i = 0; i < size_ / 2; i++) {
+            layer_size_t idx = in_shape_.get_index(0, 0, i);
+            add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
+        }
+
+        int head = size_ / 2;
+        int tail = head - size_;
+        int channels = (int)in_shape_.depth_;
+        const layer_size_t wxh = in_shape_.area();
+        const float_t alpha_div_size = alpha_ / size_;
+
+        for (int i = 0; i < channels; i++, head++, tail++) {
+            if (head < channels)
+                add_square_sum(&in[in_shape_.get_index(0, 0, head)], wxh, &in_square_[0]);
+
+            if (tail >= 0)
+                sub_square_sum(&in[in_shape_.get_index(0, 0, tail)], wxh, &in_square_[0]);
+
+            float_t *dst = &out[in_shape_.get_index(0, 0, i)];
+            const float_t *src = &in[in_shape_.get_index(0, 0, i)];
+            for (layer_size_t j = 0; j < wxh; j++)
+                dst[j] = src[j] * std::pow(1.0 + alpha_div_size * in_square_[j], -beta_);
+        }
+    }
+
+    void forward_within(const vec_t& in, vec_t& out) {
+        throw nn_error("not implemented");
+    }
+
+    void add_square_sum(const float_t *src, size_t size, float_t *dst) {
+        for (size_t i = 0; i < size; i++)
+            dst[i] += src[i] * src[i];
+    }
+
+    void sub_square_sum(const float_t *src, size_t size, float_t *dst) {
+        for (size_t i = 0; i < size; i++)
+            dst[i] -= src[i] * src[i];
+    }
+
+    layer_shape_t in_shape_;
+
+    layer_size_t size_;
+    float_t alpha_, beta_;
+    norm_region region_;
+
+    vec_t in_square_;
 };
 
 } // namespace tiny_cnn

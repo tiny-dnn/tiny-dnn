@@ -553,6 +553,26 @@ TEST(read_write, network)
     }
 }
 
+TEST(lrn, cross) {
+    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
+
+    float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
+    float_t expected[4] =
+    {
+        -1.0/36.0,    // -1.0 / (1+0.5*(1*1+3*3))^2
+        3.0/64.0,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
+        2.0/400.0,    //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
+        5.0/15.5/15.5 // 5.0 / (1+0.5*(2*2+5*5))^2
+    };
+
+    auto out = lrn.forward_propagation(vec_t(in, in + 4), 0);
+
+    EXPECT_FLOAT_EQ(expected[0], out[0]);
+    EXPECT_FLOAT_EQ(expected[1], out[1]);
+    EXPECT_FLOAT_EQ(expected[2], out[2]);
+    EXPECT_FLOAT_EQ(expected[3], out[3]);
+}
+
 int main(void) {
     RUN_ALL_TESTS();
 }
