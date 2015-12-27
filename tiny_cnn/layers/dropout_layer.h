@@ -40,7 +40,7 @@ public:
         : layer<activation::identity>(in_dim, in_dim, 0, 0), phase_(phase), dropout_rate_(dropout_rate)
     {
         scale_ = 1.0 / (1.0 - dropout_rate);
-        mask_ = new bool[in_dim];
+        mask_ = new bool[in_dim * CNN_TASK_SIZE];
     }
 
     virtual ~dropout_layer()
@@ -74,28 +74,33 @@ public:
 
     const vec_t& back_propagation_2nd(const vec_t& in_raw) override 
     {
-        CNN_UNREFERENCED_PARAMETER(in_raw);
-        throw nn_error("not implemented");
+        prev_delta2_ = in_raw;
+        return prev_->back_propagation_2nd(prev_delta2_);
     }
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) override 
     {
-        CNN_UNREFERENCED_PARAMETER(current_delta);
-        CNN_UNREFERENCED_PARAMETER(worker_index);
-        throw nn_error("not implemented");
+        vec_t& prev_delta = prev_delta_[worker_index];
+        bool* mask = &mask_[worker_index * CNN_TASK_SIZE];
+
+        for (size_t i = 0; i < current_delta.size(); i++) {
+            prev_delta[i] = mask[i] * current_delta[i];
+        }
+        return prev_->back_propagation(prev_delta, worker_index);
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t worker_index) override 
     {
         vec_t& out = output_[worker_index];
         vec_t& a = a_[worker_index];
+        bool* mask = &mask_[worker_index * CNN_TASK_SIZE];
 
         if (phase_ == net_phase::train) {
             for (size_t i = 0; i < in.size(); i++)
-                mask_[i] = bernoulli(dropout_rate_);
+                mask[i] = bernoulli(dropout_rate_);
 
             for (size_t i = 0; i < in.size(); i++)
-                a[i] = out[i] = mask_[i] * scale_ * in[i];
+                a[i] = out[i] = mask[i] * scale_ * in[i];
         }
         else {
             for (size_t i = 0; i < in.size(); i++)
