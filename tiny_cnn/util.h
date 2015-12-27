@@ -33,6 +33,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdarg>
+#include "picojson.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -47,7 +48,7 @@
 namespace tiny_cnn {
 
 typedef double float_t;
-typedef unsigned short layer_size_t;
+typedef unsigned int layer_size_t;
 typedef size_t label_t;
 typedef std::vector<float_t> vec_t;
 
@@ -57,6 +58,11 @@ public:
     const char* what() const throw() override { return msg_.c_str(); }
 private:
     std::string msg_;
+};
+
+enum class net_phase {
+    train,
+    test
 };
 
 template<typename T> inline
@@ -77,6 +83,14 @@ uniform_rand(T min, T max) {
     return dst(gen);
 }
 
+template<typename T> inline
+typename std::enable_if<std::is_floating_point<T>::value, T>::type
+gaussian_rand(T mean, T sigma) {
+    static std::mt19937 gen(1);
+    std::normal_distribution<T> dst(mean, sigma);
+    return dst(gen);
+}
+
 template<typename Container>
 inline int uniform_idx(const Container& t) {
     return uniform_rand(0, (int) t.size() - 1);
@@ -90,6 +104,12 @@ template<typename Iter>
 void uniform_rand(Iter begin, Iter end, float_t min, float_t max) {
     for (Iter it = begin; it != end; ++it) 
         *it = uniform_rand(min, max);
+}
+
+template<typename Iter>
+void gaussian_rand(Iter begin, Iter end, float_t mean, float_t sigma) {
+    for (Iter it = begin; it != end; ++it)
+        *it = gaussian_rand(mean, sigma);
 }
 
 template<typename T>
@@ -291,6 +311,9 @@ struct index3d {
     }
 
     T get_index(T x, T y, T channel) const {
+        assert(x >= 0 && x < width_);
+        assert(y >= 0 && y < height_);
+        assert(channel >= 0 && channel < depth_);
         return (height_ * channel + y) * width_ + x; 
     }
 
@@ -302,6 +325,8 @@ struct index3d {
     T height_;
     T depth_;
 };
+
+typedef index3d<layer_size_t> layer_shape_t;
 
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const index3d<T>& d) {

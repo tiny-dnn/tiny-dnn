@@ -122,7 +122,7 @@ public:
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
-        for (int i = 0; i < in_size_; i++) {
+        for (layer_size_t i = 0; i < in_size_; i++) {
             int outi = in2out_[i];
             prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
         }

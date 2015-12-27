@@ -171,7 +171,7 @@ public:
             bhessian_[i] += diff;
         }
 
-        for (int i = 0; i < in_size_; i++) {
+        for (layer_size_t i = 0; i < in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
             prev_delta2_[i] = 0.0;
 
