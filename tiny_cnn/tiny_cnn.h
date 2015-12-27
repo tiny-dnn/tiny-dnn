@@ -52,3 +52,8 @@
 #include "io/cifar10_parser.h"
 #include "io/display.h"
 #include "io/layer_factory.h"
+
+#ifdef CNN_CAFFEINATED
+// experimental / require google protobuf
+#include "io/caffe/layer_factory.h"
+#endif
