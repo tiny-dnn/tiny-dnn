@@ -55,7 +55,7 @@ public:
     }
 
     size_t connection_size() const override {
-        return in_size() * size_;
+        return this->in_size() * size_;
     }
 
     size_t fan_in_size() const override {
