@@ -37,6 +37,18 @@ struct connection_table {
     connection_table(const bool *ar, size_t rows, size_t cols) : connected_(rows * cols), rows_(rows), cols_(cols) {
         std::copy(ar, ar + rows * cols, connected_.begin());
     }
+    connection_table(size_t ngroups, size_t rows, size_t cols) : connected_(rows * cols, false), rows_(rows), cols_(cols) {
+        if (rows % ngroups || cols % ngroups) throw nn_error("invalid group size");
+
+        size_t row_group = rows / ngroups;
+        size_t col_group = cols / ngroups;
+
+        for (size_t g = 0; g < ngroups; g++) {
+            for (size_t r = 0; r < row_group; r++)
+              for (size_t c = 0; c < col_group; c++)
+                connected_[(r + g * row_group) * cols_ + c + g * col_group] = true;
+        }
+    }
 
     bool is_connected(size_t x, size_t y) const {
         return is_empty() ? true : connected_[y * cols_ + x];
