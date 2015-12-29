@@ -28,6 +28,12 @@
 #include <algorithm>
 #include <memory>
 #include <unordered_map>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
+#include <io.h>
+#include <fcntl.h>
+#include <limits>
 #include "caffe.pb.h"
 #include "tiny_cnn/tiny_cnn.h"
 
@@ -215,14 +221,14 @@ inline void load_weights_conv(const caffe::LayerParameter& src, tiny_cnn::layer_
                     conv->weight_at(i, o, x, y) = weights.data(curr++);
                     */
 
-    for (size_t o = 0; o < weights.data_size(); o++) {
+    for (int o = 0; o < weights.data_size(); o++) {
         dst->weight()[o] = weights.data(o);
     }
 
     // fill bias
     if (src.convolution_param().bias_term()) {
         auto biases = src.blobs(1);
-        for (size_t o = 0; o < biases.data_size(); o++)
+        for (int o = 0; o < biases.data_size(); o++)
             dst->bias()[o] = biases.data(o);
     }
 }
@@ -244,6 +250,46 @@ inline void load_weights_pool(const caffe::LayerParameter& src, tiny_cnn::layer_
     }
 }
 
+inline std::shared_ptr<tiny_cnn::layer_base> create_lrn(const caffe::LayerParameter& layer, const shape_t& bottom_shape, shape_t *top_shape) {
+    using lrn_layer = tiny_cnn::lrn_layer<tiny_cnn::activation::identity>;
+
+    if (!layer.has_lrn_param())
+        throw std::runtime_error("lrn param missing");
+
+    auto lrn_param = layer.lrn_param();
+    layer_size_t local_size = 5;
+    float_t alpha = 1;
+    float_t beta = 5;
+    norm_region region = norm_region::across_channels;
+
+    if (lrn_param.has_local_size()) local_size = lrn_param.local_size();
+    if (lrn_param.has_alpha()) alpha = lrn_param.alpha();
+    if (lrn_param.has_beta()) beta = lrn_param.beta();
+    if (lrn_param.has_norm_region()) {
+        if (lrn_param.norm_region() == caffe::LRNParameter_NormRegion_WITHIN_CHANNEL)
+            region = norm_region::within_channels;
+    }
+
+    auto lrn = std::make_shared<lrn_layer>(bottom_shape.width_, bottom_shape.height_, local_size, bottom_shape.depth_, alpha, beta, region);
+
+    return lrn;
+}
+
+inline std::shared_ptr<tiny_cnn::layer_base> create_dropout(const caffe::LayerParameter& layer, const shape_t& bottom_shape, shape_t *top_shape) {
+    if (!layer.has_dropout_param())
+        throw std::runtime_error("dropout param missing");
+
+    float_t dropout_rate = 0.5;
+
+    if (layer.dropout_param().has_dropout_ratio())
+        dropout_rate = layer.dropout_param().dropout_ratio();
+
+    auto dropout = std::make_shared<dropout_layer>(bottom_shape.size(), dropout_rate, net_phase::test);
+
+    return dropout;
+
+}
+
 inline std::shared_ptr<tiny_cnn::layer_base> create_convlayer(const caffe::LayerParameter& layer, const shape_t& bottom_shape, shape_t *top_shape) {
     using conv_layer = tiny_cnn::convolutional_layer<tiny_cnn::activation::identity>;
 
@@ -255,6 +301,7 @@ inline std::shared_ptr<tiny_cnn::layer_base> create_convlayer(const caffe::Layer
     tiny_cnn::layer_size_t w_stride = 1, h_stride = 1;
     bool has_bias = true;
     tiny_cnn::padding pad_type = tiny_cnn::padding::valid;
+    tiny_cnn::connection_table table;
 
     auto conv_param = layer.convolution_param();
 
@@ -299,7 +346,11 @@ inline std::shared_ptr<tiny_cnn::layer_base> create_convlayer(const caffe::Layer
     if (conv_param.stride_size() == 1 || conv_param.has_stride_w())
         w_stride = conv_param.stride_size() == 1 ? conv_param.stride(0) : conv_param.stride_w();
 
-    auto conv = std::make_shared<conv_layer>(in_width, in_height, window_size, in_channels, out_channels, pad_type, has_bias, w_stride, h_stride);
+    // group
+    if (conv_param.has_group())
+        table = tiny_cnn::connection_table(conv_param.group(), in_channels, out_channels);
+
+    auto conv = std::make_shared<conv_layer>(in_width, in_height, window_size, in_channels, out_channels, table, pad_type, has_bias, w_stride, h_stride);
 
     // filler
     if (conv_param.has_weight_filler())
@@ -317,13 +368,21 @@ inline std::shared_ptr<tiny_cnn::layer_base> create_convlayer(const caffe::Layer
         int dim = weights.data_size();
         int curr = 0;
 
-        for (size_t o = 0; o < out_channels; o++)
-            for (size_t i = 0; i < in_channels; i++)
-                for (size_t y = 0; y < window_size; y++)
-                    for (size_t x = 0; x < window_size; x++)
+        for (size_t o = 0; o < out_channels; o++) {
+            for (size_t i = 0; i < in_channels; i++) {
+                if (!table.is_connected(o, i))
+                    continue;
+                for (size_t y = 0; y < window_size; y++) {
+                    for (size_t x = 0; x < window_size; x++) {
                         conv->weight_at(i, o, x, y) = weights.data(curr++);
+                    }
+                }
+            }
+        }
 
-        // fill bias
+        if (curr != dim)
+            throw std::runtime_error("weight dimension mismatch");
+        //// fill bias
         if (has_bias) {
             auto biases = layer.blobs(1);
             for (size_t o = 0; o < out_channels; o++)
@@ -339,22 +398,22 @@ inline bool layer_skipped(const std::string& type) {
     return false;
 }
 
-inline bool layer_is_activation(const std::string& type) {
+inline bool layer_has_weights(const std::string& type) {
     static const char* activations[] =
     {
-        "SoftmaxWithLoss", "SigmoidCrossEntropyLoss",
+        "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
         "ReLU", "Sigmoid", "TanH", "Softmax"
     };
     for (int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
-        if (activations[i] == type) return true;
+        if (activations[i] == type) return false;
     }
-    return false;
+    return true;
 }
 
 inline bool layer_supported(const std::string& type) {
     static const char* supported[] =
     {
-        "InnerProduct", "Convolution", "Pooling",
+        "InnerProduct", "Convolution", "Pooling", "LRN", "Dropout",
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss",
         "ReLU", "Sigmoid", "TanH", "Softmax"
     };
@@ -385,15 +444,17 @@ inline std::shared_ptr<tiny_cnn::layer_base> create(const caffe::LayerParameter&
 
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
-    factory_registry["Convolution"] = ::detail::create_convlayer;
-    factory_registry["InnerProduct"] = ::detail::create_fullyconnected;
-    factory_registry["Pooling"] = ::detail::create_pooling;
-    factory_registry["SoftmaxWithLoss"] = ::detail::create_softmax;
-    factory_registry["SigmoidCrossEntropyLoss"] = ::detail::create_sigmoid;
-    factory_registry["ReLU"] = ::detail::create_relu;
-    factory_registry["Sigmoid"] = ::detail::create_sigmoid;
-    factory_registry["TanH"] = ::detail::create_tanh;
-    factory_registry["Softmax"] = ::detail::create_tanh;
+    factory_registry["Convolution"] = tiny_cnn::detail::create_convlayer;
+    factory_registry["InnerProduct"] = tiny_cnn::detail::create_fullyconnected;
+    factory_registry["Pooling"] = tiny_cnn::detail::create_pooling;
+    factory_registry["LRN"] = tiny_cnn::detail::create_lrn;
+    factory_registry["Dropout"] = tiny_cnn::detail::create_dropout;
+    factory_registry["SoftmaxWithLoss"] = tiny_cnn::detail::create_softmax;
+    factory_registry["SigmoidCrossEntropyLoss"] = tiny_cnn::detail::create_sigmoid;
+    factory_registry["ReLU"] = tiny_cnn::detail::create_relu;
+    factory_registry["Sigmoid"] = tiny_cnn::detail::create_sigmoid;
+    factory_registry["TanH"] = tiny_cnn::detail::create_tanh;
+    factory_registry["Softmax"] = tiny_cnn::detail::create_tanh;
 
     if (factory_registry.find(layer.type()) == factory_registry.end())
         throw std::runtime_error("layer parser not found");
@@ -405,9 +466,9 @@ inline void load(const caffe::LayerParameter& src, tiny_cnn::layer_base *dst) {
     typedef std::function<void(const caffe::LayerParameter&, tiny_cnn::layer_base*)> factoryimpl;
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
-    factory_registry["Convolution"] = ::detail::load_weights_conv;
-    factory_registry["InnerProduct"] = ::detail::load_weights_fullyconnected;
-    factory_registry["Pooling"] = ::detail::load_weights_pool;
+    factory_registry["Convolution"] = tiny_cnn::detail::load_weights_conv;
+    factory_registry["InnerProduct"] = tiny_cnn::detail::load_weights_fullyconnected;
+    factory_registry["Pooling"] = tiny_cnn::detail::load_weights_pool;
 
     if (factory_registry.find(src.type()) == factory_registry.end())
         throw std::runtime_error("layer parser not found");
@@ -428,7 +489,10 @@ struct layer_node {
 // parse caffe net and interpret as single layer vector
 class caffe_layer_vector {
 public:
-    caffe_layer_vector(const caffe::NetParameter& net) {
+    caffe_layer_vector(const caffe::NetParameter& net_orig) : net(net_orig) {
+        if (net.layers_size() > 0)
+            upgradev1net(net_orig, &net);
+
         nodes.reserve(net.layer_size());
 
         for (int i = 0; i < net.layer_size(); i++) {
@@ -472,6 +536,157 @@ public:
     }
 
 private:
+    void upgradev1net(const caffe::NetParameter& old, caffe::NetParameter *dst) const {
+        dst->CopyFrom(old);
+        dst->clear_layers();
+        dst->clear_layer();
+
+        for (int i = 0; i < old.layers_size(); i++)
+            upgradev1layer(old.layers(i), dst->add_layer());
+    }
+
+    const char* v1type2name(caffe::V1LayerParameter_LayerType type) const {
+        switch (type) {
+        case caffe::V1LayerParameter_LayerType_NONE:
+            return "";
+        case caffe::V1LayerParameter_LayerType_ABSVAL:
+            return "AbsVal";
+        case caffe::V1LayerParameter_LayerType_ACCURACY:
+            return "Accuracy";
+        case caffe::V1LayerParameter_LayerType_ARGMAX:
+            return "ArgMax";
+        case caffe::V1LayerParameter_LayerType_BNLL:
+            return "BNLL";
+        case caffe::V1LayerParameter_LayerType_CONCAT:
+            return "Concat";
+        case caffe::V1LayerParameter_LayerType_CONTRASTIVE_LOSS:
+            return "ContrastiveLoss";
+        case caffe::V1LayerParameter_LayerType_CONVOLUTION:
+            return "Convolution";
+        case caffe::V1LayerParameter_LayerType_DECONVOLUTION:
+            return "Deconvolution";
+        case caffe::V1LayerParameter_LayerType_DATA:
+            return "Data";
+        case caffe::V1LayerParameter_LayerType_DROPOUT:
+            return "Dropout";
+        case caffe::V1LayerParameter_LayerType_DUMMY_DATA:
+            return "DummyData";
+        case caffe::V1LayerParameter_LayerType_EUCLIDEAN_LOSS:
+            return "EuclideanLoss";
+        case caffe::V1LayerParameter_LayerType_ELTWISE:
+            return "Eltwise";
+        case caffe::V1LayerParameter_LayerType_EXP:
+            return "Exp";
+        case caffe::V1LayerParameter_LayerType_FLATTEN:
+            return "Flatten";
+        case caffe::V1LayerParameter_LayerType_HDF5_DATA:
+            return "HDF5Data";
+        case caffe::V1LayerParameter_LayerType_HDF5_OUTPUT:
+            return "HDF5Output";
+        case caffe::V1LayerParameter_LayerType_HINGE_LOSS:
+            return "HingeLoss";
+        case caffe::V1LayerParameter_LayerType_IM2COL:
+            return "Im2col";
+        case caffe::V1LayerParameter_LayerType_IMAGE_DATA:
+            return "ImageData";
+        case caffe::V1LayerParameter_LayerType_INFOGAIN_LOSS:
+            return "InfogainLoss";
+        case caffe::V1LayerParameter_LayerType_INNER_PRODUCT:
+            return "InnerProduct";
+        case caffe::V1LayerParameter_LayerType_LRN:
+            return "LRN";
+        case caffe::V1LayerParameter_LayerType_MEMORY_DATA:
+            return "MemoryData";
+        case caffe::V1LayerParameter_LayerType_MULTINOMIAL_LOGISTIC_LOSS:
+            return "MultinomialLogisticLoss";
+        case caffe::V1LayerParameter_LayerType_MVN:
+            return "MVN";
+        case caffe::V1LayerParameter_LayerType_POOLING:
+            return "Pooling";
+        case caffe::V1LayerParameter_LayerType_POWER:
+            return "Power";
+        case caffe::V1LayerParameter_LayerType_RELU:
+            return "ReLU";
+        case caffe::V1LayerParameter_LayerType_SIGMOID:
+            return "Sigmoid";
+        case caffe::V1LayerParameter_LayerType_SIGMOID_CROSS_ENTROPY_LOSS:
+            return "SigmoidCrossEntropyLoss";
+        case caffe::V1LayerParameter_LayerType_SILENCE:
+            return "Silence";
+        case caffe::V1LayerParameter_LayerType_SOFTMAX:
+            return "Softmax";
+        case caffe::V1LayerParameter_LayerType_SOFTMAX_LOSS:
+            return "SoftmaxWithLoss";
+        case caffe::V1LayerParameter_LayerType_SPLIT:
+            return "Split";
+        case caffe::V1LayerParameter_LayerType_SLICE:
+            return "Slice";
+        case caffe::V1LayerParameter_LayerType_TANH:
+            return "TanH";
+        case caffe::V1LayerParameter_LayerType_WINDOW_DATA:
+            return "WindowData";
+        case caffe::V1LayerParameter_LayerType_THRESHOLD:
+            return "Threshold";
+        default:
+            throw std::runtime_error("unknown v1 layer-type");
+        }
+    }
+
+    void upgradev1layer(const caffe::V1LayerParameter& old, caffe::LayerParameter *dst) const {
+        dst->Clear();
+
+        for (int i = 0; i < old.bottom_size(); i++)
+            dst->add_bottom(old.bottom(i));
+
+        for (int i = 0; i < old.top_size(); i++)
+            dst->add_top(old.top(i));
+
+        if (old.has_name()) dst->set_name(old.name());
+        if (old.has_type()) dst->set_type(v1type2name(old.type()));
+
+        for (int i = 0; i < old.blobs_size(); i++)
+            dst->add_blobs()->CopyFrom(old.blobs(i));
+
+        for (int i = 0; i < old.param_size(); i++) {
+            while (dst->param_size() <= i) dst->add_param();
+            dst->mutable_param(i)->set_name(old.param(i));
+        }
+        #define COPY_PARAM(name) if (old.has_##name##_param()) dst->mutable_##name##_param()->CopyFrom(old.##name##_param())
+
+        COPY_PARAM(accuracy);
+        COPY_PARAM(argmax);
+        COPY_PARAM(concat);
+        COPY_PARAM(contrastive_loss);
+        COPY_PARAM(convolution);
+        COPY_PARAM(data);
+        COPY_PARAM(dropout);
+        COPY_PARAM(dummy_data);
+        COPY_PARAM(eltwise);
+        COPY_PARAM(exp);
+        COPY_PARAM(hdf5_data);
+        COPY_PARAM(hdf5_output);
+        COPY_PARAM(hinge_loss);
+        COPY_PARAM(image_data);
+        COPY_PARAM(infogain_loss);
+        COPY_PARAM(inner_product);
+        COPY_PARAM(lrn);
+        COPY_PARAM(memory_data);
+        COPY_PARAM(mvn);
+        COPY_PARAM(pooling);
+        COPY_PARAM(power);
+        COPY_PARAM(relu);
+        COPY_PARAM(sigmoid);
+        COPY_PARAM(softmax);
+        COPY_PARAM(slice);
+        COPY_PARAM(tanh);
+        COPY_PARAM(threshold);
+        COPY_PARAM(window_data);
+        COPY_PARAM(transform);
+        COPY_PARAM(loss);
+        #undef COPY_PARAM
+    }
+
+    caffe::NetParameter net;
     layer_node *root_node;
     std::map<std::string, layer_node*> layer_table; // layer name -> layer
     std::map<std::string, layer_node*> blob_table; // blob name -> bottom holder
@@ -492,43 +707,44 @@ private:
 inline std::shared_ptr<tiny_cnn::network<tiny_cnn::mse, tiny_cnn::adagrad>>
 create_net_from_caffenet(const caffe::NetParameter& layer, const tiny_cnn::layer_shape_t& data_shape)
 {
-::detail::caffe_layer_vector src_net(layer);
-shape_t shape;
+    tiny_cnn::detail::caffe_layer_vector src_net(layer);
+    shape_t shape;
 
-if (data_shape.size() > 0) {
-    shape = data_shape;
-}
-else {
-    if (layer.input_shape_size() == 0)
-        throw std::runtime_error("input_shape not found in caffemodel. must specify input shape explicitly");
-    int depth = static_cast<int>(layer.input_shape(0).dim(1));
-    int width = static_cast<int>(layer.input_shape(0).dim(2));
-    int height = static_cast<int>(layer.input_shape(0).dim(3));
-    shape = tiny_cnn::layer_shape_t(width, height, depth);
-}
-
-auto dst_net = std::make_shared<tiny_cnn::network<tiny_cnn::mse, tiny_cnn::adagrad>>(layer.name());
-
-for (size_t i = 0; i < src_net.size(); i++) {
-    auto type = src_net[i].type();
-
-    if (::detail::layer_skipped(type)) {
-        continue;
+    if (data_shape.size() > 0) {
+        shape = data_shape;
+    }
+    else {
+        if (layer.input_shape_size() == 0)
+            throw std::runtime_error("input_shape not found in caffemodel. must specify input shape explicitly");
+        int depth = static_cast<int>(layer.input_shape(0).dim(1));
+        int width = static_cast<int>(layer.input_shape(0).dim(2));
+        int height = static_cast<int>(layer.input_shape(0).dim(3));
+        shape = tiny_cnn::layer_shape_t(width, height, depth);
     }
 
-    if (!::detail::layer_supported(type))
-        throw std::runtime_error("error: tiny-cnn does not support this layer type:" + type);
+    auto dst_net = std::make_shared<tiny_cnn::network<tiny_cnn::mse, tiny_cnn::adagrad>>(layer.name());
 
-    shape_t shape_next = shape;
-    auto layer = ::detail::create(src_net[i], shape, &shape_next);
+    for (size_t i = 0; i < src_net.size(); i++) {
+        auto type = src_net[i].type();
 
-    std::cout << "convert " << type << " => " << typeid(*layer).name() << std::endl;
+        if (tiny_cnn::detail::layer_skipped(type)) {
+            continue;
+        }
 
-    dst_net->add(layer);
-    shape = shape_next;
-}
+        if (!tiny_cnn::detail::layer_supported(type))
+            throw std::runtime_error("error: tiny-cnn does not support this layer type:" + type);
 
-return dst_net;
+        shape_t shape_next = shape;
+        auto layer = tiny_cnn::detail::create(src_net[i], shape, &shape_next);
+
+        std::cout << "convert " << type << " => " << typeid(*layer).name() << std::endl;
+        std::cout << " shape:" << shape_next << std::endl;
+
+        dst_net->add(layer);
+        shape = shape_next;
+    }
+
+    return dst_net;
 }
 
 /**
@@ -540,13 +756,30 @@ return dst_net;
 inline std::shared_ptr<tiny_cnn::network<tiny_cnn::mse, tiny_cnn::adagrad>>
 create_net_from_caffenet(const std::string& caffebinarymodel, const tiny_cnn::layer_shape_t& data_shape)
 {
-std::ifstream ifs(caffebinarymodel.c_str(), std::ios::in | std::ios::binary);
-caffe::NetParameter np;
+    /*std::ifstream ifs(caffebinarymodel.c_str(), std::ios::in | std::ios::binary);
+    caffe::NetParameter np;
 
-if (!np.ParseFromIstream(&ifs))
-    throw std::runtime_error("failed to parse");
+    if (ifs.fail() || ifs.bad())
+        throw std::runtime_error("failed to open file:" + caffebinarymodel);
 
-return create_net_from_caffenet(np, data_shape);
+    if (!np.ParseFromIstream(&ifs))
+        throw std::runtime_error("failed to parse");*/
+
+    int fd = _open(caffebinarymodel.c_str(), _O_RDONLY | _O_BINARY);
+    google::protobuf::io::FileInputStream rawstr(fd);
+    google::protobuf::io::CodedInputStream codedstr(&rawstr);
+
+    codedstr.SetTotalBytesLimit(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()/2);
+
+    caffe::NetParameter np;
+
+    if (!np.ParseFromCodedStream(&codedstr)) {
+        _close(fd);
+        throw std::runtime_error("failed to parse");
+    }
+
+    _close(fd);
+    return create_net_from_caffenet(np, data_shape);
 }
 
 /**
@@ -557,7 +790,7 @@ return create_net_from_caffenet(np, data_shape);
 inline std::shared_ptr<tiny_cnn::network<tiny_cnn::mse, tiny_cnn::adagrad>>
 create_net_from_caffeproto(const std::string& caffeprototxt)
 {
-int fd = _open(caffeprototxt.c_str(), O_RDONLY);
+int fd = _open(caffeprototxt.c_str(), _O_RDONLY);
 if (fd == -1)
     throw std::runtime_error("file not fonud: " + caffeprototxt);
 
@@ -582,7 +815,7 @@ int tinycnn_layer_idx = 0;
 for (int caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
     auto type = src_net[caffe_layer_idx].type();
 
-    if (::detail::layer_skipped(type) || ::detail::layer_is_activation(type)) {
+    if (::detail::layer_skipped(type) || !::detail::layer_has_weights(type)) {
         continue;
     }
 
