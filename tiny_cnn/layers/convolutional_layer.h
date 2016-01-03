@@ -142,6 +142,7 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
+        init();
     }
 
     ///< number of incoming connections for each output unit
@@ -249,7 +250,7 @@ public:
 
         for_i(parallelize_, out_.depth_, [&](int o) {
             for (layer_size_t inc = 0; inc < in_.depth_; inc++) {
-                if (!tbl_.is_connected(o, inc)) return;
+                if (!tbl_.is_connected(o, inc)) continue;
 
                 const float_t *pw = &this->W_[weight_.get_index(0, 0, in_.depth_ * o + inc)];
                 const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
