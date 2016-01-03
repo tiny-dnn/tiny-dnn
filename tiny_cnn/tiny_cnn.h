@@ -53,7 +53,7 @@
 #include "io/display.h"
 #include "io/layer_factory.h"
 
-#ifdef CNN_CAFFEINATED
+#ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
 #include "io/caffe/layer_factory.h"
 #endif
