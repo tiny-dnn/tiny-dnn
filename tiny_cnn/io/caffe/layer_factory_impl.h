@@ -469,7 +469,7 @@ inline std::shared_ptr<layer_base> create(const caffe::LayerParameter& layer, co
     factory_registry["ReLU"] = detail::create_relu;
     factory_registry["Sigmoid"] = detail::create_sigmoid;
     factory_registry["TanH"] = detail::create_tanh;
-    factory_registry["Softmax"] = detail::create_tanh;
+    factory_registry["Softmax"] = detail::create_softmax;
 
     if (factory_registry.find(layer.type()) == factory_registry.end())
         throw std::runtime_error("layer parser not found");
