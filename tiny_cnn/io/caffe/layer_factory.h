@@ -37,16 +37,19 @@
 
 typedef tiny_cnn::layer_shape_t shape_t;
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 #define _NOMINMAX
 #include <io.h>
 #include <fcntl.h>
-#ifndef O_RDONLY
-#define _O_RDONLY O_RDONLY
-#endif
-#ifndef O_BINARY
-#define _O_BINARY O_BINARY
-#endif
+#define CNN_OPEN_BINARY(filename) open(filename, _O_RDONLY|_O_BINARY)
+#define CNN_OPEN_TXT(filename) open(filename, _O_RDONLY)
+#else
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#define CNN_OPEN_BINARY(filename) open(filename, O_RDONLY)
+#define CNN_OPEN_TXT(filename) open(filename, O_RDONLY)
 #endif
 
 namespace tiny_cnn {
@@ -77,6 +80,17 @@ inline bool get_kernel_size_2d(const param& p, layer_size_t *kernel) {
     }
     return false;
 }
+
+inline layer_size_t get_kernel_size_2d(const caffe::ConvolutionParameter& p) {
+    layer_size_t window_size;
+    if (!get_kernel_size_2d(p, &window_size)) {
+        if (p.kernel_size_size() > 1)
+            throw std::runtime_error("unsupported kernel shape");
+        window_size = p.kernel_size(0);
+    }
+    return window_size;
+}
+
 
 inline std::shared_ptr<layer_base> create_max_pool(int pool_size, int stride, const shape_t& bottom_shape, shape_t *top_shape)
 {
@@ -115,9 +129,6 @@ inline std::shared_ptr<layer_base> create_tanh(const caffe::LayerParameter& laye
 }
 
 inline std::shared_ptr<layer_base> create_pooling(const caffe::LayerParameter& layer, const shape_t& bottom_shape, shape_t *top_shape) {
-    using max_pool = max_pooling_layer<activation::identity>;
-    using ave_pool = average_pooling_layer<activation::identity>;
-
     if (!layer.has_pooling_param())
         throw std::runtime_error("pool param missing");
 
@@ -162,7 +173,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src, layer_
     auto weights = src.blobs(0);
     int curr = 0;
 
-    if (dst->out_size() * dst->in_size() != weights.data_size())
+    if (dst->out_size() * dst->in_size() != (size_t)weights.data_size())
         throw std::runtime_error(std::string("layer size mismatch!") +
             "caffe(" + src.name() + "):" + std::to_string(weights.data_size()) + "\n" +
             "tiny-cnn(" + dst->layer_type() + "):" + std::to_string(dst->weight().size()));
@@ -171,7 +182,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src, layer_
         for (size_t i = 0; i < dst->in_size(); i++)
             dst->weight()[i * dst->out_size() + o] = weights.data(curr++); // transpose
 
-                                                                        // fill bias
+    // fill bias
     if (src.inner_product_param().bias_term()) {
         auto biases = src.blobs(1);
         for (size_t o = 0; o < dst->out_size(); o++)
@@ -215,22 +226,33 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer_base *dst)
 {
     // fill weight
     auto weights = src.blobs(0);
+    int out_channels = dst->out_shape().depth_;
+    int in_channels = dst->in_shape().depth_;
+    connection_table table;
+    auto conv_param = src.convolution_param();
+    int dim = weights.data_size();
+    int dst_idx = 0;
+    int src_idx = 0;
+    int window_size = get_kernel_size_2d(conv_param);
 
-    /*for (size_t o = 0; o < out_channels; o++)
-        for (size_t i = 0; i < in_channels; i++)
-            for (size_t y = 0; y < window_size; y++)
-                for (size_t x = 0; x < window_size; x++)
-                    conv->weight_at(i, o, x, y) = weights.data(curr++);
-                    */
+    if (conv_param.has_group())
+        table = connection_table(conv_param.group(), in_channels, out_channels);
 
-    for (int o = 0; o < weights.data_size(); o++) {
-        dst->weight()[o] = weights.data(o);
+    for (int o = 0; o < out_channels; o++) {
+        for (int i = 0; i < in_channels; i++) {
+            if (!table.is_connected(o, i)) {
+                dst_idx += window_size * window_size;
+                continue;
+             }
+             for (int x = 0; x < window_size * window_size; x++)
+                dst->weight()[dst_idx++] = weights.data(src_idx++);
+        }
     }
 
-    // fill bias
-    if (src.convolution_param().bias_term()) {
+    //// fill bias
+    if (conv_param.bias_term()) {
         auto biases = src.blobs(1);
-        for (int o = 0; o < biases.data_size(); o++)
+        for (int o = 0; o < out_channels; o++)
             dst->bias()[o] = biases.data(o);
     }
 }
@@ -313,13 +335,7 @@ inline std::shared_ptr<layer_base> create_convlayer(const caffe::LayerParameter&
     in_width = bottom_shape.width_;
     in_height = bottom_shape.height_;
     has_bias = conv_param.bias_term();
-    window_size = 0;
-
-    if (!get_kernel_size_2d(conv_param, &window_size)) {
-        if (conv_param.kernel_size_size() > 1)
-            throw std::runtime_error("unsupported kernel shape");
-        window_size = conv_param.kernel_size(0);
-    }
+    window_size = get_kernel_size_2d(conv_param);
 
     // padding
     if (conv_param.pad_size() == 1 || (conv_param.has_pad_w() && conv_param.has_pad_h())) {
@@ -363,33 +379,7 @@ inline std::shared_ptr<layer_base> create_convlayer(const caffe::LayerParameter&
 
     // set weight (optional)
     if (layer.blobs_size() > 0) { // blobs(0)...weight, blobs(1)...bias
-
-        // fill weight
-        auto weights = layer.blobs(0);
-
-        int dim = weights.data_size();
-        int curr = 0;
-
-        for (size_t o = 0; o < out_channels; o++) {
-            for (size_t i = 0; i < in_channels; i++) {
-                if (!table.is_connected(o, i))
-                    continue;
-                for (size_t y = 0; y < window_size; y++) {
-                    for (size_t x = 0; x < window_size; x++) {
-                        conv->weight_at(i, o, x, y) = weights.data(curr++);
-                    }
-                }
-            }
-        }
-
-        if (curr != dim)
-            throw std::runtime_error("weight dimension mismatch");
-        //// fill bias
-        if (has_bias) {
-            auto biases = layer.blobs(1);
-            for (size_t o = 0; o < out_channels; o++)
-                conv->bias()[o] = biases.data(o);
-        }
+        load_weights_conv(layer, conv.get());
     }
     *top_shape = conv->out_shape();
     return conv;
@@ -406,7 +396,7 @@ inline bool layer_has_weights(const std::string& type) {
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
         "ReLU", "Sigmoid", "TanH", "Softmax"
     };
-    for (int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
+    for (size_t i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
         if (activations[i] == type) return false;
     }
     return true;
@@ -653,7 +643,7 @@ private:
             while (dst->param_size() <= i) dst->add_param();
             dst->mutable_param(i)->set_name(old.param(i));
         }
-        #define COPY_PARAM(name) if (old.has_##name##_param()) dst->mutable_##name##_param()->CopyFrom(old.##name##_param())
+        #define COPY_PARAM(name) if (old.has_##name##_param ()) dst->mutable_##name##_param()->CopyFrom(old.name##_param())
 
         COPY_PARAM(accuracy);
         COPY_PARAM(argmax);
@@ -749,6 +739,32 @@ create_net_from_caffenet(const caffe::NetParameter& layer, const layer_shape_t& 
     return dst_net;
 }
 
+inline void read_proto_from_text(const std::string& caffeprototxt, google::protobuf::Message *message)
+{
+    int fd = CNN_OPEN_TXT(caffeprototxt.c_str());
+    if (fd == -1)
+        throw std::runtime_error("file not fonud: " + caffeprototxt);
+
+    google::protobuf::io::FileInputStream input(fd);
+    input.SetCloseOnDelete(true);
+
+    if (!google::protobuf::TextFormat::Parse(&input, message))
+        throw std::runtime_error("failed to parse");
+}
+
+inline void read_proto_from_binary(const std::string& caffebinarymodel, google::protobuf::Message *message)
+{
+    int fd = CNN_OPEN_BINARY(caffebinarymodel.c_str());
+    google::protobuf::io::FileInputStream rawstr(fd);
+    google::protobuf::io::CodedInputStream codedstr(&rawstr);
+
+    rawstr.SetCloseOnDelete(true);
+    codedstr.SetTotalBytesLimit(std::numeric_limits<int>::max(), std::numeric_limits<int>::max() / 2);
+
+    if (!message->ParseFromCodedStream(&codedstr))
+        throw std::runtime_error("failed to parse");
+}
+
 /**
 * create whole network and load weights from caffe's netparameter
 *
@@ -758,29 +774,9 @@ create_net_from_caffenet(const caffe::NetParameter& layer, const layer_shape_t& 
 inline std::shared_ptr<network<mse, adagrad>>
 create_net_from_caffenet(const std::string& caffebinarymodel, const layer_shape_t& data_shape)
 {
-    /*std::ifstream ifs(caffebinarymodel.c_str(), std::ios::in | std::ios::binary);
     caffe::NetParameter np;
 
-    if (ifs.fail() || ifs.bad())
-        throw std::runtime_error("failed to open file:" + caffebinarymodel);
-
-    if (!np.ParseFromIstream(&ifs))
-        throw std::runtime_error("failed to parse");*/
-
-    int fd = _open(caffebinarymodel.c_str(), O_RDONLY | O_BINARY);
-    google::protobuf::io::FileInputStream rawstr(fd);
-    google::protobuf::io::CodedInputStream codedstr(&rawstr);
-
-    codedstr.SetTotalBytesLimit(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()/2);
-
-    caffe::NetParameter np;
-
-    if (!np.ParseFromCodedStream(&codedstr)) {
-        _close(fd);
-        throw std::runtime_error("failed to parse");
-    }
-
-    _close(fd);
+    read_proto_from_binary(caffebinarymodel, &np);
     return create_net_from_caffenet(np, data_shape);
 }
 
@@ -792,63 +788,46 @@ create_net_from_caffenet(const std::string& caffebinarymodel, const layer_shape_
 inline std::shared_ptr<network<mse, adagrad>>
 create_net_from_caffeproto(const std::string& caffeprototxt)
 {
-    int fd = _open(caffeprototxt.c_str(), O_RDONLY);
-    if (fd == -1)
-        throw std::runtime_error("file not fonud: " + caffeprototxt);
-
     caffe::NetParameter np;
 
-    google::protobuf::io::FileInputStream input(fd);
-    input.SetCloseOnDelete(true);
-
-    if (!google::protobuf::TextFormat::Parse(&input, &np))
-        throw std::runtime_error("failed to parse");
-
+    read_proto_from_text(caffeprototxt, &np);
     return create_net_from_caffenet(np, layer_shape_t());
 }
 
 template <typename E, typename O>
 inline void load_weight_from_caffemodel(const caffe::NetParameter& layer, network<E, O> *net)
 {
-    ::detail::caffe_layer_vector src_net(layer);
+    detail::caffe_layer_vector src_net(layer);
 
     int tinycnn_layer_idx = 0;
 
     for (int caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
         auto type = src_net[caffe_layer_idx].type();
 
-        if (::detail::layer_skipped(type) || !::detail::layer_has_weights(type)) {
+        if (detail::layer_skipped(type) || !detail::layer_has_weights(type)) {
             continue;
         }
 
-        if (!::detail::layer_supported(type))
+        if (!detail::layer_supported(type))
             throw std::runtime_error("error: tiny-cnn does not support this layer type:" + type);
 
-        while (tinycnn_layer_idx < net->depth() && !::detail::layer_match(type, (*net)[tinycnn_layer_idx]->layer_type())) {
+        while (tinycnn_layer_idx < net->depth() && !detail::layer_match(type, (*net)[tinycnn_layer_idx]->layer_type())) {
             tinycnn_layer_idx++;
         }
         if (tinycnn_layer_idx >= net->depth()) break;
 
         // load weight
-        ::detail::load(src_net[caffe_layer_idx], (*net)[tinycnn_layer_idx]);
+        detail::load(src_net[caffe_layer_idx], (*net)[tinycnn_layer_idx]);
     }
 }
+
 
 template <typename E, typename O>
 inline void load_weight_from_caffemodel(const std::string& caffeprototxt, network<E, O> *net)
 {
-    int fd = _open(caffeprototxt.c_str(), O_RDONLY);
-    if (fd == -1)
-        throw std::runtime_error("file not fonud: " + caffeprototxt);
-
     caffe::NetParameter np;
 
-    google::protobuf::io::FileInputStream input(fd);
-    input.SetCloseOnDelete(true);
-
-    if (!google::protobuf::TextFormat::Parse(&input, &np))
-        throw std::runtime_error("failed to parse");
-
+    read_proto_from_text(caffeprototxt, &np);
     return load_weight_from_caffemodel(np, net);
 }
 
