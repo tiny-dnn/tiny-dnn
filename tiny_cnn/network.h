@@ -407,6 +407,10 @@ public:
         return layers_.depth();
     }
 
+    index3d<layer_size_t> in_shape() const {
+        return layers_.head()->in_shape();
+    }
+
     template <typename WeightInit>
     network& weight_init(const WeightInit& f) {
         auto ptr = std::make_shared<WeightInit>(f);
