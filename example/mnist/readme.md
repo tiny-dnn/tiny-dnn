@@ -8,9 +8,6 @@
 ## Constructing Model
 Let's define the LeNet network. At first, you have to select loss-function and learning-algorithm by declaration of network class. Then, you can add layers from top to bottom by operator <<.
 
-LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each feature maps get different set of inputs (and hopefully they become compelemtary feature extractor).
-tiny-cnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
-
 ```cpp
 // specify loss-function and learning strategy
 network<mse, adagrad> nn;
@@ -38,6 +35,9 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-ou
     << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
     << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
 ```
+
+What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each feature maps get different set of inputs (and hopefully they become compelemtary feature extractor).
+tiny-cnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
 
 ## Loading Dataset
 Tiny-cnn supports idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
