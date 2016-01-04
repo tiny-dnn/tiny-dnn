@@ -25,24 +25,53 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include "tiny_cnn.h"
-
+#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
+using namespace std;
 
-int main(int argc,char **argv) {
-    if (argc!=2){
-        std::cerr<<"Usage : "<<argv[0]<<" path_to_data (example:../data)"<<std::endl;
-        return -1;
-    }
-     // construct LeNet-5 architecture
-    network<mse, gradient_descent_levenberg_marquardt> nn;
+// rescale output to 0-100
+template <typename Activation>
+double rescale(double x) {
+    Activation a;
+    return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
+}
 
-        // connection table [Y.Lecun, 1998 Table.1]
+// convert tiny_cnn::image to cv::Mat and resize
+cv::Mat image2mat(image<>& img) {
+    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
+    cv::Mat resized;
+    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
+    return resized;
+}
+
+void convert_image(const std::string& imagefilename,
+    double minv,
+    double maxv,
+    int w,
+    int h,
+    vec_t& data) {
+    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
+    if (img.data == nullptr) return; // cannot open, or it's not an image
+
+    cv::Mat_<uint8_t> resized;
+    cv::resize(img, resized, cv::Size(w, h));
+
+    // mnist dataset is "white on black", so negate required
+    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
+        [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
+}
+
+
+void construct_net(network<mse, adagrad>& nn) {
+    // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
-    static const bool connection [] = {
+    static const bool tbl[] = {
         O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
         O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
         O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
@@ -53,26 +82,58 @@ int main(int argc,char **argv) {
 #undef O
 #undef X
 
-      nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32 in, 5x5 kernel, 1-6 fmaps conv
-       << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28 in, 6 fmaps, 2x2 subsampling
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,connection_table(connection, 6, 16)) // with connection-table
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
-       << fully_connected_layer<tan_h>(120, 10);
+    // construct nets
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
+       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
+            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
+       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
+       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
+       << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
+}
 
-    std::vector<label_t> test_labels;
-      std::vector<vec_t> test_images;
+void recognize(const std::string& dictionary, const std::string& filename) {
+    network<mse, adagrad> nn;
 
-    parse_mnist_labels(std::string(argv[1])+"/t10k-labels.idx1-ubyte", &test_labels);
-    parse_mnist_images(std::string(argv[1])+"/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 2, 2);
-   
+    construct_net(nn);
 
- // load
-    std::ifstream ifs("LeNet-weights");
+    // load nets
+    ifstream ifs(dictionary.c_str());
     ifs >> nn;
 
-           // test and show results
-    nn.test(test_images, test_labels).print_detail(std::cout);
+    // convert imagefile to vec_t
+    vec_t data;
+    convert_image(filename, -1.0, 1.0, 32, 32, data);
 
-    return 0;
+    // recognize
+    auto res = nn.predict(data);
+    vector<pair<double, int> > scores;
+
+    // sort & print top-3
+    for (int i = 0; i < 10; i++)
+        scores.emplace_back(rescale<tan_h>(res[i]), i);
+
+    sort(scores.begin(), scores.end(), greater<pair<double, int>>());
+
+    for (int i = 0; i < 3; i++)
+        cout << scores[i].second << "," << scores[i].first << endl;
+
+    // visualize outputs of each layer
+    for (size_t i = 0; i < nn.depth(); i++) {
+        auto out_img = nn[i]->output_to_image();
+        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+    }
+    // visualize filter shape of first convolutional layer
+    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+    cv::imshow("weights:", image2mat(weight));
+
+    cv::waitKey(0);
+}
+
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        cout << "please specify image file";
+        return 0;
+    }
+    recognize("LeNet-weights", argv[1]);
 }
