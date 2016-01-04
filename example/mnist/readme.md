@@ -1,6 +1,6 @@
 # MNIST Digit Classification
 
-[MNIST](http://yann.lecun.com/exdb/mnist/) is well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digits recognition task. LeNet-5 is proposed by Y.LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer, and delete connection table which introduce sparsity between S2-C3 layer.
+[MNIST](http://yann.lecun.com/exdb/mnist/) is well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digits recognition task. LeNet-5 is proposed by Y.LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
 ## Prerequisites for this example
 - OpenCV
