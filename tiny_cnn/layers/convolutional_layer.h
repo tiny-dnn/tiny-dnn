@@ -28,6 +28,7 @@
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/activations/activation_function.h"
+#include "tiny_cnn/layers/partial_connected_layer.h"
 
 
 namespace tiny_cnn {
@@ -171,37 +172,7 @@ public:
 
         std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
 
-        // propagate delta to previous layer
-        //for (int inc = 0; inc < in_.depth_; inc++) {
-        for_i(in_.depth_, [&](int inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
-                if (!tbl_.is_connected(outc, inc)) continue;
-
-                const float_t *pw = &Whessian_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
-                const float_t *pdelta_src = &current_delta2[out_.get_index(0, 0, outc)];
-                float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
-
-                for (layer_size_t y = 0; y < out_.height_; y++) {
-                    for (layer_size_t x = 0; x < out_.width_; x++) {
-                        const float_t * ppw = pw;
-                        const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
-                        float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
-
-                        for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
-                                ppdelta_dst[wy * in_padded_.width_ + wx] += sqr(*ppw++) * ppdelta_src;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        for_i(parallelize_, in_padded_.size(), [&](int i) {
-            (*prev_delta)[i] *= sqr(prev_h.df(prev_out[i]));
-        });
-
         // accumulate dw
-        //for (int inc = 0; inc < in_.depth_; inc++) {
         for_i(in_.depth_, [&](int inc) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
 
@@ -232,13 +203,46 @@ public:
             }
         }
 
+        // propagate delta to previous layer
+        for_i(in_.depth_, [&](int inc) {
+            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+                if (!tbl_.is_connected(outc, inc)) continue;
+
+                const float_t *pw = &W_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+                const float_t *pdelta_src = &current_delta2[out_.get_index(0, 0, outc)];
+                float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+
+                for (layer_size_t y = 0; y < out_.height_; y++) {
+                    for (layer_size_t x = 0; x < out_.width_; x++) {
+                        const float_t * ppw = pw;
+                        const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
+                        float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
+
+                        for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                                ppdelta_dst[wy * in_padded_.width_ + wx] += sqr(*ppw++) * ppdelta_src;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        for_i(parallelize_, in_padded_.size(), [&](int i) {
+            (*prev_delta)[i] *= sqr(prev_h.df(prev_out[i]));
+        });
+
         if (pad_type_ == padding::same)
             copy_and_unpad_delta(prev_delta2_padded_, prev_delta2_);
+
+        CNN_LOG_VECTOR(current_delta2, "[pc]curr-delta2");
+        CNN_LOG_VECTOR(prev_delta2_, "[pc]prev-delta2");
+        CNN_LOG_VECTOR(Whessian_, "[pc]whessian");
 
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
-    virtual const vec_t& forward_propagation(const vec_t& in_raw, size_t worker_index)
+    virtual const vec_t& forward_propagation(const vec_t& in_raw, size_t worker_index) override
     {
         copy_and_pad_input(in_raw, worker_index);
 
@@ -280,10 +284,15 @@ public:
             }
         });
 
-
         for_i(parallelize_, out_size_, [&](int i) {
             out[i] = h_.f(a, i);
         });
+
+        CNN_LOG_VECTOR(in_raw, "[pc]in");
+        CNN_LOG_VECTOR(W_, "[pc]w");
+        CNN_LOG_VECTOR(a, "[pc]a");
+        CNN_LOG_VECTOR(out, "[pc]forward");
+
         return next_ ? next_->forward_propagation(out, worker_index) : out;
     }
 
@@ -301,7 +310,6 @@ public:
         std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
 
         // propagate delta to previous layer
-        //for (int inc = 0; inc < in_.depth_; inc++) {
         for_i(in_.depth_, [&](int inc) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
@@ -325,12 +333,12 @@ public:
                 }
             }
         });
+
         for_i(parallelize_, in_padded_.size(), [&](int i) {
             (*prev_delta)[i] *= prev_h.df(prev_out[i]);
         });
 
         // accumulate dw
-        //for (int inc = 0; inc < in_.depth_; inc++) {
         for_i(in_.depth_, [&](int inc) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
 
@@ -361,6 +369,11 @@ public:
 
         if (pad_type_ == padding::same)
             copy_and_unpad_delta(prev_delta_padded_[index], prev_delta_[index]);
+
+        CNN_LOG_VECTOR(curr_delta, "[pc]curr_delta");
+        CNN_LOG_VECTOR(prev_delta_[index], "[pc]prev_delta");
+        CNN_LOG_VECTOR(dW, "[pc]dW");
+        CNN_LOG_VECTOR(db, "[pc]db");
 
         return prev_->back_propagation(prev_delta_[index], index);
     }
@@ -483,7 +496,7 @@ private:
 
 #if 0
 
-template<typename Activation = activation::identity, typename Filter = filter_none>
+template<typename Activation = activation::identity>
 class convolutional_layer : public partial_connected_layer<Activation> {
 public:
     typedef partial_connected_layer<Activation> Base;
@@ -501,7 +514,7 @@ public:
      *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
      *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
      **/
-    convolutional_layer(layer_size_t in_width,
+    convolutional_layer_old(layer_size_t in_width,
                         layer_size_t in_height,
                         layer_size_t window_size,
                         layer_size_t in_channels,
@@ -530,7 +543,7 @@ public:
      *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
      *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
      **/
-    convolutional_layer(layer_size_t in_width,
+    convolutional_layer_old(layer_size_t in_width,
                         layer_size_t in_height,
                         layer_size_t window_size,
                         layer_size_t in_channels,
@@ -546,7 +559,7 @@ public:
           window_size_(window_size)
     {
         init_connection(connection_table, pad_type);
-        this->remap();
+        //this->remap();
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
