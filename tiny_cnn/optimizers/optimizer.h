@@ -41,7 +41,7 @@ struct optimizer {
 };
 
 // helper class to hold N values for each weight
-template <typename value_t, int N, bool usesHessian = false>
+template <int N, bool usesHessian = false>
 struct stateful_optimizer : public optimizer<usesHessian> {
     void reset() override {
         for (auto& e : E_) e.clear();
@@ -49,13 +49,13 @@ struct stateful_optimizer : public optimizer<usesHessian> {
 
 protected:
     template <int Index>
-    std::vector<value_t>& get(const vec_t& key) {
+    vec_t& get(const vec_t& key) {
         static_assert(Index < N, "index out of range");
         if (E_[Index][&key].empty())
-            E_[Index][&key].resize(key.size(), value_t());
+            E_[Index][&key].resize(key.size(), float_t());
         return E_[Index][&key];
     }
-    std::unordered_map<const vec_t*, std::vector<value_t>> E_[N];
+    std::unordered_map<const vec_t*, vec_t> E_[N];
 };
 
 /**
@@ -86,7 +86,7 @@ public:
  * Adaptive subgradient methods for online learning and stochastic optimization
  * The Journal of Machine Learning Research, pages 2121-2159, 2011.
  **/
-struct adagrad : public stateful_optimizer<float_t, 1, false> {
+struct adagrad : public stateful_optimizer<1, false> {
     adagrad() : alpha(0.01), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t &W) {
@@ -109,7 +109,7 @@ private:
  * T Tieleman, and G E Hinton,
  * Lecture 6.5 - rmsprop, COURSERA: Neural Networks for Machine Learning (2012)
  **/
-struct RMSprop : public stateful_optimizer<float_t, 1, false> {
+struct RMSprop : public stateful_optimizer<1, false> {
     RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
@@ -135,7 +135,7 @@ private:
  *               http://arxiv.org/abs/1412.6980]
  * 
  */
-struct adam : public stateful_optimizer<float_t, 2, false> {
+struct adam : public stateful_optimizer<2, false> {
     adam() : alpha(0.001), b1(0.9), b2(0.999) , b1_t(0.9), b2_t(0.999), eps(1e-8) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
@@ -188,7 +188,7 @@ struct gradient_descent : public optimizer<false> {
  * Some methods of speeding up the convergence of iteration methods
  * USSR Computational Mathematics and Mathematical Physics, 4(5):1-17, 1964.
  **/
-struct momentum : public stateful_optimizer<float_t, 1, false> {
+struct momentum : public stateful_optimizer<1, false> {
 public:
     momentum() : alpha(0.01), lambda(0.0), mu(0.9) {}
 

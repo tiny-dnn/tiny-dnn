@@ -33,6 +33,8 @@
 #include <cassert>
 #include <cstdio>
 #include <cstdarg>
+#include <string>
+#include "aligned_allocator.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -49,7 +51,7 @@ namespace tiny_cnn {
 typedef double float_t;
 typedef unsigned int layer_size_t;
 typedef size_t label_t;
-typedef std::vector<float_t> vec_t;
+typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 class nn_error : public std::exception {
 public:
@@ -356,5 +358,23 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     using layer_base::prev_delta2_; \
     using layer<Activation>::h_
 
+
+#define CNN_LOG_VECTOR(vec, name)
+/*
+void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
+    std::cout << name << ",";
+
+    if (vec.empty()) {
+        std::cout << "(empty)" << std::endl;
+    }
+    else {
+        for (size_t i = 0; i < vec.size(); i++) {
+            std::cout << vec[i] << ",";
+        }
+    }
+
+    std::cout << std::endl;
+}
+*/
 
 } // namespace tiny_cnn
