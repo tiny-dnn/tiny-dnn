@@ -100,6 +100,10 @@ public:
         for_i(parallelize_, out_size_, [&](int i) {
             output_[index][i] = h_.f(a, i);
         });
+        CNN_LOG_VECTOR(in, "[pc]in");
+        CNN_LOG_VECTOR(W_, "[pc]w");
+        CNN_LOG_VECTOR(a, "[pc]a");
+        CNN_LOG_VECTOR(output_[index], "[pc]forward");
 
         return next_ ? next_->forward_propagation(output_[index], index) : output_[index]; // 15.6%
     }
@@ -143,6 +147,11 @@ public:
             db_[index][i] += diff;
         } 
 
+        CNN_LOG_VECTOR(current_delta, "[pc]curr_delta");
+        CNN_LOG_VECTOR(prev_delta_[index], "[pc]prev_delta");
+        CNN_LOG_VECTOR(dW_[index], "[pc]dW");
+        CNN_LOG_VECTOR(db_[index], "[pc]db");
+
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
@@ -180,6 +189,11 @@ public:
 
             prev_delta2_[i] *= sqr(scale_factor_ * prev_h.df(prev_out[i]));
         }
+
+        CNN_LOG_VECTOR(current_delta2, "[pc]curr-delta2");
+        CNN_LOG_VECTOR(prev_delta2_, "[pc]prev-delta2");
+        CNN_LOG_VECTOR(Whessian_, "[pc]whessian");
+
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 

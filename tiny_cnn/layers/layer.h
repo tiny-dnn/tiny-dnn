@@ -188,8 +188,14 @@ public:
 
         merge(worker_size, batch_size);
 
+        CNN_LOG_VECTOR(W_, "[W-before]");
+        CNN_LOG_VECTOR(b_, "[db-before]");
+
         o->update(dW_[0], Whessian_, W_);
         o->update(db_[0], bhessian_, b_);
+
+        CNN_LOG_VECTOR(W_, "[W-updated]");
+        CNN_LOG_VECTOR(b_, "[db-updated]");
 
         clear_diff(worker_size);
         post_update();
@@ -237,6 +243,9 @@ private:
 
         std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
+
+        CNN_LOG_VECTOR(dW_[0], "[dW-merged]");
+        CNN_LOG_VECTOR(db_[0], "[db-merged]");
     }
 
     void clear_diff(size_t worker_size) {

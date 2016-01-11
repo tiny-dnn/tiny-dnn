@@ -69,6 +69,7 @@ public:
         for_i(parallelize_, out_size_, [&](int i) {
             out[i] = h_.f(a, i);
         });
+        CNN_LOG_VECTOR(out, "[fc]forward");
 
         return next_ ? next_->forward_propagation(out, index) : out;
     }
@@ -99,6 +100,11 @@ public:
             }
         });
 
+        CNN_LOG_VECTOR(curr_delta, "[fc]curr_delta");
+        CNN_LOG_VECTOR(prev_delta, "[fc]prev_delta");
+        CNN_LOG_VECTOR(dW, "[fc]dW");
+        CNN_LOG_VECTOR(db, "[fc]db");
+
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
@@ -123,6 +129,8 @@ public:
 
             prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
         }
+        CNN_LOG_VECTOR(current_delta2, "[fc]curr-delta2");
+        CNN_LOG_VECTOR(prev_delta2_, "[fc]prev-delta2");
 
         return prev_->back_propagation_2nd(prev_delta2_);
     }
