@@ -108,6 +108,13 @@ public:
     void         add(std::shared_ptr<layer_base> layer) { layers_.add(layer); }
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
+    template <typename Range>
+    vec_t        predict(const Range& in) {
+        using std::begin; // for ADL
+        using std::end;
+        return predict(vec_t(begin(in), end(in)));
+    }
+
     /**
      * training conv-net
      *
