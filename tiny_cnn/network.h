@@ -98,16 +98,39 @@ public:
 
     explicit network(const std::string& name = "") : name_(name) {}
 
-    // getter
+    /**
+     * return input dims of network
+     **/
     layer_size_t in_dim() const         { return layers_.head()->in_size(); }
+
+    /**
+     * return output dims of network
+     **/
     layer_size_t out_dim() const        { return layers_.tail()->out_size(); }
+
     std::string  name() const           { return name_; }
     Optimizer&   optimizer()            { return optimizer_; }
 
+    /**
+     * explicitly initialize weights of all layers
+     **/
     void         init_weight()          { layers_.init_weight(); }
+
+    /**
+     * add one layer to tail(output-side)
+     **/
     void         add(std::shared_ptr<layer_base> layer) { layers_.add(layer); }
+
+    /**
+     * executes forward-propagation and returns output
+     **/
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
+    /**
+     * executes forward-propagation and returns output
+     *
+     * @param in input value range(double[], std::vector<double>, std::list<double> etc)
+     **/
     template <typename Range>
     vec_t        predict(const Range& in) {
         using std::begin; // for ADL
@@ -123,6 +146,8 @@ public:
      * @param epoch              number of training epochs
      * @param on_batch_enumerate callback for each mini-batch enumerate
      * @param on_epoch_enumerate callback for each epoch 
+     * @param reset_weights      reset all weights or keep current
+     * @param n_threads          number of tasks
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
     bool train(const std::vector<vec_t>& in,
@@ -132,12 +157,12 @@ public:
                OnBatchEnumerate          on_batch_enumerate,
                OnEpochEnumerate          on_epoch_enumerate,
 
-               const bool                _init_weight = true,
-               const int                 nbThreads = CNN_TASK_SIZE
+               const bool                reset_weights = true,
+               const int                 n_threads = CNN_TASK_SIZE
                )
     {
         check_training_data(in, t);
-        if (_init_weight)
+        if (reset_weights)
             init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
         optimizer_.reset();
@@ -146,7 +171,7 @@ public:
             if (optimizer_.requires_hessian())
                 calc_hessian(in);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), nbThreads);
+                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), n_threads);
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
@@ -184,7 +209,6 @@ public:
         return test_result;
     }
 
-
     std::vector<vec_t> test(const std::vector<vec_t>& in)
      {
             std::vector<vec_t> test_result(in.size());
@@ -192,17 +216,6 @@ public:
             for_i(in.size(), [&](int i)
             {
                 test_result[i] = predict(in[i]);
-            });
-            return test_result;
-    }
-
-    std::vector<float_t> scoreRegressor(const std::vector<vec_t>& in)
-    {
-            std::vector<float_t> test_result(in.size());
-
-            for_i(in.size(), [&](int i)
-            {
-                test_result[i] = predict(in[i])[0];
             });
             return test_result;
     }
@@ -220,6 +233,10 @@ public:
         return sum_loss;
     }
 
+    /**
+     * save network weights into stream
+     * @attention this saves only network *weights*, not network configuration
+     **/
     void save(std::ostream& os) const {
         os.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
 
@@ -227,6 +244,10 @@ public:
         while (l) { l->save(os); l = l->next(); }
     }
 
+    /**
+     * load network weights from stream
+     * @attention this loads only network *weights*, not network configuration
+     **/
     void load(std::istream& is) {
         is.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
 
@@ -288,27 +309,46 @@ public:
         return true;
     }
 
+    /**
+     * return index-th layer as <T>
+     * throw nn_error if index-th layer cannot be converted to T
+     **/
     template <typename T>
     const T& at(size_t index) const {
         return layers_.at<T>(index);
     }
 
+    /**
+     * return raw pointer of index-th layer
+     **/
     const layer_base* operator [] (size_t index) const {
         return layers_[index];
     }
 
+    /**
+     * return raw pointer of index-th layer
+     **/
     layer_base* operator [] (size_t index) {
         return layers_[index];
     }
 
+    /**
+     * number of layers
+     **/
     size_t depth() const {
         return layers_.depth();
     }
 
+    /**
+     * input shape (width x height x channels)
+     **/
     index3d<layer_size_t> in_shape() const {
         return layers_.head()->in_shape();
     }
 
+    /**
+     * set weight initializer to all layers
+     **/
     template <typename WeightInit>
     network& weight_init(const WeightInit& f) {
         auto ptr = std::make_shared<WeightInit>(f);
@@ -317,6 +357,9 @@ public:
         return *this;
     }
 
+    /**
+     * set bias initializer to all layers
+     **/
     template <typename BiasInit>
     network& bias_init(const BiasInit& f) { 
         auto ptr = std::make_shared<BiasInit>(f);
