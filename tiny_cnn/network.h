@@ -207,115 +207,6 @@ public:
             return test_result;
     }
 
-
-#ifdef CODE_READY
-/**
- * @brief [TODO--------- NOT FINISHED]
- * @details [long description]
- * 
- * @param data [description]
- * @return [description]
- */
-    image<float_t> fast_scoreRegressor(const float_t* data, const int rows, const int cols)
-     {
-        return test_image(image<float_t>(data, cols, rows));
-     }
-
-    image<float_t> fast_scoreRegressor(const image<float_t>& data)
-    {
-        int cols, rows, depth;
-        image<float_t> res(data.width(),data.height());
-        auto current = layers_.head();
-
-        //int count = 0;
-        image<float_t> in;
-        image<float_t> out(data);
-        //image<float_t> output = current->forward_propagation(in,0);
-
-        while ((current = current->next()) != 0) 
-        { 
-            in = out;//transfer out of previous layer to in of current
-
-            //format out image
-            index3d<layer_size_t> shape =  current->out_shape();
-            out = image<float_>(shape);
-
-            cols = in.width(); rows = in.height();depth = in.depth();
-            //std::cout<<++count<<std::endl;
-            if (!current->layer_type().compare("conv"))
-            {
-
-                //convolve all the image (instead of the patch, so faster)
-                vec_t& kernel = current->weight();//w
-                vec_t& b = current->bias();
-                
-                //depth = out.depth();
-                //convolution
-                //for_i((cols-kernel_size)*(rows-kernel_size), [&](int count)
-                for (int count = 0; count < (cols-kernel_size)*(rows-kernel_size); ++count)
-                {
-                    int mm, nn, ii, jj, m, n;
-                    const int j = count / (cols-kernel_size) + kernel_size/2;
-                    const int i = count % (cols-kernel_size) + kernel_size/2;
-
-                    for_i(out.depth(), [&](int k)
-                    {
-                        //convolve
-                        float sum = 0;
-                        for (m = 0; m < kernel_size; ++m)
-                        {
-                            mm = kernel_size - 1 - m;
-                            for (n = 0; n < kernel_size; ++n) {
-                                nn = kernel_size - 1 - n;
-
-                                ii = i + (m - kernel_size / 2);
-                                jj = j + (n - kernel_size / 2);
-
-                                //if (ii >= 0 && ii < rows && jj >= 0 && jj < cols) 
-                                {
-                                    float val = (in[ii * cols +jj]);
-                                    //for (k=0;k<depth_;k++)
-                                    sum += val *  kernel[shape.getIndex(nn,mm,k)];//+mm * kernel_size + nn];
-                                }
-                            }
-                        }
-
-                        //add the bias
-                         for (m = 0; m < kernel_size; ++m)
-                            for (n = 0; n < kernel_size; ++n)
-                                out[k * (rows*cols) + i * cols + j] = sum + b[k * (kernel_size*kernel_size) + m * kernel_size + n];
-                    }
-                    );
-                }
-                //);
-
-            }
-
-            if (!current->layer_type().compare("max-pool"))
-            {
-                size_t size = current->pool_size();
-
-                for_i(depth, [&](int k)
-                {
-                    for (int count = 0; count < out.width()*out.height(); ++count)
-                    {
-                        int mm, nn, ii, jj, m, n;
-                        const int j = count / out.width();
-                        const int i = count % out.width();
-                        out[k * out.width()*out.height() + i  * out.width() + j] = in[k * width * height + i * size * width + j * size];    
-                }
-                );
-
-            }
-
-
-         }
-
-        return res;
-
-    }
-#endif
-    
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
@@ -659,17 +550,6 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
 
     return res;
 }
-
-// void vec2image(const std::vector<vec_t> &in, float_t* out)
-// {
-//     //printf("%d\n",in.size());
-//     for (int i=0;i<in.size();i++)
-//     //for_i(in.size(), [&](int i)
-//     {
-//         out[i] = in[i][0];
-//     }
-//     //);
-// }
 
 template <typename L, typename O, typename Layer>
 network<L, O>& operator << (network<L, O>& n, const Layer&& l) {
