@@ -57,7 +57,7 @@ inline bool is_aligned(T, const typename T::value_type* p1, const typename T::va
 // traits
 
 template <typename T>
-struct generic {
+struct generic_vec_type {
     typedef T register_type;
     typedef T value_type;
     enum {
@@ -285,7 +285,7 @@ inline void reduce_aligned(const typename T::value_type* src, unsigned int size,
 #elif defined(CNN_USE_SSE)
 #define VECTORIZE_TYPE detail::sse<T>
 #else
-#define VECTORIZE_TYPE detail::generic<T>
+#define VECTORIZE_TYPE detail::generic_vec_type<T>
 #endif
 
 // dst[i] += c * src[i]
