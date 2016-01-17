@@ -400,19 +400,26 @@ private:
     }   
 
     void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
+        task_group g;
+        //int num_tasks = batch_size < CNN_TASK_SIZE ? 1 : CNN_TASK_SIZE;
         int data_per_thread = batch_size / num_tasks;
-        int remaining = batch_size;     
+        int remaining = batch_size;
 
-        for_i(num_tasks, [&](int i) {
-            int start = i * data_per_thread;
-            int num = std::min(batch_size - start + 1, data_per_thread);
+        // divide batch data and invoke [num_tasks] tasks
+        for (int i = 0; i < num_tasks; i++) {
+            int num = i == num_tasks - 1 ? remaining : data_per_thread;
 
-            if (num <= 0) return;
+            g.run([=]{
+                for (int j = 0; j < num; j++) bprop(fprop(in[j], i), t[j], i);
+            });
 
-            for (int j = 0; j < num; j++)
-                bprop(fprop(in[start+j], i), t[start+j], i);
-        }, 1);
-        
+            remaining -= num;
+            in += num;
+            t += num;
+        }
+
+        assert(remaining == 0);
+        g.wait();
         // merge all dW and update W by optimizer
         layers_.update_weights(&optimizer_, num_tasks, batch_size);
     }
