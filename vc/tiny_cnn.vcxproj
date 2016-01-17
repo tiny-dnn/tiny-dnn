@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\example\main.cpp" />
+    <ClCompile Include="..\examples\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tiny_cnn\activations\activation_function.h" />
