@@ -156,20 +156,14 @@ inline void nop()
 static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
 
 typedef tbb::blocked_range<int> blocked_range;
-typedef tbb::task_group task_group;
 
 template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
-    tbb::parallel_for(blocked_range(begin, end, 100), f);
+void parallel_for(int begin, int end, const Func& f, int grainsize) {
+    tbb::parallel_for(blocked_range(begin, end, end - begin > grainsize ? grainsize : 1), f);
 }
 template<typename Func>
 void xparallel_for(int begin, int end, const Func& f) {
     f(blocked_range(begin, end, 100));
-}
-
-template<typename Func>
-void for_(bool parallelize, int begin, int end, Func f) {
-    parallelize ? parallel_for(begin, end, f) : xparallel_for(begin, end, f);
 }
 
 #else
@@ -195,23 +189,10 @@ void xparallel_for(size_t begin, size_t end, const Func& f) {
 #ifdef CNN_USE_OMP
 
 template<typename Func>
-void parallel_for(int begin, int end, const Func& f) {
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     #pragma omp parallel for
     for (int i=begin; i<end; ++i)
         f(blocked_range(i,i+1));
-}
-
-template<typename T, typename U>
-bool const value_representation(U const &value)
-{
-    return static_cast<U>(static_cast<T>(value)) == value;
-}
-
-template<typename Func>
-void for_(bool parallelize, size_t begin, size_t end, Func f) {
-    parallelize = parallelize && value_representation<int>(begin);
-    parallelize = parallelize && value_representation<int>(end);
-    parallelize? parallel_for(static_cast<int>(begin), static_cast<int>(end), f) : xparallel_for(begin, end, f);
 }
 
 #else
@@ -223,25 +204,26 @@ void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore pa
 
 #endif
 
-class task_group {
-public:
-    template<typename Func>
-    void run(Func f) {
-        functions_.push_back(f);
-    }
-
-    void wait() {
-        for (auto f : functions_)
-            f();
-    }
-private:
-    std::vector<std::function<void()>> functions_;
-};
-
 #endif // CNN_USE_TBB
 
+template<typename Func>
+void for_(bool parallelize, int begin, int end, Func f, int grainsize = 100) {
+    parallelize ? parallel_for(begin, end, f, grainsize) : xparallel_for(begin, end, f);
+}
+
+template<typename T, typename U>
+bool const value_representation(U const &value) {
+    return static_cast<U>(static_cast<T>(value)) == value;
+}
+
+template<typename Func>
+void for_(bool parallelize, int begin, size_t end, Func f, int grainsize = 100) {
+    parallelize = parallelize && value_representation<int>(end);
+    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) : xparallel_for(begin, end, f);
+}
+
 template <typename Func>
-void for_i(bool parallelize, int size, Func f)
+void for_i(bool parallelize, int size, Func f, int grainsize = 100)
 {
     for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
@@ -249,12 +231,12 @@ void for_i(bool parallelize, int size, Func f)
 #endif
         for (int i = r.begin(); i < r.end(); i++)
             f(i);
-    });
+    }, grainsize);
 }
 
 template <typename Func>
-void for_i(int size, Func f) {
-    for_i(true, size, f);
+void for_i(int size, Func f, int grainsize = 100) {
+    for_i(true, size, f, grainsize);
 }
 
 template <typename T> inline T sqr(T value) { return value*value; }
