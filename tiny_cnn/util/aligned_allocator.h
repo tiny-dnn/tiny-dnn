@@ -29,6 +29,10 @@
 #ifdef _WIN32
 #include <malloc.h>
 #endif
+#ifdef __MINGW32__
+#include <mm_malloc.h>
+#endif
+#include "nn_error.h"
 
 namespace tiny_cnn {
 
@@ -105,10 +109,12 @@ public:
 
 private:
     void* aligned_alloc(size_type align, size_type size) const {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
         return ::_aligned_malloc(size, align);
 #elif defined (__ANDROID__)
         return ::memalign(align, size);
+#elif defined (__MINGW32__)
+        return _mm_malloc(size, align);
 #else // posix assumed
         void* p;
         if (::posix_memalign(&p, align, size) != 0) {
@@ -119,8 +125,10 @@ private:
     }
 
     void aligned_free(pointer ptr) {
-#if defined(_WIN32)
+#if defined(_MSC_VER)
         ::_aligned_free(ptr);
+#elif defined(__MINGW32__)
+        ::free(ptr);
 #else
         ::free(ptr);
 #endif

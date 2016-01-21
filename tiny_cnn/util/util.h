@@ -35,6 +35,7 @@
 #include <cstdarg>
 #include <string>
 #include "aligned_allocator.h"
+#include "nn_error.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -52,14 +53,6 @@ typedef double float_t;
 typedef unsigned int layer_size_t;
 typedef size_t label_t;
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
-
-class nn_error : public std::exception {
-public:
-    explicit nn_error(const std::string& msg) : msg_(msg) {}
-    const char* what() const throw() override { return msg_.c_str(); }
-private:
-    std::string msg_;
-};
 
 enum class net_phase {
     train,
@@ -198,7 +191,7 @@ void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
 #else
 
 template<typename Func>
-void for_(bool /*parallelize*/, size_t begin, size_t end, Func f) { // ignore parallelize if you don't define CNN_USE_TBB
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     xparallel_for(begin, end, f);
 }
 
@@ -212,7 +205,7 @@ void for_(bool parallelize, int begin, int end, Func f, int grainsize = 100) {
 }
 
 template<typename T, typename U>
-bool const value_representation(U const &value) {
+bool value_representation(U const &value) {
     return static_cast<U>(static_cast<T>(value)) == value;
 }
 
