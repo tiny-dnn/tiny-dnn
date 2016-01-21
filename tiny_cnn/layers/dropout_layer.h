@@ -27,6 +27,7 @@
 #pragma once
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layer.h"
+#include <algorithm>
 
 namespace tiny_cnn {
 
@@ -37,15 +38,41 @@ public:
     CNN_USE_LAYER_MEMBERS;
 
     dropout_layer(layer_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
-        : layer<activation::identity>(in_dim, in_dim, 0, 0), phase_(phase), dropout_rate_(dropout_rate)
+        : layer<activation::identity>(in_dim, in_dim, 0, 0),
+          phase_(phase),
+          dropout_rate_(dropout_rate),
+          scale_(1.0 / (1.0 - dropout_rate_))
     {
-        scale_ = 1.0 / (1.0 - dropout_rate);
-        mask_ = new bool[in_dim * CNN_TASK_SIZE];
+        mask_ = new bool[in_size_ * CNN_TASK_SIZE];
+        std::fill(mask_, mask_ + (in_size_ * CNN_TASK_SIZE), false);
+    }
+
+    dropout_layer(const dropout_layer& obj)
+        : layer<activation::identity>(obj.in_size_, obj.in_size_, 0, 0),
+          phase_(obj.phase_),
+          dropout_rate_(obj.dropout_rate_),
+          scale_(1.0 / (1.0 - dropout_rate_))
+    {
+        mask_ = new bool[in_size_ * CNN_TASK_SIZE];
+        std::copy(obj.mask_, (obj.mask_ + (in_size_ * CNN_TASK_SIZE)), mask_);
     }
 
     virtual ~dropout_layer()
     {
         delete[] mask_;
+    }
+
+    dropout_layer& operator=(const dropout_layer& obj)
+    {
+        delete[] mask_;
+
+        layer::operator=(obj);
+        phase_ = obj.phase_;
+        dropout_rate_ = obj.dropout_rate_;
+        scale_ = obj.scale_;
+        mask_ = new bool[in_size_ * CNN_TASK_SIZE];
+        std::copy(obj.mask_, (obj.mask_ + (obj.in_size_ * CNN_TASK_SIZE)), mask_);
+        return *this;
     }
 
     void set_dropout_rate(double rate)
