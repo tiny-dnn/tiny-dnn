@@ -62,6 +62,10 @@ if(Boost_FOUND)
 ENDIF()
 
 
+
+find_package( OpenCV REQUIRED )
+
+
 IF(USE_TBB)
     find_package(TBB REQUIRED)
     add_definitions(-DCNN_USE_TBB)
@@ -117,16 +121,17 @@ ENDIF()
 #------------------------------------------------
 # TARGETS
 #------------------------------------------------
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/tiny_cnn )
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hrds tiny_cnn/activation_function.h    tiny_cnn/cifar10_parser.h  tiny_cnn/convolutional_layer.h  tiny_cnn/display.h  tiny_cnn/fully_connected_dropout_layer.h  tiny_cnn/image.h        tiny_cnn/layer.h   tiny_cnn/loss_function.h      tiny_cnn/mnist_parser.h  tiny_cnn/optimizer.h                tiny_cnn/product.h   tiny_cnn/util.h
-tiny_cnn/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/deform.h               tiny_cnn/dropout.h  tiny_cnn/fully_connected_layer.h          tiny_cnn/input_layer.h  tiny_cnn/layers.h  tiny_cnn/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/weight_init.h)
+SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h    tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/layers/fully_connected_dropout_layer.h  tiny_cnn/util/image.h        tiny_cnn/layers/layer.h   tiny_cnn/lossfunctions/loss_function.h      tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h                tiny_cnn/util/product.h   tiny_cnn/util/util.h
+tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/util/deform.h               tiny_cnn/layers/dropout.h  tiny_cnn/layers/fully_connected_layer.h          tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h)
 
 IF(Boost_FOUND)
-    ADD_EXECUTABLE(train example/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(train examples/mnist/train.cpp ${tiny_cnn_hrds})
 ENDIF()
-ADD_EXECUTABLE(test example/test.cpp  ${tiny_cnn_hrds})
+ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
+target_link_libraries( testb ${OpenCV_LIBS} )
 
 
 
@@ -152,6 +157,7 @@ message( STATUS "C++ flags (Release):       ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS
 message( STATUS "C++ flags (Debug):         ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 message( STATUS "CMAKE_CXX_FLAGS:         ${CMAKE_CXX_FLAGS}")
 message( STATUS "CMAKE_BINARY_DIR:         ${CMAKE_BINARY_DIR}")
+message( STATUS "OpenCV libs:              ${OpenCV_LIBS}")
 
 MESSAGE( STATUS )
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR}" )
