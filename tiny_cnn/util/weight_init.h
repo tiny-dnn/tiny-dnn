@@ -112,5 +112,19 @@ public:
     }
 };
 
+class he : public scalable {
+public:
+    he() : scalable((float_t)2.0) {}
+    explicit he(float_t value) : scalable(value) {}
+
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+        CNN_UNREFERENCED_PARAMETER(fan_out);
+
+        const float_t sigma = std::sqrt(scale_ /fan_in);
+
+        gaussian_rand(weight->begin(), weight->end(), 0.0, sigma);
+    }
+};
+
 } // namespace weight_init
 } // namespace tiny_cnn

@@ -88,7 +88,7 @@ public:
             prev_delta[c] *= prev_h.df(prev_out[c]);
         }
 
-        for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
             // accumulate weight-step using delta
             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
             for (layer_size_t c = 0; c < in_size_; c++)

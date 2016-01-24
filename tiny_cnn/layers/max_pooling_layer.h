@@ -82,7 +82,7 @@ public:
         vec_t& a = a_[index];
         std::vector<int>& max_idx = out2inmax_[index];
 
-        for_(parallelize_, 0, out_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const auto& in_index = out2in_[i];
                 float_t max_value = std::numeric_limits<float_t>::lowest();
