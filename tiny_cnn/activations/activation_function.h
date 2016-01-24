@@ -79,9 +79,8 @@ public:
 
 class elu : public function {
 public:
-	float_t f(const float_t x) const { return (x<0 ? (exp(x)-1) : x); }
-    float_t f(const vec_t& v, size_t i) const override { return f(v[i]); }
-    float_t df(float_t y) const override { return (y > 0.0 ? 1.0 : 1+f(y)); }
+    float_t f(const vec_t& v, size_t i) const override { return (v[i]<0 ? (exp(v[i])-1) : v[i]); }
+    float_t df(float_t y) const override { return (y > 0.0 ? 1.0 : (1+y)); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(0.1, 0.9); }
 };
 
