@@ -113,7 +113,7 @@ public:
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
 
-        for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = 0.0;
