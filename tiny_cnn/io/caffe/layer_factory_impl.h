@@ -666,7 +666,7 @@ private:
             while (dst->param_size() <= i) dst->add_param();
             dst->mutable_param(i)->set_name(old.param(i));
         }
-        #define COPY_PARAM(name) if (old.has_##name##_param()) dst->mutable_##name##_param()->CopyFrom(old.##name##_param())
+        #define COPY_PARAM(name) if (old.has_##name##_param()) dst->mutable_##name##_param()->CopyFrom(old.name##_param())
 
         COPY_PARAM(accuracy);
         COPY_PARAM(argmax);
