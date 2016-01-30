@@ -1,0 +1,23 @@
+import sys
+def build(bld):
+    if sys.platform == 'Darwin':
+      libcxx = 'c++'
+    else:
+      libcxx = 'stdc++'
+    
+    if sys.platform.startswith('win'):
+      bld(features = 'cxx cprogram',
+        source = 'main.cpp',
+        target = 'main',
+        lib      = ['tbb'],
+        libpath  = ['../'],
+        includes = ['.', '../', bld.env.TBB_ROOT])
+    else:
+      bld(features = 'cxx cprogram',
+        source = 'main.cpp',
+        target = 'main',
+        cflags   = ['-Wall'],
+        cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast'],
+        lib      = [libcxx, 'tbb'],
+        libpath  = ['../'],
+        includes = ['.', '../', bld.env.TBB_ROOT])

@@ -1,9 +1,0 @@
-def build(bld):
-    bld(features = 'cxx cprogram',
-      source = 'main.cpp',
-      target = 'main',
-      cflags   = ['-Wall'],
-      cxxflags = ['-std=c++0x', '-Wall', '-s', '-Ofast', '-march=native'],
-      lib      = ['stdc++','tbb'],
-      libpath  = ['../'],
-      includes = ['.', '../include', bld.env.BOOST_ROOT, bld.env.TBB_ROOT+'/include'])

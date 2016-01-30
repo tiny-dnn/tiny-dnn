@@ -16,6 +16,7 @@ local.properties
 .settings/
 .loadpath
 waf-*
+.waf-*
 
 # External tool builders
 .externalToolBuilders/
@@ -170,11 +171,14 @@ pip-log.txt
 #################
 build
 waf3*
-.lock-wafbuild
-
+.lock-waf*
 
 #################
 ## Other
 #################
 *.exe
 *.dll
+*.bmp
+*.bin
+
+

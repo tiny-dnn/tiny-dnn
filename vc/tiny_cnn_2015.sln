@@ -1,15 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiny_cnn", "tiny_cnn.vcxproj", "{C7B38F22-F235-45A5-834A-DE2167849C4C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiny_cnn", "tiny_cnn_2015.vcxproj", "{C7B38F22-F235-45A5-834A-DE2167849C4C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiny_cnn_test", "tiny_cnn_test.vcxproj", "{680A21F8-5877-48EA-B313-CE23B12167ED}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7ADECCDF-20AF-4B54-81E1-90DF1109D5BF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "tiny_cnn_test", "tiny_cnn_test_2015.vcxproj", "{680A21F8-5877-48EA-B313-CE23B12167ED}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Release|Win32 = Release|Win32
@@ -26,8 +27,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal
