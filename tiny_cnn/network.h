@@ -401,7 +401,6 @@ private:
 
     void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
         int data_per_thread = batch_size / num_tasks;
-        int remaining = batch_size;     
 
         for_i(num_tasks, [&](int i) {
             int start = i * data_per_thread;
