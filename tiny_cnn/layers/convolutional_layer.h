@@ -76,6 +76,8 @@ public:
     typedef layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
+    using layer_base::out_size;
+
     /**
     * constructing convolutional layer
     *
@@ -114,6 +116,40 @@ public:
     *
     * @param in_width         [in] input image width
     * @param in_height        [in] input image height
+    * @param window_width  [in] window_width(kernel) size of convolution
+    * @param window_height [in] window_height(kernel) size of convolution
+    * @param in_channels   [in] input image channels (grayscale=1, rgb=3)
+    * @param out_channels  [in] output image channels
+    * @param padding       [in] rounding strategy
+    *                          valid: use valid pixels of input only. output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels
+    *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    **/
+    convolutional_layer(layer_size_t in_width,
+        layer_size_t in_height,
+        layer_size_t window_width,
+        layer_size_t window_height,
+        layer_size_t in_channels,
+        layer_size_t out_channels,
+        padding pad_type = padding::valid,
+        bool has_bias = true,
+        layer_size_t w_stride = 1,
+        layer_size_t h_stride = 1)
+        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
+            window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
+        in_(in_width, in_height, in_channels),
+        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
+        out_(out_length(in_width, window_width, w_stride, pad_type), out_length(in_height, window_height, h_stride, pad_type), out_channels),
+        weight_(window_width, window_height, in_channels*out_channels),
+        pad_type_(pad_type),
+        w_stride_(w_stride), h_stride_(h_stride)
+    {
+        init();
+    }
+    /**
+    * constructing convolutional layer
+    *
+    * @param in_width         [in] input image width
+    * @param in_height        [in] input image height
     * @param window_size      [in] window(kernel) size of convolution
     * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
     * @param out_channels     [in] output image channels
@@ -140,6 +176,45 @@ public:
         in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
         out_(out_length(in_width, window_size, w_stride, pad_type), out_length(in_height, window_size, h_stride, pad_type), out_channels),
         weight_(window_size, window_size, in_channels*out_channels),
+        pad_type_(pad_type),
+        w_stride_(w_stride), h_stride_(h_stride)
+    {
+        init();
+    }
+
+    /**
+    * constructing convolutional layer
+    *
+    * @param in_width         [in] input image width
+    * @param in_height        [in] input image height
+    * @param window_width  [in] window_width(kernel) size of convolution
+    * @param window_height [in] window_height(kernel) size of convolution
+    * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+    * @param out_channels     [in] output image channels
+    * @param connection_table [in] definition of connections between in-channels and out-channels
+    * @param pad_type         [in] rounding strategy
+    *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
+    *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    **/
+    convolutional_layer(layer_size_t in_width,
+        layer_size_t in_height,
+        layer_size_t window_width,
+        layer_size_t window_height,
+        layer_size_t in_channels,
+        layer_size_t out_channels,
+        const connection_table& connection_table,
+        padding pad_type = padding::valid,
+        bool has_bias = true,
+        layer_size_t w_stride = 1,
+        layer_size_t h_stride = 1
+        )
+        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
+            window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
+        tbl_(connection_table),
+        in_(in_width, in_height, in_channels),
+        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
+        out_(out_length(in_width, window_width, w_stride, pad_type), out_length(in_height, window_height, h_stride, pad_type), out_channels),
+        weight_(window_width, window_height, in_channels*out_channels),
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
@@ -441,6 +516,10 @@ private:
 
     layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t w_stride, layer_size_t h_stride, padding pad_type) const {
         return out_length(in_width, window_size, w_stride, pad_type) * out_length(in_height, window_size, h_stride, pad_type);
+    }
+
+    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_width, layer_size_t window_height, layer_size_t w_stride, layer_size_t h_stride, padding pad_type) const {
+        return out_length(in_width, window_width, w_stride, pad_type) * out_length(in_height, window_height, h_stride, pad_type);
     }
 
     void copy_and_unpad_delta(const vec_t& delta, vec_t& dst) {
