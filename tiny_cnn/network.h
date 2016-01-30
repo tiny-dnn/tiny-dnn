@@ -400,20 +400,19 @@ private:
     }   
 
     void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
-        int data_per_thread = batch_size / num_tasks;
+        int num_threads = std::min(batch_size, num_tasks);
+        int data_per_thread = (batch_size + num_threads - 1) / num_threads;
 
-        for_i(num_tasks, [&](int i) {
-            int start = i * data_per_thread;
-            int num = std::min(batch_size - start + 1, data_per_thread);
+        for_i(num_threads, [&](int i) {
+            int start_index = i * data_per_thread;
+            int end_index = std::min(batch_size, start_index + data_per_thread);
 
-            if (num <= 0) return;
-
-            for (int j = 0; j < num; j++)
-                bprop(fprop(in[start+j], i), t[start+j], i);
+            for (int j = start_index; j < end_index; ++j)
+                bprop(fprop(in[j], i), t[j], i);
         }, 1);
         
         // merge all dW and update W by optimizer
-        layers_.update_weights(&optimizer_, num_tasks, batch_size);
+        layers_.update_weights(&optimizer_, num_threads, batch_size);
     }
 
     void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
