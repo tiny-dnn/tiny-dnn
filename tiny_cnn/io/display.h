@@ -92,6 +92,8 @@ class progress_display
       m_os << std::endl;
       }
   } // display_tic
+
+  progress_display &operator = (const progress_display &) = delete;
 };
 
 } // namespace

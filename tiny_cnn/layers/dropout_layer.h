@@ -57,6 +57,16 @@ public:
         std::copy(obj.mask_, (obj.mask_ + (in_size_ * CNN_TASK_SIZE)), mask_);
     }
 
+    dropout_layer(dropout_layer&& obj)
+        : layer<activation::identity>(obj.in_size_, obj.in_size_, 0, 0),
+          phase_(obj.phase_),
+          dropout_rate_(obj.dropout_rate_),
+          scale_(1.0 / (1.0 - dropout_rate_)),
+          mask_(obj.mask_)
+    {
+        obj.mask_ = nullptr;
+    }
+
     virtual ~dropout_layer()
     {
         delete[] mask_;
@@ -72,6 +82,16 @@ public:
         scale_ = obj.scale_;
         mask_ = new bool[in_size_ * CNN_TASK_SIZE];
         std::copy(obj.mask_, (obj.mask_ + (obj.in_size_ * CNN_TASK_SIZE)), mask_);
+        return *this;
+    }
+
+    dropout_layer& operator=(dropout_layer&& obj)
+    {
+        layer::operator=(obj);
+        phase_ = obj.phase_;
+        dropout_rate_ = obj.dropout_rate_;
+        scale_ = obj.scale_;
+        std::swap(mask_, obj.mask_);
         return *this;
     }
 

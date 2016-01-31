@@ -36,6 +36,13 @@ namespace tiny_cnn {
  **/
 template <bool usesHessian>
 struct optimizer {
+    optimizer() = default;
+    optimizer(const optimizer &) = default;
+    optimizer(optimizer &&) = default;
+    optimizer &operator =(const optimizer &) = default;
+    optimizer &operator =(optimizer &&) = default;
+    virtual ~optimizer() = default;
+
     bool requires_hessian() const { return usesHessian; } // vc2012 doesn't support constexpr
     virtual void reset() {} // override to implement pre-learning action
 };
