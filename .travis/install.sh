@@ -12,8 +12,8 @@ elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
   version_major=3
   version_minor=1
   version_patch=0  
-  OPENCV_DIR="$HOME/opencv_${version_major}_${version_minor}_${version_patch}/lib"
-  if [ ! -d  "$OPENCV_DIR" ]; then
+  OPENCV_DIR="$HOME/opencv_${version_major}_${version_minor}_${version_patch}"
+  if [ ! -d  "${OPENCV_DIR}/lib" ]; then
     git clone https://github.com/Itseez/opencv.git
     cd opencv
     git checkout ${version_major}.${version_minor}.${version_patch}
@@ -25,7 +25,7 @@ elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
     echo "Cached OpenCV ${1}.${2}.${3} found";
   fi
   
-  export LD_LIBRARY_PATH=${OPENCV_DIR}:$LD_LIBRARY_PATH
+  export LD_LIBRARY_PATH=${OPENCV_DIR}/lib:$LD_LIBRARY_PATH
 
   if [ "$CXX" == "g++" ]; then 
     export CXX="g++-4.8" CC="gcc-4.8"
