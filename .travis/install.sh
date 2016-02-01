@@ -20,7 +20,7 @@ elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
     mkdir build
     cd build
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$OPENCV_DIR" ..
-    make && make install
+    make -j2 && make -j2 install
   else
     echo "Cached OpenCV ${1}.${2}.${3} found";
   fi

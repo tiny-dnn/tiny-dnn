@@ -40,9 +40,8 @@ addons:
 install:
   - bash -x .travis/install.sh 
 script:
-  - cmake -DUSE_TBB=ON -DENABLE_TESTS=ON .
-  - make 
-  - ls /usr/local/lib/*opencv*
+  - cmake -DUSE_TBB=ON -DBUILD_TESTS=ON .
+  - make -j2 
   - ./tiny_cnn_test
 branches:
   only:
