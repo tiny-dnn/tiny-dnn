@@ -38,7 +38,7 @@ install:
 script:
   - cmake -DUSE_TBB=ON -DENABLE_TESTS=ON .
   - make 
-  - ls /usr/local/*opencv*
+  - ls /usr/local/lib/*opencv*
   - ./tiny_cnn_test
 branches:
   only:
