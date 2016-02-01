@@ -37,16 +37,17 @@ install:
 # OSX intall
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew tap homebrew/science; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 tbb boost cmake; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv3; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew link --force opencv3; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ -n "$( brew ls --versions tbb )" ]; then brew install --c++11 tbb; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ -n "$( brew ls --versions boost )" ]; then brew install --c++11 boost; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ -n "$( brew ls --versions cmake )" ]; then brew install cmake; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ -n "$( brew ls --versions opencv3 )" ]; then brew install -v --c++11 --with-tbb opencv3 && brew link --force opencv3; fi # verbose flag prevents the build from going stale
 # Linux install
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone https://github.com/Itseez/opencv.git; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cd opencv; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git checkout 3.1.0; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then mkdir build; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cd build; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local ..; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/opencv_3_1_0 ..; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then make && make install && ldconfig; fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 script:
