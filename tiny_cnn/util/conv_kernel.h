@@ -67,7 +67,6 @@ namespace tiny_cnn {
         std::fill(dst, dst + dst_shape.size(), 0.0f);
 
         float *wtmp = (float*)malloc(sizeof(float) * w_shape.size());
-        float *dtmp = (float*)calloc(dst_shape.size(), sizeof(float));
         for (int inc = 0; inc < src_shape.depth_; inc++) {
             for (int outc = 0; outc < dst_shape.depth_; outc++) {
                 int oi0 = outc % VEC_WIDTH;
