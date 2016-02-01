@@ -1,0 +1,34 @@
+sudo: false
+language: cpp
+os:
+  - linux
+  - osx
+compiler:
+  - gcc
+  - clang
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
+    - cmake
+    - libtbb-dev
+    - libboost-dev
+    - libopencv-dev
+before install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 tbb boost cmake; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv; fi
+install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+script:
+  - cmake -DUSE_TBB=ON -DENABLE_TESTS=ON .
+  - make 
+  - ./tiny_cnn_test
+branches:
+  only:
+    - master
+
