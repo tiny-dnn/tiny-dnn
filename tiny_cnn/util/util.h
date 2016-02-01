@@ -90,8 +90,8 @@ inline int uniform_idx(const Container& t) {
     return uniform_rand(0, (int) t.size() - 1);
 }
 
-inline bool bernoulli(double p) {
-    return uniform_rand(0.0, 1.0) <= p;
+inline bool bernoulli(float_t p) {
+    return uniform_rand(float_t(0), float_t(1)) <= p;
 }
 
 template<typename Iter>

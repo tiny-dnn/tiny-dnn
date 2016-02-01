@@ -129,9 +129,9 @@ inline std::shared_ptr<layer_base> create_ave_pool(int pool_size, int stride, co
     auto ap = std::make_shared<ave_pool>(bottom_shape.width_, bottom_shape.height_, bottom_shape.depth_, pool_size, stride);
 
     // tiny-cnn has trainable parameter in average-pooling layer
-    float_t weight = 1.0 / sqr(pool_size);
+    float_t weight = float_t(1) / sqr(pool_size);
     std::fill(ap->weight().begin(), ap->weight().end(), weight);
-    std::fill(ap->bias().begin(), ap->bias().end(), (float_t)0.0);
+    std::fill(ap->bias().begin(), ap->bias().end(), float_t(0));
     *top_shape = ap->out_shape();
     return ap;
 }
@@ -291,9 +291,9 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer_base *dst)
             pool_size = pool_param.kernel_size();
 
         // tiny-cnn has trainable parameter in average-pooling layer
-        float_t weight = 1.0 / sqr(pool_size);
+        float_t weight = float_t(1) / sqr(pool_size);
         if (!dst->weight().empty()) std::fill(dst->weight().begin(), dst->weight().end(), weight);
-        if (!dst->bias().empty()) std::fill(dst->bias().begin(), dst->bias().end(), (float_t)0.0);
+        if (!dst->bias().empty()) std::fill(dst->bias().begin(), dst->bias().end(), float_t(0));
     }
 }
 
@@ -326,7 +326,7 @@ inline std::shared_ptr<layer_base> create_dropout(const caffe::LayerParameter& l
     if (!layer.has_dropout_param())
         throw std::runtime_error("dropout param missing");
 
-    float_t dropout_rate = 0.5;
+    float_t dropout_rate = float_t(0.5);
 
     if (layer.dropout_param().has_dropout_ratio())
         dropout_rate = layer.dropout_param().dropout_ratio();

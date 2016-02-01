@@ -43,7 +43,7 @@ public:
 
     typedef layer<Activation> Base;
 
-    explicit linear_layer(layer_size_t dim, float_t scale = 1.0, float_t bias = 0.0)
+    explicit linear_layer(layer_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
         : Base(dim, dim, 0, 0),
         scale_(scale), bias_(bias) {}
 

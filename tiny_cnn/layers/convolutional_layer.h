@@ -245,7 +245,7 @@ public:
         const activation::function& prev_h = prev_->activation_function();
         vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta2_padded_ : &prev_delta2_;
 
-        std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         // accumulate dw
         for_i(in_.depth_, [&](int inc) {
@@ -255,7 +255,7 @@ public:
 
                 for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
                     for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = 0.0;
+                        float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &current_delta2[out_.get_index(0, 0, outc)];
 
@@ -274,7 +274,7 @@ public:
         if (!this->bhessian_.empty()) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &current_delta2[out_.get_index(0, 0, outc)];
-                this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, (float_t)0.0);
+                this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
         }
 
@@ -325,7 +325,7 @@ public:
         vec_t &out = output_[worker_index]; // output
         const vec_t &in = *(prev_out_padded_[worker_index]); // input
         
-        std::fill(a.begin(), a.end(), (float_t)0.0);
+        std::fill(a.begin(), a.end(), float_t(0));
 
         for_i(parallelize_, out_.depth_, [&](int o) {
             for (layer_size_t inc = 0; inc < in_.depth_; inc++) {
@@ -339,7 +339,7 @@ public:
                     for (layer_size_t x = 0; x < out_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
-                        float_t sum = (float_t)0.0;
+                        float_t sum = float_t(0);
 
                         // should be optimized for small kernel(3x3,5x5)
                         for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
@@ -382,7 +382,7 @@ public:
         vec_t& dW = dW_[index];
         vec_t& db = db_[index];
 
-        std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         // propagate delta to previous layer
         for_i(in_.depth_, [&](int inc) {
@@ -421,7 +421,7 @@ public:
 
                 for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
                     for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = 0.0;
+                        float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
@@ -438,7 +438,7 @@ public:
         if (!db.empty()) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
-                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, (float_t)0.0);
+                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
         }
 
@@ -494,15 +494,15 @@ private:
     void init() {
         for (layer_size_t i = 0; i < CNN_TASK_SIZE; i++) {
             if (pad_type_ == padding::same) {
-                prev_out_buf_[i] = new vec_t(in_padded_.size(), (float_t)0.0);
-                prev_delta_padded_[i].resize(in_padded_.size(), (float_t)0.0);               
+                prev_out_buf_[i] = new vec_t(in_padded_.size(), float_t(0));
+                prev_delta_padded_[i].resize(in_padded_.size(), float_t(0));               
             }
             else {
                 prev_out_buf_[i] = nullptr;
             }
         }
         if (pad_type_ == padding::same) {
-            prev_delta2_padded_.resize(in_padded_.size(), (float_t)0.0);
+            prev_delta2_padded_.resize(in_padded_.size(), float_t(0));
         }
     }
 

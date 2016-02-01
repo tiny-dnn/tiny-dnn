@@ -61,7 +61,7 @@ namespace tiny_cnn {
         };
 
         explicit dropout(int out_dim)
-            : out_dim_(out_dim), mask_(out_dim), ctx_(train_phase), mode_(per_data), dropout_rate_(0.5) {
+            : out_dim_(out_dim), mask_(out_dim), ctx_(train_phase), mode_(per_data), dropout_rate_(float_t(0.5)) {
             for (int i = 0; i < CNN_TASK_SIZE; i++) {
                 masked_out_[i].resize(out_dim);
                 masked_delta_[i].resize(out_dim);
@@ -69,8 +69,8 @@ namespace tiny_cnn {
             shuffle();
         }
 
-        void set_dropout_rate(double rate) {
-            if (rate < 0.0 || rate >= 1.0)
+        void set_dropout_rate(float_t rate) {
+            if (rate < float_t(0) || rate >= float_t(1))
                 throw nn_error("0.0 <= dropout-rate < 1.0");
             dropout_rate_ = rate;
         }
@@ -91,7 +91,7 @@ namespace tiny_cnn {
             }
             else if (ctx_ == test_phase) {
                 for (int i = 0; i < out_dim_; i++)
-                    masked_out_[index][i] = out[i] * (1.0 - dropout_rate_);
+                    masked_out_[index][i] = out[i] * (float_t(1) - dropout_rate_);
             }
             else {
                 throw nn_error("invalid context");
@@ -111,7 +111,7 @@ namespace tiny_cnn {
 
         void shuffle() {
             for (auto& m : mask_)
-                m = bernoulli(1.0 - dropout_rate_);
+                m = bernoulli(float_t(1) - dropout_rate_);
         }
 
         void end_batch() {
@@ -125,7 +125,7 @@ namespace tiny_cnn {
         vec_t masked_delta_[CNN_TASK_SIZE];
         context ctx_;
         mode mode_;
-        double dropout_rate_;
+        float_t dropout_rate_;
     };
 
 } // namespace tiny_cnn

@@ -112,7 +112,7 @@ public:
         for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 int outi = in2out_[i];
-                prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : 0.0;
+                prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : float_t(0);
             }
         });
         return prev_->back_propagation(prev_delta_[index], index);
@@ -124,7 +124,7 @@ public:
 
         for (layer_size_t i = 0; i < in_size_; i++) {
             int outi = in2out_[i];
-            prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : 0.0;
+            prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
         }
         return prev_->back_propagation_2nd(prev_delta2_);
     }
