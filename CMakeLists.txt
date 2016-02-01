@@ -82,7 +82,7 @@ ENDIF()
 # COMPILER OPTIONS
 # ----------------------------------------------------------------------------
 
-IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
+IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     IF(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
         SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3 ")
