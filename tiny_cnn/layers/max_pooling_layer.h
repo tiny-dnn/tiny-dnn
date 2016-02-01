@@ -109,7 +109,7 @@ public:
         vec_t& prev_delta = prev_delta_[index];
         std::vector<int>& max_idx = out2inmax_[index];
 
-        for_(parallelize_, 0, in_size_, [&](const blocked_range& r) {
+        for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 int outi = in2out_[i];
                 prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : 0.0;
