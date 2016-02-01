@@ -15,18 +15,30 @@ addons:
     - g++-4.8
     - clang
     - cmake
+    - git
     - libtbb-dev
     - libboost-dev
-    - libopencv-dev
+    - libjpeg8-dev
+    - libtiff4-dev
+    - libjasper-dev
+    - libpng12-dev 
+    - libgtk2.0-dev
+    - libavcodec-dev
+    - libavformat-dev
+    - libswscale-dev
+    - libv4l-dev
+    - libatlas-base-dev
+    - gfortran
 before install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 tbb boost cmake; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv3; brew link opencv3 --force; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv3 && brew link opencv3 --force; fi
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 script:
   - cmake -DUSE_TBB=ON -DENABLE_TESTS=ON .
   - make 
+  - ls /usr/local/*opencv*
   - ./tiny_cnn_test
 branches:
   only:
