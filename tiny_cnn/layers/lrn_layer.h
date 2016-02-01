@@ -85,13 +85,13 @@ public:
         return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         CNN_UNREFERENCED_PARAMETER(current_delta);
         CNN_UNREFERENCED_PARAMETER(index);
         throw nn_error("not implemented");
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         CNN_UNREFERENCED_PARAMETER(current_delta2);
         throw nn_error("not implemented");
     }

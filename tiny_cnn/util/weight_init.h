@@ -91,7 +91,7 @@ public:
     gaussian() : scalable(float_t(1)) {}
     explicit gaussian(float_t sigma) : scalable(sigma) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -104,7 +104,7 @@ public:
     constant() : scalable(float_t(0)) {}
     explicit constant(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -117,7 +117,7 @@ public:
     he() : scalable(float_t(2)) {}
     explicit he(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
         const float_t sigma = std::sqrt(scale_ /fan_in);

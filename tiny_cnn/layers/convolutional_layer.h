@@ -28,7 +28,6 @@
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/activations/activation_function.h"
-#include "tiny_cnn/layers/partial_connected_layer.h"
 
 
 namespace tiny_cnn {
@@ -222,24 +221,24 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const
+    virtual size_t fan_in_size() const override
     {
         return weight_.width_ * weight_.height_ * in_.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const
+    virtual size_t fan_out_size() const override
     {
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
     ///< number of connections
-    virtual size_t connection_size() const
+    virtual size_t connection_size() const override
     {
         return out_.size() * fan_in_size();
     }
 
-    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2)
+    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) override
     {
         const vec_t& prev_out = *(prev_out_padded_[0]);
         const activation::function& prev_h = prev_->activation_function();
@@ -375,7 +374,7 @@ public:
         return W_[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) {
+    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
         const vec_t& prev_out = *(prev_out_padded_[index]);
         const activation::function& prev_h = prev_->activation_function();
         vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta_padded_[index] : &prev_delta_[index];
@@ -574,6 +573,8 @@ private:
 };
 
 #if 0
+
+#include "tiny_cnn/layers/partial_connected_layer.h"
 
 template<typename Activation = activation::identity>
 class convolutional_layer : public partial_connected_layer<Activation> {
