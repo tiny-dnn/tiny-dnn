@@ -39,7 +39,6 @@ before install:
 #  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone https://github.com/Itseez/opencv.git && cd opencv && git checkout 3.1.0 && mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX /usr/local .. && make && make install && ldconfig; fi
 install:
   - ./.travis/install.sh 
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 script:
   - cmake -DUSE_TBB=ON -DENABLE_TESTS=ON .
   - make 
