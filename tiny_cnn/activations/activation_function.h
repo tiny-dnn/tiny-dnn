@@ -35,9 +35,13 @@ class function {
 public:
     function() = default;
     function(const function &) = default;
+#ifndef CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
     function(function &&) = default;
+#endif
     function &operator =(const function &) = default;
+#ifndef CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
     function &operator =(function &&) = default;
+#endif
     virtual ~function() = default;
 
     virtual float_t f(const vec_t& v, size_t index) const = 0;

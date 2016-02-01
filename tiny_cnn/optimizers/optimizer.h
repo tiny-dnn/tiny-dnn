@@ -38,9 +38,13 @@ template <bool usesHessian>
 struct optimizer {
     optimizer() = default;
     optimizer(const optimizer &) = default;
+#ifndef CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
     optimizer(optimizer &&) = default;
+#endif
     optimizer &operator =(const optimizer &) = default;
+#ifndef CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
     optimizer &operator =(optimizer &&) = default;
+#endif
     virtual ~optimizer() = default;
 
     bool requires_hessian() const { return usesHessian; } // vc2012 doesn't support constexpr

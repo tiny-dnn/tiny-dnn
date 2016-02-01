@@ -353,3 +353,9 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 */
 
 } // namespace tiny_cnn
+
+#if defined(_MSC_VER) && (_MSC_VER <= 1800)
+#define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
+#define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
+#endif
+
