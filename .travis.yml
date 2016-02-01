@@ -21,7 +21,7 @@ addons:
 before install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update; fi
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 tbb boost cmake; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv3; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb opencv3; brew link opencv3 --force; fi
 install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 script:
