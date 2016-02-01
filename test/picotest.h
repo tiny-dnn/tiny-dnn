@@ -39,6 +39,7 @@
 #include <stdint.h>
 #include <cstdarg>
 #include <cstring>
+#include <cmath>
 
 #if defined _WIN32 
 #define PICOTEST_WINDOWS
