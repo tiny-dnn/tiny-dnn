@@ -20,7 +20,7 @@ addons:
     - cmake
     - git
     - libtbb-dev
-    - libboost-dev
+    - libboost-all-dev
     - libjpeg8-dev
     - libtiff4-dev
     - libjasper-dev
