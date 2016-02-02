@@ -1,0 +1,51 @@
+sudo: false
+language: cpp
+os:
+  - linux
+  - osx
+compiler:
+  - gcc
+  - clang
+cache:
+  directories:
+  - $HOME/opencv_3_1_0
+  - $HOME/homebrew-cache
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
+    - cmake
+    - git
+    - libtbb-dev
+    - libboost-all-dev
+    - libjpeg8-dev
+    - libtiff4-dev
+    - libjasper-dev
+    - libpng12-dev 
+    - libgtk2.0-dev
+    - libavcodec-dev
+    - libavformat-dev
+    - libswscale-dev
+    - libv4l-dev
+    - libatlas-base-dev
+    - gfortran
+#before install:
+#  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then bash scripts/travis-ci/apt/install_opencv.sh 3 1 0; fi
+#  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew update && brew tap homebrew/science; fi
+#  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then brew install --c++11 --with-tbb tbb boost cmake opencv3 && brew link opencv3 --force; fi
+#  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then git clone https://github.com/Itseez/opencv.git && cd opencv && git checkout 3.1.0 && mkdir build && cd build && cmake -D CMAKE_BUILD_TYPE=Release -D CMAKE_INSTALL_PREFIX /usr/local .. && make && make install && ldconfig; fi
+install:
+  - bash -x .travis/install.sh 
+script:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .; fi
+  - make -j2 
+  - ./tiny_cnn_test
+branches:
+  only:
+    - master
+
