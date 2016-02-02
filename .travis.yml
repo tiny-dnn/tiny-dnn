@@ -9,6 +9,7 @@ compiler:
 cache:
   directories:
   - $HOME/opencv_3_1_0
+  - $HOME/homebrew-cache
 addons:
   apt:
     sources:
