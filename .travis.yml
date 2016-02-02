@@ -40,7 +40,7 @@ addons:
 install:
   - bash -x .travis/install.sh 
 script:
-  - cmake -DUSE_TBB=ON -DBUILD_TESTS=ON .
+  - cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .
   - make -j2 
   - ./tiny_cnn_test
 branches:
