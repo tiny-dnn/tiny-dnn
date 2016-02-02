@@ -2,7 +2,7 @@
 set -e
 
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-  brew update
+  brew update >/dev/null
   [ -z $( brew tap | grep 'homebrew/science' ) ] && brew tap homebrew/science
   if [ -f "${HOME}/homebrew-cache/homebrew-cache.tar.gz"]; then
     tar -xvzf "${HOME}/homebrew-cache/homebrew-cache.tar.gz" --directory /usr/local/Cellar
