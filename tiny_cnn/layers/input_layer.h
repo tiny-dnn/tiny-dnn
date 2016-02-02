@@ -43,16 +43,16 @@ public:
     index3d<layer_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<layer_size_t>(0, 0, 0); }
     std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) {
+    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
         output_[index] = in;
         return next_ ? next_->forward_propagation(in, index) : output_[index];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) {
+    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) override {
         return current_delta;
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         return current_delta2;
     }
 

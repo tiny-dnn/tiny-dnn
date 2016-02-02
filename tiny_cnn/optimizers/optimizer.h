@@ -38,9 +38,13 @@ template <bool usesHessian>
 struct optimizer {
     optimizer() = default;
     optimizer(const optimizer &) = default;
+#ifndef CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
     optimizer(optimizer &&) = default;
+#endif
     optimizer &operator =(const optimizer &) = default;
+#ifndef CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
     optimizer &operator =(optimizer &&) = default;
+#endif
     virtual ~optimizer() = default;
 
     bool requires_hessian() const { return usesHessian; } // vc2012 doesn't support constexpr
@@ -74,7 +78,7 @@ protected:
  **/
 struct gradient_descent_levenberg_marquardt : public optimizer<true> {
 public:
-    gradient_descent_levenberg_marquardt() : alpha(0.00085), mu(0.02) {}
+    gradient_descent_levenberg_marquardt() : alpha(float_t(0.00085)), mu(float_t(0.02)) {}
 
     void update(const vec_t& dW, const vec_t& Hessian, vec_t& W) {
         for_i(W.size(), [&](int i){
@@ -94,7 +98,7 @@ public:
  * The Journal of Machine Learning Research, pages 2121-2159, 2011.
  **/
 struct adagrad : public stateful_optimizer<1, false> {
-    adagrad() : alpha(0.01), eps(1e-8) {}
+    adagrad() : alpha(float_t(0.01)), eps(float_t(1e-8)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t &W) {
         vec_t& g = get<0>(W);
@@ -117,7 +121,7 @@ private:
  * Lecture 6.5 - rmsprop, COURSERA: Neural Networks for Machine Learning (2012)
  **/
 struct RMSprop : public stateful_optimizer<1, false> {
-    RMSprop() : alpha(0.0001), mu(0.99), eps(1e-8) {}
+    RMSprop() : alpha(float_t(0.0001)), mu(float_t(0.99)), eps(float_t(1e-8)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& g = get<0>(W);
@@ -143,7 +147,7 @@ private:
  * 
  */
 struct adam : public stateful_optimizer<2, false> {
-    adam() : alpha(0.001), b1(0.9), b2(0.999) , b1_t(0.9), b2_t(0.999), eps(1e-8) {}
+    adam() : alpha(float_t(0.001)), b1(float_t(0.9)), b2(float_t(0.999)), b1_t(float_t(0.9)), b2_t(float_t(0.999)), eps(float_t(1e-8)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& mt = get<0>(W);
@@ -152,10 +156,10 @@ struct adam : public stateful_optimizer<2, false> {
         b1_t*=b1;b2_t*=b2;
 
         for_i(W.size(), [&](int i){
-            mt[i] = b1 * mt[i] + (1 - b1) * dW[i];
-            vt[i] = b2 * vt[i] + (1 - b2) * dW[i] * dW[i];
+            mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
+            vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
-            W[i] -= alpha * ( mt[i]/(1-b1_t) ) / std::sqrt( (vt[i]/(1-b2_t)) + eps);
+            W[i] -= alpha * ( mt[i]/(float_t(1) -b1_t) ) / std::sqrt( (vt[i]/(float_t(1)-b2_t)) + eps);
         });
     }
 
@@ -176,7 +180,7 @@ private:
  * slightly faster than tiny_cnn::momentum
  **/
 struct gradient_descent : public optimizer<false> {
-    gradient_descent() : alpha(0.01), lambda(0.0) {}
+    gradient_descent() : alpha(float_t(0.01)), lambda(float_t(0)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         for_i(W.size(), [&](int i){
@@ -197,7 +201,7 @@ struct gradient_descent : public optimizer<false> {
  **/
 struct momentum : public stateful_optimizer<1, false> {
 public:
-    momentum() : alpha(0.01), lambda(0.0), mu(0.9) {}
+    momentum() : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& dWprev = get<0>(W);

@@ -224,7 +224,7 @@ public:
      * calculate loss value (the smaller, the better) for regression task
      **/
     float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
-        float_t sum_loss = (float_t)0.0;
+        float_t sum_loss = float_t(0);
 
         for (size_t i = 0; i < in.size(); i++) {
             const vec_t predicted = predict(in[i]);
@@ -440,7 +440,7 @@ private:
     }
 
     float_t get_loss(const vec_t& out, const vec_t& t) {
-        float_t e = 0.0;
+        float_t e = float_t(0);
         assert(out.size() == t.size());
         for_i(out.size(), [&](int i){ e += E::f(out[i], t[i]); });
         return e;
@@ -481,20 +481,20 @@ private:
     float_t calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
         static const float_t delta = 1e-10;
 
-        std::fill(dw.begin(), dw.end(), 0.0);
+        std::fill(dw.begin(), dw.end(), float_t(0));
 
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
 
         w[check_index] = prev_w + delta;
-        float_t f_p = 0.0;
+        float_t f_p = float_t(0);
         for_i(data_size, [&](int i){ f_p += get_loss(fprop(in[i]), v[i]); });
 
-        float_t f_m = 0.0;
+        float_t f_m = float_t(0);
         w[check_index] = prev_w - delta;
         for_i(data_size, [&](int i){ f_m += get_loss(fprop(in[i]), v[i]); });
 
-        float_t delta_by_numerical = (f_p - f_m) / (2.0 * delta);
+        float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop

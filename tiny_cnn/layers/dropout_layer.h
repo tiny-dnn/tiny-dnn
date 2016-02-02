@@ -41,7 +41,7 @@ public:
         : layer<activation::identity>(in_dim, in_dim, 0, 0),
           phase_(phase),
           dropout_rate_(dropout_rate),
-          scale_(1.0 / (1.0 - dropout_rate_))
+          scale_(float_t(1) / (float_t(1) - dropout_rate_))
     {
         mask_ = new bool[in_size_ * CNN_TASK_SIZE];
         std::fill(mask_, mask_ + (in_size_ * CNN_TASK_SIZE), false);
@@ -51,7 +51,7 @@ public:
         : layer<activation::identity>(obj.in_size_, obj.in_size_, 0, 0),
           phase_(obj.phase_),
           dropout_rate_(obj.dropout_rate_),
-          scale_(1.0 / (1.0 - dropout_rate_))
+          scale_(float_t(1) / (float_t(1) - dropout_rate_))
     {
         mask_ = new bool[in_size_ * CNN_TASK_SIZE];
         std::copy(obj.mask_, (obj.mask_ + (in_size_ * CNN_TASK_SIZE)), mask_);
@@ -61,7 +61,7 @@ public:
         : layer<activation::identity>(obj.in_size_, obj.in_size_, 0, 0),
           phase_(obj.phase_),
           dropout_rate_(obj.dropout_rate_),
-          scale_(1.0 / (1.0 - dropout_rate_)),
+          scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           mask_(obj.mask_)
     {
         obj.mask_ = nullptr;
@@ -95,10 +95,10 @@ public:
         return *this;
     }
 
-    void set_dropout_rate(double rate)
+    void set_dropout_rate(float_t rate)
     {
         dropout_rate_ = rate;
-        scale_ = 1.0 / (1.0 - dropout_rate_);
+        scale_ = float_t(1) / (float_t(1) - dropout_rate_);
     }
 
     ///< number of incoming connections for each output unit

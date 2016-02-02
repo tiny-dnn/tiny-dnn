@@ -48,7 +48,7 @@ public:
     layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : parallelize_(true), next_(nullptr), prev_(nullptr),
           weight_init_(std::make_shared<weight_init::xavier>()),
-          bias_init_(std::make_shared<weight_init::constant>(0.0)) {
+          bias_init_(std::make_shared<weight_init::constant>(float_t(0))) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
 
@@ -69,8 +69,8 @@ public:
         weight_init_->fill(&W_, fan_in_size(), fan_out_size());
         bias_init_->fill(&b_, fan_in_size(), fan_out_size());
 
-        std::fill(Whessian_.begin(), Whessian_.end(), 0.0);
-        std::fill(bhessian_.begin(), bhessian_.end(), 0.0);
+        std::fill(Whessian_.begin(), Whessian_.end(), float_t(0));
+        std::fill(bhessian_.begin(), bhessian_.end(), float_t(0));
         clear_diff(CNN_TASK_SIZE);
     }
 
@@ -250,8 +250,8 @@ private:
 
     void clear_diff(size_t worker_size) {
         for (size_t i = 0; i < worker_size; i++) {
-            std::fill(dW_[i].begin(), dW_[i].end(), 0.0);
-            std::fill(db_[i].begin(), db_[i].end(), 0.0);
+            std::fill(dW_[i].begin(), dW_[i].end(), float_t(0));
+            std::fill(db_[i].begin(), db_[i].end(), float_t(0));
         }
     }
 

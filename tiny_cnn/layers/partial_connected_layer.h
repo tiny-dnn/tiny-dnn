@@ -40,7 +40,7 @@ public:
     typedef std::vector<std::pair<layer_size_t, layer_size_t> > wo_connections;
     typedef layer<Activation> Base;
 
-    partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = 1.0)
+    partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = float_t(1))
         : Base(in_dim, out_dim, weight_dim, bias_dim), 
           weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim),
           scale_factor_(scale_factor) {}
@@ -88,7 +88,7 @@ public:
         for_i(parallelize_, out_size_, [&](int i) {
             const wi_connections& connections = out2wi_[i];
 
-            a[i] = 0.0;
+            a[i] = float_t(0);
 
             for (auto connection : connections)// 13.1%
                 a[i] += W_[connection.first] * in[connection.second]; // 3.2%
@@ -108,7 +108,7 @@ public:
         return next_ ? next_->forward_propagation(output_[index], index) : output_[index]; // 15.6%
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
@@ -116,7 +116,7 @@ public:
         for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
-                float_t delta = 0.0;
+                float_t delta = float_t(0);
 
                 for (auto connection : connections) 
                     delta += W_[connection.first] * current_delta[connection.second]; // 40.6%
@@ -128,7 +128,7 @@ public:
         for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const io_connections& connections = weight2io_[i];
-                float_t diff = 0.0;
+                float_t diff = float_t(0);
 
                 for (auto connection : connections) // 11.9%
                     diff += prev_out[connection.first] * current_delta[connection.second];
@@ -139,7 +139,7 @@ public:
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
             const std::vector<layer_size_t>& outs = bias2out_[i];
-            float_t diff = 0.0;
+            float_t diff = float_t(0);
 
             for (auto o : outs)
                 diff += current_delta[o];    
@@ -155,13 +155,13 @@ public:
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
         for (size_t i = 0; i < weight2io_.size(); i++) {
             const io_connections& connections = weight2io_[i];
-            float_t diff = 0.0;
+            float_t diff = float_t(0);
 
             for (auto connection : connections)
                 diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
@@ -172,7 +172,7 @@ public:
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
             const std::vector<layer_size_t>& outs = bias2out_[i];
-            float_t diff = 0.0;
+            float_t diff = float_t(0);
 
             for (auto o : outs)
                 diff += current_delta2[o];    
@@ -182,7 +182,7 @@ public:
 
         for (layer_size_t i = 0; i < in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
-            prev_delta2_[i] = 0.0;
+            prev_delta2_[i] = float_t(0);
 
             for (auto connection : connections) 
                 prev_delta2_[i] += sqr(W_[connection.first]) * current_delta2[connection.second];

@@ -67,7 +67,6 @@ namespace tiny_cnn {
         std::fill(dst, dst + dst_shape.size(), 0.0f);
 
         float *wtmp = (float*)malloc(sizeof(float) * w_shape.size());
-        float *dtmp = (float*)calloc(dst_shape.size(), sizeof(float));
         for (int inc = 0; inc < src_shape.depth_; inc++) {
             for (int outc = 0; outc < dst_shape.depth_; outc++) {
                 int oi0 = outc % VEC_WIDTH;
@@ -207,7 +206,7 @@ namespace tiny_cnn {
     {
         assert(w_shape.depth_ == src_shape.depth_ * dst_shape.depth_);
 
-        std::fill(dst, dst + dst_shape.size(), (float_t)0.0);
+        std::fill(dst, dst + dst_shape.size(), float_t(0));
 
         for (int outc = 0; outc < dst_shape.depth_; outc++) {
             for (int inc = 0; inc < src_shape.depth_; inc++) {
@@ -215,7 +214,7 @@ namespace tiny_cnn {
 
                 for (int y = 0; y < dst_shape.height_; y++) {
                     for (int x = 0; x < dst_shape.width_; x++) {
-                        float_t sum = (float_t)0.0;
+                        float_t sum = float_t(0);
 
                         for (int ky = 0; ky < w_shape.height_; ky++)
                             for (int kx = 0; kx < w_shape.width_; kx++)

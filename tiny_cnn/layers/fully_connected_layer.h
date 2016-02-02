@@ -52,12 +52,12 @@ public:
         return out_size_;
     }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) {
+    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
         vec_t &a = a_[index];
         vec_t &out = output_[index];
 
         for_i(parallelize_, out_size_, [&](int i) {
-            a[i] = 0.0;
+            a[i] = float_t(0);
             for (layer_size_t c = 0; c < in_size_; c++) {
                 a[i] += W_[c*out_size_ + i] * in[c];
             }
@@ -74,7 +74,7 @@ public:
         return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) {
+    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
@@ -108,7 +108,7 @@ public:
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
@@ -122,7 +122,7 @@ public:
         }
 
         for (layer_size_t c = 0; c < in_size_; c++) { 
-            prev_delta2_[c] = 0.0;
+            prev_delta2_[c] = float_t(0);
 
             for (layer_size_t r = 0; r < out_size_; r++) 
                 prev_delta2_[c] += current_delta2[r] * sqr(W_[c*out_size_ + r]);

@@ -85,20 +85,20 @@ public:
         return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) {
+    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
         CNN_UNREFERENCED_PARAMETER(current_delta);
         CNN_UNREFERENCED_PARAMETER(index);
         throw nn_error("not implemented");
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) {
+    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         CNN_UNREFERENCED_PARAMETER(current_delta2);
         throw nn_error("not implemented");
     }
 
 private:
     void forward_across(const vec_t& in, vec_t& out) {
-        std::fill(in_square_.begin(), in_square_.end(), (float_t)0.0);
+        std::fill(in_square_.begin(), in_square_.end(), float_t(0));
 
         for (layer_size_t i = 0; i < size_ / 2; i++) {
             layer_size_t idx = in_shape_.get_index(0, 0, i);
@@ -121,7 +121,7 @@ private:
             float_t *dst = &out[in_shape_.get_index(0, 0, i)];
             const float_t *src = &in[in_shape_.get_index(0, 0, i)];
             for (layer_size_t j = 0; j < wxh; j++)
-                dst[j] = src[j] * std::pow(1.0 + alpha_div_size * in_square_[j], -beta_);
+                dst[j] = src[j] * std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
         }
     }
 

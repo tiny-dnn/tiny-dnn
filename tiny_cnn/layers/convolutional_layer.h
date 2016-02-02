@@ -28,7 +28,6 @@
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/activations/activation_function.h"
-#include "tiny_cnn/layers/partial_connected_layer.h"
 
 
 namespace tiny_cnn {
@@ -222,30 +221,30 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const
+    virtual size_t fan_in_size() const override
     {
         return weight_.width_ * weight_.height_ * in_.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const
+    virtual size_t fan_out_size() const override
     {
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
     ///< number of connections
-    virtual size_t connection_size() const
+    virtual size_t connection_size() const override
     {
         return out_.size() * fan_in_size();
     }
 
-    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2)
+    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) override
     {
         const vec_t& prev_out = *(prev_out_padded_[0]);
         const activation::function& prev_h = prev_->activation_function();
         vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta2_padded_ : &prev_delta2_;
 
-        std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         // accumulate dw
         for_i(in_.depth_, [&](int inc) {
@@ -255,7 +254,7 @@ public:
 
                 for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
                     for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = 0.0;
+                        float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &current_delta2[out_.get_index(0, 0, outc)];
 
@@ -274,7 +273,7 @@ public:
         if (!this->bhessian_.empty()) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &current_delta2[out_.get_index(0, 0, outc)];
-                this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, (float_t)0.0);
+                this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
         }
 
@@ -325,7 +324,7 @@ public:
         vec_t &out = output_[worker_index]; // output
         const vec_t &in = *(prev_out_padded_[worker_index]); // input
         
-        std::fill(a.begin(), a.end(), (float_t)0.0);
+        std::fill(a.begin(), a.end(), float_t(0));
 
         for_i(parallelize_, out_.depth_, [&](int o) {
             for (layer_size_t inc = 0; inc < in_.depth_; inc++) {
@@ -339,7 +338,7 @@ public:
                     for (layer_size_t x = 0; x < out_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
-                        float_t sum = (float_t)0.0;
+                        float_t sum = float_t(0);
 
                         // should be optimized for small kernel(3x3,5x5)
                         for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
@@ -375,14 +374,14 @@ public:
         return W_[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) {
+    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
         const vec_t& prev_out = *(prev_out_padded_[index]);
         const activation::function& prev_h = prev_->activation_function();
         vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta_padded_[index] : &prev_delta_[index];
         vec_t& dW = dW_[index];
         vec_t& db = db_[index];
 
-        std::fill(prev_delta->begin(), prev_delta->end(), (float_t)0.0);
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         // propagate delta to previous layer
         for_i(in_.depth_, [&](int inc) {
@@ -421,7 +420,7 @@ public:
 
                 for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
                     for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = 0.0;
+                        float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
@@ -438,7 +437,7 @@ public:
         if (!db.empty()) {
             for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
-                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, (float_t)0.0);
+                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
         }
 
@@ -494,15 +493,15 @@ private:
     void init() {
         for (layer_size_t i = 0; i < CNN_TASK_SIZE; i++) {
             if (pad_type_ == padding::same) {
-                prev_out_buf_[i] = new vec_t(in_padded_.size(), (float_t)0.0);
-                prev_delta_padded_[i].resize(in_padded_.size(), (float_t)0.0);               
+                prev_out_buf_[i] = new vec_t(in_padded_.size(), float_t(0));
+                prev_delta_padded_[i].resize(in_padded_.size(), float_t(0));               
             }
             else {
                 prev_out_buf_[i] = nullptr;
             }
         }
         if (pad_type_ == padding::same) {
-            prev_delta2_padded_.resize(in_padded_.size(), (float_t)0.0);
+            prev_delta2_padded_.resize(in_padded_.size(), float_t(0));
         }
     }
 
@@ -574,6 +573,8 @@ private:
 };
 
 #if 0
+
+#include "tiny_cnn/layers/partial_connected_layer.h"
 
 template<typename Activation = activation::identity>
 class convolutional_layer : public partial_connected_layer<Activation> {

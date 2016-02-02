@@ -64,7 +64,7 @@ struct generic_vec_type {
         unroll_size = 1
     };
     static register_type set1(const value_type& x) { return x; }
-    static register_type zero() { return 0.0; }
+    static register_type zero() { return register_type(0); }
     static register_type mul(const register_type& v1, const register_type& v2) { return v1 * v2; }
     static register_type add(const register_type& v1, const register_type& v2) { return v1 + v2; }
     static register_type load(const value_type* px) { return *px; }

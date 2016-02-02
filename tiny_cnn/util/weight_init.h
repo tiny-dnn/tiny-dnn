@@ -55,7 +55,7 @@ protected:
  **/
 class xavier : public scalable {
 public:
-    xavier() : scalable((float_t)6.0) {}
+    xavier() : scalable(float_t(6)) {}
     explicit xavier(float_t value) : scalable(value) {}
 
     void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
@@ -74,13 +74,13 @@ public:
  **/
 class lecun : public scalable {
 public:
-    lecun() : scalable((float_t)1.0) {}
+    lecun() : scalable(float_t(1)) {}
     explicit lecun(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        const float_t weight_base = scale_ / std::sqrt(fan_in);
+        const float_t weight_base = scale_ / std::sqrt(float_t(fan_in));
 
         uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
     }
@@ -88,23 +88,23 @@ public:
 
 class gaussian : public scalable {
 public:
-    gaussian() : scalable(1.0) {}
+    gaussian() : scalable(float_t(1)) {}
     explicit gaussian(float_t sigma) : scalable(sigma) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        gaussian_rand(weight->begin(), weight->end(), 0.0, scale_);
+        gaussian_rand(weight->begin(), weight->end(), float_t(0), scale_);
     }
 };
 
 class constant : public scalable {
 public:
-    constant() : scalable((float_t)0.0) {}
+    constant() : scalable(float_t(0)) {}
     explicit constant(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -114,15 +114,15 @@ public:
 
 class he : public scalable {
 public:
-    he() : scalable((float_t)2.0) {}
+    he() : scalable(float_t(2)) {}
     explicit he(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) {
+    void fill(vec_t *weight, layer_size_t fan_in, layer_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
         const float_t sigma = std::sqrt(scale_ /fan_in);
 
-        gaussian_rand(weight->begin(), weight->end(), 0.0, sigma);
+        gaussian_rand(weight->begin(), weight->end(), float_t(0), sigma);
     }
 };
 

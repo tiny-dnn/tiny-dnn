@@ -90,8 +90,8 @@ inline int uniform_idx(const Container& t) {
     return uniform_rand(0, (int) t.size() - 1);
 }
 
-inline bool bernoulli(double p) {
-    return uniform_rand(0.0, 1.0) <= p;
+inline bool bernoulli(float_t p) {
+    return uniform_rand(float_t(0), float_t(1)) <= p;
 }
 
 template<typename Iter>
@@ -353,3 +353,9 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 */
 
 } // namespace tiny_cnn
+
+#if defined(_MSC_VER) && (_MSC_VER <= 1800)
+#define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
+#define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
+#endif
+

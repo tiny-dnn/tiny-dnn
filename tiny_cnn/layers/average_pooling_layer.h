@@ -42,7 +42,7 @@ public:
     average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
     : Base(in_width * in_height * in_channels, 
            in_width * in_height * in_channels / sqr(pooling_size), 
-           in_channels, in_channels, 1.0 / sqr(pooling_size)),
+           in_channels, in_channels, float_t(1) / sqr(pooling_size)),
       stride_(pooling_size),
       in_(in_width, in_height, in_channels), 
       out_(in_width/pooling_size, in_height/pooling_size, in_channels)
@@ -56,7 +56,7 @@ public:
     average_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size, layer_size_t stride)
         : Base(in_width * in_height * in_channels,
             out_size(in_width, pooling_size, stride) * out_size(in_height, pooling_size, stride) * in_channels,
-            in_channels, in_channels, 1.0 / sqr(pooling_size)),
+            in_channels, in_channels, float_t(1) / sqr(pooling_size)),
         stride_(stride),
         in_(in_width, in_height, in_channels),
         out_(out_size(in_width, pooling_size, stride), out_size(in_height, pooling_size, stride), in_channels)
@@ -67,7 +67,7 @@ public:
         init_connection(pooling_size);
     }
 
-    image<> output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t worker_index = 0) const override {
         return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
