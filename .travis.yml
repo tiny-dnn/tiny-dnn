@@ -41,8 +41,8 @@ addons:
 install:
   - bash -x .travis/install.sh 
 script:
-  - if [ "$TRAVIS_OS_NAME" == "linux"]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .
-  - if [ "$TRAVIS_OS_NAME" == "osx"]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .
+  - if [ "$TRAVIS_OS_NAME" == "linux"]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx"]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .; fi
   - make -j2 
   - ./tiny_cnn_test
 branches:
