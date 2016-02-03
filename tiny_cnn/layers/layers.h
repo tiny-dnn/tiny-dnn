@@ -87,7 +87,7 @@ public:
     template <typename Optimizer>
     void update_weights(Optimizer *o, size_t worker_size, size_t batch_size) {
         for (auto pl : layers_)
-            pl->update_weight(o, worker_size, batch_size);
+            pl->update_weight(o, static_cast<layer_size_t>(worker_size), batch_size);
     }
     
     void set_parallelize(bool parallelize) {
