@@ -130,13 +130,13 @@ public:
      * executes forward-propagation and returns maximum output
      **/
     float_t      predict_max_value(const vec_t& in) {
-        return fprop_max(in, 0);
+        return fprop_max(in);
     }
     /**
      * executes forward-propagation and returns maximum output index
      **/
     label_t      predict_label(const vec_t& in) {
-        return fprop_max_index(in, 0);
+        return fprop_max_index(in);
     }
 
     /**
@@ -382,12 +382,12 @@ public:
     }
 
 protected:
-    float_t fprop_max(const vec_t& in, int idx) {
+    float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
         return *std::max_element(std::begin(prediction), std::end(prediction));
     }
 
-    label_t fprop_max_index(const vec_t& in, int idx) {
+    label_t fprop_max_index(const vec_t& in, int idx = 0) {
         return label_t(max_index(fprop(in, idx)));
     }
 private:
