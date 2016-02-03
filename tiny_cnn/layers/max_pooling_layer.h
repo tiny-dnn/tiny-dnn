@@ -153,12 +153,13 @@ private:
 
     void connect_kernel(layer_size_t pooling_size, layer_size_t outx, layer_size_t outy, layer_size_t  c)
     {
-        layer_size_t dxmax = std::min((size_t)pooling_size, in_.width_ - outx * stride_);
-        layer_size_t dymax = std::min((size_t)pooling_size, in_.height_ - outy * stride_);
+        layer_size_t dxmax = static_cast<layer_size_t>(std::min((size_t)pooling_size, in_.width_ - outx * stride_));
+        layer_size_t dymax = static_cast<layer_size_t>(std::min((size_t)pooling_size, in_.height_ - outy * stride_));
 
         for (layer_size_t dy = 0; dy < dymax; dy++) {
             for (layer_size_t dx = 0; dx < dxmax; dx++) {
-                layer_size_t in_index = in_.get_index(outx * stride_ + dx, outy * stride_ + dy, c);
+                layer_size_t in_index = in_.get_index(static_cast<layer_size_t>(outx * stride_ + dx),
+                                                      static_cast<layer_size_t>(outy * stride_ + dy), c);
                 layer_size_t out_index = out_.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size())
@@ -181,7 +182,8 @@ private:
         for (layer_size_t c = 0; c < in_.depth_; ++c)
             for (layer_size_t y = 0; y < out_.height_; ++y)
                 for (layer_size_t x = 0; x < out_.width_; ++x)
-                    connect_kernel(pool_size_, x, y, c);
+                    connect_kernel(static_cast<layer_size_t>(pool_size_),
+                                   x, y, c);
     }
 
 };
