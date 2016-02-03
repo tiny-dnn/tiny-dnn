@@ -81,7 +81,7 @@ public:
     gradient_descent_levenberg_marquardt() : alpha(float_t(0.00085)), mu(float_t(0.02)) {}
 
     void update(const vec_t& dW, const vec_t& Hessian, vec_t& W) {
-        for_i(W.size(), [&](int i){
+        for_i(static_cast<int>(W.size()), [&](int i){
             W[i] = W[i] - (alpha / (Hessian[i] + mu)) * dW[i];
         });
     }
@@ -103,7 +103,7 @@ struct adagrad : public stateful_optimizer<1, false> {
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t &W) {
         vec_t& g = get<0>(W);
 
-        for_i(W.size(), [&](int i) {
+        for_i(static_cast<int>(W.size()), [&](int i) {
             g[i] += dW[i] * dW[i];
             W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
         });
@@ -126,7 +126,7 @@ struct RMSprop : public stateful_optimizer<1, false> {
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& g = get<0>(W);
 
-        for_i(W.size(), [&](int i)
+        for_i(static_cast<int>(W.size()), [&](int i)
         {
             g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
             W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
@@ -155,7 +155,7 @@ struct adam : public stateful_optimizer<2, false> {
 
         b1_t*=b1;b2_t*=b2;
 
-        for_i(W.size(), [&](int i){
+        for_i(static_cast<int>(W.size()), [&](int i){
             mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
             vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
@@ -183,7 +183,7 @@ struct gradient_descent : public optimizer<false> {
     gradient_descent() : alpha(float_t(0.01)), lambda(float_t(0)) {}
 
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
-        for_i(W.size(), [&](int i){
+        for_i(static_cast<int>(W.size()), [&](int i){
             W[i] = W[i] - alpha * (dW[i] + lambda * W[i]);
         });
     }
@@ -206,7 +206,7 @@ public:
     void update(const vec_t& dW, const vec_t& /*Hessian*/, vec_t& W) {
         vec_t& dWprev = get<0>(W);
 
-        for_i(W.size(), [&](int i){
+        for_i(static_cast<int>(W.size()), [&](int i){
             float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
             W[i]      += V;
             dWprev[i] =  V;
