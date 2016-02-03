@@ -318,7 +318,7 @@ public:
 
     virtual const vec_t& forward_propagation(const vec_t& in_raw, size_t worker_index) override
     {
-        copy_and_pad_input(in_raw, worker_index);
+        copy_and_pad_input(in_raw, static_cast<int>(worker_index));
 
         vec_t &a = a_[worker_index]; // w*x
         vec_t &out = output_[worker_index]; // output
