@@ -48,7 +48,7 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
  * create multi-layer perceptron
  */
 template<typename loss_func, typename algorithm, typename activation>
-network<loss_func, algorithm> make_mlp(const std::vector<int>& units) {
+network<loss_func, algorithm> make_mlp(const std::vector<layer_size_t>& units) {
     return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
 }
 
