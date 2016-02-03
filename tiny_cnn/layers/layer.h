@@ -66,8 +66,10 @@ public:
     // cannot call from ctor because of pure virtual function call fan_in_size().
     // so should call this function explicitly after ctor
     void init_weight() {
-        weight_init_->fill(&W_, fan_in_size(), fan_out_size());
-        bias_init_->fill(&b_, fan_in_size(), fan_out_size());
+        weight_init_->fill(&W_, static_cast<layer_size_t>(fan_in_size()),
+                           static_cast<layer_size_t>(fan_out_size()));
+        bias_init_->fill(&b_, static_cast<layer_size_t>(fan_in_size()),
+                         static_cast<layer_size_t>(fan_out_size()));
 
         std::fill(Whessian_.begin(), Whessian_.end(), float_t(0));
         std::fill(bhessian_.begin(), bhessian_.end(), float_t(0));
@@ -237,9 +239,11 @@ protected:
 private:
     void merge(size_t worker_size, size_t batch_size) {
         for (size_t i = 1; i < worker_size; i++)
-            vectorize::reduce<float_t>(&dW_[i][0], dW_[i].size(), &dW_[0][0]);
+            vectorize::reduce<float_t>(&dW_[i][0],
+                static_cast<layer_size_t>(dW_[i].size()), &dW_[0][0]);
         for (size_t i = 1; i < worker_size; i++)
-            vectorize::reduce<float_t>(&db_[i][0], db_[i].size(), &db_[0][0]);
+            vectorize::reduce<float_t>(&db_[i][0],
+                static_cast<layer_size_t>(db_[i].size()), &db_[0][0]);
 
         std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
