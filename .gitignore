@@ -180,5 +180,7 @@ waf3*
 *.dll
 *.bmp
 *.bin
+*.pb.cc
+*.pb.h
 
 
