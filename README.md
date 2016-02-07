@@ -1,5 +1,7 @@
 tiny-cnn: A header only, dependency-free deep learning framework in C++11
 ========
+[![Build Status](https://travis-ci.org/nyanp/tiny-cnn.svg?branch=master)](https://travis-ci.org/nyanp/tiny-cnn)
+
 
 tiny-cnn is a C++11 implementation of deep learning (convolutional neural networks). It is suitable for deep learning on  limited computational resource, embedded systems and IoT devices.
 
