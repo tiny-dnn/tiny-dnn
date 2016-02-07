@@ -1,0 +1,51 @@
+sudo: false
+language: cpp
+os:
+  - linux
+  - osx
+compiler:
+  - gcc
+  - clang
+cache:
+  directories:
+  - $HOME/opencv_3_1_0 # Cache is only available on travis container-based boxes
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    packages:
+    - gcc-4.8
+    - g++-4.8
+    - clang
+    - cmake
+    - git
+    - libtbb-dev
+    - libboost1.55-all-dev
+    - libjpeg8-dev
+    - libtiff4-dev
+    - libjasper-dev
+    - libpng12-dev 
+    - libgtk2.0-dev
+    - libavcodec-dev
+    - libavformat-dev
+    - libswscale-dev
+    - libv4l-dev
+    - libatlas-base-dev
+    - gfortran
+install:
+  - bash -x .travis/install.sh 
+script:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export CPLUS_INCLUDE_PATH="$HOME/opencv_3_1_0/include"; fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .; fi
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .; fi
+  - make -j2 
+  - ./tiny_cnn_test
+branches:
+  only:
+    - master
+matrix:
+  exclude: # On OSX g++ is a symlink to clang++ by default 
+    - os: osx
+      compiler: gcc

@@ -46,6 +46,7 @@ OPTION(USE_TBB 	"Set to ON to use boost" OFF)
 OPTION(USE_OMP 	"Set to ON to use boost" OFF)
 OPTION(USE_SSE 	"Set to ON to use sse" ON)
 OPTION(USE_AVX 	"Set to ON to use avx" ON)
+OPTION(BUILD_TESTS "Set to ON to build tests" OFF)
 
 # ----------------------------------------------------------------------------
 #   Find Dependencies
@@ -82,7 +83,7 @@ ENDIF()
 # COMPILER OPTIONS
 # ----------------------------------------------------------------------------
 
-IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW)
+IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     IF(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
         SET(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3 ")
@@ -132,6 +133,12 @@ IF(Boost_FOUND)
 ENDIF()
 ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
 target_link_libraries( testb ${OpenCV_LIBS} )
+
+IF(BUILD_TESTS)
+    FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds})
+    TARGET_LINK_LIBRARIES(tiny_cnn_test ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
+ENDIF()
 
 
 
