@@ -127,7 +127,7 @@ int max_index(const T& vec) {
 
     for (size_t i = 0; i < vec.size(); i++) {
         if (vec[i] > max_val) {
-            max_index = i;
+            max_index = static_cast<int>(i);
             max_val = vec[i];
         }
     }

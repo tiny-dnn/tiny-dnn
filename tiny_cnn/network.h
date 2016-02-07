@@ -171,7 +171,9 @@ public:
             if (optimizer_.requires_hessian())
                 calc_hessian(in);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i], std::min(batch_size, in.size() - i), n_threads);
+                train_once(&in[i], &t[i],
+                           static_cast<int>(std::min(batch_size, in.size() - i)),
+                           n_threads);
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
