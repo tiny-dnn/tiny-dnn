@@ -121,17 +121,9 @@ inline bool is_little_endian() {
 
 
 template<typename T>
-int max_index(const T& vec) {
-    typename T::value_type max_val = std::numeric_limits<typename T::value_type>::lowest();
-    int max_index = -1;
-
-    for (size_t i = 0; i < vec.size(); i++) {
-        if (vec[i] > max_val) {
-            max_index = static_cast<int>(i);
-            max_val = vec[i];
-        }
-    }
-    return max_index;
+size_t max_index(const T& vec) {
+    auto begin_iterator = std::begin(vec);
+    return std::max_element(begin_iterator, std::end(vec)) - begin_iterator;
 }
 
 template<typename T, typename U>
