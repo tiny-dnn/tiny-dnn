@@ -260,7 +260,7 @@ private:
     }
 
     void set_size(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) {
-        try {
+        CNN_TRY {
             in_size_ = in_dim;
             out_size_ = out_dim;
 
@@ -275,7 +275,7 @@ private:
             for (auto& p : prev_delta_) p.resize(in_dim);
             for (auto& dw : dW_) dw.resize(weight_dim);
             for (auto& db : db_) db.resize(bias_dim);
-        } catch (const std::bad_alloc&) {
+        } CNN_CATCH (const std::bad_alloc&) {
             throw nn_error(
                 format_str("memory allocation failed: layer size too large!\nin:%d,out:%d,weights:%d,biases:%d",
                            in_dim, out_dim, weight_dim, bias_dim));
