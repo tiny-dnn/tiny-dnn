@@ -34,6 +34,8 @@
 #include <cstdio>
 #include <cstdarg>
 #include <string>
+#include <thread>
+#include <future>
 #include "aligned_allocator.h"
 #include "nn_error.h"
 
@@ -191,8 +193,31 @@ void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
 #else
 
 template<typename Func>
-void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-    xparallel_for(begin, end, f);
+void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
+    int nthreads = std::thread::hardware_concurrency();
+    int blockSize = (end - start) / nthreads;
+    if (blockSize*nthreads < end - start)
+        blockSize++;
+
+    std::vector<std::future<void>> futures;
+
+    int blockStart = start;
+    int blockEnd = blockStart + blockSize;
+    if (blockEnd > end) blockEnd = end;
+
+    for (int i = 0; i < nthreads; i++) {
+        futures.push_back(std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
+            f(blocked_range(blockStart, blockEnd));
+        })));
+
+        blockStart += blockSize;
+        blockEnd = blockStart + blockSize;
+        if (blockStart >= end) break;
+        if (blockEnd > end) blockEnd = end;
+    }
+
+    for (auto &f : futures)
+        f.wait();
 }
 
 #endif

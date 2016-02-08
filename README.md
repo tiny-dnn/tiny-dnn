@@ -1,5 +1,7 @@
-tiny-cnn: A C++11 implementation of deep learning (convolutional neural networks)
+tiny-cnn: A header only, dependency-free deep learning framework in C++11
 ========
+[![Build Status](https://travis-ci.org/nyanp/tiny-cnn.svg?branch=master)](https://travis-ci.org/nyanp/tiny-cnn)
+
 
 tiny-cnn is a C++11 implementation of deep learning (convolutional neural networks). It is suitable for deep learning on  limited computational resource, embedded systems and IoT devices.
 
@@ -15,14 +17,14 @@ tiny-cnn is a C++11 implementation of deep learning (convolutional neural networ
 
 see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
-## designing principles
+## features
 - fast, without GPU
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
 - header only
     - Just include tiny_cnn.h and write your model in c++. There is nothing to install.
-- policy-based design
 - small dependency & simple implementation
+- [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
 
 ## comparison with other libraries
 
@@ -35,10 +37,12 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 ## supported networks
 ### layer-types
 * fully-connected layer
-* fully-connected layer with dropout
 * convolutional layer
 * average pooling layer
 * max-pooling layer
+* contrast normalization layer
+* dropout layer
+* linear operation layer
 
 ### activation functions
 * tanh
@@ -47,6 +51,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * rectified linear(relu)
 * leaky relu
 * identity
+* exponential linear units(elu)
 
 ### loss functions
 * cross-entropy
@@ -90,7 +95,7 @@ with tbb and SSE/AVX
     ./waf configure --SSE --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
     ./waf build
 
-### vc(2012~)
+### vc(2013~)
 open vc/tiny_cnn.sln and build in release mode.
 
 ### using CMake
@@ -177,7 +182,7 @@ void construct_mlp() {
 }
 ```
 
-more sample, read main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/wiki/MNIST-Example) page.
+more sample, read main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter) page.
 
 ## references
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
