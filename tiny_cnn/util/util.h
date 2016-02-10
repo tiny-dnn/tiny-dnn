@@ -379,11 +379,3 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 #define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
 #define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
 #endif
-
-#ifdef CNN_USE_EXCEPTIONS
-#define CNN_TRY try
-#define CNN_CATCH(x) catch(x)
-#else
-#define CNN_TRY
-#define CNN_CATCH(x) if (true) ; else
-#endif
