@@ -4,6 +4,8 @@ environment:
 
 version: '{branch}-{build}'
 
+os: Visual Studio 2015
+
 install:
   # Get a recent CMake and our dependencies (Eigen, OpenCV, Boost):
   - cmd: cd %home%
@@ -18,4 +20,3 @@ before_build:
 
 build:
   project: C:\projects\build\tiny_cnn.sln
-  parallel: true
