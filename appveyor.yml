@@ -1,0 +1,10 @@
+version: '{branch}-{build}'
+
+before_build:
+  - cmd: mkdir build
+  - cmd: cd build
+  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBOOST_ROOT=C:\Libraries\boost_1_59_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_59_0\lib64-msvc-14.0 -DCMAKE_INSTALL_PREFIX=..\install .'
+
+build:
+  project: build/tiny_cnn.sln
+  parallel: true

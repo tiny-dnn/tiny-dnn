@@ -182,5 +182,7 @@ waf3*
 *.bin
 *.pb.cc
 *.pb.h
-
+CMakeFiles*
+build*
+*.cmake
 
