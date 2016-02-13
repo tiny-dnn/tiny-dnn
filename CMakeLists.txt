@@ -125,9 +125,12 @@ IF(BUILD_TESTS)
     set(Boost_USE_STATIC_LIBS        OFF)
     FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
     IF(Boost_FOUND)
+        include_directories(${Boost_INCLUDE_DIRS})
+	link_directories(${Boost_LIBRARY_DIRS})
+	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
         ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds})
+        TARGET_LINK_LIBRARIES(tiny_cnn_test ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
     ENDIF()
-    TARGET_LINK_LIBRARIES(tiny_cnn_test ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
 ENDIF()
 
 
