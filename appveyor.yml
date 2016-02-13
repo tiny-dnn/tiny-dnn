@@ -1,6 +1,3 @@
-init:
-- ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-
 environment:
   home: C:\projects
   cmake: C:\projects\cmake-3.4.1-win32-x86\bin\cmake.exe
@@ -19,10 +16,7 @@ install:
 before_build:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBOOST_ROOT=C:\Libraries\boost_1_59_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_59_0\lib64-msvc-14.0 -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-cnn'
+  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DBOOST_ROOT=C:\Libraries\boost_1_59_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_59_0\lib64-msvc-14.0 -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-cnn'
 
 build:
   project: C:\projects\build\tiny_cnn.sln
-
-on_finish:
-- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
