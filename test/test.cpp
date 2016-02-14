@@ -574,5 +574,5 @@ TEST(lrn, cross) {
 }
 
 int main(void) {
-    RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }
