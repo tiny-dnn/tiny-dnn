@@ -28,7 +28,7 @@
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/activations/activation_function.h"
-
+#include <deque>
 
 namespace tiny_cnn {
 
@@ -58,7 +58,7 @@ struct connection_table {
         return rows_ == 0 && cols_ == 0;
     }
 
-    std::vector<bool> connected_;
+    std::deque<bool> connected_;
     size_t rows_;
     size_t cols_;
 };
