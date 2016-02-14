@@ -127,6 +127,19 @@ public:
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
     /**
+     * executes forward-propagation and returns maximum output
+     **/
+    float_t      predict_max_value(const vec_t& in) {
+        return fprop_max(in);
+    }
+    /**
+     * executes forward-propagation and returns maximum output index
+     **/
+    label_t      predict_label(const vec_t& in) {
+        return fprop_max_index(in);
+    }
+
+    /**
      * executes forward-propagation and returns output
      *
      * @param in input value range(double[], std::vector<double>, std::list<double> etc)
@@ -201,7 +214,7 @@ public:
         result test_result;
 
         for (size_t i = 0; i < in.size(); i++) {
-            const label_t predicted = max_index(predict(in[i]));
+            const label_t predicted = fprop_max_index(in[i]);
             const label_t actual = t[i];
 
             if (predicted == actual) test_result.num_success++;
@@ -370,6 +383,15 @@ public:
         return *this;
     }
 
+protected:
+    float_t fprop_max(const vec_t& in, int idx = 0) {
+        const vec_t& prediction = fprop(in, idx);
+        return *std::max_element(std::begin(prediction), std::end(prediction));
+    }
+
+    label_t fprop_max_index(const vec_t& in, int idx = 0) {
+        return label_t(max_index(fprop(in, idx)));
+    }
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {

@@ -47,6 +47,11 @@
 //#define CNN_USE_OMP
 
 /**
+ * define to use exceptions
+ */
+#define CNN_USE_EXCEPTIONS
+
+/**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
