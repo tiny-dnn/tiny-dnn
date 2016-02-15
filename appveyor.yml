@@ -13,6 +13,9 @@ install:
   - cmd: 7z x cmake.zip -o"C:\projects" -y > nul # will extract to cmake-3.4.1-win32-x86\
   - cmd: '%cmake% --version'
 
+# gradient-check test is too slow to execute on debug mode
+configuration: Release
+
 before_build:
   - cmd: mkdir build
   - cmd: cd build
