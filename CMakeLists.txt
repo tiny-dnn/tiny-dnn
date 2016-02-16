@@ -82,6 +82,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         add_definitions(-DCNN_USE_AVX)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx ")
     ENDIF()
+    IF((NOT USE_TBB) AND (NOT USE_OMP))
+        SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -pthread ")
+    ENDIF()
     SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 ")
     SET(EXTRA_C_FLAGS_RELEASE " -O3 ")
     SET(EXTRA_C_FLAGS_DEBUG " -g3 ")
@@ -122,15 +125,7 @@ IF (BUILD_EXAMPLES)
 ENDIF()
 
 IF(BUILD_TESTS)
-    set(Boost_USE_STATIC_LIBS        OFF)
-    FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
-    IF(Boost_FOUND)
-        include_directories(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
-        ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds})
-        TARGET_LINK_LIBRARIES(tiny_cnn_test ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
-    ENDIF()
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds})
 ENDIF()
 
 
@@ -145,7 +140,7 @@ message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
 
-message( STATUS "BUILD_EXAMPLES=${BUILD_EXAMPLES} BUILD_TESTS=${BUILD_TESTS} Boost_FOUND=${Boost_FOUND} USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
+message( STATUS "BUILD_EXAMPLES=${BUILD_EXAMPLES} BUILD_TESTS=${BUILD_TESTS} USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
 
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
