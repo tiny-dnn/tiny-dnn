@@ -34,10 +34,9 @@
 #include <cstdio>
 #include <cstdarg>
 #include <string>
-#include <thread>
-#include <future>
 #include "aligned_allocator.h"
 #include "nn_error.h"
+#include "tiny_cnn/config.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -45,6 +44,11 @@
 #endif
 #include <tbb/tbb.h>
 #include <tbb/task_group.h>
+#endif
+
+#ifndef CNN_USE_OMP
+#include <thread>
+#include <future>
 #endif
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
@@ -89,7 +93,7 @@ gaussian_rand(T mean, T sigma) {
 
 template<typename Container>
 inline int uniform_idx(const Container& t) {
-    return uniform_rand(0, (int) t.size() - 1);
+    return uniform_rand(0, int(t.size() - 1));
 }
 
 inline bool bernoulli(float_t p) {
@@ -121,17 +125,9 @@ inline bool is_little_endian() {
 
 
 template<typename T>
-int max_index(const T& vec) {
-    typename T::value_type max_val = std::numeric_limits<typename T::value_type>::lowest();
-    int max_index = -1;
-
-    for (size_t i = 0; i < vec.size(); i++) {
-        if (vec[i] > max_val) {
-            max_index = static_cast<int>(i);
-            max_val = vec[i];
-        }
-    }
-    return max_index;
+size_t max_index(const T& vec) {
+    auto begin_iterator = std::begin(vec);
+    return std::max_element(begin_iterator, std::end(vec)) - begin_iterator;
 }
 
 template<typename T, typename U>
@@ -393,4 +389,3 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 #define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
 #define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
 #endif
-

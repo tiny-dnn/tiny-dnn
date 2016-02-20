@@ -712,7 +712,9 @@ do {\
 /////////////////////////////////////////////////////////////////
 // RUNNING ALL TESTS
 
-#define RUN_ALL_TESTS() \
-picotest::framework::Registry::getInstance().testRun(); \
-picotest::framework::Registry::getInstance().report(std::cout); \
-picotest::framework::Registry::getInstance().fail();
+inline int RUN_ALL_TESTS() {
+    picotest::framework::Registry::getInstance().testRun();
+    picotest::framework::Registry::getInstance().report(std::cout); 
+    return picotest::framework::Registry::getInstance().fail() ? 1 : 0;
+}
+
