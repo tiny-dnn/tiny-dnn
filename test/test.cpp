@@ -26,8 +26,6 @@
 */
 #include "picotest.h"
 #include "tiny_cnn/tiny_cnn.h"
-#include <boost/filesystem.hpp>
-#include <boost/program_options.hpp>
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -454,17 +452,31 @@ TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
 }
 
+
+inline bool exists(const std::string& path) {
+    if (FILE *file = fopen(path.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+inline std::string unique_path() {
+    std::string pattern = "%%%%-%%%%-%%%%-%%%%";
+
+    for (auto p = pattern.begin(); p != pattern.end(); ++p) {
+        if (*p == '%') *p = (rand()%10)+'0';
+    }
+    return exists(pattern) ? unique_path() : pattern;
+}
+
 template <typename T>
 void serialization_test(const T& src, T& dst)
 {
     EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
-    boost::filesystem::path tmp_path = boost::filesystem::unique_path();
-
-    if (boost::filesystem::exists(tmp_path))
-        throw nn_error("file exists");
-
-    std::string tmp_file_path = tmp_path.string();
+    std::string tmp_file_path = unique_path();
 
     // write
     {
@@ -478,7 +490,7 @@ void serialization_test(const T& src, T& dst)
         ifs >> dst;
     }
 
-    boost::filesystem::remove(tmp_path); // remove temporary file
+    ::remove(tmp_file_path.c_str());
 
     EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
 }
@@ -574,5 +586,5 @@ TEST(lrn, cross) {
 }
 
 int main(void) {
-    RUN_ALL_TESTS();
+    return RUN_ALL_TESTS();
 }

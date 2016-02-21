@@ -42,30 +42,20 @@ else()
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
-OPTION(USE_TBB 	"Set to ON to use boost" OFF)
-OPTION(USE_OMP 	"Set to ON to use boost" OFF)
+OPTION(USE_TBB 	"Set to ON to use TBB" OFF)
+OPTION(USE_OMP 	"Set to ON to use OMP" OFF)
 OPTION(USE_SSE 	"Set to ON to use sse" ON)
 OPTION(USE_AVX 	"Set to ON to use avx" ON)
 OPTION(BUILD_TESTS "Set to ON to build tests" OFF)
+OPTION(BUILD_EXAMPLES "Set to ON to build examples" ON)
 
 # ----------------------------------------------------------------------------
 #   Find Dependencies
 # ----------------------------------------------------------------------------
 
-######BOOST (NOT REQUIRED)
-set(Boost_USE_STATIC_LIBS        OFF)
-find_package( Boost   COMPONENTS   timer   ) #thread iostreams
-if(Boost_FOUND)
-	include_directories(${Boost_INCLUDE_DIRS})
-	link_directories(${Boost_LIBRARY_DIRS})
-	SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} ${Boost_LIBRARY_DIRS})
-        SET(REQUIRED_LIBRARIES  ${REQUIRED_} ${Boost_TIMER_LIBRARY}  )
+IF(BUILD_EXAMPLES)
+    find_package( OpenCV REQUIRED )
 ENDIF()
-
-
-
-find_package( OpenCV REQUIRED )
-
 
 IF(USE_TBB)
     find_package(TBB REQUIRED)
@@ -92,6 +82,9 @@ IF(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         add_definitions(-DCNN_USE_AVX)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx ")
     ENDIF()
+    IF((NOT USE_TBB) AND (NOT USE_OMP))
+        SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -pthread ")
+    ENDIF()
     SET(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 ")
     SET(EXTRA_C_FLAGS_RELEASE " -O3 ")
     SET(EXTRA_C_FLAGS_DEBUG " -g3 ")
@@ -105,11 +98,8 @@ ELSE()#MSVC
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     ENDIF()
     SET(EXTRA_C_FLAGS_RELEASE " /Ox ")
-
-
 ENDIF()
 
- 
 
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
     SET(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
@@ -128,16 +118,14 @@ LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h    tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/layers/fully_connected_dropout_layer.h  tiny_cnn/util/image.h        tiny_cnn/layers/layer.h   tiny_cnn/lossfunctions/loss_function.h      tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h                tiny_cnn/util/product.h   tiny_cnn/util/util.h
 tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/util/deform.h               tiny_cnn/layers/dropout.h  tiny_cnn/layers/fully_connected_layer.h          tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h)
 
-IF(Boost_FOUND)
+IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(train examples/mnist/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
+    target_link_libraries( testb ${OpenCV_LIBS} )
 ENDIF()
-ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
-target_link_libraries( testb ${OpenCV_LIBS} )
 
 IF(BUILD_TESTS)
-    FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
     ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds})
-    TARGET_LINK_LIBRARIES(tiny_cnn_test ${Boost_SYSTEM_LIBRARY} ${Boost_FILESYSTEM_LIBRARY})
 ENDIF()
 
 
@@ -152,7 +140,7 @@ message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
 
-message( STATUS "Boost_FOUND=${Boost_FOUND}   USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
+message( STATUS "BUILD_EXAMPLES=${BUILD_EXAMPLES} BUILD_TESTS=${BUILD_TESTS} USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
 
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )

@@ -54,5 +54,5 @@ def configure(conf):
     conf.env.BOOST_ROOT = conf.options.BOOST_ROOT
 
 def build(bld):
-    bld.recurse('example')
+    bld.recurse('examples')
 

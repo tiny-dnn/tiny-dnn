@@ -293,15 +293,15 @@ public:
             switch (mode) {
             case GRAD_CHECK_ALL:
                 for (int i = 0; i < (int)w.size(); i++)
-                    if (calc_delta(in, &v[0], data_size, w, dw, i) > eps) return false;
+                    if (!calc_delta(in, &v[0], data_size, w, dw, i, eps)) return false;
                 for (int i = 0; i < (int)b.size(); i++)
-                    if (calc_delta(in, &v[0], data_size, b, db, i) > eps) return false;
+                    if (!calc_delta(in, &v[0], data_size, b, db, i, eps)) return false;
                 break;
             case GRAD_CHECK_RANDOM:
                 for (int i = 0; i < 10; i++)
-                    if (calc_delta(in, &v[0], data_size, w, dw, uniform_idx(w)) > eps) return false;
+                    if (!calc_delta(in, &v[0], data_size, w, dw, uniform_idx(w), eps)) return false;
                 for (int i = 0; i < 10; i++)
-                    if (calc_delta(in, &v[0], data_size, b, db, uniform_idx(b)) > eps) return false;
+                    if (!calc_delta(in, &v[0], data_size, b, db, uniform_idx(b), eps)) return false;
                 break;
             default:
                 throw nn_error("unknown grad-check type");
@@ -466,7 +466,7 @@ private:
     float_t get_loss(const vec_t& out, const vec_t& t) {
         float_t e = float_t(0);
         assert(out.size() == t.size());
-        for_i(out.size(), [&](int i){ e += E::f(out[i], t[i]); });
+        for(size_t i = 0; i < out.size(); i++){ e += E::f(out[i], t[i]); }
         return e;
     }
 
@@ -502,7 +502,7 @@ private:
         layers_.tail()->back_propagation(delta, idx);
     }
 
-    float_t calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index) {
+    bool calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index, double eps) {
         static const float_t delta = 1e-10;
 
         std::fill(dw.begin(), dw.end(), float_t(0));
@@ -512,21 +512,21 @@ private:
 
         w[check_index] = prev_w + delta;
         float_t f_p = float_t(0);
-        for_i(data_size, [&](int i){ f_p += get_loss(fprop(in[i]), v[i]); });
+        for(int i = 0; i < data_size; i++) { f_p += get_loss(fprop(in[i]), v[i]); }
 
         float_t f_m = float_t(0);
         w[check_index] = prev_w - delta;
-        for_i(data_size, [&](int i){ f_m += get_loss(fprop(in[i]), v[i]); });
+        for(int i = 0; i < data_size; i++) { f_m += get_loss(fprop(in[i]), v[i]); }
 
         float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        for_i(data_size, [&](int i){ bprop(fprop(in[i]), v[i]); });
+        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i]); }
 
         float_t delta_by_bprop = dw[check_index];
 
-        return std::abs(delta_by_bprop - delta_by_numerical);
+        return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 
     void check_t(size_t i, label_t t, layer_size_t dim_out) {
