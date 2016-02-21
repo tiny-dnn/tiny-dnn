@@ -35,6 +35,7 @@
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layers.h"
+#include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
@@ -175,6 +176,7 @@ public:
                )
     {
         check_training_data(in, t);
+        set_netphase(net_phase::train);
         if (reset_weights)
             init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
@@ -204,7 +206,21 @@ public:
      **/
     template<typename T>
     bool train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+        set_netphase(net_phase::train);
         return train(in, t, batch_size, epoch, nop, nop);
+    }
+
+    /**
+     * set the netphase to train or test
+     * @param phase phase of network, could be train or test
+     */
+    void set_netphase(net_phase phase)
+    {
+      for(size_t i = 0; i != layers_.depth()+1; ++i){
+          if(layers_[0]->layer_type() == "dropout"){
+             static_cast<dropout_layer*>(layers_[0])->set_context(phase);
+          }
+      }
     }
 
     /**
@@ -212,7 +228,7 @@ public:
      **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
         result test_result;
-
+        set_netphase(net_phase::test);
         for (size_t i = 0; i < in.size(); i++) {
             const label_t predicted = fprop_max_index(in[i]);
             const label_t actual = t[i];
@@ -227,7 +243,7 @@ public:
     std::vector<vec_t> test(const std::vector<vec_t>& in)
      {
             std::vector<vec_t> test_result(in.size());
-
+            set_netphase(net_phase::test);
             for_i(in.size(), [&](int i)
             {
                 test_result[i] = predict(in[i]);
