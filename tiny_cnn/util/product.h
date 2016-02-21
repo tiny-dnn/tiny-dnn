@@ -281,38 +281,38 @@ inline void reduce_aligned(const typename T::value_type* src, unsigned int size,
 } // namespace detail
 
 #if defined(CNN_USE_AVX)
-#define VECTORIZE_TYPE detail::avx<T>
+#define VECTORIZE_TYPE(T) detail::avx<T>
 #elif defined(CNN_USE_SSE)
-#define VECTORIZE_TYPE detail::sse<T>
+#define VECTORIZE_TYPE(T) detail::sse<T>
 #else
-#define VECTORIZE_TYPE detail::generic_vec_type<T>
+#define VECTORIZE_TYPE(T) detail::generic_vec_type<T>
 #endif
 
 // dst[i] += c * src[i]
 template<typename T>
 void muladd(const T* src, T c, unsigned int size, T* dst) {
-    if (detail::is_aligned(VECTORIZE_TYPE(), src, dst))
-        detail::muladd_aligned<VECTORIZE_TYPE>(src, c, size, dst);
+    if (detail::is_aligned(VECTORIZE_TYPE(T)(), src, dst))
+        detail::muladd_aligned<VECTORIZE_TYPE(T)>(src, c, size, dst);
     else
-        detail::muladd_nonaligned<VECTORIZE_TYPE>(src, c, size, dst);
+        detail::muladd_nonaligned<VECTORIZE_TYPE(T)>(src, c, size, dst);
 }
 
 // sum(s1[i] * s2[i])
 template<typename T>
 T dot(const T* s1, const T* s2, unsigned int size) {
-    if (detail::is_aligned(VECTORIZE_TYPE(), s1, s2))
-        return detail::dot_product_aligned<VECTORIZE_TYPE>(s1, s2, size);
+    if (detail::is_aligned(VECTORIZE_TYPE(T)(), s1, s2))
+        return detail::dot_product_aligned<VECTORIZE_TYPE(T)>(s1, s2, size);
     else
-        return detail::dot_product_nonaligned<VECTORIZE_TYPE>(s1, s2, size);
+        return detail::dot_product_nonaligned<VECTORIZE_TYPE(T)>(s1, s2, size);
 }
 
 /// dst[i] += src[i]
 template<typename T>
 void reduce(const T* src, unsigned int size, T* dst) {
-    if (detail::is_aligned(VECTORIZE_TYPE(), src, dst))
-        return detail::reduce_aligned<VECTORIZE_TYPE>(src, size, dst);
+    if (detail::is_aligned(VECTORIZE_TYPE(T)(), src, dst))
+        return detail::reduce_aligned<VECTORIZE_TYPE(T)>(src, size, dst);
     else
-        return detail::reduce_nonaligned<VECTORIZE_TYPE>(src, size, dst);
+        return detail::reduce_nonaligned<VECTORIZE_TYPE(T)>(src, size, dst);
 }
 
 } // namespace vectorize
