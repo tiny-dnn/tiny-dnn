@@ -227,7 +227,13 @@ protected:
     vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
+
+    /** contribution to derivative of loss function with respect to weights of this layer,
+        indexed by worker / thread */
     vec_t dW_[CNN_TASK_SIZE];
+
+    /** contribution to derivative of loss function with respect to bias terms of this layer,
+        indexed by worker / thread */
     vec_t db_[CNN_TASK_SIZE];
 
     vec_t Whessian_; // diagonal terms of hessian matrix
@@ -237,6 +243,8 @@ protected:
     std::shared_ptr<weight_init::function> bias_init_;
 
 private:
+    /** sums contributions to gradient (of the loss function with respect to weights and
+        bias) as calculated by individual threads */
     void merge(size_t worker_size, size_t batch_size) {
         for (size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&dW_[i][0],
