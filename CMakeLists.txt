@@ -122,6 +122,7 @@ IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(train examples/mnist/train.cpp ${tiny_cnn_hrds})
     ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
     target_link_libraries( testb ${OpenCV_LIBS} )
+    include_directories(${OpenCV_INCLUDE_DIRS})
 ENDIF()
 
 IF(BUILD_TESTS)
