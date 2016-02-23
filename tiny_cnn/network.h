@@ -35,6 +35,7 @@
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layers.h"
+#include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
@@ -175,6 +176,7 @@ public:
                )
     {
         check_training_data(in, t);
+        set_netphase(net_phase::train);
         if (reset_weights)
             init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
@@ -204,7 +206,21 @@ public:
      **/
     template<typename T>
     bool train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+        set_netphase(net_phase::train);
         return train(in, t, batch_size, epoch, nop, nop);
+    }
+
+    /**
+     * set the netphase to train or test
+     * @param phase phase of network, could be train or test
+     */
+    void set_netphase(net_phase phase)
+    {
+      for(size_t i = 0; i != layers_.depth()+1; ++i){
+          if(layers_[0]->layer_type() == "dropout"){
+             static_cast<dropout_layer*>(layers_[0])->set_context(phase);
+          }
+      }
     }
 
     /**
@@ -212,7 +228,7 @@ public:
      **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
         result test_result;
-
+        set_netphase(net_phase::test);
         for (size_t i = 0; i < in.size(); i++) {
             const label_t predicted = fprop_max_index(in[i]);
             const label_t actual = t[i];
@@ -227,7 +243,7 @@ public:
     std::vector<vec_t> test(const std::vector<vec_t>& in)
      {
             std::vector<vec_t> test_result(in.size());
-
+            set_netphase(net_phase::test);
             for_i(in.size(), [&](int i)
             {
                 test_result[i] = predict(in[i]);
@@ -408,12 +424,22 @@ private:
         }
     }
 
+    /**
+     * train on one minibatch
+     *
+     * @param size is the number of data points to use in this batch
+     */
     void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
         train_once(in, &v[0], size, nbThreads );
     }
 
+    /**
+     * train on one minibatch
+     *
+     * @param size is the number of data points to use in this batch
+     */
     void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         if (size == 1) {
             bprop(fprop(in[0]), t[0]);
@@ -423,14 +449,25 @@ private:
         }
     }   
 
+    /** 
+     * trains on one minibatch, i.e. runs forward and backward propagation to calculate
+     * the gradient of the loss function with respect to the network parameters (weights),
+     * then calls the optimizer algorithm to update the weights
+     *
+     * @param batch_size the number of data points to use in this batch 
+     */
     void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
         int num_threads = std::min(batch_size, num_tasks);
+
+        // number of data points to use in each thread
         int data_per_thread = (batch_size + num_threads - 1) / num_threads;
 
+        // i is the thread / worker index
         for_i(num_threads, [&](int i) {
             int start_index = i * data_per_thread;
             int end_index = std::min(batch_size, start_index + data_per_thread);
 
+            // loop over data points in this batch assigned to thread i
             for (int j = start_index; j < end_index; ++j)
                 bprop(fprop(in[j], i), t[j], i);
         }, 1);
@@ -448,6 +485,11 @@ private:
         layers_.divide_hessian(size);
     }
 
+    /**
+     * @param  h the activation function at the output of the last layer
+     * @return true if the combination of the loss function E and the last layer output activation
+     *         function h is such that dE / da = (dE/dY) * (dy/da) = y - target
+     */
     template<typename Activation>
     bool is_canonical_link(const Activation& h) {
         if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
@@ -488,6 +530,9 @@ private:
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h)) {
+            // we have a combination of loss function and last layer
+            // output activation function which is such that
+            // dE / da = (dE/dy) * (dy/da) = y - target
             for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
         } else {
             vec_t dE_dy = gradient<E>(out, t);
