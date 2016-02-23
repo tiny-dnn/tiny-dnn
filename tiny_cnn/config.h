@@ -60,3 +60,11 @@
 #else
 #define CNN_TASK_SIZE 8
 #endif
+
+namespace tiny_cnn {
+
+typedef double float_t;
+
+typedef size_t cnn_size_t;
+
+}
