@@ -55,9 +55,6 @@
 
 namespace tiny_cnn {
 
-typedef double float_t;
-typedef size_t cnn_size_t;
-
 ///< output label(class-index) for classification
 ///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
 typedef cnn_size_t label_t;
