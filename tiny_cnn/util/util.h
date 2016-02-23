@@ -212,8 +212,8 @@ void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
         if (blockEnd > end) blockEnd = end;
     }
 
-    for (auto &f : futures)
-        f.wait();
+    for (auto &future : futures)
+        future.wait();
 }
 
 #endif

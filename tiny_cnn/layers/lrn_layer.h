@@ -126,6 +126,8 @@ private:
     }
 
     void forward_within(const vec_t& in, vec_t& out) {
+        CNN_UNREFERENCED_PARAMETER(in);
+        CNN_UNREFERENCED_PARAMETER(out);
         throw nn_error("not implemented");
     }
 
