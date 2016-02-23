@@ -31,7 +31,7 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 ## Comparison with other libraries
 
 ||tiny-cnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
-|--|--|--|--|--|
+|---|---|---|---|---|
 |Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|
 |Modeling By|C++ code|Config File|Python Code|Python Code|
 |GPU Support|No|Yes|Yes|Yes|
@@ -161,7 +161,7 @@ using namespace tiny_cnn::activation;
 void construct_mlp() {
     network<mse, gradient_descent> net;
 
-    net << fully_connected_layer<sigmoid>(32 * 32, 300);
+    net << fully_connected_layer<sigmoid>(32 * 32, 300)
         << fully_connected_layer<identity>(300, 10);
 
     assert(net.in_dim() == 32 * 32);
