@@ -45,7 +45,7 @@ public:
         memcpy(&data_[0],data, depth_ * width * height*sizeof(T));
     }
 
-    image(index3d<layer_size_t> rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(depth_ * width_ * height_, 0) {}
+    image(index3d<cnn_size_t> rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(depth_ * width_ * height_, 0) {}
 
     image(size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(width * height, 0) {}
 
@@ -181,7 +181,7 @@ inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 2
         throw nn_error("failed to visialize image: vector is empty");
 
     image<T> img;
-    const layer_size_t border_width = 1;
+    const cnn_size_t border_width = 1;
     const auto cols = vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
     const auto rows = (vec.size() - 1) / cols + 1;
     const auto pitch = block_size + border_width;
@@ -229,13 +229,13 @@ inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 2
  *  -------
  **/
 template<typename T>
-inline image<T> vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
+inline image<T> vec2image(const vec_t& vec, const index3d<cnn_size_t>& maps) {
     if (vec.empty())
         throw nn_error("failed to visualize image: vector is empty");
     if (vec.size() != maps.size())
         throw nn_error("failed to visualize image: vector size invalid");
 
-    const layer_size_t border_width = 1;
+    const cnn_size_t border_width = 1;
     const auto pitch = maps.width_ + border_width;
     const auto width = maps.depth_ * pitch + border_width;
     const auto height = maps.height_ + 2 * border_width;
@@ -247,12 +247,12 @@ inline image<T> vec2image(const vec_t& vec, const index3d<layer_size_t>& maps) {
 
     auto minmax = std::minmax_element(vec.begin(), vec.end());
 
-    for (layer_size_t c = 0; c < maps.depth_; ++c) {
+    for (cnn_size_t c = 0; c < maps.depth_; ++c) {
         const auto top = border_width;
         const auto left = c * pitch + border_width;
 
-        for (layer_size_t y = 0; y < maps.height_; ++y) {
-            for (layer_size_t x = 0; x < maps.width_; ++x) {
+        for (cnn_size_t y = 0; y < maps.height_; ++y) {
+            for (cnn_size_t x = 0; x < maps.width_; ++x) {
                 const float_t val = vec[maps.get_index(x, y, c)];
 
                 img.at(left + x, top + y)

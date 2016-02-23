@@ -38,7 +38,7 @@ public:
     CNN_USE_LAYER_MEMBERS;
     typedef layer<Activation> Base;
 
-    max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size)
+    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size)
         : Base(in_width * in_height * in_channels,
         in_width * in_height * in_channels / sqr(pooling_size),
         0, 0),
@@ -53,7 +53,7 @@ public:
         init_connection();
     }
 
-    max_pooling_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t in_channels, layer_size_t pooling_size, layer_size_t stride)
+    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size, cnn_size_t stride)
         : Base(in_width * in_height * in_channels,
         out_size(in_width, pooling_size, stride) * out_size(in_height, pooling_size, stride) * in_channels,
         0, 0),
@@ -122,7 +122,7 @@ public:
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
-        for (layer_size_t i = 0; i < in_size_; i++) {
+        for (cnn_size_t i = 0; i < in_size_; i++) {
             int outi = in2out_[i];
             prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
         }
@@ -133,8 +133,8 @@ public:
         return vec2image<unsigned char>(output_[worker_index], out_);
     }
 
-    index3d<layer_size_t> in_shape() const override { return in_; }
-    index3d<layer_size_t> out_shape() const override { return out_; }
+    index3d<cnn_size_t> in_shape() const override { return in_; }
+    index3d<cnn_size_t> out_shape() const override { return out_; }
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const {return pool_size_;}
 
@@ -144,23 +144,23 @@ private:
     std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
     std::vector<int> in2out_; // mapping in => out (N:1)
     std::vector<int> out2inmax_[CNN_TASK_SIZE]; // mapping out => max_index(in) (1:1)
-    index3d<layer_size_t> in_;
-    index3d<layer_size_t> out_;
+    index3d<cnn_size_t> in_;
+    index3d<cnn_size_t> out_;
 
-    layer_size_t out_size(layer_size_t in_size, layer_size_t pooling_size, layer_size_t stride) const {
+    cnn_size_t out_size(cnn_size_t in_size, cnn_size_t pooling_size, cnn_size_t stride) const {
         return (int) std::ceil(((double)in_size - pooling_size) / stride) + 1;
     }
 
-    void connect_kernel(layer_size_t pooling_size, layer_size_t outx, layer_size_t outy, layer_size_t  c)
+    void connect_kernel(cnn_size_t pooling_size, cnn_size_t outx, cnn_size_t outy, cnn_size_t  c)
     {
-        layer_size_t dxmax = static_cast<layer_size_t>(std::min((size_t)pooling_size, in_.width_ - outx * stride_));
-        layer_size_t dymax = static_cast<layer_size_t>(std::min((size_t)pooling_size, in_.height_ - outy * stride_));
+        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min((size_t)pooling_size, in_.width_ - outx * stride_));
+        cnn_size_t dymax = static_cast<cnn_size_t>(std::min((size_t)pooling_size, in_.height_ - outy * stride_));
 
-        for (layer_size_t dy = 0; dy < dymax; dy++) {
-            for (layer_size_t dx = 0; dx < dxmax; dx++) {
-                layer_size_t in_index = in_.get_index(static_cast<layer_size_t>(outx * stride_ + dx),
-                                                      static_cast<layer_size_t>(outy * stride_ + dy), c);
-                layer_size_t out_index = out_.get_index(outx, outy, c);
+        for (cnn_size_t dy = 0; dy < dymax; dy++) {
+            for (cnn_size_t dx = 0; dx < dxmax; dx++) {
+                cnn_size_t in_index = in_.get_index(static_cast<cnn_size_t>(outx * stride_ + dx),
+                                                      static_cast<cnn_size_t>(outy * stride_ + dy), c);
+                cnn_size_t out_index = out_.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size())
                     throw nn_error("index overflow");
@@ -179,10 +179,10 @@ private:
         for (int i = 0; i < CNN_TASK_SIZE; i++)
             out2inmax_[i].resize(out_.size());
 
-        for (layer_size_t c = 0; c < in_.depth_; ++c)
-            for (layer_size_t y = 0; y < out_.height_; ++y)
-                for (layer_size_t x = 0; x < out_.width_; ++x)
-                    connect_kernel(static_cast<layer_size_t>(pool_size_),
+        for (cnn_size_t c = 0; c < in_.depth_; ++c)
+            for (cnn_size_t y = 0; y < out_.height_; ++y)
+                for (cnn_size_t x = 0; x < out_.width_; ++x)
+                    connect_kernel(static_cast<cnn_size_t>(pool_size_),
                                    x, y, c);
     }
 

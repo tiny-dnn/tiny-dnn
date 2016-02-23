@@ -56,8 +56,12 @@
 namespace tiny_cnn {
 
 typedef double float_t;
-typedef unsigned int layer_size_t;
-typedef size_t label_t;
+typedef size_t cnn_size_t;
+
+///< output label(class-index) for classification
+///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
+typedef cnn_size_t label_t;
+
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 enum class net_phase {
@@ -337,7 +341,7 @@ struct index3d {
     T depth_;
 };
 
-typedef index3d<layer_size_t> layer_shape_t;
+typedef index3d<cnn_size_t> layer_shape_t;
 
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const index3d<T>& d) {

@@ -45,7 +45,7 @@ public:
 
     typedef layer<Activation> Base;
 
-    lrn_layer(layer_size_t in_width, layer_size_t in_height, layer_size_t local_size, layer_size_t in_channels,
+    lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
                        float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
         : Base(in_width*in_height*in_channels, in_width*in_height*in_channels, 0, 0),
         in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
@@ -100,15 +100,15 @@ private:
     void forward_across(const vec_t& in, vec_t& out) {
         std::fill(in_square_.begin(), in_square_.end(), float_t(0));
 
-        for (layer_size_t i = 0; i < size_ / 2; i++) {
-            layer_size_t idx = in_shape_.get_index(0, 0, i);
+        for (cnn_size_t i = 0; i < size_ / 2; i++) {
+            cnn_size_t idx = in_shape_.get_index(0, 0, i);
             add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
         }
 
         int head = size_ / 2;
         int tail = head - size_;
         int channels = (int)in_shape_.depth_;
-        const layer_size_t wxh = in_shape_.area();
+        const cnn_size_t wxh = in_shape_.area();
         const float_t alpha_div_size = alpha_ / size_;
 
         for (int i = 0; i < channels; i++, head++, tail++) {
@@ -120,7 +120,7 @@ private:
 
             float_t *dst = &out[in_shape_.get_index(0, 0, i)];
             const float_t *src = &in[in_shape_.get_index(0, 0, i)];
-            for (layer_size_t j = 0; j < wxh; j++)
+            for (cnn_size_t j = 0; j < wxh; j++)
                 dst[j] = src[j] * std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
         }
     }
@@ -143,7 +143,7 @@ private:
 
     layer_shape_t in_shape_;
 
-    layer_size_t size_;
+    cnn_size_t size_;
     float_t alpha_, beta_;
     norm_region region_;
 

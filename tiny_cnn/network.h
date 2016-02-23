@@ -102,12 +102,12 @@ public:
     /**
      * return input dims of network
      **/
-    layer_size_t in_dim() const         { return layers_.head()->in_size(); }
+    cnn_size_t in_dim() const         { return layers_.head()->in_size(); }
 
     /**
      * return output dims of network
      **/
-    layer_size_t out_dim() const        { return layers_.tail()->out_size(); }
+    cnn_size_t out_dim() const        { return layers_.tail()->out_size(); }
 
     std::string  name() const           { return name_; }
     Optimizer&   optimizer()            { return optimizer_; }
@@ -373,7 +373,7 @@ public:
     /**
      * input shape (width x height x channels)
      **/
-    index3d<layer_size_t> in_shape() const {
+    index3d<cnn_size_t> in_shape() const {
         return layers_.head()->in_shape();
     }
 
@@ -411,7 +411,7 @@ protected:
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        layer_size_t outdim = out_dim();
+        cnn_size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);
@@ -574,7 +574,7 @@ private:
         return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 
-    void check_t(size_t i, label_t t, layer_size_t dim_out) {
+    void check_t(size_t i, label_t t, cnn_size_t dim_out) {
         if (t >= dim_out) {
             std::ostringstream os;
             os << format_str("t[%u]=%u, dim(network output)=%u", i, t, dim_out) << std::endl;
@@ -586,15 +586,15 @@ private:
         }
     }
 
-    void check_t(size_t i, const vec_t& t, layer_size_t dim_out) {
+    void check_t(size_t i, const vec_t& t, cnn_size_t dim_out) {
         if (t.size() != dim_out)
             throw nn_error(format_str("output dimension mismatch!\n dim(target[%u])=%u, dim(network output size=%u", i, t.size(), dim_out));
     }
 
     template <typename T>
     void check_training_data(const std::vector<vec_t>& in, const std::vector<T>& t) {
-        layer_size_t dim_in = in_dim();
-        layer_size_t dim_out = out_dim();
+        cnn_size_t dim_in = in_dim();
+        cnn_size_t dim_out = out_dim();
 
         if (in.size() != t.size())
             throw nn_error("number of training data must be equal to label data");
