@@ -64,7 +64,12 @@ waf-*
 *.vspscc
 .builds
 *.dotCover
-
+*.tlog
+*.ipdb
+*.iobj
+*.idb
+*.lastbuildstate
+*.unsuccessfulbuild
 ## TODO: If you have NuGet Package Restore enabled, uncomment this
 #packages/
 
