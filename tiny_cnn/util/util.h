@@ -59,6 +59,8 @@ namespace tiny_cnn {
 ///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
 typedef cnn_size_t label_t;
 
+typedef cnn_size_t layer_size_t; // for backward compatibility
+
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 enum class net_phase {
