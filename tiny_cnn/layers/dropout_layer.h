@@ -159,7 +159,7 @@ public:
     /**
      * set dropout-context (training-phase or test-phase)
      **/
-    void set_context(net_phase ctx)
+    void set_context(net_phase ctx) override
     {
         phase_ = ctx;
     }

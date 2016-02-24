@@ -184,6 +184,11 @@ public:
     // called afrer updating weight
     virtual void post_update() {}
 
+    /**
+     * notify changing context (train <=> test)
+     **/
+     virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
+
     template <typename Optimizer>
     void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
         if (W_.empty()) return;

@@ -1,5 +1,5 @@
-﻿2016/02/24 23:37:29 にビルドを開始しました。
-     1>ノード 2 上のプロジェクト "C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\tiny_cnn_test.vcxproj" (Build ターゲット)。
+﻿2016/02/24 23:40:07 にビルドを開始しました。
+     1>ノード 3 上のプロジェクト "C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\tiny_cnn_test.vcxproj" (Build ターゲット)。
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /I..\..\ /ZI /nologo /W3 /WX- /Od /Oi /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /arch:AVX2 /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"DebugTest\\" /Fd"DebugTest\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\test\test.cpp
          test.cpp
@@ -21,4 +21,4 @@
 
 ビルドに成功しました。
 
-経過時間 00:00:15.33
+経過時間 00:00:15.55
