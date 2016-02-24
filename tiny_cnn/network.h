@@ -217,8 +217,8 @@ public:
     void set_netphase(net_phase phase)
     {
       for(size_t i = 0; i != layers_.depth()+1; ++i){
-          if(layers_[0]->layer_type() == "dropout"){
-             static_cast<dropout_layer*>(layers_[0])->set_context(phase);
+          if(layers_[i]->layer_type() == "dropout"){
+             static_cast<dropout_layer*>(layers_[i])->set_context(phase);
           }
       }
     }
