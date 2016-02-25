@@ -175,20 +175,20 @@ private:
  *   ----------
  **/
  template<typename T>
-inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 20)
+inline image<T> vec2image(const vec_t& vec, cnn_size_t block_size = 2, cnn_size_t max_cols = 20)
 {
     if (vec.empty())
         throw nn_error("failed to visialize image: vector is empty");
 
     image<T> img;
     const cnn_size_t border_width = 1;
-    const auto cols = vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
+    const auto cols = vec.size() >= (cnn_size_t)max_cols ? (cnn_size_t)max_cols : vec.size();
     const auto rows = (vec.size() - 1) / cols + 1;
     const auto pitch = block_size + border_width;
     const auto width = pitch * cols + border_width;
     const auto height = pitch * rows + border_width;
     const typename image<T>::intensity_t bg_color = 255;
-    size_t current_idx = 0;
+    cnn_size_t current_idx = 0;
 
     img.resize(width, height);
     img.fill(bg_color);
@@ -196,16 +196,16 @@ inline image<T> vec2image(const vec_t& vec, int block_size = 2, int max_cols = 2
     auto minmax = std::minmax_element(vec.begin(), vec.end());
 
     for (unsigned int r = 0; r < rows; r++) {
-        int topy = pitch * r + border_width;
+        cnn_size_t topy = pitch * r + border_width;
 
         for (unsigned int c = 0; c < cols; c++, current_idx++) {
-            int leftx = pitch * c + border_width;
+            cnn_size_t leftx = pitch * c + border_width;
             const float_t src = vec[current_idx];
             image<>::intensity_t dst
                 = static_cast<typename image<T>::intensity_t>(rescale(src, *minmax.first, *minmax.second, 0, 255));
 
-            for (int y = 0; y < block_size; y++)
-              for (int x = 0; x < block_size; x++)
+            for (cnn_size_t y = 0; y < block_size; y++)
+              for (cnn_size_t x = 0; x < block_size; x++)
                 img.at(x + leftx, y + topy) = dst;
 
             if (current_idx == vec.size()) return img;

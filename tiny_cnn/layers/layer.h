@@ -84,12 +84,12 @@ public:
     /////////////////////////////////////////////////////////////////////////
     // getter
 
-    const vec_t& output(int worker_index) const { return output_[worker_index]; }
-    const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
+    const vec_t& output(cnn_size_t worker_index) const { return output_[worker_index]; }
+    const vec_t& delta(cnn_size_t worker_index) const { return prev_delta_[worker_index]; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
-    vec_t& weight_diff(int index) { return dW_[index]; }
-    vec_t& bias_diff(int index) { return db_[index]; }
+    vec_t& weight_diff(cnn_size_t index) { return dW_[index]; }
+    vec_t& bias_diff(cnn_size_t index) { return db_[index]; }
     bool is_exploded() const { return has_infinite(W_) || has_infinite(b_); }
     layer_base* next() { return next_; }
     layer_base* prev() { return prev_; }
@@ -190,7 +190,7 @@ public:
      virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
     template <typename Optimizer>
-    void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
+    void update_weight(Optimizer *o, cnn_size_t worker_size, cnn_size_t batch_size) {
         if (W_.empty()) return;
 
         merge(worker_size, batch_size);
@@ -250,11 +250,11 @@ protected:
 private:
     /** sums contributions to gradient (of the loss function with respect to weights and
         bias) as calculated by individual threads */
-    void merge(size_t worker_size, size_t batch_size) {
-        for (size_t i = 1; i < worker_size; i++)
+    void merge(cnn_size_t worker_size, cnn_size_t batch_size) {
+        for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&dW_[i][0],
                 static_cast<cnn_size_t>(dW_[i].size()), &dW_[0][0]);
-        for (size_t i = 1; i < worker_size; i++)
+        for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&db_[i][0],
                 static_cast<cnn_size_t>(db_[i].size()), &db_[0][0]);
 

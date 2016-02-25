@@ -166,6 +166,7 @@ struct blocked_range {
     typedef int const_iterator;
 
     blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+    blocked_range(size_t begin, size_t end) : begin_(static_cast<int>(begin)), end_(static_cast<int>(end)) {}
 
     const_iterator begin() const { return begin_; }
     const_iterator end() const { return end_; }
@@ -249,8 +250,8 @@ void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
     for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f, grainsize);
 }
 
-template <typename Func>
-void for_i(bool parallelize, int size, Func f, int grainsize = 100)
+template <typename T, typename Func>
+void for_i(bool parallelize, T size, Func f, int grainsize = 100)
 {
     for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
@@ -261,8 +262,8 @@ void for_i(bool parallelize, int size, Func f, int grainsize = 100)
     }, grainsize);
 }
 
-template <typename Func>
-void for_i(int size, Func f, int grainsize = 100) {
+template <typename T, typename Func>
+void for_i(T size, Func f, int grainsize = 100) {
     for_i(true, size, f, grainsize);
 }
 
