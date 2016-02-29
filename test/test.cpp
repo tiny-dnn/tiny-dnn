@@ -508,9 +508,6 @@ TEST(read_write, fully_connected)
 
 TEST(read_write, convolutional)
 {
-    typedef mse loss_func;
-    typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
-
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
     convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
 
