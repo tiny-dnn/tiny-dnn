@@ -119,9 +119,10 @@ SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h    tiny_cnn/io/cif
 tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h          tiny_cnn/util/deform.h               tiny_cnn/layers/dropout.h  tiny_cnn/layers/fully_connected_layer.h          tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h       tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h)
 
 IF (BUILD_EXAMPLES)
-    ADD_EXECUTABLE(train examples/mnist/train.cpp ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(testb examples/mnist/test.cpp  ${tiny_cnn_hrds})
-    target_link_libraries( testb ${OpenCV_LIBS} )
+    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp  ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
+    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
     include_directories(${OpenCV_INCLUDE_DIRS})
 ENDIF()
 
