@@ -5,21 +5,21 @@ tiny-cnn: A header only, dependency-free deep learning framework in C++11
 |------------------|-------------|
 |[![Build Status](https://travis-ci.org/nyanp/tiny-cnn.svg?branch=master)](https://travis-ci.org/nyanp/tiny-cnn)|[![Build status](https://ci.appveyor.com/api/projects/status/s4mow1544tvoqeeu?svg=true)](https://ci.appveyor.com/project/nyanp/tiny-cnn)|
 
-tiny-cnn is a C++11 implementation of deep learning (convolutional neural networks). It is suitable for deep learning on  limited computational resource, embedded systems and IoT devices.
+tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
-* [designing principles](#designing-principles)
-* [comparison with other libraries](#comparison-with-other-libraries)
-* [supported networks](#supported-networks)
-* [dependencies](#dependencies)
-* [building sample project](#building-sample-project)
-* [examples](#examples)
-* [references](#references)
-* [license](#license)
-* [mailing list](#mailing-list)
+* [Features](#Features)
+* [Comparison with other libraries](#Comparison-with-other-libraries)
+* [Supported networks](#Supported-networks)
+* [Dependencies](#Dependencies)
+* [Build](#Build)
+* [Examples](#Examples)
+* [References](#References)
+* [License](#License)
+* [Mailing list](#Mailing-list)
 
 see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
-## features
+## Features
 - fast, without GPU
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
@@ -28,15 +28,20 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 - small dependency & simple implementation
 - [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
 
-## comparison with other libraries
+## Comparison with other libraries
 
-| |Lines Of Code|Prerequisites|Modeling By|GPU Support|Installing|Pre-Trained model|
-|:--|:--|:--|:--|:--|:--|:--|:--|:--|:--|
-|tiny-cnn|3.1K|__Nothing__(optional:TBB,Boost)|C++ code|No|Unnecessary|No|
-|[caffe](https://github.com/BVLC/caffe)|58.7K|CUDA,BLAS,Boost,OpenCV,protobuf,etc|Config File|Yes|Necessary|Yes|
-|[Theano](https://github.com/Theano/Theano)|134K|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|Python Code|Yes|Necessary|No|
+||tiny-cnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
+|---|---|---|---|---|
+|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|
+|Modeling By|C++ code|Config File|Python Code|Python Code|
+|GPU Support|No|Yes|Yes|Yes|
+|Installing|Unnecessary|Necessary|Necessary|Necessary|
+|Windows Support|Yes|No*|Yes|No*|
+|Pre-Trained Model|Yes(via caffe-converter)|Yes|No*|No*|
 
-## supported networks
+*unofficial version is available
+
+## Supported networks
 ### layer-types
 * fully-connected layer
 * convolutional layer
@@ -66,49 +71,44 @@ see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 * rmsprop
 * adam
 
-## dependencies
+## Dependencies
 ##### Minimum requirements
 Nothing.All you need is a C++11 compiler.
 
-##### Requirements to enable parallelization (*recommended*)
-[Intel TBB](https://www.threadingbuildingblocks.org/)
-
 ##### Requirements to build sample/test programs
-[boost C++ library](http://www.boost.org/)
+[OpenCV](http://opencv.org/)
 
-## building sample project
-### gcc(4.7~)
-without tbb
+## Build
+tiny-cnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
 
-    ./waf configure --BOOST_ROOT=your-boost-root
-    ./waf build
-
-with tbb
-
-    ./waf configure --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
-    ./waf build
-
-with tbb and SSE/AVX
-
-    ./waf configure --AVX --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
-    ./waf build
-
-
-    ./waf configure --SSE --TBB --TBB_ROOT=your-tbb-root --BOOST_ROOT=your-boost-root
-    ./waf build
-
-### vc(2013~)
-open vc/tiny_cnn.sln and build in release mode.
-
-### using CMake
 ```
 cmake .
-make
 ```
 
+Then open .sln file in visual studio and build(on windows/msvc), or type ```make``` command(on linux/mac/windows-mingw).
+
+Some cmake options are available:
+
+|options|description|default|additional requirements to use|
+|-----|-----|----|----|
+|USE_TBB|Use [Intel TBB](https://www.threadingbuildingblocks.org/) for parallelization|OFF*|[Intel TBB](https://www.threadingbuildingblocks.org/)|
+|USE_OMP|Use OpenMP for parallelization|OFF*|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
+|USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
+|USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
+|BUILD_TESTS|Build unist tests|OFF|-|
+|BUILD_EXAMPLES|Build example projects|ON|-|
+
+*tiny-cnn use c++11 standard library for parallelization by default
+
+For example, type the following commands if you want to use intel TBB and build tests:
+```bash
+cmake -DUSE_TBB=ON -DBUILD_EXAMPLES=ON .
+```
+
+## Customize configurations
 You can edit include/config.h to customize default behavior.
 
-## examples
+## Examples
 construct convolutional neural networks
 
 ```cpp
@@ -161,7 +161,7 @@ using namespace tiny_cnn::activation;
 void construct_mlp() {
     network<mse, gradient_descent> net;
 
-    net << fully_connected_layer<sigmoid>(32 * 32, 300);
+    net << fully_connected_layer<sigmoid>(32 * 32, 300)
         << fully_connected_layer<identity>(300, 10);
 
     assert(net.in_dim() == 32 * 32);
@@ -184,9 +184,9 @@ void construct_mlp() {
 }
 ```
 
-more sample, read main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter) page.
+more sample, read examples/main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter) page.
 
-## references
+## References
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
     arXiv:1206.5533v2, 2012
 
@@ -197,10 +197,10 @@ other useful reference lists:
 - [UFLDL Recommended Readings](http://deeplearning.stanford.edu/wiki/index.php/UFLDL_Recommended_Readings)
 - [deeplearning.net reading list](http://deeplearning.net/reading-list/)
 
-## license
+## License
 The BSD 3-Clause License
 
-## mailing list
+## Mailing list
 google group for questions and discussions:
 
 https://groups.google.com/forum/#!forum/tiny-cnn-users

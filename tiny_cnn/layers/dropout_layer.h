@@ -37,7 +37,7 @@ public:
     typedef activation::identity Activation;
     CNN_USE_LAYER_MEMBERS;
 
-    dropout_layer(layer_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
+    dropout_layer(cnn_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
         : layer<activation::identity>(in_dim, in_dim, 0, 0),
           phase_(phase),
           dropout_rate_(dropout_rate),
@@ -159,7 +159,7 @@ public:
     /**
      * set dropout-context (training-phase or test-phase)
      **/
-    void set_context(net_phase ctx)
+    void set_context(net_phase ctx) override
     {
         phase_ = ctx;
     }

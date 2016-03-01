@@ -55,9 +55,12 @@
 
 namespace tiny_cnn {
 
-typedef double float_t;
-typedef unsigned int layer_size_t;
-typedef size_t label_t;
+///< output label(class-index) for classification
+///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
+typedef cnn_size_t label_t;
+
+typedef cnn_size_t layer_size_t; // for backward compatibility
+
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 enum class net_phase {
@@ -163,6 +166,7 @@ struct blocked_range {
     typedef int const_iterator;
 
     blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+    blocked_range(size_t begin, size_t end) : begin_(static_cast<int>(begin)), end_(static_cast<int>(end)) {}
 
     const_iterator begin() const { return begin_; }
     const_iterator end() const { return end_; }
@@ -212,32 +216,42 @@ void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
         if (blockEnd > end) blockEnd = end;
     }
 
-    for (auto &f : futures)
-        f.wait();
+    for (auto &future : futures)
+        future.wait();
 }
 
 #endif
 
 #endif // CNN_USE_TBB
 
-template<typename Func>
-void for_(bool parallelize, int begin, int end, Func f, int grainsize = 100) {
-    parallelize ? parallel_for(begin, end, f, grainsize) : xparallel_for(begin, end, f);
-}
-
 template<typename T, typename U>
 bool value_representation(U const &value) {
     return static_cast<U>(static_cast<T>(value)) == value;
 }
 
-template<typename Func>
-void for_(bool parallelize, int begin, size_t end, Func f, int grainsize = 100) {
+template<typename T, typename Func>
+inline
+void for_(std::true_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
     parallelize = parallelize && value_representation<int>(end);
+    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) :
+                  xparallel_for(begin, static_cast<int>(end), f);
+}
+
+template<typename T, typename Func>
+inline
+void for_(std::false_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
     parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) : xparallel_for(begin, end, f);
 }
 
-template <typename Func>
-void for_i(bool parallelize, int size, Func f, int grainsize = 100)
+template<typename T, typename Func>
+inline
+void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
+    static_assert(std::is_integral<T>::value, "end must be integral type");
+    for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f, grainsize);
+}
+
+template <typename T, typename Func>
+void for_i(bool parallelize, T size, Func f, int grainsize = 100)
 {
     for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
@@ -248,8 +262,8 @@ void for_i(bool parallelize, int size, Func f, int grainsize = 100)
     }, grainsize);
 }
 
-template <typename Func>
-void for_i(int size, Func f, int grainsize = 100) {
+template <typename T, typename Func>
+void for_i(T size, Func f, int grainsize = 100) {
     for_i(true, size, f, grainsize);
 }
 
@@ -327,7 +341,7 @@ struct index3d {
     T depth_;
 };
 
-typedef index3d<layer_size_t> layer_shape_t;
+typedef index3d<cnn_size_t> layer_shape_t;
 
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const index3d<T>& d) {

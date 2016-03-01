@@ -418,15 +418,15 @@ public:
         return numTotal() > 0 && numFailed() > 0;
     }
 
-    int numFailed() const {
+    size_t numFailed() const {
         return numTotal() - numSuccess();
     }
 
-    int numSuccess() const {
+    size_t numSuccess() const {
         return std::count_if(tests_.begin(), tests_.end(), std::mem_fun_ref(&TestCase::success));
     }
 
-    int numTotal() const {
+    size_t numTotal() const {
         return tests_.size();
     }
 

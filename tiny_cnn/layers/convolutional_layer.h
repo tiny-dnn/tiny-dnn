@@ -89,15 +89,15 @@ public:
     *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
     **/
-    convolutional_layer(layer_size_t in_width,
-        layer_size_t in_height,
-        layer_size_t window_size,
-        layer_size_t in_channels,
-        layer_size_t out_channels,
+    convolutional_layer(cnn_size_t in_width,
+        cnn_size_t in_height,
+        cnn_size_t window_size,
+        cnn_size_t in_channels,
+        cnn_size_t out_channels,
         padding pad_type = padding::valid,
         bool has_bias = true,
-        layer_size_t w_stride = 1,
-        layer_size_t h_stride = 1)
+        cnn_size_t w_stride = 1,
+        cnn_size_t h_stride = 1)
         : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
             sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
         in_(in_width, in_height, in_channels),
@@ -123,16 +123,16 @@ public:
     *                          valid: use valid pixels of input only. output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
     **/
-    convolutional_layer(layer_size_t in_width,
-        layer_size_t in_height,
-        layer_size_t window_width,
-        layer_size_t window_height,
-        layer_size_t in_channels,
-        layer_size_t out_channels,
+    convolutional_layer(cnn_size_t in_width,
+        cnn_size_t in_height,
+        cnn_size_t window_width,
+        cnn_size_t window_height,
+        cnn_size_t in_channels,
+        cnn_size_t out_channels,
         padding pad_type = padding::valid,
         bool has_bias = true,
-        layer_size_t w_stride = 1,
-        layer_size_t h_stride = 1)
+        cnn_size_t w_stride = 1,
+        cnn_size_t h_stride = 1)
         : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
             window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
         in_(in_width, in_height, in_channels),
@@ -157,16 +157,16 @@ public:
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
     **/
-    convolutional_layer(layer_size_t in_width,
-        layer_size_t in_height,
-        layer_size_t window_size,
-        layer_size_t in_channels,
-        layer_size_t out_channels,
+    convolutional_layer(cnn_size_t in_width,
+        cnn_size_t in_height,
+        cnn_size_t window_size,
+        cnn_size_t in_channels,
+        cnn_size_t out_channels,
         const connection_table& connection_table,
         padding pad_type = padding::valid,
         bool has_bias = true,
-        layer_size_t w_stride = 1,
-        layer_size_t h_stride = 1
+        cnn_size_t w_stride = 1,
+        cnn_size_t h_stride = 1
         )
         : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
             sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
@@ -195,17 +195,17 @@ public:
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
     **/
-    convolutional_layer(layer_size_t in_width,
-        layer_size_t in_height,
-        layer_size_t window_width,
-        layer_size_t window_height,
-        layer_size_t in_channels,
-        layer_size_t out_channels,
+    convolutional_layer(cnn_size_t in_width,
+        cnn_size_t in_height,
+        cnn_size_t window_width,
+        cnn_size_t window_height,
+        cnn_size_t in_channels,
+        cnn_size_t out_channels,
         const connection_table& connection_table,
         padding pad_type = padding::valid,
         bool has_bias = true,
-        layer_size_t w_stride = 1,
-        layer_size_t h_stride = 1
+        cnn_size_t w_stride = 1,
+        cnn_size_t h_stride = 1
         )
         : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
             window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
@@ -248,18 +248,18 @@ public:
 
         // accumulate dw
         for_i(in_.depth_, [&](int inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
                 if (!tbl_.is_connected(outc, inc)) continue;
 
-                for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                    for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                         float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &current_delta2[out_.get_index(0, 0, outc)];
 
-                        for (layer_size_t y = 0; y < out_.height_; y++) {
-                            for (layer_size_t x = 0; x < out_.width_; x++) {
+                        for (cnn_size_t y = 0; y < out_.height_; y++) {
+                            for (cnn_size_t x = 0; x < out_.width_; x++) {
                                 dst += sqr(prevo[y * in_padded_.width_ + x]) * delta[y * out_.width_ + x];
                             }
                         }
@@ -271,7 +271,7 @@ public:
 
         // accumulate db
         if (!this->bhessian_.empty()) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &current_delta2[out_.get_index(0, 0, outc)];
                 this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
@@ -279,21 +279,21 @@ public:
 
         // propagate delta to previous layer
         for_i(in_.depth_, [&](int inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
 
                 const float_t *pw = &W_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
                 const float_t *pdelta_src = &current_delta2[out_.get_index(0, 0, outc)];
                 float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 
-                for (layer_size_t y = 0; y < out_.height_; y++) {
-                    for (layer_size_t x = 0; x < out_.width_; x++) {
+                for (cnn_size_t y = 0; y < out_.height_; y++) {
+                    for (cnn_size_t x = 0; x < out_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
                         float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
 
-                        for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                                 ppdelta_dst[wy * in_padded_.width_ + wx] += sqr(*ppw++) * ppdelta_src;
                             }
                         }
@@ -327,22 +327,22 @@ public:
         std::fill(a.begin(), a.end(), float_t(0));
 
         for_i(parallelize_, out_.depth_, [&](int o) {
-            for (layer_size_t inc = 0; inc < in_.depth_; inc++) {
+            for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                 if (!tbl_.is_connected(o, inc)) continue;
 
                 const float_t *pw = &this->W_[weight_.get_index(0, 0, in_.depth_ * o + inc)];
                 const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
                 float_t *pa = &a[out_.get_index(0, 0, o)];
 
-                for (layer_size_t y = 0; y < out_.height_; y++) {
-                    for (layer_size_t x = 0; x < out_.width_; x++) {
+                for (cnn_size_t y = 0; y < out_.height_; y++) {
+                    for (cnn_size_t x = 0; x < out_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
                         float_t sum = float_t(0);
 
                         // should be optimized for small kernel(3x3,5x5)
-                        for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                                 sum += *ppw++ * ppi[wy * in_padded_.width_ + wx];
                             }
                         }
@@ -370,7 +370,7 @@ public:
         return next_ ? next_->forward_propagation(out, worker_index) : out;
     }
 
-    float_t& weight_at(layer_size_t in_channel, layer_size_t out_channel, layer_size_t kernel_x, layer_size_t kernel_y) {
+    float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
         return W_[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
@@ -385,21 +385,21 @@ public:
 
         // propagate delta to previous layer
         for_i(in_.depth_, [&](int inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
 
                 const float_t *pw = &this->W_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
                 const float_t *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
                 float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 
-                for (layer_size_t y = 0; y < out_.height_; y++) {
-                    for (layer_size_t x = 0; x < out_.width_; x++) {
+                for (cnn_size_t y = 0; y < out_.height_; y++) {
+                    for (cnn_size_t x = 0; x < out_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
                         float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
 
-                        for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                                 ppdelta_dst[wy * in_padded_.width_ + wx] += *ppw++ * ppdelta_src;
                             }
                         }
@@ -414,17 +414,17 @@ public:
 
         // accumulate dw
         for_i(in_.depth_, [&](int inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
                 if (!tbl_.is_connected(outc, inc)) continue;
 
-                for (layer_size_t wy = 0; wy < weight_.height_; wy++) {
-                    for (layer_size_t wx = 0; wx < weight_.width_; wx++) {
+                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                         float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
                         const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
-                        for (layer_size_t y = 0; y < out_.height_; y++) {
+                        for (cnn_size_t y = 0; y < out_.height_; y++) {
                             dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
                         }
                         dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
@@ -435,7 +435,7 @@ public:
 
         // accumulate db
         if (!db.empty()) {
-            for (layer_size_t outc = 0; outc < out_.depth_; outc++) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
                 db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
@@ -452,13 +452,13 @@ public:
         return prev_->back_propagation(prev_delta_[index], index);
     }
 
-    index3d<layer_size_t> in_shape() const override { return in_; }
-    index3d<layer_size_t> out_shape() const override { return out_; }
+    index3d<cnn_size_t> in_shape() const override { return in_; }
+    index3d<cnn_size_t> out_shape() const override { return out_; }
     std::string layer_type() const override { return "conv"; }
 
     image<> weight_to_image() const {
         image<> img;
-        const layer_size_t border_width = 1;
+        const cnn_size_t border_width = 1;
         const auto pitch = weight_.width_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
@@ -469,15 +469,15 @@ public:
 
         auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
 
-        for (layer_size_t r = 0; r < in_.depth_; ++r) {
-            for (layer_size_t c = 0; c < out_.depth_; ++c) {
+        for (cnn_size_t r = 0; r < in_.depth_; ++r) {
+            for (cnn_size_t c = 0; c < out_.depth_; ++c) {
                 if (!tbl_.is_connected(c, r)) continue;
 
                 const auto top = r * pitch + border_width;
                 const auto left = c * pitch + border_width;
 
-                for (layer_size_t y = 0; y < weight_.height_; ++y) {
-                    for (layer_size_t x = 0; x < weight_.width_; ++x) {
+                for (cnn_size_t y = 0; y < weight_.height_; ++y) {
+                    for (cnn_size_t x = 0; x < weight_.width_; ++x) {
                         const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
@@ -491,7 +491,7 @@ public:
 
 private:
     void init() {
-        for (layer_size_t i = 0; i < CNN_TASK_SIZE; i++) {
+        for (cnn_size_t i = 0; i < CNN_TASK_SIZE; i++) {
             if (pad_type_ == padding::same) {
                 prev_out_buf_[i] = new vec_t(in_padded_.size(), float_t(0));
                 prev_delta_padded_[i].resize(in_padded_.size(), float_t(0));               
@@ -505,19 +505,19 @@ private:
         }
     }
 
-    layer_size_t in_length(layer_size_t in_length, layer_size_t window_size, padding pad_type) const {
+    cnn_size_t in_length(cnn_size_t in_length, cnn_size_t window_size, padding pad_type) const {
         return pad_type == padding::same ? (in_length + window_size - 1) : in_length;
     }
 
-    layer_size_t out_length(layer_size_t in_length, layer_size_t window_size, layer_size_t stride, padding pad_type) const {
-        return pad_type == padding::same ? (layer_size_t)ceil((double)in_length / stride) : (layer_size_t)ceil((double)(in_length - window_size + 1) / stride);
+    cnn_size_t out_length(cnn_size_t in_length, cnn_size_t window_size, cnn_size_t stride, padding pad_type) const {
+        return pad_type == padding::same ? (cnn_size_t)ceil((double)in_length / stride) : (cnn_size_t)ceil((double)(in_length - window_size + 1) / stride);
     }
 
-    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, layer_size_t w_stride, layer_size_t h_stride, padding pad_type) const {
+    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) const {
         return out_length(in_width, window_size, w_stride, pad_type) * out_length(in_height, window_size, h_stride, pad_type);
     }
 
-    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_width, layer_size_t window_height, layer_size_t w_stride, layer_size_t h_stride, padding pad_type) const {
+    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_width, cnn_size_t window_height, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) const {
         return out_length(in_width, window_width, w_stride, pad_type) * out_length(in_height, window_height, h_stride, pad_type);
     }
 
@@ -526,11 +526,11 @@ private:
             dst = delta;
         }
         else {
-            for (layer_size_t c = 0; c < in_.depth_; c++) {
+            for (cnn_size_t c = 0; c < in_.depth_; c++) {
                 float_t *pdst = &dst[in_.get_index(0, 0, c)];
                 const float_t *pin = &delta[in_padded_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
 
-                for (layer_size_t y = 0; y < in_.height_; y++, pdst += in_.width_, pin += in_padded_.width_) {
+                for (cnn_size_t y = 0; y < in_.height_; y++, pdst += in_.width_, pin += in_padded_.width_) {
                     std::copy(pin, pin + in_.width_, pdst);
                 }
             }
@@ -545,11 +545,11 @@ private:
         }
         else {
             // make padded version in order to avoid corner-case in fprop/bprop
-            for (layer_size_t c = 0; c < in_.depth_; c++) {
+            for (cnn_size_t c = 0; c < in_.depth_; c++) {
                 float_t *pimg = &(*dst)[in_padded_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
                 const float_t *pin = &in[in_.get_index(0, 0, c)];
 
-                for (layer_size_t y = 0; y < in_.height_; y++, pin += in_.width_, pimg += in_padded_.width_) {
+                for (cnn_size_t y = 0; y < in_.height_; y++, pin += in_.width_, pimg += in_padded_.width_) {
                     std::copy(pin, pin + in_.width_, pimg);
                 }
             }
@@ -563,10 +563,10 @@ private:
     vec_t  prev_delta2_padded_;
 
     connection_table tbl_;
-    index3d<layer_size_t> in_;
-    index3d<layer_size_t> in_padded_;
-    index3d<layer_size_t> out_;
-    index3d<layer_size_t> weight_;
+    index3d<cnn_size_t> in_;
+    index3d<cnn_size_t> in_padded_;
+    index3d<cnn_size_t> out_;
+    index3d<cnn_size_t> weight_;
     padding pad_type_;
     size_t w_stride_;
     size_t h_stride_;
@@ -594,11 +594,11 @@ public:
      *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
      *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
      **/
-    convolutional_layer_old(layer_size_t in_width,
-                        layer_size_t in_height,
-                        layer_size_t window_size,
-                        layer_size_t in_channels,
-                        layer_size_t out_channels,
+    convolutional_layer_old(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
                         padding pad_type = padding::valid)
     : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
            sqr(window_size) * in_channels * out_channels, out_channels), 
@@ -623,11 +623,11 @@ public:
      *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
      *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
      **/
-    convolutional_layer_old(layer_size_t in_width,
-                        layer_size_t in_height,
-                        layer_size_t window_size,
-                        layer_size_t in_channels,
-                        layer_size_t out_channels,
+    convolutional_layer_old(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
                         const connection_table& connection_table,
                         padding pad_type = padding::valid)
         : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
@@ -648,7 +648,7 @@ public:
 
     image<> weight_to_image() const {
         image<> img;
-        const layer_size_t border_width = 1;
+        const cnn_size_t border_width = 1;
         const auto pitch = window_size_ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
@@ -659,15 +659,15 @@ public:
 
         auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
 
-        for (layer_size_t r = 0; r < in_.depth_; ++r) {
-            for (layer_size_t c = 0; c < out_.depth_; ++c) {
+        for (cnn_size_t r = 0; r < in_.depth_; ++r) {
+            for (cnn_size_t c = 0; c < out_.depth_; ++c) {
                 if (!connection_.is_connected(c, r)) continue;
 
                 const auto top = r * pitch + border_width;
                 const auto left = c * pitch + border_width;
 
-                for (layer_size_t y = 0; y < window_size_; ++y) {
-                    for (layer_size_t x = 0; x < window_size_; ++x) {
+                for (cnn_size_t y = 0; y < window_size_; ++y) {
+                    for (cnn_size_t x = 0; x < window_size_; ++x) {
                         const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
@@ -679,47 +679,47 @@ public:
         return img;
     }
 
-    index3d<layer_size_t> in_shape() const override { return in_; }
-    index3d<layer_size_t> out_shape() const override { return out_; }
+    index3d<cnn_size_t> in_shape() const override { return in_; }
+    index3d<cnn_size_t> out_shape() const override { return out_; }
     std::string layer_type() const override { return "conv"; }
 
 private:
-    layer_size_t out_length(layer_size_t in_length, layer_size_t window_size, padding pad_type) const {
+    cnn_size_t out_length(cnn_size_t in_length, cnn_size_t window_size, padding pad_type) const {
         return pad_type == padding::same ? in_length : (in_length - window_size + 1);
     }
 
-    layer_size_t out_size(layer_size_t in_width, layer_size_t in_height, layer_size_t window_size, padding pad_type) const {
+    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, padding pad_type) const {
         return out_length(in_width, window_size, pad_type) * out_length(in_height, window_size, pad_type);
     }
 
     void init_connection(const connection_table& table, padding pad_type) {
-        layer_size_t pad = (pad_type == padding::valid) ? 0 : window_size_ / 2;
+        cnn_size_t pad = (pad_type == padding::valid) ? 0 : window_size_ / 2;
 
-        for (layer_size_t inc = 0; inc < in_.depth_; ++inc) {
-            for (layer_size_t outc = 0; outc < out_.depth_; ++outc) {
+        for (cnn_size_t inc = 0; inc < in_.depth_; ++inc) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; ++outc) {
                 if (!table.is_connected(outc, inc)) {
                     continue;
                 }
 
-                for (layer_size_t y = 0; y < out_.height_; ++y)
-                    for (layer_size_t x = 0; x < out_.width_; ++x)
+                for (cnn_size_t y = 0; y < out_.height_; ++y)
+                    for (cnn_size_t x = 0; x < out_.width_; ++x)
                         connect_kernel(inc, outc, x, y, pad);
             }
         }
 
-        for (layer_size_t outc = 0; outc < out_.depth_; ++outc)
-            for (layer_size_t y = 0; y < out_.height_; ++y)
-                for (layer_size_t x = 0; x < out_.width_; ++x)
+        for (cnn_size_t outc = 0; outc < out_.depth_; ++outc)
+            for (cnn_size_t y = 0; y < out_.height_; ++y)
+                for (cnn_size_t x = 0; x < out_.width_; ++x)
                     this->connect_bias(outc, out_.get_index(x, y, outc));
     }
 
-    void connect_kernel(layer_size_t inc, layer_size_t outc, layer_size_t x, layer_size_t y, layer_size_t pad) {
+    void connect_kernel(cnn_size_t inc, cnn_size_t outc, cnn_size_t x, cnn_size_t y, cnn_size_t pad) {
 
-        for (layer_size_t dy = 0; dy < window_size_; ++dy) {
+        for (cnn_size_t dy = 0; dy < window_size_; ++dy) {
             if (y + dy < pad) continue;
             if (y + dy - pad >= in_.height_) continue;
 
-            for (layer_size_t dx = 0; dx < window_size_; ++dx) {
+            for (cnn_size_t dx = 0; dx < window_size_; ++dx) {
                 if (x + dx < pad) continue;
                 if (x + dx - pad >= in_.width_) continue;
 
@@ -731,9 +731,9 @@ private:
         }
     }
 
-    index3d<layer_size_t> in_;
-    index3d<layer_size_t> out_;
-    index3d<layer_size_t> weight_;
+    index3d<cnn_size_t> in_;
+    index3d<cnn_size_t> out_;
+    index3d<cnn_size_t> weight_;
     connection_table connection_;
     size_t window_size_;
 };

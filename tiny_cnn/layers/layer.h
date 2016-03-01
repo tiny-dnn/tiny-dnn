@@ -45,7 +45,7 @@ public:
 
     virtual ~layer_base() {}
 
-    layer_base(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
+    layer_base(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : parallelize_(true), next_(nullptr), prev_(nullptr),
           weight_init_(std::make_shared<weight_init::xavier>()),
           bias_init_(std::make_shared<weight_init::constant>(float_t(0))) {
@@ -66,10 +66,10 @@ public:
     // cannot call from ctor because of pure virtual function call fan_in_size().
     // so should call this function explicitly after ctor
     void init_weight() {
-        weight_init_->fill(&W_, static_cast<layer_size_t>(fan_in_size()),
-                           static_cast<layer_size_t>(fan_out_size()));
-        bias_init_->fill(&b_, static_cast<layer_size_t>(fan_in_size()),
-                         static_cast<layer_size_t>(fan_out_size()));
+        weight_init_->fill(&W_, static_cast<cnn_size_t>(fan_in_size()),
+                           static_cast<cnn_size_t>(fan_out_size()));
+        bias_init_->fill(&b_, static_cast<cnn_size_t>(fan_in_size()),
+                         static_cast<cnn_size_t>(fan_out_size()));
 
         std::fill(Whessian_.begin(), Whessian_.end(), float_t(0));
         std::fill(bhessian_.begin(), bhessian_.end(), float_t(0));
@@ -84,21 +84,21 @@ public:
     /////////////////////////////////////////////////////////////////////////
     // getter
 
-    const vec_t& output(int worker_index) const { return output_[worker_index]; }
-    const vec_t& delta(int worker_index) const { return prev_delta_[worker_index]; }
+    const vec_t& output(cnn_size_t worker_index) const { return output_[worker_index]; }
+    const vec_t& delta(cnn_size_t worker_index) const { return prev_delta_[worker_index]; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
-    vec_t& weight_diff(int index) { return dW_[index]; }
-    vec_t& bias_diff(int index) { return db_[index]; }
+    vec_t& weight_diff(cnn_size_t index) { return dW_[index]; }
+    vec_t& bias_diff(cnn_size_t index) { return db_[index]; }
     bool is_exploded() const { return has_infinite(W_) || has_infinite(b_); }
     layer_base* next() { return next_; }
     layer_base* prev() { return prev_; }
 
     ///< input dimension
-    virtual layer_size_t in_size() const { return in_size_; }
+    virtual cnn_size_t in_size() const { return in_size_; }
 
     ///< output dimension
-    virtual layer_size_t out_size() const { return out_size_; }
+    virtual cnn_size_t out_size() const { return out_size_; }
 
     ///< number of parameters
     virtual size_t param_size() const { return W_.size() + b_.size(); }
@@ -113,10 +113,10 @@ public:
     virtual size_t connection_size() const = 0;
 
     ///< input shape(width x height x depth)
-    virtual index3d<layer_size_t> in_shape() const { return index3d<layer_size_t>(in_size(), 1, 1); }
+    virtual index3d<cnn_size_t> in_shape() const { return index3d<cnn_size_t>(in_size(), 1, 1); }
 
     ///< output shape(width x height x depth)
-    virtual index3d<layer_size_t> out_shape() const { return index3d<layer_size_t>(out_size(), 1, 1); }
+    virtual index3d<cnn_size_t> out_shape() const { return index3d<cnn_size_t>(out_size(), 1, 1); }
 
     ///< name of layer. should be unique for each concrete class
     virtual std::string layer_type() const = 0;
@@ -184,8 +184,13 @@ public:
     // called afrer updating weight
     virtual void post_update() {}
 
+    /**
+     * notify changing context (train <=> test)
+     **/
+     virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
+
     template <typename Optimizer>
-    void update_weight(Optimizer *o, int worker_size, size_t batch_size) {
+    void update_weight(Optimizer *o, cnn_size_t worker_size, cnn_size_t batch_size) {
         if (W_.empty()) return;
 
         merge(worker_size, batch_size);
@@ -216,8 +221,8 @@ public:
     }
 
 protected:
-    layer_size_t in_size_;
-    layer_size_t out_size_;
+    cnn_size_t in_size_;
+    cnn_size_t out_size_;
     bool parallelize_;
 
     layer_base* next_;
@@ -227,7 +232,13 @@ protected:
     vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
+
+    /** contribution to derivative of loss function with respect to weights of this layer,
+        indexed by worker / thread */
     vec_t dW_[CNN_TASK_SIZE];
+
+    /** contribution to derivative of loss function with respect to bias terms of this layer,
+        indexed by worker / thread */
     vec_t db_[CNN_TASK_SIZE];
 
     vec_t Whessian_; // diagonal terms of hessian matrix
@@ -237,13 +248,15 @@ protected:
     std::shared_ptr<weight_init::function> bias_init_;
 
 private:
-    void merge(size_t worker_size, size_t batch_size) {
-        for (size_t i = 1; i < worker_size; i++)
+    /** sums contributions to gradient (of the loss function with respect to weights and
+        bias) as calculated by individual threads */
+    void merge(cnn_size_t worker_size, cnn_size_t batch_size) {
+        for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&dW_[i][0],
-                static_cast<layer_size_t>(dW_[i].size()), &dW_[0][0]);
-        for (size_t i = 1; i < worker_size; i++)
+                static_cast<cnn_size_t>(dW_[i].size()), &dW_[0][0]);
+        for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&db_[i][0],
-                static_cast<layer_size_t>(db_[i].size()), &db_[0][0]);
+                static_cast<cnn_size_t>(db_[i].size()), &db_[0][0]);
 
         std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
         std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
@@ -259,7 +272,7 @@ private:
         }
     }
 
-    void set_size(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim) {
+    void set_size(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim) {
         in_size_ = in_dim;
         out_size_ = out_dim;
 
@@ -280,7 +293,7 @@ private:
 template<typename Activation>
 class layer : public layer_base {
 public:
-    layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim)
+    layer(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : layer_base(in_dim, out_dim, weight_dim, bias_dim) {}
 
     activation::function& activation_function() override { return h_; }
@@ -329,7 +342,7 @@ inline void data_mismatch(const layer_base& layer, const vec_t& data) {
     throw nn_error("input dimension mismath!" + detail_info);
 }
 
-inline void pooling_size_mismatch(layer_size_t in_width, layer_size_t in_height, layer_size_t pooling_size) {
+inline void pooling_size_mismatch(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t pooling_size) {
     std::ostringstream os;
 
     os << std::endl;

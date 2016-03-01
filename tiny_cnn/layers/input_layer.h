@@ -37,10 +37,10 @@ public:
 
     input_layer() : Base(0, 0, 0, 0) {}
 
-    layer_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<layer_size_t>(0); }
+    cnn_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<cnn_size_t>(0); }
 
-    index3d<layer_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<layer_size_t>(0, 0, 0); }
-    index3d<layer_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<layer_size_t>(0, 0, 0); }
+    index3d<cnn_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<cnn_size_t>(0, 0, 0); }
+    index3d<cnn_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<cnn_size_t>(0, 0, 0); }
     std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {

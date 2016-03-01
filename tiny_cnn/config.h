@@ -60,3 +60,19 @@
 #else
 #define CNN_TASK_SIZE 8
 #endif
+
+namespace tiny_cnn {
+
+/**
+ * calculation data type
+ * you can change it to float, or user defined class (fixed point,etc)
+ **/
+typedef double float_t;
+
+/**
+ * size of layer, model, data etc.
+ * change to smaller type if memory footprint is severe
+ **/
+typedef size_t cnn_size_t;
+
+}

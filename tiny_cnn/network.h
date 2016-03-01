@@ -35,6 +35,7 @@
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layers.h"
+#include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
@@ -101,12 +102,12 @@ public:
     /**
      * return input dims of network
      **/
-    layer_size_t in_dim() const         { return layers_.head()->in_size(); }
+    cnn_size_t in_dim() const         { return layers_.head()->in_size(); }
 
     /**
      * return output dims of network
      **/
-    layer_size_t out_dim() const        { return layers_.tail()->out_size(); }
+    cnn_size_t out_dim() const        { return layers_.tail()->out_size(); }
 
     std::string  name() const           { return name_; }
     Optimizer&   optimizer()            { return optimizer_; }
@@ -175,6 +176,7 @@ public:
                )
     {
         check_training_data(in, t);
+        set_netphase(net_phase::train);
         if (reset_weights)
             init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
@@ -204,7 +206,19 @@ public:
      **/
     template<typename T>
     bool train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+        set_netphase(net_phase::train);
         return train(in, t, batch_size, epoch, nop, nop);
+    }
+
+    /**
+     * set the netphase to train or test
+     * @param phase phase of network, could be train or test
+     */
+    void set_netphase(net_phase phase)
+    {
+        for (size_t i = 0; i != layers_.depth(); ++i) {
+            layers_[i]->set_context(phase);
+        }
     }
 
     /**
@@ -212,7 +226,7 @@ public:
      **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
         result test_result;
-
+        set_netphase(net_phase::test);
         for (size_t i = 0; i < in.size(); i++) {
             const label_t predicted = fprop_max_index(in[i]);
             const label_t actual = t[i];
@@ -227,7 +241,7 @@ public:
     std::vector<vec_t> test(const std::vector<vec_t>& in)
      {
             std::vector<vec_t> test_result(in.size());
-
+            set_netphase(net_phase::test);
             for_i(in.size(), [&](int i)
             {
                 test_result[i] = predict(in[i]);
@@ -357,7 +371,7 @@ public:
     /**
      * input shape (width x height x channels)
      **/
-    index3d<layer_size_t> in_shape() const {
+    index3d<cnn_size_t> in_shape() const {
         return layers_.head()->in_shape();
     }
 
@@ -395,7 +409,7 @@ protected:
 private:
 
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        layer_size_t outdim = out_dim();
+        cnn_size_t outdim = out_dim();
 
         assert(num > 0);
         assert(outdim > 0);
@@ -408,12 +422,22 @@ private:
         }
     }
 
+    /**
+     * train on one minibatch
+     *
+     * @param size is the number of data points to use in this batch
+     */
     void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
         train_once(in, &v[0], size, nbThreads );
     }
 
+    /**
+     * train on one minibatch
+     *
+     * @param size is the number of data points to use in this batch
+     */
     void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
         if (size == 1) {
             bprop(fprop(in[0]), t[0]);
@@ -423,14 +447,25 @@ private:
         }
     }   
 
+    /** 
+     * trains on one minibatch, i.e. runs forward and backward propagation to calculate
+     * the gradient of the loss function with respect to the network parameters (weights),
+     * then calls the optimizer algorithm to update the weights
+     *
+     * @param batch_size the number of data points to use in this batch 
+     */
     void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
         int num_threads = std::min(batch_size, num_tasks);
+
+        // number of data points to use in each thread
         int data_per_thread = (batch_size + num_threads - 1) / num_threads;
 
+        // i is the thread / worker index
         for_i(num_threads, [&](int i) {
             int start_index = i * data_per_thread;
             int end_index = std::min(batch_size, start_index + data_per_thread);
 
+            // loop over data points in this batch assigned to thread i
             for (int j = start_index; j < end_index; ++j)
                 bprop(fprop(in[j], i), t[j], i);
         }, 1);
@@ -448,6 +483,11 @@ private:
         layers_.divide_hessian(size);
     }
 
+    /**
+     * @param  h the activation function at the output of the last layer
+     * @return true if the combination of the loss function E and the last layer output activation
+     *         function h is such that dE / da = (dE/dY) * (dy/da) = y - target
+     */
     template<typename Activation>
     bool is_canonical_link(const Activation& h) {
         if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
@@ -488,6 +528,9 @@ private:
         const activation::function& h = layers_.tail()->activation_function();
 
         if (is_canonical_link(h)) {
+            // we have a combination of loss function and last layer
+            // output activation function which is such that
+            // dE / da = (dE/dy) * (dy/da) = y - target
             for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
         } else {
             vec_t dE_dy = gradient<E>(out, t);
@@ -529,7 +572,7 @@ private:
         return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 
-    void check_t(size_t i, label_t t, layer_size_t dim_out) {
+    void check_t(size_t i, label_t t, cnn_size_t dim_out) {
         if (t >= dim_out) {
             std::ostringstream os;
             os << format_str("t[%u]=%u, dim(network output)=%u", i, t, dim_out) << std::endl;
@@ -541,15 +584,15 @@ private:
         }
     }
 
-    void check_t(size_t i, const vec_t& t, layer_size_t dim_out) {
+    void check_t(size_t i, const vec_t& t, cnn_size_t dim_out) {
         if (t.size() != dim_out)
             throw nn_error(format_str("output dimension mismatch!\n dim(target[%u])=%u, dim(network output size=%u", i, t.size(), dim_out));
     }
 
     template <typename T>
     void check_training_data(const std::vector<vec_t>& in, const std::vector<T>& t) {
-        layer_size_t dim_in = in_dim();
-        layer_size_t dim_out = out_dim();
+        cnn_size_t dim_in = in_dim();
+        cnn_size_t dim_out = out_dim();
 
         if (in.size() != t.size())
             throw nn_error("number of training data must be equal to label data");

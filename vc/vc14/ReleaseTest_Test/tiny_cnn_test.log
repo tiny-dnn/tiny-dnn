@@ -1,0 +1,18 @@
+﻿2016/02/24 23:30:46 にビルドを開始しました。
+     1>ノード 3 上のプロジェクト "C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\tiny_cnn_test.vcxproj" (Build ターゲット)。
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\CL.exe /c /I..\..\ /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /D CNN_USE_TBB /D _MBCS /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"ReleaseTest_Test\\" /Fd"ReleaseTest_Test\vc140.pdb" /Gd /TP /analyze- /errorReport:prompt ..\..\test\test.cpp
+         test.cpp
+     1>..\..\test\test.cpp(457): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+         C:\Program Files (x86)\Windows Kits\10\Include\10.0.10150.0\ucrt\stdio.h(205): note: 'fopen' の宣言を確認してください
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\ReleaseTest_Test\tiny_cnn_test.exe" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /Debug /PDB:"C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\ReleaseTest_Test\tiny_cnn_test.pdb" /OPT:REF /OPT:ICF /LTCG:incremental /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\ReleaseTest_Test\tiny_cnn_test.lib" /MACHINE:X86 /SAFESEH ReleaseTest_Test\test.obj
+         コード生成しています。
+         All 4911 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+         コード生成が終了しました。
+         tiny_cnn_test.vcxproj -> C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\ReleaseTest_Test\tiny_cnn_test.exe
+     1>プロジェクト "C:\Users\knowme\Documents\GitHub\tiny-cnn\vc\vc14\tiny_cnn_test.vcxproj" (Build ターゲット) のビルドが完了しました。
+
+ビルドに成功しました。
+
+経過時間 00:00:11.12

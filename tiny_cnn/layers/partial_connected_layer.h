@@ -35,12 +35,12 @@ class partial_connected_layer : public layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef std::vector<std::pair<layer_size_t, layer_size_t> > io_connections;
-    typedef std::vector<std::pair<layer_size_t, layer_size_t> > wi_connections;
-    typedef std::vector<std::pair<layer_size_t, layer_size_t> > wo_connections;
+    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > io_connections;
+    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wi_connections;
+    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wo_connections;
     typedef layer<Activation> Base;
 
-    partial_connected_layer(layer_size_t in_dim, layer_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = float_t(1))
+    partial_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = float_t(1))
         : Base(in_dim, out_dim, weight_dim, bias_dim), 
           weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim),
           scale_factor_(scale_factor) {}
@@ -71,13 +71,13 @@ public:
         return max_size(in2wo_);
     }
 
-    void connect_weight(layer_size_t input_index, layer_size_t output_index, layer_size_t weight_index) {
+    void connect_weight(cnn_size_t input_index, cnn_size_t output_index, cnn_size_t weight_index) {
         weight2io_[weight_index].emplace_back(input_index, output_index);
         out2wi_[output_index].emplace_back(weight_index, input_index);
         in2wo_[input_index].emplace_back(weight_index, output_index);
     }
 
-    void connect_bias(layer_size_t bias_index, layer_size_t output_index) {
+    void connect_bias(cnn_size_t bias_index, cnn_size_t output_index) {
         out2bias_[output_index] = bias_index;
         bias2out_[bias_index].push_back(output_index);
     }
@@ -138,7 +138,7 @@ public:
         });
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
-            const std::vector<layer_size_t>& outs = bias2out_[i];
+            const std::vector<cnn_size_t>& outs = bias2out_[i];
             float_t diff = float_t(0);
 
             for (auto o : outs)
@@ -171,7 +171,7 @@ public:
         }
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
-            const std::vector<layer_size_t>& outs = bias2out_[i];
+            const std::vector<cnn_size_t>& outs = bias2out_[i];
             float_t diff = float_t(0);
 
             for (auto o : outs)
@@ -180,7 +180,7 @@ public:
             bhessian_[i] += diff;
         }
 
-        for (layer_size_t i = 0; i < in_size_; i++) {
+        for (cnn_size_t i = 0; i < in_size_; i++) {
             const wo_connections& connections = in2wo_[i];
             prev_delta2_[i] = float_t(0);
 
@@ -208,13 +208,13 @@ public:
         for (size_t i = 0; i < out_size_; i++) {
             wi_connections& wi = out2wi_[i];
             for (size_t j = 0; j < wi.size(); j++)
-                wi[j].first = static_cast<layer_size_t>(swaps[wi[j].first]);
+                wi[j].first = static_cast<cnn_size_t>(swaps[wi[j].first]);
         }
 
         for (size_t i = 0; i < in_size_; i++) {
             wo_connections& wo = in2wo_[i];
             for (size_t j = 0; j < wo.size(); j++)
-                wo[j].first = static_cast<layer_size_t>(swaps[wo[j].first]);
+                wo[j].first = static_cast<cnn_size_t>(swaps[wo[j].first]);
         }
 
         std::vector<io_connections> weight2io_new(n);
@@ -228,7 +228,7 @@ protected:
     std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
     std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
     std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
-    std::vector<std::vector<layer_size_t> > bias2out_;
+    std::vector<std::vector<cnn_size_t> > bias2out_;
     std::vector<size_t> out2bias_;
     float_t scale_factor_;
 };

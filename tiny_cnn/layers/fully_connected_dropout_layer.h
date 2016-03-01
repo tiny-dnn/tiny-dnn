@@ -34,7 +34,7 @@ namespace tiny_cnn {
 template<typename Activation>
 class fully_connected_dropout_layer : public fully_connected_layer<Activation, dropout> {
 public:
-    fully_connected_dropout_layer(layer_size_t in_dim, layer_size_t out_dim, dropout::mode mode = dropout::per_data)
+    fully_connected_dropout_layer(cnn_size_t in_dim, cnn_size_t out_dim, dropout::mode mode = dropout::per_data)
         : fully_connected_layer<Activation, dropout>(in_dim, out_dim)
     {
         this->filter_.set_mode(mode);

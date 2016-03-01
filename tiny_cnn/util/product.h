@@ -192,15 +192,15 @@ inline bool is_aligned(avx<T>, const typename avx<T>::value_type* p) {
 
 // generic dot-product
 template<typename T>
-inline typename T::value_type dot_product_nonaligned(const typename T::value_type* f1, const typename T::value_type* f2, unsigned int size) {
+inline typename T::value_type dot_product_nonaligned(const typename T::value_type* f1, const typename T::value_type* f2, size_t  size) {
     typename T::register_type result = T::zero();
 
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) 
+    for (size_t i = 0; i < size/T::unroll_size; i++) 
         result = T::add(result, T::mul(T::loadu(&f1[i*T::unroll_size]), T::loadu(&f2[i*T::unroll_size])));  
 
     typename T::value_type sum = T::resemble(result);
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         sum += f1[i] * f2[i];
 
     return sum;
@@ -208,73 +208,73 @@ inline typename T::value_type dot_product_nonaligned(const typename T::value_typ
 
 // generic dot-product(aligned)
 template<typename T>
-inline typename T::value_type dot_product_aligned(const typename T::value_type* f1, const typename T::value_type* f2, unsigned int size) {
+inline typename T::value_type dot_product_aligned(const typename T::value_type* f1, const typename T::value_type* f2, size_t  size) {
     typename T::register_type result = T::zero();
 
     assert(is_aligned(T(), f1));
     assert(is_aligned(T(), f2));
 
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) 
+    for (size_t i = 0; i < size/T::unroll_size; i++) 
         result = T::add(result, T::mul(T::load(&f1[i*T::unroll_size]), T::load(&f2[i*T::unroll_size])));  
     
     typename T::value_type sum = T::resemble(result);
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         sum += f1[i] * f2[i];
 
     return sum;
 }
 
 template<typename T>
-inline void muladd_aligned(const typename T::value_type* src, typename T::value_type c, unsigned int size, typename T::value_type* dst) {
+inline void muladd_aligned(const typename T::value_type* src, typename T::value_type c, size_t  size, typename T::value_type* dst) {
     typename T::register_type factor = T::set1(c);
 
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) {
+    for (size_t i = 0; i < size/T::unroll_size; i++) {
         typename T::register_type d = T::load(&dst[i*T::unroll_size]);
         typename T::register_type s = T::load(&src[i*T::unroll_size]);
         T::store(&dst[i*T::unroll_size], T::add(d, T::mul(s, factor)));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         dst[i] += src[i] * c;
 }
 
 
 template<typename T>
-inline void muladd_nonaligned(const typename T::value_type* src, typename T::value_type c, unsigned int size, typename T::value_type* dst) {
+inline void muladd_nonaligned(const typename T::value_type* src, typename T::value_type c, size_t  size, typename T::value_type* dst) {
     typename T::register_type factor = T::set1(c);
 
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) {
+    for (size_t i = 0; i < size/T::unroll_size; i++) {
         typename T::register_type d = T::loadu(&dst[i*T::unroll_size]);
         typename T::register_type s = T::loadu(&src[i*T::unroll_size]);
         T::storeu(&dst[i*T::unroll_size], T::add(d, T::mul(s, factor)));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         dst[i] += src[i] * c;
 }
 
 template<typename T>
-inline void reduce_nonaligned(const typename T::value_type* src, unsigned int size, typename T::value_type* dst) {
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) {
+inline void reduce_nonaligned(const typename T::value_type* src, size_t  size, typename T::value_type* dst) {
+    for (size_t i = 0; i < size/T::unroll_size; i++) {
         typename T::register_type d = T::loadu(&dst[i*T::unroll_size]);
         typename T::register_type s = T::loadu(&src[i*T::unroll_size]);
         T::storeu(&dst[i*T::unroll_size], T::add(d, s));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         dst[i] += src[i];
 }
 
 template<typename T>
-inline void reduce_aligned(const typename T::value_type* src, unsigned int size, typename T::value_type* dst) {
-    for (unsigned int i = 0; i < size/T::unroll_size; i++) {
+inline void reduce_aligned(const typename T::value_type* src, size_t  size, typename T::value_type* dst) {
+    for (size_t i = 0; i < size/T::unroll_size; i++) {
         typename T::register_type d = T::loadu(&dst[i*T::unroll_size]);
         typename T::register_type s = T::loadu(&src[i*T::unroll_size]);
         T::storeu(&dst[i*T::unroll_size], T::add(d, s));
     }
 
-    for (unsigned int i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
+    for (size_t i = (size/T::unroll_size)*T::unroll_size; i < size; i++)
         dst[i] += src[i];
 }
 
@@ -290,7 +290,7 @@ inline void reduce_aligned(const typename T::value_type* src, unsigned int size,
 
 // dst[i] += c * src[i]
 template<typename T>
-void muladd(const T* src, T c, unsigned int size, T* dst) {
+void muladd(const T* src, T c, size_t  size, T* dst) {
     if (detail::is_aligned(VECTORIZE_TYPE(T)(), src, dst))
         detail::muladd_aligned<VECTORIZE_TYPE(T)>(src, c, size, dst);
     else
@@ -299,7 +299,7 @@ void muladd(const T* src, T c, unsigned int size, T* dst) {
 
 // sum(s1[i] * s2[i])
 template<typename T>
-T dot(const T* s1, const T* s2, unsigned int size) {
+T dot(const T* s1, const T* s2, size_t  size) {
     if (detail::is_aligned(VECTORIZE_TYPE(T)(), s1, s2))
         return detail::dot_product_aligned<VECTORIZE_TYPE(T)>(s1, s2, size);
     else
@@ -308,7 +308,7 @@ T dot(const T* s1, const T* s2, unsigned int size) {
 
 /// dst[i] += src[i]
 template<typename T>
-void reduce(const T* src, unsigned int size, T* dst) {
+void reduce(const T* src, size_t  size, T* dst) {
     if (detail::is_aligned(VECTORIZE_TYPE(T)(), src, dst))
         return detail::reduce_aligned<VECTORIZE_TYPE(T)>(src, size, dst);
     else
