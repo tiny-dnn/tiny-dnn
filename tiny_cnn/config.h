@@ -74,6 +74,6 @@ typedef double float_t;
  * size of layer, model, data etc.
  * change to smaller type if memory footprint is severe
  **/
-typedef size_t cnn_size_t;
+typedef std::size_t cnn_size_t;
 
 }

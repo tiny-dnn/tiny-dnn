@@ -34,23 +34,23 @@ namespace tiny_cnn {
 
 struct connection_table {
     connection_table() : rows_(0), cols_(0) {}
-    connection_table(const bool *ar, size_t rows, size_t cols) : connected_(rows * cols), rows_(rows), cols_(cols) {
+    connection_table(const bool *ar, cnn_size_t rows, cnn_size_t cols) : connected_(rows * cols), rows_(rows), cols_(cols) {
         std::copy(ar, ar + rows * cols, connected_.begin());
     }
-    connection_table(size_t ngroups, size_t rows, size_t cols) : connected_(rows * cols, false), rows_(rows), cols_(cols) {
+    connection_table(cnn_size_t ngroups, cnn_size_t rows, cnn_size_t cols) : connected_(rows * cols, false), rows_(rows), cols_(cols) {
         if (rows % ngroups || cols % ngroups) throw nn_error("invalid group size");
 
-        size_t row_group = rows / ngroups;
-        size_t col_group = cols / ngroups;
+        cnn_size_t row_group = rows / ngroups;
+        cnn_size_t col_group = cols / ngroups;
 
-        for (size_t g = 0; g < ngroups; g++) {
-            for (size_t r = 0; r < row_group; r++)
-              for (size_t c = 0; c < col_group; c++)
+        for (cnn_size_t g = 0; g < ngroups; g++) {
+            for (cnn_size_t r = 0; r < row_group; r++)
+              for (cnn_size_t c = 0; c < col_group; c++)
                 connected_[(r + g * row_group) * cols_ + c + g * col_group] = true;
         }
     }
 
-    bool is_connected(size_t x, size_t y) const {
+    bool is_connected(cnn_size_t x, cnn_size_t y) const {
         return is_empty() ? true : connected_[y * cols_ + x];
     }
 
@@ -59,8 +59,8 @@ struct connection_table {
     }
 
     std::deque<bool> connected_;
-    size_t rows_;
-    size_t cols_;
+    cnn_size_t rows_;
+    cnn_size_t cols_;
 };
 
 enum class padding {

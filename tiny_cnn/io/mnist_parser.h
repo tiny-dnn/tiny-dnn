@@ -74,8 +74,8 @@ inline void parse_mnist_image(std::ifstream& ifs,
 
     dst.resize(width * height, scale_min);
 
-    for (size_t y = 0; y < header.num_rows; y++)
-      for (size_t x = 0; x < header.num_cols; x++)
+    for (uint32_t y = 0; y < header.num_rows; y++)
+      for (uint32_t x = 0; x < header.num_cols; x++)
         dst[width * (y + y_padding) + x + x_padding]
         = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
 }
@@ -108,7 +108,7 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
     if (magic_number != 0x00000801 || num_items <= 0)
         throw nn_error("MNIST label-file format error");
 
-    for (size_t i = 0; i < num_items; i++) {
+    for (uint32_t i = 0; i < num_items; i++) {
         uint8_t label;
         ifs.read((char*) &label, 1);
         labels->push_back((label_t) label);
@@ -158,7 +158,7 @@ inline void parse_mnist_images(const std::string& image_file,
 
     detail::parse_mnist_header(ifs, header);
 
-    for (size_t i = 0; i < header.num_items; i++) {
+    for (uint32_t i = 0; i < header.num_items; i++) {
         vec_t image;
         detail::parse_mnist_image(ifs, header, scale_min, scale_max, x_padding, y_padding, image);
         images->push_back(image);

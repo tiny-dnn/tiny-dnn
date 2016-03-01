@@ -180,7 +180,7 @@ namespace detail {
     /***** comparing floating point numbers using ULP *****/
 
     struct Floating {
-        static const size_t MIN_UPS = 4;
+        static const std::size_t MIN_UPS = 4;
 
         union float_ {
             float value;
@@ -402,7 +402,7 @@ public:
 
     template<typename Char, typename CharTraits>
     void report(std::basic_ostream<Char, CharTraits>& os) const {
-        int failed = numFailed();
+        std::size_t failed = numFailed();
 
         if (failed) {
             os << numFailed() << " of " << numTotal() << " tests failed." << std::endl;
@@ -418,15 +418,15 @@ public:
         return numTotal() > 0 && numFailed() > 0;
     }
 
-    size_t numFailed() const {
+    std::size_t numFailed() const {
         return numTotal() - numSuccess();
     }
 
-    size_t numSuccess() const {
+    std::size_t numSuccess() const {
         return std::count_if(tests_.begin(), tests_.end(), std::mem_fun_ref(&TestCase::success));
     }
 
-    size_t numTotal() const {
+    std::size_t numTotal() const {
         return tests_.size();
     }
 

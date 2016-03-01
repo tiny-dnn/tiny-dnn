@@ -80,7 +80,7 @@ public:
     virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
         vec_t& out = output_[index];
         vec_t& a = a_[index];
-        std::vector<int>& max_idx = out2inmax_[index];
+        std::vector<cnn_size_t>& max_idx = out2inmax_[index];
 
         for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
@@ -107,11 +107,11 @@ public:
         const vec_t& prev_out = prev_->output(static_cast<int>(index));
         const activation::function& prev_h = prev_->activation_function();
         vec_t& prev_delta = prev_delta_[index];
-        std::vector<int>& max_idx = out2inmax_[index];
+        std::vector<cnn_size_t>& max_idx = out2inmax_[index];
 
         for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
-                int outi = in2out_[i];
+                cnn_size_t outi = in2out_[i];
                 prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : float_t(0);
             }
         });
@@ -123,7 +123,7 @@ public:
         const activation::function& prev_h = prev_->activation_function();
 
         for (cnn_size_t i = 0; i < in_size_; i++) {
-            int outi = in2out_[i];
+            cnn_size_t outi = in2out_[i];
             prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
         }
         return prev_->back_propagation_2nd(prev_delta2_);
@@ -141,9 +141,9 @@ public:
 private:
     size_t pool_size_;
     size_t stride_;
-    std::vector<std::vector<int> > out2in_; // mapping out => in (1:N)
-    std::vector<int> in2out_; // mapping in => out (N:1)
-    std::vector<int> out2inmax_[CNN_TASK_SIZE]; // mapping out => max_index(in) (1:1)
+    std::vector<std::vector<cnn_size_t> > out2in_; // mapping out => in (1:N)
+    std::vector<cnn_size_t> in2out_; // mapping in => out (N:1)
+    std::vector<cnn_size_t> out2inmax_[CNN_TASK_SIZE]; // mapping out => max_index(in) (1:1)
     index3d<cnn_size_t> in_;
     index3d<cnn_size_t> out_;
 

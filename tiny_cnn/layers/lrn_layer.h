@@ -105,13 +105,13 @@ private:
             add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
         }
 
-        int head = size_ / 2;
-        int tail = head - size_;
-        int channels = (int)in_shape_.depth_;
+        cnn_size_t head = size_ / 2;
+        cnn_size_t tail = head - size_;
+        cnn_size_t channels = in_shape_.depth_;
         const cnn_size_t wxh = in_shape_.area();
         const float_t alpha_div_size = alpha_ / size_;
 
-        for (int i = 0; i < channels; i++, head++, tail++) {
+        for (cnn_size_t i = 0; i < channels; i++, head++, tail++) {
             if (head < channels)
                 add_square_sum(&in[in_shape_.get_index(0, 0, head)], wxh, &in_square_[0]);
 
@@ -131,13 +131,13 @@ private:
         throw nn_error("not implemented");
     }
 
-    void add_square_sum(const float_t *src, size_t size, float_t *dst) {
-        for (size_t i = 0; i < size; i++)
+    void add_square_sum(const float_t *src, cnn_size_t size, float_t *dst) {
+        for (cnn_size_t i = 0; i < size; i++)
             dst[i] += src[i] * src[i];
     }
 
-    void sub_square_sum(const float_t *src, size_t size, float_t *dst) {
-        for (size_t i = 0; i < size; i++)
+    void sub_square_sum(const float_t *src, cnn_size_t size, float_t *dst) {
+        for (cnn_size_t i = 0; i < size; i++)
             dst[i] -= src[i] * src[i];
     }
 
