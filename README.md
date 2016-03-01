@@ -7,15 +7,15 @@ tiny-cnn: A header only, dependency-free deep learning framework in C++11
 
 tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
-* [Features](#Features)
-* [Comparison with other libraries](#Comparison-with-other-libraries)
-* [Supported networks](#Supported-networks)
-* [Dependencies](#Dependencies)
-* [Build](#Build)
-* [Examples](#Examples)
-* [References](#References)
-* [License](#License)
-* [Mailing list](#Mailing-list)
+* [Features](#features)
+* [Comparison with other libraries](#comparison-with-other-libraries)
+* [Supported networks](#supported-networks)
+* [Dependencies](#dependencies)
+* [Build](#build)
+* [Examples](#examples)
+* [References](#references)
+* [License](#license)
+* [Mailing list](#mailing-list)
 
 see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
