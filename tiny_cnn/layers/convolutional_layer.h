@@ -509,11 +509,11 @@ private:
         return pad_type == padding::same ? (in_length + window_size - 1) : in_length;
     }
 
-    cnn_size_t out_length(cnn_size_t in_length, cnn_size_t window_size, cnn_size_t stride, padding pad_type) const {
+    static cnn_size_t out_length(cnn_size_t in_length, cnn_size_t window_size, cnn_size_t stride, padding pad_type) {
         return pad_type == padding::same ? (cnn_size_t)ceil((double)in_length / stride) : (cnn_size_t)ceil((double)(in_length - window_size + 1) / stride);
     }
 
-    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) const {
+    static cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) {
         return out_length(in_width, window_size, w_stride, pad_type) * out_length(in_height, window_size, h_stride, pad_type);
     }
 
