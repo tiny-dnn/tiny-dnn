@@ -24,7 +24,7 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include "picotest.h"
+#include "picotest/picotest.h"
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
