@@ -95,10 +95,11 @@ Some cmake options are available:
 |USE_OMP|Use OpenMP for parallelization|OFF*|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
-|BUILD_TESTS|Build unist tests|OFF|-|
+|BUILD_TESTS|Build unist tests|OFF|-**|
 |BUILD_EXAMPLES|Build example projects|ON|-|
 
 *tiny-cnn use c++11 standard library for parallelization by default
+**to build tests, type `git submodule update --init` before build
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash
