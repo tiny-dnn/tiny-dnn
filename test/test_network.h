@@ -65,8 +65,8 @@ TEST(network, optimizer) {
     net1.optimizer().alpha = 0.3;
     
     EXPECT_EQ(net1.optimizer().alpha, 0.3);
-    EXPECT_EQ(typeid(net1.optimizer()), typeid(adagrad));
-    EXPECT_EQ(typeid(net2.optimizer()), typeid(gradient_descent_levenberg_marquardt));
+    EXPECT_TRUE(typeid(net1.optimizer()) == typeid(adagrad));
+    EXPECT_TRUE(typeid(net2.optimizer()) == typeid(gradient_descent_levenberg_marquardt));
 }
 
 TEST(network, add) {
