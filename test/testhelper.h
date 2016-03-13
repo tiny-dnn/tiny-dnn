@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,19 +24,55 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
+#include <string>
+#include <iostream>
+#include <cstdio>
 #include "picotest/picotest.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
+namespace tiny_cnn {
 
-#include "test_average_pooling_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_lrn_layer.h"
-#include "test_network.h"
-
-int main(void) {
-    return RUN_ALL_TESTS();
+inline bool exists(const std::string& path) {
+    if (FILE *file = std::fopen(path.c_str(), "r")) {
+        fclose(file);
+        return true;
+    } else {
+        return false;
+    }
 }
+
+inline std::string unique_path() {
+    std::string pattern = "%%%%-%%%%-%%%%-%%%%";
+
+    for (auto p = pattern.begin(); p != pattern.end(); ++p) {
+        if (*p == '%') *p = (rand()%10)+'0';
+    }
+    return exists(pattern) ? unique_path() : pattern;
+}
+
+template <typename T>
+void serialization_test(const T& src, T& dst)
+{
+    EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
+
+    std::string tmp_file_path = unique_path();
+
+    // write
+    {
+        std::ofstream ofs(tmp_file_path.c_str());
+        ofs << src;
+    }
+
+    // read
+    {
+        std::ifstream ifs(tmp_file_path.c_str());
+        ifs >> dst;
+    }
+
+    std::remove(tmp_file_path.c_str());
+
+    EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
+}
+
+} // namespace tiny_cnn

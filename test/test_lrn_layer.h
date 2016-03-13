@@ -24,19 +24,31 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
+namespace tiny_cnn {
 
-#include "test_average_pooling_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_lrn_layer.h"
-#include "test_network.h"
+TEST(lrn, cross) {
+    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
 
-int main(void) {
-    return RUN_ALL_TESTS();
+    tiny_cnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
+    tiny_cnn::float_t expected[4] =
+    {
+        -1.0/36.0,    // -1.0 / (1+0.5*(1*1+3*3))^2
+        3.0/64.0,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
+        2.0/400.0,    //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
+        5.0/15.5/15.5 // 5.0 / (1+0.5*(2*2+5*5))^2
+    };
+
+    auto out = lrn.forward_propagation(vec_t(in, in + 4), 0);
+
+    EXPECT_FLOAT_EQ(expected[0], out[0]);
+    EXPECT_FLOAT_EQ(expected[1], out[1]);
+    EXPECT_FLOAT_EQ(expected[2], out[2]);
+    EXPECT_FLOAT_EQ(expected[3], out[3]);
 }
+
+} // namespace tiny-cnn

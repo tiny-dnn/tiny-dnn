@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,19 +24,30 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
+namespace tiny_cnn {
 
-#include "test_average_pooling_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_lrn_layer.h"
-#include "test_network.h"
+TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
+    typedef cross_entropy loss_func;
+    typedef activation::sigmoid activation;
+    typedef network<loss_func, tiny_cnn::gradient_descent_levenberg_marquardt> network;
 
-int main(void) {
-    return RUN_ALL_TESTS();
+    network nn;
+    nn << fully_connected_layer<activation>(3, 8)
+       << max_pooling_layer<activation>(4, 2, 1, 2); // 4x2 => 2x1
+
+    vec_t a(3, 0.0);
+    for (int i = 0; i < 3; i++) a[i] = i;
+    label_t t = 0;
+
+    nn.init_weight();
+    for (int i = 0; i < 24; i++) nn[0]->weight()[i] = i;
+
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
 }
+
+} // namespace tiny-cnn
