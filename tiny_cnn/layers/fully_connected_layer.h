@@ -27,11 +27,10 @@
 #pragma once
 #include "tiny_cnn/layers/layer.h"
 #include "tiny_cnn/util/product.h"
-#include "dropout.h"
 
 namespace tiny_cnn {
 
-template<typename Activation>//, typename Filter = filter_none> // filter is removed, use dropout_layer instead.
+template<typename Activation>
 class fully_connected_layer : public layer<Activation> {
 public:
     typedef layer<Activation> Base;
