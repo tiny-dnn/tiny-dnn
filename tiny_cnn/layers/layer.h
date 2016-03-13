@@ -97,8 +97,12 @@ public:
     ///< input dimension
     virtual cnn_size_t in_size() const { return in_size_; }
 
+    cnn_size_t in_dim() const { return in_size(); }
+
     ///< output dimension
     virtual cnn_size_t out_size() const { return out_size_; }
+
+    cnn_size_t out_dim() const { return out_size(); }
 
     ///< number of parameters
     virtual size_t param_size() const { return W_.size() + b_.size(); }

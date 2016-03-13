@@ -29,13 +29,14 @@
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn::activation;
-
+#include "test_network.h"
 #include "test_average_pooling_layer.h"
+#include "test_dropout_layer.h"
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
 #include "test_convolutional_layer.h"
 #include "test_lrn_layer.h"
-#include "test_network.h"
+
 
 int main(void) {
     return RUN_ALL_TESTS();

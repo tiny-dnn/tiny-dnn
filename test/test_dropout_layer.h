@@ -28,37 +28,59 @@
 #include "picotest/picotest.h"
 #include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
+#include <deque>
 
 namespace tiny_cnn {
 
-TEST(lrn, cross) {
-    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
+TEST(dropout, randomized) {
+    int num_units = 10000;
+    double dropout_rate = 0.1;
+    dropout_layer l(num_units, dropout_rate, net_phase::train);
+    vec_t v(num_units, 1.0);
+    const bool *pmask;
 
-    tiny_cnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
-    tiny_cnn::float_t expected[4] =
-    {
-        -1.0/36.0,    // -1.0 / (1+0.5*(1*1+3*3))^2
-        3.0/64.0,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
-        2.0/400.0,    //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
-        5.0/15.5/15.5 // 5.0 / (1+0.5*(2*2+5*5))^2
-    };
+    l.forward_propagation(v, 0);
+    pmask = l.get_mask();
+    std::deque<bool> mask1(pmask, pmask + num_units);
 
-    auto out = lrn.forward_propagation(vec_t(in, in + 4), 0);
+    l.forward_propagation(v, 0);
+    pmask = l.get_mask();
+    std::deque<bool> mask2(pmask, pmask + num_units);
 
-    EXPECT_FLOAT_EQ(expected[0], out[0]);
-    EXPECT_FLOAT_EQ(expected[1], out[1]);
-    EXPECT_FLOAT_EQ(expected[2], out[2]);
-    EXPECT_FLOAT_EQ(expected[3], out[3]);
+    // mask should change for each fprop
+    EXPECT_TRUE(is_different_container(mask1, mask2));
+
+    // dropout-rate should be around 0.1
+    double margin_factor = 0.9;
+    int num_true1 = std::count(mask1.begin(), mask1.end(), true);
+    int num_true2 = std::count(mask2.begin(), mask2.end(), true);
+
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true1);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true1);
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true2);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true2);
 }
 
-TEST(lrn, read_write) {
-    lrn_layer<identity> l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
-    lrn_layer<identity> l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
+TEST(dropout, read_write) {
+    dropout_layer l1(1024, 0.5, net_phase::test);
+    dropout_layer l2(1024, 0.5, net_phase::test);
 
     l1.init_weight();
     l2.init_weight();
 
     serialization_test(l1, l2);
+}
+
+TEST(dropout, gradient_check) {
+    network<mse, adagrad> nn;
+    nn << dropout_layer(50, 0.5, net_phase::test);
+
+    vec_t a(50, 0.0);
+    label_t t = 9;
+
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 } // namespace tiny-cnn

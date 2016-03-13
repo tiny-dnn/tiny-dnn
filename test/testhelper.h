@@ -33,6 +33,28 @@
 
 namespace tiny_cnn {
 
+template <typename Container, typename T>
+inline bool is_near_container(const Container& expected, const Container& actual, T abs_error) {
+    auto i1 = std::begin(expected);
+    auto i2 = std::begin(actual);
+
+    for (; i1 != std::end(expected); ++i1, ++i2) {
+        if(std::abs(*i1 - *i2) > abs_error) return false;
+    }
+    return true;
+}
+
+template <typename Container>
+inline bool is_different_container(const Container& expected, const Container& actual) {
+    auto i1 = std::begin(expected);
+    auto i2 = std::begin(actual);
+
+    for (; i1 != std::end(expected); ++i1, ++i2) {
+        if (*i1 != *i2) return true;
+    }
+    return false;
+}
+
 inline bool exists(const std::string& path) {
     if (FILE *file = std::fopen(path.c_str(), "r")) {
         fclose(file);
@@ -51,10 +73,19 @@ inline std::string unique_path() {
     return exists(pattern) ? unique_path() : pattern;
 }
 
+vec_t forward_pass(layer_base& src, const vec_t& vec) {
+    return src.forward_propagation(vec, 0);
+}
+
+template <typename L, typename O>
+vec_t forward_pass(network<L, O>& net, const vec_t& vec) {
+    return net.predict(vec);
+}
+
 template <typename T>
-void serialization_test(const T& src, T& dst)
+void serialization_test(T& src, T& dst)
 {
-    EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
+    //EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
 
     std::string tmp_file_path = unique_path();
 
@@ -72,7 +103,15 @@ void serialization_test(const T& src, T& dst)
 
     std::remove(tmp_file_path.c_str());
 
+    vec_t v(src.in_dim());
+    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+
     EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
+
+    vec_t r1 = forward_pass(src, v);
+    vec_t r2 = forward_pass(dst, v);
+
+    EXPECT_TRUE(is_near_container(r1, r2, 1E-4));
 }
 
 } // namespace tiny_cnn

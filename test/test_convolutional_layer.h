@@ -176,60 +176,7 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
-TEST(convolutional, serialize) {
-    convolutional_layer<tan_h> layer1(14, 14, 5, 1, 2);
-    convolutional_layer<tan_h> layer2(14, 14, 5, 1, 2);
-
-    vec_t v(14*14);
-
-    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
-    layer1.init_weight();
-
-    std::ostringstream os;
-    layer1.save(os);
-
-    std::istringstream is(os.str());
-    layer2.load(is);
-
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
-
-    for (size_t i = 0; i < out1.size(); i++)
-        EXPECT_NEAR(out1[i], out2[i], 1e-4);
-}
-
-TEST(convolutional, serialize2) {
-#define O true
-#define X false
-    static const bool connection[] = {
-        O, X, X, X, O, O, 
-        O, O, X, X, X, O, 
-        O, O, O, X, X, X
-    };
-#undef O
-#undef X
-    convolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    convolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-
-    vec_t v(14*14*3);
-
-    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
-    layer1.init_weight();
-
-    std::ostringstream os;
-    layer1.save(os);
-
-    std::istringstream is(os.str());
-    layer2.load(is);
-
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
-
-    for (size_t i = 0; i < out1.size(); i++)
-        EXPECT_NEAR(out1[i], out2[i], 1e-4);
-}
-
-TEST(read_write, convolutional)
+TEST(convolutional, read_write)
 {
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
     convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
@@ -239,5 +186,24 @@ TEST(read_write, convolutional)
 
     serialization_test(l1, l2);
 }
+
+TEST(convolutional, read_write2) {
+#define O true
+#define X false
+    static const bool connection[] = {
+        O, X, X, X, O, O,
+        O, O, X, X, X, O,
+        O, O, O, X, X, X
+    };
+#undef O
+#undef X
+    convolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    convolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    layer1.init_weight();
+    layer2.init_weight();
+
+    serialization_test(layer1, layer2);
+}
+
 
 } // namespace tiny-cnn

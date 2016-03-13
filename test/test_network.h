@@ -31,7 +31,181 @@
 
 namespace tiny_cnn {
 
-TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
+TEST(network, in_dim) {
+    network<mse, adagrad> net;
+    convolutional_layer<identity> c1(32, 32, 5, 3, 6, padding::same);
+    max_pooling_layer<identity> p1(32, 32, 6, 2);
+    net << c1 << p1;
+
+    EXPECT_EQ(c1.in_dim(), net.in_dim());
+}
+
+TEST(network, out_dim) {
+    network<mse, adagrad> net;
+    convolutional_layer<identity> c1(32, 32, 5, 3, 6, padding::same);
+    max_pooling_layer<identity> p1(32, 32, 6, 2);
+    net << c1 << p1;
+
+    EXPECT_EQ(p1.out_dim(), net.out_dim());
+}
+
+TEST(network, name) {
+
+    network<mse, adagrad> net1;
+    network<mse, adagrad> net2("foo");
+
+    EXPECT_EQ(net1.name(), "");
+    EXPECT_EQ(net2.name(), "foo");
+}
+
+TEST(network, optimizer) {
+    network<mse, adagrad> net1;
+    network<mse, gradient_descent_levenberg_marquardt> net2;
+
+    net1.optimizer().alpha = 0.3;
+    
+    EXPECT_EQ(net1.optimizer().alpha, 0.3);
+    EXPECT_EQ(typeid(net1.optimizer()), typeid(adagrad));
+    EXPECT_EQ(typeid(net2.optimizer()), typeid(gradient_descent_levenberg_marquardt));
+}
+
+TEST(network, add) {
+    network<mse, adagrad> net;
+    net.add(std::make_shared<convolutional_layer<identity>>(32, 32, 5, 3, 6, padding::same));
+
+    EXPECT_EQ(net.out_dim(), 32*32*6);
+    EXPECT_EQ(net.depth(), 1);
+}
+
+TEST(network, train_predict) {
+    // train xor function
+    network<mse, adagrad> net;
+
+    std::vector<vec_t> data;
+    std::vector<label_t> label;
+    size_t tnum = 100;
+
+    net.optimizer().alpha *= 10;
+
+    for (size_t i = 0; i < tnum; i++) {
+        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        data.push_back({in[0]*1.0, in[1]*1.0});
+        label.push_back((in[0] ^ in[1]) ? 1 : 0);
+    }
+
+    net << fully_connected_layer<tan_h>(2, 10)
+        << fully_connected_layer<tan_h>(10, 2);
+
+    net.train(data, label, 10, 10);
+
+
+    for (size_t i = 0; i < tnum; i++) {
+        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+        label_t actual = net.predict_label({ in[0] * 1.0, in[1] * 1.0 });
+        EXPECT_EQ(expected, actual);
+    }
+}
+
+TEST(network, set_netphase) {
+    // TODO: add unit-test for public api
+}
+
+TEST(network, test) {
+    // TODO: add unit-test for public api
+}
+
+TEST(network, get_loss) {
+    // TODO: add unit-test for public api
+}
+
+TEST(network, at) {
+    network<mse, adagrad> net;
+    convolutional_layer<identity> c1(32, 32, 5, 3, 6, padding::same);
+    average_pooling_layer<identity> p1(32, 32, 6, 2);
+
+    c1.init_weight();
+    p1.init_weight();
+    net << c1 << p1;
+
+    auto& c = net.at<convolutional_layer<identity>>(0);
+    auto& p = net.at<average_pooling_layer<identity>>(1);
+
+    EXPECT_TRUE(c.has_same_weights(c1, 1e-10));
+    EXPECT_TRUE(p.has_same_weights(p1, 1e-10));
+}
+
+TEST(network, bracket_operator) {
+    network<mse, adagrad> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
+        << average_pooling_layer<identity>(32, 32, 6, 2);
+
+    EXPECT_EQ(net[0]->layer_type(), "conv");
+    EXPECT_EQ(net[1]->layer_type(), "ave-pool");
+}
+
+TEST(network, depth) {
+    network<mse, adagrad> net;
+
+    EXPECT_EQ(net.depth(), 0);
+
+    net << convolutional_layer<identity>(1, 1, 1, 1, 1, padding::same);
+
+    EXPECT_EQ(net.depth(), 1);
+
+    net << convolutional_layer<identity>(1, 1, 1, 1, 1, padding::same);
+
+    EXPECT_EQ(net.depth(), 2);
+}
+
+TEST(network, in_shape) {
+    network<mse, adagrad> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same);
+
+    EXPECT_EQ(net.in_shape(), index3d<cnn_size_t>(32, 32, 3));
+}
+
+TEST(network, weight_init) {
+    network<mse, adagrad> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
+        << average_pooling_layer<identity>(32, 32, 6, 2);
+
+    net.weight_init(weight_init::constant(2.0));
+    net.init_weight();
+
+    vec_t& w1 = net[0]->weight();
+    vec_t& w2 = net[1]->weight();
+
+    for (size_t i = 0; i < w1.size(); i++)
+        EXPECT_NEAR(w1[i], 2.0, 1e-10);
+
+    for (size_t i = 0; i < w2.size(); i++)
+        EXPECT_NEAR(w2[i], 2.0, 1e-10);
+}
+
+TEST(network, bias_init) {
+    network<mse, adagrad> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
+        << average_pooling_layer<identity>(32, 32, 6, 2);
+
+    net.bias_init(weight_init::constant(2.0));
+    net.init_weight();
+
+    vec_t& w1 = net[0]->bias();
+    vec_t& w2 = net[1]->bias();
+
+    for (size_t i = 0; i < w1.size(); i++)
+        EXPECT_NEAR(w1[i], 2.0, 1e-10);
+
+    for (size_t i = 0; i < w2.size(); i++)
+        EXPECT_NEAR(w2[i], 2.0, 1e-10);
+}
+
+TEST(network, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
@@ -50,7 +224,7 @@ TEST(multi_layer, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
-TEST(multi_layer, gradient_check2) { // tan_h - mse
+TEST(network, gradient_check2) { // tan_h - mse
     typedef mse loss_func;
     typedef tan_h activation;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
@@ -69,7 +243,7 @@ TEST(multi_layer, gradient_check2) { // tan_h - mse
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
-TEST(multi_layer, gradient_check3) { // mixture - mse
+TEST(network, gradient_check3) { // mixture - mse
     typedef mse loss_func;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
 
@@ -87,7 +261,7 @@ TEST(multi_layer, gradient_check3) { // mixture - mse
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
-TEST(multi_layer4, gradient_check) { // sigmoid - cross-entropy
+TEST(network, gradient_check4) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
@@ -106,7 +280,7 @@ TEST(multi_layer4, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_RANDOM));
 }
 
-TEST(multi_layer5, gradient_check) { // softmax - cross-entropy
+TEST(network, gradient_check5) { // softmax - cross-entropy
     typedef cross_entropy loss_func;
     typedef softmax activation;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
@@ -125,7 +299,7 @@ TEST(multi_layer5, gradient_check) { // softmax - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 5e-3, GRAD_CHECK_RANDOM));
 }
 
-TEST(multi_layer6, gradient_check) { // sigmoid - cross-entropy
+TEST(network, gradient_check6) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;
@@ -142,7 +316,7 @@ TEST(multi_layer6, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
-TEST(read_write, network)
+TEST(network, read_write)
 {
     typedef mse loss_func;
     typedef network<loss_func, gradient_descent_levenberg_marquardt> network;

@@ -66,28 +66,6 @@ TEST(fully_connected, bprop) {
     EXPECT_NEAR(predicted[1], t2[1], 1E-5);
 }
 
-TEST(fully_connected, serialize) {
-    fully_connected_layer<tan_h> layer1(10, 10);
-    fully_connected_layer<tan_h> layer2(10, 10);
-
-    vec_t v(10);
-
-    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
-    layer1.init_weight();
-
-    std::ostringstream os;
-    layer1.save(os);
-
-    std::istringstream is(os.str());
-    layer2.load(is);
-
-    const vec_t& out1 = layer1.forward_propagation(v, 0);
-    const vec_t& out2 = layer2.forward_propagation(v, 0);
-
-    for (size_t i = 0; i < out1.size(); i++)
-        EXPECT_NEAR(out1[i], out2[i], 1e-4);
-}
-
 TEST(fully_connected, bprop2) {
     network<mse, gradient_descent> nn;
 
@@ -124,7 +102,19 @@ TEST(fully_connected, bprop2) {
     EXPECT_NEAR(predicted[1], t2[1], 1E-4);
 }
 
-TEST(read_write, fully_connected)
+TEST(fully_connected, gradient_check) {
+    network<mse, adagrad> nn;
+    nn << fully_connected_layer<tan_h>(50, 10);
+
+    vec_t a(50, 0.0);
+    label_t t = 9;
+
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(fully_connected, read_write)
 {
     fully_connected_layer<tan_h> l1(100, 100);
     fully_connected_layer<tan_h> l2(100, 100);

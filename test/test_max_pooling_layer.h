@@ -50,4 +50,14 @@ TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
 }
 
+TEST(max_pool, read_write) {
+    max_pooling_layer<tan_h> l1(100, 100, 5, 2);
+    max_pooling_layer<tan_h> l2(100, 100, 5, 2);
+
+    l1.init_weight();
+    l2.init_weight();
+
+    serialization_test(l1, l2);
+}
+
 } // namespace tiny-cnn
