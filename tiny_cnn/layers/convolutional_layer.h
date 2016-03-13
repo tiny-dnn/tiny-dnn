@@ -98,7 +98,7 @@ public:
         bool has_bias = true,
         cnn_size_t w_stride = 1,
         cnn_size_t h_stride = 1)
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
+        : Base(in_width * in_height * in_channels, out_dim(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
             sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
         in_(in_width, in_height, in_channels),
         in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
@@ -133,7 +133,7 @@ public:
         bool has_bias = true,
         cnn_size_t w_stride = 1,
         cnn_size_t h_stride = 1)
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
+        : Base(in_width * in_height * in_channels, out_dim(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
             window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
         in_(in_width, in_height, in_channels),
         in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
@@ -168,7 +168,7 @@ public:
         cnn_size_t w_stride = 1,
         cnn_size_t h_stride = 1
         )
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
+        : Base(in_width * in_height * in_channels, out_dim(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
             sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
         tbl_(connection_table),
         in_(in_width, in_height, in_channels),
@@ -207,7 +207,7 @@ public:
         cnn_size_t w_stride = 1,
         cnn_size_t h_stride = 1
         )
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
+        : Base(in_width * in_height * in_channels, out_dim(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
             window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
         tbl_(connection_table),
         in_(in_width, in_height, in_channels),
@@ -513,11 +513,11 @@ private:
         return pad_type == padding::same ? (cnn_size_t)ceil((double)in_length / stride) : (cnn_size_t)ceil((double)(in_length - window_size + 1) / stride);
     }
 
-    static cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) {
+    static cnn_size_t out_dim(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) {
         return out_length(in_width, window_size, w_stride, pad_type) * out_length(in_height, window_size, h_stride, pad_type);
     }
 
-    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_width, cnn_size_t window_height, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) const {
+    cnn_size_t out_dim(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_width, cnn_size_t window_height, cnn_size_t w_stride, cnn_size_t h_stride, padding pad_type) const {
         return out_length(in_width, window_width, w_stride, pad_type) * out_length(in_height, window_height, h_stride, pad_type);
     }
 
