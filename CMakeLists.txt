@@ -97,7 +97,7 @@ ELSE()#MSVC
         add_definitions(-DCNN_USE_AVX)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     ENDIF()
-    SET(EXTRA_C_FLAGS_RELEASE " /Ox ")
+    SET(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj ")
 ENDIF()
 
 
