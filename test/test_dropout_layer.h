@@ -24,20 +24,63 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
+#include <deque>
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_lrn_layer.h"
+namespace tiny_cnn {
 
+TEST(dropout, randomized) {
+    int num_units = 10000;
+    double dropout_rate = 0.1;
+    dropout_layer l(num_units, dropout_rate, net_phase::train);
+    vec_t v(num_units, 1.0);
+    const bool *pmask;
 
-int main(void) {
-    return RUN_ALL_TESTS();
+    l.forward_propagation(v, 0);
+    pmask = l.get_mask();
+    std::deque<bool> mask1(pmask, pmask + num_units);
+
+    l.forward_propagation(v, 0);
+    pmask = l.get_mask();
+    std::deque<bool> mask2(pmask, pmask + num_units);
+
+    // mask should change for each fprop
+    EXPECT_TRUE(is_different_container(mask1, mask2));
+
+    // dropout-rate should be around 0.1
+    double margin_factor = 0.9;
+    int num_true1 = std::count(mask1.begin(), mask1.end(), true);
+    int num_true2 = std::count(mask2.begin(), mask2.end(), true);
+
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true1);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true1);
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true2);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true2);
 }
+
+TEST(dropout, read_write) {
+    dropout_layer l1(1024, 0.5, net_phase::test);
+    dropout_layer l2(1024, 0.5, net_phase::test);
+
+    l1.init_weight();
+    l2.init_weight();
+
+    serialization_test(l1, l2);
+}
+
+TEST(dropout, gradient_check) {
+    network<mse, adagrad> nn;
+    nn << dropout_layer(50, 0.5, net_phase::test);
+
+    vec_t a(50, 0.0);
+    label_t t = 9;
+
+    uniform_rand(a.begin(), a.end(), -1, 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+}
+
+} // namespace tiny-cnn

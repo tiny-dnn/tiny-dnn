@@ -166,6 +166,8 @@ public:
 
     std::string layer_type() const override { return "dropout"; }
 
+    const bool* get_mask() const { return mask_; }
+
 private:
     net_phase phase_;
     float_t dropout_rate_;

@@ -25,38 +25,40 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "fully_connected_layer.h"
-#include "dropout.h"
+#include "picotest/picotest.h"
+#include "testhelper.h"
+#include "tiny_cnn/tiny_cnn.h"
 
 namespace tiny_cnn {
 
-// normal 
-template<typename Activation>
-class fully_connected_dropout_layer : public fully_connected_layer<Activation, dropout> {
-public:
-    fully_connected_dropout_layer(cnn_size_t in_dim, cnn_size_t out_dim, dropout::mode mode = dropout::per_data)
-        : fully_connected_layer<Activation, dropout>(in_dim, out_dim)
+TEST(lrn, cross) {
+    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
+
+    tiny_cnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
+    tiny_cnn::float_t expected[4] =
     {
-        this->filter_.set_mode(mode);
-    }
+        -1.0/36.0,    // -1.0 / (1+0.5*(1*1+3*3))^2
+        3.0/64.0,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
+        2.0/400.0,    //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
+        5.0/15.5/15.5 // 5.0 / (1+0.5*(2*2+5*5))^2
+    };
 
-    void set_dropout_rate(double rate) {
-        this->filter_.set_dropout_rate(rate);
-    }
+    auto out = lrn.forward_propagation(vec_t(in, in + 4), 0);
 
-    /**
-     * set dropout-context (training-phase or test-phase)
-     **/
-    void set_context(dropout::context ctx) {
-        this->filter_.set_context(ctx);
-    }
+    EXPECT_FLOAT_EQ(expected[0], out[0]);
+    EXPECT_FLOAT_EQ(expected[1], out[1]);
+    EXPECT_FLOAT_EQ(expected[2], out[2]);
+    EXPECT_FLOAT_EQ(expected[3], out[3]);
+}
 
-    std::string layer_type() const override { return "dropout"; }
+TEST(lrn, read_write) {
+    lrn_layer<identity> l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
+    lrn_layer<identity> l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
 
-private:
-    void post_update() override {
-        this->filter_.end_batch();
-    }
-};
+    l1.init_weight();
+    l2.init_weight();
 
-} // namespace tiny_cnn
+    serialization_test(l1, l2);
+}
+
+} // namespace tiny-cnn

@@ -55,12 +55,12 @@ public:
 
     max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size, cnn_size_t stride)
         : Base(in_width * in_height * in_channels,
-        out_size(in_width, pooling_size, stride) * out_size(in_height, pooling_size, stride) * in_channels,
+        pool_out_dim(in_width, pooling_size, stride) * pool_out_dim(in_height, pooling_size, stride) * in_channels,
         0, 0),
         pool_size_(pooling_size),
         stride_(stride),
         in_(in_width, in_height, in_channels),
-        out_(out_size(in_width, pooling_size, stride), out_size(in_height, pooling_size, stride), in_channels)
+        out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels)
     {
         init_connection();
     }
@@ -147,7 +147,7 @@ private:
     index3d<cnn_size_t> in_;
     index3d<cnn_size_t> out_;
 
-    cnn_size_t out_size(cnn_size_t in_size, cnn_size_t pooling_size, cnn_size_t stride) const {
+    static cnn_size_t pool_out_dim(cnn_size_t in_size, cnn_size_t pooling_size, cnn_size_t stride) {
         return (int) std::ceil(((double)in_size - pooling_size) / stride) + 1;
     }
 

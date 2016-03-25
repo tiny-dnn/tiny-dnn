@@ -341,6 +341,16 @@ struct index3d {
     T depth_;
 };
 
+template <typename T>
+bool operator == (const index3d<T>& lhs, const index3d<T>& rhs) {
+    return (lhs.width_ == rhs.width_) && (lhs.height_ == rhs.height_) && (lhs.depth_ == rhs.depth_);
+}
+
+template <typename T>
+bool operator != (const index3d<T>& lhs, const index3d<T>& rhs) {
+    return !(lhs == rhs);
+}
+
 typedef index3d<cnn_size_t> layer_shape_t;
 
 template <typename Stream, typename T>
