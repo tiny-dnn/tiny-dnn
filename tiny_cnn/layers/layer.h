@@ -43,7 +43,7 @@ class layer_base {
 public:
     friend void connection_mismatch(const layer_base& from, const layer_base& to);
 
-    virtual ~layer_base() {}
+    virtual ~layer_base() = default;
 
     layer_base(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : parallelize_(true), next_(nullptr), prev_(nullptr),
@@ -51,6 +51,14 @@ public:
           bias_init_(std::make_shared<weight_init::constant>(float_t(0))) {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
     }
+
+    layer_base(const layer_base&) = default;
+    layer_base &operator =(const layer_base&) = default;
+
+#if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
+    layer_base(layer_base&&) = default;
+    layer_base &operator = (layer_base&&) = default;
+#endif
 
     void connect(std::shared_ptr<layer_base>& tail) {
         if (out_size() != 0 && tail->in_size() != out_size())
