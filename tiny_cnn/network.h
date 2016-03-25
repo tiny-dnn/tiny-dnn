@@ -35,7 +35,6 @@
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layers.h"
-#include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
