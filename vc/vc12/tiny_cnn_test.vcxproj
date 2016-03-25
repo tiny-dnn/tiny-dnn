@@ -80,6 +80,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\test\test.cpp" />
     <ClInclude Include="..\..\tiny_cnn\activations\activation_function.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\dropout_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\lossfunctions\loss_function.h" />
     <ClInclude Include="..\..\tiny_cnn\optimizers\optimizer.h" />
     <ClInclude Include="..\..\tiny_cnn\util\conv_kernel.h" />
@@ -100,7 +101,6 @@
     <ClInclude Include="..\..\tiny_cnn\layers\max_pooling_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\partial_connected_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\average_pooling_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\dropout.h" />
     <ClInclude Include="..\..\tiny_cnn\tiny_cnn.h" />
     <ClInclude Include="..\..\tiny_cnn\config.h" />
     <ClInclude Include="..\..\tiny_cnn\network.h" />
