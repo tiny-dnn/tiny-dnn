@@ -653,14 +653,8 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
 }
 
 template <typename L, typename O, typename Layer>
-network<L, O>& operator << (network<L, O>& n, const Layer&& l) {
-    n.add(std::make_shared<Layer>(l));
-    return n;
-}
-
-template <typename L, typename O, typename Layer>
-network<L, O>& operator << (network<L, O>& n, Layer& l) {
-    n.add(std::make_shared<Layer>(l));
+network<L, O>& operator << (network<L, O>& n, Layer&& l) {
+    n.add(std::make_shared<typename std::remove_reference<Layer>::type>(std::forward<Layer>(l)));
     return n;
 }
 
