@@ -35,7 +35,6 @@
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layers.h"
-#include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
@@ -653,14 +652,8 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
 }
 
 template <typename L, typename O, typename Layer>
-network<L, O>& operator << (network<L, O>& n, const Layer&& l) {
-    n.add(std::make_shared<Layer>(l));
-    return n;
-}
-
-template <typename L, typename O, typename Layer>
-network<L, O>& operator << (network<L, O>& n, Layer& l) {
-    n.add(std::make_shared<Layer>(l));
+network<L, O>& operator << (network<L, O>& n, Layer&& l) {
+    n.add(std::make_shared<typename std::remove_reference<Layer>::type>(std::forward<Layer>(l)));
     return n;
 }
 
