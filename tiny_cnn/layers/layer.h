@@ -161,6 +161,11 @@ public:
         for (auto& w : W_) is >> w;
         for (auto& b : b_) is >> b;
     }
+    
+    virtual void load(std::vector<double> weights, int& idx) {
+		for (auto& w : W_) w = weights[idx++];
+		for (auto& b : b_) b = weights[idx++];
+	}
 
     /////////////////////////////////////////////////////////////////////////
     // visualize
