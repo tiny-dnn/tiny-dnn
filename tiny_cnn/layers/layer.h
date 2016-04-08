@@ -28,6 +28,7 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
+#include <stdio.h>
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
