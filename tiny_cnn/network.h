@@ -291,7 +291,7 @@ public:
 		FILE* stream = fopen(filepath, "r");
 		//double* temp = new double[param_num];
 		//const double* data = temp;
-		vector<double> data;
+		std::vector<double> data;
 		double temp;
 		while (fscanf(stream, "%lf", &temp) > 0)
 			data.push_back(temp);
