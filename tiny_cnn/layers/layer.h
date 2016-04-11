@@ -28,6 +28,7 @@
 #include <sstream>
 #include <iomanip>
 #include <memory>
+#include <stdio.h>
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
@@ -161,6 +162,11 @@ public:
         for (auto& w : W_) is >> w;
         for (auto& b : b_) is >> b;
     }
+    
+    virtual void load(std::vector<double> weights, int& idx) {
+		for (auto& w : W_) w = weights[idx++];
+		for (auto& b : b_) b = weights[idx++];
+	}
 
     /////////////////////////////////////////////////////////////////////////
     // visualize
