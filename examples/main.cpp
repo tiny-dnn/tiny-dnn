@@ -36,6 +36,7 @@ void sample1_convnet(const string& data_dir_path = "../../data");
 void sample2_mlp();
 void sample3_dae();
 void sample4_dropout();
+void sample5_unbalanced_training_data(const string& data_dir_path = "../../data");
 
 int main(int argc, char** argv) {
     try {
@@ -266,4 +267,102 @@ void sample4_dropout()
     // change context to enable all hidden-units
     //f1.set_context(dropout::test_phase);
     //std::cout << res.num_success << "/" << res.num_total << std::endl;
+}
+
+#include "tiny_cnn/util/target_cost.h"
+
+///////////////////////////////////////////////////////////////////////////////
+// learning unbalanced training data
+
+void sample5_unbalanced_training_data(const string& data_dir_path)
+{
+    const cnn_size_t num_hidden_units = 20; // keep the network relatively simple
+
+#if defined(_MSC_VER) && _MSC_VER < 1800
+    // initializer-list is not supported
+    int num_units[] = { 28 * 28, num_hidden_units, 10 };
+    auto nn_standard = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
+    auto nn_balanced = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
+#else
+    auto nn_standard = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
+    auto nn_balanced = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
+#endif
+
+    // load MNIST dataset
+    std::vector<label_t> train_labels, test_labels;
+    std::vector<vec_t>   train_images, test_images;
+
+    parse_mnist_labels(data_dir_path + "/train-labels.idx1-ubyte", &train_labels);
+    parse_mnist_images(data_dir_path + "/train-images.idx3-ubyte", &train_images, -1.0, 1.0, 0, 0);
+    parse_mnist_labels(data_dir_path + "/t10k-labels.idx1-ubyte", &test_labels);
+    parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
+
+    { // create an unbalanced training set
+        std::vector<label_t> train_labels_unbalanced;
+        std::vector<vec_t>   train_images_unbalanced;
+        train_labels_unbalanced.reserve(train_labels.size());
+        train_images_unbalanced.reserve(train_images.size());
+
+        for (size_t i = 0, end = train_labels.size(); i < end; ++i) {
+            const label_t label = train_labels[i];
+
+            // drop most 0s, 1s, 2s, 3s, and 4s
+            const bool keep_sample = label >= 5 || bernoulli(0.005);
+
+            if (keep_sample) {
+                train_labels_unbalanced.push_back(label);
+                train_images_unbalanced.push_back(train_images[i]);
+            }
+        }
+
+        // keep the newly created unbalanced training set
+        std::swap(train_labels, train_labels_unbalanced);
+        std::swap(train_images, train_images_unbalanced);
+    }
+
+    nn_standard.optimizer().alpha = 0.001;
+    nn_balanced.optimizer().alpha = 0.001;
+
+    progress_display disp(train_images.size());
+    timer t;
+
+    const int minibatch_size = 10;
+
+    auto nn = &nn_standard; // the network referred to by the callbacks
+
+    // create callbacks - as usual
+    auto on_enumerate_epoch = [&](){
+        std::cout << t.elapsed() << "s elapsed." << std::endl;
+
+        tiny_cnn::result res = nn->test(test_images, test_labels);
+
+        std::cout << nn->optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+
+        nn->optimizer().alpha *= 0.85; // decay learning rate
+        nn->optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn->optimizer().alpha);
+
+        disp.restart(train_images.size());
+        t.restart();
+    };
+
+    auto on_enumerate_data = [&](){
+        disp += minibatch_size;
+    };
+
+    // first train the standard network (default cost - equal for each sample)
+    // - note that it does not learn the classes 0-4
+    nn_standard.train(train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE);
+
+    // then train another network, now with explicitly supplied target costs (aim: a more balanced predictor)
+    // - note that it can learn the classes 0-4 (at least somehow)
+    nn = &nn_balanced;
+    const auto target_cost = create_balanced_target_cost(train_labels, 0.8);
+    nn_balanced.train(train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE, &target_cost);
+
+    // test and show results
+    std::cout << std::endl << "Standard training (implicitly assumed equal cost for every sample):" << std::endl;
+    nn_standard.test(test_images, test_labels).print_detail(std::cout);
+
+    std::cout << std::endl << "Balanced training (explicitly supplied target costs):" << std::endl;
+    nn_balanced.test(test_images, test_labels).print_detail(std::cout);
 }
