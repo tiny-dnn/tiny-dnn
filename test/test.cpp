@@ -36,7 +36,7 @@ using namespace tiny_cnn::activation;
 #include "test_fully_connected_layer.h"
 #include "test_convolutional_layer.h"
 #include "test_lrn_layer.h"
-
+#include "test_target_cost.h"
 
 int main(void) {
     return RUN_ALL_TESTS();
