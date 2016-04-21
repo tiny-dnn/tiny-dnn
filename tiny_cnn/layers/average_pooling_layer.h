@@ -68,7 +68,7 @@ public:
     }
 
     image<> output_to_image(size_t worker_index = 0) const override {
-        return vec2image<unsigned char>(output_[worker_index], out_);
+        return vec2image<unsigned char>(get_worker_storage(worker_index).output_, out_);
     }
 
     index3d<cnn_size_t> in_shape() const override { return in_; }

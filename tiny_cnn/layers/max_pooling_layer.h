@@ -50,6 +50,8 @@ public:
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
 
+        set_worker_count(CNN_TASK_SIZE);
+
         init_connection();
     }
 
@@ -78,9 +80,10 @@ public:
     }
 
     virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        vec_t& out = output_[index];
-        vec_t& a = a_[index];
-        std::vector<cnn_size_t>& max_idx = out2inmax_[index];
+        worker_specific_storage& ws = get_worker_storage(index);
+        vec_t& out = ws.output_;
+        vec_t& a = ws.a_;
+        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
 
         for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
@@ -104,10 +107,11 @@ public:
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+        worker_specific_storage& ws = get_worker_storage(index);
         const vec_t& prev_out = prev_->output(static_cast<int>(index));
         const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = prev_delta_[index];
-        std::vector<cnn_size_t>& max_idx = out2inmax_[index];
+        vec_t& prev_delta = ws.prev_delta_;
+        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
 
         for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
@@ -115,22 +119,24 @@ public:
                 prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : float_t(0);
             }
         });
-        return prev_->back_propagation(prev_delta_[index], index);
+        return prev_->back_propagation(ws.prev_delta_, index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
+        max_pooling_layer_worker_specific_storage& mws = max_pooling_layer_worker_storage_[0];
+
         for (cnn_size_t i = 0; i < in_size_; i++) {
             cnn_size_t outi = in2out_[i];
-            prev_delta2_[i] = (out2inmax_[0][outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
+            prev_delta2_[i] = (mws.out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
         }
         return prev_->back_propagation_2nd(prev_delta2_);
     }
 
     image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image<unsigned char>(output_[worker_index], out_);
+        return vec2image<unsigned char>(get_worker_storage(worker_index).output_, out_);
     }
 
     index3d<cnn_size_t> in_shape() const override { return in_; }
@@ -138,12 +144,26 @@ public:
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const {return pool_size_;}
 
+    virtual void set_worker_count(cnn_size_t worker_count) {
+        Base::set_worker_count(worker_count);
+        max_pooling_layer_worker_storage_.resize(worker_count);
+        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
+            mws.out2inmax_.resize(out_.size());
+        }
+    }
+
 private:
     size_t pool_size_;
     size_t stride_;
     std::vector<std::vector<cnn_size_t> > out2in_; // mapping out => in (1:N)
     std::vector<cnn_size_t> in2out_; // mapping in => out (N:1)
-    std::vector<cnn_size_t> out2inmax_[CNN_TASK_SIZE]; // mapping out => max_index(in) (1:1)
+
+    struct max_pooling_layer_worker_specific_storage {
+        std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
+    };
+
+    std::vector<max_pooling_layer_worker_specific_storage> max_pooling_layer_worker_storage_;
+
     index3d<cnn_size_t> in_;
     index3d<cnn_size_t> out_;
 
@@ -176,8 +196,10 @@ private:
     {
         in2out_.resize(in_.size());
         out2in_.resize(out_.size());
-        for (int i = 0; i < CNN_TASK_SIZE; i++)
-            out2inmax_[i].resize(out_.size());
+
+        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
+            mws.out2inmax_.resize(out_.size());
+        }
 
         for (cnn_size_t c = 0; c < in_.depth_; ++c)
             for (cnn_size_t y = 0; y < out_.height_; ++y)

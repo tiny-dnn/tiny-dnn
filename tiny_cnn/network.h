@@ -176,6 +176,7 @@ public:
     {
         check_training_data(in, t);
         set_netphase(net_phase::train);
+        layers_.set_worker_count(n_threads);
         if (reset_weights)
             init_weight();
         layers_.set_parallelize(batch_size < CNN_TASK_SIZE);

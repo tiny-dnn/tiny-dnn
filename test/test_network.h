@@ -83,7 +83,7 @@ TEST(network, train_predict) {
 
     std::vector<vec_t> data;
     std::vector<label_t> label;
-    size_t tnum = 200;
+    size_t tnum = 1000;
 
     net.optimizer().alpha *= 10;
 
