@@ -223,7 +223,7 @@ TEST(target_cost, train_unbalanced_data) {
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;
-    const size_t tnum = 1000;
+    const size_t tnum = 2000;
 
     for (size_t i = 0; i < tnum; i++) {
         const bool label = bernoulli(p);
