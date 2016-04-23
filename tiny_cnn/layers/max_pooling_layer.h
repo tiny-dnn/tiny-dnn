@@ -144,7 +144,7 @@ public:
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const {return pool_size_;}
 
-    virtual void set_worker_count(cnn_size_t worker_count) {
+    virtual void set_worker_count(cnn_size_t worker_count) override {
         Base::set_worker_count(worker_count);
         max_pooling_layer_worker_storage_.resize(worker_count);
         for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {

@@ -167,7 +167,7 @@ public:
         return dropout_layer_worker_storage_[worker_index].mask_;
     }
 
-    virtual void set_worker_count(cnn_size_t worker_count) {
+    virtual void set_worker_count(cnn_size_t worker_count) override {
         layer<activation::identity>::set_worker_count(worker_count);
         dropout_layer_worker_storage_.resize(worker_count);
 

@@ -493,7 +493,7 @@ public:
         return img;
     }
 
-    virtual void set_worker_count(cnn_size_t worker_count) {
+    virtual void set_worker_count(cnn_size_t worker_count) override {
         Base::set_worker_count(worker_count);
         conv_layer_worker_storage_.resize(worker_count);
         init();
