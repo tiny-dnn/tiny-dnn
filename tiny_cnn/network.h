@@ -161,6 +161,7 @@ public:
      * @param on_epoch_enumerate callback for each epoch 
      * @param reset_weights      reset all weights or keep current
      * @param n_threads          number of tasks
+     * @param t_cost             target costs (leave to NULL in order to assume equal cost for every target)
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
     bool train(const std::vector<vec_t>& in,
@@ -171,10 +172,12 @@ public:
                OnEpochEnumerate          on_epoch_enumerate,
 
                const bool                reset_weights = true,
-               const int                 n_threads = CNN_TASK_SIZE
+               const int                 n_threads = CNN_TASK_SIZE,
+               const std::vector<vec_t>* t_cost = NULL
                )
     {
         check_training_data(in, t);
+        check_target_cost_matrix(t, t_cost);
         set_netphase(net_phase::train);
         layers_.set_worker_count(n_threads);
         if (reset_weights)
@@ -184,11 +187,12 @@ public:
 
         for (int iter = 0; iter < epoch; iter++) {
             if (optimizer_.requires_hessian())
-                calc_hessian(in);
+                calc_hessian(in, t_cost);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
                 train_once(&in[i], &t[i],
                            static_cast<int>(std::min(batch_size, in.size() - i)),
-                           n_threads);
+                           n_threads,
+                           get_target_cost_sample_pointer(t_cost, i));
                 on_batch_enumerate();
 
                 if (i % 100 == 0 && layers_.is_exploded()) {
@@ -449,10 +453,10 @@ private:
      *
      * @param size is the number of data points to use in this batch
      */
-    void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
+    void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads, const vec_t* t_cost) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
-        train_once(in, &v[0], size, nbThreads );
+        train_once(in, &v[0], size, nbThreads, t_cost);
     }
 
     /**
@@ -460,12 +464,12 @@ private:
      *
      * @param size is the number of data points to use in this batch
      */
-    void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads = CNN_TASK_SIZE) {
+    void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads, const vec_t* t_cost) {
         if (size == 1) {
-            bprop(fprop(in[0]), t[0]);
+            bprop(fprop(in[0]), t[0], 0, t_cost);
             layers_.update_weights(&optimizer_, 1, 1);
         } else {
-            train_onebatch(in, t, size, nbThreads);
+            train_onebatch(in, t, size, nbThreads, t_cost);
         }
     }   
 
@@ -476,7 +480,7 @@ private:
      *
      * @param batch_size the number of data points to use in this batch 
      */
-    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks = CNN_TASK_SIZE) {
+    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks, const vec_t* t_cost) {
         int num_threads = std::min(batch_size, num_tasks);
 
         // number of data points to use in each thread
@@ -489,18 +493,18 @@ private:
 
             // loop over data points in this batch assigned to thread i
             for (int j = start_index; j < end_index; ++j)
-                bprop(fprop(in[j], i), t[j], i);
+                bprop(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : NULL);
         }, 1);
         
         // merge all dW and update W by optimizer
         layers_.update_weights(&optimizer_, num_threads, batch_size);
     }
 
-    void calc_hessian(const std::vector<vec_t>& in, int size_initialize_hessian = 500) {
+    void calc_hessian(const std::vector<vec_t>& in, const std::vector<vec_t>* t_cost, int size_initialize_hessian = 500) {
         int size = std::min((int)in.size(), size_initialize_hessian);
 
         for (int i = 0; i < size; i++)
-            bprop_2nd(fprop(in[i]));
+            bprop_2nd(fprop(in[i]), get_target_cost_sample_pointer(t_cost, i));
 
         layers_.divide_hessian(size);
     }
@@ -532,7 +536,7 @@ private:
         return e;
     }
 
-    void bprop_2nd(const vec_t& out) {
+    void bprop_2nd(const vec_t& out, const vec_t* t_cost) {
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
@@ -542,10 +546,15 @@ private:
             for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);}); // FIXME
         }
 
+        if (t_cost) {
+            // CHECKME - is this correct?
+            for_i(out_dim(), [&](int i) { delta[i] *= (*t_cost)[i]; });
+        }
+
         layers_.tail()->back_propagation_2nd(delta);
     }
 
-    void bprop(const vec_t& out, const vec_t& t, int idx = 0) {
+    void bprop(const vec_t& out, const vec_t& t, int idx, const vec_t* t_cost) {
         vec_t delta(out_dim());
         const activation::function& h = layers_.tail()->activation_function();
 
@@ -562,6 +571,10 @@ private:
                 vec_t dy_da = h.df(out, i);
                 delta[i] = vectorize::dot(&dE_dy[0], &dy_da[0], out_dim());
             }
+        }
+
+        if (t_cost) {
+            for_i(out_dim(), [&](int i) { delta[i] *= (*t_cost)[i]; });
         }
 
         layers_.tail()->back_propagation(delta, idx);
@@ -587,7 +600,7 @@ private:
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i]); }
+        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i], 0, NULL); }
 
         float_t delta_by_bprop = dw[check_index];
 
@@ -626,6 +639,44 @@ private:
                 throw nn_error(format_str("input dimension mismatch!\n dim(data[%u])=%d, dim(network input)=%u", i, in[i].size(), dim_in));
 
             check_t(i, t[i], dim_out);
+        }
+    }
+
+    template <typename T>
+    void check_target_cost_matrix(const std::vector<T>& t, const std::vector<vec_t>* t_cost) {
+        if (t_cost != NULL) {
+            if (t.size() != t_cost->size()) {
+                throw nn_error("if target cost is supplied, its length must equal that of target data");
+            }
+
+            for (size_t i = 0, end = t.size(); i < end; i++) {
+                check_target_cost_element(t[i], t_cost->operator[](i));
+            }
+        }
+    }
+
+    // classification
+    void check_target_cost_element(const label_t t, const vec_t& t_cost) {
+        if (t >= t_cost.size()) {
+            throw nn_error("if target cost is supplied for a classification task, some cost must be given for each distinct class label");
+        }
+    }
+
+    // regression
+    void check_target_cost_element(const vec_t& t, const vec_t& t_cost) {
+        if (t.size() != t_cost.size()) {
+            throw nn_error("if target cost is supplied for a regression task, its shape must be identical to the target data");
+        }
+    }
+
+    inline const vec_t* get_target_cost_sample_pointer(const std::vector<vec_t>* t_cost, size_t i) {
+        if (t_cost) {
+            const std::vector<vec_t>& target_cost = *t_cost;
+            assert(i < target_cost.size());
+            return &(target_cost[i]);
+        }
+        else {
+            return NULL;
         }
     }
 
