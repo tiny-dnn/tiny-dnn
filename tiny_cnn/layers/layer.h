@@ -297,10 +297,10 @@ private:
 
         for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&ws[i].dW_[0],
-                static_cast<cnn_size_t>(ws[i].dW_.size()), &ws[i].dW_[0]);
+                static_cast<cnn_size_t>(ws[i].dW_.size()), &ws[0].dW_[0]);
         for (cnn_size_t i = 1; i < worker_size; i++)
             vectorize::reduce<float_t>(&ws[i].db_[0],
-                static_cast<cnn_size_t>(ws[i].db_.size()), &ws[i].db_[0]);
+                static_cast<cnn_size_t>(ws[i].db_.size()), &ws[0].db_[0]);
 
         std::transform(ws[0].dW_.begin(), ws[0].dW_.end(), ws[0].dW_.begin(), [&](float_t x) { return x / batch_size; });
         std::transform(ws[0].db_.begin(), ws[0].db_.end(), ws[0].db_.begin(), [&](float_t x) { return x / batch_size; });
