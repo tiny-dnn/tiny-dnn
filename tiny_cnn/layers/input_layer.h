@@ -44,7 +44,7 @@ public:
     std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        worker_specific_storage& ws = get_worker_storage(index);
+        Base::worker_specific_storage& ws = Base::get_worker_storage(index);
         ws.output_ = in;
         return next_ ? next_->forward_propagation(in, index) : ws.output_;
     }

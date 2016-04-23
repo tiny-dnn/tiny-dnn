@@ -35,6 +35,7 @@ namespace tiny_cnn {
 class dropout_layer : public layer<activation::identity> {
 public:
     typedef activation::identity Activation;
+    typedef layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
     dropout_layer(cnn_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
@@ -121,7 +122,7 @@ public:
 
     const vec_t& back_propagation(const vec_t& current_delta, size_t worker_index) override 
     {
-        worker_specific_storage& ws = get_worker_storage(worker_index);
+        auto& ws = this->get_worker_storage(worker_index);
         vec_t& prev_delta = ws.prev_delta_;
         const std::vector<uint8_t>& mask = dropout_layer_worker_storage_[worker_index].mask_;
 
@@ -133,7 +134,7 @@ public:
 
     const vec_t& forward_propagation(const vec_t& in, size_t worker_index) override 
     {
-        worker_specific_storage& ws = get_worker_storage(worker_index);
+        auto& ws = this->get_worker_storage(worker_index);
         vec_t& out = ws.output_;
         vec_t& a = ws.a_;
         std::vector<uint8_t>& mask = dropout_layer_worker_storage_[worker_index].mask_;

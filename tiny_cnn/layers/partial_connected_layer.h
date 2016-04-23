@@ -83,7 +83,7 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        worker_specific_storage& ws = get_worker_storage(index);
+        auto& ws = this->get_worker_storage(index);
         vec_t& a = ws.a_;
      
         for_i(parallelize_, out_size_, [&](int i) {
@@ -110,7 +110,7 @@ public:
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        worker_specific_storage& ws = get_worker_storage(index);
+        auto& ws = this->get_worker_storage(index);
 
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();

@@ -69,7 +69,7 @@ public:
     std::string layer_type() const override { return "norm"; }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        worker_specific_storage& ws = get_worker_storage(index);
+        auto& ws = this->get_worker_storage(index);
 
         vec_t& a = ws.a_;
         vec_t& out = ws.output_;

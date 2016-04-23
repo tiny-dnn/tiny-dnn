@@ -320,7 +320,7 @@ public:
     {
         copy_and_pad_input(in_raw, static_cast<int>(worker_index));
 
-        worker_specific_storage& ws = get_worker_storage(worker_index);
+        auto& ws = this->get_worker_storage(worker_index);
         vec_t &a = ws.a_; // w*x
         vec_t &out = ws.output_; // output
         const vec_t &in = *(conv_layer_worker_storage_[worker_index].prev_out_padded_); // input
@@ -376,7 +376,7 @@ public:
     }
 
     const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
-        worker_specific_storage& ws = get_worker_storage(index);
+        auto& ws = this->get_worker_storage(index);
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
         const vec_t& prev_out = *(cws.prev_out_padded_);
