@@ -30,7 +30,15 @@
 #include <unordered_map>
 #include <limits>
 #include "caffe.pb.h"
-#include "tiny_cnn/tiny_cnn.h"
+
+#include "tiny_cnn/layers/convolutional_layer.h"
+#include "tiny_cnn/layers/fully_connected_layer.h"
+#include "tiny_cnn/layers/average_pooling_layer.h"
+#include "tiny_cnn/layers/max_pooling_layer.h"
+#include "tiny_cnn/layers/linear_layer.h"
+#include "tiny_cnn/layers/lrn_layer.h"
+#include "tiny_cnn/layers/dropout_layer.h"
+#include "tiny_cnn/layers/linear_layer.h"
 
 typedef tiny_cnn::layer_shape_t shape_t;
 

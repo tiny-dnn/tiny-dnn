@@ -30,7 +30,10 @@
 #include <google/protobuf/text_format.h>
 #include "caffe.pb.h"
 
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_cnn/network.h"
+#include "tiny_cnn/lossfunctions/loss_function.h"
+#include "tiny_cnn/optimizers/optimizer.h"
+#include "tiny_cnn/util/util.h"
 #include "tiny_cnn/io/caffe/layer_factory_impl.h"
 
 namespace tiny_cnn {
