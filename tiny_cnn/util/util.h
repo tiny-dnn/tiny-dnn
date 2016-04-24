@@ -34,6 +34,7 @@
 #include <cstdio>
 #include <cstdarg>
 #include <string>
+#include <sstream>
 #include "aligned_allocator.h"
 #include "nn_error.h"
 #include "tiny_cnn/config.h"
@@ -359,6 +360,13 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     return s;
 }
 
+// equivalent to std::to_string, which android NDK doesn't support
+template <typename T>
+std::string to_string(T value) {
+    std::ostringstream os;
+    os << value;
+    return os.str();
+}
 
 // boilerplate to resolve dependent name
 #define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
