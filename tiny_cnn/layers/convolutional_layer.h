@@ -107,14 +107,14 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        init();
+        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     /**
     * constructing convolutional layer
     *
-    * @param in_width         [in] input image width
-    * @param in_height        [in] input image height
+    * @param in_width      [in] input image width
+    * @param in_height     [in] input image height
     * @param window_width  [in] window_width(kernel) size of convolution
     * @param window_height [in] window_height(kernel) size of convolution
     * @param in_channels   [in] input image channels (grayscale=1, rgb=3)
@@ -142,7 +142,7 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        init();
+        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
     /**
     * constructing convolutional layer
@@ -178,7 +178,7 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        init();
+        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     /**
@@ -186,8 +186,8 @@ public:
     *
     * @param in_width         [in] input image width
     * @param in_height        [in] input image height
-    * @param window_width  [in] window_width(kernel) size of convolution
-    * @param window_height [in] window_height(kernel) size of convolution
+    * @param window_width     [in] window_width(kernel) size of convolution
+    * @param window_height    [in] window_height(kernel) size of convolution
     * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
     * @param out_channels     [in] output image channels
     * @param connection_table [in] definition of connections between in-channels and out-channels
@@ -217,7 +217,7 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        init();
+        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     ///< number of incoming connections for each output unit
@@ -240,7 +240,7 @@ public:
 
     virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) override
     {
-        const vec_t& prev_out = *(prev_out_padded_[0]);
+        const vec_t& prev_out = *(conv_layer_worker_storage_[0].prev_out_padded_);
         const activation::function& prev_h = prev_->activation_function();
         vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta2_padded_ : &prev_delta2_;
 
@@ -320,9 +320,10 @@ public:
     {
         copy_and_pad_input(in_raw, static_cast<int>(worker_index));
 
-        vec_t &a = a_[worker_index]; // w*x
-        vec_t &out = output_[worker_index]; // output
-        const vec_t &in = *(prev_out_padded_[worker_index]); // input
+        auto& ws = this->get_worker_storage(worker_index);
+        vec_t &a = ws.a_; // w*x
+        vec_t &out = ws.output_; // output
+        const vec_t &in = *(conv_layer_worker_storage_[worker_index].prev_out_padded_); // input
         
         std::fill(a.begin(), a.end(), float_t(0));
 
@@ -375,11 +376,14 @@ public:
     }
 
     const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
-        const vec_t& prev_out = *(prev_out_padded_[index]);
+        auto& ws = this->get_worker_storage(index);
+        conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
+
+        const vec_t& prev_out = *(cws.prev_out_padded_);
         const activation::function& prev_h = prev_->activation_function();
-        vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta_padded_[index] : &prev_delta_[index];
-        vec_t& dW = dW_[index];
-        vec_t& db = db_[index];
+        vec_t* prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : &ws.prev_delta_;
+        vec_t& dW = ws.dW_;
+        vec_t& db = ws.db_;
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
@@ -442,14 +446,14 @@ public:
         }
 
         if (pad_type_ == padding::same)
-            copy_and_unpad_delta(prev_delta_padded_[index], prev_delta_[index]);
+            copy_and_unpad_delta(cws.prev_delta_padded_, ws.prev_delta_);
 
         CNN_LOG_VECTOR(curr_delta, "[pc]curr_delta");
         CNN_LOG_VECTOR(prev_delta_[index], "[pc]prev_delta");
         CNN_LOG_VECTOR(dW, "[pc]dW");
         CNN_LOG_VECTOR(db, "[pc]db");
 
-        return prev_->back_propagation(prev_delta_[index], index);
+        return prev_->back_propagation(ws.prev_delta_, index);
     }
 
     index3d<cnn_size_t> in_shape() const override { return in_; }
@@ -489,15 +493,21 @@ public:
         return img;
     }
 
+    virtual void set_worker_count(cnn_size_t worker_count) override {
+        Base::set_worker_count(worker_count);
+        conv_layer_worker_storage_.resize(worker_count);
+        init();
+    }
+
 private:
     void init() {
-        for (cnn_size_t i = 0; i < CNN_TASK_SIZE; i++) {
+        for (conv_layer_worker_specific_storage& cws : conv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {
-                prev_out_buf_[i] = new vec_t(in_padded_.size(), float_t(0));
-                prev_delta_padded_[i].resize(in_padded_.size(), float_t(0));               
+                cws.prev_out_buf_.resize(in_padded_.size(), float_t(0));
+                cws.prev_delta_padded_.resize(in_padded_.size(), float_t(0));
             }
             else {
-                prev_out_buf_[i] = nullptr;
+                cws.prev_out_buf_.clear();
             }
         }
         if (pad_type_ == padding::same) {
@@ -538,10 +548,12 @@ private:
     }
 
     void copy_and_pad_input(const vec_t& in, int worker_index) {
-        vec_t* dst = prev_out_buf_[worker_index];
+        conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[worker_index];
+
+        vec_t* dst = &cws.prev_out_buf_;
 
         if (pad_type_ == padding::valid) {
-            prev_out_padded_[worker_index] = &in;
+            cws.prev_out_padded_ = &in;
         }
         else {
             // make padded version in order to avoid corner-case in fprop/bprop
@@ -553,13 +565,18 @@ private:
                     std::copy(pin, pin + in_.width_, pimg);
                 }
             }
-            prev_out_padded_[worker_index] = prev_out_buf_[worker_index];
+            cws.prev_out_padded_ = &cws.prev_out_buf_;
         }
     }
 
-    const vec_t* prev_out_padded_[CNN_TASK_SIZE];
-    vec_t* prev_out_buf_[CNN_TASK_SIZE];
-    vec_t  prev_delta_padded_[CNN_TASK_SIZE];
+    struct conv_layer_worker_specific_storage {
+        const vec_t* prev_out_padded_;
+        vec_t prev_out_buf_;
+        vec_t prev_delta_padded_;
+    };
+
+    std::vector<conv_layer_worker_specific_storage> conv_layer_worker_storage_;
+
     vec_t  prev_delta2_padded_;
 
     connection_table tbl_;

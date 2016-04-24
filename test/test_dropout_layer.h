@@ -37,28 +37,25 @@ TEST(dropout, randomized) {
     double dropout_rate = 0.1;
     dropout_layer l(num_units, dropout_rate, net_phase::train);
     vec_t v(num_units, 1.0);
-    const bool *pmask;
 
     l.forward_propagation(v, 0);
-    pmask = l.get_mask();
-    std::deque<bool> mask1(pmask, pmask + num_units);
+    const auto mask1 = l.get_mask(0);
 
     l.forward_propagation(v, 0);
-    pmask = l.get_mask();
-    std::deque<bool> mask2(pmask, pmask + num_units);
+    const auto mask2 = l.get_mask(0);
 
     // mask should change for each fprop
     EXPECT_TRUE(is_different_container(mask1, mask2));
 
     // dropout-rate should be around 0.1
     double margin_factor = 0.9;
-    int num_true1 = std::count(mask1.begin(), mask1.end(), true);
-    int num_true2 = std::count(mask2.begin(), mask2.end(), true);
+    int num_on1 = std::count(mask1.begin(), mask1.end(), 1);
+    int num_on2 = std::count(mask2.begin(), mask2.end(), 1);
 
-    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true1);
-    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true1);
-    EXPECT_LE(num_units * dropout_rate * margin_factor, num_true2);
-    EXPECT_GE(num_units * dropout_rate / margin_factor, num_true2);
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_on1);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_on1);
+    EXPECT_LE(num_units * dropout_rate * margin_factor, num_on2);
+    EXPECT_GE(num_units * dropout_rate / margin_factor, num_on2);
 }
 
 TEST(dropout, read_write) {

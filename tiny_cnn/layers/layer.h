@@ -49,8 +49,10 @@ public:
     layer_base(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim)
         : parallelize_(true), next_(nullptr), prev_(nullptr),
           weight_init_(std::make_shared<weight_init::xavier>()),
-          bias_init_(std::make_shared<weight_init::constant>(float_t(0))) {
+          bias_init_(std::make_shared<weight_init::constant>(float_t(0)))
+    {
         set_size(in_dim, out_dim, weight_dim, bias_dim);
+        set_worker_count(CNN_TASK_SIZE);
     }
 
     layer_base(const layer_base&) = default;
@@ -82,7 +84,7 @@ public:
 
         std::fill(Whessian_.begin(), Whessian_.end(), float_t(0));
         std::fill(bhessian_.begin(), bhessian_.end(), float_t(0));
-        clear_diff(CNN_TASK_SIZE);
+        clear_diff();
     }
 
     void divide_hessian(int denominator) {
@@ -93,12 +95,12 @@ public:
     /////////////////////////////////////////////////////////////////////////
     // getter
 
-    const vec_t& output(cnn_size_t worker_index) const { return output_[worker_index]; }
-    const vec_t& delta(cnn_size_t worker_index) const { return prev_delta_[worker_index]; }
+    const vec_t& output(cnn_size_t worker_index) const { return worker_storage_[worker_index].output_; }
+    const vec_t& delta(cnn_size_t worker_index) const { return worker_storage_[worker_index].prev_delta_; }
     vec_t& weight() { return W_; }
     vec_t& bias() { return b_; }
-    vec_t& weight_diff(cnn_size_t index) { return dW_[index]; }
-    vec_t& bias_diff(cnn_size_t index) { return db_[index]; }
+    vec_t& weight_diff(cnn_size_t index) { return worker_storage_[index].dW_; }
+    vec_t& bias_diff(cnn_size_t index) { return worker_storage_[index].db_; }
     bool is_exploded() const { return has_infinite(W_) || has_infinite(b_); }
     layer_base* next() { return next_; }
     layer_base* prev() { return prev_; }
@@ -175,7 +177,7 @@ public:
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image<unsigned char>(output_[worker_index]);
+        return vec2image<unsigned char>(worker_storage_[worker_index].output_);
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -216,13 +218,13 @@ public:
         CNN_LOG_VECTOR(W_, "[W-before]");
         CNN_LOG_VECTOR(b_, "[db-before]");
 
-        o->update(dW_[0], Whessian_, W_);
-        o->update(db_[0], bhessian_, b_);
+        o->update(worker_storage_[0].dW_, Whessian_, W_);
+        o->update(worker_storage_[0].db_, bhessian_, b_);
 
         CNN_LOG_VECTOR(W_, "[W-updated]");
         CNN_LOG_VECTOR(b_, "[db-updated]");
 
-        clear_diff(worker_size);
+        clear_diff();
         post_update();
     }
 
@@ -238,6 +240,19 @@ public:
         return true;
     }
 
+    virtual void set_worker_count(cnn_size_t worker_count) {
+        if (worker_count == 0) {
+            throw nn_error("worker_count cannot be zero!");
+        }
+
+        if (worker_count != worker_storage_.size()) {
+            worker_storage_.resize(worker_count);
+
+            // resize the vectors of each worker
+            set_size(in_size_, out_size_, W_.size(), b_.size());
+        }
+    }
+
 protected:
     cnn_size_t in_size_;
     cnn_size_t out_size_;
@@ -245,19 +260,20 @@ protected:
 
     layer_base* next_;
     layer_base* prev_;
-    vec_t a_[CNN_TASK_SIZE];          // w * x
-    vec_t output_[CNN_TASK_SIZE];     // last output of current layer, set by fprop
-    vec_t prev_delta_[CNN_TASK_SIZE]; // last delta of previous layer, set by bprop
     vec_t W_;          // weight vector
     vec_t b_;          // bias vector
 
-    /** contribution to derivative of loss function with respect to weights of this layer,
-        indexed by worker / thread */
-    vec_t dW_[CNN_TASK_SIZE];
+    struct worker_specific_storage {
+        vec_t a_;          // w * x
+        vec_t output_;     // last output of current layer, set by fprop
+        vec_t prev_delta_; // last delta of previous layer, set by bprop
 
-    /** contribution to derivative of loss function with respect to bias terms of this layer,
-        indexed by worker / thread */
-    vec_t db_[CNN_TASK_SIZE];
+        // worker's contribution to derivative of loss function with respect to weights of this layer
+        vec_t dW_;
+
+        // worker's contribution to derivative of loss function with respect to bias terms of this layer
+        vec_t db_;
+    };
 
     vec_t Whessian_; // diagonal terms of hessian matrix
     vec_t bhessian_;
@@ -265,28 +281,38 @@ protected:
     std::shared_ptr<weight_init::function> weight_init_;
     std::shared_ptr<weight_init::function> bias_init_;
 
+    const worker_specific_storage& get_worker_storage(cnn_size_t worker_index) const {
+        return worker_storage_[worker_index];
+    }
+
+    worker_specific_storage& get_worker_storage(cnn_size_t worker_index) {
+        return worker_storage_[worker_index];
+    }
+
 private:
     /** sums contributions to gradient (of the loss function with respect to weights and
         bias) as calculated by individual threads */
     void merge(cnn_size_t worker_size, cnn_size_t batch_size) {
-        for (cnn_size_t i = 1; i < worker_size; i++)
-            vectorize::reduce<float_t>(&dW_[i][0],
-                static_cast<cnn_size_t>(dW_[i].size()), &dW_[0][0]);
-        for (cnn_size_t i = 1; i < worker_size; i++)
-            vectorize::reduce<float_t>(&db_[i][0],
-                static_cast<cnn_size_t>(db_[i].size()), &db_[0][0]);
+        auto& ws = worker_storage_; // short-hand notation
 
-        std::transform(dW_[0].begin(), dW_[0].end(), dW_[0].begin(), [&](float_t x) { return x / batch_size; });
-        std::transform(db_[0].begin(), db_[0].end(), db_[0].begin(), [&](float_t x) { return x / batch_size; });
+        for (cnn_size_t i = 1; i < worker_size; i++)
+            vectorize::reduce<float_t>(&ws[i].dW_[0],
+                static_cast<cnn_size_t>(ws[i].dW_.size()), &ws[0].dW_[0]);
+        for (cnn_size_t i = 1; i < worker_size; i++)
+            vectorize::reduce<float_t>(&ws[i].db_[0],
+                static_cast<cnn_size_t>(ws[i].db_.size()), &ws[0].db_[0]);
+
+        std::transform(ws[0].dW_.begin(), ws[0].dW_.end(), ws[0].dW_.begin(), [&](float_t x) { return x / batch_size; });
+        std::transform(ws[0].db_.begin(), ws[0].db_.end(), ws[0].db_.begin(), [&](float_t x) { return x / batch_size; });
 
         CNN_LOG_VECTOR(dW_[0], "[dW-merged]");
         CNN_LOG_VECTOR(db_[0], "[db-merged]");
     }
 
-    void clear_diff(size_t worker_size) {
-        for (size_t i = 0; i < worker_size; i++) {
-            std::fill(dW_[i].begin(), dW_[i].end(), float_t(0));
-            std::fill(db_[i].begin(), db_[i].end(), float_t(0));
+    void clear_diff() {
+        for (auto& ws : worker_storage_) {
+            std::fill(ws.dW_.begin(), ws.dW_.end(), float_t(0));
+            std::fill(ws.db_.begin(), ws.db_.end(), float_t(0));
         }
     }
 
@@ -300,12 +326,16 @@ private:
         bhessian_.resize(bias_dim);
         prev_delta2_.resize(in_dim);
 
-        for (auto& o : output_)     o.resize(out_dim);
-        for (auto& a : a_)          a.resize(out_dim);
-        for (auto& p : prev_delta_) p.resize(in_dim);
-        for (auto& dw : dW_) dw.resize(weight_dim);
-        for (auto& db : db_) db.resize(bias_dim);
+        for (auto& ws : worker_storage_) {
+            ws.output_.resize(out_dim);
+            ws.a_.resize(out_dim);
+            ws.prev_delta_.resize(in_dim);
+            ws.dW_.resize(weight_dim);
+            ws.db_.resize(bias_dim);
+        }
     }
+
+    std::vector<worker_specific_storage> worker_storage_;
 };
 
 template<typename Activation>

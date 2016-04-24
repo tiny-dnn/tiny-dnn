@@ -83,7 +83,8 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        vec_t& a = a_[index];
+        auto& ws = this->get_worker_storage(index);
+        vec_t& a = ws.a_;
      
         for_i(parallelize_, out_size_, [&](int i) {
             const wi_connections& connections = out2wi_[i];
@@ -98,20 +99,22 @@ public:
         });
 
         for_i(parallelize_, out_size_, [&](int i) {
-            output_[index][i] = h_.f(a, i);
+            ws.output_[i] = h_.f(a, i);
         });
         CNN_LOG_VECTOR(in, "[pc]in");
         CNN_LOG_VECTOR(W_, "[pc]w");
         CNN_LOG_VECTOR(a, "[pc]a");
         CNN_LOG_VECTOR(output_[index], "[pc]forward");
 
-        return next_ ? next_->forward_propagation(output_[index], index) : output_[index]; // 15.6%
+        return next_ ? next_->forward_propagation(ws.output_, index) : ws.output_; // 15.6%
     }
 
     virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
+        auto& ws = this->get_worker_storage(index);
+
         const vec_t& prev_out = prev_->output(index);
         const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = prev_delta_[index];
+        vec_t& prev_delta = ws.prev_delta_;
 
         for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
@@ -133,7 +136,7 @@ public:
                 for (auto connection : connections) // 11.9%
                     diff += prev_out[connection.first] * current_delta[connection.second];
 
-                dW_[index][i] += diff * scale_factor_;
+                ws.dW_[i] += diff * scale_factor_;
             }
         });
 
@@ -144,7 +147,7 @@ public:
             for (auto o : outs)
                 diff += current_delta[o];    
 
-            db_[index][i] += diff;
+            ws.db_[i] += diff;
         } 
 
         CNN_LOG_VECTOR(current_delta, "[pc]curr_delta");
@@ -152,7 +155,7 @@ public:
         CNN_LOG_VECTOR(dW_[index], "[pc]dW");
         CNN_LOG_VECTOR(db_[index], "[pc]db");
 
-        return prev_->back_propagation(prev_delta_[index], index);
+        return prev_->back_propagation(ws.prev_delta_, index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {

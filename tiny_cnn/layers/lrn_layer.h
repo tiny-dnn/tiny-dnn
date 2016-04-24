@@ -69,8 +69,10 @@ public:
     std::string layer_type() const override { return "norm"; }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        vec_t& a = a_[index];
-        vec_t& out = output_[index];
+        auto& ws = this->get_worker_storage(index);
+
+        vec_t& a = ws.a_;
+        vec_t& out = ws.output_;
 
         if (region_ == norm_region::across_channels) {
             forward_across(in, a);

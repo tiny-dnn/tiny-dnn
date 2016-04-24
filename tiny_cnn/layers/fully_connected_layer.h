@@ -52,8 +52,9 @@ public:
     }
 
     const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        vec_t &a = a_[index];
-        vec_t &out = output_[index];
+        auto& ws = this->get_worker_storage(index);
+        vec_t &a = ws.a_;
+        vec_t &out = ws.output_;
 
         for_i(parallelize_, out_size_, [&](int i) {
             a[i] = float_t(0);
@@ -74,11 +75,12 @@ public:
     }
 
     const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
+        auto& ws = this->get_worker_storage(index);
         const vec_t& prev_out = prev_->output(static_cast<int>(index));
         const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = prev_delta_[index];
-        vec_t& dW = dW_[index];
-        vec_t& db = db_[index];
+        vec_t& prev_delta = ws.prev_delta_;
+        vec_t& dW = ws.dW_;
+        vec_t& db = ws.db_;
 
         for (cnn_size_t c = 0; c < this->in_size_; c++) {
             // propagate delta to previous layer
@@ -104,7 +106,7 @@ public:
         CNN_LOG_VECTOR(dW, "[fc]dW");
         CNN_LOG_VECTOR(db, "[fc]db");
 
-        return prev_->back_propagation(prev_delta_[index], index);
+        return prev_->back_propagation(ws.prev_delta_, index);
     }
 
     const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {

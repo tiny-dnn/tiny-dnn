@@ -366,13 +366,8 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     using layer_base::parallelize_; \
     using layer_base::next_; \
     using layer_base::prev_; \
-    using layer_base::a_; \
-    using layer_base::output_; \
-    using layer_base::prev_delta_; \
     using layer_base::W_; \
     using layer_base::b_; \
-    using layer_base::dW_; \
-    using layer_base::db_; \
     using layer_base::Whessian_; \
     using layer_base::bhessian_; \
     using layer_base::prev_delta2_; \

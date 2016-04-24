@@ -100,6 +100,12 @@ public:
         return layers_.size() - 1; // except input-layer
     }
 
+    void set_worker_count(cnn_size_t thread_count) {
+        for (auto pl : layers_) {
+            pl->set_worker_count(thread_count);
+        }
+    }
+
 private:
     void construct(const layers& rhs) {
         add(std::make_shared<input_layer>());
