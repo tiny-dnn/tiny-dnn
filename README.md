@@ -138,7 +138,7 @@ void construct_cnn() {
     std::vector<vec_t> train_images;
     
     parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
-    parse_mnist_images("train-images.idx3-ubyte", &train_images);
+    parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 2, 2);
     
     // train (50-epoch, 30-minibatch)
     net.train(train_images, train_labels, 30, 50);
