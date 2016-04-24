@@ -161,7 +161,7 @@ public:
      * @param on_epoch_enumerate callback for each epoch 
      * @param reset_weights      reset all weights or keep current
      * @param n_threads          number of tasks
-     * @param t_cost             target costs (leave to NULL in order to assume equal cost for every target)
+     * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
      */
     template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
     bool train(const std::vector<vec_t>& in,
@@ -173,7 +173,7 @@ public:
 
                const bool                reset_weights = true,
                const int                 n_threads = CNN_TASK_SIZE,
-               const std::vector<vec_t>* t_cost = NULL
+               const std::vector<vec_t>* t_cost = nullptr
                )
     {
         check_training_data(in, t);
@@ -493,7 +493,7 @@ private:
 
             // loop over data points in this batch assigned to thread i
             for (int j = start_index; j < end_index; ++j)
-                bprop(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : NULL);
+                bprop(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : nullptr);
         }, 1);
         
         // merge all dW and update W by optimizer
@@ -600,7 +600,7 @@ private:
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i], 0, NULL); }
+        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i], 0, nullptr); }
 
         float_t delta_by_bprop = dw[check_index];
 
@@ -644,7 +644,7 @@ private:
 
     template <typename T>
     void check_target_cost_matrix(const std::vector<T>& t, const std::vector<vec_t>* t_cost) {
-        if (t_cost != NULL) {
+        if (t_cost != nullptr) {
             if (t.size() != t_cost->size()) {
                 throw nn_error("if target cost is supplied, its length must equal that of target data");
             }
@@ -676,7 +676,7 @@ private:
             return &(target_cost[i]);
         }
         else {
-            return NULL;
+            return nullptr;
         }
     }
 
