@@ -28,7 +28,7 @@
 
 #include "tiny_cnn/config.h"
 #include "tiny_cnn/network.h"
-
+#include "tiny_cnn/nodes.h"
 
 #include "tiny_cnn/layers/convolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"

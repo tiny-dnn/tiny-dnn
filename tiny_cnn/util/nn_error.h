@@ -41,4 +41,9 @@ private:
     std::string msg_;
 };
 
+class nn_not_implemented_error : public nn_error {
+public:
+    explicit nn_not_implemented_error(const std::string& msg = "not implemented") : nn_error(msg) {}
+};
+
 } // namespace tiny_cnn

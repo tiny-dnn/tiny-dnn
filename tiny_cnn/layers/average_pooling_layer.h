@@ -40,12 +40,13 @@ public:
     CNN_USE_LAYER_MEMBERS;
 
     average_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size)
-    : Base(in_width * in_height * in_channels, 
+    : Base(in_width * in_height * in_channels,
            in_width * in_height * in_channels / sqr(pooling_size), 
            in_channels, in_channels, float_t(1) / sqr(pooling_size)),
       stride_(pooling_size),
       in_(in_width, in_height, in_channels), 
-      out_(in_width/pooling_size, in_height/pooling_size, in_channels)
+      out_(in_width/pooling_size, in_height/pooling_size, in_channels),
+      w_(pooling_size, pooling_size, in_channels)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
@@ -59,7 +60,8 @@ public:
             in_channels, in_channels, float_t(1) / sqr(pooling_size)),
         stride_(stride),
         in_(in_width, in_height, in_channels),
-        out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels)
+        out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels),
+        w_(pooling_size, pooling_size, in_channels)
     {
        // if ((in_width % pooling_size) || (in_height % pooling_size))
        //     pooling_size_mismatch(in_width, in_height, pooling_size);
@@ -67,12 +69,12 @@ public:
         init_connection(pooling_size);
     }
 
-    image<> output_to_image(size_t worker_index = 0) const override {
-        return vec2image<unsigned char>(Base::get_worker_storage(worker_index).output_, out_);
-    }
+    //image<> output_to_image(size_t worker_index = 0) const override {
+    //    return vec2image<unsigned char>(Base::get_worker_storage(worker_index).output_, out_);
+    //}
 
-    index3d<cnn_size_t> in_shape() const override { return in_; }
-    index3d<cnn_size_t> out_shape() const override { return out_; }
+    std::vector<index3d<cnn_size_t>> in_shape() const override { return{ in_, w_, index3d<cnn_size_t>(1, 1, out_.depth_) }; }
+    std::vector<index3d<cnn_size_t>> out_shape() const override { return{ out_, out_ }; }
     std::string layer_type() const override { return "ave-pool"; }
 
 private:
@@ -109,8 +111,9 @@ private:
                     inc);
     }
 
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
+    shape3d in_;
+    shape3d out_;
+    shape3d w_;
 };
 
 } // namespace tiny_cnn

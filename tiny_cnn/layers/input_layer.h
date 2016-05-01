@@ -29,15 +29,15 @@
 
 namespace tiny_cnn {
 
-class input_layer : public layer<activation::identity> {
+class input_layer : public feedforward_layer<activation::identity> {
 public:
     typedef activation::identity Activation;
-    typedef layer<activation::identity> Base;
+    typedef feedforward_layer<activation::identity> Base;
     CNN_USE_LAYER_MEMBERS;
 
     input_layer() : Base(0, 0, 0, 0) {}
 
-    cnn_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<cnn_size_t>(0); }
+    cnn_size_t in_data_size() const override { return next_ ? next_->in_size(): static_cast<cnn_size_t>(0); }
 
     index3d<cnn_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<cnn_size_t>(0, 0, 0); }
     index3d<cnn_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<cnn_size_t>(0, 0, 0); }

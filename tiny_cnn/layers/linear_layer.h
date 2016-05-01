@@ -37,14 +37,14 @@ namespace tiny_cnn {
  * f(x) = h(scale*x+bias)
  */
 template<typename Activation>
-class linear_layer : public layer<Activation> {
+class linear_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
     explicit linear_layer(cnn_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
-        : Base(dim, dim, 0, 0),
+        : Base({vector_type::data}),
         scale_(scale), bias_(bias) {}
 
     size_t param_size() const override {
@@ -65,11 +65,12 @@ public:
 
     std::string layer_type() const override { return "linear"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
-
-        vec_t& a = ws.a_;
-        vec_t& out = ws.output_;
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t>& in_data,
+                             std::vector<vec_t>& out_data) override {
+        const vec_t& in  = in_data[0];
+        vec_t&       out = out_data[0];
+        vec_t&       a   = out_data[1];
 
         for_i(parallelize_, out_size_, [&](int i) {
             a[i] = scale_ * in[i] + bias_;
@@ -77,25 +78,24 @@ public:
         for_i(parallelize_, out_size_, [&](int i) {
             out[i] = h_.f(a, i);
         });
-
-        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void back_propagation(cnn_size_t                index,
+                          const std::vector<vec_t>& in_data,
+                          const std::vector<vec_t>& out_data,
+                          std::vector<vec_t>&       out_grad,
+                          std::vector<vec_t>&       in_grad) override {
+        vec_t&       prev_delta = out_grad[0];
+        vec_t&       curr_delta = out_grad[1];
 
-        const vec_t& prev_out = prev_->output(index);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = ws.prev_delta_;
+        this->backward_activation(prev_delta, out_data[0], curr_delta);
 
         for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta[i] = current_delta[i] * scale_ * prev_h.df(prev_out[i]);
+            prev_delta[i] = curr_delta[i] * scale_;
         });
-
-        return prev_->back_propagation(prev_delta, index);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
+   /* const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
@@ -104,7 +104,7 @@ public:
         });
 
         return prev_->back_propagation_2nd(prev_delta2_);
-    }
+    }*/
 
 protected:
     float_t scale_, bias_;

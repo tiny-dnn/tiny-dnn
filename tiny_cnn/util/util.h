@@ -342,6 +342,8 @@ struct index3d {
     T depth_;
 };
 
+typedef index3d<cnn_size_t> shape3d;
+
 template <typename T>
 bool operator == (const index3d<T>& lhs, const index3d<T>& rhs) {
     return (lhs.width_ == rhs.width_) && (lhs.height_ == rhs.height_) && (lhs.depth_ == rhs.depth_);
@@ -360,6 +362,17 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     return s;
 }
 
+template <typename Stream, typename T>
+Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
+    s << "{";
+    for (cnn_size_t i = 0; i < d.size(); i++) {
+        if (i) s << ",";
+        s << "[" << d[i] << "]";
+    }
+    s << "}";
+    return s;
+}
+
 // equivalent to std::to_string, which android NDK doesn't support
 template <typename T>
 std::string to_string(T value) {
@@ -369,17 +382,8 @@ std::string to_string(T value) {
 }
 
 // boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
-    using layer_base::out_size_; \
-    using layer_base::parallelize_; \
-    using layer_base::next_; \
-    using layer_base::prev_; \
-    using layer_base::W_; \
-    using layer_base::b_; \
-    using layer_base::Whessian_; \
-    using layer_base::bhessian_; \
-    using layer_base::prev_delta2_; \
-    using layer<Activation>::h_
+#define CNN_USE_LAYER_MEMBERS using layer_base::parallelize_; \
+    using feedforward_layer<Activation>::h_
 
 
 #define CNN_LOG_VECTOR(vec, name)
@@ -399,6 +403,25 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
     std::cout << std::endl;
 }
 */
+
+
+template <typename T, typename Pred, typename Sum>
+cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
+    size_t sum = 0;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (p(i)) sum += s(vec[i]);
+    }
+    return sum;
+}
+
+template <typename T, typename Pred>
+std::vector<T> filter(const std::vector<T>& src, Pred p) {
+    std::vector<T> dst;
+    for (cnn_size_t i = 0; i < src.size(); i++)
+        if (p(i)) dst.push_back(src[i]);
+    return dst;
+}
+
 
 } // namespace tiny_cnn
 

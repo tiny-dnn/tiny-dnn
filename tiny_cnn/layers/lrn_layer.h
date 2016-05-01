@@ -39,15 +39,15 @@ namespace tiny_cnn {
  * local response normalization
  */
 template<typename Activation>
-class lrn_layer : public layer<Activation> {
+class lrn_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
     lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
                        float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
-        : Base(in_width*in_height*in_channels, in_width*in_height*in_channels, 0, 0),
+        : Base({vector_type::data}),
         in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
 
     size_t param_size() const override {
@@ -68,28 +68,34 @@ public:
 
     std::string layer_type() const override { return "norm"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
-
-        vec_t& a = ws.a_;
-        vec_t& out = ws.output_;
+    void forward_propagation(cnn_size_t index,
+                            const std::vector<vec_t*>& in_data,
+                            std::vector<vec_t*>& out_data) override {
+        vec_t& out = *out_data[0];
+        vec_t& a   = *out_data[1];
 
         if (region_ == norm_region::across_channels) {
-            forward_across(in, a);
+            forward_across(*in_data[0], a);
         }
         else {
-            forward_within(in, a);
+            forward_within(*in_data[0], a);
         }
 
         for_i(parallelize_, out_size_, [&](int i) {
             out[i] = h_.f(a, i);
         });
-        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        CNN_UNREFERENCED_PARAMETER(current_delta);
+    void back_propagation(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
         CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("not implemented");
     }
 

@@ -33,8 +33,8 @@
 #include <map>
 #include <set>
 
+#include "tiny_cnn/nodes.h"
 #include "tiny_cnn/util/util.h"
-#include "tiny_cnn/layers/layers.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/activations/activation_function.h"
 
@@ -90,36 +90,24 @@ enum grad_check_mode {
     GRAD_CHECK_RANDOM ///< check 10 randomly selected weights
 };
 
-template<typename LossFunction, typename Optimizer>
-class network 
+template <typename NetType>
+class network;
+
+template <typename Layer>
+network<sequential>& operator << (network<sequential>& n, Layer&& l);
+
+template<typename NetType>
+class network
 {
 public:
-    typedef LossFunction E;
-
     explicit network(const std::string& name = "") : name_(name) {}
 
-    /**
-     * return input dims of network
-     **/
-    cnn_size_t in_dim() const         { return layers_.head()->in_size(); }
-
-    /**
-     * return output dims of network
-     **/
-    cnn_size_t out_dim() const        { return layers_.tail()->out_size(); }
-
     std::string  name() const           { return name_; }
-    Optimizer&   optimizer()            { return optimizer_; }
 
     /**
      * explicitly initialize weights of all layers
      **/
     void         init_weight()          { layers_.init_weight(); }
-
-    /**
-     * add one layer to tail(output-side)
-     **/
-    void         add(std::shared_ptr<layer_base> layer) { layers_.add(layer); }
 
     /**
      * executes forward-propagation and returns output
@@ -132,6 +120,7 @@ public:
     float_t      predict_max_value(const vec_t& in) {
         return fprop_max(in);
     }
+
     /**
      * executes forward-propagation and returns maximum output index
      **/
@@ -163,8 +152,9 @@ public:
      * @param n_threads          number of tasks
      * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
      */
-    template <typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
-    bool train(const std::vector<vec_t>& in,
+    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate, typename T>
+    bool train(Optimizer&                optimizer,
+               const std::vector<vec_t>& in,
                const std::vector<T>&     t,
                size_t                    batch_size,
                int                       epoch,
@@ -176,29 +166,27 @@ public:
                const std::vector<vec_t>* t_cost = nullptr
                )
     {
-        check_training_data(in, t);
+        //check_training_data(in, t);
         check_target_cost_matrix(t, t_cost);
         set_netphase(net_phase::train);
-        layers_.set_worker_count(n_threads);
-        if (reset_weights)
-            init_weight();
-        layers_.set_parallelize(batch_size < CNN_TASK_SIZE);
-        optimizer_.reset();
+        net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
+
+        for (auto n : net_)
+            n->set_parallelize(batch_size < CNN_TASK_SIZE);
+        optimizer.reset();
 
         for (int iter = 0; iter < epoch; iter++) {
-            if (optimizer_.requires_hessian())
-                calc_hessian(in, t_cost);
             for (size_t i = 0; i < in.size(); i+=batch_size) {
-                train_once(&in[i], &t[i],
+                train_once<Error>(optimizer, &in[i], &t[i],
                            static_cast<int>(std::min(batch_size, in.size() - i)),
                            n_threads,
                            get_target_cost_sample_pointer(t_cost, i));
                 on_batch_enumerate();
 
-                if (i % 100 == 0 && layers_.is_exploded()) {
-                    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
-                    return false;
-                }
+                //if (i % 100 == 0 && layers_.is_exploded()) {
+                //    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
+                //    return false;
+                //}
             }
             on_epoch_enumerate();
         }
@@ -208,10 +196,10 @@ public:
     /**
      * training conv-net without callback
      **/
-    template<typename T>
-    bool train(const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
+    template<typename Error, typename Optimizer, typename T>
+    bool train(Optimizer& optimizer, const std::vector<vec_t>& in, const std::vector<T>& t, size_t batch_size = 1, int epoch = 1) {
         set_netphase(net_phase::train);
-        return train(in, t, batch_size, epoch, nop, nop);
+        return train<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
     }
 
     /**
@@ -220,8 +208,8 @@ public:
      */
     void set_netphase(net_phase phase)
     {
-        for (size_t i = 0; i != layers_.depth(); ++i) {
-            layers_[i]->set_context(phase);
+        for (auto n : net_) {
+            n->set_context(phase);
         }
     }
 
@@ -272,9 +260,7 @@ public:
      **/
     void save(std::ostream& os) const {
         os.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
-
-        auto l = layers_.head();
-        while (l) { l->save(os); l = l->next(); }
+        net_.save(os);
     }
 
     /**
@@ -283,9 +269,7 @@ public:
      **/
     void load(std::istream& is) {
         is.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
-
-        auto l = layers_.head();
-        while (l) { l->load(is); l = l->next(); }
+        net_.load(is);
     }
     
     /**
@@ -302,126 +286,8 @@ public:
 			data.push_back(temp);
 		fclose(stream);
 
-		auto l = layers_.head();
-		int idx = 0;
-		while (l) {
-			l->load(data, idx);
-			l = l->next();
-		}
+		net_.load(data);
 	}
-    
-    /**
-     * checking gradients calculated by bprop
-     * detail information:
-     * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
-     **/
-    bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode) {
-        assert(!layers_.empty());
-        std::vector<vec_t> v;
-        label2vector(t, data_size, &v);
-
-        auto current = layers_.head();
-
-        while ((current = current->next()) != 0) { // ignore first input layer
-            vec_t& w = current->weight();
-            vec_t& b = current->bias();
-            vec_t& dw = current->weight_diff(0);
-            vec_t& db = current->bias_diff(0);
-
-            if (w.empty()) continue;
-            
-            switch (mode) {
-            case GRAD_CHECK_ALL:
-                for (int i = 0; i < (int)w.size(); i++)
-                    if (!calc_delta(in, &v[0], data_size, w, dw, i, eps)) return false;
-                for (int i = 0; i < (int)b.size(); i++)
-                    if (!calc_delta(in, &v[0], data_size, b, db, i, eps)) return false;
-                break;
-            case GRAD_CHECK_RANDOM:
-                for (int i = 0; i < 10; i++)
-                    if (!calc_delta(in, &v[0], data_size, w, dw, uniform_idx(w), eps)) return false;
-                for (int i = 0; i < 10; i++)
-                    if (!calc_delta(in, &v[0], data_size, b, db, uniform_idx(b), eps)) return false;
-                break;
-            default:
-                throw nn_error("unknown grad-check type");
-            }
-        }
-        return true;
-    }
-
-    template <typename L, typename O>
-    bool has_same_weights(const network<L, O>& others, float_t eps) const {
-        auto h1 = layers_.head();
-        auto h2 = others.layers_.head();
-
-        while (h1 && h2) {
-            if (!h1->has_same_weights(*h2, eps))
-                return false;
-            h1 = h1->next();
-            h2 = h2->next();
-        }
-        return true;
-    }
-
-    /**
-     * return index-th layer as <T>
-     * throw nn_error if index-th layer cannot be converted to T
-     **/
-    template <typename T>
-    const T& at(size_t index) const {
-        return layers_.at<T>(index);
-    }
-
-    /**
-     * return raw pointer of index-th layer
-     **/
-    const layer_base* operator [] (size_t index) const {
-        return layers_[index];
-    }
-
-    /**
-     * return raw pointer of index-th layer
-     **/
-    layer_base* operator [] (size_t index) {
-        return layers_[index];
-    }
-
-    /**
-     * number of layers
-     **/
-    size_t depth() const {
-        return layers_.depth();
-    }
-
-    /**
-     * input shape (width x height x channels)
-     **/
-    index3d<cnn_size_t> in_shape() const {
-        return layers_.head()->in_shape();
-    }
-
-    /**
-     * set weight initializer to all layers
-     **/
-    template <typename WeightInit>
-    network& weight_init(const WeightInit& f) {
-        auto ptr = std::make_shared<WeightInit>(f);
-        for (size_t i = 0; i < depth(); i++)
-          layers_[i]->weight_init(ptr);
-        return *this;
-    }
-
-    /**
-     * set bias initializer to all layers
-     **/
-    template <typename BiasInit>
-    network& bias_init(const BiasInit& f) { 
-        auto ptr = std::make_shared<BiasInit>(f);
-        for (size_t i = 0; i < depth(); i++)
-            layers_[i]->bias_init(ptr);
-        return *this;
-    }
 
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
@@ -434,6 +300,9 @@ protected:
     }
 private:
 
+    template <typename Layer>
+    friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
+
     void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
         cnn_size_t outdim = out_dim();
 
@@ -443,8 +312,8 @@ private:
         vec->reserve(num);
         for (int i = 0; i < num; i++) {
             assert(t[i] < outdim);
-            vec->emplace_back(outdim, target_value_min());
-            vec->back()[t[i]] = target_value_max();
+            vec->emplace_back(outdim, net_.target_value_min());
+            vec->back()[t[i]] = net_.target_value_max();
         }
     }
 
@@ -453,10 +322,11 @@ private:
      *
      * @param size is the number of data points to use in this batch
      */
-    void train_once(const vec_t* in, const label_t* t, int size, const int nbThreads, const vec_t* t_cost) {
+    template <typename E, typename Optimizer>
+    void train_once(Optimizer& optimizer, const vec_t* in, const label_t* t, int size, const int nbThreads, const vec_t* t_cost) {
         std::vector<vec_t> v;
         label2vector(t, size, &v);
-        train_once(in, &v[0], size, nbThreads, t_cost);
+        train_once<E>(optimizer, in, &v[0], size, nbThreads, t_cost);
     }
 
     /**
@@ -464,12 +334,13 @@ private:
      *
      * @param size is the number of data points to use in this batch
      */
-    void train_once(const vec_t* in, const vec_t* t, int size, const int nbThreads, const vec_t* t_cost) {
+    template <typename E, typename Optimizer>
+    void train_once(Optimizer& optimizer, const vec_t* in, const vec_t* t, int size, const int nbThreads, const vec_t* t_cost) {
         if (size == 1) {
-            bprop(fprop(in[0]), t[0], 0, t_cost);
-            layers_.update_weights(&optimizer_, 1, 1);
+            bprop<E>(fprop(in[0]), t[0], 0, t_cost);
+            net_.update_weights(&optimizer, 1, 1);
         } else {
-            train_onebatch(in, t, size, nbThreads, t_cost);
+            train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
         }
     }   
 
@@ -480,8 +351,11 @@ private:
      *
      * @param batch_size the number of data points to use in this batch 
      */
-    void train_onebatch(const vec_t* in, const vec_t* t, int batch_size, const int num_tasks, const vec_t* t_cost) {
+    template <typename E, typename Optimizer>
+    void train_onebatch(Optimizer& optimizer, const vec_t* in, const vec_t* t, int batch_size, const int num_tasks, const vec_t* t_cost) {
         int num_threads = std::min(batch_size, num_tasks);
+
+        net_.set_worker_count(num_threads);
 
         // number of data points to use in each thread
         int data_per_thread = (batch_size + num_threads - 1) / num_threads;
@@ -493,11 +367,11 @@ private:
 
             // loop over data points in this batch assigned to thread i
             for (int j = start_index; j < end_index; ++j)
-                bprop(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : nullptr);
+                bprop<E>(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : nullptr);
         }, 1);
         
         // merge all dW and update W by optimizer
-        layers_.update_weights(&optimizer_, num_threads, batch_size);
+        net_.update_weights(&optimizer, num_threads, batch_size);
     }
 
     void calc_hessian(const std::vector<vec_t>& in, const std::vector<vec_t>* t_cost, int size_initialize_hessian = 500) {
@@ -523,10 +397,11 @@ private:
         return false;
     }
 
-    const vec_t& fprop(const vec_t& in, int idx = 0) {
+    vec_t fprop(const vec_t& in, int idx = 0) {
         if (in.size() != (size_t)in_dim())
-            data_mismatch(*layers_[0], in);
-        return layers_.head()->forward_propagation(in, idx);
+            data_mismatch(**net_.begin(), in);
+
+        return net_.forward({in}, idx)[0];
     }
 
     float_t get_loss(const vec_t& out, const vec_t& t) {
@@ -534,6 +409,14 @@ private:
         assert(out.size() == t.size());
         for(size_t i = 0; i < out.size(); i++){ e += E::f(out[i], t[i]); }
         return e;
+    }
+
+    cnn_size_t out_dim() const {
+        return net_.out_data_size();
+    }
+
+    cnn_size_t in_dim() const {
+        return net_.in_data_size();
     }
 
     void bprop_2nd(const vec_t& out, const vec_t* t_cost) {
@@ -554,30 +437,15 @@ private:
         layers_.tail()->back_propagation_2nd(delta);
     }
 
+    template <typename E>
     void bprop(const vec_t& out, const vec_t& t, int idx, const vec_t* t_cost) {
-        vec_t delta(out_dim());
-        const activation::function& h = layers_.tail()->activation_function();
-
-        if (is_canonical_link(h)) {
-            // we have a combination of loss function and last layer
-            // output activation function which is such that
-            // dE / da = (dE/dy) * (dy/da) = y - target
-            for_i(out_dim(), [&](int i){ delta[i] = out[i] - t[i]; });
-        } else {
-            vec_t dE_dy = gradient<E>(out, t);
-
-            // delta = dE/da = (dE/dy) * (dy/da)
-            for (size_t i = 0; i < out_dim(); i++) {
-                vec_t dy_da = h.df(out, i);
-                delta[i] = vectorize::dot(&dE_dy[0], &dy_da[0], out_dim());
-            }
-        }
+        vec_t delta = gradient<E>(out, t);
 
         if (t_cost) {
             for_i(out_dim(), [&](int i) { delta[i] *= (*t_cost)[i]; });
         }
 
-        layers_.tail()->back_propagation(delta, idx);
+        net_.backward({delta}, idx);
     }
 
     bool calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index, double eps) {
@@ -680,12 +548,8 @@ private:
         }
     }
 
-    float_t target_value_min() const { return layers_.tail()->activation_function().scale().first; }
-    float_t target_value_max() const { return layers_.tail()->activation_function().scale().second; }
-
     std::string name_;
-    Optimizer optimizer_;
-    layers layers_;
+    NetType net_;
 };
 
 /**
@@ -725,20 +589,20 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
     return res;
 }
 
-template <typename L, typename O, typename Layer>
-network<L, O>& operator << (network<L, O>& n, Layer&& l) {
-    n.add(std::make_shared<typename std::remove_reference<Layer>::type>(std::forward<Layer>(l)));
+template <typename Layer>
+network<sequential>& operator << (network<sequential>& n, Layer&& l) {
+    n.net_.add(std::make_shared<typename std::remove_reference<Layer>::type>(std::forward<Layer>(l)));
     return n;
 }
 
-template <typename L, typename O, typename Char, typename CharTraits>
-std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const network<L, O>& n) {
+template <typename NetType, typename Char, typename CharTraits>
+std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const network<NetType>& n) {
     n.save(os);
     return os;
 }
 
-template <typename L, typename O, typename Char, typename CharTraits>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, network<L, O>& n) {
+template <typename NetType, typename Char, typename CharTraits>
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, network<NetType>& n) {
     n.load(os);
     return os;
 }
