@@ -423,6 +423,45 @@ std::vector<T> filter(const std::vector<T>& src, Pred p) {
 }
 
 
+enum class vector_type : int32_t {
+    // 0x0001XXX : in/out data
+    data = 0x0001000, // input/output data, fed by other layer or input channel
+
+                      // 0x0002XXX : trainable parameters, updated for each back propagation
+                      weight = 0x0002000,
+                      bias = 0x0002001,
+
+                      label = 0x0004000,
+                      aux = 0x0010000 // layer-specific storage
+};
+
+inline vector_type operator & (vector_type lhs, vector_type rhs) {
+    return (vector_type)(static_cast<int32_t>(lhs) & static_cast<int32_t>(rhs));
+}
+
+inline bool is_trainable_weight(vector_type vtype) {
+    return (vtype & vector_type::weight) == vector_type::weight;
+}
+
+inline std::vector<vector_type> std_input_order(bool has_bias) {
+    if (has_bias) {
+        return{ vector_type::data, vector_type::weight, vector_type::bias };
+    }
+    else {
+        return{ vector_type::data, vector_type::weight };
+    }
+}
+
+inline std::vector<vector_type> std_output_order(bool has_activation) {
+    if (has_activation) {
+        return{ vector_type::data, vector_type::aux };
+    }
+    else {
+        return{ vector_type::data };
+    }
+}
+
+
 } // namespace tiny_cnn
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1800)

@@ -107,7 +107,7 @@ public:
     /**
      * explicitly initialize weights of all layers
      **/
-    void         init_weight()          { layers_.init_weight(); }
+    void         init_weight()          { net_.setup(true, 1); }
 
     /**
      * executes forward-propagation and returns output
@@ -244,12 +244,13 @@ public:
     /**
      * calculate loss value (the smaller, the better) for regression task
      **/
+    template <typename E>
     float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
         float_t sum_loss = float_t(0);
 
         for (size_t i = 0; i < in.size(); i++) {
             const vec_t predicted = predict(in[i]);
-            sum_loss += get_loss(predict(in[i]), t[i]);
+            sum_loss += get_loss<E>(predict(in[i]), t[i]);
         }
         return sum_loss;
     }
@@ -289,6 +290,110 @@ public:
 		net_.load(data);
 	}
 
+    /**
+    * checking gradients calculated by bprop
+    * detail information:
+    * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
+    **/
+    template <typename E>
+    bool gradient_check(const vec_t* in, const label_t* t, int data_size, float_t eps, grad_check_mode mode) {
+        std::vector<vec_t> v;
+        net_.label2vec(t, data_size, &v);
+
+        for (auto current : net_) { // ignore first input layer
+            vec_t& w = *current->get_weights()[0];
+            vec_t& b = *current->get_weights()[1];
+            vec_t& dw = *current->get_grads()[0];
+            vec_t& db = *current->get_grads()[1];
+
+            if (w.empty()) continue;
+
+            switch (mode) {
+            case GRAD_CHECK_ALL:
+                for (int i = 0; i < (int)w.size(); i++)
+                    if (!calc_delta<E>(in, &v[0], data_size, w, dw, i, eps)) return false;
+                for (int i = 0; i < (int)b.size(); i++)
+                    if (!calc_delta<E>(in, &v[0], data_size, b, db, i, eps)) return false;
+                break;
+            case GRAD_CHECK_RANDOM:
+                for (int i = 0; i < 10; i++)
+                    if (!calc_delta<E>(in, &v[0], data_size, w, dw, uniform_idx(w), eps)) return false;
+                for (int i = 0; i < 10; i++)
+                    if (!calc_delta<E>(in, &v[0], data_size, b, db, uniform_idx(b), eps)) return false;
+                break;
+            default:
+                throw nn_error("unknown grad-check type");
+            }
+        }
+        return true;
+    }
+
+
+    /**
+    * return raw pointer of index-th layer
+    **/
+    const layer_base* operator [] (size_t index) const {
+        return layers_[index];
+    }
+
+    /**
+    * return raw pointer of index-th layer
+    **/
+    layer_base* operator [] (size_t index) {
+        return net_[index];
+    }
+
+    /**
+    * return index-th layer as <T>
+    * throw nn_error if index-th layer cannot be converted to T
+    **/
+    template <typename T>
+    const T& at(size_t index) const {
+        return net_.at<T>(index);
+    }
+
+    cnn_size_t out_data_size() const {
+        return net_.out_data_size();
+    }
+
+    cnn_size_t in_data_size() const {
+        return net_.in_data_size();
+    }
+
+
+    /**
+    * set weight initializer to all layers
+    **/
+    template <typename WeightInit>
+    network& weight_init(const WeightInit& f) {
+        auto ptr = std::make_shared<WeightInit>(f);
+        for (auto& l : net_)
+            l->weight_init(ptr);
+        return *this;
+    }
+
+    /**
+    * set bias initializer to all layers
+    **/
+    template <typename BiasInit>
+    network& bias_init(const BiasInit& f) {
+        auto ptr = std::make_shared<BiasInit>(f);
+        for (auto& l : net_)
+            l->bias_init(ptr);
+        return *this;
+    }
+
+    template <typename T>
+    bool has_same_weights(const network<T>& rhs, float_t eps) const {
+        auto first1 = net_.begin();
+        auto first2 = rhs.net_.begin();
+        auto last1 = net_.end();
+        auto last2 = rhs.net_.end();
+
+        for (; first1 != last1 && first2 != last2; ++first1, ++first2)
+            if (!(*first1)->has_same_weights(*first2->get(), eps)) return false;
+        return true;
+    }
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
@@ -303,20 +408,6 @@ private:
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
-    void label2vector(const label_t* t, int num, std::vector<vec_t> *vec) const {
-        cnn_size_t outdim = out_dim();
-
-        assert(num > 0);
-        assert(outdim > 0);
-
-        vec->reserve(num);
-        for (int i = 0; i < num; i++) {
-            assert(t[i] < outdim);
-            vec->emplace_back(outdim, net_.target_value_min());
-            vec->back()[t[i]] = net_.target_value_max();
-        }
-    }
-
     /**
      * train on one minibatch
      *
@@ -325,7 +416,7 @@ private:
     template <typename E, typename Optimizer>
     void train_once(Optimizer& optimizer, const vec_t* in, const label_t* t, int size, const int nbThreads, const vec_t* t_cost) {
         std::vector<vec_t> v;
-        label2vector(t, size, &v);
+        net_.label2vec(t, size, &v);
         train_once<E>(optimizer, in, &v[0], size, nbThreads, t_cost);
     }
 
@@ -398,12 +489,13 @@ private:
     }
 
     vec_t fprop(const vec_t& in, int idx = 0) {
-        if (in.size() != (size_t)in_dim())
+        if (in.size() != (size_t)in_data_size())
             data_mismatch(**net_.begin(), in);
 
         return net_.forward({in}, idx)[0];
     }
 
+    template <typename E>
     float_t get_loss(const vec_t& out, const vec_t& t) {
         float_t e = float_t(0);
         assert(out.size() == t.size());
@@ -411,43 +503,7 @@ private:
         return e;
     }
 
-    cnn_size_t out_dim() const {
-        return net_.out_data_size();
-    }
-
-    cnn_size_t in_dim() const {
-        return net_.in_data_size();
-    }
-
-    void bprop_2nd(const vec_t& out, const vec_t* t_cost) {
-        vec_t delta(out_dim());
-        const activation::function& h = layers_.tail()->activation_function();
-
-        if (is_canonical_link(h)) {
-            for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]);});
-        } else {
-            for_i(out_dim(), [&](int i){ delta[i] = target_value_max() * h.df(out[i]) * h.df(out[i]);}); // FIXME
-        }
-
-        if (t_cost) {
-            // CHECKME - is this correct?
-            for_i(out_dim(), [&](int i) { delta[i] *= (*t_cost)[i]; });
-        }
-
-        layers_.tail()->back_propagation_2nd(delta);
-    }
-
     template <typename E>
-    void bprop(const vec_t& out, const vec_t& t, int idx, const vec_t* t_cost) {
-        vec_t delta = gradient<E>(out, t);
-
-        if (t_cost) {
-            for_i(out_dim(), [&](int i) { delta[i] *= (*t_cost)[i]; });
-        }
-
-        net_.backward({delta}, idx);
-    }
-
     bool calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index, double eps) {
         static const float_t delta = 1e-10;
 
@@ -458,21 +514,32 @@ private:
 
         w[check_index] = prev_w + delta;
         float_t f_p = float_t(0);
-        for(int i = 0; i < data_size; i++) { f_p += get_loss(fprop(in[i]), v[i]); }
+        for (int i = 0; i < data_size; i++) { f_p += get_loss<E>(fprop(in[i]), v[i]); }
 
         float_t f_m = float_t(0);
         w[check_index] = prev_w - delta;
-        for(int i = 0; i < data_size; i++) { f_m += get_loss(fprop(in[i]), v[i]); }
+        for (int i = 0; i < data_size; i++) { f_m += get_loss<E>(fprop(in[i]), v[i]); }
 
         float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        for(int i = 0; i < data_size; i++){ bprop(fprop(in[i]), v[i], 0, nullptr); }
+        for (int i = 0; i < data_size; i++) { bprop<E>(fprop(in[i]), v[i], 0, nullptr); }
 
         float_t delta_by_bprop = dw[check_index];
 
         return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
+    }
+
+    template <typename E>
+    void bprop(const vec_t& out, const vec_t& t, int idx, const vec_t* t_cost) {
+        vec_t delta = gradient<E>(out, t);
+
+        if (t_cost) {
+            for_i(out_data_size(), [&](int i) { delta[i] *= (*t_cost)[i]; });
+        }
+
+        net_.backward({delta}, idx);
     }
 
     void check_t(size_t i, label_t t, cnn_size_t dim_out) {
@@ -494,8 +561,8 @@ private:
 
     template <typename T>
     void check_training_data(const std::vector<vec_t>& in, const std::vector<T>& t) {
-        cnn_size_t dim_in = in_dim();
-        cnn_size_t dim_out = out_dim();
+        cnn_size_t dim_in = in_data_size();
+        cnn_size_t dim_out = out_data_size();
 
         if (in.size() != t.size())
             throw nn_error("number of training data must be equal to label data");

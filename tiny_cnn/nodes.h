@@ -74,9 +74,17 @@ public:
     iterator end() { return nodes_.end(); }
     const_iterator begin() const { return nodes_.begin(); }
     const_iterator end() const { return nodes_.end(); }
-
+    layer_base* operator [] (size_t index) { return nodes_[index].get(); }
+    const layer_base* operator [] (size_t index) const { return nodes_[index].get(); }
     cnn_size_t in_data_size() const { return nodes_.front()->in_data_size(); }
     cnn_size_t out_data_size() const { return nodes_.back()->out_data_size(); }
+
+    template <typename T>
+    const T& at(size_t index) const {
+        const T* v = dynamic_cast<const T*>(nodes_[index + 1].get());
+        if (v) return *v;
+        throw nn_error("failed to cast");
+    }
 
     // @todo: multiple output
     virtual float_t target_value_min(int out_channel = 0) const {
@@ -89,6 +97,17 @@ public:
     virtual void save(std::ostream& os) const = 0;
     virtual void load(std::istream& is) = 0;
     virtual void load(const std::vector<float_t>& vec) = 0;
+
+    void label2vec(const label_t* t, int num, std::vector<vec_t> *vec) const {
+        cnn_size_t outdim = out_data_size();
+
+        vec->reserve(num);
+        for (int i = 0; i < num; i++) {
+            assert(t[i] < outdim);
+            vec->emplace_back(outdim, target_value_min());
+            vec->back()[t[i]] = target_value_max();
+        }
+    }
 protected:
     std::vector<nodeptr_t> nodes_;
 };
@@ -105,7 +124,7 @@ public:
         }
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
-            (*l)->backward(&storage_, worker_index);
+            (*l)->backward(worker_index);
         }
     }
 
@@ -116,15 +135,15 @@ public:
         }
 
         for (auto l : nodes_) {
-            l->forward(&storage_, worker_index);
+            l->forward(worker_index);
         }
 
-        return nodes_.back()->output(storage_, worker_index);
+        return nodes_.back()->output(worker_index);
     }
 
     void update_weights(optimizer *opt, int num_workers, int batch_size) override {
         for (auto l : nodes_) {
-            l->update_weight(opt, &storage_, num_workers, batch_size);
+            l->update_weight(opt, num_workers, batch_size);
         }
     }
 
@@ -149,18 +168,20 @@ public:
 
     void save(std::ostream& os) const {
         for (auto& l : nodes_)
-            l->save(os, storage_);
+            l->save(os);
     }
 
     void load(std::istream& is) {
+        setup(false, 1);
         for (auto& l : nodes_)
-            l->load(is, storage_);
+            l->load(is);
     }
 
     void load(const std::vector<float_t>& vec) {
         int idx = 0;
+        setup(false, 1);
         for (auto& l : nodes_)
-            l->load(vec, idx, storage_);
+            l->load(vec, idx);
     }
 private:
 
@@ -185,7 +206,7 @@ public:
         }
 
         for (int i = (int)layer_names_.size() - 1; i >= 0; i--)
-            get_by_bame(layer_names_[i])->backward(&storage_, worker_index);
+            get_by_bame(layer_names_[i])->backward(worker_index);
     }
 
     std::vector<vec_t> forward(const std::vector<vec_t>& in_data, int worker_index) {
@@ -200,14 +221,14 @@ public:
 
         // propagate to output
         for (int i = 0; i < (int)layer_names_.size(); i++)
-            get_by_bame(layer_names_[i])->forward(&storage_, worker_index);
+            get_by_bame(layer_names_[i])->forward(worker_index);
 
-        return get_by_bame(layer_names_.back())->output(storage_, worker_index);
+        return get_by_bame(layer_names_.back())->output(worker_index);
     }
 
     void update_weights(optimizer *opt, int num_workers, int batch_size) {
         for (auto l : nodes_) {
-            l->update_weight(opt, &storage_, num_workers, batch_size);
+            l->update_weight(opt, num_workers, batch_size);
         }
     }
 

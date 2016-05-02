@@ -41,45 +41,6 @@
 
 namespace tiny_cnn {
 
-
-enum class vector_type : int32_t {
-    // 0x0001XXX : in/out data
-    data   = 0x0001000, // input/output data, fed by other layer or input channel
-
-    // 0x0002XXX : trainable parameters, updated for each back propagation
-    weight = 0x0002000,
-    bias   = 0x0002001,
-
-    label  = 0x0004000,
-    aux    = 0x0010000 // layer-specific storage
-};
-
-inline vector_type operator & (vector_type lhs, vector_type rhs) {
-    return (vector_type)(static_cast<int32_t>(lhs) & static_cast<int32_t>(rhs));
-}
-
-inline bool is_trainable_weight(vector_type vtype) {
-    return (vtype & vector_type::weight) == vector_type::weight;
-}
-
-inline std::vector<vector_type> std_input_order(bool has_bias) {
-    if (has_bias) {
-        return { vector_type::data, vector_type::weight, vector_type::bias };
-    }
-    else {
-        return { vector_type::data, vector_type::weight };
-    }
-}
-
-inline std::vector<vector_type> std_output_order(bool has_activation) {
-    if (has_activation) {
-        return { vector_type::data, vector_type::aux };
-    }
-    else {
-        return { vector_type::data };
-    }
-}
-
 /**
  * base class of all kind of NN layers
  **/
@@ -95,7 +56,7 @@ public:
      * @param out_type[M] type of output vector
      **/
     layer_base(const std::vector<vector_type>& in_type, const std::vector<vector_type>& out_type)
-        : parallelize_(true), in_channels_(in_type.size()), out_channels_(out_type.size()),
+        : parallelize_(true), in_channels_(in_type.size()), out_channels_(out_type.size()), s_(nullptr),
           connection_(in_type, out_type)
     {
         weight_init_ = std::make_shared<weight_init::xavier>();
@@ -172,26 +133,36 @@ public:
         return sumif(out_shape(), [&](int i) { return connection_.out_type[i] == vector_type::data; }, [](const shape3d& s) { return s.size(); });
     }
 
-    std::vector<const vec_t*> get_weights(const data_storage& storage) const {
-        std::vector<const vec_t*> vec = storage.get(connection_.in_data);
+    std::vector<const vec_t*> get_weights() const {
+        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(connection_.in_data);
         return filter(vec, [&](int i){ return is_trainable_weight(connection_.in_type[i]); });
     }
 
-    std::vector<vec_t*> get_weights(data_storage& storage) {
-        std::vector<vec_t*> vec = storage.get(connection_.in_data);
+    std::vector<vec_t*> get_weights() {
+        std::vector<vec_t*> vec = s_->get(connection_.in_data);
         return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
     }
 
-    std::vector<const vec_t*> get_grads(const data_storage& storage) const {
-        std::vector<const vec_t*> vec = storage.get(connection_.in_grad);
+    std::vector<vec_t*> get_inputs(cnn_size_t worker_index = 0) {
+        std::vector<vec_t*> vec = s_->get(connection_.in_data, worker_index);
+        return filter(vec, [&](int i) { return connection_.in_type[i] == vector_type::data; });
+    }
+
+    std::vector<vec_t*> get_grads(cnn_size_t worker_index = 0) {
+        std::vector<vec_t*> vec = s_->get(connection_.in_grad, worker_index);
         return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
     }
 
-    std::vector<vec_t> output(const data_storage& storage, int worker_index = 0) const {
+    std::vector<const vec_t*> get_grads(cnn_size_t worker_index = 0) const {
+        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(connection_.in_grad, worker_index);
+        return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+    }
+
+    std::vector<vec_t> output(int worker_index = 0) const {
         std::vector<vec_t> out;
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            if (connection_.out_type[i] == vector_type::data) out.push_back(*storage.get(connection_.out_data[i], worker_index));
+            if (connection_.out_type[i] == vector_type::data) out.push_back(*s_->get(connection_.out_data[i], worker_index));
         }
         return out;
     }
@@ -223,26 +194,40 @@ public:
     virtual size_t connection_size() const = 0;
 
     /////////////////////////////////////////////////////////////////////////
+    // setter
+    template <typename WeightInit>
+    layer_base& weight_init(const WeightInit& f) { weight_init_ = std::make_shared<WeightInit>(f); return *this; }
+
+    template <typename BiasInit>
+    layer_base& bias_init(const BiasInit& f) { bias_init_ = std::make_shared<BiasInit>(f); return *this; }
+
+    template <typename WeightInit>
+    layer_base& weight_init(std::shared_ptr<WeightInit> f) { weight_init_ = f; return *this; }
+
+    template <typename BiasInit>
+    layer_base& bias_init(std::shared_ptr<BiasInit> f) { bias_init_ = f; return *this; }
+
+    /////////////////////////////////////////////////////////////////////////
     // save/load
 
-    virtual void save(std::ostream& os, const data_storage& storage) const {
+    virtual void save(std::ostream& os) const {
         //if (is_exploded()) throw nn_error("failed to save weights because of infinite weight");
-        auto all_weights = get_weights(storage);
+        auto all_weights = get_weights();
 
         for (auto& weight : all_weights)
           for (auto w : *weight)
             os << w <<  " ";
     }
 
-    virtual void load(std::istream& is, data_storage& storage) {
-        auto all_weights = get_weights(storage);
+    virtual void load(std::istream& is) {
+        auto all_weights = get_weights();
         for (auto& weight : all_weights)
           for (auto& w : *weight)
             is >> w;
     }
 
-    virtual void load(std::vector<double> src, int& idx, data_storage& storage) {
-        auto all_weights = get_weights(storage);
+    virtual void load(std::vector<double> src, int& idx) {
+        auto all_weights = get_weights();
         for (auto& weight : all_weights)
           for (auto& w : *weight)
               w = src[idx++];
@@ -291,30 +276,30 @@ public:
      **/
      virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
-     void forward(data_storage *storage, int worker_index) {
+     void forward(int worker_index) {
          std::vector<vec_t*> in_data, out_data;
 
          // organize input/output vectors from storage
-         prepare(connection_.in_data,  storage, worker_index, &in_data);
-         prepare(connection_.out_data, storage, worker_index, &out_data);
+         prepare(connection_.in_data,  s_, worker_index, &in_data);
+         prepare(connection_.out_data, s_, worker_index, &out_data);
 
          forward_propagation(worker_index, in_data, out_data);
      }
 
-     void backward(data_storage *storage, int worker_index) {
+     void backward(int worker_index) {
          std::vector<vec_t*> in_data, out_data, in_grad, out_grad;
 
          // organize input/output vectors from storage
-         prepare(connection_.in_data, storage, worker_index, &in_data);
-         prepare(connection_.out_data, storage, worker_index, &out_data);
-         prepare(connection_.in_grad, storage, worker_index, &in_grad);
-         prepare(connection_.out_grad, storage, worker_index, &out_grad);
+         prepare(connection_.in_data, s_, worker_index, &in_data);
+         prepare(connection_.out_data, s_, worker_index, &out_data);
+         prepare(connection_.in_grad, s_, worker_index, &in_grad);
+         prepare(connection_.out_grad, s_, worker_index, &out_grad);
 
          back_propagation(worker_index, in_data, out_data, out_grad, in_grad);
      }
 
      // allocate & reset weight
-     void setup(data_storage *storage, bool reset_weight, int max_task_size) {
+     void setup(data_storage *storage, bool reset_weight, int max_task_size = CNN_TASK_SIZE) {
         if (in_shape().size() != in_channels_ || out_shape().size() != out_channels_)
             throw nn_error("");
 
@@ -325,6 +310,7 @@ public:
         allocate_grad(out_shape(), connection_.out_grad, connection_.out_type, storage);
 
         init_weight(storage);
+        s_ = storage;
      }
 
      void init_weight(data_storage *storage) {
@@ -343,20 +329,20 @@ public:
          }
      }
 
-     void update_weight(optimizer *o, data_storage *storage, cnn_size_t worker_size, cnn_size_t batch_size) {
+     void update_weight(optimizer *o, cnn_size_t worker_size, cnn_size_t batch_size) {
         size_t in_size = connection_.in_data.size();
 
         for (size_t i = 0; i < in_size; i++) {
             if (is_trainable_weight(connection_.in_type[i])) {
                 vec_t diff;
-                vec_t& target = *storage->get(connection_.in_data[i]);
+                vec_t& target = *s_->get(connection_.in_data[i]);
 
-                storage->merge(connection_.in_grad[i], worker_size, &diff);
+                s_->merge(connection_.in_grad[i], worker_size, &diff);
                 std::transform(diff.begin(), diff.end(), diff.begin(), [&](float_t x) { return x / batch_size; });
 
                 o->update(diff, target);
             }
-            storage->clear(connection_.in_grad[i], worker_size);
+            s_->clear(connection_.in_grad[i], worker_size);
         }
         post_update();
      }
@@ -365,10 +351,25 @@ public:
 
      }
 
+     bool has_same_weights(const layer_base& rhs, float_t eps) const {
+         auto w1 = get_weights();
+         auto w2 = rhs.get_weights();
+         if (w1.size() != w2.size()) return false;
+
+         for (size_t i = 0; i < w1.size(); i++) {
+             if (w1[i]->size() != w2[i]->size()) return false;
+
+             for (size_t j = 0; j < w1[i]->size(); j++)
+                 if (std::abs(w1[i]->at(j) - w2[i]->at(j)) > eps) return false;
+         }
+         return true;
+     }
+
 protected:
     bool parallelize_;
     cnn_size_t in_channels_; // number of input vectors
     cnn_size_t out_channels_; // number of output vectors
+    data_storage* s_;
 
     struct connection {
         connection(const std::vector<vector_type>& in_type, const std::vector<vector_type>& out_type)
