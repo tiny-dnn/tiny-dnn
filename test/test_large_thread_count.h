@@ -7,8 +7,9 @@ namespace tiny_cnn {
 
 TEST(test_large_thread_count, test_large_thread_count) {
 
-    network<mse, adagrad> net;
+    network<sequential> net;
     net << fully_connected_layer<tan_h>(1, 2);
+    adagrad optimizer;
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;
@@ -26,10 +27,10 @@ TEST(test_large_thread_count, test_large_thread_count) {
     const int n_threads = 200;
 
     // test different batch sizes
-    net.train(data, labels, 1, 1, nop, nop, true, n_threads);
-    net.train(data, labels, 100, 1, nop, nop, true, n_threads);
-    net.train(data, labels, 200, 1, nop, nop, true, n_threads);
-    net.train(data, labels, 300, 1, nop, nop, true, n_threads);
+    net.train<mse>(optimizer, data, labels, 1, 1, nop, nop, true, n_threads);
+    net.train<mse>(optimizer, data, labels, 100, 1, nop, nop, true, n_threads);
+    net.train<mse>(optimizer, data, labels, 200, 1, nop, nop, true, n_threads);
+    net.train<mse>(optimizer, data, labels, 300, 1, nop, nop, true, n_threads);
 }
 
 } // namespace tiny-cnn

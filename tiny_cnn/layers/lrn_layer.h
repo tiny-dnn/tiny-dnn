@@ -48,15 +48,8 @@ public:
     lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
                        float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
         : Base({vector_type::data}),
-        in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
+        in_shape_(in_width, in_height, in_channels), out_shape_(in_width, in_height, 1), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
 
-    size_t param_size() const override {
-        return 0;
-    }
-
-    size_t connection_size() const override {
-        return this->in_size() * size_;
-    }
 
     size_t fan_in_size() const override {
         return size_;
@@ -64,6 +57,14 @@ public:
 
     size_t fan_out_size() const override {
         return size_;
+    }
+
+    std::vector<shape3d> in_shape() const override {
+        return { in_shape_ };
+    }
+
+    std::vector<shape3d> out_shape() const override {
+        return { out_shape_, out_shape_ };
     }
 
     std::string layer_type() const override { return "norm"; }
@@ -81,7 +82,7 @@ public:
             forward_within(*in_data[0], a);
         }
 
-        for_i(parallelize_, out_size_, [&](int i) {
+        for_i(parallelize_, out.size(), [&](int i) {
             out[i] = h_.f(a, i);
         });
     }
@@ -96,11 +97,6 @@ public:
         CNN_UNREFERENCED_PARAMETER(out_data);
         CNN_UNREFERENCED_PARAMETER(out_grad);
         CNN_UNREFERENCED_PARAMETER(in_grad);
-        throw nn_error("not implemented");
-    }
-
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        CNN_UNREFERENCED_PARAMETER(current_delta2);
         throw nn_error("not implemented");
     }
 
@@ -149,7 +145,8 @@ private:
             dst[i] -= src[i] * src[i];
     }
 
-    layer_shape_t in_shape_;
+    shape3d in_shape_;
+    shape3d out_shape_;
 
     cnn_size_t size_;
     float_t alpha_, beta_;

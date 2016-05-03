@@ -352,6 +352,12 @@ public:
      **/
      virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
+     std::vector<vec_t> forward(const std::vector<vec_t>& input) { // for test
+         set_in_data(&input[0], input.size(), 0);
+         forward(0);
+         return output(0);
+     }
+
      void forward(int worker_index) {
          std::vector<vec_t*> in_data, out_data;
 

@@ -43,7 +43,7 @@ TEST(lrn, cross) {
         5.0/15.5/15.5 // 5.0 / (1+0.5*(2*2+5*5))^2
     };
 
-    auto out = lrn.forward_propagation(vec_t(in, in + 4), 0);
+    auto out = lrn.forward({vec_t(in, in + 4)})[0];
 
     EXPECT_FLOAT_EQ(expected[0], out[0]);
     EXPECT_FLOAT_EQ(expected[1], out[1]);

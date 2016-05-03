@@ -354,8 +354,6 @@ bool operator != (const index3d<T>& lhs, const index3d<T>& rhs) {
     return !(lhs == rhs);
 }
 
-typedef index3d<cnn_size_t> layer_shape_t;
-
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const index3d<T>& d) {
     s << d.width_ << "x" << d.height_ << "x" << d.depth_;

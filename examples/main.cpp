@@ -30,6 +30,8 @@
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
+using namespace tiny_cnn::layers;
+
 using namespace std;
 
 void sample1_convnet(const string& data_dir_path = "../../data");
@@ -37,6 +39,7 @@ void sample2_mlp();
 void sample3_dae();
 void sample4_dropout();
 void sample5_unbalanced_training_data(const string& data_dir_path = "../../data");
+void sample6_graph();
 
 int main(int argc, char** argv) {
     try {
@@ -360,4 +363,25 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
 
     std::cout << std::endl << "Balanced training (explicitly supplied target costs):" << std::endl;
     nn_balanced.test(test_images, test_labels).print_detail(std::cout);
+}
+
+void sample6_graph()
+{
+    // declare node
+    auto in1 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto in2 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto added = std::make_shared<add>(2, 3);
+    auto out = std::make_shared<linear_layer<relu>>(3);
+
+    // connect
+    (in1, in2) << added;
+    added << out;
+
+    network<graph> net;
+    construct_graph(net, { in1, in2 }, { out });
+
+    auto res = net.predict({ { 2,4,3 },{ -1,2,-5 } })[0];
+
+    // relu({2,4,3} + {-1,2,-5}) = {1,6,0}
+    std::cout << res[0] << "," << res[1] << "," << res[2] << std::endl;
 }

@@ -140,15 +140,15 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     const float_t p1 = 0.9; // p(label == 1 | in == 1)
 
     auto create_net = []() {
-        network<mse, adagrad> net;
+        network<sequential> net;
         net << fully_connected_layer<tan_h>(1, 10)
             << fully_connected_layer<tan_h>(10, 2);
         return net;
     };
 
-    network<mse, adagrad> net_equal_sample_cost = create_net();
-    network<mse, adagrad> net_equal_class_cost  = create_net();
-
+    network<sequential> net_equal_sample_cost = create_net();
+    network<sequential> net_equal_class_cost  = create_net();
+    adagrad optimizer1, optimizer2;
     std::vector<vec_t> data;
     std::vector<label_t> labels;
     const size_t tnum = 1000;
@@ -174,8 +174,8 @@ TEST(target_cost, train_unbalanced_data_1dim) {
 
     // train both networks - one with implicit cost (equal for each sample),
     // and the other with explicit cost (balanced, or equal for each class)
-    net_equal_sample_cost.train(data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, NULL);
-    net_equal_class_cost .train(data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, &balanced_cost);
+    net_equal_sample_cost.train<mse>(optimizer1, data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, NULL);
+    net_equal_class_cost .train<mse>(optimizer2, data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, &balanced_cost);
 
     // count errors
     size_t errors_equal_sample_cost = 0;
@@ -212,14 +212,15 @@ TEST(target_cost, train_unbalanced_data) {
     const float_t noise = 0.25;
 
     auto create_net = []() {
-        network<mse, adagrad> net;
+        network<sequential> net;
         net << fully_connected_layer<tan_h>(2, 10)
             << fully_connected_layer<tan_h>(10, 2);
         return net;
     };
 
-    network<mse, adagrad> net_equal_sample_cost = create_net();
-    network<mse, adagrad> net_equal_class_cost  = create_net();
+    network<sequential> net_equal_sample_cost = create_net();
+    network<sequential> net_equal_class_cost  = create_net();
+    adagrad optimizer1, optimizer2;
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;
@@ -244,8 +245,8 @@ TEST(target_cost, train_unbalanced_data) {
 
     // train both networks - one with implicit cost (equal for each sample),
     // and the other with explicit cost (balanced, or equal for each class)
-    net_equal_sample_cost.train(data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, NULL);
-    net_equal_class_cost .train(data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, &balanced_cost);
+    net_equal_sample_cost.train<mse>(optimizer1, data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, NULL);
+    net_equal_class_cost .train<mse>(optimizer2, data, labels, 10, 100, nop, nop, true, CNN_TASK_SIZE, &balanced_cost);
 
     // count errors
     size_t errors_equal_sample_cost = 0;
