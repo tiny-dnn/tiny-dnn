@@ -74,11 +74,13 @@ inline std::string unique_path() {
 }
 
 vec_t forward_pass(layer_base& src, const vec_t& vec) {
-    return src.forward_propagation(vec, 0);
+    *src.get_inputs()[0]->get_data() = vec;
+    src.forward(0);
+    return src.output()[0];
 }
 
-template <typename L, typename O>
-vec_t forward_pass(network<L, O>& net, const vec_t& vec) {
+template <typename N>
+vec_t forward_pass(network<N>& net, const vec_t& vec) {
     return net.predict(vec);
 }
 
@@ -92,18 +94,18 @@ void serialization_test(T& src, T& dst)
     // write
     {
         std::ofstream ofs(tmp_file_path.c_str());
-        ofs << src;
+        src.save(ofs);
     }
 
     // read
     {
         std::ifstream ifs(tmp_file_path.c_str());
-        ifs >> dst;
+        dst.load(ifs);
     }
 
     std::remove(tmp_file_path.c_str());
 
-    vec_t v(src.in_dim());
+    vec_t v(src.in_data_size());
     uniform_rand(v.begin(), v.end(), -1.0, 1.0);
 
     EXPECT_TRUE(src.has_same_weights(dst, 1E-5));

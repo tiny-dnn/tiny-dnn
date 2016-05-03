@@ -34,12 +34,84 @@
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/util/weight_init.h"
-#include "tiny_cnn/data_storage.h"
 #include "tiny_cnn/optimizers/optimizer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
+
+class layer_base;
+class node;
+inline void connect_node(std::shared_ptr<node> head, std::shared_ptr<node> tail, cnn_size_t head_index, cnn_size_t tail_index);
+inline void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base> tail, cnn_size_t head_index, cnn_size_t tail_index);
+
+enum class node_type {
+   layer,
+   data
+};
+
+class node {
+public:
+    node(node_type ntype) : ntype_(ntype), in_fixed_(false), out_fixed_(false) {}
+    node(node_type ntype, cnn_size_t in_size, cnn_size_t out_size)
+    : ntype_(ntype), in_fixed_(true), out_fixed_(true), prev_(in_size), next_(out_size) {}
+
+    virtual bool is_layer() const { return ntype_ == node_type::layer; }
+    virtual bool is_data() const { return ntype_ == node_type::data; }
+
+    const std::vector<std::shared_ptr<node>>& prev() const { return prev_; }
+    const std::vector<std::shared_ptr<node>>& next() const { return next_; }
+
+protected:
+    node() = delete;
+    node_type ntype_;
+    bool in_fixed_;
+    bool out_fixed_;
+    friend void connect_node(std::shared_ptr<node> head, std::shared_ptr<node> tail, cnn_size_t head_index, cnn_size_t tail_index);
+    friend void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base> tail, cnn_size_t head_index, cnn_size_t tail_index);
+
+    mutable std::vector<std::shared_ptr<node>> prev_;
+    mutable std::vector<std::shared_ptr<node>> next_;
+};
+
+class data_node : public node {
+public:
+    data_node(cnn_size_t size, bool has_grad = false, bool worker_specific_data = false, bool worker_specific_grad = false)
+      : node(node_type::data), worker_specific_data_(worker_specific_data), worker_specific_grad_(worker_specific_grad), data_(1, vec_t(size)) {
+          if (has_grad) grad_.resize(1, vec_t(size));
+      }
+    data_node(const shape3d& shape, vector_type vtype)
+        : node(node_type::data), worker_specific_data_(!is_trainable_weight(vtype)), worker_specific_grad_(true), data_(1, vec_t(shape.size()))
+    {
+        grad_.resize(1, vec_t(shape.size()));
+    }
+
+    void merge_grads(cnn_size_t worker_size, vec_t *dst) {
+        *dst = grad_[0];
+
+        for (cnn_size_t i = 1; i < worker_size; i++)
+            vectorize::reduce<float_t>(&grad_[i][0], dst->size(), &(*dst)[0]);
+    }
+
+    void clear_grads(cnn_size_t worker_size) {
+        for (cnn_size_t i = 0; i < worker_size; i++)
+            std::fill(grad_[i].begin(), grad_[i].end(), (float_t)0);
+    }
+
+    void         set_worker_size(cnn_size_t size) {
+        if (worker_specific_data_) data_.resize(size, data_[0]);
+        if (worker_specific_grad_) grad_.resize(size, grad_[0]);
+    }
+    vec_t*       get_data(cnn_size_t worker_index = 0)     { return worker_specific_data_ ? &data_[worker_index] : &data_[0]; }
+    vec_t*       get_gradient(cnn_size_t worker_index = 0) { return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0]; }
+    const vec_t* get_data(cnn_size_t worker_index = 0)     const { return worker_specific_data_ ? &data_[worker_index] : &data_[0]; }
+    const vec_t* get_gradient(cnn_size_t worker_index = 0) const { return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0]; }
+private:
+    bool worker_specific_data_;
+    bool worker_specific_grad_;
+    std::vector<vec_t> data_;
+    std::vector<vec_t> grad_;
+};
 
 /**
  * base class of all kind of NN layers
@@ -51,7 +123,7 @@ namespace tiny_cnn {
  * - out_shape           ... specify output data shapes
  * - layer_type          ... name of layer
  **/
-class layer_base {
+class layer_base : public node {
 public:
     friend void connection_mismatch(const layer_base& from, const layer_base& to);
 
@@ -63,8 +135,8 @@ public:
      * @param out_type[M] type of output vector
      **/
     layer_base(const std::vector<vector_type>& in_type, const std::vector<vector_type>& out_type)
-        : parallelize_(true), in_channels_(in_type.size()), out_channels_(out_type.size()), s_(nullptr),
-          connection_(in_type, out_type)
+        : node(node_type::layer, in_type.size(), out_type.size()), parallelize_(true), in_channels_(in_type.size()), out_channels_(out_type.size()),
+          in_type_(in_type), out_type_(out_type)
     {
         weight_init_ = std::make_shared<weight_init::xavier>();
         bias_init_ = std::make_shared<weight_init::constant>();
@@ -82,50 +154,6 @@ public:
         parallelize_ = parallelize;
     }
 
-    ///< connect this output[idx] and other's input[idx]
-    void connect(layer_base* other, cnn_size_t this_idx, cnn_size_t other_idx, data_storage *storage) {
-        auto this_shape = out_shape()[this_idx];
-        auto other_shape = other->in_shape()[other_idx];
-
-        if (this_shape.size() != other_shape.size())
-            throw nn_error("dimension mismatch");
-
-        // @todo refactoring
-        if (connection_.out_data[this_idx] == -1 && other->connection_.in_data[other_idx] == -1) {
-            connection_.out_data[this_idx] = other->connection_.in_data[other_idx] = storage->allocate(out_shape()[this_idx], true);
-            connection_.out_grad[this_idx] = other->connection_.in_grad[other_idx] = storage->allocate(out_shape()[this_idx], true);
-        }
-        else if (connection_.out_data[this_idx] == -1) {
-            connection_.out_data[this_idx] = other->connection_.in_data[other_idx];
-            connection_.out_grad[this_idx] = other->connection_.in_grad[other_idx];
-        }
-        else if (other->connection_.in_data[other_idx] == -1) {
-            other->connection_.in_data[other_idx] = connection_.out_data[this_idx];
-            other->connection_.in_grad[other_idx] = connection_.out_grad[this_idx];
-        }
-        else if (connection_.out_data[this_idx] != other->connection_.in_data[other_idx]) {
-            throw nn_error("connection duplicated");
-        }
-    }
-
-    void connect(layer_base* other, data_storage *storage) {
-        if (out_channels() < other->in_channels())
-            throw nn_error("channels mismatch");
-
-        for (cnn_size_t i = 0; i < other->in_channels(); i++)
-            connect(other, i, i, storage);
-    }
-
-    void connect_input(int in_idx, int data_id, int grad_id) {
-        connection_.in_data[in_idx] = data_id;
-        connection_.in_grad[in_idx] = grad_id;
-    }
-
-    void connect_output(int out_idx, int data_id, int grad_id) {
-        connection_.out_data[out_idx] = data_id;
-        connection_.out_grad[out_idx] = grad_id;
-    }
-
     /////////////////////////////////////////////////////////////////////////
     // getter
 
@@ -133,47 +161,77 @@ public:
     cnn_size_t out_channels() const { return out_channels_; }
 
     cnn_size_t in_data_size() const {
-        return sumif(in_shape(), [&](int i) { return connection_.in_type[i] == vector_type::data; }, [](const shape3d& s) { return s.size(); });
+        return sumif(in_shape(), [&](int i) { return in_type_[i] == vector_type::data; }, [](const shape3d& s) { return s.size(); });
     }
 
     cnn_size_t out_data_size() const {
-        return sumif(out_shape(), [&](int i) { return connection_.out_type[i] == vector_type::data; }, [](const shape3d& s) { return s.size(); });
+        return sumif(out_shape(), [&](int i) { return out_type_[i] == vector_type::data; }, [](const shape3d& s) { return s.size(); });
     }
 
     std::vector<const vec_t*> get_weights() const {
-        return get_data(connection_.in_data, 0, [&](int i){ return is_trainable_weight(connection_.in_type[i]); });
+        std::vector<const vec_t*> v;
+        for (cnn_size_t i = 0; i < in_channels_; i++)
+            if (is_trainable_weight(in_type_[i])) v.push_back(ith_in_node(i)->get_data(0));
+        return v;
     }
 
     std::vector<vec_t*> get_weights() {
-        return get_data(connection_.in_data, 0, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+        std::vector<vec_t*> v;
+        for (cnn_size_t i = 0; i < in_channels_; i++)
+            if (is_trainable_weight(in_type_[i])) v.push_back(ith_in_node(i)->get_data(0));
+        return v;
     }
 
-    std::vector<vec_t*> get_inputs(cnn_size_t worker_idx = 0) {
-        return get_data(connection_.in_data, worker_idx, [&](int i) { return connection_.in_type[i] == vector_type::data; });
+    std::vector<vec_t*> get_weight_grads() {
+        std::vector<vec_t*> v;
+        for (cnn_size_t i = 0; i < in_channels_; i++)
+            if (is_trainable_weight(in_type_[i])) v.push_back(ith_in_node(i)->get_gradient(0));
+        return v;
     }
 
-    std::vector<vec_t*> get_grads(cnn_size_t worker_idx = 0) {
-        return get_data(connection_.in_grad, worker_idx, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+    std::vector<data_node*> get_inputs() {
+        std::vector<data_node*> nodes;
+        for (cnn_size_t i = 0; i < in_channels_; i++) nodes.push_back(ith_in_node(i));
+        return nodes;
     }
 
-    std::vector<const vec_t*> get_grads(cnn_size_t worker_idx = 0) const {
-        return get_data(connection_.in_grad, worker_idx, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+    std::vector<data_node*> get_outputs() {
+        std::vector<data_node*> nodes;
+        for (cnn_size_t i = 0; i < out_channels_; i++) nodes.push_back(ith_out_node(i));
+        return nodes;
     }
 
+    void set_out_grads(const vec_t* grad, cnn_size_t gnum, cnn_size_t worker_idx) {
+        cnn_size_t j = 0;
+        for (cnn_size_t i = 0; i < out_channels_; i++) {
+            if (out_type_[i] != vector_type::data) continue;
+            assert(j < gnum);
+            *ith_out_node(i)->get_gradient(worker_idx) = grad[j++];
+        }
+    }
+
+    void set_in_data(const vec_t* data, cnn_size_t dnum, cnn_size_t worker_idx) {
+        cnn_size_t j = 0;
+        for (cnn_size_t i = 0; i < in_channels_; i++) {
+            if (in_type_[i] != vector_type::data) continue;
+            assert(j < dnum);
+            *ith_in_node(i)->get_data(worker_idx) = data[j++];
+        }
+    }
 
     std::vector<vec_t> output(int worker_index = 0) const {
         std::vector<vec_t> out;
 
-        for (cnn_size_t i = 0; i < out_channels_; i++) {
-            if (connection_.out_type[i] == vector_type::data) out.push_back(*s_->get(connection_.out_data[i], worker_index));
-        }
+        for (cnn_size_t i = 0; i < out_channels_; i++)
+            if (out_type_[i] == vector_type::data) out.push_back(*ith_out_node(i)->get_data(worker_index));
+
         return out;
     }
 
     ///< data-storage index of input data
-    std::vector<int> in_data_index() const { return filter(connection_.in_data, [&](int i){ return connection_.in_type[i] == vector_type::data; }); }
-    std::vector<int> out_data_index() const { return filter(connection_.out_data, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
-    std::vector<int> out_grad_index() const { return filter(connection_.out_grad, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
+    //std::vector<int> in_data_index() const { return filter(connection_.in_data, [&](int i){ return connection_.in_type[i] == vector_type::data; }); }
+    //std::vector<int> out_data_index() const { return filter(connection_.out_data, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
+    //std::vector<int> out_grad_index() const { return filter(connection_.out_grad, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
 
     /**
      * return output value range
@@ -298,8 +356,11 @@ public:
          std::vector<vec_t*> in_data, out_data;
 
          // organize input/output vectors from storage
-         prepare(connection_.in_data,  s_, worker_index, &in_data);
-         prepare(connection_.out_data, s_, worker_index, &out_data);
+         for (cnn_size_t i = 0; i < in_channels_; i++)
+             in_data.push_back(ith_in_node(i)->get_data(worker_index));
+
+         for (cnn_size_t i = 0; i < out_channels_; i++)
+             out_data.push_back(ith_out_node(i)->get_data(worker_index));
 
          forward_propagation(worker_index, in_data, out_data);
      }
@@ -308,38 +369,39 @@ public:
          std::vector<vec_t*> in_data, out_data, in_grad, out_grad;
 
          // organize input/output vectors from storage
-         prepare(connection_.in_data, s_, worker_index, &in_data);
-         prepare(connection_.out_data, s_, worker_index, &out_data);
-         prepare(connection_.in_grad, s_, worker_index, &in_grad);
-         prepare(connection_.out_grad, s_, worker_index, &out_grad);
+         for (cnn_size_t i = 0; i < in_channels_; i++)
+             in_data.push_back(ith_in_node(i)->get_data(worker_index));
+
+         for (cnn_size_t i = 0; i < out_channels_; i++)
+             out_data.push_back(ith_out_node(i)->get_data(worker_index));
+
+         for (cnn_size_t i = 0; i < in_channels_; i++)
+             in_grad.push_back(ith_in_node(i)->get_gradient(worker_index));
+
+         for (cnn_size_t i = 0; i < out_channels_; i++)
+             out_grad.push_back(ith_out_node(i)->get_gradient(worker_index));
 
          back_propagation(worker_index, in_data, out_data, out_grad, in_grad);
      }
 
      // allocate & reset weight
-     void setup(data_storage *storage, bool reset_weight, int max_task_size = CNN_TASK_SIZE) {
+     void setup(bool reset_weight, int max_task_size = CNN_TASK_SIZE) {
         if (in_shape().size() != in_channels_ || out_shape().size() != out_channels_)
             throw nn_error("");
 
-        storage->set_worker_size(max_task_size);
-        allocate_data(in_shape(), connection_.in_data, connection_.in_type, storage);
-        allocate_grad(in_shape(), connection_.in_grad, connection_.in_type, storage);
-        allocate_data(out_shape(), connection_.out_data, connection_.out_type, storage);
-        allocate_grad(out_shape(), connection_.out_grad, connection_.out_type, storage);
-
-        init_weight(storage);
-        s_ = storage;
+        set_worker_count(max_task_size);
+        if (reset_weight) init_weight();
      }
 
-     void init_weight(data_storage *storage) {
+     void init_weight() {
          for (cnn_size_t i = 0; i < in_channels_; i++) {
-             int index = connection_.in_data[i];
-             switch (connection_.in_type[i]) {
+
+             switch (in_type_[i]) {
              case vector_type::weight:
-                 storage->foreach(index, [&](vec_t* v) { weight_init_->fill(v, fan_in_size(), fan_out_size()); });
+                 weight_init_->fill(ith_in_node(i)->get_data(), fan_in_size(), fan_out_size());
                  break;
              case vector_type::bias:
-                 storage->foreach(index, [&](vec_t* v) { bias_init_->fill(v, fan_in_size(), fan_out_size()); });
+                 bias_init_->fill(ith_in_node(i)->get_data(), fan_in_size(), fan_out_size());
                  break;
              default:
                  break;
@@ -348,24 +410,29 @@ public:
      }
 
      void update_weight(optimizer *o, cnn_size_t worker_size, cnn_size_t batch_size) {
-        size_t in_size = connection_.in_data.size();
 
-        for (size_t i = 0; i < in_size; i++) {
-            if (is_trainable_weight(connection_.in_type[i])) {
+        for (size_t i = 0; i < in_type_.size(); i++) {
+            if (is_trainable_weight(in_type_[i])) {
                 vec_t diff;
-                vec_t& target = *s_->get(connection_.in_data[i]);
+                vec_t& target = *ith_in_node(i)->get_data();
 
-                s_->merge(connection_.in_grad[i], worker_size, &diff);
+                ith_in_node(i)->merge_grads(worker_size, &diff);
                 std::transform(diff.begin(), diff.end(), diff.begin(), [&](float_t x) { return x / batch_size; });
-
                 o->update(diff, target);
+
+                ith_in_node(i)->clear_grads(worker_size);
             }
-            s_->clear(connection_.in_grad[i], worker_size);
         }
         post_update();
      }
 
-     virtual void set_worker_count(cnn_size_t worker_count) {}
+     virtual void set_worker_count(cnn_size_t worker_count) {
+         for (cnn_size_t i = 0; i < in_channels_; i++)
+             ith_in_node(i)->set_worker_size(worker_count);
+
+         for (cnn_size_t i = 0; i < out_channels_; i++)
+             ith_out_node(i)->set_worker_size(worker_count);
+     }
 
      bool has_same_weights(const layer_base& rhs, float_t eps) const {
          auto w1 = get_weights();
@@ -385,54 +452,36 @@ protected:
     bool parallelize_;
     cnn_size_t in_channels_; // number of input vectors
     cnn_size_t out_channels_; // number of output vectors
-    data_storage* s_;
-
-    struct connection {
-        connection(const std::vector<vector_type>& in_type, const std::vector<vector_type>& out_type)
-            : in_data(in_type.size(), -1), out_data(out_type.size(), -1),
-              in_grad(in_type.size(), -1), out_grad(out_type.size(), -1), in_type(in_type), out_type(out_type) {}
-        std::vector<int> in_data; // data index of storage
-        std::vector<int> out_data; // data index of storage
-        std::vector<int> in_grad;
-        std::vector<int> out_grad;
-        std::vector<vector_type> in_type;
-        std::vector<vector_type> out_type;
-    };
-    connection connection_;
-
+    std::vector<vector_type> in_type_;
+    std::vector<vector_type> out_type_;
+ 
 private:
     std::shared_ptr<weight_init::function> weight_init_;
     std::shared_ptr<weight_init::function> bias_init_;
 
-    template <typename Pred>
-    std::vector<const vec_t*> get_data(const std::vector<int>& storage_idx, cnn_size_t worker_idx, Pred p) const {
-        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(storage_idx, worker_idx);
-        return filter(vec, p);
+    void alloc_input(cnn_size_t i) const {
+        prev_[i] = std::make_shared<data_node>(in_shape()[i], in_type_[i]);
     }
 
-    template <typename Pred>
-    std::vector<vec_t*> get_data(const std::vector<int>& storage_idx, cnn_size_t worker_idx, Pred p) {
-        std::vector<vec_t*> vec = s_->get(storage_idx, worker_idx);
-        return filter(vec, p);
+    void alloc_output(cnn_size_t i) const {
+        next_[i] = std::make_shared<data_node>(out_shape()[i], out_type_[i]);
     }
 
-    void prepare(const std::vector<int>& data_idx, data_storage *storage, int worker_index, std::vector<vec_t*> *dst) {
-        for (size_t i = 0; i < data_idx.size(); i++)
-            dst->push_back(storage->get(data_idx[i], worker_index));
+    data_node*       ith_in_node(cnn_size_t i)       {
+        if (!prev_[i]) alloc_input(i);
+        return dynamic_cast<data_node*>(prev()[i].get());
     }
-
-    void allocate_data(const std::vector<index3d<cnn_size_t>>& shape, std::vector<int>& connections, const std::vector<vector_type>& type, data_storage *storage) {
-        for (cnn_size_t i = 0; i < shape.size(); i++) {
-            if (connections[i] == -1)
-                connections[i] = storage->allocate(shape[i], !is_trainable_weight(type[i]));
-        }
+    const data_node* ith_in_node(cnn_size_t i) const {
+        if (!prev_[i]) alloc_input(i);
+        return dynamic_cast<const data_node*>(prev()[i].get());
     }
-
-    void allocate_grad(const std::vector<index3d<cnn_size_t>>& shape, std::vector<int>& connections, const std::vector<vector_type>& type, data_storage *storage) {
-        for (cnn_size_t i = 0; i < shape.size(); i++) {
-            if (connections[i] == -1)
-                connections[i] = storage->allocate(shape[i], true);
-        }
+    data_node*       ith_out_node(cnn_size_t i)       {
+        if (!next_[i]) alloc_output(i);
+        return dynamic_cast<data_node*>(next()[i].get());
+    }
+    const data_node* ith_out_node(cnn_size_t i) const {
+        if (!next_[i]) alloc_output(i);
+        return dynamic_cast<const data_node*>(next()[i].get()); 
     }
 };
 
@@ -466,6 +515,39 @@ protected:
     Activation h_;
 };
 
+inline void connect_node(std::shared_ptr<node> head, std::shared_ptr<node> tail, cnn_size_t head_index = 0, cnn_size_t tail_index = 0) {
+    if (head->out_fixed_) {
+        head->next_[head_index] = tail;
+    }
+    else {
+        head->next_.push_back(tail);
+    }
+
+    if (tail->in_fixed_) {
+        tail->prev_[tail_index] = head;
+    }
+    else {
+        tail->prev_.push_back(head);
+    }
+}
+
+inline void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base> tail, cnn_size_t head_index = 0, cnn_size_t tail_index = 0) {
+    auto out_shape = head->out_shape()[head_index];
+    auto in_shape = tail->in_shape()[tail_index];
+    assert(out_shape.size() == in_shape.size());
+
+    if (!head->next_[head_index] && !tail->prev_[tail_index]) {
+        auto newnode = std::make_shared<data_node>(out_shape.size(), true, true);
+        //head->next_[head_index] = tail->prev_[tail_index] = newnode;
+        connect_node(head, newnode, head_index, 0);
+        connect_node(newnode, tail, 0, tail_index);
+    } else if (!head->next_[head_index]) {
+        head->next_[head_index] = tail->prev_[tail_index];
+    } else {
+        tail->prev_[tail_index] = head->next_[head_index];
+    }
+}
+
 template <typename Char, typename CharTraits>
 std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const layer_base& v) {
     v.save(os);
@@ -476,6 +558,43 @@ template <typename Char, typename CharTraits>
 std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, layer_base& v) {
     v.load(os);
     return os;
+}
+
+struct node_tuple {
+    node_tuple(std::shared_ptr<layer_base> l1, std::shared_ptr<layer_base> l2) {
+        nodes_.push_back(l1); nodes_.push_back(l2);
+    }
+    std::vector<std::shared_ptr<layer_base>> nodes_;
+};
+
+node_tuple operator , (std::shared_ptr<layer_base> l1, std::shared_ptr<layer_base> l2) {
+    return node_tuple(l1, l2);
+}
+
+node_tuple operator , (node_tuple& lhs, std::shared_ptr<layer_base> rhs) {
+    lhs.nodes_.push_back(rhs);
+    return lhs;
+}
+
+template <typename T, typename U>
+inline std::shared_ptr<T>& operator << (std::shared_ptr<T>& lhs, std::shared_ptr<U>& rhs) {
+    connect(lhs, rhs);
+    return lhs;
+}
+
+template <typename T>
+inline const node_tuple& operator << (const node_tuple& lhs, std::shared_ptr<T>& rhs) {
+    for (size_t i = 0; i < lhs.nodes_.size(); i++)
+        connect(lhs.nodes_[i], rhs, 0, i);
+    return lhs;
+}
+
+
+template <typename T>
+inline std::shared_ptr<T>& operator << (std::shared_ptr<T>& lhs, const node_tuple& rhs) {
+    for (size_t i = 0; i < rhs.nodes_.size(); i++)
+        connect(lhs, rhs.nodes_[i], i, 0);
+    return lhs;
 }
 
 // error message functions

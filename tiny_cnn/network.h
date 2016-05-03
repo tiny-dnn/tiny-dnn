@@ -96,6 +96,8 @@ class network;
 template <typename Layer>
 network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
+void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs);
+
 template<typename NetType>
 class network
 {
@@ -113,6 +115,9 @@ public:
      * executes forward-propagation and returns output
      **/
     vec_t        predict(const vec_t& in) { return fprop(in); }
+
+
+    std::vector<vec_t> predict(const std::vector<vec_t>& in) { return fprop(in); }
 
     /**
      * executes forward-propagation and returns maximum output
@@ -303,8 +308,8 @@ public:
         for (auto current : net_) { // ignore first input layer
             vec_t& w = *current->get_weights()[0];
             vec_t& b = *current->get_weights()[1];
-            vec_t& dw = *current->get_grads()[0];
-            vec_t& db = *current->get_grads()[1];
+            vec_t& dw = *current->get_weight_grads()[0];
+            vec_t& db = *current->get_weight_grads()[1];
 
             if (w.empty()) continue;
 
@@ -408,6 +413,8 @@ private:
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
+    friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs);
+
     /**
      * train on one minibatch
      *
@@ -493,6 +500,10 @@ private:
             data_mismatch(**net_.begin(), in);
 
         return net_.forward({in}, idx)[0];
+    }
+
+    std::vector<vec_t> fprop(const std::vector<vec_t>& in, int idx = 0) {
+        return net_.forward(in, idx);
     }
 
     template <typename E>
@@ -672,6 +683,11 @@ template <typename NetType, typename Char, typename CharTraits>
 std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, network<NetType>& n) {
     n.load(os);
     return os;
+}
+
+void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs)
+{
+    graph.net_.construct(inputs, outputs);
 }
 
 } // namespace tiny_cnn

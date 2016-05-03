@@ -50,13 +50,6 @@ public:
         return{ shape3d(dim_,1,1) };
     }
 
-    elementwise_add_layer& operator () (std::vector<layer_base*> tail) {
-        for (cnn_size_t i = 0; i < tail.size(); i++) {
-            connect(tail[i], i, 0, s_);
-        }
-        return *this;
-    }
-
     void forward_propagation(cnn_size_t worker_index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {

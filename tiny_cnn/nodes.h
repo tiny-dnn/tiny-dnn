@@ -58,17 +58,26 @@ public:
     /**
      * update weights and clear all gradients
      **/
-    virtual void update_weights(optimizer *opt, int num_workers, int batch_size) = 0;
+    virtual void update_weights(optimizer *opt, int num_workers, int batch_size) {
+        for (auto l : nodes_)
+            l->update_weight(opt, num_workers, batch_size);
+    }
 
     /**
      * change max number of task
      **/
-    virtual void set_worker_count(cnn_size_t worker) = 0;
+    virtual void set_worker_count(cnn_size_t worker) {
+        for (auto l : nodes_)
+            l->set_worker_count(worker);
+    }
 
     /**
      * setup all weights, must be called before forward/backward
      **/
-    virtual void setup(bool reset_weight, int max_task_size) = 0;
+    virtual void setup(bool reset_weight, int max_task_size) {
+        for (auto l : nodes_)
+            l->setup(reset_weight, max_task_size);
+    }
 
     iterator begin() { return nodes_.begin(); }
     iterator end() { return nodes_.end(); }
@@ -133,10 +142,7 @@ protected:
 class sequential : public nodes {
 public:
     void backward(const std::vector<vec_t>& first, int worker_index) override {
-        auto out_grad_id = nodes_.back()->out_grad_index();
-        for (size_t i = 0; i < out_grad_id.size(); i++) {
-            *storage_.get(out_grad_id[i], worker_index) = first[i];
-        }
+        nodes_.back()->set_out_grads(&first[0], first.size(), worker_index);
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
             (*l)->backward(worker_index);
@@ -144,10 +150,7 @@ public:
     }
 
     std::vector<vec_t> forward(const std::vector<vec_t>& first, int worker_index) override {
-        auto input_data_id = nodes_.front()->in_data_index();
-        for (size_t i = 0; i < input_data_id.size(); i++) {
-            *storage_.get(input_data_id[i], worker_index) = first[i];
-        }
+        nodes_.front()->set_in_data(&first[0], first.size(), worker_index);
 
         for (auto l : nodes_) {
             l->forward(worker_index);
@@ -156,33 +159,31 @@ public:
         return nodes_.back()->output(worker_index);
     }
 
-    void update_weights(optimizer *opt, int num_workers, int batch_size) override {
-        for (auto l : nodes_) {
-            l->update_weight(opt, num_workers, batch_size);
-        }
-    }
-
-    void set_worker_count(cnn_size_t worker) {
-        storage_.set_worker_size(worker);
-        for (auto l : nodes_)
-            l->set_worker_count(worker);
-    }
-
-    void setup(bool reset_weight, int max_task_size) {
-        for (auto l : nodes_) {
-            l->setup(&storage_, reset_weight, max_task_size);
-        }
-    }
 
     void add(nodeptr_t layer) {
-        if (!nodes_.empty()) {
-            nodes_.back()->connect(layer.get(), 0, 0, &storage_);
-        }
         nodes_.push_back(layer);
+
+        if (nodes_.size() != 1) {
+            auto head = nodes_[nodes_.size()-2];
+            auto tail = nodes_[nodes_.size()-1];
+            connect(head, tail, 0, 0);
+            auto out = head->get_outputs();
+            auto in = tail->get_inputs();
+        }
+        check_connectivity();
+    }
+
+    void check_connectivity() {
+        for (cnn_size_t i = 0; i < nodes_.size() - 1; i++) {
+            auto out = nodes_[i]->get_outputs();
+            auto in = nodes_[i+1]->get_inputs();
+
+            if (out[0] != in[0]) {
+                throw nn_error("");
+            }
+        }
     }
 private:
-
-     data_storage storage_;
 };
 
 /**
@@ -193,106 +194,75 @@ class graph : public nodes {
 public:
 
     void backward(const std::vector<vec_t>& out_grad, int worker_index) override {
+        if (out_grad.size() != output_layers_.size())
+            throw nn_error("input size mismatch");
 
-        // set input-data to first layers
-        for (size_t i = 0; i < out_grad.size(); i++) {
-            for (size_t j = 0; j < output2grads_[i].size(); j++) {
-                vec_t *v = storage_.get(output2grads_[i][j], worker_index);
-                *v = out_grad[i];
-            }
-        }
+        for (cnn_size_t i = 0; i < out_grad.size(); i++)
+            output_layers_[i]->set_in_data(&out_grad[i], 1, worker_index);
 
-        for (int i = (int)layer_names_.size() - 1; i >= 0; i--)
-            get_by_bame(layer_names_[i])->backward(worker_index);
+        for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++)
+            (*l)->backward(worker_index);
     }
 
     std::vector<vec_t> forward(const std::vector<vec_t>& in_data, int worker_index) {
+        if (in_data.size() != input_layers_.size())
+            throw nn_error("input size mismatch");
 
-        // set input-data to first layers
-        for (size_t i = 0; i < in_data.size(); i++) {
-            for (size_t j = 0; j < input2data_[i].size(); j++) {
-                vec_t *v = storage_.get(input2data_[i][j], worker_index);
-                *v = in_data[i];
+        for (cnn_size_t i = 0; i < in_data.size(); i++)
+            input_layers_[i]->set_in_data(&in_data[i], 1, worker_index);
+
+        for (auto l : nodes_)
+            l->forward(worker_index);
+ 
+        return nodes_.back()->output(worker_index);
+    }
+
+    void construct(const std::vector<nodeptr_t>& input, const std::vector<nodeptr_t>& output) {
+        std::vector<std::shared_ptr<node>> sorted;
+        std::unordered_map<std::shared_ptr<node>, std::vector<uint8_t>> removed_edge;
+        std::vector<std::shared_ptr<node>> input_nodes(input.begin(), input.end());
+
+        // topological-sorting
+        while (!input_nodes.empty()) {
+            sorted.push_back(input_nodes.back());
+            input_nodes.pop_back();
+
+            auto& curr = sorted.back();
+            auto& next = curr->next();
+
+            for (size_t i = 0; i < next.size(); i++) {
+                if (!next[i]) continue;
+                // remove edge between next[i] and current
+                if (removed_edge.find(next[i]) == removed_edge.end()) {
+                    removed_edge[next[i]] = std::vector<uint8_t>(next[i]->prev().size(), 0);
+                }
+                std::vector<uint8_t>& removed = removed_edge[next[i]];
+                removed[find_index(next[i]->prev(), curr)] = 1;
+
+                if (std::all_of(removed.begin(), removed.end(), [](uint8_t x) { return x == 1; })) {
+                    input_nodes.push_back(next[i]);
+                }
             }
         }
 
-        // propagate to output
-        for (int i = 0; i < (int)layer_names_.size(); i++)
-            get_by_bame(layer_names_[i])->forward(worker_index);
-
-        return get_by_bame(layer_names_.back())->output(worker_index);
-    }
-
-    void update_weights(optimizer *opt, int num_workers, int batch_size) {
-        for (auto l : nodes_) {
-            l->update_weight(opt, num_workers, batch_size);
+        for (auto& n : sorted) {
+            if (n->is_layer()) {
+                nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
+            }
         }
-    }
 
-    void set_worker_count(cnn_size_t worker) {
-        storage_.set_worker_size(worker);
-        for (auto l : nodes_)
-            l->set_worker_count(worker);
-    }
-
-    void setup(bool reset_weight, int max_task_size) {
-        for (auto l : nodes_) {
-            l->setup(&storage_, reset_weight, max_task_size);
-        }
-    }
-
-    void add_node(nodeptr_t node, const std::string& name) {
-        layer_names_.push_back(name);
-        nodes_.push_back(node);
-    }
-
-    void add_edge(const std::string& from, int from_idx, const std::string& to, int to_idx) {
-        get_by_bame(from)->connect(get_by_bame(to).get(), from_idx, to_idx, &storage_);
-    }
-
-    void add_edge(const std::string& from, const std::string& to) {
-        get_by_bame(from)->connect(get_by_bame(to).get(), &storage_);
-    }
-
-    void add_data_input_port(const std::string& layer_name, int port_idx, int data_idx) {
-        if (input2data_.size() <= (cnn_size_t)data_idx) input2data_.resize(data_idx + 1);
-
-        auto layer = get_by_bame(layer_name);
-        input2data_[data_idx].push_back(layer->in_data_index()[port_idx]);
-    }
-
-    void add_data_output_port(const std::string& layer_name, int port_idx, int data_idx) {
-        if (output2grads_.size() <= (cnn_size_t)data_idx) output2grads_.resize(data_idx + 1);
-
-        auto layer = get_by_bame(layer_name);
-        output2grads_[data_idx].push_back(layer->out_grad_index()[port_idx]);
-    }
-
-    bool empty() const { return nodes_.size() == 0; }
-
-    template <typename Optimizer>
-    void update_weights(Optimizer *o, size_t worker_size, size_t batch_size) {
-        for (auto pl : nodes_)
-            pl->update_weight(o, static_cast<cnn_size_t>(worker_size), batch_size);
-    }
-
-    void set_parallelize(bool parallelize) {
-        for (auto pl : nodes_)
-            pl->set_parallelize(parallelize);
+        input_layers_ = input;
+        output_layers_ = output;
     }
 
 private:
-    nodeptr_t get_by_bame(const std::string& name) {
-        auto it = std::find(layer_names_.begin(), layer_names_.end(), name);
-        return nodes_[std::distance(layer_names_.begin(), it)];
+    cnn_size_t find_index(const std::vector<std::shared_ptr<node>>& nodes, const std::shared_ptr<node>& target) {
+        for (cnn_size_t i = 0; i < nodes.size(); i++)
+            if (nodes[i].get() == target.get()) return i;
+        throw nn_error("invalid connection");
     }
-
-    std::vector<std::string> layer_names_;
-
-    std::vector<std::vector<int>> input2data_;
-    std::vector<std::vector<int>> output2grads_;
-
-    data_storage storage_;
+    std::vector<nodeptr_t> input_layers_;
+    std::vector<nodeptr_t> output_layers_;
 };
 
 } // namespace tiny_cnn
