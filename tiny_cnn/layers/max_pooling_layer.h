@@ -71,10 +71,6 @@ public:
         return 1;
     }
 
-    size_t connection_size() const override {
-        return out2in_[0].size() * out2in_.size();
-    }
-
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>&       out_data)  override {

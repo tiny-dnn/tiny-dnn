@@ -113,12 +113,6 @@ public:
         return 1;
     }
 
-    ///< number of connections
-    size_t connection_size() const override
-    {
-        return in_data_size();
-    }
-
     std::vector<index3d<cnn_size_t>> in_shape() const override {
         return{ index3d<cnn_size_t>(in_size_, 1, 1) };
     }

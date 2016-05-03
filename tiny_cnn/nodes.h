@@ -81,7 +81,7 @@ public:
 
     template <typename T>
     const T& at(size_t index) const {
-        const T* v = dynamic_cast<const T*>(nodes_[index + 1].get());
+        const T* v = dynamic_cast<const T*>(nodes_[index].get());
         if (v) return *v;
         throw nn_error("failed to cast");
     }
@@ -90,13 +90,28 @@ public:
     virtual float_t target_value_min(int out_channel = 0) const {
         return nodes_.back()->out_value_range().first;
     }
+
     virtual float_t target_value_max(int out_channel = 0) const {
         return nodes_.back()->out_value_range().second;
     }
 
-    virtual void save(std::ostream& os) const = 0;
-    virtual void load(std::istream& is) = 0;
-    virtual void load(const std::vector<float_t>& vec) = 0;
+    virtual void save(std::ostream& os) const {
+        for (auto& l : nodes_)
+            l->save(os);
+    }
+
+    virtual void load(std::istream& is) {
+        setup(false, 1);
+        for (auto& l : nodes_)
+            l->load(is);
+    }
+
+    virtual void load(const std::vector<float_t>& vec) {
+        int idx = 0;
+        setup(false, 1);
+        for (auto& l : nodes_)
+            l->load(vec, idx);
+    }
 
     void label2vec(const label_t* t, int num, std::vector<vec_t> *vec) const {
         cnn_size_t outdim = out_data_size();
@@ -164,24 +179,6 @@ public:
             nodes_.back()->connect(layer.get(), 0, 0, &storage_);
         }
         nodes_.push_back(layer);
-    }
-
-    void save(std::ostream& os) const {
-        for (auto& l : nodes_)
-            l->save(os);
-    }
-
-    void load(std::istream& is) {
-        setup(false, 1);
-        for (auto& l : nodes_)
-            l->load(is);
-    }
-
-    void load(const std::vector<float_t>& vec) {
-        int idx = 0;
-        setup(false, 1);
-        for (auto& l : nodes_)
-            l->load(vec, idx);
     }
 private:
 

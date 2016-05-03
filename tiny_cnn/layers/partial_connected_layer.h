@@ -54,15 +54,6 @@ public:
         return total_param;
     }
 
-    size_t connection_size() const override {
-        size_t total_size = 0;
-        for (auto io : weight2io_)
-            total_size += io.size();
-        for (auto b : bias2out_)
-            total_size += b.size();
-        return total_size;
-    }
-
     size_t fan_in_size() const override {
         return max_size(out2wi_);
     }

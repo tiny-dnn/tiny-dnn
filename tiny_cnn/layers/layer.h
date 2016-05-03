@@ -43,6 +43,13 @@ namespace tiny_cnn {
 
 /**
  * base class of all kind of NN layers
+ *
+ * sub-class should override these methods:
+ * - forward_propagation ... body of forward-pass calculation
+ * - back_propagation    ... body of backward-pass calculation
+ * - in_shape            ... specify input data shapes
+ * - out_shape           ... specify output data shapes
+ * - layer_type          ... name of layer
  **/
 class layer_base {
 public:
@@ -134,29 +141,25 @@ public:
     }
 
     std::vector<const vec_t*> get_weights() const {
-        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(connection_.in_data);
-        return filter(vec, [&](int i){ return is_trainable_weight(connection_.in_type[i]); });
+        return get_data(connection_.in_data, 0, [&](int i){ return is_trainable_weight(connection_.in_type[i]); });
     }
 
     std::vector<vec_t*> get_weights() {
-        std::vector<vec_t*> vec = s_->get(connection_.in_data);
-        return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+        return get_data(connection_.in_data, 0, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
     }
 
-    std::vector<vec_t*> get_inputs(cnn_size_t worker_index = 0) {
-        std::vector<vec_t*> vec = s_->get(connection_.in_data, worker_index);
-        return filter(vec, [&](int i) { return connection_.in_type[i] == vector_type::data; });
+    std::vector<vec_t*> get_inputs(cnn_size_t worker_idx = 0) {
+        return get_data(connection_.in_data, worker_idx, [&](int i) { return connection_.in_type[i] == vector_type::data; });
     }
 
-    std::vector<vec_t*> get_grads(cnn_size_t worker_index = 0) {
-        std::vector<vec_t*> vec = s_->get(connection_.in_grad, worker_index);
-        return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+    std::vector<vec_t*> get_grads(cnn_size_t worker_idx = 0) {
+        return get_data(connection_.in_grad, worker_idx, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
     }
 
-    std::vector<const vec_t*> get_grads(cnn_size_t worker_index = 0) const {
-        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(connection_.in_grad, worker_index);
-        return filter(vec, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
+    std::vector<const vec_t*> get_grads(cnn_size_t worker_idx = 0) const {
+        return get_data(connection_.in_grad, worker_idx, [&](int i) { return is_trainable_weight(connection_.in_type[i]); });
     }
+
 
     std::vector<vec_t> output(int worker_index = 0) const {
         std::vector<vec_t> out;
@@ -172,26 +175,41 @@ public:
     std::vector<int> out_data_index() const { return filter(connection_.out_data, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
     std::vector<int> out_grad_index() const { return filter(connection_.out_grad, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
 
-    ///< output value range
-    ///< used for calculating target value from label
+    /**
+     * return output value range
+     * used only for calculating target value from label-id in final(output) layer
+     * override properly if the layer is intended to be used as output layer
+     **/
     virtual std::pair<float_t, float_t> out_value_range() const { return {0.0, 1.0}; }
 
-    ///< input shape(width x height x depth)
+    /**
+     * array of input shapes (width x height x depth)
+     **/
     virtual std::vector<shape3d> in_shape() const = 0;
 
-    ///< output shape(width x height x depth)
+    /**
+     * array of output shapes (width x height x depth)
+     **/
     virtual std::vector<shape3d> out_shape() const = 0;
 
-    ///< name of layer. should be unique for each concrete class
+    /**
+     * name of layer, should be unique for each concrete class
+     **/
     virtual std::string layer_type() const = 0;
 
-    ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const = 0;
+    /**
+     * number of incoming connections for each output unit
+     * used only for weight/bias initialization methods which require fan-in size (e.g. xavier)
+     * override if the layer has trainable weights, and scale of initialization is important
+     **/
+    virtual size_t fan_in_size() const { return in_shape()[0].width_; }
 
-    ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const = 0;
-
-    virtual size_t connection_size() const = 0;
+    /**
+     * number of outgoing connections for each input unit
+     * used only for weight/bias initialization methods which require fan-out size (e.g. xavier)
+     * override if the layer has trainable weights, and scale of initialization is important
+     **/
+    virtual size_t fan_out_size() const { return out_shape()[0].width_; }
 
     /////////////////////////////////////////////////////////////////////////
     // setter
@@ -347,9 +365,7 @@ public:
         post_update();
      }
 
-     virtual void set_worker_count(cnn_size_t worker_count) {
-
-     }
+     virtual void set_worker_count(cnn_size_t worker_count) {}
 
      bool has_same_weights(const layer_base& rhs, float_t eps) const {
          auto w1 = get_weights();
@@ -387,6 +403,18 @@ protected:
 private:
     std::shared_ptr<weight_init::function> weight_init_;
     std::shared_ptr<weight_init::function> bias_init_;
+
+    template <typename Pred>
+    std::vector<const vec_t*> get_data(const std::vector<int>& storage_idx, cnn_size_t worker_idx, Pred p) const {
+        std::vector<const vec_t*> vec = ((const data_storage*)s_)->get(storage_idx, worker_idx);
+        return filter(vec, p);
+    }
+
+    template <typename Pred>
+    std::vector<vec_t*> get_data(const std::vector<int>& storage_idx, cnn_size_t worker_idx, Pred p) {
+        std::vector<vec_t*> vec = s_->get(storage_idx, worker_idx);
+        return filter(vec, p);
+    }
 
     void prepare(const std::vector<int>& data_idx, data_storage *storage, int worker_index, std::vector<vec_t*> *dst) {
         for (size_t i = 0; i < data_idx.size(); i++)

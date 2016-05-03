@@ -228,12 +228,6 @@ public:
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
-    ///< number of connections
-    virtual size_t connection_size() const override
-    {
-        return out_.size() * fan_in_size();
-    }
-
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
