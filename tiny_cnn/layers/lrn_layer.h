@@ -48,7 +48,7 @@ public:
     lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
                        float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
         : Base({vector_type::data}),
-        in_shape_(in_width, in_height, in_channels), out_shape_(in_width, in_height, 1), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
+        in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
 
 
     size_t fan_in_size() const override {
@@ -64,7 +64,7 @@ public:
     }
 
     std::vector<shape3d> out_shape() const override {
-        return { out_shape_, out_shape_ };
+        return { in_shape_, in_shape_ };
     }
 
     std::string layer_type() const override { return "norm"; }
@@ -146,7 +146,6 @@ private:
     }
 
     shape3d in_shape_;
-    shape3d out_shape_;
 
     cnn_size_t size_;
     float_t alpha_, beta_;
