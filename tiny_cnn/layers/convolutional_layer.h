@@ -382,7 +382,7 @@ public:
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
-        const vec_t& W = *this->get_weight()[0];
+        const vec_t& W = *this->get_weights()[0];
 
         img.resize(width, height);
         img.fill(bg_color);

@@ -333,6 +333,9 @@ public:
         return true;
     }
 
+    size_t layer_size() const {
+        return net_.size();
+    }
 
     /**
     * return raw pointer of index-th layer

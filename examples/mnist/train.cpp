@@ -30,7 +30,7 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void construct_net(network<mse, adagrad>& nn) {
+void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -57,7 +57,8 @@ void construct_net(network<mse, adagrad>& nn) {
 
 void train_lenet(std::string data_dir_path) {
     // specify loss-function and learning strategy
-    network<mse, adagrad> nn;
+    network<sequential> nn;
+    adagrad optimizer;
 
     construct_net(nn);
 
@@ -83,7 +84,7 @@ void train_lenet(std::string data_dir_path) {
     int minibatch_size = 10;
     int num_epochs = 30;
 
-    nn.optimizer().alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= std::sqrt(minibatch_size);
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -100,7 +101,7 @@ void train_lenet(std::string data_dir_path) {
     };
 
     // training
-    nn.train(train_images, train_labels, minibatch_size, num_epochs,
+    nn.train<mse>(optimizer, train_images, train_labels, minibatch_size, num_epochs,
              on_enumerate_minibatch, on_enumerate_epoch);
 
     std::cout << "end training." << std::endl;

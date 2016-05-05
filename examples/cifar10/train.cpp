@@ -52,7 +52,8 @@ void construct_net(N& nn) {
 
 void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     // specify loss-function and learning strategy
-    network<cross_entropy, adam> nn;
+    network<sequential> nn;
+    adam optimizer;
 
     construct_net(nn);
 
@@ -79,7 +80,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     const int n_minibatch = 10; ///< minibatch size
     const int n_train_epochs = 30; ///< training duration
 
-    nn.optimizer().alpha *= sqrt(n_minibatch) * learning_rate;
+    optimizer.alpha *= sqrt(n_minibatch) * learning_rate;
 
     // create callback
     auto on_enumerate_epoch = [&]() {
@@ -96,7 +97,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     };
 
     // training
-    nn.train(train_images, train_labels, n_minibatch, n_train_epochs, on_enumerate_minibatch, on_enumerate_epoch);
+    nn.train<cross_entropy>(optimizer, train_images, train_labels, n_minibatch, n_train_epochs, on_enumerate_minibatch, on_enumerate_epoch);
 
     cout << "end training." << endl;
 

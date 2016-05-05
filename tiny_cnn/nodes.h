@@ -79,6 +79,7 @@ public:
             l->setup(reset_weight, max_task_size);
     }
 
+    size_t size() const { return nodes_.size(); }
     iterator begin() { return nodes_.begin(); }
     iterator end() { return nodes_.end(); }
     const_iterator begin() const { return nodes_.begin(); }

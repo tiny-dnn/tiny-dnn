@@ -201,6 +201,12 @@ public:
         return nodes;
     }
 
+    std::vector<const data_node*> get_outputs() const {
+        std::vector<const data_node*> nodes;
+        for (cnn_size_t i = 0; i < out_channels_; i++) nodes.push_back(ith_out_node(i));
+        return nodes;
+    }
+
     void set_out_grads(const vec_t* grad, cnn_size_t gnum, cnn_size_t worker_idx) {
         cnn_size_t j = 0;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
@@ -311,6 +317,14 @@ public:
 
     /////////////////////////////////////////////////////////////////////////
     // visualize
+
+    ///< visualize latest output of this layer
+    ///< default implementation interpret output as 1d-vector,
+    ///< so "visual" layer(like convolutional layer) should override this for better visualization.
+    virtual image<> output_to_image(size_t channel = 0, size_t worker_index = 0) const {
+        const vec_t* output = get_outputs()[channel]->get_data(worker_index);
+        return vec2image<unsigned char>(*output);
+    }
 
     /////////////////////////////////////////////////////////////////////////
     // fprop/bprop
