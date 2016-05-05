@@ -278,7 +278,8 @@ public:
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
-        return W_[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
+        vec_t* W = this->get_weights()[0];
+        return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
     void back_propagation(cnn_size_t                 index,
@@ -381,11 +382,12 @@ public:
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
+        const vec_t& W = *this->get_weight()[0];
 
         img.resize(width, height);
         img.fill(bg_color);
 
-        auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
+        auto minmax = std::minmax_element(W.begin(), W.end());
 
         for (cnn_size_t r = 0; r < in_.depth_; ++r) {
             for (cnn_size_t c = 0; c < out_.depth_; ++c) {
@@ -396,7 +398,7 @@ public:
 
                 for (cnn_size_t y = 0; y < weight_.height_; ++y) {
                     for (cnn_size_t x = 0; x < weight_.width_; ++x) {
-                        const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
+                        const float_t w = W[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
                             = static_cast<image<>::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));

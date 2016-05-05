@@ -338,7 +338,7 @@ public:
     * return raw pointer of index-th layer
     **/
     const layer_base* operator [] (size_t index) const {
-        return layers_[index];
+        return net_[index];
     }
 
     /**
@@ -470,29 +470,6 @@ private:
         
         // merge all dW and update W by optimizer
         net_.update_weights(&optimizer, num_threads, batch_size);
-    }
-
-    void calc_hessian(const std::vector<vec_t>& in, const std::vector<vec_t>* t_cost, int size_initialize_hessian = 500) {
-        int size = std::min((int)in.size(), size_initialize_hessian);
-
-        for (int i = 0; i < size; i++)
-            bprop_2nd(fprop(in[i]), get_target_cost_sample_pointer(t_cost, i));
-
-        layers_.divide_hessian(size);
-    }
-
-    /**
-     * @param  h the activation function at the output of the last layer
-     * @return true if the combination of the loss function E and the last layer output activation
-     *         function h is such that dE / da = (dE/dY) * (dy/da) = y - target
-     */
-    template<typename Activation>
-    bool is_canonical_link(const Activation& h) {
-        if (typeid(h) == typeid(activation::sigmoid) && typeid(E) == typeid(cross_entropy)) return true;
-        if (typeid(h) == typeid(activation::tan_h) && typeid(E) == typeid(cross_entropy)) return true;
-        if (typeid(h) == typeid(activation::identity) && typeid(E) == typeid(mse)) return true;
-        if (typeid(h) == typeid(activation::softmax) && typeid(E) == typeid(cross_entropy_multiclass)) return true;
-        return false;
     }
 
     vec_t fprop(const vec_t& in, int idx = 0) {

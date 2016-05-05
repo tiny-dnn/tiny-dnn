@@ -54,8 +54,9 @@ public:
           phase_(obj.phase_),
           dropout_rate_(obj.dropout_rate_),
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
-          dropout_layer_worker_storage_(obj.dropout_layer_worker_storage_),
-          in_size_(obj.in_size_)
+          in_size_(obj.in_size_),
+          dropout_layer_worker_storage_(obj.dropout_layer_worker_storage_)
+
     {
     }
 
@@ -64,8 +65,8 @@ public:
           phase_(obj.phase_),
           dropout_rate_(obj.dropout_rate_),
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
-          dropout_layer_worker_storage_(std::move(obj.dropout_layer_worker_storage_)),
-          in_size_(obj.in_size_)
+          in_size_(obj.in_size_),
+          dropout_layer_worker_storage_(std::move(obj.dropout_layer_worker_storage_))
     {
     }
 
@@ -121,20 +122,17 @@ public:
         return{ index3d<cnn_size_t>(in_size_, 1, 1) };
     }
 
-
-    //void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {
-    //    prev_delta2_ = delta_in[0];
-    //}
-
     void back_propagation(cnn_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
-        vec_t&       prev_delta = *out_grad[0];
-        const vec_t& curr_delta = *out_grad[1];
-
+        vec_t&       prev_delta = *in_grad[0];
+        const vec_t& curr_delta = *out_grad[0];
         const std::vector<uint8_t>& mask = dropout_layer_worker_storage_[index].mask_;
+
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
 
         for (size_t i = 0; i < curr_delta.size(); i++) {
             prev_delta[i] = mask[i] * curr_delta[i];

@@ -97,10 +97,12 @@ public:
 
     // @todo: multiple output
     virtual float_t target_value_min(int out_channel = 0) const {
+        CNN_UNREFERENCED_PARAMETER(out_channel);
         return nodes_.back()->out_value_range().first;
     }
 
     virtual float_t target_value_max(int out_channel = 0) const {
+        CNN_UNREFERENCED_PARAMETER(out_channel);
         return nodes_.back()->out_value_range().second;
     }
 

@@ -182,13 +182,20 @@ void xparallel_for(size_t begin, size_t end, const Func& f) {
     f(r);
 }
 
-#ifdef CNN_USE_OMP
+#if defined(CNN_USE_OMP)
 
 template<typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     #pragma omp parallel for
     for (int i=begin; i<end; ++i)
         f(blocked_range(i,i+1));
+}
+
+#elif defined(CNN_SINGLE_THREAD)
+
+template<typename Func>
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
+    xparallel_for(static_cast<size_t>(begin), static_cast<size_t>(end), f);
 }
 
 #else

@@ -56,6 +56,8 @@ public:
         const vec_t& in1 = *in_data[0];
         vec_t& out = *out_data[0];
 
+        CNN_UNREFERENCED_PARAMETER(worker_index);
+
         out = in1;
 
         for (cnn_size_t i = 1; i < num_args_; i++) {
@@ -67,11 +69,14 @@ public:
         }
     }
 
-    void back_propagation(cnn_size_t                worker_index,
+    void back_propagation(cnn_size_t                 worker_index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(worker_index);
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         for (cnn_size_t i = 0; i < num_args_; i++)
             *in_grad[i] = *out_grad[0];
     }

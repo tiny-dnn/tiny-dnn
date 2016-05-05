@@ -42,6 +42,7 @@ public:
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
+        CNN_UNREFERENCED_PARAMETER(index);
         *out_data[0] = *in_data[0];
     }
 
@@ -51,6 +52,11 @@ public:
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
         // do nothing
+        CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
     }
 
 private:
