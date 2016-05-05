@@ -48,6 +48,7 @@ OPTION(USE_SSE 	"Set to ON to use sse" ON)
 OPTION(USE_AVX 	"Set to ON to use avx" ON)
 OPTION(BUILD_TESTS "Set to ON to build tests" OFF)
 OPTION(BUILD_EXAMPLES "Set to ON to build examples" ON)
+OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
 
 # ----------------------------------------------------------------------------
 #   Find Dependencies
@@ -108,7 +109,7 @@ ENDIF()
     SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
     SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
 
- 
+
 #------------------------------------------------
 # TARGETS
 #------------------------------------------------
@@ -133,6 +134,32 @@ IF(BUILD_TESTS)
 ENDIF()
 
 
+#------------------------------------------------
+# DOCUMENTATION
+#------------------------------------------------
+
+# ========= Doxygen docs =========
+
+find_package(Doxygen)
+
+if(BUILD_DOCS)
+    if(NOT DOXYGEN_FOUND)
+        message(FATAL_ERROR "Doxygen is needed to build the documentation.")
+    endif()
+
+    set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in)
+    set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    configure_file(${doxyfile_in} ${doxyfile} @ONLY)
+
+    add_custom_target(doc
+        COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION share/doc)
+endif()
 
 
 # ----------------------------------------------------------------------------
