@@ -76,9 +76,17 @@ using ave_pool = tiny_cnn::average_pooling_layer<T>;
 template <class T>
 using fc = tiny_cnn::fully_connected_layer<T>;
 
+template <class T>
+using dense = tiny_cnn::fully_connected_layer<T>;
+
 using add = tiny_cnn::elementwise_add_layer;
 
 using dropout = tiny_cnn::dropout_layer;
+
+using input = tiny_cnn::input_layer;
+
+template <class T>
+using lrn = tiny_cnn::lrn_layer<T>;
 
 }
 }
