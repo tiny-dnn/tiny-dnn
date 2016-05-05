@@ -419,25 +419,16 @@ cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
     return sum;
 }
 
-template <typename T, typename Pred>
-std::vector<T> filter(const std::vector<T>& src, Pred p) {
-    std::vector<T> dst;
-    for (cnn_size_t i = 0; i < src.size(); i++)
-        if (p(i)) dst.push_back(src[i]);
-    return dst;
-}
-
-
 enum class vector_type : int32_t {
     // 0x0001XXX : in/out data
     data = 0x0001000, // input/output data, fed by other layer or input channel
 
-                      // 0x0002XXX : trainable parameters, updated for each back propagation
-                      weight = 0x0002000,
-                      bias = 0x0002001,
+    // 0x0002XXX : trainable parameters, updated for each back propagation
+    weight = 0x0002000,
+    bias = 0x0002001,
 
-                      label = 0x0004000,
-                      aux = 0x0010000 // layer-specific storage
+    label = 0x0004000,
+    aux = 0x0010000 // layer-specific storage
 };
 
 inline vector_type operator & (vector_type lhs, vector_type rhs) {

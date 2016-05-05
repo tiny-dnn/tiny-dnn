@@ -31,6 +31,7 @@
 #include "tiny_cnn/nodes.h"
 
 #include "tiny_cnn/layers/input_layer.h"
+#include "tiny_cnn/layers/feedforward_layer.h"
 #include "tiny_cnn/layers/convolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
