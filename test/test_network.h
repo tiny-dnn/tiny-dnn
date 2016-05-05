@@ -73,7 +73,7 @@ TEST(network, train_predict) {
 
     std::vector<vec_t> data;
     std::vector<label_t> label;
-    size_t tnum = 200;
+    size_t tnum = 300;
 
     optimizer.alpha *= 10;
 
@@ -131,7 +131,7 @@ TEST(network, bracket_operator) {
     EXPECT_EQ(net[1]->layer_type(), "ave-pool");
 }
 
-/*
+
 TEST(network, weight_init) {
     network<sequential> net;
 
@@ -141,8 +141,8 @@ TEST(network, weight_init) {
     net.weight_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = net[0]->weight();
-    vec_t& w2 = net[1]->weight();
+    vec_t& w1 = *net[0]->get_weights()[0];
+    vec_t& w2 = *net[1]->get_weights()[0];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -160,15 +160,15 @@ TEST(network, bias_init) {
     net.bias_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = net[0]->bias();
-    vec_t& w2 = net[1]->bias();
+    vec_t& w1 = *net[0]->get_weights()[1];
+    vec_t& w2 = *net[1]->get_weights()[1];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
 
     for (size_t i = 0; i < w2.size(); i++)
         EXPECT_NEAR(w2[i], 2.0, 1e-10);
-}*/
+}
 
 TEST(network, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
