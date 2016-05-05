@@ -76,12 +76,13 @@ protected:
 
 class data_node : public node {
 public:
-    data_node(cnn_size_t size, bool has_grad = false, bool worker_specific_data = false, bool worker_specific_grad = false)
-      : node(node_type::data), worker_specific_data_(worker_specific_data), worker_specific_grad_(worker_specific_grad), data_(1, vec_t(size)) {
-          if (has_grad) grad_.resize(1, vec_t(size));
-      }
     data_node(const shape3d& shape, vector_type vtype)
-        : node(node_type::data), worker_specific_data_(!is_trainable_weight(vtype)), worker_specific_grad_(true), data_(1, vec_t(shape.size()))
+        : node(node_type::data),
+          worker_specific_data_(!is_trainable_weight(vtype)),
+          worker_specific_grad_(true),
+          shape_(shape),
+          vtype_(vtype),
+          data_(1, vec_t(shape.size()))
     {
         grad_.resize(1, vec_t(shape.size()));
     }
@@ -106,9 +107,13 @@ public:
     vec_t*       get_gradient(cnn_size_t worker_index = 0) { return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0]; }
     const vec_t* get_data(cnn_size_t worker_index = 0)     const { return worker_specific_data_ ? &data_[worker_index] : &data_[0]; }
     const vec_t* get_gradient(cnn_size_t worker_index = 0) const { return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0]; }
+    const shape3d& shape() const { return shape_; }
+    vector_type vtype() const { return vtype_; }
 private:
     bool worker_specific_data_;
     bool worker_specific_grad_;
+    shape3d shape_;
+    vector_type vtype_;
     std::vector<vec_t> data_;
     std::vector<vec_t> grad_;
 };
@@ -323,7 +328,7 @@ public:
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t channel = 0, size_t worker_index = 0) const {
         const vec_t* output = get_outputs()[channel]->get_data(worker_index);
-        return vec2image<unsigned char>(*output);
+        return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -557,8 +562,7 @@ inline void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base
     assert(out_shape.size() == in_shape.size());
 
     if (!head->next_[head_index] && !tail->prev_[tail_index]) {
-        auto newnode = std::make_shared<data_node>(out_shape.size(), true, true);
-        //head->next_[head_index] = tail->prev_[tail_index] = newnode;
+        auto newnode = std::make_shared<data_node>(out_shape, vector_type::data);
         connect_node(head, newnode, head_index, 0);
         connect_node(newnode, tail, 0, tail_index);
     } else if (!head->next_[head_index]) {

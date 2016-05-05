@@ -98,6 +98,13 @@ network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
 void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs);
 
+/**
+ * api class for constructing/training/testing neural networks
+ *
+ * @param NetType specify the network is "sequential" or "graph".
+ *                "sequential" means the network doesn't have any branch or merge pass.
+ *                if the network has branch/merge, "graph" can be used.
+ **/
 template<typename NetType>
 class network
 {
@@ -116,7 +123,9 @@ public:
      **/
     vec_t        predict(const vec_t& in) { return fprop(in); }
 
-
+    /**
+     * executes forward-propagation and returns output
+     **/
     std::vector<vec_t> predict(const std::vector<vec_t>& in) { return fprop(in); }
 
     /**
@@ -235,15 +244,14 @@ public:
         return test_result;
     }
 
-    std::vector<vec_t> test(const std::vector<vec_t>& in)
-     {
-            std::vector<vec_t> test_result(in.size());
-            set_netphase(net_phase::test);
-            for_i(in.size(), [&](int i)
-            {
-                test_result[i] = predict(in[i]);
-            });
-            return test_result;
+    std::vector<vec_t> test(const std::vector<vec_t>& in) {
+        std::vector<vec_t> test_result(in.size());
+        set_netphase(net_phase::test);
+        for_i(in.size(), [&](int i)
+        {
+            test_result[i] = predict(in[i]);
+        });
+        return test_result;
     }
 
     /**
@@ -284,8 +292,6 @@ public:
      **/
     void fast_load(const char* filepath) {
 		FILE* stream = fopen(filepath, "r");
-		//double* temp = new double[param_num];
-		//const double* data = temp;
 		std::vector<double> data;
 		double temp;
 		while (fscanf(stream, "%lf", &temp) > 0)
@@ -333,41 +339,49 @@ public:
         return true;
     }
 
+    /**
+     * return number of layers
+     **/
     size_t layer_size() const {
         return net_.size();
     }
 
     /**
-    * return raw pointer of index-th layer
-    **/
+     * return raw pointer of index-th layer
+     **/
     const layer_base* operator [] (size_t index) const {
         return net_[index];
     }
 
     /**
-    * return raw pointer of index-th layer
-    **/
+     * return raw pointer of index-th layer
+     **/
     layer_base* operator [] (size_t index) {
         return net_[index];
     }
 
     /**
-    * return index-th layer as <T>
-    * throw nn_error if index-th layer cannot be converted to T
-    **/
+     * return index-th layer as <T>
+     * throw nn_error if index-th layer cannot be converted to T
+     **/
     template <typename T>
     const T& at(size_t index) const {
         return net_.at<T>(index);
     }
-
+    
+    /**
+     * return total number of elements of output data
+     **/
     cnn_size_t out_data_size() const {
         return net_.out_data_size();
     }
 
+    /**
+     * return total number of elements of input data
+     */
     cnn_size_t in_data_size() const {
         return net_.in_data_size();
     }
-
 
     /**
     * set weight initializer to all layers
@@ -391,6 +405,9 @@ public:
         return *this;
     }
 
+    /**
+     * returns if 2 networks have almost(<eps) the same weights
+     **/
     template <typename T>
     bool has_same_weights(const network<T>& rhs, float_t eps) const {
         auto first1 = net_.begin();
