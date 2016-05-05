@@ -1,0 +1,11 @@
+PROJECT_NAME           = "@CMAKE_PROJECT_NAME@"
+PROJECT_NUMBER         = @PROJECT_VERSION@
+PROJECT_BRIEF          = "A header only, dependency-free deep learning framework in C++11"
+STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
+                         @PROJECT_BINARY_DIR@
+OUTPUT_LANGUAGE        = English
+INPUT                  = @doxy_main_page@ \
+                         @CMAKE_CURRENT_SOURCE_DIR@/tiny_cnn
+FILE_PATTERNS          = *.h
+RECURSIVE              = YES
+USE_MDFILE_AS_MAINPAGE = @doxy_main_page@
