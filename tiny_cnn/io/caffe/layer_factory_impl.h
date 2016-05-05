@@ -40,7 +40,7 @@
 #include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/layers/linear_layer.h"
 
-typedef tiny_cnn::layer_shape_t shape_t;
+typedef tiny_cnn::shape3d shape_t;
 
 #ifdef _MSC_VER
 #define _NOMINMAX

@@ -44,8 +44,8 @@ namespace tiny_cnn {
 * @param layer [in] netparameter of caffemodel
 * @param data_shape [in] size of input data (width x height x channels)
 */
-inline std::shared_ptr<network<mse, adagrad>>
-create_net_from_caffe_net(const caffe::NetParameter& layer, const layer_shape_t& data_shape)
+inline std::shared_ptr<network<sequential>>
+create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_shape)
 {
     detail::caffe_layer_vector src_net(layer);
     shape_t shape;
@@ -59,10 +59,10 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const layer_shape_t&
         int depth = static_cast<int>(layer.input_shape(0).dim(1));
         int width = static_cast<int>(layer.input_shape(0).dim(2));
         int height = static_cast<int>(layer.input_shape(0).dim(3));
-        shape = layer_shape_t(width, height, depth);
+        shape = shape3d(width, height, depth);
     }
 
-    auto dst_net = std::make_shared<network<mse, adagrad>>(layer.name());
+    auto dst_net = std::make_shared<network<sequential>>(layer.name());
 
     for (size_t i = 0; i < src_net.size(); i++) {
         auto type = src_net[i].type();
@@ -80,7 +80,7 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const layer_shape_t&
         std::cout << "convert " << type << " => " << typeid(*layer).name() << std::endl;
         std::cout << " shape:" << shape_next << std::endl;
 
-        dst_net->add(layer);
+        *dst_net << layer;
         shape = shape_next;
     }
 
@@ -94,8 +94,8 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const layer_shape_t&
  * @param layer [in] netparameter of caffemodel
  * @param data_shape [in] size of input data (width x height x channels)
  */
-inline std::shared_ptr<network<mse, adagrad>>
-create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const layer_shape_t& data_shape)
+inline std::shared_ptr<network<sequential>>
+create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const shape3d& data_shape)
 {
     caffe::NetParameter np;
 
@@ -108,13 +108,13 @@ create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const lay
  *
  * @param layer [in] netparameter of caffe prototxt
  */
-inline std::shared_ptr<network<mse, adagrad>>
+inline std::shared_ptr<network<sequential>>
 create_net_from_caffe_prototxt(const std::string& caffeprototxt)
 {
     caffe::NetParameter np;
 
     detail::read_proto_from_text(caffeprototxt, &np);
-    return create_net_from_caffe_net(np, layer_shape_t());
+    return create_net_from_caffe_net(np, shape3d());
 }
 
 /**
@@ -124,8 +124,8 @@ create_net_from_caffe_prototxt(const std::string& caffeprototxt)
  * @param layer [in] caffe's netparameter
  * @param net [out] tiny-cnn's network
  */
-template <typename E, typename O>
-inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, network<E, O> *net)
+template <typename N>
+inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, network<N> *net)
 {
     detail::caffe_layer_vector src_net(layer);
 
@@ -158,8 +158,8 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, netwo
  * @param caffebinary [in] caffe's trained model file(binary format)
  * @param net [out] tiny-cnn's network
  */
-template <typename E, typename O>
-inline void reload_weight_from_caffe_protobinary(const std::string& caffebinary, network<E, O> *net)
+template <typename N>
+inline void reload_weight_from_caffe_protobinary(const std::string& caffebinary, network<N> *net)
 {
     caffe::NetParameter np;
 
