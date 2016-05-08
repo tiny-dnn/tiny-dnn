@@ -105,7 +105,6 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     /**
@@ -140,7 +139,6 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
     /**
     * constructing convolutional layer
@@ -175,7 +173,6 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     /**
@@ -213,7 +210,6 @@ public:
         pad_type_(pad_type),
         w_stride_(w_stride), h_stride_(h_stride)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
     }
 
     ///< number of incoming connections for each output unit
