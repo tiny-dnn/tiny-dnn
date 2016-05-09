@@ -50,7 +50,7 @@ enum class node_type {
    data
 };
 
-class node {
+class node : public std::enable_shared_from_this<node> {
 public:
     node(node_type ntype) : ntype_(ntype), in_fixed_(false), out_fixed_(false) {}
     node(node_type ntype, cnn_size_t in_size, cnn_size_t out_size)
@@ -151,24 +151,24 @@ node_tuple operator , (node_tuple& lhs, std::shared_ptr<layer_base> rhs) {
 }
 
 template <typename T, typename U>
-inline std::shared_ptr<T>& operator << (std::shared_ptr<T>& lhs, std::shared_ptr<U>& rhs) {
+inline std::shared_ptr<U>& operator << (std::shared_ptr<T>& lhs, std::shared_ptr<U>& rhs) {
     connect(lhs, rhs);
-    return lhs;
+    return rhs;
 }
 
 template <typename T>
-inline const node_tuple& operator << (const node_tuple& lhs, std::shared_ptr<T>& rhs) {
+inline std::shared_ptr<T>& operator << (const node_tuple& lhs, std::shared_ptr<T>& rhs) {
     for (size_t i = 0; i < lhs.nodes_.size(); i++)
         connect(lhs.nodes_[i], rhs, 0, i);
-    return lhs;
+    return rhs;
 }
 
 
 template <typename T>
-inline std::shared_ptr<T>& operator << (std::shared_ptr<T>& lhs, const node_tuple& rhs) {
+inline node_tuple& operator << (std::shared_ptr<T>& lhs, const node_tuple& rhs) {
     for (size_t i = 0; i < rhs.nodes_.size(); i++)
         connect(lhs, rhs.nodes_[i], i, 0);
-    return lhs;
+    return rhs;
 }
 
 } // namespace tiny_cnn

@@ -69,30 +69,50 @@ enum class net_phase {
     test
 };
 
+class random_generator {
+public:
+    static random_generator& get_instance() {
+        static random_generator instance;
+        return instance;
+    }
+
+    std::mt19937& operator()() {
+        return gen_;
+    }
+
+    void set_seed(unsigned int seed) {
+        gen_.seed(seed);
+    }
+private:
+    // avoid gen_(0) for MSVC known issue
+    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+    random_generator() : gen_(1) {}
+    std::mt19937 gen_;
+};
+
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
-    // avoid gen(0) for MSVC known issue
-    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
-    static std::mt19937 gen(1);
     std::uniform_int_distribution<T> dst(min, max);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 uniform_rand(T min, T max) {
-    static std::mt19937 gen(1);
     std::uniform_real_distribution<T> dst(min, max);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 gaussian_rand(T mean, T sigma) {
-    static std::mt19937 gen(1);
     std::normal_distribution<T> dst(mean, sigma);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
+}
+
+void set_random_seed(unsigned int seed) {
+    random_generator::get_instance().set_seed(seed);
 }
 
 template<typename Container>

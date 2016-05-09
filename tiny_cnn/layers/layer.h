@@ -436,7 +436,9 @@ private:
 inline void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base> tail, cnn_size_t head_index = 0, cnn_size_t tail_index = 0) {
     auto out_shape = head->out_shape()[head_index];
     auto in_shape = tail->in_shape()[tail_index];
-    assert(out_shape.size() == in_shape.size());
+
+    if (out_shape.size() != in_shape.size())
+        connection_mismatch(*head, *tail);
 
     if (!head->next_[head_index] && !tail->prev_[tail_index]) {
         auto newnode = std::make_shared<data_node>(out_shape, vector_type::data);
@@ -444,8 +446,10 @@ inline void connect(std::shared_ptr<layer_base> head, std::shared_ptr<layer_base
         connect_node(newnode, tail, 0, tail_index);
     } else if (!head->next_[head_index]) {
         head->next_[head_index] = tail->prev_[tail_index];
+        tail->prev_[tail_index]->next_.push_back(head);
     } else {
         tail->prev_[tail_index] = head->next_[head_index];
+        head->next_[head_index]->prev_.push_back(tail);
     }
 }
 

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,22 +24,61 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_nodes.h"
+using namespace tiny_cnn::layers;
 
-int main(void) {
-    return RUN_ALL_TESTS();
+namespace tiny_cnn {
+
+TEST(nodes, sequential) {
+    network<sequential> nn;
+
+    nn << fc<tan_h>(10, 100)
+       << fc<softmax>(100, 10);
 }
+
+TEST(nodes, graph_no_branch) {
+    // declare nodes
+    auto in = std::make_shared<input_layer>(shape3d(8, 8, 1));
+
+    auto cnn = std::make_shared<
+        convolutional_layer<tan_h> >(8, 8, 3, 1, 4);
+
+    auto pool = std::make_shared<
+        average_pooling_layer<tan_h> >(6, 6, 4, 2);
+
+    auto out = std::make_shared<linear_layer<relu> >(3 * 3 * 4);
+
+    // connect
+    in << cnn << pool << out;
+
+    network<graph> net;
+    construct_graph(net, { in }, { out });
+}
+
+TEST(nodes, graph_branch) {
+    // declare nodes
+    auto in1 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto in2 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto added = std::make_shared<add>(2, 3);
+    auto out = std::make_shared<linear_layer<relu>>(3);
+
+    // connect
+    (in1, in2) << added;
+    added << out;
+
+    network<graph> net;
+    construct_graph(net, { in1, in2 }, { out });
+
+    auto res = net.predict({ { 2,4,3 },{ -1,2,-5 } })[0];
+
+    // relu({2,4,3} + {-1,2,-5}) = {1,6,0}
+    EXPECT_FLOAT_EQ(res[0], 1.0);
+    EXPECT_FLOAT_EQ(res[1], 6.0);
+    EXPECT_FLOAT_EQ(res[2], 0.0);
+}
+
+} // namespace tiny-cnn

@@ -221,6 +221,8 @@ TEST(target_cost, train_unbalanced_data) {
     network<sequential> net_equal_sample_cost = create_net();
     network<sequential> net_equal_class_cost  = create_net();
     adagrad optimizer1, optimizer2;
+    optimizer1.alpha = 0.02;
+    optimizer2.alpha = 0.02;
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;
