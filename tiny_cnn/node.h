@@ -45,25 +45,20 @@ namespace tiny_cnn {
 class layer_base;
 class edge;
 
-enum class node_type {
-    layer,
-    data
-};
-
 /**
  * base class of all kind of tinny-cnn data
  **/
 class node : public std::enable_shared_from_this<node> {
  public:
-    node(node_type ntype, cnn_size_t in_size, cnn_size_t out_size)
+    node(cnn_size_t in_size, cnn_size_t out_size)
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}
 
     const std::vector<std::shared_ptr<edge>>& prev() const { return prev_; }
     const std::vector<std::shared_ptr<edge>>& next() const { return next_; }
 
-    std::vector<node*> prev_nodes() const;
-    std::vector<node*> next_nodes() const;
+    std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
+    std::vector<node*> next_nodes() const; // @todo refactor and remove this method
  protected:
     node() = delete;
 
@@ -85,7 +80,6 @@ class edge {
  public:
     edge(node* prev, const shape3d& shape, vector_type vtype)
         : worker_specific_data_(!is_trainable_weight(vtype)),
-          worker_specific_grad_(true),
           shape_(shape),
           vtype_(vtype),
           data_(1, vec_t(shape.size())),
@@ -108,24 +102,25 @@ class edge {
 
     void set_worker_size(cnn_size_t size) {
         if (worker_specific_data_) data_.resize(size, data_[0]);
-        if (worker_specific_grad_) grad_.resize(size, grad_[0]);
+        grad_.resize(size, grad_[0]);
     }
 
     vec_t* get_data(cnn_size_t worker_index = 0) {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
-    vec_t* get_gradient(cnn_size_t worker_index = 0) {
-        return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0];
-    }
-
     const vec_t* get_data(cnn_size_t worker_index = 0) const {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
-    const vec_t* get_gradient(cnn_size_t worker_index = 0) const {
-        return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0];
+    vec_t* get_gradient(cnn_size_t worker_index = 0) {
+        return &grad_[worker_index];
     }
+
+    const vec_t* get_gradient(cnn_size_t worker_index = 0) const {
+        return &grad_[worker_index];
+    }
+
     const std::vector<node*>& next() const { return next_; }
     node* prev() { return prev_; }
 
@@ -135,7 +130,6 @@ class edge {
 
  private:
     bool worker_specific_data_;
-    bool worker_specific_grad_;
     shape3d shape_;
     vector_type vtype_;
     std::vector<vec_t> data_;

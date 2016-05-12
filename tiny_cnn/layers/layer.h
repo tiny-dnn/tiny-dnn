@@ -68,7 +68,7 @@ class layer_base : public node {
      **/
     layer_base(const std::vector<vector_type>& in_type,
                const std::vector<vector_type>& out_type)
-            : node(node_type::layer, in_type.size(), out_type.size()),
+            : node(in_type.size(), out_type.size()),
               parallelize_(true),
               in_channels_(in_type.size()),
               out_channels_(out_type.size()),
