@@ -222,7 +222,7 @@ public:
 
     void construct(const std::vector<nodeptr_t>& input, const std::vector<nodeptr_t>& output) {
         std::vector<std::shared_ptr<node>> sorted;
-        std::unordered_map<std::shared_ptr<node>, std::vector<uint8_t>> removed_edge;
+        std::unordered_map<node*, std::vector<uint8_t>> removed_edge;
         std::vector<std::shared_ptr<node>> input_nodes(input.begin(), input.end());
 
         // topological-sorting
@@ -231,27 +231,25 @@ public:
             input_nodes.pop_back();
 
             auto& curr = sorted.back();
-            auto& next = curr->next();
+            auto next = curr->next_nodes();
 
             for (size_t i = 0; i < next.size(); i++) {
                 if (!next[i]) continue;
                 // remove edge between next[i] and current
                 if (removed_edge.find(next[i]) == removed_edge.end()) {
-                    removed_edge[next[i]] = std::vector<uint8_t>(next[i]->prev().size(), 0);
+                    removed_edge[next[i]] = std::vector<uint8_t>(next[i]->prev_nodes().size(), 0);
                 }
                 std::vector<uint8_t>& removed = removed_edge[next[i]];
-                removed[find_index(next[i]->prev(), curr)] = 1;
+                removed[find_index(next[i]->prev_nodes(), curr)] = 1;
 
                 if (std::all_of(removed.begin(), removed.end(), [](uint8_t x) { return x == 1; })) {
-                    input_nodes.push_back(next[i]);
+                    input_nodes.push_back(next[i]->shared_from_this());
                 }
             }
         }
 
         for (auto& n : sorted) {
-            if (n->is_layer()) {
-                nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
-            }
+            nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
         }
 
         input_layers_ = input;
@@ -259,9 +257,9 @@ public:
     }
 
 private:
-    cnn_size_t find_index(const std::vector<std::shared_ptr<node>>& nodes, const std::shared_ptr<node>& target) {
+    cnn_size_t find_index(const std::vector<node*>& nodes, const std::shared_ptr<node>& target) {
         for (cnn_size_t i = 0; i < nodes.size(); i++)
-            if (nodes[i].get() == target.get()) return i;
+            if (nodes[i] == target.get()) return i;
         throw nn_error("invalid connection");
     }
     std::vector<nodeptr_t> input_layers_;
