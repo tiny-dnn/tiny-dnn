@@ -68,7 +68,7 @@ class layer_base : public node {
      **/
     layer_base(const std::vector<vector_type>& in_type,
                const std::vector<vector_type>& out_type)
-            : node(node_type::layer, in_type.size(), out_type.size()),
+            : node(in_type.size(), out_type.size()),
               parallelize_(true),
               in_channels_(in_type.size()),
               out_channels_(out_type.size()),
@@ -191,11 +191,6 @@ class layer_base : public node {
         }
         return out;
     }
-
-    ///< data-storage index of input data
-    //std::vector<int> in_data_index() const { return filter(connection_.in_data, [&](int i){ return connection_.in_type[i] == vector_type::data; }); }
-    //std::vector<int> out_data_index() const { return filter(connection_.out_data, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
-    //std::vector<int> out_grad_index() const { return filter(connection_.out_grad, [&](int i) { return connection_.out_type[i] == vector_type::data; }); }
 
     /**
      * return output value range
@@ -385,6 +380,11 @@ class layer_base : public node {
       if (in_shape().size() != in_channels_ ||
           out_shape().size() != out_channels_) { throw nn_error(""); }
 
+      for (size_t i = 0; i < out_channels_; i++) {
+          if (!next_[i]) {
+              next_[i] = std::make_shared<edge>(this, out_shape()[i], out_type_[i]);
+          }
+      }
       set_worker_count(max_task_size);
       if (reset_weight) init_weight();
     }
@@ -450,6 +450,7 @@ class layer_base : public node {
         return true;
     }
 
+
  protected:
     bool parallelize_;
     cnn_size_t in_channels_;  // number of input vectors
@@ -462,11 +463,13 @@ class layer_base : public node {
     std::shared_ptr<weight_init::function> bias_init_;
 
     void alloc_input(cnn_size_t i) const {
-        prev_[i] = std::make_shared<edge>(in_shape()[i], in_type_[i]);
+        //@todo refactoring
+        prev_[i] = std::make_shared<edge>(nullptr, in_shape()[i], in_type_[i]);
     }
 
     void alloc_output(cnn_size_t i) const {
-        next_[i] = std::make_shared<edge>(out_shape()[i], out_type_[i]);
+        //@todo refactoring
+        next_[i] = std::make_shared<edge>((layer_base*)this, out_shape()[i], out_type_[i]);
     }
 
     edge*       ith_in_node(cnn_size_t i)       {
@@ -494,21 +497,18 @@ inline void connect(std::shared_ptr<layer_base> head,
     auto out_shape = head->out_shape()[head_index];
     auto in_shape = tail->in_shape()[tail_index];
 
+    head->setup(false);
+
     if (out_shape.size() != in_shape.size()) {
         connection_mismatch(*head, *tail);
     }
 
-    if (!head->next_[head_index] && !tail->prev_[tail_index]) {
-        auto newnode = std::make_shared<edge>(out_shape, vector_type::data);
-        connect_node(head, newnode, head_index, 0);
-        connect_node(newnode, tail, 0, tail_index);
-    } else if (!head->next_[head_index]) {
-        head->next_[head_index] = tail->prev_[tail_index];
-        tail->prev_[tail_index]->next_.push_back(head);
-    } else {
-        tail->prev_[tail_index] = head->next_[head_index];
-        head->next_[head_index]->prev_.push_back(tail);
+    if (!head->next_[head_index]) {
+        throw nn_error("output edge must not be null");
     }
+
+    tail->prev_[tail_index] = head->next_[head_index];
+    tail->prev_[tail_index]->add_next_node(tail.get());
 }
 
 template <typename Char, typename CharTraits>

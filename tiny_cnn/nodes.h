@@ -237,12 +237,11 @@ class graph : public nodes {
         return nodes_.back()->output(worker_index);
     }
 
-
     void construct(const std::vector<layerptr_t>& input,
                    const std::vector<layerptr_t>& output) {
         std::vector<nodeptr_t> sorted;
         std::vector<nodeptr_t> input_nodes(input.begin(), input.end());
-        std::unordered_map<nodeptr_t, std::vector<uint8_t>> removed_edge;
+        std::unordered_map<node*, std::vector<uint8_t>> removed_edge;
 
         // topological-sorting
         while (!input_nodes.empty()) {
@@ -250,30 +249,28 @@ class graph : public nodes {
             input_nodes.pop_back();
 
             nodeptr_t curr = sorted.back();
-            std::vector<nodeptr_t> next = curr->next();
+            std::vector<node*> next = curr->next_nodes();
 
           for (size_t i = 0; i < next.size(); i++) {
                 if (!next[i]) continue;
                 // remove edge between next[i] and current
                 if (removed_edge.find(next[i]) == removed_edge.end()) {
                     removed_edge[next[i]] =
-                        std::vector<uint8_t>(next[i]->prev().size(), 0);
+                        std::vector<uint8_t>(next[i]->prev_nodes().size(), 0);
                 }
 
                 std::vector<uint8_t>& removed = removed_edge[next[i]];
-                removed[find_index(next[i]->prev(), curr)] = 1;
+                removed[find_index(next[i]->prev_nodes(), curr)] = 1;
 
-                if (std::any_of(removed.begin(), removed.end(), [](uint8_t x) {
+                if (std::all_of(removed.begin(), removed.end(), [](uint8_t x) {
                         return x == 1; })) {
-                    input_nodes.push_back(next[i]);
+                    input_nodes.push_back(next[i]->shared_from_this());
                 }
             }
         }
 
         for (auto& n : sorted) {
-            if (n->is_layer()) {
-                nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
-            }
+            nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
         }
 
         input_layers_ = input;
@@ -281,10 +278,10 @@ class graph : public nodes {
     }
 
  private:
-    cnn_size_t find_index(const std::vector<nodeptr_t>& nodes,
+    cnn_size_t find_index(const std::vector<node*>& nodes,
                           const nodeptr_t& target) {
         for (cnn_size_t i = 0; i < nodes.size(); i++) {
-            if (nodes[i].get() == target.get()) return i;
+            if (nodes[i] == target.get()) return i;
         }
         throw nn_error("invalid connection");
     }

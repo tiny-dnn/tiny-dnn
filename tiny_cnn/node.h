@@ -30,6 +30,7 @@
 #include <memory>
 #include <numeric>
 #include <vector>
+#include <set>
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -43,13 +44,10 @@ namespace tiny_cnn {
 
 class node;
 class layer_base;
-
-enum class node_type {
-    layer,
-    data
-};
+class edge;
 
 typedef std::shared_ptr<node> nodeptr_t;
+typedef std::shared_ptr<edge> edgeptr_t;
 
 typedef std::shared_ptr<layer_base> layerptr_t;
 typedef typename std::vector<layerptr_t>::iterator iterator;
@@ -60,45 +58,36 @@ typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
  **/
 class node : public std::enable_shared_from_this<node> {
  public:
-    explicit node(node_type ntype)
-        : ntype_(ntype), in_fixed_(false), out_fixed_(false) {}
+    node(cnn_size_t in_size, cnn_size_t out_size)
+        : prev_(in_size), next_(out_size) {}
+    virtual ~node() {}
 
-    node(node_type ntype, cnn_size_t in_size, cnn_size_t out_size)
-        : ntype_(ntype), in_fixed_(true), out_fixed_(true),
-          prev_(in_size), next_(out_size) {}
+    const std::vector<edgeptr_t>& prev() const { return prev_; }
+    const std::vector<edgeptr_t>& next() const { return next_; }
 
-    virtual bool is_layer() const { return ntype_ == node_type::layer; }
-    virtual bool is_data() const { return ntype_ == node_type::data; }
-
-    const std::vector<nodeptr_t>& prev() const { return prev_; }
-    const std::vector<nodeptr_t>& next() const { return next_; }
-
+    std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
+    std::vector<node*> next_nodes() const; // @todo refactor and remove this method
  protected:
     node() = delete;
-    node_type ntype_;
-    bool in_fixed_;
-    bool out_fixed_;
-    friend void connect_node(nodeptr_t head, nodeptr_t tail,
-                             cnn_size_t head_index, cnn_size_t tail_index);
+
     friend void connect(layerptr_t head, layerptr_t tail,
                         cnn_size_t head_index, cnn_size_t tail_index);
 
-    mutable std::vector<nodeptr_t> prev_;
-    mutable std::vector<nodeptr_t> next_;
+    mutable std::vector<edgeptr_t> prev_;
+    mutable std::vector<edgeptr_t> next_;
 };
 
 /**
  * class containing input/output data
  **/
-class edge : public node {
+class edge {
  public:
-    edge(const shape3d& shape, vector_type vtype)
-        : node(node_type::data),
-          worker_specific_data_(!is_trainable_weight(vtype)),
-          worker_specific_grad_(true),
+    edge(node* prev, const shape3d& shape, vector_type vtype)
+        : worker_specific_data_(!is_trainable_weight(vtype)),
           shape_(shape),
           vtype_(vtype),
-          data_(1, vec_t(shape.size())) {
+          data_(1, vec_t(shape.size())),
+          prev_(prev) {
       grad_.resize(1, vec_t(shape.size()));
     }
 
@@ -117,51 +106,59 @@ class edge : public node {
 
     void set_worker_size(cnn_size_t size) {
         if (worker_specific_data_) data_.resize(size, data_[0]);
-        if (worker_specific_grad_) grad_.resize(size, grad_[0]);
+        grad_.resize(size, grad_[0]);
     }
 
     vec_t* get_data(cnn_size_t worker_index = 0) {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
-    vec_t* get_gradient(cnn_size_t worker_index = 0) {
-        return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0];
-    }
-
     const vec_t* get_data(cnn_size_t worker_index = 0) const {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
-    const vec_t* get_gradient(cnn_size_t worker_index = 0) const {
-        return worker_specific_grad_ ? &grad_[worker_index] : &grad_[0];
+    vec_t* get_gradient(cnn_size_t worker_index = 0) {
+        return &grad_[worker_index];
     }
+
+    const vec_t* get_gradient(cnn_size_t worker_index = 0) const {
+        return &grad_[worker_index];
+    }
+
+    const std::vector<node*>& next() const { return next_; }
+    node* prev() { return prev_; }
 
     const shape3d& shape() const { return shape_; }
     vector_type vtype() const { return vtype_; }
+    void add_next_node(node* next) { next_.push_back(next); }
 
  private:
     bool worker_specific_data_;
-    bool worker_specific_grad_;
     shape3d shape_;
     vector_type vtype_;
     std::vector<vec_t> data_;
     std::vector<vec_t> grad_;
+    node* prev_;               // previous node, "producer" of this tensor
+    std::vector<node*> next_;  // next nodes, "consumers" of this tensor
 };
 
-inline void connect_node(nodeptr_t head, nodeptr_t tail,
-                         cnn_size_t head_index = 0, cnn_size_t tail_index = 0) {
-    // connect head to tail
-    if (head->out_fixed_) {
-        head->next_[head_index] = tail;
-    } else {
-        head->next_.push_back(tail);
+std::vector<node*> node::prev_nodes() const {
+    std::set<node*> sets;
+    for (auto& e : prev_) {
+        if (e && e->prev()) sets.insert(e->prev());
     }
-    // connect tail to head
-    if (tail->in_fixed_) {
-        tail->prev_[tail_index] = head;
-    } else {
-        tail->prev_.push_back(head);
+    return std::vector<node*>(sets.begin(), sets.end());
+}
+
+std::vector<node*> node::next_nodes() const {
+    std::set<node*> sets;
+    for (auto& e : next_) {
+        if (e) {
+            auto n = e->next();
+            sets.insert(n.begin(), n.end());
+        }
     }
+    return std::vector<node*>(sets.begin(), sets.end());
 }
 
 struct node_tuple {
