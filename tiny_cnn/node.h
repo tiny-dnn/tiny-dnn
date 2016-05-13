@@ -42,8 +42,16 @@
 
 namespace tiny_cnn {
 
+class node;
 class layer_base;
 class edge;
+
+typedef std::shared_ptr<node> nodeptr_t;
+typedef std::shared_ptr<edge> edgeptr_t;
+
+typedef std::shared_ptr<layer_base> layerptr_t;
+typedef typename std::vector<layerptr_t>::iterator iterator;
+typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
 /**
  * base class of all kind of tinny-cnn data
@@ -54,23 +62,19 @@ class node : public std::enable_shared_from_this<node> {
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}
 
-    const std::vector<std::shared_ptr<edge>>& prev() const { return prev_; }
-    const std::vector<std::shared_ptr<edge>>& next() const { return next_; }
+    const std::vector<edgeptr_t>& prev() const { return prev_; }
+    const std::vector<edgeptr_t>& next() const { return next_; }
 
     std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
     std::vector<node*> next_nodes() const; // @todo refactor and remove this method
  protected:
     node() = delete;
 
-    friend void connect_node(std::shared_ptr<node> head,
-                             std::shared_ptr<node> tail,
-                             cnn_size_t head_index, cnn_size_t tail_index);
-    friend void connect(std::shared_ptr<layer_base> head,
-                        std::shared_ptr<layer_base> tail,
+    friend void connect(layerptr_t head, layerptr_t tail,
                         cnn_size_t head_index, cnn_size_t tail_index);
 
-    mutable std::vector<std::shared_ptr<edge>> prev_;
-    mutable std::vector<std::shared_ptr<edge>> next_;
+    mutable std::vector<edgeptr_t> prev_;
+    mutable std::vector<edgeptr_t> next_;
 };
 
 /**
@@ -134,8 +138,8 @@ class edge {
     vector_type vtype_;
     std::vector<vec_t> data_;
     std::vector<vec_t> grad_;
-    node* prev_; // previous node, "producer" of this tensor
-    std::vector<node*> next_; // next nodes, "consumers" of this tensor
+    node* prev_;               // previous node, "producer" of this tensor
+    std::vector<node*> next_;  // next nodes, "consumers" of this tensor
 };
 
 std::vector<node*> node::prev_nodes() const {
@@ -158,18 +162,17 @@ std::vector<node*> node::next_nodes() const {
 }
 
 struct node_tuple {
-    node_tuple(std::shared_ptr<layer_base> l1, std::shared_ptr<layer_base> l2) {
+    node_tuple(layerptr_t l1, layerptr_t l2) {
         nodes_.push_back(l1); nodes_.push_back(l2);
     }
-    std::vector<std::shared_ptr<layer_base>> nodes_;
+    std::vector<layerptr_t> nodes_;
 };
 
-node_tuple operator , (std::shared_ptr<layer_base> l1,
-                       std::shared_ptr<layer_base> l2) {
+node_tuple operator , (layerptr_t l1, layerptr_t l2) {
     return node_tuple(l1, l2);
 }
 
-node_tuple operator , (node_tuple* lhs, std::shared_ptr<layer_base> rhs) {
+node_tuple operator , (node_tuple* lhs, layerptr_t rhs) {
     lhs->nodes_.push_back(rhs);
     return (*lhs);
 }
@@ -198,6 +201,5 @@ inline node_tuple& operator << (std::shared_ptr<T>& lhs,
     }
     return rhs;
 }
-
 
 }   // namespace tiny_cnn
