@@ -490,8 +490,8 @@ class layer : public node {
     }
 };
 
-inline void connect(std::shared_ptr<layer> head,
-                    std::shared_ptr<layer> tail,
+inline void connect(layerptr_t head,
+                    layerptr_t tail,
                     cnn_size_t head_index = 0,
                     cnn_size_t tail_index = 0) {
     auto out_shape = head->out_shape()[head_index];
@@ -508,7 +508,7 @@ inline void connect(std::shared_ptr<layer> head,
     }
 
     tail->prev_[tail_index] = head->next_[head_index];
-    tail->prev_[tail_index]->add_next_node(tail.get());
+    tail->prev_[tail_index]->add_next_node(tail);
 }
 
 template <typename Char, typename CharTraits>

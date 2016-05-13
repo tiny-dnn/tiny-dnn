@@ -46,10 +46,10 @@ class node;
 class layer;
 class edge;
 
-typedef std::shared_ptr<node> nodeptr_t;
+typedef node* nodeptr_t;
 typedef std::shared_ptr<edge> edgeptr_t;
 
-typedef std::shared_ptr<layer> layerptr_t;
+typedef layer* layerptr_t;
 typedef typename std::vector<layerptr_t>::iterator iterator;
 typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
@@ -161,18 +161,21 @@ std::vector<node*> node::next_nodes() const {
     return std::vector<node*>(sets.begin(), sets.end());
 }
 
+template <typename T>
 struct node_tuple {
-    node_tuple(layerptr_t l1, layerptr_t l2) {
+    node_tuple(T l1, T l2) {
         nodes_.push_back(l1); nodes_.push_back(l2);
     }
-    std::vector<layerptr_t> nodes_;
+    std::vector<T> nodes_;
 };
 
-node_tuple operator , (layerptr_t l1, layerptr_t l2) {
-    return node_tuple(l1, l2);
+template <typename T>
+node_tuple<T> operator , (T l1, T l2) {
+    return node_tuple<T>(l1, l2);
 }
 
-node_tuple operator , (node_tuple* lhs, layerptr_t rhs) {
+template <typename T>
+node_tuple<T> operator , (node_tuple<T>* lhs, T& rhs) {
     lhs->nodes_.push_back(rhs);
     return (*lhs);
 }
@@ -180,24 +183,22 @@ node_tuple operator , (node_tuple* lhs, layerptr_t rhs) {
 template <typename T, typename U>
 inline std::shared_ptr<U>& operator << (std::shared_ptr<T>& lhs,
                                         std::shared_ptr<U>& rhs) {
-    connect(lhs, rhs);
+    connect(lhs.get(), rhs.get());
     return rhs;
 }
 
-template <typename T>
-inline std::shared_ptr<T>& operator << (const node_tuple& lhs,
-                                        std::shared_ptr<T>& rhs) {
+template <typename T, typename U>
+inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
     for (size_t i = 0; i < lhs.nodes_.size(); i++) {
-        connect(lhs.nodes_[i], rhs, 0, i);
+        connect(&*lhs.nodes_[i], &*rhs, 0, i);
     }
     return rhs;
 }
 
-template <typename T>
-inline node_tuple& operator << (std::shared_ptr<T>& lhs,
-                                const node_tuple& rhs) {
+template <typename T, typename U>
+inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
     for (size_t i = 0; i < rhs.nodes_.size(); i++) {
-        connect(lhs, rhs.nodes_[i], i, 0);
+        connect(&*lhs, &*rhs.nodes_[i], i, 0);
     }
     return rhs;
 }

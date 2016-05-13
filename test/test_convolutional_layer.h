@@ -49,7 +49,7 @@ TEST(convolutional, fprop) {
     in_data.push_back(&bias);
     out_data.push_back(&out);
     out_data.push_back(&a);
-
+    l.setup(false, 1);
     {
         l.forward_propagation(0, in_data, out_data);
 

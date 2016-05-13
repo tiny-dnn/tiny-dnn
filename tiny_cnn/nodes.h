@@ -35,8 +35,26 @@
 
 namespace tiny_cnn {
 
-/**
- * basic class of various network types (sequential, multi-in/multi-out)
+/** basic class of various network types (sequential, multi-in/multi-out).
+ *
+ * this class holds list of pointer of Node, and provides entry point of
+ * forward / backward operations.
+ * Node is a computational unit of tiny-cnn (for example, convolution).
+ * Currently 2 kinds of implementation are available: sequential and graph.
+ * 
+ * Nodes can accept lvalue, rvalue and shared_ptr forms of node.
+ * If given type is rvalue or shared_ptr, nodes create shared_ptr<node> to keep
+ * given node alive. If given type is lvalue, tiny-cnn holds raw-pointer only
+ * (to avoid double-free).
+ *
+ *     sequential s;
+ *     s.add(fc<tan_h>(100, 200));                   // rvalue, moved into nodes
+ *
+ *     s.add(std::make_shared<fc<tan_h>>(200, 100)); // shared_ptr, shared by nodes
+ *
+ *     fc<softmax> out(100, 10);
+ *     s.add(out);                                   // lvalue, hold raw-pointer only
+ *
  **/
 class nodes {
  public:
@@ -88,14 +106,14 @@ class nodes {
     iterator end() { return nodes_.end(); }
     const_iterator begin() const { return nodes_.begin(); }
     const_iterator end() const { return nodes_.end(); }
-    layer* operator [] (size_t index) { return nodes_[index].get(); }
-    const layer* operator [] (size_t index) const { return nodes_[index].get(); } // NOLINT
+    layer* operator [] (size_t index) { return nodes_[index]; }
+    const layer* operator [] (size_t index) const { return nodes_[index]; } // NOLINT
     cnn_size_t in_data_size() const { return nodes_.front()->in_data_size(); }
     cnn_size_t out_data_size() const { return nodes_.back()->out_data_size(); }
 
     template <typename T>
     const T& at(size_t index) const {
-        const T* v = dynamic_cast<const T*>(nodes_[index].get());
+        const T* v = dynamic_cast<const T*>(nodes_[index]);
         if (v) return *v;
         throw nn_error("failed to cast");
     }
@@ -143,8 +161,31 @@ class nodes {
         }
     }
 
- protected:
-    std::vector<layerptr_t> nodes_;
+protected:
+    template <typename T>
+    void push_back(T&& node) {
+        push_back_impl(std::forward<T>(node),
+                       std::is_rvalue_reference<decltype(node)>::type());
+    }
+
+    template <typename T>
+    void push_back(std::shared_ptr<T> node) {
+        own_nodes_.push_back(node);
+        nodes_.push_back(own_nodes_.back().get());
+    }
+protected:
+    template <typename T>
+    void push_back_impl(T&& node, std::true_type) { // is_rvalue_reference
+        own_nodes_.push_back(std::make_shared<std::remove_reference<T>::type>(std::forward<T>(node)));
+        nodes_.push_back(own_nodes_.back().get());
+    }
+    template <typename T>
+    void push_back_impl(T&& node, std::false_type) {
+        nodes_.push_back(&node);
+    }
+
+    std::vector<std::shared_ptr<layer>> own_nodes_; ///< nodes which this class has ownership
+    std::vector<layerptr_t> nodes_; ///< list of all nodes which includes own_nodes
 };
 
 /**
@@ -171,9 +212,9 @@ class sequential : public nodes {
         return nodes_.back()->output(worker_index);
     }
 
-
-    void add(layerptr_t layer) {
-        nodes_.push_back(layer);
+    template <typename T>
+    void add(T&& layer) {
+        push_back(std::forward<T>(layer));
 
         if (nodes_.size() != 1) {
             auto head = nodes_[nodes_.size()-2];
@@ -239,19 +280,19 @@ class graph : public nodes {
 
     void construct(const std::vector<layerptr_t>& input,
                    const std::vector<layerptr_t>& output) {
-        std::vector<nodeptr_t> sorted;
+        std::vector<layerptr_t> sorted;
         std::vector<nodeptr_t> input_nodes(input.begin(), input.end());
         std::unordered_map<node*, std::vector<uint8_t>> removed_edge;
 
         // topological-sorting
         while (!input_nodes.empty()) {
-            sorted.push_back(input_nodes.back());
+            sorted.push_back(dynamic_cast<layerptr_t>(input_nodes.back()));
             input_nodes.pop_back();
 
-            nodeptr_t curr = sorted.back();
+            layerptr_t curr = sorted.back();
             std::vector<node*> next = curr->next_nodes();
 
-          for (size_t i = 0; i < next.size(); i++) {
+            for (size_t i = 0; i < next.size(); i++) {
                 if (!next[i]) continue;
                 // remove edge between next[i] and current
                 if (removed_edge.find(next[i]) == removed_edge.end()) {
@@ -264,13 +305,13 @@ class graph : public nodes {
 
                 if (std::all_of(removed.begin(), removed.end(), [](uint8_t x) {
                         return x == 1; })) {
-                    input_nodes.push_back(next[i]->shared_from_this());
+                    input_nodes.push_back(next[i]);
                 }
             }
         }
 
         for (auto& n : sorted) {
-            nodes_.push_back(std::dynamic_pointer_cast<layer>(n));
+            nodes_.push_back(n);
         }
 
         input_layers_ = input;
@@ -279,9 +320,9 @@ class graph : public nodes {
 
  private:
     cnn_size_t find_index(const std::vector<node*>& nodes,
-                          const nodeptr_t& target) {
+                          layerptr_t target) {
         for (cnn_size_t i = 0; i < nodes.size(); i++) {
-            if (nodes[i] == target.get()) return i;
+            if (nodes[i] == static_cast<node*>(&*target)) return i;
         }
         throw nn_error("invalid connection");
     }

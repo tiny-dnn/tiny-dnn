@@ -97,6 +97,7 @@ template <typename Layer>
 network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
 void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
+void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs);
 
 /**
  * api class for constructing/training/testing neural networks
@@ -416,7 +417,7 @@ public:
         auto last2 = rhs.net_.end();
 
         for (; first1 != last1 && first2 != last2; ++first1, ++first2)
-            if (!(*first1)->has_same_weights(*first2->get(), eps)) return false;
+            if (!(*first1)->has_same_weights(**first2, eps)) return false;
         return true;
     }
 protected:
@@ -434,6 +435,7 @@ private:
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
     friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
+    friend void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs);
 
     /**
      * train on one minibatch
@@ -666,7 +668,7 @@ inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  row
 
 template <typename Layer>
 network<sequential>& operator << (network<sequential>& n, Layer&& l) {
-    n.net_.add(std::make_shared<typename std::remove_reference<Layer>::type>(std::forward<Layer>(l)));
+    n.net_.add(std::forward<Layer>(l));
     return n;
 }
 
@@ -682,9 +684,20 @@ std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, Char
     return os;
 }
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
+void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
 {
     graph.net_.construct(inputs, outputs);
+}
+
+void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
+{
+    std::vector<layer*> in_ptr, out_ptr;
+    auto shared2ptr = [](std::shared_ptr<layer> l) { return l.get(); };
+
+    std::transform(inputs.begin(), inputs.end(), std::back_inserter(in_ptr), shared2ptr);
+    std::transform(outputs.begin(), outputs.end(), std::back_inserter(out_ptr), shared2ptr);
+
+    graph.net_.construct(in_ptr, out_ptr);
 }
 
 } // namespace tiny_cnn
