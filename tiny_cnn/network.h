@@ -96,7 +96,7 @@ class network;
 template <typename Layer>
 network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs);
+void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
 
 /**
  * api class for constructing/training/testing neural networks
@@ -349,14 +349,14 @@ public:
     /**
      * return raw pointer of index-th layer
      **/
-    const layer_base* operator [] (size_t index) const {
+    const layer* operator [] (size_t index) const {
         return net_[index];
     }
 
     /**
      * return raw pointer of index-th layer
      **/
-    layer_base* operator [] (size_t index) {
+    layer* operator [] (size_t index) {
         return net_[index];
     }
 
@@ -433,7 +433,7 @@ private:
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
-    friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs);
+    friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
 
     /**
      * train on one minibatch
@@ -682,7 +682,7 @@ std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, Char
     return os;
 }
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer_base>>& inputs, const std::vector<std::shared_ptr<layer_base>>& outputs)
+void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
 {
     graph.net_.construct(inputs, outputs);
 }

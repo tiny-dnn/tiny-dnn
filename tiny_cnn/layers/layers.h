@@ -42,16 +42,16 @@ public:
         return *this;
     }
 
-    void add(std::shared_ptr<layer_base> new_tail) {
+    void add(std::shared_ptr<layer> new_tail) {
         if (tail())  tail()->connect(new_tail);
         layers_.push_back(new_tail);
     }
 
     bool empty() const { return layers_.size() == 0; }
 
-    layer_base* head() const { return empty() ? 0 : layers_[0].get(); }
+    layer* head() const { return empty() ? 0 : layers_[0].get(); }
 
-    layer_base* tail() const { return empty() ? 0 : layers_[layers_.size() - 1].get(); }
+    layer* tail() const { return empty() ? 0 : layers_[layers_.size() - 1].get(); }
 
     template <typename T>
     const T& at(size_t index) const {
@@ -60,11 +60,11 @@ public:
         throw nn_error("failed to cast");
     }
 
-    const layer_base* operator [] (size_t index) const {
+    const layer* operator [] (size_t index) const {
         return layers_[index + 1].get();
     }
 
-    layer_base* operator [] (size_t index) {
+    layer* operator [] (size_t index) {
         return layers_[index + 1].get();
     }
 
@@ -113,7 +113,7 @@ private:
             add(rhs.layers_[i]);
     }
 
-    std::vector<std::shared_ptr<layer_base>> layers_;
+    std::vector<std::shared_ptr<layer>> layers_;
 };
 
 } // namespace tiny_cnn

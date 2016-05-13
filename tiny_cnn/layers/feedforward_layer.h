@@ -34,10 +34,10 @@ namespace tiny_cnn {
  * single-input, single-output network with activation function
  **/
 template<typename Activation>
-class feedforward_layer : public layer_base {
+class feedforward_layer : public layer {
 public:
     explicit feedforward_layer(const std::vector<vector_type>& in_data_type)
-        : layer_base(in_data_type, std_output_order(true)) {}
+        : layer(in_data_type, std_output_order(true)) {}
     activation::function& activation_function() { return h_; }
     std::pair<float_t, float_t> out_value_range() const override { return h_.scale(); }
 

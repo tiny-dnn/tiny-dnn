@@ -88,8 +88,8 @@ class nodes {
     iterator end() { return nodes_.end(); }
     const_iterator begin() const { return nodes_.begin(); }
     const_iterator end() const { return nodes_.end(); }
-    layer_base* operator [] (size_t index) { return nodes_[index].get(); }
-    const layer_base* operator [] (size_t index) const { return nodes_[index].get(); } // NOLINT
+    layer* operator [] (size_t index) { return nodes_[index].get(); }
+    const layer* operator [] (size_t index) const { return nodes_[index].get(); } // NOLINT
     cnn_size_t in_data_size() const { return nodes_.front()->in_data_size(); }
     cnn_size_t out_data_size() const { return nodes_.back()->out_data_size(); }
 
@@ -270,7 +270,7 @@ class graph : public nodes {
         }
 
         for (auto& n : sorted) {
-            nodes_.push_back(std::dynamic_pointer_cast<layer_base>(n));
+            nodes_.push_back(std::dynamic_pointer_cast<layer>(n));
         }
 
         input_layers_ = input;

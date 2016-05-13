@@ -29,9 +29,9 @@
 
 namespace tiny_cnn {
 
-class input_layer : public layer_base {
+class input_layer : public layer {
 public:
-    input_layer(const shape3d& shape) : layer_base({vector_type::data}, {vector_type::data}), shape_(shape) {}
+    input_layer(const shape3d& shape) : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
 
     std::vector<shape3d> in_shape() const override { return { shape_ }; }
     std::vector<shape3d> out_shape() const override { return { shape_ }; }

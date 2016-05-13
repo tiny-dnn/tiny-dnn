@@ -43,13 +43,13 @@
 namespace tiny_cnn {
 
 class node;
-class layer_base;
+class layer;
 class edge;
 
 typedef std::shared_ptr<node> nodeptr_t;
 typedef std::shared_ptr<edge> edgeptr_t;
 
-typedef std::shared_ptr<layer_base> layerptr_t;
+typedef std::shared_ptr<layer> layerptr_t;
 typedef typename std::vector<layerptr_t>::iterator iterator;
 typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 

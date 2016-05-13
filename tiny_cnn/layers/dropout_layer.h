@@ -32,10 +32,10 @@
 namespace tiny_cnn {
 
 // normal 
-class dropout_layer : public layer_base {
+class dropout_layer : public layer {
 public:
     typedef activation::identity Activation;
-    typedef layer_base Base;
+    typedef layer Base;
     //CNN_USE_LAYER_MEMBERS;
 
     dropout_layer(cnn_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)

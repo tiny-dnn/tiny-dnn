@@ -33,10 +33,10 @@ namespace tiny_cnn {
 /**
  * element-wise add N vectors
  **/
-class elementwise_add_layer : public layer_base {
+class elementwise_add_layer : public layer {
 public:
     elementwise_add_layer(cnn_size_t num_args, cnn_size_t dim)
-    : layer_base(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}), num_args_(num_args), dim_(dim) {}
+    : layer(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}), num_args_(num_args), dim_(dim) {}
 
     std::string layer_type() const override {
         return "elementwise-add";

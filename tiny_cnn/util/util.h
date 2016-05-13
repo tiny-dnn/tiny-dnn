@@ -407,7 +407,7 @@ std::string to_string(T value) {
 }
 
 // boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS using layer_base::parallelize_; \
+#define CNN_USE_LAYER_MEMBERS using layer::parallelize_; \
     using feedforward_layer<Activation>::h_
 
 

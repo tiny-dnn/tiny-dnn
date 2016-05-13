@@ -73,7 +73,7 @@ inline std::string unique_path() {
     return exists(pattern) ? unique_path() : pattern;
 }
 
-vec_t forward_pass(layer_base& src, const vec_t& vec) {
+vec_t forward_pass(layer& src, const vec_t& vec) {
     *src.get_inputs()[0]->get_data() = vec;
     src.forward(0);
     return src.output()[0];

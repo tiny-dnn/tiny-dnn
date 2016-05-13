@@ -54,19 +54,19 @@ namespace tiny_cnn {
  * - out_shape           ... specify output data shapes
  * - layer_type          ... name of layer
  **/
-class layer_base : public node {
+class layer : public node {
  public:
-    friend void connection_mismatch(const layer_base& from,
-                                    const layer_base& to);
+    friend void connection_mismatch(const layer& from,
+                                    const layer& to);
 
-    virtual ~layer_base() = default;
+    virtual ~layer() = default;
 
     /**
      * construct N-input, M-output layer
      * @param in_type[N] type of input vector (data, weight, bias...)
      * @param out_type[M] type of output vector
      **/
-    layer_base(const std::vector<vector_type>& in_type,
+    layer(const std::vector<vector_type>& in_type,
                const std::vector<vector_type>& out_type)
             : node(in_type.size(), out_type.size()),
               parallelize_(true),
@@ -78,12 +78,12 @@ class layer_base : public node {
         bias_init_ = std::make_shared<weight_init::constant>();
     }
 
-    layer_base(const layer_base&) = default;
-    layer_base &operator =(const layer_base&) = default;
+    layer(const layer&) = default;
+    layer &operator =(const layer&) = default;
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
-    layer_base(layer_base&&) = default;
-    layer_base &operator = (layer_base&&) = default;
+    layer(layer&&) = default;
+    layer &operator = (layer&&) = default;
 #endif
 
     void set_parallelize(bool parallelize) {
@@ -231,25 +231,25 @@ class layer_base : public node {
     /////////////////////////////////////////////////////////////////////////
     // setter
     template <typename WeightInit>
-    layer_base& weight_init(const WeightInit& f) {
+    layer& weight_init(const WeightInit& f) {
         weight_init_ = std::make_shared<WeightInit>(f);
         return *this;
     }
 
     template <typename BiasInit>
-    layer_base& bias_init(const BiasInit& f) {
+    layer& bias_init(const BiasInit& f) {
         bias_init_ = std::make_shared<BiasInit>(f);
         return *this;
     }
 
     template <typename WeightInit>
-    layer_base& weight_init(std::shared_ptr<WeightInit> f) {
+    layer& weight_init(std::shared_ptr<WeightInit> f) {
         weight_init_ = f;
         return *this;
     }
 
     template <typename BiasInit>
-    layer_base& bias_init(std::shared_ptr<BiasInit> f) {
+    layer& bias_init(std::shared_ptr<BiasInit> f) {
         bias_init_ = f;
         return *this;
     }
@@ -435,7 +435,7 @@ class layer_base : public node {
         }
     }
 
-    bool has_same_weights(const layer_base& rhs, float_t eps) const {
+    bool has_same_weights(const layer& rhs, float_t eps) const {
         auto w1 = get_weights();
         auto w2 = rhs.get_weights();
         if (w1.size() != w2.size()) return false;
@@ -469,7 +469,7 @@ class layer_base : public node {
 
     void alloc_output(cnn_size_t i) const {
         //@todo refactoring
-        next_[i] = std::make_shared<edge>((layer_base*)this, out_shape()[i], out_type_[i]);
+        next_[i] = std::make_shared<edge>((layer*)this, out_shape()[i], out_type_[i]);
     }
 
     edge*       ith_in_node(cnn_size_t i)       {
@@ -490,8 +490,8 @@ class layer_base : public node {
     }
 };
 
-inline void connect(std::shared_ptr<layer_base> head,
-                    std::shared_ptr<layer_base> tail,
+inline void connect(std::shared_ptr<layer> head,
+                    std::shared_ptr<layer> tail,
                     cnn_size_t head_index = 0,
                     cnn_size_t tail_index = 0) {
     auto out_shape = head->out_shape()[head_index];
@@ -513,21 +513,21 @@ inline void connect(std::shared_ptr<layer_base> head,
 
 template <typename Char, typename CharTraits>
 std::basic_ostream<Char, CharTraits>& operator << (
-        std::basic_ostream<Char, CharTraits>& os, const layer_base& v) {
+        std::basic_ostream<Char, CharTraits>& os, const layer& v) {
     v.save(os);
     return os;
 }
 
 template <typename Char, typename CharTraits>
 std::basic_istream<Char, CharTraits>& operator >> (
-      std::basic_istream<Char, CharTraits>& os, layer_base& v) {
+      std::basic_istream<Char, CharTraits>& os, layer& v) {
     v.load(os);
     return os;
 }
 
 // error message functions
 
-inline void connection_mismatch(const layer_base& from, const layer_base& to) {
+inline void connection_mismatch(const layer& from, const layer& to) {
     std::ostringstream os;
 
     os << std::endl;
@@ -551,7 +551,7 @@ inline void connection_mismatch(const layer_base& from, const layer_base& to) {
     throw nn_error("layer dimension mismatch!" + detail_info);
 }
 
-inline void data_mismatch(const layer_base& layer, const vec_t& data) {
+inline void data_mismatch(const layer& layer, const vec_t& data) {
     std::ostringstream os;
 
     os << std::endl;
