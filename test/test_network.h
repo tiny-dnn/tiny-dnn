@@ -31,6 +31,59 @@
 
 namespace tiny_cnn {
 
+class test_fc_layer : public fully_connected_layer<tan_h> {
+public:
+    typedef fully_connected_layer<tan_h> base;
+    
+    test_fc_layer() : base(10, 10) {
+        ++counter();
+    }
+
+    test_fc_layer(const test_fc_layer& fc) : base(10, 10) {
+        ++counter();
+    }
+
+    virtual ~test_fc_layer() {
+        --counter();
+    }
+
+    test_fc_layer(test_fc_layer&& r) : base(std::move(r)){
+        ++counter();
+    }
+
+    static int& counter() { static int i = 0; return i; }
+};
+
+TEST(network, construct_sequential_by_local_variables) {
+    {
+        network<sequential> net;
+        test_fc_layer fc1, fc2;
+        net << fc1 << fc2;
+        ASSERT_EQ(test_fc_layer::counter(), 2);
+    }
+    ASSERT_EQ(test_fc_layer::counter(), 0);
+}
+
+TEST(network, construct_sequential_by_temporary_variables) {
+    {
+        network<sequential> net;
+        net << test_fc_layer() << test_fc_layer();
+        ASSERT_EQ(test_fc_layer::counter(), 2);
+    }
+    ASSERT_EQ(test_fc_layer::counter(), 0);
+}
+
+TEST(network, construct_sequential_by_shared_ptr) {
+    {
+        network<sequential> net;
+        auto fc1 = std::make_shared<test_fc_layer>();
+        auto fc2 = std::make_shared<test_fc_layer>();
+        net << fc1 << fc2;
+        ASSERT_EQ(test_fc_layer::counter(), 2);
+    }
+    ASSERT_EQ(test_fc_layer::counter(), 0);
+}
+
 TEST(network, in_dim) {
     network<sequential> net;
     convolutional_layer<identity> c1(32, 32, 5, 3, 6, padding::same);
