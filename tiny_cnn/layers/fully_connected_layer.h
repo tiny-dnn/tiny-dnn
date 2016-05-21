@@ -101,7 +101,7 @@ public:
         for (cnn_size_t c = 0; c < this->in_size_; c++) {
             // propagate delta to previous layer
             // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-            prev_delta[c] = vectorize::dot(&curr_delta[0], &W[c*out_size_], out_size_);
+            prev_delta[c] += vectorize::dot(&curr_delta[0], &W[c*out_size_], out_size_);
         }
 
         for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {

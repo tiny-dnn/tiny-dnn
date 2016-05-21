@@ -355,7 +355,7 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
     nn = &nn_balanced;
     optimizer = gradient_descent();
     const auto target_cost = create_balanced_target_cost(train_labels, 0.8);
-    nn_balanced.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE, &target_cost);
+    nn_balanced.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE, target_cost);
 
     // test and show results
     std::cout << std::endl << "Standard training (implicitly assumed equal cost for every sample):" << std::endl;

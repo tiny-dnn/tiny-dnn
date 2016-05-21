@@ -406,6 +406,12 @@ class layer : public node {
         }
     }
 
+    void clear_grads(cnn_size_t worker_size) {
+        for (size_t i = 0; i < in_type_.size(); i++) {
+            ith_in_node(i)->clear_grads(worker_size);
+        }
+    }
+
     void update_weight(optimizer *o,
                        cnn_size_t worker_size, cnn_size_t batch_size) {
         for (size_t i = 0; i < in_type_.size(); i++) {
@@ -418,11 +424,10 @@ class layer : public node {
                                diff.begin(), [&](float_t x) { // NOLINT
                                   return x / batch_size; });
                 o->update(diff, target);
-
-                ith_in_node(i)->clear_grads(worker_size);
-          }
-      }
-      post_update();
+            }
+        }
+        clear_grads(worker_size);
+        post_update();
     }
 
     virtual void set_worker_count(cnn_size_t worker_count) {

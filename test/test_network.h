@@ -119,6 +119,55 @@ TEST(network, add) {
     //EXPECT_EQ(net.depth(), 1);
 }
 
+TEST(network, multi_out) {
+    network<graph> net;
+    adam optimizer;
+    size_t tnum = 600;
+
+    std::vector<vec_t> data;
+    std::vector<std::vector<vec_t>> out;
+
+    auto in = std::make_shared<input_layer>(shape3d(2,1,1));
+    auto hidden = std::make_shared<layers::fc<tan_h>>(2,4);
+    auto out1 = std::make_shared<layers::fc<tan_h>>(4,2);
+    auto out2 = std::make_shared<layers::fc<tan_h>>(4,2);
+
+    in << hidden << out1;
+    hidden << out2;
+
+    for (size_t i = 0; i < tnum; i++) {
+        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+        data.push_back({ in[0] * 1.0, in[1] * 1.0 });
+
+        out.emplace_back(std::vector<vec_t>{
+            {(in[0]&&in[1])*1.0, (in[0]||in[1])*1.0}, // 1st output train and/or function
+            {(in[0]^in[1])*1.0, (in[0]==in[1])*1.0} // 2nd output train xor/eq function
+        });
+    }
+
+    // construct single input, dual output network
+    construct_graph(net, {in}, {out1,out2});
+
+    optimizer.alpha *= 10;
+
+    //net.fit<mse>(optimizer, data, out, 10, 10, nop, [&](){ std::cout << net.get_loss<mse>(data,out) << std::endl;});
+    net.fit<mse>(optimizer, data, out, 10, 10);
+
+    for (size_t i = 0; i < tnum; i++) {
+        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        std::vector<vec_t> actual = net.predict(std::vector<vec_t>{{ in[0] * 1.0, in[1] * 1.0 }});
+        vec_t actual_out1 = actual[0];
+        vec_t actual_out2 = actual[1];
+
+        EXPECT_NEAR(actual_out1[0], in[0]&&in[1], 0.1);
+        EXPECT_NEAR(actual_out1[1], in[0]||in[1], 0.1);
+        EXPECT_NEAR(actual_out2[0], in[0]^in[1], 0.1);
+        EXPECT_NEAR(actual_out2[1], in[0]==in[1], 0.1);
+    }
+}
+
+
 TEST(network, train_predict) {
     // train xor function
     network<sequential> net;

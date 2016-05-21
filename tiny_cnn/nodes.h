@@ -101,6 +101,12 @@ class nodes {
         }
     }
 
+    void clear_grads(int max_task_size) {
+        for (auto l : nodes_) {
+            l->clear_grads(max_task_size);
+        }
+    }
+
     size_t size() const { return nodes_.size(); }
     iterator begin() { return nodes_.begin(); }
     iterator end() { return nodes_.end(); }
@@ -253,7 +259,7 @@ class graph : public nodes {
         }
 
         for (cnn_size_t i = 0; i < out_grad.size(); i++) {
-            output_layers_[i]->set_in_data(&out_grad[i], 1, worker_index);
+            output_layers_[i]->set_out_grads(&out_grad[i], 1, worker_index);
         }
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
@@ -274,8 +280,7 @@ class graph : public nodes {
         for (auto l : nodes_) {
             l->forward(worker_index);
         }
-
-        return nodes_.back()->output(worker_index);
+        return merge_outs(worker_index);
     }
 
     void construct(const std::vector<layerptr_t>& input,
@@ -319,6 +324,16 @@ class graph : public nodes {
     }
 
  private:
+
+     std::vector<vec_t> merge_outs(int worker_index) {
+         std::vector<vec_t> merged;
+         for (auto& l : output_layers_) {
+             std::vector<vec_t> out = l->output(worker_index);
+             merged.insert(merged.end(), out.begin(), out.end());
+         }
+         return merged;
+     }
+
     cnn_size_t find_index(const std::vector<node*>& nodes,
                           layerptr_t target) {
         for (cnn_size_t i = 0; i < nodes.size(); i++) {
