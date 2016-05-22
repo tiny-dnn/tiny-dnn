@@ -170,14 +170,25 @@ struct node_tuple {
 };
 
 template <typename T>
-node_tuple<T> operator , (T l1, T l2) {
-    return node_tuple<T>(l1, l2);
+node_tuple<T*> operator , (T& l1, T& l2) {
+    return node_tuple<T*>(&l1, &l2);
 }
 
 template <typename T>
-node_tuple<T> operator , (node_tuple<T>* lhs, T& rhs) {
-    lhs->nodes_.push_back(rhs);
-    return (*lhs);
+node_tuple<std::shared_ptr<T>> operator , (std::shared_ptr<T> l1, std::shared_ptr<T> l2) {
+    return node_tuple<std::shared_ptr<T>>(l1, l2);
+}
+
+template <typename T>
+node_tuple<std::shared_ptr<T>> operator , (node_tuple<std::shared_ptr<T>> lhs, std::shared_ptr<T>& rhs) {
+    lhs.nodes_.push_back(rhs);
+    return lhs;
+}
+
+template <typename T>
+node_tuple<T*> operator , (node_tuple<T*> lhs, T& rhs) {
+    lhs.nodes_.push_back(&rhs);
+    return lhs;
 }
 
 template <typename T, typename U>
@@ -202,5 +213,22 @@ inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
     }
     return rhs;
 }
+
+template <typename T, typename U>
+inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
+    for (size_t i = 0; i < lhs.nodes_.size(); i++) {
+        connect(lhs.nodes_[i], &rhs, 0, i);
+    }
+    return rhs;
+}
+
+template <typename T, typename U>
+inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
+    for (size_t i = 0; i < rhs.nodes_.size(); i++) {
+        connect(&lhs, rhs.nodes_[i], i, 0);
+    }
+    return rhs;
+}
+
 
 }   // namespace tiny_cnn

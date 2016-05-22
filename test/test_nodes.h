@@ -81,4 +81,26 @@ TEST(nodes, graph_branch) {
     EXPECT_FLOAT_EQ(res[2], 0.0);
 }
 
+TEST(nodes, graph_branch2) {
+    // declare nodes
+    input_layer in1(shape3d(3, 1, 1));
+    input_layer in2(shape3d(3, 1, 1));
+    add added(2, 3);
+    linear_layer<relu> out(3);
+
+    // connect
+    (in1, in2) << added;
+    added << out;
+
+    network<graph> net;
+    construct_graph(net, { &in1, &in2 }, { &out });
+
+    auto res = net.predict({ { 2,4,3 },{ -1,2,-5 } })[0];
+
+    // relu({2,4,3} + {-1,2,-5}) = {1,6,0}
+    EXPECT_FLOAT_EQ(res[0], 1.0);
+    EXPECT_FLOAT_EQ(res[1], 6.0);
+    EXPECT_FLOAT_EQ(res[2], 0.0);
+}
+
 } // namespace tiny-cnn
