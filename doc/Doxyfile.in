@@ -6,7 +6,8 @@ STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
 OUTPUT_LANGUAGE        = English
 INPUT                  = @doxy_main_page@ \
                          @CMAKE_CURRENT_SOURCE_DIR@/tiny_cnn \
-                         @CMAKE_CURRENT_SOURCE_DIR@/examples
+                         @CMAKE_CURRENT_SOURCE_DIR@/examples \
+                         @CMAKE_CURRENT_SOURCE_DIR@/doc
 FILE_PATTERNS          = *.h *.md
 RECURSIVE              = YES
 USE_MDFILE_AS_MAINPAGE = @doxy_main_page@
