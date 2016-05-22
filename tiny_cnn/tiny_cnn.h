@@ -41,6 +41,7 @@
 #include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/arithmetic_layer.h"
+#include "tiny_cnn/layers/concat_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -88,6 +89,10 @@ using input = tiny_cnn::input_layer;
 
 template <class T>
 using lrn = tiny_cnn::lrn_layer<T>;
+
+using input = tiny_cnn::input_layer;
+
+using concat = tiny_cnn::concat_layer;
 
 }
 }
