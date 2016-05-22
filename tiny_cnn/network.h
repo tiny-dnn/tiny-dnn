@@ -138,8 +138,6 @@ template<typename NetType>
 class network
 {
 public:
-    typedef std::vector<vec_t> tensor_t;
-
     explicit network(const std::string& name = "") : name_(name) {}
 
     std::string  name() const           { return name_; }
@@ -186,6 +184,24 @@ public:
     }
 
 
+    /**
+     * trains the network for a fixed number of epochs (for classification task)
+     *
+     * The difference between train and fit method is how to specify desired output.
+     * This method takes label_t argument and convert to target vector automatically.
+     * To train correctly, output dimension of last layer must be greater or equal to
+     * number of label-ids.
+     *
+     * @param optimizer          optimizing algorithm for training
+     * @param inputs             array of input data
+     * @param class_labels       array of label-id for each input data(0-origin)
+     * @param epoch              number of training epochs
+     * @param on_batch_enumerate callback for each mini-batch enumerate
+     * @param on_epoch_enumerate callback for each epoch
+     * @param reset_weights      set true if reset current network weights
+     * @param n_threads          number of tasks
+     * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
+     */
     template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate>
     bool train(Optimizer&                  optimizer,
                const std::vector<vec_t>&   inputs,
@@ -200,13 +216,54 @@ public:
                )
     {
         std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
-        normalize_data(inputs, input_tensor);
-        normalize_data(class_labels, output_tensor);
-        if (!t_cost.empty()) normalize_data(t_cost, t_cost_tensor);
+        normalize_tensor(inputs, input_tensor);
+        normalize_tensor(class_labels, output_tensor);
+        if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
 
         return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch, on_batch_enumerate, on_epoch_enumerate, reset_weights, n_threads, t_cost_tensor);
     }
 
+    /**
+    * trains the network for a fixed number of epochs to generate desired output.
+    *
+    * This method execute fixed number of training steps and invoke callbacks for each mini-batch/epochs.
+    * The network is trained to minimize given loss function(specified by template parameter).
+    *
+    * Shape of inputs and desired_outputs must be same to network inputs. For example, if your network
+    * has 2 input layers that takes N dimensional array, for each element of inputs must be [2xN]
+    * array.
+    *
+    * @code
+    * network<sequential> net;
+    * adagrad opt;
+    *
+    * net << layers::fc<tan_h>(2,3) << layers::fc<relu>(3,1);
+    *
+    * // 2training data, each data is float_t[2]
+    * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
+    * std::vector<vec_t> out  {    { 2 },    { 1 } };
+    *
+    * net.fit<mse>(opt, data, out, 1, 1);
+    *
+    * // 2training data, each data is float_t[1][2]
+    * // this form is also valid
+    * std::vector<tensor_t> data2{ { { 1, 0 } }, { { 0, 2 } } };
+    * std::vector<tensor_t> out2 { {    { 2 } }, {    { 1 } } };
+    *
+    * net.fit<mse>(opt, data2, out2, 1, 1);
+    * @endcode
+    *
+    *
+    * @param optimizer          optimizing algorithm for training
+    * @param inputs             array of input data
+    * @param desired_outputs    array of desired output
+    * @param epoch              number of training epochs
+    * @param on_batch_enumerate callback for each mini-batch enumerate
+    * @param on_epoch_enumerate callback for each epoch
+    * @param reset_weights      set true if reset current network weights
+    * @param n_threads          number of tasks
+    * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
+    */
     template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate, typename T, typename U>
     bool fit(Optimizer&            optimizer,
              const std::vector<T>& inputs,
@@ -221,84 +278,16 @@ public:
              )
     {
         std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
-        normalize_data(inputs, input_tensor);
-        normalize_data(desired_outputs, output_tensor);
-        if (!t_cost.empty()) normalize_data(t_cost, t_cost_tensor);
+        normalize_tensor(inputs, input_tensor);
+        normalize_tensor(desired_outputs, output_tensor);
+        if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
 
         return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch, on_batch_enumerate, on_epoch_enumerate, reset_weights, n_threads, t_cost_tensor);
     }
 
-    void normalize_data(const std::vector<tensor_t>& inputs, std::vector<tensor_t>& normalized)
-    {
-        normalized = inputs;
-    }
-
-    void normalize_data(const std::vector<vec_t>& inputs, std::vector<tensor_t>& normalized)
-    {
-        normalized.reserve(inputs.size());
-        for (size_t i = 0; i < inputs.size(); i++)
-            normalized.emplace_back(tensor_t{inputs[i]});
-    }
-
-    void normalize_data(const std::vector<label_t>& inputs, std::vector<tensor_t>& normalized)
-    {
-        std::vector<vec_t> vec;
-        normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], inputs.size(), &vec);
-        normalize_data(vec, normalized);
-    }
-
-    /**
-     * fitting network
-     *
-     * @param optimzier          optimizing algorithm for training
-     * @param inputs             array of input data
-     * @param desired_outputs    array of desired output
-     * @param epoch              number of training epochs
-     * @param on_batch_enumerate callback for each mini-batch enumerate
-     * @param on_epoch_enumerate callback for each epoch 
-     * @param reset_weights      reset all weights or keep current
-     * @param n_threads          number of tasks
-     * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
-     */
-    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate>
-    bool fit(Optimizer&                   optimizer,
-             const std::vector<tensor_t>& inputs,
-             const std::vector<tensor_t>& desired_outputs,
-             size_t                       batch_size,
-             int                          epoch,
-             OnBatchEnumerate             on_batch_enumerate,
-             OnEpochEnumerate             on_epoch_enumerate,
-             const bool                   reset_weights = true,
-             const int                    n_threads = CNN_TASK_SIZE,
-             const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()
-             )
-    {
-        //check_training_data(in, t);
-        check_target_cost_matrix(desired_outputs, t_cost);
-        set_netphase(net_phase::train);
-        net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
-
-        for (auto n : net_)
-            n->set_parallelize(batch_size < CNN_TASK_SIZE);
-        optimizer.reset();
-        for (int iter = 0; iter < epoch; iter++) {
-
-            for (size_t i = 0; i < inputs.size(); i+=batch_size) {
-                train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
-                           static_cast<int>(std::min(batch_size, inputs.size() - i)),
-                           n_threads,
-                           get_target_cost_sample_pointer(t_cost, i));
-                on_batch_enumerate();
-
-                //if (i % 100 == 0 && layers_.is_exploded()) {
-                //    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
-                //    return false;
-                //}
-            }
-            on_epoch_enumerate();
-        }
-        return true;
+    template<typename Error, typename Optimizer, typename T, typename U>
+    bool fit(Optimizer& optimizer, const std::vector<T>& in, const std::vector<U>& t, size_t batch_size = 1, int epoch = 1) {
+        return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
     }
 
     /**
@@ -306,19 +295,14 @@ public:
      **/
     template<typename Error, typename Optimizer>
     bool train(Optimizer& optimizer, const std::vector<vec_t>& in, const std::vector<label_t>& t, size_t batch_size = 1, int epoch = 1) {
-        set_netphase(net_phase::train);
         return train<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
     }
 
+    /**
+     * @deprecated use fit instead for regression task
+     **/
     template<typename Error, typename Optimizer>
     bool train(Optimizer& optimizer, const std::vector<vec_t>& in, const std::vector<vec_t>& t, size_t batch_size = 1, int epoch = 1) {
-        set_netphase(net_phase::train);
-        return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
-    }
-
-    template<typename Error, typename Optimizer, typename T, typename U>
-    bool fit(Optimizer& optimizer, const std::vector<T>& in, const std::vector<U>& t, size_t batch_size = 1, int epoch = 1) {
-        set_netphase(net_phase::train);
         return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
     }
 
@@ -326,8 +310,7 @@ public:
      * set the netphase to train or test
      * @param phase phase of network, could be train or test
      */
-    void set_netphase(net_phase phase)
-    {
+    void set_netphase(net_phase phase) {
         for (auto n : net_) {
             n->set_context(phase);
         }
@@ -350,6 +333,9 @@ public:
         return test_result;
     }
 
+    /**
+     * generate output for each input
+     **/
     std::vector<vec_t> test(const std::vector<vec_t>& in) {
         std::vector<vec_t> test_result(in.size());
         set_netphase(net_phase::test);
@@ -374,11 +360,14 @@ public:
         return sum_loss;
     }
 
+    /**
+     * calculate loss value (the smaller, the better) for regression task
+     **/
     template <typename E, typename T>
     float_t get_loss(const std::vector<T>& in, const std::vector<tensor_t>& t) {
         float_t sum_loss = float_t(0);
         std::vector<tensor_t> in_tensor;
-        normalize_data(in, in_tensor);
+        normalize_tensor(in, in_tensor);
 
         for (size_t i = 0; i < in.size(); i++) {
 
@@ -465,6 +454,13 @@ public:
      **/
     size_t layer_size() const {
         return net_.size();
+    }
+
+    /**
+     * @deprecated use layer_size() instread.
+     **/
+    size_t depth() const {
+        return layer_size();
     }
 
     /**
@@ -556,6 +552,47 @@ private:
 
     friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
     friend void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs);
+
+    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate>
+    bool fit(Optimizer&                   optimizer,
+        const std::vector<tensor_t>& inputs,
+        const std::vector<tensor_t>& desired_outputs,
+        size_t                       batch_size,
+        int                          epoch,
+        OnBatchEnumerate             on_batch_enumerate,
+        OnEpochEnumerate             on_epoch_enumerate,
+        const bool                   reset_weights = true,
+        const int                    n_threads = CNN_TASK_SIZE,
+        const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()
+    )
+    {
+        //check_training_data(in, t);
+        check_target_cost_matrix(desired_outputs, t_cost);
+        set_netphase(net_phase::train);
+        net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
+
+        for (auto n : net_)
+            n->set_parallelize(batch_size < CNN_TASK_SIZE);
+        optimizer.reset();
+        for (int iter = 0; iter < epoch; iter++) {
+
+            for (size_t i = 0; i < inputs.size(); i += batch_size) {
+                train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
+                    static_cast<int>(std::min(batch_size, inputs.size() - i)),
+                    n_threads,
+                    get_target_cost_sample_pointer(t_cost, i));
+                on_batch_enumerate();
+
+                //if (i % 100 == 0 && layers_.is_exploded()) {
+                //    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
+                //    return false;
+                //}
+            }
+            on_epoch_enumerate();
+        }
+        set_netphase(net_phase::test);
+        return true;
+    }
 
     /**
      * train on one minibatch
@@ -737,7 +774,7 @@ private:
             check_target_cost_element(t[i], t_cost[i]);
     }
 
-    inline const tensor_t* get_target_cost_sample_pointer(const std::vector<tensor_t>& t_cost, size_t i) {
+    const tensor_t* get_target_cost_sample_pointer(const std::vector<tensor_t>& t_cost, size_t i) {
         if (!t_cost.empty()) {
             assert(i < t_cost.size());
             return &(t_cost[i]);
@@ -745,6 +782,23 @@ private:
         else {
             return nullptr;
         }
+    }
+
+    void normalize_tensor(const std::vector<tensor_t>& inputs, std::vector<tensor_t>& normalized) {
+        normalized = inputs;
+    }
+
+    void normalize_tensor(const std::vector<vec_t>& inputs, std::vector<tensor_t>& normalized) {
+        normalized.reserve(inputs.size());
+        for (size_t i = 0; i < inputs.size(); i++)
+            normalized.emplace_back(tensor_t{ inputs[i] });
+    }
+
+    void normalize_tensor(const std::vector<label_t>& inputs, std::vector<tensor_t>& normalized) {
+        std::vector<vec_t> vec;
+        normalized.reserve(inputs.size());
+        net_.label2vec(&inputs[0], inputs.size(), &vec);
+        normalize_tensor(vec, normalized);
     }
 
     std::string name_;

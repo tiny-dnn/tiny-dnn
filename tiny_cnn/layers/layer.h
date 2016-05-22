@@ -108,6 +108,24 @@ class layer : public node {
                 return s.size(); });
     }
 
+    std::vector<shape3d> in_data_shape() {
+        return filter(in_shape(), [&](int i) { return in_type_[i] == vector_type::data; });
+    }
+
+    std::vector<shape3d> out_data_shape() {
+        return filter(out_shape(), [&](int i) { return out_type_[i] == vector_type::data; });
+    }
+
+    ///! @deprecated use in_data_size() instead
+    cnn_size_t in_size() const {
+        return in_data_size();
+    }
+
+    ///! @deprecated use out_data_size() instead
+    cnn_size_t out_size() const {
+        return out_data_size();
+    }
+
     std::vector<const vec_t*> get_weights() const {
         std::vector<const vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
@@ -191,6 +209,7 @@ class layer : public node {
         }
         return out;
     }
+
 
     /**
      * return output value range
@@ -514,6 +533,11 @@ inline void connect(layerptr_t head,
 
     tail->prev_[tail_index] = head->next_[head_index];
     tail->prev_[tail_index]->add_next_node(tail);
+}
+
+inline layer& operator << (layer& lhs, layer& rhs) {
+    connect(&lhs, &rhs);
+    return rhs;
 }
 
 template <typename Char, typename CharTraits>

@@ -63,6 +63,7 @@ typedef cnn_size_t label_t;
 typedef cnn_size_t layer_size_t; // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
+typedef std::vector<vec_t> tensor_t;
 
 enum class net_phase {
     train,
@@ -389,12 +390,12 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
 
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
-    s << "{";
+    s << "[";
     for (cnn_size_t i = 0; i < d.size(); i++) {
         if (i) s << ",";
         s << "[" << d[i] << "]";
     }
-    s << "}";
+    s << "]";
     return s;
 }
 
@@ -437,6 +438,15 @@ cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
         if (p(i)) sum += s(vec[i]);
     }
     return sum;
+}
+
+template <typename T, typename Pred>
+std::vector<T> filter(const std::vector<T>& vec, Pred p) {
+    std::vector<T> res;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (p(i)) res.push_back(vec[i]);
+    }
+    return res;
 }
 
 enum class vector_type : int32_t {
