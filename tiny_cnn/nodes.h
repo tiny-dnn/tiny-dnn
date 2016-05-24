@@ -41,7 +41,7 @@ namespace tiny_cnn {
  * forward / backward operations.
  * Node is a computational unit of tiny-cnn (for example, convolution).
  * Currently 2 kinds of implementation are available: sequential and graph.
- * 
+ *
  * Nodes can accept lvalue, rvalue and shared_ptr forms of node.
  * If given type is rvalue or shared_ptr, nodes create shared_ptr<node> to keep
  * given node alive. If given type is lvalue, tiny-cnn holds raw-pointer only
@@ -112,8 +112,8 @@ class nodes {
     iterator end() { return nodes_.end(); }
     const_iterator begin() const { return nodes_.begin(); }
     const_iterator end() const { return nodes_.end(); }
-    layer* operator [] (size_t index) { return nodes_[index]; }
-    const layer* operator [] (size_t index) const { return nodes_[index]; } // NOLINT
+    layer* operator[] (size_t index) { return nodes_[index]; }
+    const layer* operator[] (size_t index) const { return nodes_[index]; }
     cnn_size_t in_data_size() const { return nodes_.front()->in_data_size(); }
     cnn_size_t out_data_size() const { return nodes_.back()->out_data_size(); }
 
@@ -167,11 +167,11 @@ class nodes {
         }
     }
 
-protected:
+ protected:
     template <typename T>
     void push_back(T&& node) {
         push_back_impl(std::forward<T>(node),
-                       std::is_rvalue_reference<decltype(node)>::type());
+                       typename std::is_rvalue_reference<decltype(node)>::type()); // NOLINT
     }
 
     template <typename T>
@@ -179,19 +179,24 @@ protected:
         own_nodes_.push_back(node);
         nodes_.push_back(own_nodes_.back().get());
     }
-protected:
+
+ protected:
     template <typename T>
-    void push_back_impl(T&& node, std::true_type) { // is_rvalue_reference
-        own_nodes_.push_back(std::make_shared<std::remove_reference<T>::type>(std::forward<T>(node)));
+    void push_back_impl(T&& node, std::true_type) {  // is_rvalue_reference
+        own_nodes_.push_back(std::make_shared<
+            typename std::remove_reference<T>::type>(std::forward<T>(node)));
         nodes_.push_back(own_nodes_.back().get());
     }
+
     template <typename T>
     void push_back_impl(T&& node, std::false_type) {
         nodes_.push_back(&node);
     }
 
-    std::vector<std::shared_ptr<layer>> own_nodes_; ///< nodes which this class has ownership
-    std::vector<layerptr_t> nodes_; ///< list of all nodes which includes own_nodes
+    /* Nodes which this class has ownership */
+    std::vector<std::shared_ptr<layer>> own_nodes_;
+    /* List of all nodes which includes own_nodes */
+    std::vector<layerptr_t> nodes_;
 };
 
 /**
