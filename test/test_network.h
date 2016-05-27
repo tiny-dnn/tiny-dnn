@@ -262,7 +262,7 @@ TEST(network, weight_init_per_layer) {
 
     // change specific layer
     net[0]->weight_init(weight_init::constant(2.0));
-    net[0]->weight_init(weight_init::constant(1.0));
+    net[1]->weight_init(weight_init::constant(1.0));
     net.init_weight();
 
     vec_t& w1 = *net[0]->get_weights()[0];
