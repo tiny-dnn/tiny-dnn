@@ -210,6 +210,10 @@ class layer : public node {
         return out;
     }
 
+    std::vector<vector_type> in_types() const { return in_type_; }
+
+    std::vector<vector_type> out_types() const { return out_type_; }
+
 
     /**
      * return output value range
@@ -474,6 +478,9 @@ class layer : public node {
         return true;
     }
 
+    std::vector<layer*> prev_layers() const {
+        prev_nodes();
+    }
 
  protected:
     bool parallelize_;

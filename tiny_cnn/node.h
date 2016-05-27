@@ -31,6 +31,8 @@
 #include <numeric>
 #include <vector>
 #include <set>
+#include <queue>
+#include <unordered_set>
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -127,6 +129,7 @@ class edge {
 
     const std::vector<node*>& next() const { return next_; }
     node* prev() { return prev_; }
+    const node* prev() const { return prev_; }
 
     const shape3d& shape() const { return shape_; }
     vector_type vtype() const { return vtype_; }
@@ -228,6 +231,45 @@ inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
         connect(&lhs, rhs.nodes_[i], i, 0);
     }
     return rhs;
+}
+
+
+template <typename T, typename U>
+void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
+    std::unordered_set<layer*> visited;
+    std::queue<layer*> S;
+
+    S.push(root_node);
+
+    while (!S.empty()) {
+        layer *curr = S.front();
+        S.pop();
+        visited.insert(curr);
+
+        node_callback(*curr);
+
+        auto edges = curr->next();
+        for (auto e : edges) {
+            if (e != nullptr)
+                edge_callback(*e);
+        }
+
+        auto prev = curr->prev_nodes();
+        for (auto p : prev) {
+            layer* l = dynamic_cast<layer*>(p); // @todo refactoring
+            if (visited.find(l) == visited.end()) {
+                S.push(l);
+            }
+        }
+
+        auto next = curr->next_nodes();
+        for (auto n : next) {
+            layer* l = dynamic_cast<layer*>(n); // @todo refactoring
+            if (visited.find(l) == visited.end()) {
+                S.push(l);
+            }
+        }
+    }
 }
 
 
