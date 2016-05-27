@@ -156,24 +156,24 @@ class layer : public node {
         return v;
     }
 
-    std::vector<edge*> get_inputs() {
-        std::vector<edge*> nodes;
+    std::vector<edgeptr_t> get_inputs() {
+        std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             nodes.push_back(ith_in_node(i));
         }
         return nodes;
     }
 
-    std::vector<edge*> get_outputs() {
-        std::vector<edge*> nodes;
+    std::vector<edgeptr_t> get_outputs() {
+        std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
         }
         return nodes;
     }
 
-    std::vector<const edge*> get_outputs() const {
-        std::vector<const edge*> nodes;
+    std::vector<const edgeptr_t> get_outputs() const {
+        std::vector<const edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
         }
@@ -413,11 +413,11 @@ class layer : public node {
             switch (in_type_[i]) {
                 case vector_type::weight:
                     weight_init_->fill(ith_in_node(i)->get_data(),
-                    fan_in_size(), fan_out_size());
+                                       fan_in_size(), fan_out_size());
                     break;
                 case vector_type::bias:
                     bias_init_->fill(ith_in_node(i)->get_data(),
-                    fan_in_size(), fan_out_size());
+                                     fan_in_size(), fan_out_size());
                     break;
                 default:
                     break;
@@ -496,21 +496,24 @@ class layer : public node {
         next_[i] = std::make_shared<edge>((layer*)this, out_shape()[i], out_type_[i]);
     }
 
-    edge*       ith_in_node(cnn_size_t i)       {
+    edgeptr_t ith_in_node(cnn_size_t i) {
         if (!prev_[i]) alloc_input(i);
-        return dynamic_cast<edge*>(prev()[i].get());
+        return prev()[i];
     }
-    const edge* ith_in_node(cnn_size_t i) const {
+
+    const edgeptr_t ith_in_node(cnn_size_t i) const {
         if (!prev_[i]) alloc_input(i);
-        return dynamic_cast<const edge*>(prev()[i].get());
+        return prev()[i];
     }
-    edge*       ith_out_node(cnn_size_t i)       {
-        if (!next_[i]) alloc_output(i);
-        return dynamic_cast<edge*>(next()[i].get());
+
+    edgeptr_t ith_out_node(cnn_size_t i) {
+        if (!next_[i]) alloc_input(i);
+        return next()[i];
     }
-    const edge* ith_out_node(cnn_size_t i) const {
-        if (!next_[i]) alloc_output(i);
-        return dynamic_cast<const edge*>(next()[i].get());
+
+    const edgeptr_t ith_out_node(cnn_size_t i) const {
+        if (!next_[i]) alloc_input(i);
+        return next()[i];
     }
 };
 
