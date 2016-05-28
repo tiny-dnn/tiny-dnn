@@ -234,43 +234,4 @@ inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
 }
 
 
-template <typename T, typename U>
-void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
-    std::unordered_set<layer*> visited;
-    std::queue<layer*> S;
-
-    S.push(root_node);
-
-    while (!S.empty()) {
-        layer *curr = S.front();
-        S.pop();
-        visited.insert(curr);
-
-        node_callback(*curr);
-
-        auto edges = curr->next();
-        for (auto e : edges) {
-            if (e != nullptr)
-                edge_callback(*e);
-        }
-
-        auto prev = curr->prev_nodes();
-        for (auto p : prev) {
-            layer* l = dynamic_cast<layer*>(p); // @todo refactoring
-            if (visited.find(l) == visited.end()) {
-                S.push(l);
-            }
-        }
-
-        auto next = curr->next_nodes();
-        for (auto n : next) {
-            layer* l = dynamic_cast<layer*>(n); // @todo refactoring
-            if (visited.find(l) == visited.end()) {
-                S.push(l);
-            }
-        }
-    }
-}
-
-
 }   // namespace tiny_cnn

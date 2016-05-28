@@ -105,6 +105,7 @@ private:
     void generate_layer_channels(std::ostream& stream,
                                  const std::vector<shape3d>& shapes,
                                  const std::vector<vector_type>& vtypes) {
+        CNN_UNREFERENCED_PARAMETER(vtypes);
         for (size_t i = 0; i < shapes.size(); i++) {
             stream << "|" << shapes[i];
         }
@@ -114,8 +115,8 @@ private:
         stream << "}" << std::endl;
     }
 
-    std::string name_;
     layer* root_;
+    std::string name_;
 };
 
 
