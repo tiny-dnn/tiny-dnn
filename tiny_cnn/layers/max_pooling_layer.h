@@ -133,11 +133,6 @@ public:
         }
     }*/
 
-    image<> output_to_image(size_t channel = 0, size_t worker_index = 0) const {
-        CNN_UNREFERENCED_PARAMETER(channel);
-        return vec2image<unsigned char>(Base::get_worker_storage(worker_index).output_, out_);
-    }
-
     std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
     std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-pool"; }
