@@ -107,7 +107,7 @@ private:
                                  const std::vector<vector_type>& vtypes) {
         CNN_UNREFERENCED_PARAMETER(vtypes);
         for (size_t i = 0; i < shapes.size(); i++) {
-            stream << "|" << shapes[i];
+            stream << "|" << shapes[i] << "(" << vtypes[i] << ")";
         }
     }
 

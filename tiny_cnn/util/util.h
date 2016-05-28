@@ -461,6 +461,29 @@ enum class vector_type : int32_t {
     aux = 0x0010000 // layer-specific storage
 };
 
+inline std::string to_string(vector_type vtype) {
+    switch (vtype)
+    {
+    case tiny_cnn::vector_type::data:
+        return "data";
+    case tiny_cnn::vector_type::weight:
+        return "weight";
+    case tiny_cnn::vector_type::bias:
+        return "bias";
+    case tiny_cnn::vector_type::label:
+        return "label";
+    case tiny_cnn::vector_type::aux:
+        return "aux";
+    default:
+        return "unknown";
+    }
+}
+
+inline std::ostream& operator << (std::ostream& os, vector_type vtype) {
+    os << to_string(vtype);
+    return os;
+}
+
 inline vector_type operator & (vector_type lhs, vector_type rhs) {
     return (vector_type)(static_cast<int32_t>(lhs) & static_cast<int32_t>(rhs));
 }
