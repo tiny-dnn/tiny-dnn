@@ -45,6 +45,7 @@ script:
 branches:
   only:
     - master
+    - feat/generic-computational-graph
 matrix:
   exclude: # On OSX g++ is a symlink to clang++ by default 
     - os: osx
