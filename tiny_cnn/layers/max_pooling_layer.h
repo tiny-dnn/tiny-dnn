@@ -48,8 +48,6 @@ public:
         if ((in_width % pooling_size) || (in_height % pooling_size))
             pooling_size_mismatch(in_width, in_height, pooling_size);
 
-        set_worker_count(CNN_TASK_SIZE);
-
         init_connection();
     }
 
