@@ -104,10 +104,11 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
-        const vec_t& prev_out   = *in_data[0];
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
         std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+
+        CNN_UNREFERENCED_PARAMETER(in_data);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
@@ -132,7 +133,8 @@ public:
         }
     }*/
 
-    image<> output_to_image(size_t worker_index = 0) const {
+    image<> output_to_image(size_t channel = 0, size_t worker_index = 0) const {
+        CNN_UNREFERENCED_PARAMETER(channel);
         return vec2image<unsigned char>(Base::get_worker_storage(worker_index).output_, out_);
     }
 
