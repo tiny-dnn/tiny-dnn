@@ -240,6 +240,7 @@ TEST(network, weight_init) {
     net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
         << average_pooling_layer<identity>(32, 32, 6, 2);
 
+    // change all layers at once
     net.weight_init(weight_init::constant(2.0));
     net.init_weight();
 
@@ -251,6 +252,27 @@ TEST(network, weight_init) {
 
     for (size_t i = 0; i < w2.size(); i++)
         EXPECT_NEAR(w2[i], 2.0, 1e-10);
+}
+
+TEST(network, weight_init_per_layer) {
+    network<sequential> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
+        << average_pooling_layer<identity>(32, 32, 6, 2);
+
+    // change specific layer
+    net[0]->weight_init(weight_init::constant(2.0));
+    net[1]->weight_init(weight_init::constant(1.0));
+    net.init_weight();
+
+    vec_t& w1 = *net[0]->get_weights()[0];
+    vec_t& w2 = *net[1]->get_weights()[0];
+
+    for (size_t i = 0; i < w1.size(); i++)
+        EXPECT_NEAR(w1[i], 2.0, 1e-10);
+
+    for (size_t i = 0; i < w2.size(); i++)
+        EXPECT_NEAR(w2[i], 1.0, 1e-10);
 }
 
 TEST(network, bias_init) {
@@ -270,6 +292,26 @@ TEST(network, bias_init) {
 
     for (size_t i = 0; i < w2.size(); i++)
         EXPECT_NEAR(w2[i], 2.0, 1e-10);
+}
+
+TEST(network, bias_init_per_layer) {
+    network<sequential> net;
+
+    net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same)
+        << average_pooling_layer<identity>(32, 32, 6, 2);
+
+    net[0]->bias_init(weight_init::constant(2.0));
+    net[1]->bias_init(weight_init::constant(1.0));
+    net.init_weight();
+
+    vec_t& w1 = *net[0]->get_weights()[1];
+    vec_t& w2 = *net[1]->get_weights()[1];
+
+    for (size_t i = 0; i < w1.size(); i++)
+        EXPECT_NEAR(w1[i], 2.0, 1e-10);
+
+    for (size_t i = 0; i < w2.size(); i++)
+        EXPECT_NEAR(w2[i], 1.0, 1e-10);
 }
 
 TEST(network, gradient_check) { // sigmoid - cross-entropy

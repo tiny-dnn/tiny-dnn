@@ -51,6 +51,7 @@
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/util/deform.h"
 #include "tiny_cnn/util/product.h"
+#include "tiny_cnn/util/graph_visualizer.h"
 
 #include "tiny_cnn/io/mnist_parser.h"
 #include "tiny_cnn/io/cifar10_parser.h"

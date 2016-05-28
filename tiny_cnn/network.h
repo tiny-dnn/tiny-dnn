@@ -483,7 +483,7 @@ public:
      **/
     template <typename T>
     const T& at(size_t index) const {
-        return net_.at<T>(index);
+        return net_.template at<T>(index);
     }
     
     /**

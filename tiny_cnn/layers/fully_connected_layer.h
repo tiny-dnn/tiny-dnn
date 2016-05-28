@@ -68,6 +68,8 @@ public:
         vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
 
+        CNN_UNREFERENCED_PARAMETER(index);
+
         for_i(parallelize_, out_size_, [&](int i) {
             a[i] = float_t(0);
             for (cnn_size_t c = 0; c < in_size_; c++) {
@@ -95,6 +97,8 @@ public:
         vec_t&       dW         = *in_grad[1];
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 

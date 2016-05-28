@@ -31,6 +31,8 @@
 #include <numeric>
 #include <vector>
 #include <set>
+#include <queue>
+#include <unordered_set>
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -127,6 +129,7 @@ class edge {
 
     const std::vector<node*>& next() const { return next_; }
     node* prev() { return prev_; }
+    const node* prev() const { return prev_; }
 
     const shape3d& shape() const { return shape_; }
     vector_type vtype() const { return vtype_; }

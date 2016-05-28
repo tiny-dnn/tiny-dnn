@@ -64,6 +64,8 @@ public:
         vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
 
+        CNN_UNREFERENCED_PARAMETER(index);
+
         for_i(parallelize_, dim_, [&](int i) {
             a[i] = scale_ * in[i] + bias_;
         });
@@ -79,6 +81,9 @@ public:
                           std::vector<vec_t*>&       in_grad) override {
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(in_data);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
