@@ -126,11 +126,11 @@ class layer : public node {
         return out_data_size();
     }
 
-    std::vector<const vec_t*> get_weights() const {
-        std::vector<const vec_t*> v;
+    std::vector<vec_t*> get_weights() const {
+        std::vector<vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
-                v.push_back(ith_in_node(i)->get_data(0));
+                v.push_back(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data(0));
             }
         }
         return v;
@@ -156,26 +156,26 @@ class layer : public node {
         return v;
     }
 
-    std::vector<edge*> get_inputs() {
-        std::vector<edge*> nodes;
+    std::vector<edgeptr_t> get_inputs() {
+        std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             nodes.push_back(ith_in_node(i));
         }
         return nodes;
     }
 
-    std::vector<edge*> get_outputs() {
-        std::vector<edge*> nodes;
+    std::vector<edgeptr_t> get_outputs() {
+        std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
         }
         return nodes;
     }
 
-    std::vector<const edge*> get_outputs() const {
-        std::vector<const edge*> nodes;
+    std::vector<edgeptr_t> get_outputs() const {
+        std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            nodes.push_back(ith_out_node(i));
+            nodes.push_back(const_cast<layerptr_t>(this)->ith_out_node(i));
         }
         return nodes;
     }
@@ -204,7 +204,8 @@ class layer : public node {
         std::vector<vec_t> out;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             if (out_type_[i] == vector_type::data) {
-                out.push_back(*ith_out_node(i)->get_data(worker_index));
+                out.push_back(*(const_cast<layerptr_t>(this))
+                    ->ith_out_node(i)->get_data(worker_index));
             }
         }
         return out;
@@ -417,11 +418,11 @@ class layer : public node {
             switch (in_type_[i]) {
                 case vector_type::weight:
                     weight_init_->fill(ith_in_node(i)->get_data(),
-                    fan_in_size(), fan_out_size());
+                                       fan_in_size(), fan_out_size());
                     break;
                 case vector_type::bias:
                     bias_init_->fill(ith_in_node(i)->get_data(),
-                    fan_in_size(), fan_out_size());
+                                     fan_in_size(), fan_out_size());
                     break;
                 default:
                     break;
@@ -499,22 +500,25 @@ class layer : public node {
         next_[i] = std::make_shared<edge>((layer*)this, out_shape()[i], out_type_[i]);
     }
 
-    edge*       ith_in_node(cnn_size_t i)       {
+    edgeptr_t ith_in_node(cnn_size_t i) {
         if (!prev_[i]) alloc_input(i);
-        return dynamic_cast<edge*>(prev()[i].get());
+        return prev()[i];
     }
-    const edge* ith_in_node(cnn_size_t i) const {
+
+    /*const edgeptr_t ith_in_node(cnn_size_t i) const {
         if (!prev_[i]) alloc_input(i);
-        return dynamic_cast<const edge*>(prev()[i].get());
+        return prev()[i];
+    }*/
+
+    edgeptr_t ith_out_node(cnn_size_t i) {
+        if (!next_[i]) alloc_input(i);
+        return next()[i];
     }
-    edge*       ith_out_node(cnn_size_t i)       {
-        if (!next_[i]) alloc_output(i);
-        return dynamic_cast<edge*>(next()[i].get());
-    }
-    const edge* ith_out_node(cnn_size_t i) const {
-        if (!next_[i]) alloc_output(i);
-        return dynamic_cast<const edge*>(next()[i].get());
-    }
+
+    /*const edgeptr_t ith_out_node(cnn_size_t i) const {
+        if (!next_[i]) alloc_input(i);
+        return next()[i];
+    }*/
 };
 
 inline void connect(layerptr_t head,
