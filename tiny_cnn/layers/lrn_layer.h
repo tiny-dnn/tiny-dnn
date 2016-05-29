@@ -75,6 +75,8 @@ public:
         vec_t& out = *out_data[0];
         vec_t& a   = *out_data[1];
 
+        CNN_UNREFERENCED_PARAMETER(index);
+
         if (region_ == norm_region::across_channels) {
             forward_across(*in_data[0], a);
         }

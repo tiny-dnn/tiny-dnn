@@ -55,7 +55,7 @@
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>..\..\</AdditionalIncludeDirectories>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>

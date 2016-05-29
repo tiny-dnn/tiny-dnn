@@ -58,6 +58,9 @@ namespace tiny_cnn {
  **/
 class nodes {
  public:
+     typedef typename std::vector<layerptr_t>::iterator iterator;
+     typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
+
     /**
      * propagate gradient
      * @param first        : gradient of cost function(dE/dy)
@@ -326,6 +329,8 @@ class graph : public nodes {
 
         input_layers_ = input;
         output_layers_ = output;
+
+        setup(false, 1);
     }
 
  private:

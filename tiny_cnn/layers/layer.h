@@ -360,6 +360,7 @@ class layer : public node {
     }
 
     std::vector<vec_t> forward(const std::vector<vec_t>& input) {   // for test
+        setup(false);
         set_in_data(&input[0], input.size(), 0);
         forward(0);
         return output(0);

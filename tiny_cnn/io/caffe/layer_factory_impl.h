@@ -265,10 +265,13 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
           throw std::runtime_error(std::string("layer size mismatch!"));
     }
 
+    std::vector<vec_t*> w = dst->get_weights();
+
     for (size_t o = 0; o < dst->out_size(); o++) {
         for (size_t i = 0; i < dst->in_size(); i++) {
             // TODO: how to access to weights?
             //dst->weight()[i * dst->out_size() + o] = weights.data(curr++); // transpose
+            //w[i][dst->out_size() + o] = weights.data(curr++); // transpose
         }
     }
 
@@ -588,11 +591,11 @@ inline bool layer_match(const std::string& caffetype,
 
 inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
                                      const shape_t& in_shape,
-                                     shape_t *out_shape) {
-    /*typedef std::function<std::shared_ptr<layer>(
+                                     shape_t* out_shape) {
+    typedef std::function<std::shared_ptr<layer>(
         const caffe::LayerParameter&, const shape_t&, shape_t*)> factoryimpl;
 
-    std::unordered_map<std::string, factoryimpl> factory_registry;
+    /*std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::create_convlayer;
     factory_registry["InnerProduct"] = detail::create_fullyconnected;

@@ -45,7 +45,6 @@ public:
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           in_size_(in_dim)
     {
-        set_worker_count(CNN_TASK_SIZE);
         clear_mask();
     }
 
