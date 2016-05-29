@@ -57,7 +57,7 @@ private:
     typedef std::unordered_map<const node*, std::string> node2name_t;
 
     void generate_header(std::ostream& stream) {
-        stream << "digraph " << name_ << " {" << std::endl;
+        stream << "digraph \"" << name_ << "\" {" << std::endl;
         stream << "  node [ shape=record ];" << std::endl;
     }
 
@@ -75,9 +75,9 @@ private:
 
         auto namer = [&](const layer& l) {
             std::string ltype = l.layer_type();
-            std::replace(ltype.begin(), ltype.end(), '-', '_');
 
-            node2name[&l] = ltype + to_string(layer_counts[l.layer_type()]++);
+            // add quote and sequential-id
+            node2name[&l] = "\"" + ltype + to_string(layer_counts[l.layer_type()]++) + "\"";
         };
 
         graph_traverse(root_, namer, [&](const edge&){});
@@ -85,9 +85,13 @@ private:
 
     void generate_edge(std::ostream& stream, const edge& e, node2name_t& node2name) {
         auto next = e.next();
+        auto prev = e.prev();
 
         for (auto n : next) {
-            stream << "  " << node2name[e.prev()] << " -> " << node2name[n] << ";" << std::endl;
+            cnn_size_t dst_port = n->prev_port(e);
+            cnn_size_t src_port = prev->next_port(e);
+            stream << "  " << node2name[prev] << ":out" << src_port <<
+                    " -> " << node2name[n] << ":in" << dst_port << ";" << std::endl;
         }
     }
 
@@ -95,19 +99,20 @@ private:
         stream << "  " << node2name[&layer] << " [" << std::endl;
         stream << "    label= \"";
         stream << layer.layer_type() << "|{{in";
-        generate_layer_channels(stream, layer.in_shape(), layer.in_types());
+        generate_layer_channels(stream, layer.in_shape(), layer.in_types(), "in");
         stream << "}|{out";
-        generate_layer_channels(stream, layer.out_shape(), layer.out_types());
+        generate_layer_channels(stream, layer.out_shape(), layer.out_types(), "out");
         stream << "}}\""<< std::endl;
         stream << "  ];" << std::endl;
     }
 
     void generate_layer_channels(std::ostream& stream,
                                  const std::vector<shape3d>& shapes,
-                                 const std::vector<vector_type>& vtypes) {
+                                 const std::vector<vector_type>& vtypes,
+                                 const std::string& port_prefix) {
         CNN_UNREFERENCED_PARAMETER(vtypes);
         for (size_t i = 0; i < shapes.size(); i++) {
-            stream << "|" << shapes[i] << "(" << vtypes[i] << ")";
+            stream << "|<" << port_prefix << i << ">" << shapes[i] << "(" << vtypes[i] << ")";
         }
     }
 

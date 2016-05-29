@@ -20,13 +20,19 @@ tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep lea
 see [Wiki Pages](https://github.com/nyanp/tiny-cnn/wiki) for more info.
 
 ## Features
-- fast, without GPU
+- reasonably fast, without GPU
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
-- header only
+- portable & header-only
+    - Run anywhere only if only you have a compiler which supports C++11
     - Just include tiny_cnn.h and write your model in c++. There is nothing to install.
-- small dependency & simple implementation
-- [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
+- easy to integrate with a real application
+    - no output on stdout/stderr
+    - a constant throughput (simple parallelization model, no garbage collection)
+    - work without exception
+    - [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
+- simple implementation
+    - be a good library for learning neural networks
 
 ## Comparison with other libraries
 
