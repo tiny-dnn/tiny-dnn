@@ -329,6 +329,8 @@ class graph : public nodes {
 
         input_layers_ = input;
         output_layers_ = output;
+
+        setup(false, 1);
     }
 
  private:
