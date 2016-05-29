@@ -52,14 +52,12 @@ typedef node* nodeptr_t;
 typedef std::shared_ptr<edge> edgeptr_t;
 
 typedef layer* layerptr_t;
-typedef typename std::vector<layerptr_t>::iterator iterator;
-typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
 /**
  * base class of all kind of tinny-cnn data
  **/
 class node : public std::enable_shared_from_this<node> {
- public:
+public:
     node(cnn_size_t in_size, cnn_size_t out_size)
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}

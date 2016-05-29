@@ -138,6 +138,9 @@ template<typename NetType>
 class network
 {
 public:
+    typedef typename std::vector<layerptr_t>::iterator iterator;
+    typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
+
     explicit network(const std::string& name = "") : name_(name) {}
 
     std::string  name() const           { return name_; }
@@ -536,6 +539,12 @@ public:
             if (!(*first1)->has_same_weights(**first2, eps)) return false;
         return true;
     }
+
+    iterator begin() { return net_.begin(); }
+    iterator end() { return net_.end(); }
+    const_iterator begin() const { return net_.begin(); }
+    const_iterator end() const { return net_.end(); }
+
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
