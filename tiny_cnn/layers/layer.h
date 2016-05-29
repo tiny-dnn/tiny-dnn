@@ -402,16 +402,20 @@ class layer : public node {
 
     // allocate & reset weight
     void setup(bool reset_weight, int max_task_size = CNN_TASK_SIZE) {
-      if (in_shape().size() != in_channels_ ||
-          out_shape().size() != out_channels_) { throw nn_error(""); }
+        if (in_shape().size() != in_channels_ ||
+            out_shape().size() != out_channels_) {
+                throw nn_error("Connection mismatch at setup layer");
+        }
 
-      for (size_t i = 0; i < out_channels_; i++) {
-          if (!next_[i]) {
-              next_[i] = std::make_shared<edge>(this, out_shape()[i], out_type_[i]);
-          }
-      }
-      set_worker_count(max_task_size);
-      if (reset_weight) init_weight();
+        for (size_t i = 0; i < out_channels_; i++) {
+            if (!next_[i]) {
+                next_[i] = std::make_shared<edge>(
+                    this, out_shape()[i], out_type_[i]);
+            }
+        }
+
+        set_worker_count(max_task_size);
+        if (reset_weight) init_weight();
     }
 
     void init_weight() {

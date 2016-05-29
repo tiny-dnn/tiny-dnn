@@ -142,6 +142,7 @@ inline std::shared_ptr<layer> create_max_pool(int pool_size,
     // TODO
     //  *top_shape = mp->out_shape();
     *top_shape = mp->out_shape()[0];  // check this
+    mp->init_weight();
 
     return mp;
 }
@@ -158,8 +159,15 @@ inline std::shared_ptr<layer> create_ave_pool(int pool_size,
 
     // tiny-cnn has trainable parameter in average-pooling layer
     float_t weight = float_t(1) / sqr(pool_size);
+
+    vec_t& w = *ap->get_weights()[0];
+    vec_t& b = *ap->get_weights()[1];
+
     //std::fill(ap->weight().begin(), ap->weight().end(), weight);
     //std::fill(ap->bias().begin(), ap->bias().end(), float_t(0));
+
+    std::fill(w.begin(), w.end(), weight);
+    std::fill(b.begin(), b.end(), float_t(0));
 
     // TODO: check if this works
     *top_shape = ap->out_shape()[0];
@@ -202,8 +210,9 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
 
     auto pool_param = layer.pooling_param();
 
+    layer_size_t h_stride = 0;
+    layer_size_t w_stride = 0;
     layer_size_t pool_size = 0;
-    layer_size_t h_stride, w_stride;
 
     if (!get_kernel_size_2d(pool_param, &pool_size)) {
         pool_size = pool_param.kernel_size();
@@ -256,22 +265,23 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
     auto weights = src.blobs(0);
     int curr = 0;
 
-    if (dst->out_size() * dst->in_size() != weights.data_size()) {
-        // TODO
-        /*throw std::runtime_error(
+    if (dst->out_size() * dst->in_size() !=
+        static_cast<cnn_size_t>(weights.data_size())) {
+        throw std::runtime_error(
             std::string("layer size mismatch!") +
             "caffe(" + src.name() + "):" + to_string(weights.data_size()) + "\n" +
-            "tiny-cnn(" + dst->layer_type() + "):" + to_string(dst->weight().size()));*/
-          throw std::runtime_error(std::string("layer size mismatch!"));
+            "tiny-cnn(" + dst->layer_type() + "):" + to_string(dst->get_weights().size()));
     }
 
-    std::vector<vec_t*> w = dst->get_weights();
+    vec_t& w = *dst->get_weights()[0];
+    vec_t& b = *dst->get_weights()[1];
 
+    // fill weights
     for (size_t o = 0; o < dst->out_size(); o++) {
         for (size_t i = 0; i < dst->in_size(); i++) {
             // TODO: how to access to weights?
             //dst->weight()[i * dst->out_size() + o] = weights.data(curr++); // transpose
-            //w[i][dst->out_size() + o] = weights.data(curr++); // transpose
+            w[i * dst->out_size() + o] = weights.data(curr++); // transpose
         }
     }
 
@@ -281,6 +291,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
         for (size_t o = 0; o < dst->out_size(); o++) {
             // TODO: how to access to biases?
             //dst->bias()[o] = biases.data(o);
+            b[o] = biases.data(o);
         }
     }
 }
@@ -290,8 +301,9 @@ inline std::shared_ptr<layer> create_fullyconnected(
         const shape_t& bottom_shape, shape_t *top_shape) {
     using fc_layer = fully_connected_layer<activation::identity>;
 
-    if (!layer.has_inner_product_param())
+    if (!layer.has_inner_product_param()) {
         throw std::runtime_error("inner-product param missing");
+    }
 
     layer_size_t dim_input = 0, dim_output = 0;
     bool has_bias = true;
@@ -335,7 +347,6 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
 
     connection_table table;
     auto conv_param = src.convolution_param();
-    int dim = weights.data_size();
     int dst_idx = 0;
     int src_idx = 0;
     int window_size = get_kernel_size_2d(conv_param);
@@ -344,6 +355,10 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
         table = connection_table(conv_param.group(), in_channels, out_channels);
     }
 
+    vec_t& w = *dst->get_weights()[0];
+    vec_t& b = *dst->get_weights()[1];
+
+    // fill weights
     for (int o = 0; o < out_channels; o++) {
         for (int i = 0; i < in_channels; i++) {
             if (!table.is_connected(o, i)) {
@@ -353,16 +368,18 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
             for (int x = 0; x < window_size * window_size; x++) {
                 //TODO
                 //dst->weight()[dst_idx++] = weights.data(src_idx++);
+                w[dst_idx++] =  weights.data(src_idx++);
             }
         }
     }
 
-    //// fill bias
+    // fill bias
     if (conv_param.bias_term()) {
         auto biases = src.blobs(1);
         for (int o = 0; o < out_channels; o++) {
             //TODO
             //dst->bias()[o] = biases.data(o);
+            b[o] = biases.data(o);
         }
     }
 }
@@ -390,12 +407,17 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
             std::fill(dst->bias().begin(), dst->bias().end(), float_t(0));
             dst->init_bias();
         }*/
-        if (!dst->get_weights().empty()) {
-            dst->init_weight();
+
+        vec_t& w = *dst->get_weights()[0];
+        vec_t& b = *dst->get_weights()[1];
+
+        if (!w.empty()) {
+            std::fill(w.begin(), w.end(), weight);
         }
-        //if (!dst->bias().empty()) {
-        //    dst->init_bias();
-        //}
+        if (!b.empty()) {
+            std::fill(b.begin(), b.end(), float_t(0));
+            //dst->init_bias();
+        }
     }
 }
 
@@ -554,7 +576,7 @@ inline bool layer_has_weights(const std::string& type) {
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
         "ReLU", "Sigmoid", "TanH", "Softmax"
     };
-    for (int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
+    for (unsigned int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
         if (activations[i] == type) return false;
     }
     return true;
@@ -592,10 +614,52 @@ inline bool layer_match(const std::string& caffetype,
 inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
                                      const shape_t& in_shape,
                                      shape_t* out_shape) {
-    typedef std::function<std::shared_ptr<layer>(
+    const std::string layer_type = layer.type();
+
+    if (layer_type == "Convolution") {
+        return detail::create_convlayer(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "InnerProduct") {
+        return detail::create_fullyconnected(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "Pooling") {
+        return detail::create_pooling(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "LRN") {
+        return detail::create_lrn(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "Dropout") {
+        return detail::create_dropout(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "SoftmaxWithLoss" ||
+        layer_type == "Softmax") {
+        return detail::create_softmax(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "SigmoidCrossEntropyLoss" ||
+        layer_type == "Sigmoid") {
+        return detail::create_sigmoid(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "ReLU") {
+        return detail::create_relu(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "TanH") {
+        return detail::create_tanh(layer, in_shape, out_shape);
+    }
+
+    throw std::runtime_error("layer parser not found");
+
+    /*typedef std::function<std::shared_ptr<layer>(
         const caffe::LayerParameter&, const shape_t&, shape_t*)> factoryimpl;
 
-    /*std::unordered_map<std::string, factoryimpl> factory_registry;
+    std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::create_convlayer;
     factory_registry["InnerProduct"] = detail::create_fullyconnected;
