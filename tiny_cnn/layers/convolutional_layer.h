@@ -86,25 +86,23 @@ public:
     * @param padding      [in] rounding strategy
     *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias     [in] whether to add a bias vector to the filter outputs
+    * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_size,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1)
-        : Base(std_input_order(has_bias)),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_size, w_stride, pad_type), conv_out_length(in_height, window_size, h_stride, pad_type), out_channels),
-        weight_(window_size, window_size, in_channels*out_channels),
-        has_bias_(has_bias),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1)
+        : Base(std_input_order(has_bias))
     {
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_size, window_size,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     /**
@@ -119,27 +117,26 @@ public:
     * @param padding       [in] rounding strategy
     *                          valid: use valid pixels of input only. output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias     [in] whether to add a bias vector to the filter outputs
+    * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_width,
-        cnn_size_t window_height,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1)
-        : Base(std_input_order(has_bias)),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_width, w_stride, pad_type), conv_out_length(in_height, window_height, h_stride, pad_type), out_channels),
-        weight_(window_width, window_height, in_channels*out_channels),
-        has_bias_(has_bias),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+                        cnn_size_t in_height,
+                        cnn_size_t window_width,
+                        cnn_size_t window_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1)
+        : Base(std_input_order(has_bias))
     {
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
+
     /**
     * constructing convolutional layer
     *
@@ -152,27 +149,24 @@ public:
     * @param pad_type         [in] rounding strategy
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias         [in] whether to add a bias vector to the filter outputs
+    * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_size,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        const connection_table& connection_table,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1
-        )
+    convolutional_layer(cnn_size_t              in_width,
+                        cnn_size_t              in_height,
+                        cnn_size_t              window_size,
+                        cnn_size_t              in_channels,
+                        cnn_size_t              out_channels,
+                        const connection_table& connection_table,
+                        padding                 pad_type = padding::valid,
+                        bool                    has_bias = true,
+                        cnn_size_t              w_stride = 1,
+                        cnn_size_t              h_stride = 1)
         : Base(std_input_order(has_bias)), tbl_(connection_table),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_size, w_stride, pad_type), conv_out_length(in_height, window_size, h_stride, pad_type), out_channels),
-        weight_(window_size, window_size, in_channels*out_channels),
-        has_bias_(has_bias),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
     {
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_size, window_size,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     /**
@@ -188,28 +182,25 @@ public:
     * @param pad_type         [in] rounding strategy
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias         [in] whether to add a bias vector to the filter outputs
+    * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_width,
-        cnn_size_t window_height,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        const connection_table& connection_table,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1
-        )
-        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)), tbl_(connection_table),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_width, w_stride, pad_type), conv_out_length(in_height, window_height, h_stride, pad_type), out_channels),
-        weight_(window_width, window_height, in_channels*out_channels),
-        has_bias_(has_bias),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+    convolutional_layer(cnn_size_t              in_width,
+                        cnn_size_t              in_height,
+                        cnn_size_t              window_width,
+                        cnn_size_t              window_height,
+                        cnn_size_t              in_channels,
+                        cnn_size_t              out_channels,
+                        const connection_table& connection_table,
+                        padding                 pad_type = padding::valid,
+                        bool                    has_bias = true,
+                        cnn_size_t              w_stride = 1,
+                        cnn_size_t              h_stride = 1)
+        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)), tbl_(connection_table)
     {
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     ///< number of incoming connections for each output unit
@@ -412,6 +403,28 @@ public:
     }
 
 private:
+    void conv_set_params(const shape3d& in,
+                         cnn_size_t     w_width,
+                         cnn_size_t     w_height
+                         cnn_size_t     outc,
+                         padding        ptype,
+                         bool           has_bias,
+                         cnn_size_t     w_stride,
+                         cnn_size_t     h_stride) {
+        in_ = in;
+        in_padded_ = shape3d(in_length(in.width_, w_width, ptype),
+                             in_length(in.height_, w_height, ptype),
+                             in.depth_);
+        out_ = shape3d(conv_out_length(in.width, w_width, w_stride, ptype),
+                       conv_out_length(in.height_, w_height, h_stride, ptype),
+                       outc);
+        weight_ = shape3d(w_width, w_height, in.depth_ * outc);
+        has_bias_ = has_bias;
+        pad_type_ = ptype;
+        w_stride_ = w_stride;
+        h_stride_ = h_stride;
+    }
+
     void init() {
         for (conv_layer_worker_specific_storage& cws : conv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {

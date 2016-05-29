@@ -45,11 +45,50 @@ public:
 
     typedef feedforward_layer<Activation> Base;
 
-    lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
-                       float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
-        : Base({vector_type::data}),
-        in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
+    /**
+    * @param layer       [in] the previous layer connected to this
+    * @param local_size  [in] the number of channels(depths) to sum over
+    * @param in_channels [in] the number of channels of input data
+    * @param alpha       [in] the scaling parameter (same to caffe's LRN)
+    * @param beta        [in] the scaling parameter (same to caffe's LRN)
+    **/
+    lrn_layer(layer*      prev,
+              cnn_size_t  local_size,
+              float_t     alpha = 1.0,
+              float_t     beta  = 5.0,
+              norm_region region = norm_region::across_channels)
+        : Base({ vector_type::data }),
+          in_shape_(prev->out_data_shape()[0]),
+          size_(local_size),
+          alpha_(alpha),
+          beta_(beta),
+          region_(region),
+          in_square_(in_shape_.area()) {
+    }
 
+    /**
+     * @param in_width    [in] the width of input data
+     * @param in_height   [in] the height of input data
+     * @param local_size  [in] the number of channels(depths) to sum over
+     * @param in_channels [in] the number of channels of input data
+     * @param alpha       [in] the scaling parameter (same to caffe's LRN)
+     * @param beta        [in] the scaling parameter (same to caffe's LRN)
+     **/
+    lrn_layer(cnn_size_t  in_width,
+              cnn_size_t  in_height,
+              cnn_size_t  local_size,
+              cnn_size_t  in_channels,
+              float_t     alpha = 1.0,
+              float_t     beta  = 5.0,
+              norm_region region = norm_region::across_channels)
+        : Base({vector_type::data}),
+          in_shape_(in_width, in_height, in_channels),
+          size_(local_size),
+          alpha_(alpha),
+          beta_(beta),
+          region_(region),
+          in_square_(in_shape_.area()) {
+    }
 
     size_t fan_in_size() const override {
         return size_;
