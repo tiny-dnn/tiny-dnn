@@ -163,7 +163,7 @@ public:
                         bool                    has_bias = true,
                         cnn_size_t              w_stride = 1,
                         cnn_size_t              h_stride = 1)
-        : Base(std_input_order(has_bias)), tbl_(connection_table),
+        : Base(std_input_order(has_bias)), tbl_(connection_table)
     {
         conv_set_params(shape3d(in_width, in_height, in_channels), window_size, window_size,
                         out_channels, pad_type, has_bias, w_stride, h_stride);
@@ -405,7 +405,7 @@ public:
 private:
     void conv_set_params(const shape3d& in,
                          cnn_size_t     w_width,
-                         cnn_size_t     w_height
+                         cnn_size_t     w_height,
                          cnn_size_t     outc,
                          padding        ptype,
                          bool           has_bias,
@@ -415,7 +415,7 @@ private:
         in_padded_ = shape3d(in_length(in.width_, w_width, ptype),
                              in_length(in.height_, w_height, ptype),
                              in.depth_);
-        out_ = shape3d(conv_out_length(in.width, w_width, w_stride, ptype),
+        out_ = shape3d(conv_out_length(in.width_, w_width, w_stride, ptype),
                        conv_out_length(in.height_, w_height, h_stride, ptype),
                        outc);
         weight_ = shape3d(w_width, w_height, in.depth_ * outc);
