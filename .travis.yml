@@ -13,7 +13,6 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-    - boost-latest
     packages:
     - gcc-4.8
     - g++-4.8
@@ -21,7 +20,6 @@ addons:
     - cmake
     - git
     - libtbb-dev
-    - libboost1.55-all-dev
     - libjpeg8-dev
     - libtiff4-dev
     - libjasper-dev

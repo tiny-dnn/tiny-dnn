@@ -127,12 +127,29 @@ IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
     target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
     include_directories(${OpenCV_INCLUDE_DIRS})
+    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
+
+    find_package(Protobuf)
+    IF (PROTOBUF_FOUND)
+        set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.pb.cc")
+        IF (EXISTS ${proto_file})
+            add_executable(example_caffe_converter
+                           examples/caffe_converter/caffe_converter.cpp
+                           ${tiny_cnn_hrds} ${proto_file})
+            target_link_libraries(example_caffe_converter
+                                  ${PROTOBUF_LIBRARIES} ${OpenCV_LIBS})
+        ELSE()
+            MESSAGE(STATUS "Cannot generate Caffe Importer. Please generate Protobuf file.")
+        ENDIF()
+    ELSE()
+        MESSAGE(STATUS "Cannot generate Caffe Importer. Please install Protobuf.")
+    ENDIF()
+
 ENDIF()
 
 IF(BUILD_TESTS)
     ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds} ${tiny_cnn_test_headers})
 ENDIF()
-
 
 #------------------------------------------------
 # DOCUMENTATION
