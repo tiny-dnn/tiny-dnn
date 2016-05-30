@@ -199,7 +199,7 @@ public:
                         cnn_size_t              h_stride = 1)
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)), tbl_(connection_table)
     {
-        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height,
                         out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
