@@ -342,8 +342,8 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
     //TODO: check if it works
     //int out_channels = dst->out_shape().depth_;
     //int in_channels = dst->in_shape().depth_;
-    int out_channels = dst->in_channels();
-    int in_channels = dst->out_channels();
+    int out_channels = dst->out_data_shape()[0].depth_;
+    int in_channels = dst->in_data_shape()[0].depth_;
 
     connection_table table;
     auto conv_param = src.convolution_param();
@@ -567,7 +567,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
 }
 
 inline bool layer_skipped(const std::string& type) {
-    if (type == "Data" || type == "EuclideanLoss") return true;
+    if (type == "Data" || type == "EuclideanLoss" || type == "Input") return true;
     return false;
 }
 

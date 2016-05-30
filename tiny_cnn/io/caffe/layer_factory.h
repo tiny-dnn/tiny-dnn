@@ -53,14 +53,22 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_
     if (data_shape.size() > 0) {
         shape = data_shape;
     } else {
-        if (layer.input_shape_size() == 0) {
+        if (layer.input_shape_size() > 0) {
+            // input_shape is deprecated in Caffe
+            int depth = static_cast<int>(layer.input_shape(0).dim(1));
+            int width = static_cast<int>(layer.input_shape(0).dim(2));
+            int height = static_cast<int>(layer.input_shape(0).dim(3));
+            shape = shape3d(width, height, depth);
+        }
+        else if (src_net[0].has_input_param()) {
+            int depth = static_cast<int>(src_net[0].input_param().shape(0).dim(1));
+            int width = static_cast<int>(src_net[0].input_param().shape(0).dim(2));
+            int height = static_cast<int>(src_net[0].input_param().shape(0).dim(3));
+            shape = shape3d(width, height, depth);
+        }
+        else {
             throw std::runtime_error("input_shape not found in caffemodel. must specify input shape explicitly");
         }
-
-        int depth = static_cast<int>(layer.input_shape(0).dim(1));
-        int width = static_cast<int>(layer.input_shape(0).dim(2));
-        int height = static_cast<int>(layer.input_shape(0).dim(3));
-        shape = shape3d(width, height, depth);
     }
 
     auto dst_net = std::make_shared<network<sequential>>(layer.name());

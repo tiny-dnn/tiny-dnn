@@ -93,7 +93,10 @@ class layer : public node {
     /////////////////////////////////////////////////////////////////////////
     // getter
 
+    ///< number of incoming edges in this layer
     cnn_size_t in_channels() const { return in_channels_; }
+
+    ///< number of outgoing edges in this layer 
     cnn_size_t out_channels() const { return out_channels_; }
 
     cnn_size_t in_data_size() const {
