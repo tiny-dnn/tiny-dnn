@@ -379,6 +379,7 @@ class layer : public node {
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             out_data.push_back(ith_out_node(i)->get_data(worker_index));
+            ith_out_node(i)->clear_grad_onwork(worker_index);
         }
 
         forward_propagation(worker_index, in_data, out_data);

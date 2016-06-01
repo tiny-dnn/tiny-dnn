@@ -113,7 +113,11 @@ class edge {
 
     void clear_grads(cnn_size_t worker_size) {
         for (cnn_size_t i = 0; i < worker_size; i++)
-            std::fill(grad_[i].begin(), grad_[i].end(), (float_t)0);
+            clear_grad_onwork(i);
+    }
+
+    void clear_grad_onwork(cnn_size_t index) {
+        std::fill(grad_[index].begin(), grad_[index].end(), (float_t)0);
     }
 
     void set_worker_size(cnn_size_t size) {
