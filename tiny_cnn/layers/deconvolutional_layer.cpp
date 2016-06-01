@@ -402,8 +402,8 @@ public:
                         const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
                         float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
 
-                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                        for (cnn_size_t wy = weight_.height_-1; wy >=0 ; wy--) {
+                            for (cnn_size_t wx = weight_.width_-1; wx >=0 ; wx--) {
                                 ppdelta_dst[wy * in_padded_.width_ + wx] += *ppw++ * ppdelta_src;
                             }
                         }
@@ -431,7 +431,7 @@ public:
                         for (cnn_size_t y = 0; y < out_.height_; y++) {
                             dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
                         }
-                        dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
+                        dW[weight_.get_index(weight_.width_ - wx - 1, weight_.height_ - wy - 1, in_.depth_ * outc + inc)] += dst;
                     }
                 }
             }
