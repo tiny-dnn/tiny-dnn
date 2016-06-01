@@ -90,7 +90,7 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    optimizer.alpha = 0.01;
+    optimizer.alpha = 0.1;
     nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
