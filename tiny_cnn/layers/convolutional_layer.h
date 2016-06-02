@@ -68,7 +68,11 @@ enum class padding {
     same   ///< add zero-padding around input so as to keep image size
 };
 
-
+/**
+ * 2D convolution layer
+ *
+ * take input as two-dimensional *image* and applying filtering operation.
+ **/
 template<typename Activation = activation::identity>
 class convolutional_layer : public feedforward_layer<Activation> {
 public:

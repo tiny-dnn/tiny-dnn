@@ -41,4 +41,48 @@ TEST(max_pool, read_write) {
     serialization_test(l1, l2);
 }
 
+TEST(max_pool, forward) {
+    max_pooling_layer<identity> l(4, 4, 1, 2);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 6,
+        4, 2
+    };
+
+    vec_t res = l.forward({in})[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+
+TEST(max_pool, forward_stride) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 1);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 7, 6,
+        8, 7, 6,
+        4, 3, 2
+    };
+
+    vec_t res = l.forward({ in })[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
 } // namespace tiny-cnn

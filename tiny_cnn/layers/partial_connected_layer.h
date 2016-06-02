@@ -40,10 +40,18 @@ public:
     typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wo_connections;
     typedef feedforward_layer<Activation> Base;
 
-    partial_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = float_t(1))
-        : Base(std_input_order(true)), 
-          weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim),
-          scale_factor_(scale_factor) {}
+    partial_connected_layer(cnn_size_t in_dim,
+                            cnn_size_t out_dim,
+                            size_t     weight_dim,
+                            size_t     bias_dim,
+                            float_t    scale_factor = float_t(1))
+        : Base(std_input_order(bias_dim > 0)),
+          weight2io_(weight_dim),
+          out2wi_(out_dim),
+          in2wo_(in_dim),
+          bias2out_(bias_dim),
+          out2bias_(out_dim),
+          scale_factor_(scale_factor){}
 
     size_t param_size() const {
         size_t total_param = 0;
