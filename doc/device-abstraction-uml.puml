@@ -1,0 +1,21 @@
+@startuml
+class Session {
+ -String name
+}
+
+abstract class Device {
+  -int id
+}
+
+abstract class Layer {
+
+}
+
+Session *-- Device
+Device *-- Layer
+Device <|-- CPUDevice
+Device <|-- OCLDevice
+Layer <|-- TINYConvolutionalLayer
+Layer <|-- NNPACKConvolutionalLayer
+Layer <|-- LIBDNNConvolutionalLayer
+@enduml

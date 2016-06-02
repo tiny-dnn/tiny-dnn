@@ -13,3 +13,8 @@ tiny-cnn is a header-only, dependency-free deep learning framework written in C+
 
 ## Developer guides
 - [Adding a new layer](Adding a new layer.md)
+
+## Design
+
+![url](http://uml.mvnsearch.org/github/edgarriba/tiny-cnn/blob/feat/generic-computational-graph-device-abstraction/doc/device-abstraction-uml.puml)
+
