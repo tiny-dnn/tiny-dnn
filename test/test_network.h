@@ -163,8 +163,12 @@ TEST(network, multi_out) {
     for (size_t i = 0; i < tnum; i++) {
         bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
         // label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+<<<<<<< HEAD
         data.push_back({ static_cast<float_t>(in[0]),
                          static_cast<float_t>(in[1]) });
+=======
+        data.push_back({ in[0] * 1.0, in[1] * 1.0 });
+>>>>>>> Create DeviceAbstraction.puml
 
         out.emplace_back(std::vector<vec_t>{
             { static_cast<float_t>(in[0] && in[1]),

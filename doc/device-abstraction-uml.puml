@@ -1,8 +1,11 @@
 @startuml
 class Session {
  -String name
+<<<<<<< HEAD
   void schedule_session()
   void run_session()
+=======
+>>>>>>> Create DeviceAbstraction.puml
 }
 
 abstract class Device {
@@ -22,6 +25,7 @@ abstract class Layer {
  virtual void backward_propagation()
 }
 
+<<<<<<< HEAD
 class ConvolutionalLayer {
 }
 
@@ -42,6 +46,21 @@ class NNPackBackend {
 }
 
 class LibDNNBackend {
+=======
+abstract class BaseConvolutionalLayer {
+}
+
+class ConvolutionalLayer {
+}
+
+class NNPACKConvolutionalLayer {
+}
+
+class LIBDNNConvolutionalLayer {
+}
+
+class MaxPoolingLayer {
+>>>>>>> Create DeviceAbstraction.puml
 }
 
 Session *-- Device
@@ -58,6 +77,7 @@ Edge *-- Node : next
 Edge *-- Data : data
 Edge *-- Data : grad
 
+<<<<<<< HEAD
 Layer <|-- ConvolutionalLayer
 Layer <|-- MaxPoolingLayer
 
@@ -69,4 +89,13 @@ Backend <|-- TinyCNNBackend
 Backend <|-- NNPackBackend
 Backend <|-- LibDNNBackend
 
+=======
+Device *-- Layer
+Layer <|-- BaseConvolutionalLayer
+Layer <|-- MaxPoolingLayer
+
+BaseConvolutionalLayer <|-- ConvolutionalLayer
+BaseConvolutionalLayer <|-- NNPACKConvolutionalLayer
+BaseConvolutionalLayer <|-- LIBDNNConvolutionalLayer
+>>>>>>> Create DeviceAbstraction.puml
 @enduml
