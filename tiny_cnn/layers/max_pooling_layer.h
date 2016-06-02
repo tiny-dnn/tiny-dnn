@@ -27,7 +27,6 @@
 #pragma once
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
-#include "tiny_cnn/layers/partial_connected_layer.h"
 #include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
