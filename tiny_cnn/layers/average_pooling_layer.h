@@ -37,12 +37,21 @@
 
 namespace tiny_cnn {
 
+/**
+ * average pooling with trainable weights
+ **/
 template<typename Activation = activation::identity>
 class average_pooling_layer : public partial_connected_layer<Activation> {
  public:
     typedef partial_connected_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     **/
     average_pooling_layer(cnn_size_t in_width,
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
@@ -61,11 +70,18 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         init_connection(pooling_size);
     }
 
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     * @param stride       [in] interval at which to apply the filters to the input
+    **/
     average_pooling_layer(cnn_size_t in_width,
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
                           cnn_size_t pooling_size,
-                        cnn_size_t stride)
+                          cnn_size_t stride)
         : Base(in_width * in_height * in_channels,
                pool_out_dim(in_width, pooling_size, stride) *
                pool_out_dim(in_height, pooling_size, stride) * in_channels,
@@ -81,11 +97,6 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
         init_connection(pooling_size);
     }
-
-    // image<> output_to_image(size_t worker_index = 0) const override {
-    //    return vec2image<unsigned char>(
-    //          Base::get_worker_storage(worker_index).output_, out_);
-    //}
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
         return { in_, w_, index3d<cnn_size_t>(1, 1, out_.depth_) };
@@ -112,8 +123,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     void init_connection(cnn_size_t pooling_size) {
         for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < in_.height_; y += stride_) {
-                for (cnn_size_t x = 0; x < in_.width_; x += stride_) {
+            for (cnn_size_t y = 0; y < in_.height_ - pooling_size + 1; y += stride_) {
+                for (cnn_size_t x = 0; x < in_.width_ - pooling_size + 1; x += stride_) {
                     connect_kernel(pooling_size, x, y, c);
                 }
             }
