@@ -55,7 +55,8 @@ OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
 # ----------------------------------------------------------------------------
 
 IF(BUILD_EXAMPLES)
-    find_package( OpenCV REQUIRED )
+    find_package(OpenCV REQUIRED)
+    include_directories(${OpenCV_INCLUDE_DIRS})
 ENDIF()
 
 IF(USE_TBB)
@@ -70,6 +71,7 @@ find_package(OpenMP  REQUIRED)
         set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         add_definitions( -DCNN_USE_OMP)
 ENDIF()
+
 # ----------------------------------------------------------------------------
 # COMPILER OPTIONS
 # ----------------------------------------------------------------------------
@@ -101,14 +103,12 @@ ELSE()#MSVC
     SET(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj ")
 ENDIF()
 
-
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
-    SET(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
-    SET(CMAKE_CXX_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS}")
-    SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
-    SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
-
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
+SET(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
+SET(CMAKE_CXX_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
+SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS}")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
+SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
 
 #------------------------------------------------
 # TARGETS
@@ -116,18 +116,74 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
-tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/layers/arithmetic_layer.h tiny_cnn/layers/concat_layer.h tiny_cnn/layers/feedforward_layer.h tiny_cnn/layers/dropout_layer.h tiny_cnn/layers/lrn_layer.h tiny_cnn/layers/linear_layer.h tiny_cnn/node.h tiny_cnn/nodes.h tiny_cnn/util/target_cost.h tiny_cnn/util/aligned_allocator.h)
+SET(tiny_cnn_hrds
+    # core
+    tiny_cnn/node.h
+    tiny_cnn/nodes.h
+    tiny_cnn/network.h
+    tiny_cnn/config.h
+    tiny_cnn/tiny_cnn.h
+    # layers
+    tiny_cnn/layers/layer.h
+    tiny_cnn/layers/layers.h
+    tiny_cnn/layers/input_layer.h
+    tiny_cnn/layers/max_pooling_layer.h
+    tiny_cnn/layers/average_pooling_layer.h
+    tiny_cnn/layers/arithmetic_layer.h
+    tiny_cnn/layers/concat_layer.h
+    tiny_cnn/layers/feedforward_layer.h
+    tiny_cnn/layers/dropout_layer.h
+    tiny_cnn/layers/lrn_layer.h
+    tiny_cnn/layers/linear_layer.h
+    tiny_cnn/layers/conv_layer.h
+    tiny_cnn/layers/fully_connected_layer.h
+    tiny_cnn/layers/partial_connected_layer.h
+    # activations
+    tiny_cnn/activations/activation_function.h
+    # lossfunctions
+    tiny_cnn/lossfunctions/loss_function.h
+    # optimizers
+    tiny_cnn/optimizers/optimizer.h
+    # io
+    tiny_cnn/io/display.h
+    tiny_cnn/io/mnist_parser.h
+    tiny_cnn/io/cifar10_parser.h
+    # util
+    tiny_cnn/util/image.h
+    tiny_cnn/util/product.h
+    tiny_cnn/util/util.h
+    tiny_cnn/util/deform.h
+    tiny_cnn/util/weight_init.h
+    tiny_cnn/util/target_cost.h
+    tiny_cnn/util/aligned_allocator.h)
 
-SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutional_layer.h test/test_fully_connected_layer.h test/test_lrn_layer.h test/test_max_pooling_layer.h test/test_dropout_layer.h test/test_network.h test/test_target_cost.h test/test_large_thread_count.h test/testhelper.h test/picotest/picotest.h)
+SET(tiny_cnn_test_headers
+    test/picotest/picotest.h
+    # core
+    test/test_network.h
+    test/test_target_cost.h
+    test/test_large_thread_count.h
+    test/testhelper.h
+    # layers
+    test/test_average_pooling_layer.h
+    test/test_convolutional_layer.h
+    test/test_fully_connected_layer.h
+    test/test_lrn_layer.h
+    test/test_max_pooling_layer.h
+    test/test_dropout_layer.h)
 
 IF (BUILD_EXAMPLES)
-    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp  ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
-    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
-    include_directories(${OpenCV_INCLUDE_DIRS})
-    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
+    ADD_EXECUTABLE(example_mnist_train
+                   examples/mnist/train.cpp ${tiny_cnn_hrds})
+
+    ADD_EXECUTABLE(example_mnist_test
+                   examples/mnist/test.cpp  ${tiny_cnn_hrds})
+
+    ADD_EXECUTABLE(example_cifar_train
+                   examples/cifar10/train.cpp ${tiny_cnn_hrds})
+
+    target_link_libraries(example_mnist_test ${OpenCV_LIBS})
+    target_link_libraries(example_mnist_test ${OpenCV_LIBS})
 
     find_package(Protobuf)
     IF (PROTOBUF_FOUND)
@@ -188,9 +244,7 @@ MESSAGE( STATUS "---------------------------------------------------------------
 message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
-
 message( STATUS "BUILD_EXAMPLES=${BUILD_EXAMPLES} BUILD_TESTS=${BUILD_TESTS} USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
-
 
 MESSAGE( STATUS "-------------------------------------------------------------------------------" )
 
