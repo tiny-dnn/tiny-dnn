@@ -96,7 +96,7 @@ class layer : public node {
     ///< number of incoming edges in this layer
     cnn_size_t in_channels() const { return in_channels_; }
 
-    ///< number of outgoing edges in this layer 
+    ///< number of outgoing edges in this layer
     cnn_size_t out_channels() const { return out_channels_; }
 
     cnn_size_t in_data_size() const {
@@ -514,20 +514,10 @@ class layer : public node {
         return prev()[i];
     }
 
-    /*const edgeptr_t ith_in_node(cnn_size_t i) const {
-        if (!prev_[i]) alloc_input(i);
-        return prev()[i];
-    }*/
-
     edgeptr_t ith_out_node(cnn_size_t i) {
-        if (!next_[i]) alloc_input(i);
+        if (!next_[i]) alloc_output(i);
         return next()[i];
     }
-
-    /*const edgeptr_t ith_out_node(cnn_size_t i) const {
-        if (!next_[i]) alloc_input(i);
-        return next()[i];
-    }*/
 };
 
 inline void connect(layerptr_t head,
