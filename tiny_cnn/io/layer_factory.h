@@ -33,9 +33,9 @@ namespace tiny_cnn {
 /**
 * create multi-layer perceptron
 */
-template<typename loss_func, typename algorithm, typename activation, typename Iter>
-network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
-    typedef network<loss_func, algorithm> net_t;
+template<typename activation, typename Iter>
+network<sequential> make_mlp(Iter first, Iter last) {
+    typedef network<sequential> net_t;
     net_t n;
 
     Iter next = first + 1;
@@ -47,9 +47,9 @@ network<loss_func, algorithm> make_mlp(Iter first, Iter last) {
 /**
  * create multi-layer perceptron
  */
-template<typename loss_func, typename algorithm, typename activation>
-network<loss_func, algorithm> make_mlp(const std::vector<cnn_size_t>& units) {
-    return make_mlp<loss_func, algorithm, activation>(units.begin(), units.end());
+template<typename activation>
+network<sequential> make_mlp(const std::vector<cnn_size_t>& units) {
+    return make_mlp<activation>(units.begin(), units.end());
 }
 
 

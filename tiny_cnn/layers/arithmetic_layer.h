@@ -26,86 +26,63 @@
 */
 #pragma once
 #include "tiny_cnn/util/util.h"
-#include <algorithm>
-
-extern bool g_log_softmax;
-
+#include "tiny_cnn/layers/layer.h"
 
 namespace tiny_cnn {
 
 /**
- * f(x) = h(scale*x+bias)
- */
-template<typename Activation>
-class linear_layer : public feedforward_layer<Activation> {
+ * element-wise add N vectors
+ **/
+class elementwise_add_layer : public layer {
 public:
-    CNN_USE_LAYER_MEMBERS;
+    elementwise_add_layer(cnn_size_t num_args, cnn_size_t dim)
+    : layer(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}), num_args_(num_args), dim_(dim) {}
 
-    typedef feedforward_layer<Activation> Base;
-
-    explicit linear_layer(cnn_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
-        : Base({vector_type::data}),
-        dim_(dim), scale_(scale), bias_(bias) {}
+    std::string layer_type() const override {
+        return "elementwise-add";
+    }
 
     std::vector<shape3d> in_shape() const override {
-        return {shape3d(dim_, 1, 1) };
+        return std::vector<shape3d>(num_args_, shape3d(dim_,1,1));
     }
 
     std::vector<shape3d> out_shape() const override {
-        return{ shape3d(dim_, 1, 1), shape3d(dim_, 1, 1) };
+        return{ shape3d(dim_,1,1) };
     }
 
-    std::string layer_type() const override { return "linear"; }
-
-    void forward_propagation(cnn_size_t index,
+    void forward_propagation(cnn_size_t worker_index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
-        const vec_t& in  = *in_data[0];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
+        const vec_t& in1 = *in_data[0];
+        vec_t& out = *out_data[0];
 
-        CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(worker_index);
 
-        for_i(parallelize_, dim_, [&](int i) {
-            a[i] = scale_ * in[i] + bias_;
-        });
-        for_i(parallelize_, dim_, [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+        out = in1;
+
+        for (cnn_size_t i = 1; i < num_args_; i++) {
+            std::transform(in_data[i]->begin(),
+                           in_data[i]->end(),
+                           out.begin(),
+                           out.begin(),
+                           [](float_t x, float_t y){ return x + y; });
+        }
     }
 
-    void back_propagation(cnn_size_t                index,
+    void back_propagation(cnn_size_t                 worker_index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
-
-        CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(worker_index);
         CNN_UNREFERENCED_PARAMETER(in_data);
-
-        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
-
-        for_i(parallelize_, dim_, [&](int i) {
-            prev_delta[i] = curr_delta[i] * scale_;
-        });
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        for (cnn_size_t i = 0; i < num_args_; i++)
+            *in_grad[i] = *out_grad[0];
     }
-
-   /* const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta2_[i] = current_delta2[i] * sqr(scale_ * prev_h.df(prev_out[i]));
-        });
-
-        return prev_->back_propagation_2nd(prev_delta2_);
-    }*/
-
-protected:
+private:
+    cnn_size_t num_args_;
     cnn_size_t dim_;
-    float_t scale_, bias_;
 };
 
 } // namespace tiny_cnn

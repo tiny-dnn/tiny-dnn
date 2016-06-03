@@ -31,36 +31,35 @@
 namespace tiny_cnn {
 
 template<typename Activation>
-class partial_connected_layer : public layer<Activation> {
+class partial_connected_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
     typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > io_connections;
     typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wi_connections;
     typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wo_connections;
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
-    partial_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim, size_t weight_dim, size_t bias_dim, float_t scale_factor = float_t(1))
-        : Base(in_dim, out_dim, weight_dim, bias_dim), 
-          weight2io_(weight_dim), out2wi_(out_dim), in2wo_(in_dim), bias2out_(bias_dim), out2bias_(out_dim),
-          scale_factor_(scale_factor) {}
+    partial_connected_layer(cnn_size_t in_dim,
+                            cnn_size_t out_dim,
+                            size_t     weight_dim,
+                            size_t     bias_dim,
+                            float_t    scale_factor = float_t(1))
+        : Base(std_input_order(bias_dim > 0)),
+          weight2io_(weight_dim),
+          out2wi_(out_dim),
+          in2wo_(in_dim),
+          bias2out_(bias_dim),
+          out2bias_(out_dim),
+          scale_factor_(scale_factor){}
 
-    size_t param_size() const override {
+    size_t param_size() const {
         size_t total_param = 0;
         for (auto w : weight2io_)
             if (w.size() > 0) total_param++;
         for (auto b : bias2out_)
             if (b.size() > 0) total_param++;
         return total_param;
-    }
-
-    size_t connection_size() const override {
-        size_t total_size = 0;
-        for (auto io : weight2io_)
-            total_size += io.size();
-        for (auto b : bias2out_)
-            total_size += b.size();
-        return total_size;
     }
 
     size_t fan_in_size() const override {
@@ -82,49 +81,59 @@ public:
         bias2out_[bias_index].push_back(output_index);
     }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
-        vec_t& a = ws.a_;
-     
-        for_i(parallelize_, out_size_, [&](int i) {
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>& out_data) override {
+        const vec_t& in  = *in_data[0];
+        const vec_t& W   = *in_data[1];
+        const vec_t& b   = *in_data[2];
+        vec_t&       out = *out_data[0];
+        vec_t&       a   = *out_data[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        for_i(parallelize_, out2wi_.size(), [&](int i) {
             const wi_connections& connections = out2wi_[i];
 
             a[i] = float_t(0);
 
             for (auto connection : connections)// 13.1%
-                a[i] += W_[connection.first] * in[connection.second]; // 3.2%
+                a[i] += W[connection.first] * in[connection.second]; // 3.2%
 
             a[i] *= scale_factor_;
-            a[i] += b_[out2bias_[i]];
+            a[i] += b[out2bias_[i]];
         });
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            ws.output_[i] = h_.f(a, i);
+        for_i(parallelize_, out2wi_.size(), [&](int i) {
+            out[i] = h_.f(a, i);
         });
-        CNN_LOG_VECTOR(in, "[pc]in");
-        CNN_LOG_VECTOR(W_, "[pc]w");
-        CNN_LOG_VECTOR(a, "[pc]a");
-        CNN_LOG_VECTOR(output_[index], "[pc]forward");
-
-        return next_ ? next_->forward_propagation(ws.output_, index) : ws.output_; // 15.6%
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void back_propagation(cnn_size_t                index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
+        const vec_t& prev_out = *in_data[0];
+        const vec_t& W  = *in_data[1];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       db = *in_grad[2];
+        vec_t&       prev_delta = *in_grad[0];
+        vec_t&       curr_delta = *out_grad[0];
 
-        const vec_t& prev_out = prev_->output(index);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = ws.prev_delta_;
+        CNN_UNREFERENCED_PARAMETER(index);
 
-        for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = float_t(0);
 
                 for (auto connection : connections) 
-                    delta += W_[connection.first] * current_delta[connection.second]; // 40.6%
+                    delta += W[connection.first] * curr_delta[connection.second]; // 40.6%
 
-                prev_delta[i] = delta * scale_factor_ * prev_h.df(prev_out[i]); // 2.1%
+                prev_delta[i] = delta * scale_factor_; // 2.1%
             }
         });
 
@@ -134,9 +143,9 @@ public:
                 float_t diff = float_t(0);
 
                 for (auto connection : connections) // 11.9%
-                    diff += prev_out[connection.first] * current_delta[connection.second];
+                    diff += prev_out[connection.first] * curr_delta[connection.second];
 
-                ws.dW_[i] += diff * scale_factor_;
+                dW[i] += diff * scale_factor_;
             }
         });
 
@@ -145,86 +154,10 @@ public:
             float_t diff = float_t(0);
 
             for (auto o : outs)
-                diff += current_delta[o];    
+                diff += curr_delta[o];    
 
-            ws.db_[i] += diff;
+            db[i] += diff;
         } 
-
-        CNN_LOG_VECTOR(current_delta, "[pc]curr_delta");
-        CNN_LOG_VECTOR(prev_delta_[index], "[pc]prev_delta");
-        CNN_LOG_VECTOR(dW_[index], "[pc]dW");
-        CNN_LOG_VECTOR(db_[index], "[pc]db");
-
-        return prev_->back_propagation(ws.prev_delta_, index);
-    }
-
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        for (size_t i = 0; i < weight2io_.size(); i++) {
-            const io_connections& connections = weight2io_[i];
-            float_t diff = float_t(0);
-
-            for (auto connection : connections)
-                diff += sqr(prev_out[connection.first]) * current_delta2[connection.second];
-
-            diff *= sqr(scale_factor_);
-            Whessian_[i] += diff;
-        }
-
-        for (size_t i = 0; i < bias2out_.size(); i++) {
-            const std::vector<cnn_size_t>& outs = bias2out_[i];
-            float_t diff = float_t(0);
-
-            for (auto o : outs)
-                diff += current_delta2[o];    
-
-            bhessian_[i] += diff;
-        }
-
-        for (cnn_size_t i = 0; i < in_size_; i++) {
-            const wo_connections& connections = in2wo_[i];
-            prev_delta2_[i] = float_t(0);
-
-            for (auto connection : connections) 
-                prev_delta2_[i] += sqr(W_[connection.first]) * current_delta2[connection.second];
-
-            prev_delta2_[i] *= sqr(scale_factor_ * prev_h.df(prev_out[i]));
-        }
-
-        CNN_LOG_VECTOR(current_delta2, "[pc]curr-delta2");
-        CNN_LOG_VECTOR(prev_delta2_, "[pc]prev-delta2");
-        CNN_LOG_VECTOR(Whessian_, "[pc]whessian");
-
-        return prev_->back_propagation_2nd(prev_delta2_);
-    }
-
-    // remove unused weight to improve cache hits
-    void remap() {
-        std::map<int, int> swaps;
-        size_t n = 0;
-
-        for (size_t i = 0; i < weight2io_.size(); i++)
-            swaps[i] = weight2io_[i].empty() ? -1 : n++;
-
-        for (size_t i = 0; i < out_size_; i++) {
-            wi_connections& wi = out2wi_[i];
-            for (size_t j = 0; j < wi.size(); j++)
-                wi[j].first = static_cast<cnn_size_t>(swaps[wi[j].first]);
-        }
-
-        for (size_t i = 0; i < in_size_; i++) {
-            wo_connections& wo = in2wo_[i];
-            for (size_t j = 0; j < wo.size(); j++)
-                wo[j].first = static_cast<cnn_size_t>(swaps[wo[j].first]);
-        }
-
-        std::vector<io_connections> weight2io_new(n);
-        for (size_t i = 0; i < weight2io_.size(); i++)
-            if(swaps[i] >= 0) weight2io_new[swaps[i]] = weight2io_[i];
-
-        weight2io_.swap(weight2io_new);
     }
 
 protected:

@@ -26,6 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
 #include <memory>
+#include <ctime>
+
 #define CNN_USE_CAFFE_CONVERTER
 #include "tiny_cnn/tiny_cnn.h"
 
@@ -114,6 +116,21 @@ vector<string> get_label_list(const string& label_file)
     return lines;
 }
 
+void load_validation_data(const std::string& validation_file,
+                          std::vector<std::pair<std::string, int>>* validation) {
+  string line;
+  ifstream ifs(validation_file.c_str());
+
+  if (ifs.fail() || ifs.bad()) {
+      throw runtime_error("failed to open:" + validation_file);
+  }
+
+  vector<string> lines;
+  while (getline(ifs, line)) {
+      lines.push_back(line);
+  }
+}
+
 void test(const string& model_file,
           const string& trained_file,
           const string& mean_file,
@@ -124,34 +141,49 @@ void test(const string& model_file,
     auto net = create_net_from_caffe_prototxt(model_file);
     reload_weight_from_caffe_protobinary(trained_file, net.get());
 
-    int channels = net->in_shape().depth_;
-    int width = net->in_shape().width_;
-    int height = net->in_shape().height_;
+    int channels = (*net)[0]->in_data_shape()[0].depth_;
+    int width = (*net)[0]->in_data_shape()[0].width_;
+    int height = (*net)[0]->in_data_shape()[0].height_;
 
-    cv::Mat img = cv::imread(img_file, -1);
+    std::vector<std::pair<std::string, int>> validation(1);
+    load_validation_data(img_file, &validation);
 
     auto mean = compute_mean(mean_file, width, height);
 
-    vector<float> inputvec(width*height*channels);
-    vector<cv::Mat> input_channels;
+    for (size_t i = 0; i < validation.size(); ++i) {
 
-    for (int i = 0; i < channels; i++)
-        input_channels.emplace_back(height, width, CV_32FC1, &inputvec[width*height*i]);
+      cv::Mat img = cv::imread(img_file, -1);
+      //cv::Mat img = cv::imread(validation[i].first, -1);
 
-    preprocess(img, mean, 3, cv::Size(width, height), &input_channels);
+      vector<float> inputvec(width*height*channels);
+      vector<cv::Mat> input_channels;
 
-    vector<tiny_cnn::float_t> vec(inputvec.begin(), inputvec.end());
+      for (int i = 0; i < channels; i++)
+          input_channels.emplace_back(height, width, CV_32FC1, &inputvec[width*height*i]);
 
-    auto result = net->predict(vec);
-    vector<tiny_cnn::float_t> sorted(result.begin(), result.end());
+      preprocess(img, mean, 3, cv::Size(width, height), &input_channels);
 
-    int top_n = 5;
-    partial_sort(sorted.begin(), sorted.begin()+top_n, sorted.end(), greater<tiny_cnn::float_t>());
+      vector<tiny_cnn::float_t> vec(inputvec.begin(), inputvec.end());
 
-    for (int i = 0; i < top_n; i++) {
-        size_t idx = distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
-        cout << labels[idx] << "," << sorted[i] << endl;
+      clock_t begin = clock();
+
+      auto result = net->predict(vec);
+
+      clock_t end = clock();
+      double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+      cout <<"Elapsed time(s): " << elapsed_secs << endl;
+
+      vector<tiny_cnn::float_t> sorted(result.begin(), result.end());
+
+      int top_n = 5;
+      partial_sort(sorted.begin(), sorted.begin()+top_n, sorted.end(), greater<tiny_cnn::float_t>());
+
+      for (int i = 0; i < top_n; i++) {
+          size_t idx = distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
+          cout << labels[idx] << "," << sorted[i] << endl;
+      }
     }
+
 }
 
 int main(int argc, char** argv) {

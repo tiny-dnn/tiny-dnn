@@ -39,23 +39,55 @@ namespace tiny_cnn {
  * local response normalization
  */
 template<typename Activation>
-class lrn_layer : public layer<Activation> {
+class lrn_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
-    lrn_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t local_size, cnn_size_t in_channels,
-                       float_t alpha, float_t beta, norm_region region = norm_region::across_channels)
-        : Base(in_width*in_height*in_channels, in_width*in_height*in_channels, 0, 0),
-        in_shape_(in_width, in_height, in_channels), size_(local_size), alpha_(alpha), beta_(beta), region_(region), in_square_(in_shape_.area()) {}
-
-    size_t param_size() const override {
-        return 0;
+    /**
+    * @param layer       [in] the previous layer connected to this
+    * @param local_size  [in] the number of channels(depths) to sum over
+    * @param in_channels [in] the number of channels of input data
+    * @param alpha       [in] the scaling parameter (same to caffe's LRN)
+    * @param beta        [in] the scaling parameter (same to caffe's LRN)
+    **/
+    lrn_layer(layer*      prev,
+              cnn_size_t  local_size,
+              float_t     alpha = 1.0,
+              float_t     beta  = 5.0,
+              norm_region region = norm_region::across_channels)
+        : Base({ vector_type::data }),
+          in_shape_(prev->out_data_shape()[0]),
+          size_(local_size),
+          alpha_(alpha),
+          beta_(beta),
+          region_(region),
+          in_square_(in_shape_.area()) {
     }
 
-    size_t connection_size() const override {
-        return this->in_size() * size_;
+    /**
+     * @param in_width    [in] the width of input data
+     * @param in_height   [in] the height of input data
+     * @param local_size  [in] the number of channels(depths) to sum over
+     * @param in_channels [in] the number of channels of input data
+     * @param alpha       [in] the scaling parameter (same to caffe's LRN)
+     * @param beta        [in] the scaling parameter (same to caffe's LRN)
+     **/
+    lrn_layer(cnn_size_t  in_width,
+              cnn_size_t  in_height,
+              cnn_size_t  local_size,
+              cnn_size_t  in_channels,
+              float_t     alpha = 1.0,
+              float_t     beta  = 5.0,
+              norm_region region = norm_region::across_channels)
+        : Base({vector_type::data}),
+          in_shape_(in_width, in_height, in_channels),
+          size_(local_size),
+          alpha_(alpha),
+          beta_(beta),
+          region_(region),
+          in_square_(in_shape_.area()) {
     }
 
     size_t fan_in_size() const override {
@@ -66,35 +98,46 @@ public:
         return size_;
     }
 
+    std::vector<shape3d> in_shape() const override {
+        return { in_shape_ };
+    }
+
+    std::vector<shape3d> out_shape() const override {
+        return { in_shape_, in_shape_ };
+    }
+
     std::string layer_type() const override { return "norm"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void forward_propagation(cnn_size_t index,
+                            const std::vector<vec_t*>& in_data,
+                            std::vector<vec_t*>& out_data) override {
+        vec_t& out = *out_data[0];
+        vec_t& a   = *out_data[1];
 
-        vec_t& a = ws.a_;
-        vec_t& out = ws.output_;
+        CNN_UNREFERENCED_PARAMETER(index);
 
         if (region_ == norm_region::across_channels) {
-            forward_across(in, a);
+            forward_across(*in_data[0], a);
         }
         else {
-            forward_within(in, a);
+            forward_within(*in_data[0], a);
         }
 
-        for_i(parallelize_, out_size_, [&](int i) {
+        for_i(parallelize_, out.size(), [&](int i) {
             out[i] = h_.f(a, i);
         });
-        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        CNN_UNREFERENCED_PARAMETER(current_delta);
+    void back_propagation(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
         CNN_UNREFERENCED_PARAMETER(index);
-        throw nn_error("not implemented");
-    }
-
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        CNN_UNREFERENCED_PARAMETER(current_delta2);
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("not implemented");
     }
 
@@ -143,7 +186,7 @@ private:
             dst[i] -= src[i] * src[i];
     }
 
-    layer_shape_t in_shape_;
+    shape3d in_shape_;
 
     cnn_size_t size_;
     float_t alpha_, beta_;

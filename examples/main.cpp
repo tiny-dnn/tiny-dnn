@@ -30,6 +30,8 @@
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
+using namespace tiny_cnn::layers;
+
 using namespace std;
 
 void sample1_convnet(const string& data_dir_path = "../../data");
@@ -37,6 +39,7 @@ void sample2_mlp();
 void sample3_dae();
 void sample4_dropout();
 void sample5_unbalanced_training_data(const string& data_dir_path = "../../data");
+void sample6_graph();
 
 int main(int argc, char** argv) {
     try {
@@ -56,7 +59,8 @@ int main(int argc, char** argv) {
 // learning convolutional neural networks (LeNet-5 like architecture)
 void sample1_convnet(const string& data_dir_path) {
     // construct LeNet-5 architecture
-    network<mse, gradient_descent_levenberg_marquardt> nn;
+    network<sequential> nn;
+    adagrad optimizer;
 
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
@@ -97,7 +101,7 @@ void sample1_convnet(const string& data_dir_path) {
     timer t;
     int minibatch_size = 10;
 
-    nn.optimizer().alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= std::sqrt(minibatch_size);
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -105,10 +109,7 @@ void sample1_convnet(const string& data_dir_path) {
 
         tiny_cnn::result res = nn.test(test_images, test_labels);
 
-        std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
-
-        nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
+        std::cout << res.num_success << "/" << res.num_total << std::endl;
 
         disp.restart(train_images.size());
         t.restart();
@@ -119,7 +120,7 @@ void sample1_convnet(const string& data_dir_path) {
     };
     
     // training
-    nn.train(train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
+    nn.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20, on_enumerate_minibatch, on_enumerate_epoch);
 
     std::cout << "end training." << std::endl;
 
@@ -141,10 +142,11 @@ void sample2_mlp()
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
     int num_units[] = { 28 * 28, num_hidden_units, 10 };
-    auto nn = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
+    auto nn = make_mlp<tan_h>(num_units, num_units + 3);
 #else
-    auto nn = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
+    auto nn = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
 #endif
+    gradient_descent optimizer;
 
     // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
@@ -155,7 +157,7 @@ void sample2_mlp()
     parse_mnist_labels("../../data/t10k-labels.idx1-ubyte", &test_labels);
     parse_mnist_images("../../data/t10k-images.idx3-ubyte", &test_images, -1.0, 1.0, 0, 0);
 
-    nn.optimizer().alpha = 0.001;
+    optimizer.alpha = 0.001;
     
     progress_display disp(train_images.size());
     timer t;
@@ -166,10 +168,10 @@ void sample2_mlp()
 
         tiny_cnn::result res = nn.test(test_images, test_labels);
 
-        std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+        std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
-        nn.optimizer().alpha *= 0.85; // decay learning rate
-        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
+        optimizer.alpha *= 0.85; // decay learning rate
+        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -179,7 +181,7 @@ void sample2_mlp()
         ++disp; 
     };  
 
-    nn.train(train_images, train_labels, 1, 20, on_enumerate_data, on_enumerate_epoch);
+    nn.train<mse>(optimizer, train_images, train_labels, 1, 20, on_enumerate_data, on_enumerate_epoch);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -189,9 +191,9 @@ void sample3_dae()
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
     int num_units[] = { 100, 400, 100 };
-    auto nn = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
+    auto nn = make_mlp<tan_h>(num_units, num_units + 3);
 #else
-    auto nn = make_mlp<mse, gradient_descent, tan_h>({ 100, 400, 100 });
+    auto nn = make_mlp<tan_h>({ 100, 400, 100 });
 #endif
 
     std::vector<vec_t> train_data_original;
@@ -204,8 +206,10 @@ void sample3_dae()
         d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
     }
 
+    gradient_descent optimizer;
+
     // learning 100-400-100 denoising auto-encoder
-    nn.train(train_data_corrupted, train_data_original);
+    nn.train<mse>(optimizer, train_data_corrupted, train_data_original);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -213,19 +217,20 @@ void sample3_dae()
 
 void sample4_dropout()
 {
-    typedef network<mse, gradient_descent> Network;
+    typedef network<sequential> Network;
     Network nn;
     cnn_size_t input_dim    = 28*28;
     cnn_size_t hidden_units = 800;
     cnn_size_t output_dim   = 10;
+    gradient_descent optimizer;
 
     fully_connected_layer<tan_h> f1(input_dim, hidden_units);
     dropout_layer dropout(hidden_units, 0.5);
     fully_connected_layer<tan_h> f2(hidden_units, output_dim);
     nn << f1 << dropout << f2;
 
-    nn.optimizer().alpha = 0.003; // TODO: not optimized
-    nn.optimizer().lambda = 0.0;
+    optimizer.alpha = 0.003; // TODO: not optimized
+    optimizer.lambda = 0.0;
 
     // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
@@ -249,10 +254,10 @@ void sample4_dropout()
         dropout.set_context(net_phase::train);
 
 
-        std::cout << nn.optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+        std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
-        nn.optimizer().alpha *= 0.99; // decay learning rate
-        nn.optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn.optimizer().alpha);
+        optimizer.alpha *= 0.99; // decay learning rate
+        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -262,7 +267,7 @@ void sample4_dropout()
         ++disp;
     };
 
-    nn.train(train_images, train_labels, 1, 100, on_enumerate_data, on_enumerate_epoch);
+    nn.train<mse>(optimizer, train_images, train_labels, 1, 100, on_enumerate_data, on_enumerate_epoch);
 
     // change context to enable all hidden-units
     //f1.set_context(dropout::test_phase);
@@ -277,16 +282,9 @@ void sample4_dropout()
 void sample5_unbalanced_training_data(const string& data_dir_path)
 {
     const cnn_size_t num_hidden_units = 20; // keep the network relatively simple
-
-#if defined(_MSC_VER) && _MSC_VER < 1800
-    // initializer-list is not supported
-    int num_units[] = { 28 * 28, num_hidden_units, 10 };
-    auto nn_standard = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
-    auto nn_balanced = make_mlp<mse, gradient_descent, tan_h>(num_units, num_units + 3);
-#else
-    auto nn_standard = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
-    auto nn_balanced = make_mlp<mse, gradient_descent, tan_h>({ 28 * 28, num_hidden_units, 10 });
-#endif
+    auto nn_standard = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
+    auto nn_balanced = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
+    gradient_descent optimizer;
 
     // load MNIST dataset
     std::vector<label_t> train_labels, test_labels;
@@ -320,8 +318,7 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
         std::swap(train_images, train_images_unbalanced);
     }
 
-    nn_standard.optimizer().alpha = 0.001;
-    nn_balanced.optimizer().alpha = 0.001;
+    optimizer.alpha = 0.001;
 
     progress_display disp(train_images.size());
     timer t;
@@ -336,10 +333,10 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
 
         tiny_cnn::result res = nn->test(test_images, test_labels);
 
-        std::cout << nn->optimizer().alpha << "," << res.num_success << "/" << res.num_total << std::endl;
+        std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
-        nn->optimizer().alpha *= 0.85; // decay learning rate
-        nn->optimizer().alpha = std::max((tiny_cnn::float_t)0.00001, nn->optimizer().alpha);
+        optimizer.alpha *= 0.85; // decay learning rate
+        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -351,13 +348,14 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
 
     // first train the standard network (default cost - equal for each sample)
     // - note that it does not learn the classes 0-4
-    nn_standard.train(train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE);
+    nn_standard.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE);
 
     // then train another network, now with explicitly supplied target costs (aim: a more balanced predictor)
     // - note that it can learn the classes 0-4 (at least somehow)
     nn = &nn_balanced;
+    optimizer = gradient_descent();
     const auto target_cost = create_balanced_target_cost(train_labels, 0.8);
-    nn_balanced.train(train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE, &target_cost);
+    nn_balanced.train<mse>(optimizer, train_images, train_labels, minibatch_size, 20, on_enumerate_data, on_enumerate_epoch, true, CNN_TASK_SIZE, target_cost);
 
     // test and show results
     std::cout << std::endl << "Standard training (implicitly assumed equal cost for every sample):" << std::endl;
@@ -365,4 +363,25 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
 
     std::cout << std::endl << "Balanced training (explicitly supplied target costs):" << std::endl;
     nn_balanced.test(test_images, test_labels).print_detail(std::cout);
+}
+
+void sample6_graph()
+{
+    // declare node
+    auto in1 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto in2 = std::make_shared<input_layer>(shape3d(3, 1, 1));
+    auto added = std::make_shared<add>(2, 3);
+    auto out = std::make_shared<linear_layer<relu>>(3);
+
+    // connect
+    (in1, in2) << added;
+    added << out;
+
+    network<graph> net;
+    construct_graph(net, { in1, in2 }, { out });
+
+    auto res = net.predict({ { 2,4,3 },{ -1,2,-5 } })[0];
+
+    // relu({2,4,3} + {-1,2,-5}) = {1,6,0}
+    std::cout << res[0] << "," << res[1] << "," << res[2] << std::endl;
 }

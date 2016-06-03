@@ -32,7 +32,8 @@
 namespace tiny_cnn {
 
 TEST(fully_connected, bprop) {
-    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
+    network<sequential> nn;
+    adagrad optimizer;
 
     nn << fully_connected_layer<sigmoid>(3, 2);
 
@@ -52,8 +53,8 @@ TEST(fully_connected, bprop) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.optimizer().alpha = 0.1;
-    nn.train(data, train, 1, 10);
+    optimizer.alpha = 0.1;
+    nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
 
@@ -67,7 +68,8 @@ TEST(fully_connected, bprop) {
 }
 
 TEST(fully_connected, bprop2) {
-    network<mse, gradient_descent> nn;
+    network<sequential> nn;
+    gradient_descent optimizer;
 
     nn << fully_connected_layer<tan_h>(4, 6)
        << fully_connected_layer<tan_h>(6, 3);
@@ -88,8 +90,8 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.optimizer().alpha = 0.01;
-    nn.train(data, train, 1, 10);
+    optimizer.alpha = 0.1;
+    nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
 
@@ -103,7 +105,7 @@ TEST(fully_connected, bprop2) {
 }
 
 TEST(fully_connected, gradient_check) {
-    network<mse, adagrad> nn;
+    network<sequential> nn;
     nn << fully_connected_layer<tan_h>(50, 10);
 
     vec_t a(50, 0.0);
@@ -111,7 +113,7 @@ TEST(fully_connected, gradient_check) {
 
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(fully_connected, read_write)
@@ -119,8 +121,8 @@ TEST(fully_connected, read_write)
     fully_connected_layer<tan_h> l1(100, 100);
     fully_connected_layer<tan_h> l2(100, 100);
 
-    l1.init_weight();
-    l2.init_weight();
+    l1.setup(true);
+    l2.setup(true);
 
     serialization_test(l1, l2);
 }

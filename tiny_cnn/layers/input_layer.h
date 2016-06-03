@@ -29,45 +29,42 @@
 
 namespace tiny_cnn {
 
-class input_layer : public layer<activation::identity> {
+class input_layer : public layer {
 public:
-    typedef activation::identity Activation;
-    typedef layer<activation::identity> Base;
-    CNN_USE_LAYER_MEMBERS;
+    explicit input_layer(const shape3d& shape)
+    : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
 
-    input_layer() : Base(0, 0, 0, 0) {}
+    explicit input_layer(cnn_size_t in_dim)
+    : layer({ vector_type::data }, { vector_type::data }), shape_(shape3d(in_dim,1,1)) {}
 
-    cnn_size_t in_size() const override { return next_ ? next_->in_size(): static_cast<cnn_size_t>(0); }
+    std::vector<shape3d> in_shape() const override { return { shape_ }; }
+    std::vector<shape3d> out_shape() const override { return { shape_ }; }
+    std::string layer_type() const override { return "input"; }
 
-    index3d<cnn_size_t> in_shape() const override { return next_ ? next_->in_shape() : index3d<cnn_size_t>(0, 0, 0); }
-    index3d<cnn_size_t> out_shape() const override { return next_ ? next_->out_shape() : index3d<cnn_size_t>(0, 0, 0); }
-    std::string layer_type() const override { return next_ ? next_->layer_type() : "input"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        Base::worker_specific_storage& ws = Base::get_worker_storage(index);
-        ws.output_ = in;
-        return next_ ? next_->forward_propagation(in, index) : ws.output_;
+
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>& out_data) override {
+        CNN_UNREFERENCED_PARAMETER(index);
+        *out_data[0] = *in_data[0];
     }
 
-    const vec_t& back_propagation(const vec_t& current_delta, size_t /*index*/) override {
-        return current_delta;
+    void back_propagation(cnn_size_t                index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
+        // do nothing
+        CNN_UNREFERENCED_PARAMETER(index);
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        return current_delta2;
-    }
-
-    size_t connection_size() const override {
-        return in_size_;
-    }
-
-    size_t fan_in_size() const override {
-        return 1;
-    }
-
-    size_t fan_out_size() const override {
-        return 1;
-    }
+private:
+    shape3d shape_;
 };
 
 } // namespace tiny_cnn

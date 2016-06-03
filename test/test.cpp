@@ -35,10 +35,10 @@ using namespace tiny_cnn::activation;
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
 #include "test_convolutional_layer.h"
-#include "test_lrn_layer.h"
 #include "test_target_cost.h"
 #include "test_large_thread_count.h"
-
+#include "test_lrn_layer.h"
+#include "test_nodes.h"
 
 int main(void) {
     return RUN_ALL_TESTS();

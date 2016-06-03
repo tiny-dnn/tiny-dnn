@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2016, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -73,12 +73,15 @@ inline std::string unique_path() {
     return exists(pattern) ? unique_path() : pattern;
 }
 
-vec_t forward_pass(layer_base& src, const vec_t& vec) {
-    return src.forward_propagation(vec, 0);
+vec_t forward_pass(layer& src, const vec_t& vec) {
+    src.setup(false, 1);
+    *src.get_inputs()[0]->get_data() = vec;
+    src.forward(0);
+    return src.output()[0];
 }
 
-template <typename L, typename O>
-vec_t forward_pass(network<L, O>& net, const vec_t& vec) {
+template <typename N>
+vec_t forward_pass(network<N>& net, const vec_t& vec) {
     return net.predict(vec);
 }
 
@@ -92,18 +95,18 @@ void serialization_test(T& src, T& dst)
     // write
     {
         std::ofstream ofs(tmp_file_path.c_str());
-        ofs << src;
+        src.save(ofs);
     }
 
     // read
     {
         std::ifstream ifs(tmp_file_path.c_str());
-        ifs >> dst;
+        dst.load(ifs);
     }
 
     std::remove(tmp_file_path.c_str());
 
-    vec_t v(src.in_dim());
+    vec_t v(src.in_data_size());
     uniform_rand(v.begin(), v.end(), -1.0, 1.0);
 
     EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
