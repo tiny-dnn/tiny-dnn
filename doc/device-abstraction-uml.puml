@@ -4,18 +4,56 @@ class Session {
 }
 
 abstract class Device {
-  -int id
+ -int id
+}
+
+class Node {
+}
+
+class Edge {
+ - shape3d shape
 }
 
 abstract class Layer {
+ - String layer_type
+ virtual void forward_propagation()
+ virtual void backward_propagation()
+}
 
+abstract class BaseConvolutionalLayer {
+}
+
+class ConvolutionalLayer {
+}
+
+class NNPACKConvolutionalLayer {
+}
+
+class LIBDNNConvolutionalLayer {
+}
+
+class MaxPoolingLayer {
 }
 
 Session *-- Device
-Device *-- Layer
+
 Device <|-- CPUDevice
 Device <|-- OCLDevice
-Layer <|-- TINYConvolutionalLayer
-Layer <|-- NNPACKConvolutionalLayer
-Layer <|-- LIBDNNConvolutionalLayer
+
+Node <|-- Layer
+Node *-- Edge : prev
+Node *-- Edge : next
+
+Edge --> Node : prev
+Edge *-- Node : next
+Edge *-- Data : data
+Edge *-- Data : grad
+
+Device *-- Layer
+Layer <|-- BaseConvolutionalLayer
+Layer <|-- MaxPoolingLayer
+
+BaseConvolutionalLayer <|-- ConvolutionalLayer
+BaseConvolutionalLayer <|-- NNPACKConvolutionalLayer
+BaseConvolutionalLayer <|-- LIBDNNConvolutionalLayer
 @enduml
