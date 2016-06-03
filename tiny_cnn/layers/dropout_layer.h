@@ -31,13 +31,19 @@
 
 namespace tiny_cnn {
 
-// normal 
+/**
+ * applies dropout to the input
+ **/
 class dropout_layer : public layer {
 public:
     typedef activation::identity Activation;
     typedef layer Base;
-    //CNN_USE_LAYER_MEMBERS;
 
+    /**
+     * @param in_dim       [in] number of elements of the input
+     * @param dropout_rate [in] (0-1) fraction of the input units to be dropped
+     * @param phase        [in] initial state of the dropout
+     **/
     dropout_layer(cnn_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
         : Base({vector_type::data}, {vector_type::data}),
           phase_(phase),
@@ -48,52 +54,11 @@ public:
         clear_mask();
     }
 
-    dropout_layer(const dropout_layer& obj)
-        : Base({ vector_type::data }, { vector_type::data }),
-          phase_(obj.phase_),
-          dropout_rate_(obj.dropout_rate_),
-          scale_(float_t(1) / (float_t(1) - dropout_rate_)),
-          in_size_(obj.in_size_),
-          dropout_layer_worker_storage_(obj.dropout_layer_worker_storage_)
-
-    {
-    }
-
-    dropout_layer(dropout_layer&& obj)
-        : Base({ vector_type::data }, { vector_type::data }),
-          phase_(obj.phase_),
-          dropout_rate_(obj.dropout_rate_),
-          scale_(float_t(1) / (float_t(1) - dropout_rate_)),
-          in_size_(obj.in_size_),
-          dropout_layer_worker_storage_(std::move(obj.dropout_layer_worker_storage_))
-    {
-    }
-
-    virtual ~dropout_layer()
-    {
-    }
-
-    dropout_layer& operator=(const dropout_layer& obj)
-    {
-        Base::operator=(obj);
-        phase_ = obj.phase_;
-        dropout_rate_ = obj.dropout_rate_;
-        scale_ = obj.scale_;
-        dropout_layer_worker_storage_ = obj.dropout_layer_worker_storage_;
-        in_size_ = obj.in_size_;
-        return *this;
-    }
-
-    dropout_layer& operator=(dropout_layer&& obj)
-    {
-        Base::operator=(obj);
-        phase_ = obj.phase_;
-        dropout_rate_ = obj.dropout_rate_;
-        scale_ = obj.scale_;
-        std::swap(dropout_layer_worker_storage_, obj.dropout_layer_worker_storage_);
-        in_size_ = obj.in_size_;
-        return *this;
-    }
+    dropout_layer(const dropout_layer& obj) = default;
+    dropout_layer(dropout_layer&& obj) = default;
+    virtual ~dropout_layer(){}
+    dropout_layer& operator=(const dropout_layer& obj) = default;
+    dropout_layer& operator=(dropout_layer&& obj) = default;
 
     void set_dropout_rate(float_t rate)
     {
