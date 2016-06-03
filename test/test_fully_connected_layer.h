@@ -31,7 +31,7 @@
 
 namespace tiny_cnn {
 
-TEST(fully_connected, bprop) {
+TEST(fully_connected, train) {
     network<sequential> nn;
     adagrad optimizer;
 
@@ -67,7 +67,7 @@ TEST(fully_connected, bprop) {
     EXPECT_NEAR(predicted[1], t2[1], 1E-5);
 }
 
-TEST(fully_connected, bprop2) {
+TEST(fully_connected, train2) {
     network<sequential> nn;
     gradient_descent optimizer;
 
@@ -125,6 +125,43 @@ TEST(fully_connected, read_write)
     l2.setup(true);
 
     serialization_test(l1, l2);
+}
+
+TEST(fully_connected, forward)
+{
+    fully_connected_layer<identity> l(4, 2);
+    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+
+    vec_t* w = l.get_weights()[0];
+    vec_t* b = l.get_weights()[1];
+    std::fill(w->begin(), w->end(), 1.0);
+    std::fill(b->begin(), b->end(), 0.5);
+
+    vec_t in = {0,1,2,3};
+    vec_t out = l.forward({in})[0];
+    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
+}
+
+TEST(fully_connected, forward_nobias)
+{
+    fully_connected_layer<identity> l(4, 2, false);
+    EXPECT_EQ(l.in_channels(), 2);// in and W
+
+    vec_t* w = l.get_weights()[0];
+
+    std::fill(w->begin(), w->end(), 1.0);
+ 
+    vec_t in = { 0,1,2,3 };
+    vec_t out = l.forward({ in })[0];
+    vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
 }
 
 } // namespace tiny-cnn
