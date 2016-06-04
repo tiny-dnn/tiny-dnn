@@ -8,12 +8,12 @@ Let's define your layer. All of layer operations in tiny-cnn are derived from ``
 // calculate y = Wx + b 
 class fully_connected : public layer {
 public:
-    //@todo 
+    //todo 
 };
 
 ```
 
-```layer``` class prepares input/output data for  your calculation. To do this, you must tell ```layer```'s constructor what you need.
+the ```layer``` class prepares input/output data for  your calculation. To do this, you must tell ```layer```'s constructor what you need.
 
 ```cpp
 layer::layer(const std::vector<vector_type>& in_type,
@@ -40,7 +40,7 @@ private:
 
 ```
 
-```vector_type::data``` is some input data passed by previous layer, or output data consumed by next layer. ```vector_type::weight``` and ```vector_type::bias``` represents trainable parameters. The only difference between them is default initialization method: ```weight``` is initialized by random value, and ```bias``` is initialized by zero-vector (this behaviour can be changed by network::weight_init method). If you need another vector to calculate, ```vector_type::aux``` can be used.
+the ```vector_type::data``` is some input data passed by previous layer, or output data consumed by next layer. ```vector_type::weight``` and ```vector_type::bias``` represents trainable parameters. The only difference between them is default initialization method: ```weight``` is initialized by random value, and ```bias``` is initialized by zero-vector (this behaviour can be changed by network::weight_init method). If you need another vector to calculate, ```vector_type::aux``` can be used.
 
 ### Implement virtual method
 There are 5 methods to implement. In most case 3 methods are written as one-liner and remaining 2 are essential:
@@ -100,7 +100,7 @@ void forward_propagation(cnn_size_t worker_index,
 }
 ```
 
-```in_data/out_data``` is array of input/output data, which is ordered as you told ```layer```'s constructor. The implementation is simple and straightforward, isn't it?
+the ```in_data/out_data``` is array of input/output data, which is ordered as you told ```layer```'s constructor. The implementation is simple and straightforward, isn't it?
 
 ```worker_index``` is task-id. It is always zero if you run tiny-cnn in single thread. If some class member variables are updated while forward/backward pass, these members must be treated carefully to avoid data race. If their variables are task-independent, your class can hold just N variables and access them by worker_index (you can see this example in [max_pooling_layer.h](../tiny_cnn/layers/max_pooling_layer.h)).
 input/output data managed by ```layer``` base class is *task-local*, so ```in_data/out_data``` is treated as if it is running on single thread.
@@ -136,9 +136,9 @@ void back_propagation(cnn_size_t                index,
 }
 ```
 
-```in_data/out_data``` are just same as forward_propagation, and ```in_grad/out_grad``` are its gradient. Order of gradient values are same as ```in_data/out_data```.
+the ```in_data/out_data``` are just same as forward_propagation, and ```in_grad/out_grad``` are its gradient. Order of gradient values are same as ```in_data/out_data```.
 
-Note: Gradient of weight/bias are collected over mini-batch and zero-cleared automatically, so you can't use assignment operator to these elements (layer will forget previous training data in mini-batch!). like this example, use ```operator += ``` instead. Gradient of data (```prev_delta``` in the example) may already have meaningful values if two or more layers share this data, so you can't overwrite this value too.
+> Note: Gradient of weight/bias are collected over mini-batch and zero-cleared automatically, so you can't use assignment operator to these elements (layer will forget previous training data in mini-batch!). like this example, use ```operator += ``` instead. Gradient of data (```prev_delta``` in the example) may already have meaningful values if two or more layers share this data, so you can't overwrite this value too.
 
 ### Verify backward caluculation
 It is always a good idea to check if your backward implementation is correct. ```network``` class provides ```gradient_check``` method for this purpose.
