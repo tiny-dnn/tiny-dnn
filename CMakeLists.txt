@@ -3,6 +3,7 @@
 #-DUSE_OMP=ON/OFF  (default off)
 #-DUSE_SSE=ON/OFF  (default on)
 #-DUSE_AVX=ON/OFF  (default on)
+#-DUSE_OPENCV=ON/OFF  (default on)
 
 # ----------------------------------------------------------------------------
 #   Basic Configuration
