@@ -170,7 +170,12 @@ SET(tiny_cnn_test_headers
     test/test_fully_connected_layer.h
     test/test_lrn_layer.h
     test/test_max_pooling_layer.h
-    test/test_dropout_layer.h)
+    test/test_dropout_layer.h
+    test/test_network.h
+    test/test_target_cost.h
+    test/test_large_thread_count.h
+    test/testhelper.h
+    test/picotest/picotest.h)
 
 IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_mnist_train
