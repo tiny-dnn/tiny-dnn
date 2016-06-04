@@ -85,4 +85,34 @@ TEST(max_pool, forward_stride) {
     }
 }
 
+TEST(max_pool, backward) {
+    max_pooling_layer<identity> l(4, 4, 1, 2);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t out_grad = {
+        1, 2,
+        3, 4
+    };
+
+    vec_t in_grad_expected = {
+        0, 0, 0, 0,
+        1, 0, 0, 2,
+        3, 0, 0, 4,
+        0, 0, 0, 0
+    };
+
+    l.forward({in});
+    vec_t in_grad = l.backward({out_grad})[0];
+
+    for (size_t i = 0; i < in_grad.size(); i++) {
+        EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
+    }
+}
+
+
 } // namespace tiny-cnn

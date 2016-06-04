@@ -30,12 +30,20 @@
 
 namespace tiny_cnn {
 
+/**
+ * compute fully-connected(matmul) operation
+ **/
 template<typename Activation>
 class fully_connected_layer : public feedforward_layer<Activation> {
 public:
     typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
+    /**
+     * @param in_dim [in] number of elements of the input
+     * @param out_dim [in] number of elements of the output
+     * @param has_bias [in] whether to include additional bias to the layer
+     **/
     fully_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim, bool has_bias = true)
         : Base(std_input_order(has_bias)), in_size_(in_dim), out_size_(out_dim), has_bias_(has_bias) {}
 
@@ -121,31 +129,6 @@ public:
             }
         });
     }
-
-    /*
-    void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {
-        const vec_t& current_delta2 = delta_in[0];
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        for (cnn_size_t c = 0; c < in_size_; c++) 
-            for (cnn_size_t r = 0; r < out_size_; r++)
-                Whessian_[c*out_size_ + r] += current_delta2[r] * sqr(prev_out[c]);
-
-        if (has_bias_) {
-            for (cnn_size_t r = 0; r < out_size_; r++)
-                bhessian_[r] += current_delta2[r];
-        }
-
-        for (cnn_size_t c = 0; c < in_size_; c++) { 
-            prev_delta2_[c] = float_t(0);
-
-            for (cnn_size_t r = 0; r < out_size_; r++) 
-                prev_delta2_[c] += current_delta2[r] * sqr(W_[c*out_size_ + r]);
-
-            prev_delta2_[c] *= sqr(prev_h.df(prev_out[c]));
-        }
-    }*/
 
     std::string layer_type() const override { return "fully-connected"; }
 

@@ -369,6 +369,13 @@ class layer : public node {
         return output(0);
     }
 
+    std::vector<vec_t> backward(const std::vector<vec_t>& out_grads) {   // for test
+        setup(false);
+        set_out_grads(&out_grads[0], out_grads.size(), 0);
+        backward(0);
+        return map_<vec_t>(get_inputs(), [](edgeptr_t e) { return *e->get_gradient(); });
+    }
+
     void forward(int worker_index) {
         std::vector<vec_t*> in_data, out_data;
 

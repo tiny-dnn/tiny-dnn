@@ -31,13 +31,25 @@
 
 namespace tiny_cnn {
 
+/**
+ * applies max-pooing operaton to the spatial data
+ **/
 template <typename Activation = activation::identity>
 class max_pooling_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
     typedef feedforward_layer<Activation> Base;
 
-    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size)
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size)
         : Base({vector_type::data}),
         pool_size_(pooling_size),
         stride_(pooling_size),
@@ -52,7 +64,18 @@ public:
         init_connection();
     }
 
-    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size, cnn_size_t stride)
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     * @param stride       [in] interval at which to apply the filters to the input
+    **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size,
+                      cnn_size_t stride)
         : Base({vector_type::data}),
         pool_size_(pooling_size),
         stride_(stride),

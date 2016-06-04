@@ -449,6 +449,15 @@ std::vector<T> filter(const std::vector<T>& vec, Pred p) {
     return res;
 }
 
+template <typename Result, typename T, typename Pred>
+std::vector<Result> map_(const std::vector<T>& vec, Pred p) {
+    std::vector<Result> res;
+    for (auto& v : vec) {
+        res.push_back(p(v));
+    }
+    return res;
+}
+
 enum class vector_type : int32_t {
     // 0x0001XXX : in/out data
     data = 0x0001000, // input/output data, fed by other layer or input channel

@@ -31,6 +31,9 @@
 
 namespace tiny_cnn {
 
+using namespace tiny_cnn::activation;
+using namespace tiny_cnn::layers;
+
 class test_fc_layer : public fully_connected_layer<tan_h> {
 public:
     typedef fully_connected_layer<tan_h> base;
@@ -82,6 +85,28 @@ TEST(network, construct_sequential_by_shared_ptr) {
         ASSERT_EQ(test_fc_layer::counter(), 2);
     }
     ASSERT_EQ(test_fc_layer::counter(), 0);
+}
+
+TEST(network, construct_multi_by_local_variables) {
+    network<sequential> net;
+    conv<tan_h> conv1(32, 32, 5, 1, 6, padding::same);
+    conv<sigmoid> conv2(32, 32, 7, 6, 12, padding::same);
+    max_pool<relu> pool1(32, 32, 12, 2);
+    lrn_layer<identity> lrn(16, 16, 4, 12);
+    dropout dp(16*16*12, 0.5);
+    fc<softmax> full(16*16*12, 1);
+
+    net << conv1 << conv2 << pool1 << lrn << dp << full;
+}
+
+TEST(network, construct_multi_by_temporary_variables) {
+    network<sequential> net;
+    net << conv<tan_h>(32, 32, 5, 1, 6, padding::same)
+    << conv<sigmoid>(32, 32, 7, 6, 12, padding::same)
+    << max_pool<relu>(32, 32, 12, 2)
+    << lrn_layer<identity>(16, 16, 4, 12)
+    << dropout(16 * 16 * 12, 0.5)
+    << fc<softmax>(16 * 16 * 12, 1);
 }
 
 TEST(network, in_dim) {
