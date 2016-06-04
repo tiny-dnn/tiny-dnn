@@ -25,14 +25,19 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-
+#ifdef CNN_USE_OPENCV
+#include <opencv2/opencv.hpp>
+/*#include <opencv2/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>*/
+#else
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tiny_cnn/util/stb_image.h"
 #include "tiny_cnn/util/stb_image_resize.h"
 #include "tiny_cnn/util/stb_image_write.h"
-
+#endif
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
@@ -46,19 +51,35 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-bool convert_image(const std::string& imagefilename,
+#ifdef CNN_USE_OPENCV
+// convert tiny_cnn::image to cv::Mat and resize
+cv::Mat image2mat(image<>& img) {
+    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
+    cv::Mat resized;
+    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
+    return resized;
+}
+#endif
+
+void convert_image(const std::string& imagefilename,
     double minv,
     double maxv,
     int w,
     int h,
-    vec_t& data)
-{
+    vec_t& data) {
+#ifdef CNN_USE_OPENCV
+    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
+    if (img.data == nullptr) return; // cannot open, or it's not an image
+
+    cv::Mat_<uint8_t> resized;
+    cv::resize(img, resized, cv::Size(w, h));
+#else
 	// load
 	int input_w, input_h, comp;
 	stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
 	if (!input_pixels) {
 		cout << "stbi_load failed";
-		return false;
+		return;
 	}
 
 	// resize
@@ -68,17 +89,17 @@ bool convert_image(const std::string& imagefilename,
 	if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
 		cout << "stbir_resize_uint8 failed";
 		stbi_image_free(input_pixels);
-		return false;
+		return;
 	}
 	stbi_image_free(input_pixels);
+#endif
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
-
-	return true;
 }
 
+#ifndef CNN_USE_OPENCV
 bool save_image(const std::string& imagefilename,
 	const image<>& img
 	)
@@ -94,6 +115,7 @@ bool save_image(const std::string& imagefilename,
 		stride_bytes);
 	return (ret != 0);
 }
+#endif
 
 void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
@@ -131,14 +153,11 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 
     // convert imagefile to vec_t
     vec_t data;
-    if (!convert_image(filename, -1.0, 1.0, 32, 32, data)) {
-		cout << "failed to convert an image";
-		return;
-	}
+    convert_image(filename, -1.0, 1.0, 32, 32, data);
 
     // recognize
     auto res = nn.predict(data);
-    vector<pair<double, int>> scores;
+    vector<pair<double, int> > scores;
 
     // sort & print top-3
     for (int i = 0; i < 10; i++)
@@ -152,13 +171,22 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     // visualize outputs of each layer
     for (size_t i = 0; i < nn.layer_size(); i++) {
         auto out_img = nn[i]->output_to_image();
+#ifdef CNN_USE_OPENCV
+        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+#else
 		auto filename = "layer_" + std::to_string(i) + ".png";
 		if (!save_image(filename, out_img)) {
 			cout << "failed to save " << filename << endl;
 		}
+#endif
     }
+    // visualize filter shape of first convolutional layer
+#ifdef CNN_USE_OPENCV
+    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+    cv::imshow("weights:", image2mat(weight));
 
-    // save filter shape of first convolutional layer
+    cv::waitKey(0);
+#else
 	{
 	    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
 		auto filename = "weights.png";
@@ -166,6 +194,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 			cout << "failed to save " << filename << endl;
 		}
 	}
+#endif
 }
 
 int main(int argc, char** argv) {
