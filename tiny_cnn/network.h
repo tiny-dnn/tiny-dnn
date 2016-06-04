@@ -217,7 +217,7 @@ public:
                int                         epoch,
                OnBatchEnumerate            on_batch_enumerate,
                OnEpochEnumerate            on_epoch_enumerate,             
-               const bool                  reset_weights = true,
+               const bool                  reset_weights = false,
                const int                   n_threads = CNN_TASK_SIZE,
                const std::vector<vec_t>&   t_cost = std::vector<vec_t>()
                )
@@ -280,7 +280,7 @@ public:
              int                   epoch,
              OnBatchEnumerate      on_batch_enumerate,
              OnEpochEnumerate      on_epoch_enumerate,
-             const bool            reset_weights = true,
+             const bool            reset_weights = false,
              const int             n_threads = CNN_TASK_SIZE,
              const std::vector<U>& t_cost = std::vector<U>()
              )
@@ -594,7 +594,7 @@ private:
         int                          epoch,
         OnBatchEnumerate             on_batch_enumerate,
         OnEpochEnumerate             on_epoch_enumerate,
-        const bool                   reset_weights = true,
+        const bool                   reset_weights = false,
         const int                    n_threads = CNN_TASK_SIZE,
         const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()
     )
