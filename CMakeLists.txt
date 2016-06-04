@@ -1,8 +1,15 @@
 #Command line options
+<<<<<<< HEAD
 #-DUSE_TBB=ON/OFF     (default off)
 #-DUSE_OMP=ON/OFF     (default off)
 #-DUSE_SSE=ON/OFF     (default on)
 #-DUSE_AVX=ON/OFF     (default on)
+=======
+#-DUSE_TBB=ON/OFF  (default off)
+#-DUSE_OMP=ON/OFF  (default off)
+#-DUSE_SSE=ON/OFF  (default on)
+#-DUSE_AVX=ON/OFF  (default on)
+>>>>>>> update build instruction file
 #-DUSE_OPENCV=ON/OFF  (default on)
 
 # ----------------------------------------------------------------------------
