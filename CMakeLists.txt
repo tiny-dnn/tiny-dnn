@@ -3,6 +3,7 @@
 #-DUSE_OMP=ON/OFF  (default off)
 #-DUSE_SSE=ON/OFF  (default on)
 #-DUSE_AVX=ON/OFF  (default on)
+#-DUSE_OPENCV=ON/OFF  (default on)
 
 # ----------------------------------------------------------------------------
 #   Basic Configuration
@@ -46,6 +47,7 @@ OPTION(USE_TBB 	"Set to ON to use TBB" OFF)
 OPTION(USE_OMP 	"Set to ON to use OMP" OFF)
 OPTION(USE_SSE 	"Set to ON to use sse" ON)
 OPTION(USE_AVX 	"Set to ON to use avx" ON)
+OPTION(USE_OPENCV	"Set to ON to use OpenCV" ON)
 OPTION(BUILD_TESTS "Set to ON to build tests" OFF)
 OPTION(BUILD_EXAMPLES "Set to ON to build examples" ON)
 OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
@@ -53,6 +55,10 @@ OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
 # ----------------------------------------------------------------------------
 #   Find Dependencies
 # ----------------------------------------------------------------------------
+
+IF(USE_OPENCV)
+    find_package( OpenCV REQUIRED )
+ENDIF()
 
 IF(USE_TBB)
     find_package(TBB REQUIRED)
@@ -100,8 +106,8 @@ ENDIF()
 
 
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
-    SET(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
-    SET(CMAKE_CXX_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
+    SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
+    SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS}")
     SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
     SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
@@ -113,19 +119,28 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
-tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/util/stb_image.h tiny_cnn/util/stb_image_resize.h tiny_cnn/util/stb_image_write.h)
+SET( tiny_cnn_hdrs tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
+tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h)
+
+IF (NOT USE_OPENCV)
+    SET(tiny_cnn_hdrs "${tiny_cnn_hdrs}  tiny_cnn/util/stb_image.h tiny_cnn/util/stb_image_resize.h tiny_cnn/util/stb_image_write.h")
+ENDIF()
 
 SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutional_layer.h test/test_fully_connected_layer.h test/test_lrn_layer.h test/test_max_pooling_layer.h test/test_dropout_layer.h test/test_network.h test/test_target_cost.h test/test_large_thread_count.h test/testhelper.h test/picotest/picotest.h)
 
 IF (BUILD_EXAMPLES)
-    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp  ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
+    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp  ${tiny_cnn_hdrs})
+    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
+	IF (USE_OPENCV)
+	    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
+	    include_directories(${OpenCV_INCLUDE_DIRS})
+	ENDIF()
 ENDIF()
 
+
 IF(BUILD_TESTS)
-    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds} ${tiny_cnn_test_headers})
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
 ENDIF()
 
 
@@ -178,6 +193,9 @@ message( STATUS "C++ flags (Release):       ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS
 message( STATUS "C++ flags (Debug):         ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
 message( STATUS "CMAKE_CXX_FLAGS:         ${CMAKE_CXX_FLAGS}")
 message( STATUS "CMAKE_BINARY_DIR:         ${CMAKE_BINARY_DIR}")
+IF (USE_OPENCV)
+	message( STATUS "OpenCV libs:           ${OpenCV_LIBS}")
+ENDIF()
 
 MESSAGE( STATUS )
 MESSAGE( STATUS "CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR}" )
