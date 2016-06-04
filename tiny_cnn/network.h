@@ -143,6 +143,9 @@ public:
 
     explicit network(const std::string& name = "") : name_(name) {}
 
+    /**
+     * name of the network
+     **/
     std::string  name() const           { return name_; }
 
     /**
@@ -198,6 +201,7 @@ public:
      * @param optimizer          optimizing algorithm for training
      * @param inputs             array of input data
      * @param class_labels       array of label-id for each input data(0-origin)
+     * @param batch_size         number of samples per parameter update
      * @param epoch              number of training epochs
      * @param on_batch_enumerate callback for each mini-batch enumerate
      * @param on_epoch_enumerate callback for each epoch
@@ -260,6 +264,7 @@ public:
     * @param optimizer          optimizing algorithm for training
     * @param inputs             array of input data
     * @param desired_outputs    array of desired output
+    * @param batch_size         number of samples per parameter update
     * @param epoch              number of training epochs
     * @param on_batch_enumerate callback for each mini-batch enumerate
     * @param on_epoch_enumerate callback for each epoch
@@ -288,17 +293,36 @@ public:
         return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch, on_batch_enumerate, on_epoch_enumerate, reset_weights, n_threads, t_cost_tensor);
     }
 
+    /**
+     * @param optimizer          optimizing algorithm for training
+     * @param inputs             array of input data
+     * @param desired_outputs    array of desired output
+     * @param batch_size         number of samples per parameter update
+     * @param epoch              number of training epochs
+     **/
     template<typename Error, typename Optimizer, typename T, typename U>
-    bool fit(Optimizer& optimizer, const std::vector<T>& in, const std::vector<U>& t, size_t batch_size = 1, int epoch = 1) {
-        return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
+    bool fit(Optimizer&            optimizer,
+             const std::vector<T>& inputs, 
+             const std::vector<U>& desired_outputs,
+             size_t                batch_size = 1,
+             int                   epoch = 1) {
+        return fit<Error>(optimizer, inputs, desired_outputs, batch_size, epoch, nop, nop);
     }
 
     /**
-     * training conv-net without callback
+     * @param optimizer          optimizing algorithm for training
+     * @param inputs             array of input data
+     * @param class_labels       array of label-id for each input data(0-origin)
+     * @param batch_size         number of samples per parameter update
+     * @param epoch              number of training epochs
      **/
     template<typename Error, typename Optimizer>
-    bool train(Optimizer& optimizer, const std::vector<vec_t>& in, const std::vector<label_t>& t, size_t batch_size = 1, int epoch = 1) {
-        return train<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
+    bool train(Optimizer&                  optimizer,
+               const std::vector<vec_t>&   inputs,
+               const std::vector<label_t>& class_labels,
+               size_t                      batch_size = 1,
+               int                         epoch = 1) {
+        return train<Error>(optimizer, inputs, class_labels, batch_size, epoch, nop, nop);
     }
 
     /**
