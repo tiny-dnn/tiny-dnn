@@ -119,18 +119,17 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hdrs tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
-tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h)
+SET(tiny_cnn_hdrs tiny_cnn/activations/activation_function.h tiny_cnn/io/cifar10_parser.h tiny_cnn/layers/convolutional_layer.h tiny_cnn/io/display.h tiny_cnn/util/image.h tiny_cnn/layers/layer.h tiny_cnn/lossfunctions/loss_function.h tiny_cnn/io/mnist_parser.h tiny_cnn/optimizers/optimizer.h tiny_cnn/util/product.h tiny_cnn/util/util.h tiny_cnn/layers/average_pooling_layer.h tiny_cnn/config.h tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h tiny_cnn/layers/layers.h tiny_cnn/layers/max_pooling_layer.h tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h tiny_cnn/tiny_cnn.h tiny_cnn/util/weight_init.h)
 
 IF (NOT USE_OPENCV)
-    SET(tiny_cnn_hdrs "${tiny_cnn_hdrs}  tiny_cnn/util/stb_image.h tiny_cnn/util/stb_image_resize.h tiny_cnn/util/stb_image_write.h")
+    SET(tiny_cnn_hdrs ${tiny_cnn_hdrs} tiny_cnn/util/stb_image.h tiny_cnn/util/stb_image_resize.h tiny_cnn/util/stb_image_write.h)
 ENDIF()
 
 SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutional_layer.h test/test_fully_connected_layer.h test/test_lrn_layer.h test/test_max_pooling_layer.h test/test_dropout_layer.h test/test_network.h test/test_target_cost.h test/test_large_thread_count.h test/testhelper.h test/picotest/picotest.h)
 
 IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
-    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp  ${tiny_cnn_hdrs})
+    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
     ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
 	IF (USE_OPENCV)
 	    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
