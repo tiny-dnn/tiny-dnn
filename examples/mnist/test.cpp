@@ -149,7 +149,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     for (int i = 0; i < 3; i++)
         cout << scores[i].second << "," << scores[i].first << endl;
 
-    // visualize outputs of each layer
+    // save outputs of each layer
     for (size_t i = 0; i < nn.depth(); i++) {
         auto out_img = nn[i]->output_to_image();
 		auto filename = "layer_" + std::to_string(i) + ".png";
@@ -158,7 +158,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 		}
     }
 
-    // visualize filter shape of first convolutional layer
+    // save filter shape of first convolutional layer
 	{
 	    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
 		auto filename = "weights.png";
