@@ -58,6 +58,7 @@ OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
 
 IF(USE_OPENCV)
     find_package( OpenCV REQUIRED )
+    add_definitions(-DCNN_USE_OPENCV)
 ENDIF()
 
 IF(USE_TBB)
