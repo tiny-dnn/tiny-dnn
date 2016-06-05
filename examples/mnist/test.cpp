@@ -25,19 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#ifdef CNN_USE_OPENCV
 #include <opencv2/opencv.hpp>
 /*#include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>*/
-#else
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_RESIZE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "../stb_image.h"
-#include "../stb_image_resize.h"
-#include "../stb_image_write.h"
-#endif
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
@@ -51,7 +42,6 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-#ifdef CNN_USE_OPENCV
 // convert tiny_cnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
     cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
@@ -59,7 +49,6 @@ cv::Mat image2mat(image<>& img) {
     cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
     return resized;
 }
-#endif
 
 void convert_image(const std::string& imagefilename,
     double minv,
@@ -67,7 +56,6 @@ void convert_image(const std::string& imagefilename,
     int w,
     int h,
     vec_t& data) {
-#ifdef CNN_USE_OPENCV
     auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
     if (img.data == nullptr) return; // cannot open, or it's not an image
 
@@ -99,23 +87,6 @@ void convert_image(const std::string& imagefilename,
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
-#ifndef CNN_USE_OPENCV
-bool save_image(const std::string& imagefilename,
-	const image<>& img
-	)
-{
-	// no scaling, save at original size
-	int stride_bytes = img.width();
-	int ret = stbi_write_png(
-		imagefilename.c_str(),
-		img.width(),
-		img.height(),
-		1,
-		&(img.at(0, 0)),
-		stride_bytes);
-	return (ret != 0);
-}
-#endif
 
 void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
@@ -171,30 +142,13 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     // visualize outputs of each layer
     for (size_t i = 0; i < nn.layer_size(); i++) {
         auto out_img = nn[i]->output_to_image();
-#ifdef CNN_USE_OPENCV
         cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
-#else
-		auto filename = "layer_" + std::to_string(i) + ".png";
-		if (!save_image(filename, out_img)) {
-			cout << "failed to save " << filename << endl;
-		}
-#endif
     }
     // visualize filter shape of first convolutional layer
-#ifdef CNN_USE_OPENCV
     auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
     cv::imshow("weights:", image2mat(weight));
 
     cv::waitKey(0);
-#else
-	{
-	    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-		auto filename = "weights.png";
-		if (!save_image(filename, weight)) {
-			cout << "failed to save " << filename << endl;
-		}
-	}
-#endif
 }
 
 int main(int argc, char** argv) {
