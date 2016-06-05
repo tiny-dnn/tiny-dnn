@@ -1,8 +1,8 @@
 #Command line options
-#-DUSE_TBB=ON/OFF  (default off)
-#-DUSE_OMP=ON/OFF  (default off)
-#-DUSE_SSE=ON/OFF  (default on)
-#-DUSE_AVX=ON/OFF  (default on)
+#-DUSE_TBB=ON/OFF     (default off)
+#-DUSE_OMP=ON/OFF     (default off)
+#-DUSE_SSE=ON/OFF     (default on)
+#-DUSE_AVX=ON/OFF     (default on)
 #-DUSE_OPENCV=ON/OFF  (default on)
 
 # ----------------------------------------------------------------------------
@@ -43,20 +43,20 @@ else()
 endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
 
-OPTION(USE_TBB 	"Set to ON to use TBB" OFF)
-OPTION(USE_OMP 	"Set to ON to use OMP" OFF)
-OPTION(USE_SSE 	"Set to ON to use sse" ON)
-OPTION(USE_AVX 	"Set to ON to use avx" ON)
-OPTION(USE_OPENCV	"Set to ON to use OpenCV" ON)
-OPTION(BUILD_TESTS "Set to ON to build tests" OFF)
-OPTION(BUILD_EXAMPLES "Set to ON to build examples" ON)
-OPTION(BUILD_DOCS "Set to ON to build documentation" OFF)
+OPTION(USE_TBB        "Set to ON to use TBB"             OFF)
+OPTION(USE_OMP        "Set to ON to use OMP"             OFF)
+OPTION(USE_SSE        "Set to ON to use sse"             ON)
+OPTION(USE_AVX        "Set to ON to use avx"             ON)
+OPTION(USE_OPENCV     "Set to ON to use OpenCV"          ON)
+OPTION(BUILD_TESTS    "Set to ON to build tests"         OFF)
+OPTION(BUILD_EXAMPLES "Set to ON to build examples"      ON)
+OPTION(BUILD_DOCS     "Set to ON to build documentation" OFF)
 
 # ----------------------------------------------------------------------------
 #   Find Dependencies
 # ----------------------------------------------------------------------------
 
-IF(USE_OPENCV)
+IF(BUILD_EXAMPLES AND USE_OPENCV)
     find_package( OpenCV REQUIRED )
 ENDIF()
 
@@ -67,10 +67,10 @@ IF(USE_TBB)
     link_directories(${TBB_LIBRARY_DIRS})
     SET(REQUIRED_LIBRARIES  ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES}  )
 ELSEIF(USE_OMP)
-find_package(OpenMP  REQUIRED)
-        set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        add_definitions( -DCNN_USE_OMP)
+    find_package(OpenMP  REQUIRED)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_definitions( -DCNN_USE_OMP)
 ENDIF()
 # ----------------------------------------------------------------------------
 # COMPILER OPTIONS
@@ -101,7 +101,7 @@ ELSE()#MSVC
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     ENDIF()
     SET(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj ")
-	add_definitions( -D _CRT_SECURE_NO_WARNINGS)
+    add_definitions( -D _CRT_SECURE_NO_WARNINGS)
 ENDIF()
 
 
@@ -125,17 +125,17 @@ SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutio
 
 IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
-   	IF (USE_OPENCV)
-	    ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
-	ELSE()
-		FILE(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
-	    ADD_EXECUTABLE(example_mnist_test examples/mnist/test_with_stb_image.cpp ${tiny_cnn_hdrs} ${stb_image_hdrs})
-	ENDIF()
+    IF (USE_OPENCV)
+        ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
+    ELSE()
+        FILE(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
+        ADD_EXECUTABLE(example_mnist_test examples/mnist/test_with_stb_image.cpp ${tiny_cnn_hdrs} ${stb_image_hdrs})
+    ENDIF()
     ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
-	IF (USE_OPENCV)
-	    target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
-	    include_directories(${OpenCV_INCLUDE_DIRS})
-	ENDIF()
+    IF (USE_OPENCV)
+        target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
+        include_directories(${OpenCV_INCLUDE_DIRS})
+    ENDIF()
 ENDIF()
 
 
@@ -189,12 +189,12 @@ MESSAGE( STATUS "---------------------------------------------------------------
 message( STATUS )
 message("    Built as dynamic libs?:" ${BUILD_SHARED_LIBS})
 message("    Compiler:"                   "${CMAKE_COMPILER}"   "${CMAKE_CXX_COMPILER}")
-message( STATUS "C++ flags (Release):       ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
-message( STATUS "C++ flags (Debug):         ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-message( STATUS "CMAKE_CXX_FLAGS:         ${CMAKE_CXX_FLAGS}")
+message( STATUS "C++ flags (Release):      ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+message( STATUS "C++ flags (Debug):        ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+message( STATUS "CMAKE_CXX_FLAGS:          ${CMAKE_CXX_FLAGS}")
 message( STATUS "CMAKE_BINARY_DIR:         ${CMAKE_BINARY_DIR}")
 IF (USE_OPENCV)
-	message( STATUS "OpenCV libs:           ${OpenCV_LIBS}")
+message( STATUS "OpenCV libs:              ${OpenCV_LIBS}")
 ENDIF()
 
 MESSAGE( STATUS )
