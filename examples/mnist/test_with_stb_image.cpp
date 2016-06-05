@@ -25,10 +25,12 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <opencv2/opencv.hpp>
-/*#include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>*/
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image/stb_image.h"
+#include "stb_image/stb_image_resize.h"
+#include "stb_image/stb_image_write.h"
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
@@ -42,31 +44,52 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert tiny_cnn::image to cv::Mat and resize
-cv::Mat image2mat(image<>& img) {
-    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
-    cv::Mat resized;
-    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
-    return resized;
-}
-
 void convert_image(const std::string& imagefilename,
     double minv,
     double maxv,
     int w,
     int h,
     vec_t& data) {
-    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
+	// load
+	int input_w, input_h, comp;
+	stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
+	if (!input_pixels) {
+		// cannot open, or it's not an image
+		cout << "stbi_load failed";
+		return;
+	}
 
-    cv::Mat_<uint8_t> resized;
-    cv::resize(img, resized, cv::Size(w, h));
+	// resize
+	std::vector<uint8_t> resized(w * h);
+	uint8_t* resized_pixels = &(resized[0]);
+	int input_stride_in_bytes = input_w;
+	if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
+		cout << "stbir_resize_uint8 failed";
+		stbi_image_free(input_pixels);
+		return;
+	}
+	stbi_image_free(input_pixels);
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
+bool save_image(const std::string& imagefilename,
+	const image<>& img
+	)
+{
+	// no scaling, save at original size
+	int stride_bytes = img.width();
+	int ret = stbi_write_png(
+		imagefilename.c_str(),
+		img.width(),
+		img.height(),
+		1,
+		&(img.at(0, 0)),
+		stride_bytes);
+	return (ret != 0);
+}
 
 void construct_net(network<mse, adagrad>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
@@ -119,16 +142,22 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     for (int i = 0; i < 3; i++)
         cout << scores[i].second << "," << scores[i].first << endl;
 
-    // visualize outputs of each layer
+    // save outputs of each layer
     for (size_t i = 0; i < nn.depth(); i++) {
         auto out_img = nn[i]->output_to_image();
-        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+		auto filename = "layer_" + std::to_string(i) + ".png";
+		if (!save_image(filename, out_img)) {
+			cout << "failed to save " << filename << endl;
+		}
     }
-    // visualize filter shape of first convolutional layer
-    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-    cv::imshow("weights:", image2mat(weight));
-
-    cv::waitKey(0);
+    // save filter shape of first convolutional layer
+	{
+	    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+		auto filename = "weights.png";
+		if (!save_image(filename, weight)) {
+			cout << "failed to save " << filename << endl;
+		}
+	}
 }
 
 int main(int argc, char** argv) {
