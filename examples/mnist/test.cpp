@@ -34,9 +34,9 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tiny_cnn/util/stb_image.h"
-#include "tiny_cnn/util/stb_image_resize.h"
-#include "tiny_cnn/util/stb_image_write.h"
+#include "../stb_image.h"
+#include "../stb_image_resize.h"
+#include "../stb_image_write.h"
 #endif
 #include "tiny_cnn/tiny_cnn.h"
 
