@@ -69,6 +69,7 @@ class layer : public node {
     layer(const std::vector<vector_type>& in_type,
                const std::vector<vector_type>& out_type)
             : node(in_type.size(), out_type.size()),
+              initialized_(false),
               parallelize_(true),
               in_channels_(in_type.size()),
               out_channels_(out_type.size()),
@@ -299,6 +300,7 @@ class layer : public node {
         for (auto& weight : all_weights) {
             for (auto& w : *weight) is >> w;
         }
+        initialized_ = true;
     }
 
     virtual void load(const std::vector<double>& src, int& idx) { // NOLINT
@@ -306,6 +308,7 @@ class layer : public node {
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
         }
+        initialized_ = true;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -426,7 +429,9 @@ class layer : public node {
         }
 
         set_worker_count(max_task_size);
-        if (reset_weight) init_weight();
+        if (reset_weight || !initialized_) {
+            init_weight();
+        }
     }
 
     void init_weight() {
@@ -444,6 +449,7 @@ class layer : public node {
                     break;
             }
         }
+        initialized_ = true;
     }
 
     void clear_grads(cnn_size_t worker_size) {
@@ -496,6 +502,7 @@ class layer : public node {
     }
 
  protected:
+    bool initialized_;
     bool parallelize_;
     cnn_size_t in_channels_;  // number of input vectors
     cnn_size_t out_channels_;  // number of output vectors
