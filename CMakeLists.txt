@@ -136,6 +136,7 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LI
 #------------------------------------------------
 # TARGETS
 #------------------------------------------------
+<<<<<<< HEAD
 
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${REQUIRED_LIBRARIES})
