@@ -31,25 +31,6 @@
 
 namespace tiny_cnn {
 
-TEST(max_pool, gradient_check) { // sigmoid - cross-entropy
-    typedef cross_entropy loss_func;
-    typedef activation::sigmoid activation;
-    typedef network<loss_func, tiny_cnn::gradient_descent_levenberg_marquardt> network;
-
-    network nn;
-    nn << fully_connected_layer<activation>(3, 8)
-       << max_pooling_layer<activation>(4, 2, 1, 2); // 4x2 => 2x1
-
-    vec_t a(3, 0.0);
-    for (int i = 0; i < 3; i++) a[i] = i;
-    label_t t = 0;
-
-    nn.init_weight();
-    for (int i = 0; i < 24; i++) nn[0]->weight()[i] = i;
-
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
-}
-
 TEST(max_pool, read_write) {
     max_pooling_layer<tan_h> l1(100, 100, 5, 2);
     max_pooling_layer<tan_h> l2(100, 100, 5, 2);
@@ -59,5 +40,79 @@ TEST(max_pool, read_write) {
 
     serialization_test(l1, l2);
 }
+
+TEST(max_pool, forward) {
+    max_pooling_layer<identity> l(4, 4, 1, 2);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 6,
+        4, 2
+    };
+
+    vec_t res = l.forward({in})[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+
+TEST(max_pool, forward_stride) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 1);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 7, 6,
+        8, 7, 6,
+        4, 3, 2
+    };
+
+    vec_t res = l.forward({ in })[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(max_pool, backward) {
+    max_pooling_layer<identity> l(4, 4, 1, 2);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t out_grad = {
+        1, 2,
+        3, 4
+    };
+
+    vec_t in_grad_expected = {
+        0, 0, 0, 0,
+        1, 0, 0, 2,
+        3, 0, 0, 4,
+        0, 0, 0, 0
+    };
+
+    l.forward({in});
+    vec_t in_grad = l.backward({out_grad})[0];
+
+    for (size_t i = 0; i < in_grad.size(); i++) {
+        EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
+    }
+}
+
 
 } // namespace tiny-cnn

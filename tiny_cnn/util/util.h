@@ -63,36 +63,57 @@ typedef cnn_size_t label_t;
 typedef cnn_size_t layer_size_t; // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
+typedef std::vector<vec_t> tensor_t;
 
 enum class net_phase {
     train,
     test
 };
 
+class random_generator {
+public:
+    static random_generator& get_instance() {
+        static random_generator instance;
+        return instance;
+    }
+
+    std::mt19937& operator()() {
+        return gen_;
+    }
+
+    void set_seed(unsigned int seed) {
+        gen_.seed(seed);
+    }
+private:
+    // avoid gen_(0) for MSVC known issue
+    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+    random_generator() : gen_(1) {}
+    std::mt19937 gen_;
+};
+
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
-    // avoid gen(0) for MSVC known issue
-    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
-    static std::mt19937 gen(1);
     std::uniform_int_distribution<T> dst(min, max);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 uniform_rand(T min, T max) {
-    static std::mt19937 gen(1);
     std::uniform_real_distribution<T> dst(min, max);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 gaussian_rand(T mean, T sigma) {
-    static std::mt19937 gen(1);
     std::normal_distribution<T> dst(mean, sigma);
-    return dst(gen);
+    return dst(random_generator::get_instance()());
+}
+
+void set_random_seed(unsigned int seed) {
+    random_generator::get_instance().set_seed(seed);
 }
 
 template<typename Container>
@@ -182,13 +203,20 @@ void xparallel_for(size_t begin, size_t end, const Func& f) {
     f(r);
 }
 
-#ifdef CNN_USE_OMP
+#if defined(CNN_USE_OMP)
 
 template<typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     #pragma omp parallel for
     for (int i=begin; i<end; ++i)
         f(blocked_range(i,i+1));
+}
+
+#elif defined(CNN_SINGLE_THREAD)
+
+template<typename Func>
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
+    xparallel_for(static_cast<size_t>(begin), static_cast<size_t>(end), f);
 }
 
 #else
@@ -342,6 +370,8 @@ struct index3d {
     T depth_;
 };
 
+typedef index3d<cnn_size_t> shape3d;
+
 template <typename T>
 bool operator == (const index3d<T>& lhs, const index3d<T>& rhs) {
     return (lhs.width_ == rhs.width_) && (lhs.height_ == rhs.height_) && (lhs.depth_ == rhs.depth_);
@@ -352,11 +382,20 @@ bool operator != (const index3d<T>& lhs, const index3d<T>& rhs) {
     return !(lhs == rhs);
 }
 
-typedef index3d<cnn_size_t> layer_shape_t;
-
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const index3d<T>& d) {
     s << d.width_ << "x" << d.height_ << "x" << d.depth_;
+    return s;
+}
+
+template <typename Stream, typename T>
+Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
+    s << "[";
+    for (cnn_size_t i = 0; i < d.size(); i++) {
+        if (i) s << ",";
+        s << "[" << d[i] << "]";
+    }
+    s << "]";
     return s;
 }
 
@@ -369,17 +408,8 @@ std::string to_string(T value) {
 }
 
 // boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS using layer_base::in_size_;\
-    using layer_base::out_size_; \
-    using layer_base::parallelize_; \
-    using layer_base::next_; \
-    using layer_base::prev_; \
-    using layer_base::W_; \
-    using layer_base::b_; \
-    using layer_base::Whessian_; \
-    using layer_base::bhessian_; \
-    using layer_base::prev_delta2_; \
-    using layer<Activation>::h_
+#define CNN_USE_LAYER_MEMBERS using layer::parallelize_; \
+    using feedforward_layer<Activation>::h_
 
 
 #define CNN_LOG_VECTOR(vec, name)
@@ -399,6 +429,96 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
     std::cout << std::endl;
 }
 */
+
+
+template <typename T, typename Pred, typename Sum>
+cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
+    size_t sum = 0;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (p(i)) sum += s(vec[i]);
+    }
+    return sum;
+}
+
+template <typename T, typename Pred>
+std::vector<T> filter(const std::vector<T>& vec, Pred p) {
+    std::vector<T> res;
+    for (size_t i = 0; i < vec.size(); i++) {
+        if (p(i)) res.push_back(vec[i]);
+    }
+    return res;
+}
+
+template <typename Result, typename T, typename Pred>
+std::vector<Result> map_(const std::vector<T>& vec, Pred p) {
+    std::vector<Result> res;
+    for (auto& v : vec) {
+        res.push_back(p(v));
+    }
+    return res;
+}
+
+enum class vector_type : int32_t {
+    // 0x0001XXX : in/out data
+    data = 0x0001000, // input/output data, fed by other layer or input channel
+
+    // 0x0002XXX : trainable parameters, updated for each back propagation
+    weight = 0x0002000,
+    bias = 0x0002001,
+
+    label = 0x0004000,
+    aux = 0x0010000 // layer-specific storage
+};
+
+inline std::string to_string(vector_type vtype) {
+    switch (vtype)
+    {
+    case tiny_cnn::vector_type::data:
+        return "data";
+    case tiny_cnn::vector_type::weight:
+        return "weight";
+    case tiny_cnn::vector_type::bias:
+        return "bias";
+    case tiny_cnn::vector_type::label:
+        return "label";
+    case tiny_cnn::vector_type::aux:
+        return "aux";
+    default:
+        return "unknown";
+    }
+}
+
+inline std::ostream& operator << (std::ostream& os, vector_type vtype) {
+    os << to_string(vtype);
+    return os;
+}
+
+inline vector_type operator & (vector_type lhs, vector_type rhs) {
+    return (vector_type)(static_cast<int32_t>(lhs) & static_cast<int32_t>(rhs));
+}
+
+inline bool is_trainable_weight(vector_type vtype) {
+    return (vtype & vector_type::weight) == vector_type::weight;
+}
+
+inline std::vector<vector_type> std_input_order(bool has_bias) {
+    if (has_bias) {
+        return{ vector_type::data, vector_type::weight, vector_type::bias };
+    }
+    else {
+        return{ vector_type::data, vector_type::weight };
+    }
+}
+
+inline std::vector<vector_type> std_output_order(bool has_activation) {
+    if (has_activation) {
+        return{ vector_type::data, vector_type::aux };
+    }
+    else {
+        return{ vector_type::data };
+    }
+}
+
 
 } // namespace tiny_cnn
 

@@ -34,7 +34,7 @@ namespace tiny_cnn {
 TEST(ave_pool, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef activation::sigmoid activation;
-    typedef network<loss_func, tiny_cnn::gradient_descent_levenberg_marquardt> network;
+    typedef network<sequential> network;
 
     network nn;
     nn << fully_connected_layer<activation>(3, 8)
@@ -45,17 +45,69 @@ TEST(ave_pool, gradient_check) { // sigmoid - cross-entropy
     label_t t = 0;
 
     nn.init_weight();
-    for (int i = 0; i < 24; i++) nn[0]->weight()[i] = i;
+    //for (int i = 0; i < 24; i++) nn[0]->weight()[i] = i;
 
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, 1e-5, GRAD_CHECK_ALL));
+}
+
+TEST(ave_pool, forward) {
+    average_pooling_layer<identity> l(4, 4, 1, 2);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        4, 4,
+        1.5, -0.5
+    };
+
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.0));
+    l.init_weight();
+
+    vec_t res = l.forward({ in })[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(ave_pool, forward_stride) {
+    average_pooling_layer<identity> l(4, 4, 1, 2, 1);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        16.0/4, 15.0/4, 16.0/4,
+        22.0/4, 16.0/4, 14.0/4,
+         6.0/4,  1.0/4, -2.0/4
+    };
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.0));
+    l.init_weight();
+
+    vec_t res = l.forward({ in })[0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
 }
 
 TEST(ave_pool, read_write) {
     average_pooling_layer<tan_h> l1(100, 100, 5, 2);
     average_pooling_layer<tan_h> l2(100, 100, 5, 2);
 
-    l1.init_weight();
-    l2.init_weight();
+    l1.setup(true, 1);
+    l2.setup(true, 1);
 
     serialization_test(l1, l2);
 }

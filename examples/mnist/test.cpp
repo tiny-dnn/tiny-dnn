@@ -68,7 +68,7 @@ void convert_image(const std::string& imagefilename,
 }
 
 
-void construct_net(network<mse, adagrad>& nn) {
+void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -94,7 +94,7 @@ void construct_net(network<mse, adagrad>& nn) {
 }
 
 void recognize(const std::string& dictionary, const std::string& filename) {
-    network<mse, adagrad> nn;
+    network<sequential> nn;
 
     construct_net(nn);
 
@@ -120,7 +120,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
         cout << scores[i].second << "," << scores[i].first << endl;
 
     // visualize outputs of each layer
-    for (size_t i = 0; i < nn.depth(); i++) {
+    for (size_t i = 0; i < nn.layer_size(); i++) {
         auto out_img = nn[i]->output_to_image();
         cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
     }

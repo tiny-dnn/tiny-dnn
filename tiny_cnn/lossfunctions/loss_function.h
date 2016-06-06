@@ -76,4 +76,16 @@ vec_t gradient(const vec_t& y, const vec_t& t) {
     return grad;
 }
 
+template <typename E>
+std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t>& t) {
+    std::vector<vec_t> grads;
+ 
+    assert(y.size() == t.size());
+
+    for (cnn_size_t i = 0; i < y.size(); i++)
+        grads.push_back(gradient<E>(y[i], t[i]));
+
+    return grads;
+}
+
 } // namespace tiny_cnn

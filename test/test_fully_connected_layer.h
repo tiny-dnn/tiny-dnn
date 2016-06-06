@@ -31,8 +31,9 @@
 
 namespace tiny_cnn {
 
-TEST(fully_connected, bprop) {
-    network<cross_entropy, gradient_descent_levenberg_marquardt> nn;
+TEST(fully_connected, train) {
+    network<sequential> nn;
+    adagrad optimizer;
 
     nn << fully_connected_layer<sigmoid>(3, 2);
 
@@ -52,8 +53,8 @@ TEST(fully_connected, bprop) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.optimizer().alpha = 0.1;
-    nn.train(data, train, 1, 10);
+    optimizer.alpha = 0.1;
+    nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
 
@@ -66,8 +67,9 @@ TEST(fully_connected, bprop) {
     EXPECT_NEAR(predicted[1], t2[1], 1E-5);
 }
 
-TEST(fully_connected, bprop2) {
-    network<mse, gradient_descent> nn;
+TEST(fully_connected, train2) {
+    network<sequential> nn;
+    gradient_descent optimizer;
 
     nn << fully_connected_layer<tan_h>(4, 6)
        << fully_connected_layer<tan_h>(6, 3);
@@ -88,8 +90,8 @@ TEST(fully_connected, bprop2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    nn.optimizer().alpha = 0.01;
-    nn.train(data, train, 1, 10);
+    optimizer.alpha = 0.1;
+    nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
 
@@ -103,7 +105,7 @@ TEST(fully_connected, bprop2) {
 }
 
 TEST(fully_connected, gradient_check) {
-    network<mse, adagrad> nn;
+    network<sequential> nn;
     nn << fully_connected_layer<tan_h>(50, 10);
 
     vec_t a(50, 0.0);
@@ -111,7 +113,7 @@ TEST(fully_connected, gradient_check) {
 
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(fully_connected, read_write)
@@ -119,10 +121,43 @@ TEST(fully_connected, read_write)
     fully_connected_layer<tan_h> l1(100, 100);
     fully_connected_layer<tan_h> l2(100, 100);
 
-    l1.init_weight();
-    l2.init_weight();
+    l1.setup(true);
+    l2.setup(true);
 
     serialization_test(l1, l2);
+}
+
+TEST(fully_connected, forward)
+{
+    fully_connected_layer<identity> l(4, 2);
+    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.5));
+
+    vec_t in = {0,1,2,3};
+    vec_t out = l.forward({in})[0];
+    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
+}
+
+TEST(fully_connected, forward_nobias)
+{
+    fully_connected_layer<identity> l(4, 2, false);
+    EXPECT_EQ(l.in_channels(), 2);// in and W
+
+    l.weight_init(weight_init::constant(1.0));
+
+    vec_t in = { 0,1,2,3 };
+    vec_t out = l.forward({ in })[0];
+    vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
 }
 
 } // namespace tiny-cnn

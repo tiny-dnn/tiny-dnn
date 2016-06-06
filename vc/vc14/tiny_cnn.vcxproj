@@ -15,30 +15,39 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\tiny_cnn\activations\activation_function.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\dropout_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\lossfunctions\loss_function.h" />
     <ClInclude Include="..\..\tiny_cnn\optimizers\optimizer.h" />
     <ClInclude Include="..\..\tiny_cnn\util\conv_kernel.h" />
     <ClInclude Include="..\..\tiny_cnn\util\deform.h" />
+    <ClInclude Include="..\..\tiny_cnn\util\graph_visualizer.h" />
     <ClInclude Include="..\..\tiny_cnn\util\weight_init.h" />
     <ClInclude Include="..\..\tiny_cnn\util\image.h" />
     <ClInclude Include="..\..\tiny_cnn\util\product.h" />
     <ClInclude Include="..\..\tiny_cnn\util\nn_error.h" />
     <ClInclude Include="..\..\tiny_cnn\util\util.h" />
     <ClInclude Include="..\..\tiny_cnn\util\aligned_allocator.h" />
+    <ClInclude Include="..\..\tiny_cnn\util\target_cost.h" />
     <ClInclude Include="..\..\tiny_cnn\io\mnist_parser.h" />
     <ClInclude Include="..\..\tiny_cnn\io\cifar10_parser.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\arithmetic_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\average_pooling_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\concat_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\convolutional_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\dropout_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\feedforward_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\fully_connected_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\input_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\layers.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\fully_connected_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\linear_layer.h" />
+    <ClInclude Include="..\..\tiny_cnn\layers\lrn_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\max_pooling_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\layers\partial_connected_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\average_pooling_layer.h" />
     <ClInclude Include="..\..\tiny_cnn\tiny_cnn.h" />
     <ClInclude Include="..\..\tiny_cnn\config.h" />
     <ClInclude Include="..\..\tiny_cnn\network.h" />
+    <ClInclude Include="..\..\tiny_cnn\node.h" />
+    <ClInclude Include="..\..\tiny_cnn\nodes.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals" />
   <PropertyGroup Label="Globals">
@@ -83,7 +92,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\..\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <InlineFunctionExpansion>Default</InlineFunctionExpansion>
       <IntrinsicFunctions>false</IntrinsicFunctions>

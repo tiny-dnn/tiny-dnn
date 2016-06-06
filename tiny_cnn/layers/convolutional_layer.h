@@ -68,14 +68,16 @@ enum class padding {
     same   ///< add zero-padding around input so as to keep image size
 };
 
-
+/**
+ * 2D convolution layer
+ *
+ * take input as two-dimensional *image* and applying filtering operation.
+ **/
 template<typename Activation = activation::identity>
-class convolutional_layer : public layer<Activation> {
+class convolutional_layer : public feedforward_layer<Activation> {
 public:
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
-
-    using layer_base::out_size;
 
     /**
     * constructing convolutional layer
@@ -88,26 +90,23 @@ public:
     * @param padding      [in] rounding strategy
     *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias     [in] whether to add a bias vector to the filter outputs
+    * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_size,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1)
-        : Base(in_width * in_height * in_channels, conv_out_dim(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
-            sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_size, w_stride, pad_type), conv_out_length(in_height, window_size, h_stride, pad_type), out_channels),
-        weight_(window_size, window_size, in_channels*out_channels),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1)
+        : Base(std_input_order(has_bias))
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_size, window_size,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     /**
@@ -122,28 +121,26 @@ public:
     * @param padding       [in] rounding strategy
     *                          valid: use valid pixels of input only. output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels
     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias     [in] whether to add a bias vector to the filter outputs
+    * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_width,
-        cnn_size_t window_height,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1)
-        : Base(in_width * in_height * in_channels, conv_out_dim(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
-            window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_width, w_stride, pad_type), conv_out_length(in_height, window_height, h_stride, pad_type), out_channels),
-        weight_(window_width, window_height, in_channels*out_channels),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+                        cnn_size_t in_height,
+                        cnn_size_t window_width,
+                        cnn_size_t window_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1)
+        : Base(std_input_order(has_bias))
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
+
     /**
     * constructing convolutional layer
     *
@@ -156,29 +153,24 @@ public:
     * @param pad_type         [in] rounding strategy
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias         [in] whether to add a bias vector to the filter outputs
+    * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_size,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        const connection_table& connection_table,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1
-        )
-        : Base(in_width * in_height * in_channels, conv_out_dim(in_width, in_height, window_size, w_stride, h_stride, pad_type) * out_channels,
-            sqr(window_size) * in_channels * out_channels, has_bias ? out_channels : 0),
-        tbl_(connection_table),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_size, pad_type), in_length(in_height, window_size, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_size, w_stride, pad_type), conv_out_length(in_height, window_size, h_stride, pad_type), out_channels),
-        weight_(window_size, window_size, in_channels*out_channels),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+    convolutional_layer(cnn_size_t              in_width,
+                        cnn_size_t              in_height,
+                        cnn_size_t              window_size,
+                        cnn_size_t              in_channels,
+                        cnn_size_t              out_channels,
+                        const connection_table& connection_table,
+                        padding                 pad_type = padding::valid,
+                        bool                    has_bias = true,
+                        cnn_size_t              w_stride = 1,
+                        cnn_size_t              h_stride = 1)
+        : Base(std_input_order(has_bias)), tbl_(connection_table)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_size, window_size,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     /**
@@ -194,30 +186,25 @@ public:
     * @param pad_type         [in] rounding strategy
     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    * @param has_bias         [in] whether to add a bias vector to the filter outputs
+    * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t in_width,
-        cnn_size_t in_height,
-        cnn_size_t window_width,
-        cnn_size_t window_height,
-        cnn_size_t in_channels,
-        cnn_size_t out_channels,
-        const connection_table& connection_table,
-        padding pad_type = padding::valid,
-        bool has_bias = true,
-        cnn_size_t w_stride = 1,
-        cnn_size_t h_stride = 1
-        )
-        : Base(in_width * in_height * in_channels, conv_out_dim(in_width, in_height, window_width, window_height, w_stride, h_stride, pad_type) * out_channels,
-            window_width*window_height * in_channels * out_channels, has_bias ? out_channels : 0),
-        tbl_(connection_table),
-        in_(in_width, in_height, in_channels),
-        in_padded_(in_length(in_width, window_width, pad_type), in_length(in_height, window_height, pad_type), in_channels),
-        out_(conv_out_length(in_width, window_width, w_stride, pad_type), conv_out_length(in_height, window_height, h_stride, pad_type), out_channels),
-        weight_(window_width, window_height, in_channels*out_channels),
-        pad_type_(pad_type),
-        w_stride_(w_stride), h_stride_(h_stride)
+    convolutional_layer(cnn_size_t              in_width,
+                        cnn_size_t              in_height,
+                        cnn_size_t              window_width,
+                        cnn_size_t              window_height,
+                        cnn_size_t              in_channels,
+                        cnn_size_t              out_channels,
+                        const connection_table& connection_table,
+                        padding                 pad_type = padding::valid,
+                        bool                    has_bias = true,
+                        cnn_size_t              w_stride = 1,
+                        cnn_size_t              h_stride = 1)
+        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)), tbl_(connection_table)
     {
-        set_worker_count(CNN_TASK_SIZE); // calls init()
+        conv_set_params(shape3d(in_width, in_height, in_channels), window_width, window_height,
+                        out_channels, pad_type, has_bias, w_stride, h_stride);
     }
 
     ///< number of incoming connections for each output unit
@@ -232,98 +219,14 @@ public:
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
-    ///< number of connections
-    virtual size_t connection_size() const override
-    {
-        return out_.size() * fan_in_size();
-    }
-
-    virtual const vec_t& back_propagation_2nd(const vec_t& current_delta2) override
-    {
-        const vec_t& prev_out = *(conv_layer_worker_storage_[0].prev_out_padded_);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t* prev_delta = (pad_type_ == padding::same) ? &prev_delta2_padded_ : &prev_delta2_;
-
-        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
-
-        // accumulate dw
-        for_i(in_.depth_, [&](int inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-
-                if (!tbl_.is_connected(outc, inc)) continue;
-
-                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = float_t(0);
-                        const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
-                        const float_t * delta = &current_delta2[out_.get_index(0, 0, outc)];
-
-                        for (cnn_size_t y = 0; y < out_.height_; y++) {
-                            for (cnn_size_t x = 0; x < out_.width_; x++) {
-                                dst += sqr(prevo[y * in_padded_.width_ + x]) * delta[y * out_.width_ + x];
-                            }
-                        }
-                        Whessian_[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
-                    }
-                }
-            }
-        });
-
-        // accumulate db
-        if (!this->bhessian_.empty()) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-                const float_t *delta = &current_delta2[out_.get_index(0, 0, outc)];
-                this->bhessian_[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
-            }
-        }
-
-        // propagate delta to previous layer
-        for_i(in_.depth_, [&](int inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-                if (!tbl_.is_connected(outc, inc)) continue;
-
-                const float_t *pw = &W_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
-                const float_t *pdelta_src = &current_delta2[out_.get_index(0, 0, outc)];
-                float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
-
-                for (cnn_size_t y = 0; y < out_.height_; y++) {
-                    for (cnn_size_t x = 0; x < out_.width_; x++) {
-                        const float_t * ppw = pw;
-                        const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
-                        float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
-
-                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                                ppdelta_dst[wy * in_padded_.width_ + wx] += sqr(*ppw++) * ppdelta_src;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        for_i(parallelize_, in_padded_.size(), [&](int i) {
-            (*prev_delta)[i] *= sqr(prev_h.df(prev_out[i]));
-        });
-
-        if (pad_type_ == padding::same)
-            copy_and_unpad_delta(prev_delta2_padded_, prev_delta2_);
-
-        CNN_LOG_VECTOR(current_delta2, "[pc]curr-delta2");
-        CNN_LOG_VECTOR(prev_delta2_, "[pc]prev-delta2");
-        CNN_LOG_VECTOR(Whessian_, "[pc]whessian");
-
-        return prev_->back_propagation_2nd(prev_delta2_);
-    }
-
-    virtual const vec_t& forward_propagation(const vec_t& in_raw, size_t worker_index) override
-    {
-        copy_and_pad_input(in_raw, static_cast<int>(worker_index));
-
-        auto& ws = this->get_worker_storage(worker_index);
-        vec_t &a = ws.a_; // w*x
-        vec_t &out = ws.output_; // output
-        const vec_t &in = *(conv_layer_worker_storage_[worker_index].prev_out_padded_); // input
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>& out_data) override {
+        copy_and_pad_input(*in_data[0], static_cast<int>(index));
+        const vec_t& W   = *in_data[1];
+        vec_t&       out = *out_data[0];
+        vec_t&       a   = *out_data[1];
+        const vec_t &in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
         
         std::fill(a.begin(), a.end(), float_t(0));
 
@@ -331,7 +234,7 @@ public:
             for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                 if (!tbl_.is_connected(o, inc)) continue;
 
-                const float_t *pw = &this->W_[weight_.get_index(0, 0, in_.depth_ * o + inc)];
+                const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * o + inc)];
                 const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
                 float_t *pa = &a[out_.get_index(0, 0, o)];
 
@@ -352,38 +255,43 @@ public:
                 }
             }
 
-            if (!this->b_.empty()) {
+            if (has_bias_) {
+                const vec_t& bias = *in_data[2];
                 float_t *pa = &a[out_.get_index(0, 0, o)];
-                float_t b = this->b_[o];
+                float_t b = bias[o];
                 std::for_each(pa, pa + out_.width_ * out_.height_, [&](float_t& f) { f += b; });
             }
         });
 
-        for_i(parallelize_, out_size_, [&](int i) {
+        for_i(parallelize_, out_.size(), [&](int i) {
             out[i] = h_.f(a, i);
         });
-
-        CNN_LOG_VECTOR(in_raw, "[pc]in");
-        CNN_LOG_VECTOR(W_, "[pc]w");
-        CNN_LOG_VECTOR(a, "[pc]a");
-        CNN_LOG_VECTOR(out, "[pc]forward");
-
-        return next_ ? next_->forward_propagation(out, worker_index) : out;
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
-        return W_[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
+        vec_t* W = this->get_weights()[0];
+        return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    const vec_t& back_propagation(const vec_t& curr_delta, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void back_propagation(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
+
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
         const vec_t& prev_out = *(cws.prev_out_padded_);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t* prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : &ws.prev_delta_;
-        vec_t& dW = ws.dW_;
-        vec_t& db = ws.db_;
+        const vec_t& W = *in_data[1];
+        vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       curr_delta = *out_grad[1];
+
+        assert(W.size() == weight_.size());
+        assert(dW.size() == weight_.size());
+        assert(curr_delta.size() == out_shape()[0].size());
+
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
@@ -392,7 +300,7 @@ public:
             for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
 
-                const float_t *pw = &this->W_[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+                const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
                 const float_t *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
                 float_t *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 
@@ -410,10 +318,6 @@ public:
                     }
                 }
             }
-        });
-
-        for_i(parallelize_, in_padded_.size(), [&](int i) {
-            (*prev_delta)[i] *= prev_h.df(prev_out[i]);
         });
 
         // accumulate dw
@@ -438,7 +342,9 @@ public:
         });
 
         // accumulate db
-        if (!db.empty()) {
+        if (has_bias_) {
+            vec_t& db = *in_grad[2];
+
             for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
                 db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
@@ -446,18 +352,18 @@ public:
         }
 
         if (pad_type_ == padding::same)
-            copy_and_unpad_delta(cws.prev_delta_padded_, ws.prev_delta_);
-
-        CNN_LOG_VECTOR(curr_delta, "[pc]curr_delta");
-        CNN_LOG_VECTOR(prev_delta_[index], "[pc]prev_delta");
-        CNN_LOG_VECTOR(dW, "[pc]dW");
-        CNN_LOG_VECTOR(db, "[pc]db");
-
-        return prev_->back_propagation(ws.prev_delta_, index);
+            copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
     }
 
-    index3d<cnn_size_t> in_shape() const override { return in_; }
-    index3d<cnn_size_t> out_shape() const override { return out_; }
+    std::vector<index3d<cnn_size_t>> in_shape() const override {
+        if (has_bias_) {
+            return{ in_, weight_, index3d<cnn_size_t>(1, 1, out_.depth_) };
+        } else {
+            return { in_, weight_ };
+        }
+    }
+
+    std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "conv"; }
 
     image<> weight_to_image() const {
@@ -467,11 +373,12 @@ public:
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
+        const vec_t& W = *this->get_weights()[0];
 
         img.resize(width, height);
         img.fill(bg_color);
 
-        auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
+        auto minmax = std::minmax_element(W.begin(), W.end());
 
         for (cnn_size_t r = 0; r < in_.depth_; ++r) {
             for (cnn_size_t c = 0; c < out_.depth_; ++c) {
@@ -482,7 +389,7 @@ public:
 
                 for (cnn_size_t y = 0; y < weight_.height_; ++y) {
                     for (cnn_size_t x = 0; x < weight_.width_; ++x) {
-                        const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
+                        const float_t w = W[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
                             = static_cast<image<>::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));
@@ -500,6 +407,28 @@ public:
     }
 
 private:
+    void conv_set_params(const shape3d& in,
+                         cnn_size_t     w_width,
+                         cnn_size_t     w_height,
+                         cnn_size_t     outc,
+                         padding        ptype,
+                         bool           has_bias,
+                         cnn_size_t     w_stride,
+                         cnn_size_t     h_stride) {
+        in_ = in;
+        in_padded_ = shape3d(in_length(in.width_, w_width, ptype),
+                             in_length(in.height_, w_height, ptype),
+                             in.depth_);
+        out_ = shape3d(conv_out_length(in.width_, w_width, w_stride, ptype),
+                       conv_out_length(in.height_, w_height, h_stride, ptype),
+                       outc);
+        weight_ = shape3d(w_width, w_height, in.depth_ * outc);
+        has_bias_ = has_bias;
+        pad_type_ = ptype;
+        w_stride_ = w_stride;
+        h_stride_ = h_stride;
+    }
+
     void init() {
         for (conv_layer_worker_specific_storage& cws : conv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {
@@ -584,177 +513,10 @@ private:
     index3d<cnn_size_t> in_padded_;
     index3d<cnn_size_t> out_;
     index3d<cnn_size_t> weight_;
+    bool has_bias_;
     padding pad_type_;
     size_t w_stride_;
     size_t h_stride_;
 };
-
-#if 0
-
-#include "tiny_cnn/layers/partial_connected_layer.h"
-
-template<typename Activation = activation::identity>
-class convolutional_layer : public partial_connected_layer<Activation> {
-public:
-    typedef partial_connected_layer<Activation> Base;
-    CNN_USE_LAYER_MEMBERS;
-
-    /**
-     * constructing convolutional layer
-     *
-     * @param in_width     [in] input image width
-     * @param in_height    [in] input image height
-     * @param window_size  [in] window(kernel) size of convolution
-     * @param in_channels  [in] input image channels (grayscale=1, rgb=3)
-     * @param out_channels [in] output image channels
-     * @param padding      [in] rounding strategy
-     *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
-     *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
-     **/
-    convolutional_layer_old(cnn_size_t in_width,
-                        cnn_size_t in_height,
-                        cnn_size_t window_size,
-                        cnn_size_t in_channels,
-                        cnn_size_t out_channels,
-                        padding pad_type = padding::valid)
-    : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
-           sqr(window_size) * in_channels * out_channels, out_channels), 
-      in_(in_width, in_height, in_channels), 
-      out_(out_length(in_width, window_size, pad_type), out_length(in_height, window_size, pad_type), out_channels),
-      weight_(window_size, window_size, in_channels*out_channels),
-      window_size_(window_size)
-    {
-        init_connection(connection_table(), pad_type);
-    }
-
-    /**
-     * constructing convolutional layer
-     *
-     * @param in_width         [in] input image width
-     * @param in_height        [in] input image height
-     * @param window_size      [in] window(kernel) size of convolution
-     * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
-     * @param out_channels     [in] output image channels
-     * @param connection_table [in] definition of connections between in-channels and out-channels
-     * @param pad_type         [in] rounding strategy 
-     *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
-     *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
-     **/
-    convolutional_layer_old(cnn_size_t in_width,
-                        cnn_size_t in_height,
-                        cnn_size_t window_size,
-                        cnn_size_t in_channels,
-                        cnn_size_t out_channels,
-                        const connection_table& connection_table,
-                        padding pad_type = padding::valid)
-        : Base(in_width * in_height * in_channels, out_size(in_width, in_height, window_size, pad_type) * out_channels, 
-               sqr(window_size) * in_channels * out_channels, out_channels), 
-          in_(in_width, in_height, in_channels), 
-          out_(out_length(in_width, window_size, pad_type), out_length(in_height, window_size, pad_type), out_channels),
-          weight_(window_size, window_size, in_channels*out_channels),
-          connection_(connection_table),
-          window_size_(window_size)
-    {
-        init_connection(connection_table, pad_type);
-        //this->remap();
-    }
-
-    image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image<unsigned char>(output_[worker_index], out_);
-    }
-
-    image<> weight_to_image() const {
-        image<> img;
-        const cnn_size_t border_width = 1;
-        const auto pitch = window_size_ + border_width;
-        const auto width = out_.depth_ * pitch + border_width;
-        const auto height = in_.depth_ * pitch + border_width;
-        const image<>::intensity_t bg_color = 255;
-
-        img.resize(width, height);
-        img.fill(bg_color);
-
-        auto minmax = std::minmax_element(this->W_.begin(), this->W_.end());
-
-        for (cnn_size_t r = 0; r < in_.depth_; ++r) {
-            for (cnn_size_t c = 0; c < out_.depth_; ++c) {
-                if (!connection_.is_connected(c, r)) continue;
-
-                const auto top = r * pitch + border_width;
-                const auto left = c * pitch + border_width;
-
-                for (cnn_size_t y = 0; y < window_size_; ++y) {
-                    for (cnn_size_t x = 0; x < window_size_; ++x) {
-                        const float_t w = W_[weight_.get_index(x, y, c * in_.depth_ + r)];
-
-                        img.at(left + x, top + y)
-                            = static_cast<image<>::intensity_t>(rescale(w, *minmax.first, *minmax.second, 0, 255));
-                    }
-                }
-            }
-        }
-        return img;
-    }
-
-    index3d<cnn_size_t> in_shape() const override { return in_; }
-    index3d<cnn_size_t> out_shape() const override { return out_; }
-    std::string layer_type() const override { return "conv"; }
-
-private:
-    cnn_size_t out_length(cnn_size_t in_length, cnn_size_t window_size, padding pad_type) const {
-        return pad_type == padding::same ? in_length : (in_length - window_size + 1);
-    }
-
-    cnn_size_t out_size(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t window_size, padding pad_type) const {
-        return out_length(in_width, window_size, pad_type) * out_length(in_height, window_size, pad_type);
-    }
-
-    void init_connection(const connection_table& table, padding pad_type) {
-        cnn_size_t pad = (pad_type == padding::valid) ? 0 : window_size_ / 2;
-
-        for (cnn_size_t inc = 0; inc < in_.depth_; ++inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; ++outc) {
-                if (!table.is_connected(outc, inc)) {
-                    continue;
-                }
-
-                for (cnn_size_t y = 0; y < out_.height_; ++y)
-                    for (cnn_size_t x = 0; x < out_.width_; ++x)
-                        connect_kernel(inc, outc, x, y, pad);
-            }
-        }
-
-        for (cnn_size_t outc = 0; outc < out_.depth_; ++outc)
-            for (cnn_size_t y = 0; y < out_.height_; ++y)
-                for (cnn_size_t x = 0; x < out_.width_; ++x)
-                    this->connect_bias(outc, out_.get_index(x, y, outc));
-    }
-
-    void connect_kernel(cnn_size_t inc, cnn_size_t outc, cnn_size_t x, cnn_size_t y, cnn_size_t pad) {
-
-        for (cnn_size_t dy = 0; dy < window_size_; ++dy) {
-            if (y + dy < pad) continue;
-            if (y + dy - pad >= in_.height_) continue;
-
-            for (cnn_size_t dx = 0; dx < window_size_; ++dx) {
-                if (x + dx < pad) continue;
-                if (x + dx - pad >= in_.width_) continue;
-
-                this->connect_weight(
-                    in_.get_index(x + dx - pad, y + dy - pad, inc), 
-                    out_.get_index(x, y, outc), 
-                    weight_.get_index(dx, dy, outc * in_.depth_ + inc));
-            }
-        }
-    }
-
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
-    index3d<cnn_size_t> weight_;
-    connection_table connection_;
-    size_t window_size_;
-};
-
-#endif
 
 } // namespace tiny_cnn

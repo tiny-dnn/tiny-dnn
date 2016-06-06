@@ -38,10 +38,10 @@ TEST(dropout, randomized) {
     dropout_layer l(num_units, dropout_rate, net_phase::train);
     vec_t v(num_units, 1.0);
 
-    l.forward_propagation(v, 0);
+    l.forward({v});
     const auto mask1 = l.get_mask(0);
 
-    l.forward_propagation(v, 0);
+    l.forward({v});
     const auto mask2 = l.get_mask(0);
 
     // mask should change for each fprop
@@ -66,18 +66,6 @@ TEST(dropout, read_write) {
     l2.init_weight();
 
     serialization_test(l1, l2);
-}
-
-TEST(dropout, gradient_check) {
-    network<mse, adagrad> nn;
-    nn << dropout_layer(50, 0.5, net_phase::test);
-
-    vec_t a(50, 0.0);
-    label_t t = 9;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
 }
 
 } // namespace tiny-cnn
