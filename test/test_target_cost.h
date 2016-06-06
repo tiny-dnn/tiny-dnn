@@ -5,7 +5,7 @@
 #include "tiny_cnn/util/target_cost.h"
 
 namespace tiny_cnn {
-#if 0
+
 TEST(target_cost, calculate_label_counts) {
     const std::vector<label_t> t = { 0, 1, 4, 0, 1, 2 }; // note that there's no class "3"
 
@@ -127,7 +127,6 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
         }
     }
 }
-#endif
 
 TEST(target_cost, train_unbalanced_data_1dim) {
     // train a really simple function with noisy, unbalanced training data:
@@ -152,7 +151,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     adagrad optimizer1, optimizer2;
     std::vector<vec_t> data;
     std::vector<label_t> labels;
-    const size_t tnum = 1000;
+    const size_t tnum = 2000;
 
     for (size_t i = 0; i < tnum; i++) {
         bool in = bernoulli(p);
@@ -167,11 +166,13 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         const cnn_size_t n_label1 = std::accumulate(labels.begin(), labels.end(), static_cast<cnn_size_t>(0));
 
         EXPECT_NEAR(n_label1 / static_cast<float_t>(tnum), p_label1, 0.05);
-        EXPECT_GE(n_label1, 800);
-        EXPECT_LE(n_label1, 900);
+        EXPECT_GE(n_label1, 1600);
+        EXPECT_LE(n_label1, 1800);
     }
 
     const auto balanced_cost = create_balanced_target_cost(labels); // give higher weight to samples in the minority class
+    optimizer1.alpha *= 5;
+    optimizer2.alpha *= 5;
 
     // train both networks - one with implicit cost (equal for each sample),
     // and the other with explicit cost (balanced, or equal for each class)

@@ -132,10 +132,8 @@ TEST(fully_connected, forward)
     fully_connected_layer<identity> l(4, 2);
     EXPECT_EQ(l.in_channels(), 3); // in, W and b
 
-    vec_t* w = l.get_weights()[0];
-    vec_t* b = l.get_weights()[1];
-    std::fill(w->begin(), w->end(), 1.0);
-    std::fill(b->begin(), b->end(), 0.5);
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.5));
 
     vec_t in = {0,1,2,3};
     vec_t out = l.forward({in})[0];
@@ -151,10 +149,8 @@ TEST(fully_connected, forward_nobias)
     fully_connected_layer<identity> l(4, 2, false);
     EXPECT_EQ(l.in_channels(), 2);// in and W
 
-    vec_t* w = l.get_weights()[0];
+    l.weight_init(weight_init::constant(1.0));
 
-    std::fill(w->begin(), w->end(), 1.0);
- 
     vec_t in = { 0,1,2,3 };
     vec_t out = l.forward({ in })[0];
     vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
