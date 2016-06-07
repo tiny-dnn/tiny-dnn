@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,18 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
-#include "picotest/picotest.h"
-#include "tiny_cnn/tiny_cnn.h"
+#pragma once
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_nodes.h"
-#include "test_core.h"
+#include "tiny_cnn/core/device.h"
 
-int main(void) {
-    return RUN_ALL_TESTS();
-}
+namespace tiny_cnn {
+namespace core {
+
+class ocl_device : public device {
+ public:
+   explicit ocl_device(const int id) : device(id) {}
+
+};
+
+}  // namespace core
+}  // namespace tiny_cnn
