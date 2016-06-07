@@ -46,14 +46,14 @@ void construct_net(network<sequential>& nn) {
 #undef X
 
     // construct nets
-    nn << deconvolutional_layer<tan_h>(32, 32, 5, 1, 6)  // D1, 1@32x32-in, 6@36x36-out
-       << average_pooling_layer<tan_h>(36, 36, 6, 2)   // S2, 6@36x36-in, 6@18x18-out
-       << deconvolutional_layer<tan_h>(18, 18, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // D3, 6@18x18-in, 16@22x22-out
-       << average_pooling_layer<tan_h>(22, 22, 16, 2)  // S4, 16@22x22-in, 16@11x11-out
-       << deconvolutional_layer<tan_h>(11, 11, 5, 16, 16) // D5, 16@11x11-in, 16@15x15-out
-       << average_pooling_layer<tan_h>(15, 15, 16, 3)  // S6, 16@15x15-in, 5@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C7, 16@5x5-in, 120@1x1-out
+    nn << deconvolutional_layer<tan_h>(32, 32, 5, 1, 6)  // D1, 1@32x32-in, 6@28x28-out
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
+       << average_unpooling_layer<tan_h>(14, 14, 6, 2)   // U3, 6@14x14-in, 6@28x28-out
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S4, 6@28x28-in, 6@14x14-out
+       << deconvolutional_layer<tan_h>(14, 14, 5, 6, 16,
+            connection_table(tbl, 6, 16))              // D5, 6@14x14-in, 16@18x18-out
+       << average_pooling_layer<tan_h>(18, 18, 16, 2)  // S6, 16@18x18-in, 16@9x9-out
+       << deconvolutional_layer<tan_h>(9, 9, 9, 16, 120) // D7, 16@9x9-in, 120@1x1-out
        << fully_connected_layer<tan_h>(120, 10);       // F8, 120-in, 10-out
 }
 
