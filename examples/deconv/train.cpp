@@ -46,14 +46,14 @@ void construct_net(network<sequential>& nn) {
 #undef X
 
     // construct nets
-    nn << deconvolutional_layer<tan_h>(32, 32, 5, 1, 6)  // D1, 1@32x32-in, 6@28x28-out
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // D1, 1@32x32-in, 6@28x28-out
        << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
        << average_unpooling_layer<tan_h>(14, 14, 6, 2)   // U3, 6@14x14-in, 6@28x28-out
        << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S4, 6@28x28-in, 6@14x14-out
        << deconvolutional_layer<tan_h>(14, 14, 5, 6, 16,
             connection_table(tbl, 6, 16))              // D5, 6@14x14-in, 16@18x18-out
        << average_pooling_layer<tan_h>(18, 18, 16, 2)  // S6, 16@18x18-in, 16@9x9-out
-       << deconvolutional_layer<tan_h>(9, 9, 9, 16, 120) // D7, 16@9x9-in, 120@1x1-out
+       << convolutional_layer<tan_h>(9, 9, 9, 16, 120) // D7, 16@9x9-in, 120@1x1-out
        << fully_connected_layer<tan_h>(120, 10);       // F8, 120-in, 10-out
 }
 
