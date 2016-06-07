@@ -44,6 +44,7 @@
 #include "tiny_cnn/layers/concat_layer.h"
 #include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/max_unpooling_layer.h"
+#include "tiny_cnn/layers/average_unpooling_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -101,7 +102,10 @@ template <class T>
 using deconv = tiny_cnn::deconvolutional_layer<T>;
 
 template <class T>
-using unpooling = tiny_cnn::max_unpooling_layer<T>;
+using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
+
+template <class T>
+using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
 
 }
 }
