@@ -110,14 +110,10 @@ template <class T>
 using deconv = tiny_cnn::deconvolutional_layer<T>;
 
 template <class T>
-<<<<<<< HEAD
 using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
 
 template <class T>
 using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
-=======
-using unpooling = tiny_cnn::max_unpooling_layer<T>;
->>>>>>> Implement on deconvolution and unpooling layer.
 
 }
 }

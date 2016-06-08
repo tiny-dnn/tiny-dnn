@@ -26,27 +26,48 @@
 */
 #pragma once
 
+#include "tiny_cnn/layers/layer.h"
+#include "tiny_cnn/core/conv_params.h"
+
 namespace tiny_cnn {
 namespace core {
 
 class context;
 
+enum class backend_t { tiny_cnn, nnpack, libdnn };
+
+struct backend_params {
+    backend_params() {}
+};
+
 class math_backend {
  public:
-  // context holds solution-dependent parameters
-  // context should be able to hold any types of structures (like boost::any)
-  math_backend(context* ctx_ = nullptr) {}
+    // context holds solution-dependent parameters
+    // context should be able to hold any types of structures (like boost::any)
+    explicit math_backend(context* ctx_ = nullptr) {}
 
-  // core math functions
+    // core math functions
 
-  virtual void conv2d() = 0;
-  virtual void matmul() = 0;
-  virtual void maxpool() = 0;
+    virtual void conv2d(cnn_size_t                 index,
+                        const std::vector<vec_t*>& in_data,
+                        std::vector<vec_t*>&       out_data) = 0;
 
-  context* get_context() const { return ctx_; }
+    virtual void conv2d_back(cnn_size_t                 index,
+                             const std::vector<vec_t*>& in_data,
+                             const std::vector<vec_t*>& out_data,
+                             std::vector<vec_t*>&       out_grad,
+                             std::vector<vec_t*>&       in_grad) = 0;
 
- private:
-  context* ctx_;
+    virtual void matmul() = 0;
+    virtual void maxpool() = 0;
+
+    context* get_context() const { return ctx_; }
+
+    void set_layer(layerptr_t layer) { layer_ = layer; }
+
+ protected:
+    context* ctx_;
+    layerptr_t layer_;
 };
 
 }  // namespace core

@@ -33,23 +33,33 @@ namespace core {
 
 class dnn_backend : public math_backend {
  public:
-  // context holds solution-dependent parameters
-  // context should be able to hold any types of structures (like boost::any)
-  dnn_backend() {}
+    // context holds solution-dependent parameters
+    // context should be able to hold any types of structures (like boost::any)
+    dnn_backend() {}
 
-  // core math functions
+    // core math functions
 
-  void conv2d() {
-      nn_error("not implemented yet.");
-  }
+    void conv2d(cnn_size_t                 index,
+                const std::vector<vec_t*>& in_data,
+                std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
 
-  void matmul() {
-      nn_error("not implemented yet.");
-  }
+    void conv2d_back(cnn_size_t                 index,
+                     const std::vector<vec_t*>& in_data,
+                     const std::vector<vec_t*>& out_data,
+                     std::vector<vec_t*>&       out_grad,
+                     std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
+    }
 
-  void maxpool() {
-      nn_error("not implemented yet.");
-  }
+    void matmul() {
+        throw nn_error("not implemented yet.");
+    }
+
+    void maxpool() {
+        throw nn_error("not implemented yet.");
+    }
 };
 
 }  // namespace core

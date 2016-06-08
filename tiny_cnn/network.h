@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -32,6 +32,7 @@
 #include <iomanip>
 #include <map>
 #include <set>
+#include <limits>
 
 #include "tiny_cnn/nodes.h"
 #include "tiny_cnn/util/util.h"
@@ -43,7 +44,7 @@ namespace tiny_cnn {
 struct result {
     result() : num_success(0), num_total(0) {}
 
-    double accuracy() const {
+    float_t accuracy() const {
         return num_success * 100.0 / num_total;
     }
 
@@ -58,13 +59,13 @@ struct result {
         auto all_labels = labels();
 
         os << std::setw(5) << "*" << " ";
-        for (auto c : all_labels) 
+        for (auto c : all_labels)
             os << std::setw(5) << c << " ";
         os << std::endl;
 
         for (auto r : all_labels) {
-            os << std::setw(5) << r << " ";           
-            for (auto c : all_labels) 
+            os << std::setw(5) << r << " ";
+            for (auto c : all_labels)
                 os << std::setw(5) << confusion_matrix[r][c] << " ";
             os << std::endl;
         }
@@ -103,7 +104,7 @@ void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, c
  * A model of neural networks in tiny-cnn
  *
  * There are two types of network model available: sequential and graph.
- * A graph representation describe network as computational graph - 
+ * A graph representation describe network as computational graph -
  * each node of graph is layer, and each directed edge holds tensor and
  * its gradients. Sequential representation describe network as linked list -
  * each layer has at most one predecessor and one successor layer.
@@ -216,7 +217,7 @@ public:
                size_t                      batch_size,
                int                         epoch,
                OnBatchEnumerate            on_batch_enumerate,
-               OnEpochEnumerate            on_epoch_enumerate,             
+               OnEpochEnumerate            on_epoch_enumerate,
                const bool                  reset_weights = false,
                const int                   n_threads = CNN_TASK_SIZE,
                const std::vector<vec_t>&   t_cost = std::vector<vec_t>()
@@ -302,7 +303,7 @@ public:
      **/
     template<typename Error, typename Optimizer, typename T, typename U>
     bool fit(Optimizer&            optimizer,
-             const std::vector<T>& inputs, 
+             const std::vector<T>& inputs,
              const std::vector<U>& desired_outputs,
              size_t                batch_size = 1,
              int                   epoch = 1) {
@@ -422,15 +423,15 @@ public:
         is.precision(std::numeric_limits<tiny_cnn::float_t>::digits10);
         net_.load(is);
     }
-    
+
     /**
      * load network weights from filepath, 30 times faster than stream reading
      * @attention this loads only network *weights*, not network configuration
      **/
     void fast_load(const char* filepath) {
 		FILE* stream = fopen(filepath, "r");
-		std::vector<double> data;
-		double temp;
+		std::vector<float_t> data;
+		float_t temp;
 		while (fscanf(stream, "%lf", &temp) > 0)
 			data.push_back(temp);
 		fclose(stream);
@@ -512,7 +513,7 @@ public:
     const T& at(size_t index) const {
         return net_.template at<T>(index);
     }
-    
+
     /**
      * return total number of elements of output data
      **/
@@ -645,14 +646,14 @@ private:
         } else {
             train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
         }
-    }   
+    }
 
-    /** 
+    /**
      * trains on one minibatch, i.e. runs forward and backward propagation to calculate
      * the gradient of the loss function with respect to the network parameters (weights),
      * then calls the optimizer algorithm to update the weights
      *
-     * @param batch_size the number of data points to use in this batch 
+     * @param batch_size the number of data points to use in this batch
      */
     template <typename E, typename Optimizer>
     void train_onebatch(Optimizer&      optimizer,
@@ -677,7 +678,7 @@ private:
             for (int j = start_index; j < end_index; ++j)
                 bprop<E>(fprop(in[j], i), t[j], i, t_cost ? &(t_cost[j]) : nullptr);
         }, 1);
-        
+
         // merge all dW and update W by optimizer
         net_.update_weights(&optimizer, num_threads, batch_size);
     }
@@ -702,28 +703,34 @@ private:
     }
 
     template <typename E>
-    bool calc_delta(const vec_t* in, const vec_t* v, int data_size, vec_t& w, vec_t& dw, int check_index, double eps) {
-        static const float_t delta = 1e-10;
+    bool calc_delta(const vec_t* in, const vec_t* v, int data_size,
+                    vec_t& w, vec_t& dw, int check_index, float_t eps) {
+        static const float_t delta = std::sqrt(
+            std::numeric_limits<float_t>::epsilon());
 
         std::fill(dw.begin(), dw.end(), float_t(0));
 
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
 
-        w[check_index] = prev_w + delta;
         float_t f_p = float_t(0);
-        for (int i = 0; i < data_size; i++) { f_p += get_loss<E>(fprop(in[i]), v[i]); }
+        w[check_index] = prev_w + delta;
+        for (int i = 0; i < data_size; i++) {
+            f_p += get_loss<E>(fprop(in[i]), v[i]);
+        }
 
         float_t f_m = float_t(0);
         w[check_index] = prev_w - delta;
-        for (int i = 0; i < data_size; i++) { f_m += get_loss<E>(fprop(in[i]), v[i]); }
+        for (int i = 0; i < data_size; i++) {
+            f_m += get_loss<E>(fprop(in[i]), v[i]);
+        }
 
         float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
         for (int i = 0; i < data_size; i++) {
-            bprop<E>(fprop(tensor_t{in[i]}), tensor_t{v[i]}, 0, nullptr);
+            bprop<E>(fprop(tensor_t{ in[i] }), tensor_t{ v[i] }, 0, nullptr);
         }
 
         float_t delta_by_bprop = dw[check_index];
@@ -841,7 +848,7 @@ private:
 /**
  * @brief [cut an image in samples to be tested (slow)]
  * @details [long description]
- * 
+ *
  * @param data [pointer to the data]
  * @param rows [self explained]
  * @param cols [self explained]

@@ -41,6 +41,13 @@ class session {
   std::string get_name() const { return name_; }
   size_t get_num_devices() const { return devices_.size(); }
 
+  // will call construct graph
+  // should we here specify the devices to use?
+  void schedule_session(/* network<sequential>& net */);
+
+  // will call forward or backward methods
+  void run_session(/* data */);
+
  private:
   std::string name_;
   std::vector<std::shared_ptr<device>> devices_;

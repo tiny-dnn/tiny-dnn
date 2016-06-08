@@ -14,11 +14,11 @@ class timer
 {
  public:
     timer():  t1(std::chrono::high_resolution_clock::now()){};
-    double elapsed(){return std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - t1).count();}
+    float_t elapsed(){return std::chrono::duration_cast<std::chrono::duration<float_t>>(std::chrono::high_resolution_clock::now() - t1).count();}
     void restart(){t1 = std::chrono::high_resolution_clock::now();}
     void start(){t1 = std::chrono::high_resolution_clock::now();}
     void stop(){t2 = std::chrono::high_resolution_clock::now();}
-    double total(){stop();return std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();}
+    float_t total(){stop();return std::chrono::duration_cast<std::chrono::duration<float_t>>(t2 - t1).count();}
     ~timer(){}
  private:
     std::chrono::high_resolution_clock::time_point t1, t2;
@@ -27,7 +27,7 @@ class timer
 
 //  progress_display  --------------------------------------------------------//
 
-//  progress_display displays an appropriate indication of 
+//  progress_display displays an appropriate indication of
 //  progress at an appropriate place in an appropriate form.
 
 class progress_display
@@ -70,7 +70,7 @@ class progress_display
 
   private:
   std::ostream &     m_os;  // may not be present in all imps
-  const std::string  m_s1;  // string is more general, safer than 
+  const std::string  m_s1;  // string is more general, safer than
   const std::string  m_s2;  //  const char *, and efficiency or size are
   const std::string  m_s3;  //  not issues
 
@@ -80,12 +80,12 @@ class progress_display
   {
     // use of floating point ensures that both large and small counts
     // work correctly.  static_cast<>() is also used several places
-    // to suppress spurious compiler warnings. 
+    // to suppress spurious compiler warnings.
     unsigned int tics_needed =
       static_cast<unsigned int>(
-        (static_cast<double>(_count)/_expected_count)*50.0 );
+        (static_cast<float_t>(_count)/_expected_count)*50.0 );
     do { m_os << '*' << std::flush; } while ( ++_tic < tics_needed );
-    _next_tic_count = 
+    _next_tic_count =
       static_cast<unsigned long>((_tic/50.0)*_expected_count);
     if ( _count == _expected_count ) {
       if ( _tic < 51 ) m_os << '*';
@@ -98,4 +98,4 @@ class progress_display
 
 } // namespace
 
-#endif 
+#endif

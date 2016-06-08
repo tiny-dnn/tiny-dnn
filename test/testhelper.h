@@ -117,4 +117,19 @@ void serialization_test(T& src, T& dst)
     EXPECT_TRUE(is_near_container(r1, r2, 1E-4));
 }
 
+template <typename T>
+inline T epsilon() {
+    return 0;
+}
+
+template <>
+inline float epsilon() {
+    return 1e-2f;
+}
+
+template <>
+inline double epsilon() {
+    return 1e-4;
+}
+
 } // namespace tiny_cnn
