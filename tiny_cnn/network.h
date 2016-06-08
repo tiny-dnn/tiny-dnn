@@ -893,12 +893,12 @@ std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, Char
     return os;
 }
 
-void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
+inline void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
 {
     graph.net_.construct(inputs, outputs);
 }
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
+inline void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
 {
     std::vector<layer*> in_ptr, out_ptr;
     auto shared2ptr = [](std::shared_ptr<layer> l) { return l.get(); };

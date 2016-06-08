@@ -157,7 +157,7 @@ ENDIF()
 
 
 IF(BUILD_TESTS)
-    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp test/test_no_duplicate_symbols.cpp  ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
 ENDIF()
 
 #------------------------------------------------

@@ -112,7 +112,7 @@ gaussian_rand(T mean, T sigma) {
     return dst(random_generator::get_instance()());
 }
 
-void set_random_seed(unsigned int seed) {
+inline void set_random_seed(unsigned int seed) {
     random_generator::get_instance().set_seed(seed);
 }
 
