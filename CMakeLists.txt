@@ -141,11 +141,18 @@ IF (BUILD_EXAMPLES)
 
     find_package(Protobuf)
     IF (PROTOBUF_FOUND)
-        set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.pb.cc")
-        IF (EXISTS ${proto_file})
+# As of Ubuntu 14.04 protoc is no longer a part of libprotobuf-dev package
+# and should be installed separately as in: sudo apt-get install protobuf-compiler
+        if(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
+            message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
+        else()
+            message(FATAL_ERROR "Could not find PROTOBUF Compiler")
+        endif()
+        PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
+        IF (EXISTS ${PROTO_HDRS})
             add_executable(example_caffe_converter
                            examples/caffe_converter/caffe_converter.cpp
-                           ${tiny_cnn_hrds} ${proto_file})
+                           ${tiny_cnn_hrds} ${PROTO_SRCS} ${PROTO_HDRS})
             target_link_libraries(example_caffe_converter
                                   ${PROTOBUF_LIBRARIES} ${OpenCV_LIBS})
         ELSE()
