@@ -152,8 +152,12 @@ IF (BUILD_EXAMPLES)
 # and should be installed separately as in: sudo apt-get install protobuf-compiler
         ELSEIF (EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
             message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
-            PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS tiny_cnn/io/caffe/caffe.proto)
-            IF (EXISTS tiny_cnn/io/caffe/caffe.proto)
+            IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
+                PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
+                IF (EXISTS ${PROTO_HDRS})
+                    file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
+                    file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
+                ENDIF()
                 add_executable(example_caffe_converter
                                examples/caffe_converter/caffe_converter.cpp
                                ${tiny_cnn_hrds} ${PROTO_SRCS} ${PROTO_HDRS})
