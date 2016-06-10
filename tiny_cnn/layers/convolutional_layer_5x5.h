@@ -223,13 +223,13 @@ public:
     ///< number of incoming connections for each output unit
     virtual size_t fan_in_size() const override
     {
-        return weight_.width_ * weight_.height_ * in_.depth_;
+        return 25 /* weight_.width_ * weight_.height_ */ * in_.depth_;
     }
 
     ///< number of outgoing connections for each input unit
     virtual size_t fan_out_size() const override
     {
-        return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
+        return (5 /* weight_.width_ */ / w_stride_) * (5 /* weight_.height_ */ / h_stride_) * out_.depth_;
     }
 
     void forward_propagation(cnn_size_t index,
@@ -262,30 +262,35 @@ public:
 #ifdef CNN_USE_AVX
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
 		if (out_.height_ == 1 && out_.width_ == 1) {
+			const size_t stride = h_stride_ * in_padded_.width_;
 	        for_i(parallelize_, out_.depth_, [&](int o) {
 				__m256 sum = _mm256_setzero_ps();
+				size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
+				size_t inidx = 0;
+				size_t inarea = in_padded_.area();
 				for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
-	                if (!tbl_.is_connected(o, inc)) continue;
-	                const float* pw = (const float*) &w[weight_.get_index(0, 0, in_.depth_ * o + inc)];
-	                const float* pi = (const float*) &in[in_padded_.get_index(0, 0, inc)];
-					__m256 w0 = _mm256_maskload_ps(pw+0, mask);
-					__m256 w1 = _mm256_maskload_ps(pw+5, mask);
-					__m256 w2 = _mm256_maskload_ps(pw+10, mask);
-					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
-					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
-					size_t stride = h_stride_ * in_padded_.width_;
-					__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
-					__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
-					__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
-					__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
-					__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-					__m256 sum0 = _mm256_fmadd_ps(w0, i0, sum);
-					__m256 sum1 = _mm256_mul_ps(w1, i1);
-					sum0 = _mm256_fmadd_ps(w2, i2, sum0);
-					sum1 = _mm256_fmadd_ps(w3, i3, sum1);
-					sum0 = _mm256_fmadd_ps(w4, i4, sum0);
-					sum = _mm256_add_ps(sum0, sum1);
-//					printf("%d %d %d %f\n", inc, y, x, ppa[x]);
+	                if (tbl_.is_connected(o, inc)) {
+						const float* pw = (const float*) &w[widx];
+						__m256 w0 = _mm256_maskload_ps(pw+0, mask);
+						__m256 w1 = _mm256_maskload_ps(pw+5, mask);
+						__m256 w2 = _mm256_maskload_ps(pw+10, mask);
+						__m256 w3 = _mm256_maskload_ps(pw+15, mask);
+						__m256 w4 = _mm256_maskload_ps(pw+20, mask);
+						const float* pi = (const float*) &in[inidx];
+						__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
+						__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
+						__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
+						__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
+						__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
+						__m256 sum0 = _mm256_fmadd_ps(w0, i0, sum);
+						__m256 sum1 = _mm256_mul_ps(w1, i1);
+						sum0 = _mm256_fmadd_ps(w2, i2, sum0);
+						sum1 = _mm256_fmadd_ps(w3, i3, sum1);
+						sum0 = _mm256_fmadd_ps(w4, i4, sum0);
+						sum = _mm256_add_ps(sum0, sum1);
+					}
+					widx += 25;
+					inidx += inarea;
 	            }
 				a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
 	        });
@@ -314,15 +319,15 @@ public:
 				for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
 	                if (!tbl_.is_connected(o, inc)) continue;
 
-	                const float_t *pw = &w[weight_.get_index(0, 0, in_.depth_ * o + inc)];
-	                const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
+	                const float* pw = (const float*) &w[25 * (in_.depth_ * o + inc)];
+	                const float* pi = (const float*) &in[in_padded_.get_index(0, 0, inc)];
 
 #ifdef CNN_USE_AVX
-					__m256 w0 = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w1 = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w2 = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w3 = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w4 = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
+					__m256 w0 = _mm256_maskload_ps(pw+0, mask);
+					__m256 w1 = _mm256_maskload_ps(pw+5, mask);
+					__m256 w2 = _mm256_maskload_ps(pw+10, mask);
+					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
+					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
 					size_t stride = h_stride_ * in_padded_.width_;
 #else
 					float w00 = *pw++;
@@ -354,11 +359,11 @@ public:
 					float_t* ppa = pa;
 	                for (cnn_size_t y = 0; y < out_.height_; y++) {
 #ifdef CNN_USE_AVX
-						const float* pi0 = (const float*)(pi + y * stride);
-						const float* pi1 = pi0 + stride;
-						const float* pi2 = pi1 + stride;
-						const float* pi3 = pi2 + stride;
-						const float* pi4 = pi3 + stride;
+						const float* pi0 = (pi + y * stride);
+						const float* pi1 = pi0 + 1 * stride;
+						const float* pi2 = pi0 + 2 * stride;
+						const float* pi3 = pi0 + 3 * stride;
+						const float* pi4 = pi0 + 4 * stride;
 	                    for (cnn_size_t x=0; x<out_.width_; ++x) {
 							__m256 i0 = _mm256_loadu_ps(pi0);
 							__m256 i1 = _mm256_loadu_ps(pi1);
@@ -483,7 +488,7 @@ public:
 			for_i(in_.depth_, [&](int inc) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
-					const float_t* pw = &w[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+					const float_t* pw = &w[25 * (in_.depth_ * outc + inc)];
 					const float_t* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
 					float_t* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 					__m256 w0a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
@@ -600,7 +605,7 @@ public:
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (tbl_.is_connected(outc, inc)) {
 						__m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
-						const float* pw = (const float*)&w[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+						const float* pw = (const float*)&w[25 * (in_.depth_ * outc + inc)];
 						__m256 w0a = _mm256_maskload_ps(pw+0, mask);
 						__m256 w1a = _mm256_maskload_ps(pw+5, mask);
 						__m256 w2a = _mm256_maskload_ps(pw+10, mask);
@@ -628,7 +633,7 @@ public:
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 
-					const float_t* pw = &w[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+					const float_t* pw = &w[25 * (in_.depth_ * outc + inc)];
 					const float_t* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
 					float_t* pdelta_dst = pdelta_dst_org;
 #ifdef CNN_USE_AVX
@@ -751,8 +756,8 @@ public:
                 if (!tbl_.is_connected(outc, inc)) continue;
 				const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
-                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
+                    for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
                         float_t dst = float_t(0);
                         const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
 
@@ -798,7 +803,7 @@ public:
     image<> weight_to_image() const {
         image<> img;
         const cnn_size_t border_width = 1;
-        const auto pitch = weight_.width_ + border_width;
+        const auto pitch = 5/* weight_.width_ */ + border_width;
         const auto width = out_.depth_ * pitch + border_width;
         const auto height = in_.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
@@ -816,8 +821,8 @@ public:
                 const auto top = r * pitch + border_width;
                 const auto left = c * pitch + border_width;
 
-                for (cnn_size_t y = 0; y < weight_.height_; ++y) {
-                    for (cnn_size_t x = 0; x < weight_.width_; ++x) {
+                for (cnn_size_t y = 0; y < 5 /* weight_.height_ */; ++y) {
+                    for (cnn_size_t x = 0; x < 5 /* weight_.width_ */; ++x) {
                         const float_t w = W[weight_.get_index(x, y, c * in_.depth_ + r)];
 
                         img.at(left + x, top + y)
@@ -896,7 +901,7 @@ private:
         else {
             for (cnn_size_t c = 0; c < in_.depth_; c++) {
                 float_t *pdst = &dst[in_.get_index(0, 0, c)];
-                const float_t *pin = &delta[in_padded_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
+                const float_t *pin = &delta[in_padded_.get_index(5 /* weight_.width_ */ / 2, 5 /* weight_.height_ */ / 2, c)];
 
                 for (cnn_size_t y = 0; y < in_.height_; y++, pdst += in_.width_, pin += in_padded_.width_) {
                     std::copy(pin, pin + in_.width_, pdst);
@@ -916,7 +921,7 @@ private:
         else {
             // make padded version in order to avoid corner-case in fprop/bprop
             for (cnn_size_t c = 0; c < in_.depth_; c++) {
-                float_t *pimg = &(*dst)[in_padded_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
+                float_t *pimg = &(*dst)[in_padded_.get_index(5 /* weight_.width_ */ / 2, 5 /* weight_.height_ */ / 2, c)];
                 const float_t *pin = &in[in_.get_index(0, 0, c)];
 
                 for (cnn_size_t y = 0; y < in_.height_; y++, pin += in_.width_, pimg += in_padded_.width_) {
