@@ -80,7 +80,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     const int n_minibatch = 10; ///< minibatch size
     const int n_train_epochs = 30; ///< training duration
 
-    optimizer.alpha *= sqrt(n_minibatch) * learning_rate;
+    optimizer.alpha *= (tiny_cnn::float_t) (sqrt(n_minibatch) * learning_rate);
 
     // create callback
     auto on_enumerate_epoch = [&]() {

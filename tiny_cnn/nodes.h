@@ -80,7 +80,7 @@ class nodes {
      * update weights and clear all gradients
      **/
     virtual
-    void update_weights(optimizer *opt, int num_workers, int batch_size) {
+    void update_weights(optimizer *opt, cnn_size_t num_workers, cnn_size_t batch_size) {
         for (auto l : nodes_) {
             l->update_weight(opt, num_workers, batch_size);
         }

@@ -251,6 +251,7 @@ public:
                             }
                         }
                         pa[y * out_.width_ + x] += sum;
+						//printf("%d %d %d %f\n", inc, y, x, sum);
                     }
                 }
             }

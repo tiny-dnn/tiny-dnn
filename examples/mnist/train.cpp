@@ -26,6 +26,8 @@
 */
 #include <iostream>
 #include "tiny_cnn/tiny_cnn.h"
+#include "tiny_cnn/layers/convolutional_layer_5x5.h"
+
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -45,13 +47,16 @@ void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
+//    typedef convolutional_layer<tan_h> conv;
+    typedef convolutional_layer_5x5<tan_h> conv;
+
     // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
+    nn << conv(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
        << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
+       << conv(14, 14, 5, 6, 16,
             connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
        << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
+       << conv(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
        << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
 }
 
@@ -82,9 +87,9 @@ void train_lenet(std::string data_dir_path) {
     progress_display disp(train_images.size());
     timer t;
     int minibatch_size = 10;
-    int num_epochs = 30;
+    int num_epochs = 5;
 
-    optimizer.alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= (tiny_cnn::float_t) std::sqrt(minibatch_size);
 
     // create callback
     auto on_enumerate_epoch = [&](){

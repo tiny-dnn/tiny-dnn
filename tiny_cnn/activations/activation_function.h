@@ -28,6 +28,10 @@
 #include "tiny_cnn/util/util.h"
 #include <algorithm>
 
+#ifdef CNN_USE_SSE
+#include "fmath/fmath.hpp"
+#endif
+
 namespace tiny_cnn {
 namespace activation {
 
@@ -133,9 +137,17 @@ class tan_h : public function {
 public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override {
+#ifdef CNN_USE_SSE
+        const float_t ep = fmath::exp(v[i]);
+        const float_t em = fmath::exp(-v[i]); 
+		float_t ret = (ep - em) / (ep + em);
+        return ret;
+#else
         const float_t ep = std::exp(v[i]);
         const float_t em = std::exp(-v[i]); 
-        return (ep - em) / (ep + em);
+		float_t ret = (ep - em) / (ep + em);
+        return ret;
+#endif
     }
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)

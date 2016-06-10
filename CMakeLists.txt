@@ -47,7 +47,7 @@ OPTION(USE_TBB        "Set to ON to use TBB"             OFF)
 OPTION(USE_OMP        "Set to ON to use OMP"             OFF)
 OPTION(USE_SSE        "Set to ON to use sse"             ON)
 OPTION(USE_AVX        "Set to ON to use avx"             ON)
-OPTION(USE_OPENCV     "Set to ON to use OpenCV"          ON)
+OPTION(USE_OPENCV     "Set to ON to use OpenCV"          OFF)
 OPTION(BUILD_TESTS    "Set to ON to build tests"         OFF)
 OPTION(BUILD_EXAMPLES "Set to ON to build examples"      ON)
 OPTION(BUILD_DOCS     "Set to ON to build documentation" OFF)
@@ -101,7 +101,9 @@ ELSE()#MSVC
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     ENDIF()
     SET(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj ")
+    SET(EXTRA_C_FLAGS_DEBUG " /MTd ")
     add_definitions( -D _CRT_SECURE_NO_WARNINGS)
+    add_definitions( -D _SCL_SECURE_NO_WARNINGS)
 ENDIF()
 
 
@@ -119,7 +121,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
+SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h tiny_cnn/layers/convolutional_layer_5x5.h tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
 tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/layers/arithmetic_layer.h tiny_cnn/layers/concat_layer.h tiny_cnn/layers/feedforward_layer.h tiny_cnn/layers/dropout_layer.h tiny_cnn/layers/lrn_layer.h tiny_cnn/layers/linear_layer.h tiny_cnn/node.h tiny_cnn/nodes.h tiny_cnn/util/target_cost.h tiny_cnn/util/aligned_allocator.h)
 
 SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutional_layer.h test/test_fully_connected_layer.h test/test_lrn_layer.h test/test_max_pooling_layer.h test/test_dropout_layer.h test/test_network.h test/test_target_cost.h test/test_large_thread_count.h test/testhelper.h test/picotest/picotest.h)
