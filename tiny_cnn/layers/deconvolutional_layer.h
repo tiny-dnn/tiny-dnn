@@ -246,12 +246,14 @@ public:
                           std::vector<vec_t*>&       in_grad) override {
 
         deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[index];
+        if (pad_type_ == padding::same)
+            copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
 
-        const vec_t& prev_out = *(cws.cur_out_padded_);
+        const vec_t& prev_out = *(cws.prev_out_);
         const vec_t& W = *in_data[1];
-        vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        vec_t*       prev_delta = in_grad[0];
         vec_t&       dW = *in_grad[1];
-        vec_t&       curr_delta = *out_grad[1];
+        vec_t&       curr_delta = (pad_type_ == padding::same) ? cws.curr_delta_padded : *out_grad[1];
 
         assert(W.size() == weight_.size());
         assert(dW.size() == weight_.size());
@@ -316,9 +318,6 @@ public:
                 db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
             }
         }
-
-        if (pad_type_ == padding::same)
-            copy_and_pad_delta(cws.prev_delta_padded_, *in_grad[0]);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -399,7 +398,7 @@ private:
         for (deconv_layer_worker_specific_storage& cws : deconv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {
                 cws.prev_out_buf_.resize(in_.size(), float_t(0));
-                cws.prev_delta_padded_.resize(in_.size(), float_t(0));
+                cws.curr_delta_padded.resize(in_.size(), float_t(0));
             }
             else {
                 cws.prev_out_buf_.clear();
@@ -437,7 +436,7 @@ private:
         else {
             for (cnn_size_t c = 0; c < in_.depth_; c++) {
                 float_t *pdst = &dst[in_.get_index(0, 0, c)];
-                const float_t *pin = &delta[in_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
+                const float_t *pin = &delta[in_.get_index(0, 0, c)];
 
                 for (cnn_size_t y = 0; y < in_.height_; y++, pdst += in_.width_, pin += in_.width_) {
                     std::copy(pin, pin + in_.width_, pdst);
@@ -449,10 +448,10 @@ private:
     void copy_and_unpad_output(const vec_t& out, int worker_index) {
         deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
 
-        vec_t* dst = &cws.cur_out_buf_;
+        vec_t* dst = &cws.curr_out_buf_;
 
         if (pad_type_ == padding::valid) {
-            cws.cur_out_padded_ = &out;
+            cws.curr_out_unpadded_ = &out;
         }
         else {
             // make unpadded version in order to restore scale in fprop/bprop
@@ -464,16 +463,16 @@ private:
                     std::copy(pout, pout + out_.width_ - weight_.width_ + 1, pimg);
                 }
             }
-            cws.cur_out_padded_ = &cws.cur_out_buf_;
+            cws.curr_out_unpadded_ = &cws.curr_out_buf_;
         }
     }
 
     struct deconv_layer_worker_specific_storage {
         const vec_t* prev_out_;
-        const vec_t* cur_out_padded_;
+        const vec_t* curr_out_unpadded_;
         vec_t prev_out_buf_;
-        vec_t cur_out_buf_;
-        vec_t prev_delta_padded_;
+        vec_t curr_out_buf_;
+        vec_t curr_delta_padded;
     };
 
     std::vector<deconv_layer_worker_specific_storage> deconv_layer_worker_storage_;
@@ -482,7 +481,6 @@ private:
 
     connection_table tbl_;
     index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> in_padded_;
     index3d<cnn_size_t> out_;
     index3d<cnn_size_t> out_unpadded_;
     index3d<cnn_size_t> weight_;
