@@ -755,34 +755,42 @@ public:
         // accumulate dw
 		if (out_.width_ == 1 && out_.height_ == 1) {
 			for_i(in_.depth_, [&](int inc) {
-#if 0 //def CNN_USE_AVX
-				__m256 prevos[4];	// 8x4 should be enough to hold 5x5 single floats
-				prevos[0].m256_f32[0] = prev_out[in_padded_.get_index(0, 0, inc)];
-				prevos[0].m256_f32[1] = prev_out[in_padded_.get_index(1, 0, inc)];
-				prevos[0].m256_f32[2] = prev_out[in_padded_.get_index(2, 0, inc)];
-				prevos[0].m256_f32[3] = prev_out[in_padded_.get_index(3, 0, inc)];
-				prevos[0].m256_f32[4] = prev_out[in_padded_.get_index(4, 0, inc)];
-				prevos[0].m256_f32[5] = prev_out[in_padded_.get_index(0, 1, inc)];
-				prevos[0].m256_f32[6] = prev_out[in_padded_.get_index(1, 1, inc)];
-				prevos[0].m256_f32[7] = prev_out[in_padded_.get_index(2, 1, inc)];
-				prevos[1].m256_f32[0] = prev_out[in_padded_.get_index(3, 1, inc)];
-				prevos[1].m256_f32[1] = prev_out[in_padded_.get_index(4, 1, inc)];
-				prevos[1].m256_f32[2] = prev_out[in_padded_.get_index(0, 2, inc)];
-				prevos[1].m256_f32[3] = prev_out[in_padded_.get_index(1, 2, inc)];
-				prevos[1].m256_f32[4] = prev_out[in_padded_.get_index(2, 2, inc)];
-				prevos[1].m256_f32[5] = prev_out[in_padded_.get_index(3, 2, inc)];
-				prevos[1].m256_f32[6] = prev_out[in_padded_.get_index(4, 2, inc)];
-				prevos[1].m256_f32[7] = prev_out[in_padded_.get_index(0, 3, inc)];
-				prevos[2].m256_f32[0] = prev_out[in_padded_.get_index(1, 3, inc)];
-				prevos[2].m256_f32[1] = prev_out[in_padded_.get_index(2, 3, inc)];
-				prevos[2].m256_f32[2] = prev_out[in_padded_.get_index(3, 3, inc)];
-				prevos[2].m256_f32[3] = prev_out[in_padded_.get_index(4, 3, inc)];
-				prevos[2].m256_f32[4] = prev_out[in_padded_.get_index(0, 4, inc)];
-				prevos[2].m256_f32[5] = prev_out[in_padded_.get_index(1, 4, inc)];
-				prevos[2].m256_f32[6] = prev_out[in_padded_.get_index(2, 4, inc)];
-				prevos[2].m256_f32[7] = prev_out[in_padded_.get_index(3, 4, inc)];
-				prevos[3].m256_f32[0] = prev_out[in_padded_.get_index(4, 4, inc)];
-#endif
+#ifdef CNN_USE_AVX
+				union {
+					struct {
+						__m256 prevos0;
+						__m256 prevos1;
+						__m256 prevos2;
+						__m256 prevos3;
+					} s;
+					float floats[32];
+				};
+				size_t base_idx = inc * in_padded_.area();
+				size_t in_padded_width = in_padded_.width_;
+				_mm256_storeu_ps(&floats[0], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 0]));
+				_mm256_storeu_ps(&floats[5], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 1]));
+				_mm256_storeu_ps(&floats[10], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 2]));
+				_mm256_storeu_ps(&floats[15], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 3]));
+				_mm256_storeu_ps(&floats[20], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 4]));
+				cnn_size_t widx = 25 * inc;
+				cnn_size_t widx_delta = 25 * in_.depth_;
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+					if (tbl_.is_connected(outc, inc)) {
+						__m256 delta = _mm256_broadcast_ss(&curr_delta[outc]);
+						__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
+						__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
+						__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
+						w0 = _mm256_fmadd_ps(s.prevos0, delta, w0);
+						w1 = _mm256_fmadd_ps(s.prevos1, delta, w1);
+						w2 = _mm256_fmadd_ps(s.prevos2, delta, w2);
+						_mm256_storeu_ps(&dW[widx+0], w0);
+						_mm256_storeu_ps(&dW[widx+8], w1);
+						_mm256_storeu_ps(&dW[widx+16], w2);
+						dW[widx+24] += s.prevos3.m256_f32[0] * delta.m256_f32[0];
+					}
+					widx += widx_delta;
+				}
+#else
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float_t delta = curr_delta[out_.get_index(0, 0, outc)];
@@ -796,6 +804,7 @@ public:
 						}
 					}
 				}
+#endif
 			});
 		}else {
 			for_i(in_.depth_, [&](int inc) {
