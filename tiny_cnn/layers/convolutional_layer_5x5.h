@@ -602,10 +602,12 @@ public:
 				__m256 dst2 = _mm256_loadu_ps(delta_dst2);
 				__m256 dst3 = _mm256_loadu_ps(delta_dst3);
 				__m256 dst4 = _mm256_loadu_ps(delta_dst4);
+				size_t widx = 25 * inc;
+				size_t wstep = 25 * in_.depth_;
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (tbl_.is_connected(outc, inc)) {
 						__m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
-						const float* pw = (const float*)&w[25 * (in_.depth_ * outc + inc)];
+						const float* pw = (const float*)&w[widx];
 						__m256 w0a = _mm256_maskload_ps(pw+0, mask);
 						__m256 w1a = _mm256_maskload_ps(pw+5, mask);
 						__m256 w2a = _mm256_maskload_ps(pw+10, mask);
@@ -617,6 +619,7 @@ public:
 						dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
 						dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
 					}
+					widx += wstep;
 				}
 				_mm256_storeu_ps(delta_dst0, dst0);
 				_mm256_storeu_ps(delta_dst1, dst1);
