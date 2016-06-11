@@ -753,25 +753,71 @@ public:
 		}
 
         // accumulate dw
-        for_i(in_.depth_, [&](int inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+		if (out_.width_ == 1 && out_.height_ == 1) {
+			for_i(in_.depth_, [&](int inc) {
+#if 0 //def CNN_USE_AVX
+				__m256 prevos[4];	// 8x4 should be enough to hold 5x5 single floats
+				prevos[0].m256_f32[0] = prev_out[in_padded_.get_index(0, 0, inc)];
+				prevos[0].m256_f32[1] = prev_out[in_padded_.get_index(1, 0, inc)];
+				prevos[0].m256_f32[2] = prev_out[in_padded_.get_index(2, 0, inc)];
+				prevos[0].m256_f32[3] = prev_out[in_padded_.get_index(3, 0, inc)];
+				prevos[0].m256_f32[4] = prev_out[in_padded_.get_index(4, 0, inc)];
+				prevos[0].m256_f32[5] = prev_out[in_padded_.get_index(0, 1, inc)];
+				prevos[0].m256_f32[6] = prev_out[in_padded_.get_index(1, 1, inc)];
+				prevos[0].m256_f32[7] = prev_out[in_padded_.get_index(2, 1, inc)];
+				prevos[1].m256_f32[0] = prev_out[in_padded_.get_index(3, 1, inc)];
+				prevos[1].m256_f32[1] = prev_out[in_padded_.get_index(4, 1, inc)];
+				prevos[1].m256_f32[2] = prev_out[in_padded_.get_index(0, 2, inc)];
+				prevos[1].m256_f32[3] = prev_out[in_padded_.get_index(1, 2, inc)];
+				prevos[1].m256_f32[4] = prev_out[in_padded_.get_index(2, 2, inc)];
+				prevos[1].m256_f32[5] = prev_out[in_padded_.get_index(3, 2, inc)];
+				prevos[1].m256_f32[6] = prev_out[in_padded_.get_index(4, 2, inc)];
+				prevos[1].m256_f32[7] = prev_out[in_padded_.get_index(0, 3, inc)];
+				prevos[2].m256_f32[0] = prev_out[in_padded_.get_index(1, 3, inc)];
+				prevos[2].m256_f32[1] = prev_out[in_padded_.get_index(2, 3, inc)];
+				prevos[2].m256_f32[2] = prev_out[in_padded_.get_index(3, 3, inc)];
+				prevos[2].m256_f32[3] = prev_out[in_padded_.get_index(4, 3, inc)];
+				prevos[2].m256_f32[4] = prev_out[in_padded_.get_index(0, 4, inc)];
+				prevos[2].m256_f32[5] = prev_out[in_padded_.get_index(1, 4, inc)];
+				prevos[2].m256_f32[6] = prev_out[in_padded_.get_index(2, 4, inc)];
+				prevos[2].m256_f32[7] = prev_out[in_padded_.get_index(3, 4, inc)];
+				prevos[3].m256_f32[0] = prev_out[in_padded_.get_index(4, 4, inc)];
+#endif
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+					if (!tbl_.is_connected(outc, inc)) continue;
+					const float_t delta = curr_delta[out_.get_index(0, 0, outc)];
+					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
+						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
+							cnn_size_t idx = in_padded_.get_index(wx, wy, inc);
+							const float_t prevo = prev_out[idx];
+							// vectorize::dot
+							cnn_size_t widx = weight_.get_index(wx, wy, in_.depth_ * outc + inc);
+							dW[widx] += prevo * delta;
+						}
+					}
+				}
+			});
+		}else {
+			for_i(in_.depth_, [&](int inc) {
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
-                if (!tbl_.is_connected(outc, inc)) continue;
-				const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
+					if (!tbl_.is_connected(outc, inc)) continue;
+					const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
-                for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
-                    for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
-                        float_t dst = float_t(0);
-                        const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
+					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
+						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
+							float_t dst = float_t(0);
+							const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
 
-                        for (cnn_size_t y = 0; y < out_.height_; y++) {
-                            dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
-                        }
-                        dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
-                    }
-                }
-            }
-        });
+							for (cnn_size_t y = 0; y < out_.height_; y++) {
+								dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
+							}
+							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
+						}
+					}
+				}
+			});
+		}
 
         // accumulate db
         if (has_bias_) {
