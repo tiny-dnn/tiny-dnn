@@ -268,29 +268,28 @@ public:
 				size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
 				size_t inidx = 0;
 				size_t inarea = in_padded_.area();
-				for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
-	                if (tbl_.is_connected(o, inc)) {
-						const float* pw = (const float*) &w[widx];
-						__m256 w0 = _mm256_maskload_ps(pw+0, mask);
-						__m256 w1 = _mm256_maskload_ps(pw+5, mask);
-						__m256 w2 = _mm256_maskload_ps(pw+10, mask);
-						__m256 w3 = _mm256_maskload_ps(pw+15, mask);
-						__m256 w4 = _mm256_maskload_ps(pw+20, mask);
-						const float* pi = (const float*) &in[inidx];
-						__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
-						__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
-						__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
-						__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
-						__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-						__m256 sum0 = _mm256_fmadd_ps(w0, i0, sum);
-						__m256 sum1 = _mm256_mul_ps(w1, i1);
-						sum0 = _mm256_fmadd_ps(w2, i2, sum0);
-						sum1 = _mm256_fmadd_ps(w3, i3, sum1);
-						sum0 = _mm256_fmadd_ps(w4, i4, sum0);
-						sum = _mm256_add_ps(sum0, sum1);
+				for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
+	                if (!tbl_.is_connected(o, inc)) {
+						continue;
 					}
-					widx += 25;
-					inidx += inarea;
+					const float* pw = (const float*) &w[widx];
+					__m256 w0 = _mm256_maskload_ps(pw+0, mask);
+					__m256 w1 = _mm256_maskload_ps(pw+5, mask);
+					__m256 w2 = _mm256_maskload_ps(pw+10, mask);
+					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
+					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
+					const float* pi = (const float*) &in[inidx];
+					__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
+					__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
+					__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
+					__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
+					__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
+					__m256 sum0 = _mm256_fmadd_ps(w0, i0, sum);
+					__m256 sum1 = _mm256_mul_ps(w1, i1);
+					sum0 = _mm256_fmadd_ps(w2, i2, sum0);
+					sum1 = _mm256_fmadd_ps(w3, i3, sum1);
+					sum0 = _mm256_fmadd_ps(w4, i4, sum0);
+					sum = _mm256_add_ps(sum0, sum1);
 	            }
 				a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
 	        });
@@ -604,22 +603,22 @@ public:
 				__m256 dst4 = _mm256_loadu_ps(delta_dst4);
 				size_t widx = 25 * inc;
 				size_t wstep = 25 * in_.depth_;
-				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-					if (tbl_.is_connected(outc, inc)) {
-						__m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
-						const float* pw = (const float*)&w[widx];
-						__m256 w0a = _mm256_maskload_ps(pw+0, mask);
-						__m256 w1a = _mm256_maskload_ps(pw+5, mask);
-						__m256 w2a = _mm256_maskload_ps(pw+10, mask);
-						__m256 w3a = _mm256_maskload_ps(pw+15, mask);
-						__m256 w4a = _mm256_maskload_ps(pw+20, mask);
-						dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
-						dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
-						dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
-						dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
-						dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=wstep) {
+					if (!tbl_.is_connected(outc, inc)) {
+						continue;
 					}
-					widx += wstep;
+					__m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
+					const float* pw = (const float*)&w[widx];
+					__m256 w0a = _mm256_maskload_ps(pw+0, mask);
+					__m256 w1a = _mm256_maskload_ps(pw+5, mask);
+					__m256 w2a = _mm256_maskload_ps(pw+10, mask);
+					__m256 w3a = _mm256_maskload_ps(pw+15, mask);
+					__m256 w4a = _mm256_maskload_ps(pw+20, mask);
+					dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
+					dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
+					dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
+					dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
+					dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
 				}
 				_mm256_storeu_ps(delta_dst0, dst0);
 				_mm256_storeu_ps(delta_dst1, dst1);
@@ -749,7 +748,6 @@ public:
 					}
 				}
 			});
-
 		}
 
         // accumulate dw
@@ -774,21 +772,21 @@ public:
 				_mm256_storeu_ps(&floats[20], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 4]));
 				cnn_size_t widx = 25 * inc;
 				cnn_size_t widx_delta = 25 * in_.depth_;
-				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-					if (tbl_.is_connected(outc, inc)) {
-						__m256 delta = _mm256_broadcast_ss(&curr_delta[outc]);
-						__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
-						__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
-						__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
-						w0 = _mm256_fmadd_ps(s.prevos0, delta, w0);
-						w1 = _mm256_fmadd_ps(s.prevos1, delta, w1);
-						w2 = _mm256_fmadd_ps(s.prevos2, delta, w2);
-						_mm256_storeu_ps(&dW[widx+0], w0);
-						_mm256_storeu_ps(&dW[widx+8], w1);
-						_mm256_storeu_ps(&dW[widx+16], w2);
-						dW[widx+24] += s.prevos3.m256_f32[0] * delta.m256_f32[0];
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=widx_delta) {
+					if (!tbl_.is_connected(outc, inc)) {
+						continue;
 					}
-					widx += widx_delta;
+					__m256 delta = _mm256_broadcast_ss(&curr_delta[outc]);
+					__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
+					__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
+					__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
+					w0 = _mm256_fmadd_ps(s.prevos0, delta, w0);
+					w1 = _mm256_fmadd_ps(s.prevos1, delta, w1);
+					w2 = _mm256_fmadd_ps(s.prevos2, delta, w2);
+					_mm256_storeu_ps(&dW[widx+0], w0);
+					_mm256_storeu_ps(&dW[widx+8], w1);
+					_mm256_storeu_ps(&dW[widx+16], w2);
+					dW[widx+24] += s.prevos3.m256_f32[0] * delta.m256_f32[0];
 				}
 #else
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
@@ -811,17 +809,49 @@ public:
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
 					if (!tbl_.is_connected(outc, inc)) continue;
-					const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
+					const float_t* delta = &curr_delta[out_.get_index(0, 0, outc)];
 
+#ifdef CNN_USE_AVX
+					// prepare load-mask beforehand
+					size_t nblocks = out_.width_ >> 3;
+					static const int32_t masks[] = {
+						-1, -1, -1, -1,
+						-1, -1, -1, -1,
+						0, 0, 0, 0,
+						0, 0, 0, 0,
+					};
+					size_t remainder = out_.width_ & 7;
+					__m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
+#endif
 					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
 						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
-							float_t dst = float_t(0);
-							const float_t * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
-
+							const float_t* prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
+#ifdef CNN_USE_AVX
+							__m256 dst = _mm256_setzero_ps();
+							__m256 a, b;
 							for (cnn_size_t y = 0; y < out_.height_; y++) {
+								// vectorize::dot
+								const float* pa = prevo + y * in_padded_.width_;
+								const float* pb = delta + y * out_.width_;
+								for (size_t i=0; i<nblocks; ++i) {
+									a = _mm256_loadu_ps(pa+8*i);
+									b = _mm256_loadu_ps(pb+8*i);
+									dst = _mm256_fmadd_ps(a, b, dst);
+								}
+								if (remainder) {
+									a = _mm256_maskload_ps(pa+8*nblocks, mask);
+									b = _mm256_maskload_ps(pb+8*nblocks, mask);
+									dst = _mm256_fmadd_ps(a, b, dst);
+								}
+							}
+							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += sum8(dst);
+#else
+							float_t dst = vectorize::dot(prevo, delta, out_.width_);
+							for (cnn_size_t y = 1; y < out_.height_; y++) {
 								dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
 							}
 							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
+#endif
 						}
 					}
 				}
