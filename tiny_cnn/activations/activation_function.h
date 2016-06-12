@@ -29,6 +29,11 @@
 #include <algorithm>
 
 #ifdef CNN_USE_SSE
+#ifdef CNN_USE_AVX
+#ifndef __AVX2__
+#define __AVX2__
+#endif
+#endif
 #include "fmath/fmath.hpp"
 #endif
 
@@ -49,6 +54,11 @@ public:
     virtual ~function() = default;
 
     virtual float_t f(const vec_t& v, cnn_size_t index) const = 0;
+	virtual void f(vec_t& dst, const vec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
 
     // dfi/dyi
     virtual float_t df(float_t y) const = 0;
@@ -108,6 +118,7 @@ public:
 class softmax : public function {
 public:
     float_t f(const vec_t& v, cnn_size_t i) const override {
+        // TODO: eradicate the intensive common computations by precomputing alpha and denom variables in advance
         float_t alpha = *std::max_element(v.begin(), v.end());
         float_t numer = std::exp(v[i] - alpha);
         float_t denom = float_t(0);
@@ -149,6 +160,33 @@ public:
         return ret;
 #endif
     }
+
+#ifdef CNN_USE_AVX
+	virtual void f(vec_t& dst, const vec_t& v) const override {
+		assert(dst.size() == v.size());
+		size_t sz = v.size();
+		size_t nblocks = sz >> 3;
+		for (size_t i = 0; i<nblocks; ++i) {
+			__m256 x = _mm256_load_ps(&v[i*8]);
+			__m256 ep = fmath::exp_ps256(x);
+			__m256 mx = _mm256_sub_ps(_mm256_setzero_ps(), x);
+			__m256 em = fmath::exp_ps256(mx);
+			__m256 ep_minus_em = _mm256_sub_ps(ep, em);
+			__m256 ep_plus_em = _mm256_add_ps(ep, em);
+#if 1
+			__m256 ret = _mm256_div_ps(ep_minus_em, ep_plus_em);
+#else
+			__m256 rcp_ep_plus_em = _mm256_rcp_ps(ep_plus_em);
+			// TODO: perform NR iteration to improve numerical precision.
+			__m256 ret = _mm256_mul_ps(ep_minus_em, rcp_ep_plus_em);
+#endif
+			_mm256_store_ps(&dst[i*8], ret);
+		}
+		for (size_t i=(nblocks << 3); i<sz; ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
     /*float_t f(float_t x) const {

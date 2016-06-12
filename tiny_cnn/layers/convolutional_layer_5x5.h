@@ -435,9 +435,13 @@ public:
 	        });
 		}
 
+#ifdef CNN_USE_AVX
+		h_.f(out, a);
+#else
         for_i(parallelize_, out_.size(), [&](int i) {
             out[i] = h_.f(a, i);
         });
+#endif
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
