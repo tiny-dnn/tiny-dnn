@@ -610,7 +610,7 @@ inline void expd_v(double *px, size_t n)
 	}
 #endif
 	for (size_t i = 0; i < r; i++) {
-		px[i] = exp(px[i]);
+		px[i] = expd(px[i]);
 	}
 }
 

@@ -147,22 +147,36 @@ public:
 class tan_h : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override {
+
 #ifdef CNN_USE_SSE
-        const float_t ep = fmath::exp(v[i]);
-        const float_t em = fmath::exp(-v[i]); 
-		float_t ret = (ep - em) / (ep + em);
+	float fimpl(float v) const {
+        const float ep = fmath::exp(v);
+        const float em = fmath::exp(-v); 
+		float ret = (ep - em) / (ep + em);
         return ret;
+	}
+
+	double fimpl(double v) const {
+        const double ep = fmath::expd(v);
+        const double em = fmath::expd(-v); 
+		double ret = (ep - em) / (ep + em);
+        return ret;
+	}
 #else
+	float_t fimpl(float_t v) const {
         const float_t ep = std::exp(v[i]);
         const float_t em = std::exp(-v[i]); 
 		float_t ret = (ep - em) / (ep + em);
         return ret;
+	}
 #endif
+
+    float_t f(const vec_t& v, cnn_size_t i) const override {
+		return fimpl(v[i]);
     }
 
 #ifdef CNN_USE_AVX
-	virtual void f(vec_t& dst, const vec_t& v) const override {
+	void fimpl(fvec_t& dst, const fvec_t& v) const {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 3;
@@ -183,8 +197,19 @@ public:
 			_mm256_store_ps(&dst[i*8], ret);
 		}
 		for (size_t i=(nblocks << 3); i<sz; ++i) {
-			dst[i] = f(v, i);
+			dst[i] = fimpl(v[i]);
 		}
+	}
+
+	void fimpl(dvec_t& dst, const dvec_t& v) const {
+		// TODO: vectorize
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = fimpl(v[i]);
+		}
+	}
+
+	virtual void f(vec_t& dst, const vec_t& v) const override {
+		return fimpl(dst, v);
 	}
 #endif
 
