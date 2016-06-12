@@ -235,12 +235,68 @@ public:
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
+		forward_propagation_impl(index, in_data, out_data);
+	}
+
+    void forward_propagation_impl(cnn_size_t index,
+                                  const std::vector<dvec_t*>& in_data,
+                                  std::vector<dvec_t*>& out_data) {
         copy_and_pad_input(*in_data[0], static_cast<int>(index));
-        const vec_t& w   = *in_data[1];
-		const vec_t& bias = *in_data[2];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
-        const vec_t& in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
+        const dvec_t& W   = *in_data[1];
+        dvec_t&       out = *out_data[0];
+        dvec_t&       a   = *out_data[1];
+        const dvec_t &in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
+        
+        std::fill(a.begin(), a.end(), double(0));
+
+        for_i(parallelize_, out_.depth_, [&](int o) {
+            for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
+                if (!tbl_.is_connected(o, inc)) continue;
+
+                const double *pw = &W[weight_.get_index(0, 0, in_.depth_ * o + inc)];
+                const double *pi = &in[in_padded_.get_index(0, 0, inc)];
+                double *pa = &a[out_.get_index(0, 0, o)];
+
+                for (cnn_size_t y = 0; y < out_.height_; y++) {
+                    for (cnn_size_t x = 0; x < out_.width_; x++) {
+                        const double * ppw = pw;
+                        const double * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
+                        double sum = double(0);
+
+                        // should be optimized for small kernel(3x3,5x5)
+                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                                sum += *ppw++ * ppi[wy * in_padded_.width_ + wx];
+                            }
+                        }
+                        pa[y * out_.width_ + x] += sum;
+						//printf("%d %d %d %f\n", inc, y, x, sum);
+                    }
+                }
+            }
+
+            if (has_bias_) {
+                const dvec_t& bias = *in_data[2];
+                double *pa = &a[out_.get_index(0, 0, o)];
+                double b = bias[o];
+                std::for_each(pa, pa + out_.width_ * out_.height_, [&](double& f) { f += b; });
+            }
+        });
+
+        for_i(parallelize_, out_.size(), [&](int i) {
+            out[i] = h_.f(a, i);
+        });
+    }
+
+    void forward_propagation_impl(cnn_size_t index,
+                                  const std::vector<fvec_t*>& in_data,
+                                  std::vector<fvec_t*>& out_data) {
+        copy_and_pad_input(*in_data[0], static_cast<int>(index));
+        const fvec_t& w   = *in_data[1];
+		const fvec_t& bias = *in_data[2];
+        fvec_t&       out = *out_data[0];
+        fvec_t&       a   = *out_data[1];
+        const fvec_t& in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
 
 #if 0
 #ifdef CNN_USE_AVX
@@ -255,7 +311,7 @@ public:
 			a[i] = 0;
 		}
 #else
-		std::fill(a.begin(), a.end(), float_t(0));
+		std::fill(a.begin(), a.end(), float(0));
 #endif
 #endif
 
@@ -297,8 +353,8 @@ public:
 #endif
 		{
 	        for_i(parallelize_, out_.depth_, [&](int o) {
-				float_t* pa = &a[out_.get_index(0, 0, o)];
-				float_t b = has_bias_ ? bias[o] : 0;
+				float* pa = &a[out_.get_index(0, 0, o)];
+				float b = has_bias_ ? bias[o] : 0;
 				const size_t area = out_.area();
 #ifdef CNN_USE_AVX
 				__m256 b2 = _mm256_set1_ps(b);
@@ -355,7 +411,7 @@ public:
 					float w43 = *pw++;
 					float w44 = *pw++;
 #endif
-					float_t* ppa = pa;
+					float* ppa = pa;
 	                for (cnn_size_t y = 0; y < out_.height_; y++) {
 #ifdef CNN_USE_AVX
 						const float* pi0 = (pi + y * stride);
@@ -391,9 +447,9 @@ public:
 	                    }
 #else
 	                    for (cnn_size_t x = 0; x < out_.width_; x++) {
-	                        const float_t * ppw = pw;
-	                        const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
-							float_t sum = float_t(0);
+	                        const float * ppw = pw;
+	                        const float * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
+							float sum = float(0);
 							sum += w00 * ppi[0];
 							sum += w01 * ppi[1];
 							sum += w02 * ppi[2];
@@ -444,7 +500,7 @@ public:
 #endif
     }
 
-    float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
+    float& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
         vec_t* w = this->get_weights()[0];
         return w[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
@@ -454,14 +510,103 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
+		back_propagation_impl(index, in_data, out_data, out_grad, in_grad);
+	}
+
+    void back_propagation_impl(cnn_size_t             index,
+                          const std::vector<dvec_t*>& in_data,
+                          const std::vector<dvec_t*>& out_data,
+                          std::vector<dvec_t*>&       out_grad,
+                          std::vector<dvec_t*>&       in_grad) {
+        conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
+
+        const dvec_t& prev_out = *(cws.prev_out_padded_);
+        const dvec_t& W = *in_data[1];
+        dvec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        dvec_t&       dW = *in_grad[1];
+        dvec_t&       curr_delta = *out_grad[1];
+
+        assert(W.size() == weight_.size());
+        assert(dW.size() == weight_.size());
+        assert(curr_delta.size() == out_shape()[0].size());
+
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        std::fill(prev_delta->begin(), prev_delta->end(), double(0));
+
+        // propagate delta to previous layer
+        for_i(in_.depth_, [&](int inc) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+                if (!tbl_.is_connected(outc, inc)) continue;
+
+                const double *pw = &W[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+                const double *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
+                double *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+
+                for (cnn_size_t y = 0; y < out_.height_; y++) {
+                    for (cnn_size_t x = 0; x < out_.width_; x++) {
+                        const double * ppw = pw;
+                        const double ppdelta_src = pdelta_src[y * out_.width_ + x];
+                        double * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
+
+                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                                ppdelta_dst[wy * in_padded_.width_ + wx] += *ppw++ * ppdelta_src;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // accumulate dw
+        for_i(in_.depth_, [&](int inc) {
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+
+                if (!tbl_.is_connected(outc, inc)) continue;
+
+                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                        double dst = double(0);
+                        const double * prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
+                        const double * delta = &curr_delta[out_.get_index(0, 0, outc)];
+
+                        for (cnn_size_t y = 0; y < out_.height_; y++) {
+                            dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
+                        }
+                        dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
+                    }
+                }
+            }
+        });
+
+        // accumulate db
+        if (has_bias_) {
+            dvec_t& db = *in_grad[2];
+
+            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+                const double *delta = &curr_delta[out_.get_index(0, 0, outc)];
+                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, double(0));
+            }
+        }
+
+        if (pad_type_ == padding::same)
+            copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
+    }
+
+    void back_propagation_impl(cnn_size_t             index,
+                          const std::vector<fvec_t*>& in_data,
+                          const std::vector<fvec_t*>& out_data,
+                          std::vector<fvec_t*>&       out_grad,
+                          std::vector<fvec_t*>&       in_grad) {
 
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
-        const vec_t& prev_out = *(cws.prev_out_padded_);
-        const vec_t& w = *in_data[1];
-        vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
-        vec_t&       dW = *in_grad[1];
-        vec_t&       curr_delta = *out_grad[1];
+        const fvec_t& prev_out = *(cws.prev_out_padded_);
+        const fvec_t& w = *in_data[1];
+        fvec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        fvec_t&       dW = *in_grad[1];
+        fvec_t&       curr_delta = *out_grad[1];
 
         assert(w.size() == weight_.size());
         assert(dW.size() == weight_.size());
@@ -481,7 +626,7 @@ public:
 			(*prev_delta)[i] = 0;
 		}
 #else
-        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
+        std::fill(prev_delta->begin(), prev_delta->end(), float(0));
 #endif
 
 #ifdef CNN_USE_AVX
@@ -491,9 +636,9 @@ public:
 			for_i(in_.depth_, [&](int inc) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
-					const float_t* pw = &w[25 * (in_.depth_ * outc + inc)];
-					const float_t* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-					float_t* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
+					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
+					float* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 					__m256 w0a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w1a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w2a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
@@ -515,11 +660,11 @@ public:
 					__m256 w3d = leftShift<12>(w3a);
 					__m256 w4d = leftShift<12>(w4a);
 					for (cnn_size_t y = 0; y < out_.height_; y++) {
-						float_t* delta_dst0 = pdelta_dst;
-						float_t* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
-						float_t* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
-						float_t* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
-						float_t* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
+						float* delta_dst0 = pdelta_dst;
+						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
+						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
+						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
+						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						cnn_size_t nblocks = out_.width_ >> 2;
 						for (cnn_size_t n = 0; n < nblocks; ++n) {
 							__m128 delta_src = _mm_loadu_ps(pdelta_src + n * 4);
@@ -594,12 +739,12 @@ public:
 			});
 		}else if (out_.height_ == 1 && out_.width_ == 1) {
 			for_i(in_.depth_, [&](int inc) {
-				float_t* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
-				float_t* delta_dst0 = pdelta_dst;
-				float_t* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
-				float_t* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
-				float_t* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
-				float_t* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
+				float* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+				float* delta_dst0 = pdelta_dst;
+				float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
+				float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
+				float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
+				float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 				__m256 dst0 = _mm256_loadu_ps(delta_dst0);
 				__m256 dst1 = _mm256_loadu_ps(delta_dst1);
 				__m256 dst2 = _mm256_loadu_ps(delta_dst2);
@@ -635,13 +780,13 @@ public:
 #endif
 		{
 			for_i(in_.depth_, [&](int inc) {
-				float_t* pdelta_dst_org = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+				float* pdelta_dst_org = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 
-					const float_t* pw = &w[25 * (in_.depth_ * outc + inc)];
-					const float_t* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-					float_t* pdelta_dst = pdelta_dst_org;
+					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
+					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
+					float* pdelta_dst = pdelta_dst_org;
 #ifdef CNN_USE_AVX
 					__m256 w0a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w1a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
@@ -677,11 +822,11 @@ public:
 #endif
 					for (cnn_size_t y = 0; y < out_.height_; y++) {
 #ifdef CNN_USE_AVX
-						float_t* delta_dst0 = pdelta_dst;
-						float_t* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
-						float_t* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
-						float_t* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
-						float_t* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
+						float* delta_dst0 = pdelta_dst;
+						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
+						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
+						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
+						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						for (cnn_size_t x = 0; x < out_.width_; x++) {
 							__m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
 							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
@@ -708,13 +853,13 @@ public:
 						pdelta_src += out_.width_;
 						pdelta_dst += h_stride_ * in_padded_.width_;
 #else
-						float_t* delta_dst0 = pdelta_dst;
-						float_t* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
-						float_t* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
-						float_t* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
-						float_t* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
+						float* delta_dst0 = pdelta_dst;
+						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
+						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
+						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
+						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						for (cnn_size_t x = 0; x < out_.width_; x++) {
-							const float_t delta_src = pdelta_src[x];
+							const float delta_src = pdelta_src[x];
 							delta_dst0[0] += w00 * delta_src;
 							delta_dst0[1] += w01 * delta_src;
 							delta_dst0[2] += w02 * delta_src;
@@ -795,11 +940,11 @@ public:
 #else
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
-					const float_t delta = curr_delta[out_.get_index(0, 0, outc)];
+					const float delta = curr_delta[out_.get_index(0, 0, outc)];
 					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
 						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
 							cnn_size_t idx = in_padded_.get_index(wx, wy, inc);
-							const float_t prevo = prev_out[idx];
+							const float prevo = prev_out[idx];
 							// vectorize::dot
 							cnn_size_t widx = weight_.get_index(wx, wy, in_.depth_ * outc + inc);
 							dW[widx] += prevo * delta;
@@ -813,7 +958,7 @@ public:
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
 					if (!tbl_.is_connected(outc, inc)) continue;
-					const float_t* delta = &curr_delta[out_.get_index(0, 0, outc)];
+					const float* delta = &curr_delta[out_.get_index(0, 0, outc)];
 
 #ifdef CNN_USE_AVX
 					// prepare load-mask beforehand
@@ -829,7 +974,7 @@ public:
 #endif
 					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
 						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
-							const float_t* prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
+							const float* prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
 #ifdef CNN_USE_AVX
 							__m256 dst = _mm256_setzero_ps();
 							__m256 a, b;
@@ -850,7 +995,7 @@ public:
 							}
 							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += sum8(dst);
 #else
-							float_t dst = vectorize::dot(prevo, delta, out_.width_);
+							float dst = vectorize::dot(prevo, delta, out_.width_);
 							for (cnn_size_t y = 1; y < out_.height_; y++) {
 								dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
 							}
@@ -864,15 +1009,15 @@ public:
 
         // accumulate db
         if (has_bias_) {
-            vec_t& db = *in_grad[2];
+            fvec_t& db = *in_grad[2];
 			if (out_.width_ == 1 && out_.height_ == 1) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					db[outc] += curr_delta[outc];
 				}
 			}else {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-					const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
-					db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
+					const float *delta = &curr_delta[out_.get_index(0, 0, outc)];
+					db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float(0));
 				}
 			}
         }
