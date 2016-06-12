@@ -59,7 +59,7 @@
 #ifdef CNN_USE_OMP
 #define CNN_TASK_SIZE 100
 #else
-#define CNN_TASK_SIZE 8
+#define CNN_TASK_SIZE std::thread::hardware_concurrency()
 #endif
 
 namespace tiny_cnn {
