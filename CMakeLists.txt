@@ -148,8 +148,26 @@ IF (BUILD_EXAMPLES)
                            ${tiny_cnn_hrds} ${proto_file})
             target_link_libraries(example_caffe_converter
                                   ${PROTOBUF_LIBRARIES} ${OpenCV_LIBS})
+# As of Ubuntu 14.04 protoc is no longer a part of libprotobuf-dev package
+# and should be installed separately as in: sudo apt-get install protobuf-compiler
+        ELSEIF (EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
+            message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
+            IF (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
+                PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
+                IF (EXISTS ${PROTO_HDRS})
+                    file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
+                    file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
+                ENDIF()
+                add_executable(example_caffe_converter
+                               examples/caffe_converter/caffe_converter.cpp
+                               ${tiny_cnn_hrds} ${PROTO_SRCS} ${PROTO_HDRS})
+                target_link_libraries(example_caffe_converter
+                                      ${PROTOBUF_LIBRARIES} ${OpenCV_LIBS})
+            ELSE()
+                MESSAGE(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
+            ENDIF()
         ELSE()
-            MESSAGE(STATUS "Cannot generate Caffe Importer. Please generate Protobuf file.")
+            MESSAGE(STATUS "Proto is not linked correctly, please make sure file exists.")
         ENDIF()
     ELSE()
         MESSAGE(STATUS "Cannot generate Caffe Importer. Please install Protobuf.")
