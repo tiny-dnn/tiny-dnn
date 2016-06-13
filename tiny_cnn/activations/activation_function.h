@@ -28,8 +28,8 @@
 #include "tiny_cnn/util/util.h"
 #include <algorithm>
 
-#ifdef CNN_USE_SSE
-#ifdef CNN_USE_AVX
+#ifdef CNN_USE_HERUMI_FMATH
+#ifdef CNN_USE_AVX2
 #ifndef __AVX2__
 #define __AVX2__
 #endif
@@ -148,7 +148,7 @@ class tan_h : public function {
 public:
     using function::df;
 
-#ifdef CNN_USE_SSE
+#ifdef CNN_USE_HERUMI_FMATH
 	float fimpl(float v) const {
         const float ep = fmath::exp(v);
         const float em = fmath::exp(-v); 
@@ -162,29 +162,63 @@ public:
 		double ret = (ep - em) / (ep + em);
         return ret;
 	}
-#else
-	float_t fimpl(float_t v) const {
-        const float_t ep = std::exp(v[i]);
-        const float_t em = std::exp(-v[i]); 
-		float_t ret = (ep - em) / (ep + em);
+#else // #ifdef CNN_USE_HERUMI_FMATH
+	float fimpl(float v) const {
+        const float ep = std::exp(v);
+        const float em = std::exp(-v);
+		float ret = (ep - em) / (ep + em);
         return ret;
 	}
-#endif
+	double fimpl(double v) const {
+		const double ep = std::exp(v);
+		const double em = std::exp(-v);
+		double ret = (ep - em) / (ep + em);
+		return ret;
+	}
+#endif // #ifdef CNN_USE_HERUMI_FMATH
 
     float_t f(const vec_t& v, cnn_size_t i) const override {
 		return fimpl(v[i]);
     }
 
 #ifdef CNN_USE_AVX
+
+	static inline __m256 exp_ps(__m256 x)
+	{
+#ifdef CNN_USE_HERUMI_FMATH
+
+#ifdef CNN_USE_AVX2
+		return fmath::exp_ps256(x);
+#else
+		__m128 lo = fmath::exp_ps(_mm256_castps256_ps128(x));
+		__m128 hi = fmath::exp_ps(_mm256_extractf128_ps(x, 1));
+		return _mm256_setr_m128(lo, hi);
+#endif
+
+#else // #ifdef CNN_USE_HERUMI_FMATH
+		//_mm_extract_ps(
+		//_MM_EXTRACT_FLOAT(
+		union {
+			__m256 y;
+			float s[8];
+		};
+		y = x;
+		for (size_t i=0; i<8; ++i) {
+			s[i] = std::exp(s[i]);
+		}
+		return y;
+#endif // #ifdef CNN_USE_HERUMI_FMATH
+	}
+
 	void fimpl(fvec_t& dst, const fvec_t& v) const {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 3;
 		for (size_t i = 0; i<nblocks; ++i) {
 			__m256 x = _mm256_load_ps(&v[i*8]);
-			__m256 ep = fmath::exp_ps256(x);
+			__m256 ep = exp_ps(x);
 			__m256 mx = _mm256_sub_ps(_mm256_setzero_ps(), x);
-			__m256 em = fmath::exp_ps256(mx);
+			__m256 em = exp_ps(mx);
 			__m256 ep_minus_em = _mm256_sub_ps(ep, em);
 			__m256 ep_plus_em = _mm256_add_ps(ep, em);
 #if 1
@@ -201,8 +235,17 @@ public:
 		}
 	}
 
+#else
+
+	void fimpl(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = fimpl(v[i]);
+		}
+	}
+
+#endif // #ifdef CNN_USE_AVX
+
 	void fimpl(dvec_t& dst, const dvec_t& v) const {
-		// TODO: vectorize
 		for (size_t i=0; i<v.size(); ++i) {
 			dst[i] = fimpl(v[i]);
 		}
@@ -211,7 +254,6 @@ public:
 	virtual void f(vec_t& dst, const vec_t& v) const override {
 		return fimpl(dst, v);
 	}
-#endif
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
     /*float_t f(float_t x) const {

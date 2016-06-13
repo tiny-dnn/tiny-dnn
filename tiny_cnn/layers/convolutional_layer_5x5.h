@@ -30,6 +30,8 @@
 //#undef CNN_USE_AVX
 
 #ifdef CNN_USE_AVX
+
+// sum __m256 horizontally (sadly, _mm256_hadd_ps isn't good enough)
 // http://stackoverflow.com/a/13222410/4699324
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
 inline float sum8(__m256 x) {
@@ -54,6 +56,11 @@ inline float sum8(__m256 x) {
     return _mm_cvtss_f32(sum);
 }
 
+#endif // #ifdef CNN_USE_AVX
+
+// byte shifting YMM register across 128-bit lanes (shift amount is immediate)
+#ifdef CNN_USE_AVX2
+
 template <int n>
 inline __m256i leftShift(__m256i a)
 {
@@ -69,11 +76,70 @@ inline __m256 leftShift(__m256 a)
 {
 	return _mm256_castsi256_ps(leftShift<n>(_mm256_castps_si256(a)));
 }
+
+#elif defined(CNN_USE_AVX)
+
+template <int n>
+inline __m256 leftShift(__m256 a)
+{
+	static_assert(false);
+}
+
+// http://stackoverflow.com/q/19516585
+template <>
+inline __m256 leftShift<4>(__m256 x)
+{
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(2, 1, 0, 3));
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 41);
+	__m256 y = _mm256_blend_ps(t0, t1, 0x11);
+	return y;
+}
+
+template <>
+inline __m256 leftShift<8>(__m256 x)
+{
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(1, 0, 3, 2));
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 41);
+	__m256 y = _mm256_blend_ps(t0, t1, 0x33);
+	return y;
+}
+
+template <>
+inline __m256 leftShift<12>(__m256 x)
+{
+	__m256 y = _mm256_permute2f128_ps(x, x, 41);
+	return y;
+}
+
+#endif
+
+#ifdef CNN_USE_AVX2
+
+// Make use of fused multiply add instruction.
+// As a matter of fact, fmadd isn't part of AVX2 instruction set but meh...
+// https://en.wikipedia.org/wiki/FMA_instruction_set#CPUs_with_FMA3
+
+inline __m256 madd(__m256 a, __m256 b, __m256 c)
+{
+	return _mm256_fmadd_ps(a, b, c);
+}
+
+#elif defined(CNN_USE_AVX)
+
+inline __m256 madd(__m256 a, __m256 b, __m256 c)
+{
+	// multiply & add, 2 instructions, less precision
+	return _mm256_add_ps(
+		_mm256_mul_ps(a, b),
+		c
+	);
+}
+
 #endif
 
 namespace tiny_cnn {
 
-// optimization for 5x5 kernel
+// optimized for 5x5 kernel
 
 /**
  * 2D convolution layer
@@ -298,23 +364,6 @@ public:
         fvec_t&       a   = *out_data[1];
         const fvec_t& in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
 
-#if 0
-#ifdef CNN_USE_AVX
-		__m256 z = _mm256_setzero_ps();
-		size_t sz = a.size();
-		size_t cnt = sz / 16;
-		for (size_t i=0; i<cnt; ++i) {
-			_mm256_stream_ps(&a[i*16+0], z);
-			_mm256_stream_ps(&a[i*16+8], z);
-		}
-		for (size_t i=cnt*16; i<sz; ++i) {
-			a[i] = 0;
-		}
-#else
-		std::fill(a.begin(), a.end(), float(0));
-#endif
-#endif
-
 #ifdef CNN_USE_AVX
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
 		if (out_.height_ == 1 && out_.width_ == 1) {
@@ -340,17 +389,17 @@ public:
 					__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
 					__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
 					__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-					__m256 sum0 = _mm256_fmadd_ps(w0, i0, sum);
+					__m256 sum0 = madd(w0, i0, sum);
 					__m256 sum1 = _mm256_mul_ps(w1, i1);
-					sum0 = _mm256_fmadd_ps(w2, i2, sum0);
-					sum1 = _mm256_fmadd_ps(w3, i3, sum1);
-					sum0 = _mm256_fmadd_ps(w4, i4, sum0);
+					sum0 = madd(w2, i2, sum0);
+					sum1 = madd(w3, i3, sum1);
+					sum0 = madd(w4, i4, sum0);
 					sum = _mm256_add_ps(sum0, sum1);
 	            }
 				a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
 	        });
 		}else
-#endif
+#endif // #ifdef CNN_USE_AVX
 		{
 	        for_i(parallelize_, out_.depth_, [&](int o) {
 				float* pa = &a[out_.get_index(0, 0, o)];
@@ -366,11 +415,11 @@ public:
 				for (size_t i=cnt*16; i<area; ++i) {
 					pa[i] = b;
 				}
-#else
+#else // #ifdef CNN_USE_AVX
 				for (size_t i=0; i<area; ++i) {
 					pa[i] = b;
 				}
-#endif
+#endif // #ifdef CNN_USE_AVX
 				for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
 	                if (!tbl_.is_connected(o, inc)) continue;
 
@@ -384,7 +433,7 @@ public:
 					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
 					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
 					size_t stride = h_stride_ * in_padded_.width_;
-#else
+#else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
 					float w02 = *pw++;
@@ -410,7 +459,7 @@ public:
 					float w42 = *pw++;
 					float w43 = *pw++;
 					float w44 = *pw++;
-#endif
+#endif // #ifdef CNN_USE_AVX
 					float* ppa = pa;
 	                for (cnn_size_t y = 0; y < out_.height_; y++) {
 #ifdef CNN_USE_AVX
@@ -427,17 +476,11 @@ public:
 							__m256 i4 = _mm256_loadu_ps(pi4);
 							__m256 sum0 = _mm256_mul_ps(w0, i0);
 							__m256 sum1 = _mm256_mul_ps(w1, i1);
-							sum0 = _mm256_fmadd_ps(w2, i2, sum0);
-							sum1 = _mm256_fmadd_ps(w3, i3, sum1);
-							sum0 = _mm256_fmadd_ps(w4, i4, sum0);
+							sum0 = madd(w2, i2, sum0);
+							sum1 = madd(w3, i3, sum1);
+							sum0 = madd(w4, i4, sum0);
 							sum0 = _mm256_add_ps(sum0, sum1);
-#if 1
 							ppa[x] += sum8(sum0);
-#else
-							sum = _mm256_hadd_ps(sum, _mm256_setzero_ps());
-							sum = _mm256_hadd_ps(sum, _mm256_setzero_ps());
-	                        ppa[x] += sum.m256_f32[0] + sum.m256_f32[4];
-#endif
 	//						printf("%d %d %d %f\n", inc, y, x, ppa[x]);
 							pi0 += w_stride_;
 							pi1 += w_stride_;
@@ -445,7 +488,7 @@ public:
 							pi3 += w_stride_;
 							pi4 += w_stride_;
 	                    }
-#else
+#else // #ifdef CNN_USE_AVX
 	                    for (cnn_size_t x = 0; x < out_.width_; x++) {
 	                        const float * ppw = pw;
 	                        const float * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
@@ -483,7 +526,7 @@ public:
 	                        ppa[x] += sum;
 	//						printf("%d %d %d %f\n", inc, y, x, sum);
 	                    }
-#endif
+#endif // #ifdef CNN_USE_AVX
 						ppa += out_.width_;
 	                }
 	            }
@@ -491,13 +534,8 @@ public:
 	        });
 		}
 
-#ifdef CNN_USE_AVX
+		// apply acativation function
 		h_.f(out, a);
-#else
-        for_i(parallelize_, out_.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
-#endif
     }
 
     float& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
@@ -625,9 +663,9 @@ public:
 		for (size_t i=cnt*16; i<sz; ++i) {
 			(*prev_delta)[i] = 0;
 		}
-#else
+#else // #ifdef CNN_USE_AVX
         std::fill(prev_delta->begin(), prev_delta->end(), float(0));
-#endif
+#endif // #ifdef CNN_USE_AVX
 
 #ifdef CNN_USE_AVX
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
@@ -678,26 +716,26 @@ public:
 							__m256 delta_src1 = _mm256_permute_ps(tmp, _MM_SHUFFLE(1, 1, 1, 1));
 							__m256 delta_src2 = _mm256_permute_ps(tmp, _MM_SHUFFLE(2, 2, 2, 2));
 							__m256 delta_src3 = _mm256_permute_ps(tmp, _MM_SHUFFLE(3, 3, 3, 3));
-							dst0 = _mm256_fmadd_ps(w0a, delta_src0, dst0);
-							dst1 = _mm256_fmadd_ps(w1a, delta_src0, dst1);
-							dst2 = _mm256_fmadd_ps(w2a, delta_src0, dst2);
-							dst3 = _mm256_fmadd_ps(w3a, delta_src0, dst3);
-							dst4 = _mm256_fmadd_ps(w4a, delta_src0, dst4);
-							dst0 = _mm256_fmadd_ps(w0b, delta_src1, dst0);
-							dst1 = _mm256_fmadd_ps(w1b, delta_src1, dst1);
-							dst2 = _mm256_fmadd_ps(w2b, delta_src1, dst2);
-							dst3 = _mm256_fmadd_ps(w3b, delta_src1, dst3);
-							dst4 = _mm256_fmadd_ps(w4b, delta_src1, dst4);
-							dst0 = _mm256_fmadd_ps(w0c, delta_src2, dst0);
-							dst1 = _mm256_fmadd_ps(w1c, delta_src2, dst1);
-							dst2 = _mm256_fmadd_ps(w2c, delta_src2, dst2);
-							dst3 = _mm256_fmadd_ps(w3c, delta_src2, dst3);
-							dst4 = _mm256_fmadd_ps(w4c, delta_src2, dst4);
-							dst0 = _mm256_fmadd_ps(w0d, delta_src3, dst0);
-							dst1 = _mm256_fmadd_ps(w1d, delta_src3, dst1);
-							dst2 = _mm256_fmadd_ps(w2d, delta_src3, dst2);
-							dst3 = _mm256_fmadd_ps(w3d, delta_src3, dst3);
-							dst4 = _mm256_fmadd_ps(w4d, delta_src3, dst4);
+							dst0 = madd(w0a, delta_src0, dst0);
+							dst1 = madd(w1a, delta_src0, dst1);
+							dst2 = madd(w2a, delta_src0, dst2);
+							dst3 = madd(w3a, delta_src0, dst3);
+							dst4 = madd(w4a, delta_src0, dst4);
+							dst0 = madd(w0b, delta_src1, dst0);
+							dst1 = madd(w1b, delta_src1, dst1);
+							dst2 = madd(w2b, delta_src1, dst2);
+							dst3 = madd(w3b, delta_src1, dst3);
+							dst4 = madd(w4b, delta_src1, dst4);
+							dst0 = madd(w0c, delta_src2, dst0);
+							dst1 = madd(w1c, delta_src2, dst1);
+							dst2 = madd(w2c, delta_src2, dst2);
+							dst3 = madd(w3c, delta_src2, dst3);
+							dst4 = madd(w4c, delta_src2, dst4);
+							dst0 = madd(w0d, delta_src3, dst0);
+							dst1 = madd(w1d, delta_src3, dst1);
+							dst2 = madd(w2d, delta_src3, dst2);
+							dst3 = madd(w3d, delta_src3, dst3);
+							dst4 = madd(w4d, delta_src3, dst4);
 							_mm256_storeu_ps(delta_dst0, dst0);
 							_mm256_storeu_ps(delta_dst1, dst1);
 							_mm256_storeu_ps(delta_dst2, dst2);
@@ -716,11 +754,11 @@ public:
 							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
 							__m256 dst3 = _mm256_loadu_ps(delta_dst3);
 							__m256 dst4 = _mm256_loadu_ps(delta_dst4);
-							dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
-							dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
-							dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
-							dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
-							dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+							dst0 = madd(w0a, delta_src, dst0);
+							dst1 = madd(w1a, delta_src, dst1);
+							dst2 = madd(w2a, delta_src, dst2);
+							dst3 = madd(w3a, delta_src, dst3);
+							dst4 = madd(w4a, delta_src, dst4);
 							_mm256_storeu_ps(delta_dst0, dst0);
 							_mm256_storeu_ps(delta_dst1, dst1);
 							_mm256_storeu_ps(delta_dst2, dst2);
@@ -763,11 +801,11 @@ public:
 					__m256 w2a = _mm256_maskload_ps(pw+10, mask);
 					__m256 w3a = _mm256_maskload_ps(pw+15, mask);
 					__m256 w4a = _mm256_maskload_ps(pw+20, mask);
-					dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
-					dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
-					dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
-					dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
-					dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+					dst0 = madd(w0a, delta_src, dst0);
+					dst1 = madd(w1a, delta_src, dst1);
+					dst2 = madd(w2a, delta_src, dst2);
+					dst3 = madd(w3a, delta_src, dst3);
+					dst4 = madd(w4a, delta_src, dst4);
 				}
 				_mm256_storeu_ps(delta_dst0, dst0);
 				_mm256_storeu_ps(delta_dst1, dst1);
@@ -777,7 +815,7 @@ public:
 			});
 
 		}else
-#endif
+#endif // #ifdef CNN_USE_AVX
 		{
 			for_i(in_.depth_, [&](int inc) {
 				float* pdelta_dst_org = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
@@ -793,7 +831,7 @@ public:
 					__m256 w2a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w3a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w4a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-#else
+#else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
 					float w02 = *pw++;
@@ -819,7 +857,7 @@ public:
 					float w42 = *pw++;
 					float w43 = *pw++;
 					float w44 = *pw++;
-#endif
+#endif // #ifdef CNN_USE_AVX
 					for (cnn_size_t y = 0; y < out_.height_; y++) {
 #ifdef CNN_USE_AVX
 						float* delta_dst0 = pdelta_dst;
@@ -834,11 +872,11 @@ public:
 							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
 							__m256 dst3 = _mm256_loadu_ps(delta_dst3);
 							__m256 dst4 = _mm256_loadu_ps(delta_dst4);
-							dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
-							dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
-							dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
-							dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
-							dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+							dst0 = madd(w0a, delta_src, dst0);
+							dst1 = madd(w1a, delta_src, dst1);
+							dst2 = madd(w2a, delta_src, dst2);
+							dst3 = madd(w3a, delta_src, dst3);
+							dst4 = madd(w4a, delta_src, dst4);
 							_mm256_storeu_ps(delta_dst0, dst0);
 							_mm256_storeu_ps(delta_dst1, dst1);
 							_mm256_storeu_ps(delta_dst2, dst2);
@@ -852,7 +890,7 @@ public:
 						}
 						pdelta_src += out_.width_;
 						pdelta_dst += h_stride_ * in_padded_.width_;
-#else
+#else // #ifdef CNN_USE_AVX
 						float* delta_dst0 = pdelta_dst;
 						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
 						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
@@ -893,7 +931,7 @@ public:
 						}
 						pdelta_src += out_.width_;
 						pdelta_dst += h_stride_ * in_padded_.width_;
-#endif
+#endif // #ifdef CNN_USE_AVX
 					}
 				}
 			});
@@ -929,15 +967,15 @@ public:
 					__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
 					__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
 					__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
-					w0 = _mm256_fmadd_ps(s.prevos0, delta, w0);
-					w1 = _mm256_fmadd_ps(s.prevos1, delta, w1);
-					w2 = _mm256_fmadd_ps(s.prevos2, delta, w2);
+					w0 = madd(s.prevos0, delta, w0);
+					w1 = madd(s.prevos1, delta, w1);
+					w2 = madd(s.prevos2, delta, w2);
 					_mm256_storeu_ps(&dW[widx+0], w0);
 					_mm256_storeu_ps(&dW[widx+8], w1);
 					_mm256_storeu_ps(&dW[widx+16], w2);
 					dW[widx+24] += s.prevos3.m256_f32[0] * delta.m256_f32[0];
 				}
-#else
+#else // #ifdef CNN_USE_AVX
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float delta = curr_delta[out_.get_index(0, 0, outc)];
@@ -951,7 +989,7 @@ public:
 						}
 					}
 				}
-#endif
+#endif // #ifdef CNN_USE_AVX
 			});
 		}else {
 			for_i(in_.depth_, [&](int inc) {
@@ -971,7 +1009,7 @@ public:
 					};
 					size_t remainder = out_.width_ & 7;
 					__m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
-#endif
+#endif // #ifdef CNN_USE_AVX
 					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
 						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
 							const float* prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
@@ -985,22 +1023,22 @@ public:
 								for (size_t i=0; i<nblocks; ++i) {
 									a = _mm256_loadu_ps(pa+8*i);
 									b = _mm256_loadu_ps(pb+8*i);
-									dst = _mm256_fmadd_ps(a, b, dst);
+									dst = madd(a, b, dst);
 								}
 								if (remainder) {
 									a = _mm256_maskload_ps(pa+8*nblocks, mask);
 									b = _mm256_maskload_ps(pb+8*nblocks, mask);
-									dst = _mm256_fmadd_ps(a, b, dst);
+									dst = madd(a, b, dst);
 								}
 							}
 							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += sum8(dst);
-#else
+#else // #ifdef CNN_USE_AVX
 							float dst = vectorize::dot(prevo, delta, out_.width_);
 							for (cnn_size_t y = 1; y < out_.height_; y++) {
 								dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
 							}
 							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
-#endif
+#endif // #ifdef CNN_USE_AVX
 						}
 					}
 				}
