@@ -35,7 +35,7 @@
 #endif
 #endif
 #include "fmath/fmath.hpp"
-#endif
+#endif // #ifdef CNN_USE_HERUMI_FMATH
 
 namespace tiny_cnn {
 namespace activation {
@@ -175,7 +175,7 @@ public:
 		double ret = (ep - em) / (ep + em);
 		return ret;
 	}
-#endif // #ifdef CNN_USE_HERUMI_FMATH
+#endif // #ifdef CNN_USE_HERUMI_FMATH #else
 
     float_t f(const vec_t& v, cnn_size_t i) const override {
 		return fimpl(v[i]);
@@ -193,7 +193,7 @@ public:
 		__m128 lo = fmath::exp_ps(_mm256_castps256_ps128(x));
 		__m128 hi = fmath::exp_ps(_mm256_extractf128_ps(x, 1));
 		return _mm256_setr_m128(lo, hi);
-#endif
+#endif // #ifdef CNN_USE_AVX2
 
 #else // #ifdef CNN_USE_HERUMI_FMATH
 		//_mm_extract_ps(
@@ -207,7 +207,7 @@ public:
 			s[i] = std::exp(s[i]);
 		}
 		return y;
-#endif // #ifdef CNN_USE_HERUMI_FMATH
+#endif // #ifdef CNN_USE_HERUMI_FMATH #else
 	}
 
 	void fimpl(fvec_t& dst, const fvec_t& v) const {
@@ -235,7 +235,7 @@ public:
 		}
 	}
 
-#else
+#else // #ifdef CNN_USE_AVX
 
 	void fimpl(fvec_t& dst, const fvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
@@ -243,7 +243,7 @@ public:
 		}
 	}
 
-#endif // #ifdef CNN_USE_AVX
+#endif // #ifdef CNN_USE_AVX #else
 
 	void fimpl(dvec_t& dst, const dvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {

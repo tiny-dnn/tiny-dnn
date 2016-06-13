@@ -59,7 +59,7 @@ inline float sum8(__m256 x) {
 #endif // #ifdef CNN_USE_AVX
 
 // byte shifting YMM register across 128-bit lanes (shift amount is immediate)
-#ifdef CNN_USE_AVX2
+#if defined(CNN_USE_AVX2)
 
 template <int n>
 inline __m256i leftShift(__m256i a)
@@ -111,24 +111,25 @@ inline __m256 leftShift<12>(__m256 x)
 	return y;
 }
 
-#endif
+#endif // #if defined(CNN_USE_AVX2) #elif defined(CNN_USE_AVX)
 
-#ifdef CNN_USE_AVX2
+// idkw but using _mm256_fmadd_ps isn't any faster than the combi of _mm256_mul_ps and _mm256_add_ps in this case with my cpu(i5-4670), though YMMV.
+#if 0//defined(CNN_USE_AVX2)
 
-// Make use of fused multiply add instruction.
+// fused multiply add.
 // As a matter of fact, fmadd isn't part of AVX2 instruction set but meh...
 // https://en.wikipedia.org/wiki/FMA_instruction_set#CPUs_with_FMA3
 
-inline __m256 madd(__m256 a, __m256 b, __m256 c)
+__m256 madd(__m256 a, __m256 b, __m256 c)
 {
 	return _mm256_fmadd_ps(a, b, c);
 }
 
 #elif defined(CNN_USE_AVX)
 
-inline __m256 madd(__m256 a, __m256 b, __m256 c)
+// multiply and add. apparently.
+__m256 madd(__m256 a, __m256 b, __m256 c)
 {
-	// multiply & add, 2 instructions, less precision
 	return _mm256_add_ps(
 		_mm256_mul_ps(a, b),
 		c
