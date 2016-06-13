@@ -104,10 +104,8 @@ public:
             value += b[out2bias_[i]];
             a[i] = value;
         });
-
-        for_i(parallelize_, out2wi_.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+		assert(out.size() == out2wi_.size());
+		h_.f(out, a);
     }
 
     void back_propagation(cnn_size_t                index,

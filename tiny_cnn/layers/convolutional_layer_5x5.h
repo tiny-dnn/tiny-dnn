@@ -658,8 +658,8 @@ public:
 		size_t sz = prev_delta->size();
 		size_t cnt = sz / 16;
 		for (size_t i=0; i<cnt; ++i) {
-			_mm256_stream_ps(&(*prev_delta)[i*16+0], z);
-			_mm256_stream_ps(&(*prev_delta)[i*16+8], z);
+			_mm256_store_ps(&(*prev_delta)[i*16+0], z);
+			_mm256_store_ps(&(*prev_delta)[i*16+8], z);
 		}
 		for (size_t i=cnt*16; i<sz; ++i) {
 			(*prev_delta)[i] = 0;
@@ -1011,6 +1011,7 @@ public:
 					size_t remainder = out_.width_ & 7;
 					__m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
 #endif // #ifdef CNN_USE_AVX
+					cnn_size_t widx = weight_.get_index(0, 0, in_.depth_ * outc + inc);
 					for (cnn_size_t wy = 0; wy < 5 /* weight_.height_ */; wy++) {
 						for (cnn_size_t wx = 0; wx < 5 /* weight_.width_ */; wx++) {
 							const float* prevo = &prev_out[in_padded_.get_index(wx, wy, inc)];
@@ -1032,13 +1033,13 @@ public:
 									dst = madd(a, b, dst);
 								}
 							}
-							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += sum8(dst);
+							dW[widx++] += sum8(dst);
 #else // #ifdef CNN_USE_AVX
 							float dst = vectorize::dot(prevo, delta, out_.width_);
 							for (cnn_size_t y = 1; y < out_.height_; y++) {
 								dst += vectorize::dot(prevo + y * in_padded_.width_, delta + y * out_.width_, out_.width_);
 							}
-							dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
+							dW[widx++] += dst;
 #endif // #ifdef CNN_USE_AVX
 						}
 					}

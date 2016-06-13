@@ -149,36 +149,38 @@ public:
     using function::df;
 
 #ifdef CNN_USE_HERUMI_FMATH
-	float fimpl(float v) const {
+	float f(float v) const {
         const float ep = fmath::exp(v);
         const float em = fmath::exp(-v); 
 		float ret = (ep - em) / (ep + em);
         return ret;
 	}
 
-	double fimpl(double v) const {
+	double f(double v) const {
         const double ep = fmath::expd(v);
         const double em = fmath::expd(-v); 
 		double ret = (ep - em) / (ep + em);
         return ret;
 	}
 #else // #ifdef CNN_USE_HERUMI_FMATH
-	float fimpl(float v) const {
-        const float ep = std::exp(v);
-        const float em = std::exp(-v);
-		float ret = (ep - em) / (ep + em);
+	template <typename T>
+	inline T fimpl(T v) const {
+        const T ep = std::exp(v);
+        const T em = std::exp(-v);
+		T ret = (ep - em) / (ep + em);
         return ret;
 	}
-	double fimpl(double v) const {
-		const double ep = std::exp(v);
-		const double em = std::exp(-v);
-		double ret = (ep - em) / (ep + em);
-		return ret;
+
+	float f(float v) const {
+        return fimpl(v);
+	}
+	double f(double v) const {
+        return fimpl(v);
 	}
 #endif // #ifdef CNN_USE_HERUMI_FMATH #else
 
     float_t f(const vec_t& v, cnn_size_t i) const override {
-		return fimpl(v[i]);
+		return f(v[i]);
     }
 
 #ifdef CNN_USE_AVX
@@ -210,7 +212,7 @@ public:
 #endif // #ifdef CNN_USE_HERUMI_FMATH #else
 	}
 
-	void fimpl(fvec_t& dst, const fvec_t& v) const {
+	void f(fvec_t& dst, const fvec_t& v) const {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 3;
@@ -231,13 +233,13 @@ public:
 			_mm256_store_ps(&dst[i*8], ret);
 		}
 		for (size_t i=(nblocks << 3); i<sz; ++i) {
-			dst[i] = fimpl(v[i]);
+			dst[i] = f(v[i]);
 		}
 	}
 
 #else // #ifdef CNN_USE_AVX
 
-	void fimpl(fvec_t& dst, const fvec_t& v) const {
+	void f(fvec_t& dst, const fvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
 			dst[i] = fimpl(v[i]);
 		}
@@ -245,14 +247,10 @@ public:
 
 #endif // #ifdef CNN_USE_AVX #else
 
-	void fimpl(dvec_t& dst, const dvec_t& v) const {
+	void f(dvec_t& dst, const dvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
-			dst[i] = fimpl(v[i]);
+			dst[i] = f(v[i]);
 		}
-	}
-
-	virtual void f(vec_t& dst, const vec_t& v) const override {
-		return fimpl(dst, v);
 	}
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
@@ -263,6 +261,14 @@ public:
     }*/
 
     float_t df(float_t y) const override { return float_t(1) - sqr(y); }
+
+#ifdef CNN_USE_AVX
+	inline __m256 df_ps(__m256 y) const {
+		__m256 one = _mm256_set1_ps(1.0f);
+		return _mm256_sub_ps(one, _mm256_mul_ps(y, y));
+	}
+#endif
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(-0.8), float_t(0.8)); }
 
 private:

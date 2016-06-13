@@ -605,7 +605,7 @@ private:
         net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
 
         for (auto n : net_) {
-#if 0 //def _DEBUG
+#ifdef _DEBUG
             n->set_parallelize(false);
 #else
             n->set_parallelize(batch_size < CNN_TASK_SIZE);
