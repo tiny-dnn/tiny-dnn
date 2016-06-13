@@ -77,14 +77,78 @@ protected:
 struct adagrad : public stateful_optimizer<1> {
     adagrad() : alpha(float_t(0.01)), eps(float_t(1e-8)) {}
 
+	inline void update_impl(size_t begin, size_t end, fvec_t& g, const fvec_t& dW, fvec_t &W)
+	{
+#if 0 //def CNN_USE_AVX
+		size_t sz = end - begin;
+		size_t nblocks = sz >> 3;
+		float* pg = &g[begin];
+		const float* pdW = &dW[begin];
+		float* pW = &W[begin];
+
+		// TODO: align8
+
+		__m256 yalpha = _mm256_set1_ps(alpha);
+
+		// load hoisting
+		__m256 yg_next = _mm256_load_ps(pg);
+		__m256 ydw_next = _mm256_load_ps(pdW);
+		__m256 yW_next = _mm256_load_ps(pW);
+		for (cnn_size_t i=0; i<nblocks; ++i) {
+			__m256 yg = yg_next;
+			__m256 ydw = ydw_next;
+			__m256 yW = yW_next;
+			yg_next = _mm256_loadu_ps(pg+8);
+			ydw_next = _mm256_loadu_ps(pdW+8);
+			yW_next = _mm256_loadu_ps(pW+8);
+			
+#ifdef CNN_USE_AVX2
+			yg = _mm256_fmadd_ps(ydw, ydw, yg);
+#else
+			yg = _mm256_add_ps(yg, _mm256_mul_ps(ydw, ydw));
+#endif
+			yW = _mm256_sub_ps(yW, _mm256_mul_ps(yalpha, _mm256_mul_ps(ydw, _mm256_rsqrt_ps(yg))));
+			_mm256_store_ps(pg, yg);
+			_mm256_store_ps(pW, yW);
+
+			pg += 8;
+			pdW += 8;
+			pW += 8;
+		}
+		for (cnn_size_t i=begin+(nblocks<<3); i<end; ++i) {
+			g[i] += dW[i] * dW[i];
+			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+		}
+#else
+		for (size_t i=begin; i<end; ++i) {
+			g[i] += dW[i] * dW[i];
+			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+		}
+#endif
+	}
+
+	inline void update_impl(size_t begin, size_t end, dvec_t& g, const dvec_t& dW, dvec_t &W)
+	{
+		for (size_t i=begin; i<end; ++i) {
+			g[i] += dW[i] * dW[i];
+			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+		}
+	}
+
     void update(const vec_t& dW, vec_t &W) {
         vec_t& g = get<0>(W);
-
+#if 0
         for_i(static_cast<int>(W.size()), [&](int i) {
             g[i] += dW[i] * dW[i];
             W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
         });
-    }
+#else
+		// compiler may be able to perform vectorization in this way
+        for_(true, 0, static_cast<int>(W.size()), [&](const blocked_range& r) {
+			update_impl(r.begin(), r.end(), g, dW, W);
+        });
+#endif
+	}
 
     float_t alpha; // learning rate
 private:

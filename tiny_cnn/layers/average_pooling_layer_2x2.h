@@ -37,11 +37,13 @@
 
 namespace tiny_cnn {
 
+// optimized for 2x2 average pooling layer
+
 /**
  * average pooling with trainable weights
  **/
 template<typename Activation = activation::identity>
-class average_pooling_layer : public partial_connected_layer<Activation> {
+class average_pooling_layer_2x2 : public partial_connected_layer<Activation> {
  public:
     typedef partial_connected_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
@@ -52,22 +54,22 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
      * @param in_channels  [in] the number of input image channels(depth)
      * @param pooling_size [in] factor by which to downscale
      **/
-    average_pooling_layer(cnn_size_t in_width,
-                          cnn_size_t in_height,
-                          cnn_size_t in_channels,
-                          cnn_size_t pooling_size)
+    average_pooling_layer_2x2(cnn_size_t in_width,
+                              cnn_size_t in_height,
+                              cnn_size_t in_channels,
+                              cnn_size_t pooling_size)
             : Base(in_width * in_height * in_channels,
                    in_width * in_height * in_channels / sqr(pooling_size),
                    in_channels, in_channels, float_t(1) / sqr(pooling_size)),
-              stride_(pooling_size),
               in_(in_width, in_height, in_channels),
               out_(in_width/pooling_size, in_height/pooling_size, in_channels),
               w_(pooling_size, pooling_size, in_channels) {
+        
+        assert(pooling_size == 2);
         if ((in_width % pooling_size) || (in_height % pooling_size)) {
             pooling_size_mismatch(in_width, in_height, pooling_size);
         }
 
-        init_connection(pooling_size);
     }
 
     /**
@@ -77,39 +79,120 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
      * @param pooling_size [in] factor by which to downscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    average_pooling_layer(cnn_size_t in_width,
-                          cnn_size_t in_height,
-                          cnn_size_t in_channels,
-                          cnn_size_t pooling_size,
-                          cnn_size_t stride)
+    average_pooling_layer_2x2(cnn_size_t in_width,
+                              cnn_size_t in_height,
+                              cnn_size_t in_channels,
+                              cnn_size_t pooling_size,
+                              cnn_size_t stride)
         : Base(in_width * in_height * in_channels,
                pool_out_dim(in_width, pooling_size, stride) *
                pool_out_dim(in_height, pooling_size, stride) * in_channels,
                in_channels, in_channels, float_t(1) / sqr(pooling_size)),
-          stride_(stride),
           in_(in_width, in_height, in_channels),
           out_(pool_out_dim(in_width, pooling_size, stride),
                pool_out_dim(in_height, pooling_size, stride), in_channels),
           w_(pooling_size, pooling_size, in_channels) {
+        
+        assert(pooling_size == 2);
         if ((in_width % pooling_size) || (in_height % pooling_size)) {
             pooling_size_mismatch(in_width, in_height, pooling_size);
         }
 
-        init_connection(pooling_size);
+    }
+    
+    size_t fan_in_size() const override {
+        return 4;
+    }
+    
+    size_t fan_out_size() const override {
+        return 1;
     }
 
-    std::vector<shape3d> in_shape() const override {
-        return { in_, w_, shape3d(1, 1, out_.depth_) };
+    std::vector<index3d<cnn_size_t>> in_shape() const override {
+        return { in_, w_, index3d<cnn_size_t>(1, 1, out_.depth_) };
     }
 
-    std::vector<shape3d> out_shape() const override {
+    std::vector<index3d<cnn_size_t>> out_shape() const override {
         return { out_, out_ };
     }
 
     std::string layer_type() const override { return "ave-pool"; }
 
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<fvec_t*>& in_data,
+                             std::vector<fvec_t*>& out_data) {
+        const fvec_t& in  = *in_data[0];
+        const fvec_t& w   = *in_data[1];
+        const fvec_t& b   = *in_data[2];
+        fvec_t&       out = *out_data[0];
+        fvec_t&       a   = *out_data[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        for_i(parallelize_, out2wi_.size(), [&](int i) {
+            const wi_connections& connections = out2wi_[i];
+
+			float value = float(0);
+
+            for (auto connection : connections)// 13.1%
+                value += w[connection.first] * in[connection.second]; // 3.2%
+
+            value *= scale_factor_;
+            value += b[out2bias_[i]];
+            a[i] = value;
+        });
+		assert(out.size() == out2wi_.size());
+		h_.f(out, a);
+    }
+
+    void back_propagation(cnn_size_t                 index,
+                          const std::vector<fvec_t*>& in_data,
+                          const std::vector<fvec_t*>& out_data,
+                          std::vector<fvec_t*>&       out_grad,
+                          std::vector<fvec_t*>&       in_grad) {
+        const fvec_t& prev_out = *in_data[0];
+        const fvec_t& w  = *in_data[1];
+        fvec_t&       dW = *in_grad[1];
+        fvec_t&       db = *in_grad[2];
+        fvec_t&       prev_delta = *in_grad[0];
+        fvec_t&       curr_delta = *out_grad[0];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
+            for (int i = r.begin(); i != r.end(); i++) {
+                const auto& connection = in2wo_[i];
+                float delta = w[connection.first] * curr_delta[connection.second]; // 40.6%
+                prev_delta[i] = delta * scale_factor_; // 2.1%
+            }
+        });
+
+        for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
+            for (int i = r.begin(); i < r.end(); i++) {
+                const io_connections& connections = weight2io_[i];
+                float diff = float(0);
+
+                for (auto connection : connections) // 11.9%
+                    diff += prev_out[connection.first] * curr_delta[connection.second];
+
+                dW[i] += diff * scale_factor_;
+            }
+        });
+
+        for (size_t i = 0; i < bias2out_.size(); i++) {
+            const std::vector<cnn_size_t>& outs = bias2out_[i];
+            float diff = float(0);
+
+            for (auto o : outs)
+                diff += curr_delta[o];    
+
+            db[i] += diff;
+        } 
+    }
+
  private:
-    size_t stride_;
     shape3d in_;
     shape3d out_;
     shape3d w_;
@@ -121,42 +204,6 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             static_cast<double>(in_size) - pooling_size) / stride) + 1);
     }
 
-    void init_connection(cnn_size_t pooling_size) {
-        for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < in_.height_ - pooling_size + 1; y += stride_) {
-                for (cnn_size_t x = 0; x < in_.width_ - pooling_size + 1; x += stride_) {
-                    connect_kernel(pooling_size, x, y, c);
-                }
-            }
-        }
-
-        for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < out_.height_; ++y) {
-                for (cnn_size_t x = 0; x < out_.width_; ++x) {
-                    this->connect_bias(c, out_.get_index(x, y, c));
-                }
-            }
-        }
-    }
-
-    void connect_kernel(cnn_size_t pooling_size,
-                        cnn_size_t x,
-                        cnn_size_t y,
-                        cnn_size_t inc) {
-        cnn_size_t dymax = std::min(pooling_size, in_.height_ - y);
-        cnn_size_t dxmax = std::min(pooling_size, in_.width_ - x);
-        cnn_size_t dstx = x / stride_;
-        cnn_size_t dsty = y / stride_;
-
-        for (cnn_size_t dy = 0; dy < dymax; ++dy) {
-            for (cnn_size_t dx = 0; dx < dxmax; ++dx) {
-                this->connect_weight(
-                    in_.get_index(x + dx, y + dy, inc),
-                    out_.get_index(dstx, dsty, inc),
-                    inc);
-            }
-        }
-    }
 };
 
 }  // namespace tiny_cnn
