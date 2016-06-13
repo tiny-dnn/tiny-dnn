@@ -95,38 +95,44 @@ public:
     }
 
     void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>&       out_data)  override {
-        const vec_t& in  = *in_data[0];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
-        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+                             const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>&       out_data)  override {
 
-        for_(parallelize_, 0, out2in_.size(), [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
-                const auto& in_index = out2in_[i];
-                float_t max_value = std::numeric_limits<float_t>::lowest();
+        // @todo revise the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = in_data.size(); sample < sample_count; ++sample) {
 
-                for (auto j : in_index) {
-                    if (in[j] > max_value) {
-                        max_value = in[j];
-                        max_idx[i] = j;
+            const vec_t& in  = (*in_data[0])[sample];
+            vec_t&       out = (*out_data[0])[sample];
+            vec_t&       a   = (*out_data[1])[sample];
+
+            std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+
+            for_(parallelize_, 0, out2in_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i < r.end(); i++) {
+                    const auto& in_index = out2in_[i];
+                    float_t max_value = std::numeric_limits<float_t>::lowest();
+
+                    for (auto j : in_index) {
+                        if (in[j] > max_value) {
+                            max_value = in[j];
+                            max_idx[i] = j;
+                        }
                     }
+                    a[i] = max_value;
                 }
-                a[i] = max_value;
-            }
-        });
+            });
 
-        for_i(parallelize_, out.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+            for_i(parallelize_, out.size(), [&](int i) {
+                out[i] = h_.f(a, i);
+            });
+        }
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t                    index,
+                          const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<vec_t*>&          out_grad,
+                          std::vector<vec_t*>&          in_grad) override {
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
         std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;

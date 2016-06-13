@@ -82,44 +82,52 @@ public:
     }
 
     void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        const vec_t& in  = *in_data[0];
-        const vec_t& W   = *in_data[1];
-        const vec_t& b   = *in_data[2];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
+                             const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        const tensor_t& in  = *in_data[0];
+        const vec_t&    W   = (*in_data[1])[0];
+        const vec_t&    b   = (*in_data[2])[0];
+        tensor_t&       out = *out_data[0];
+        tensor_t&       a   = *out_data[1];
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        for_i(parallelize_, out2wi_.size(), [&](int i) {
-            const wi_connections& connections = out2wi_[i];
+        // @todo revise the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
 
-            a[i] = float_t(0);
+            vec_t& a_sample = a[sample];
 
-            for (auto connection : connections)// 13.1%
-                a[i] += W[connection.first] * in[connection.second]; // 3.2%
+            for_i(parallelize_, out2wi_.size(), [&](int i) {
+                const wi_connections& connections = out2wi_[i];
 
-            a[i] *= scale_factor_;
-            a[i] += b[out2bias_[i]];
-        });
+                float_t& a_element = a_sample[i];
 
-        for_i(parallelize_, out2wi_.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+                a_element = float_t(0);
+
+                for (auto connection : connections)// 13.1%
+                    a_element += W[connection.first] * in[sample][connection.second]; // 3.2%
+
+                a_element *= scale_factor_;
+                a_element += b[out2bias_[i]];
+            });
+
+            for_i(parallelize_, out2wi_.size(), [&](int i) {
+                out[sample][i] = h_.f(a_sample, i);
+            });
+        }
     }
 
-    void back_propagation(cnn_size_t                index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        const vec_t& prev_out = *in_data[0];
-        const vec_t& W  = *in_data[1];
-        vec_t&       dW = *in_grad[1];
-        vec_t&       db = *in_grad[2];
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[0];
+    void back_propagation(cnn_size_t                    index,
+                          const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<vec_t*>&          out_grad,
+                          std::vector<vec_t*>&          in_grad) override {
+        const tensor_t& prev_out    = *in_data[0];
+        const vec_t&    W           = (*in_data[1])[0];
+        vec_t&          dW          = *in_grad[1];
+        vec_t&          db          = *in_grad[2];
+        vec_t&          prev_delta  = *in_grad[0];
+        vec_t&          curr_delta  = *out_grad[0];
 
         CNN_UNREFERENCED_PARAMETER(index);
 
@@ -130,34 +138,37 @@ public:
                 const wo_connections& connections = in2wo_[i];
                 float_t delta = float_t(0);
 
-                for (auto connection : connections) 
+                for (auto connection : connections)
                     delta += W[connection.first] * curr_delta[connection.second]; // 40.6%
 
                 prev_delta[i] = delta * scale_factor_; // 2.1%
             }
         });
 
-        for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
-                const io_connections& connections = weight2io_[i];
-                float_t diff = float_t(0);
+        // @todo revise the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = prev_out.size(); sample < sample_count; ++sample) {
+            for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i < r.end(); i++) {
+                    const io_connections& connections = weight2io_[i];
+                    float_t diff = float_t(0);
 
-                for (auto connection : connections) // 11.9%
-                    diff += prev_out[connection.first] * curr_delta[connection.second];
+                    for (auto connection : connections) // 11.9%
+                        diff += prev_out[sample][connection.first] * curr_delta[connection.second];
 
-                dW[i] += diff * scale_factor_;
-            }
-        });
+                    dW[i] += diff * scale_factor_;
+                }
+            });
+        }
 
         for (size_t i = 0; i < bias2out_.size(); i++) {
             const std::vector<cnn_size_t>& outs = bias2out_[i];
             float_t diff = float_t(0);
 
             for (auto o : outs)
-                diff += curr_delta[o];    
+                diff += curr_delta[o];
 
             db[i] += diff;
-        } 
+        }
     }
 
 protected:

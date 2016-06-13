@@ -74,7 +74,7 @@ class nodes {
      * @param worker_index : id of worker-task
      **/
     virtual
-    std::vector<vec_t> forward(const std::vector<vec_t>& first, int worker_index) = 0; // NOLINT
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first, int worker_index) = 0; // NOLINT
 
     /**
      * update weights and clear all gradients
@@ -183,6 +183,19 @@ class nodes {
         nodes_.push_back(own_nodes_.back().get());
     }
 
+    // transform indexing so that it's more suitable for per-layer operations
+    tensor_t get_layer_batch_input_data(const std::vector<tensor_t>& in_data, const cnn_size_t channel_index) {
+
+        // @todo we could perhaps pass pointers to underlying vec_t objects, in order to avoid copying
+        tensor_t layer_batch;
+
+        for (cnn_size_t sample = 0, sample_count = in_data.size(); sample < sample_count; ++sample) {
+            layer_batch.push_back(in_data[sample][channel_index]);
+        }
+
+        return layer_batch;
+    }
+
  protected:
     template <typename T>
     void push_back_impl(T&& node, std::true_type) {  // is_rvalue_reference
@@ -215,15 +228,19 @@ class sequential : public nodes {
         }
     }
 
-    std::vector<vec_t> forward(const std::vector<vec_t>& first,
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first,
                                int worker_index) override {
-        nodes_.front()->set_in_data(&first[0], first.size(), worker_index);
+
+        const tensor_t batch_input_data = get_layer_batch_input_data(first, 0);
+        nodes_.front()->set_in_data(&batch_input_data, batch_input_data.size(), worker_index);
 
         for (auto l : nodes_) {
             l->forward(worker_index);
         }
 
-        return nodes_.back()->output(worker_index);
+        const std::vector<tensor_t> out = nodes_.back()->output(worker_index);
+
+        return normalize_out(out);
     }
 
     template <typename T>
@@ -251,7 +268,21 @@ class sequential : public nodes {
         }
     }
 
- private:
+private:
+    std::vector<tensor_t> normalize_out(const std::vector<tensor_t>& out)
+    {
+        // normalize indexing back to [sample][layer][feature]
+        std::vector<tensor_t> normalized_output;
+
+        const cnn_size_t sample_count = out[0].size();
+        normalized_output.resize(sample_count, tensor_t(1));
+
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+            normalized_output[sample][0] = out[0][sample];
+        }
+
+        return normalized_output;
+    }
 };
 
 /**
@@ -275,14 +306,18 @@ class graph : public nodes {
         }
     }
 
-    std::vector<vec_t> forward(const std::vector<vec_t>& in_data,
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data,
                                int worker_index) {
-        if (in_data.size() != input_layers_.size()) {
+
+        cnn_size_t input_data_channel_count = in_data[0].size();
+
+        if (input_data_channel_count != input_layers_.size()) {
             throw nn_error("input size mismatch");
         }
 
-        for (cnn_size_t i = 0; i < in_data.size(); i++) {
-            input_layers_[i]->set_in_data(&in_data[i], 1, worker_index);
+        for (cnn_size_t channel_index = 0; channel_index < input_data_channel_count; channel_index++) {
+            const tensor_t layer_batch_input_data = get_layer_batch_input_data(in_data, channel_index);
+            input_layers_[channel_index]->set_in_data(&layer_batch_input_data, 1, worker_index);
         }
 
         for (auto l : nodes_) {
@@ -335,11 +370,24 @@ class graph : public nodes {
 
  private:
 
-     std::vector<vec_t> merge_outs(int worker_index) {
-         std::vector<vec_t> merged;
-         for (auto& l : output_layers_) {
-             std::vector<vec_t> out = l->output(worker_index);
-             merged.insert(merged.end(), out.begin(), out.end());
+     // normalize indexing back to [sample][layer][feature]
+     std::vector<tensor_t> merge_outs(int worker_index) {
+         std::vector<tensor_t> merged;
+         cnn_size_t output_channel_count = output_layers_.size();
+         for (cnn_size_t output_channel = 0; output_channel < output_channel_count; ++output_channel) {
+             std::vector<tensor_t> out = output_layers_[output_channel]->output(worker_index);
+
+             cnn_size_t sample_count = out[0].size();
+             if (output_channel == 0) {
+                 assert(merged.empty());
+                 merged.resize(sample_count, tensor_t(output_channel_count));
+             }
+
+             assert(merged.size() == sample_count);
+
+             for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+                 merged[sample][output_channel] = out[0][sample];
+             }
          }
          return merged;
      }

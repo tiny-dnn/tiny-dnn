@@ -38,10 +38,10 @@ TEST(dropout, randomized) {
     dropout_layer l(num_units, dropout_rate, net_phase::train);
     vec_t v(num_units, 1.0);
 
-    l.forward({v});
+    l.forward({ {v} });
     const auto mask1 = l.get_mask(0);
 
-    l.forward({v});
+    l.forward({ {v} });
     const auto mask2 = l.get_mask(0);
 
     // mask should change for each fprop

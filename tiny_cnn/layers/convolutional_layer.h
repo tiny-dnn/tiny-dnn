@@ -220,52 +220,58 @@ public:
     }
 
     void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        copy_and_pad_input(*in_data[0], static_cast<int>(index));
-        const vec_t& W   = *in_data[1];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
-        const vec_t &in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
-        
-        std::fill(a.begin(), a.end(), float_t(0));
+                             const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
 
-        for_i(parallelize_, out_.depth_, [&](int o) {
-            for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
-                if (!tbl_.is_connected(o, inc)) continue;
+        const vec_t& W = (*in_data[1])[0];
 
-                const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * o + inc)];
-                const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
-                float_t *pa = &a[out_.get_index(0, 0, o)];
+        for (int sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
 
-                for (cnn_size_t y = 0; y < out_.height_; y++) {
-                    for (cnn_size_t x = 0; x < out_.width_; x++) {
-                        const float_t * ppw = pw;
-                        const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
-                        float_t sum = float_t(0);
+            copy_and_pad_input((*in_data[0])[sample], static_cast<int>(index));
+            vec_t&      out = (*out_data[0])[sample];
+            vec_t&      a   = (*out_data[1])[sample];
+            const vec_t &in = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
 
-                        // should be optimized for small kernel(3x3,5x5)
-                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                                sum += *ppw++ * ppi[wy * in_padded_.width_ + wx];
+            std::fill(a.begin(), a.end(), float_t(0));
+
+            // @todo consider parallelizing on the sample level instead (do some profiling!)
+            for_i(parallelize_, out_.depth_, [&](int o) {
+                for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
+                    if (!tbl_.is_connected(o, inc)) continue;
+
+                    const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * o + inc)];
+                    const float_t *pi = &in[in_padded_.get_index(0, 0, inc)];
+                    float_t *pa = &a[out_.get_index(0, 0, o)];
+
+                    for (cnn_size_t y = 0; y < out_.height_; y++) {
+                        for (cnn_size_t x = 0; x < out_.width_; x++) {
+                            const float_t * ppw = pw;
+                            const float_t * ppi = pi + (y * h_stride_) * in_padded_.width_ + x * w_stride_;
+                            float_t sum = float_t(0);
+
+                            // should be optimized for small kernel(3x3,5x5)
+                            for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                                for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                                    sum += *ppw++ * ppi[wy * in_padded_.width_ + wx];
+                                }
                             }
+                            pa[y * out_.width_ + x] += sum;
                         }
-                        pa[y * out_.width_ + x] += sum;
                     }
                 }
-            }
 
-            if (has_bias_) {
-                const vec_t& bias = *in_data[2];
-                float_t *pa = &a[out_.get_index(0, 0, o)];
-                float_t b = bias[o];
-                std::for_each(pa, pa + out_.width_ * out_.height_, [&](float_t& f) { f += b; });
-            }
-        });
+                if (has_bias_) {
+                    const vec_t& bias = (*in_data[2])[0];
+                    float_t *pa = &a[out_.get_index(0, 0, o)];
+                    float_t b = bias[o];
+                    std::for_each(pa, pa + out_.width_ * out_.height_, [&](float_t& f) { f += b; });
+                }
+            });
 
-        for_i(parallelize_, out_.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+            for_i(parallelize_, out_.size(), [&](int i) {
+                out[i] = h_.f(a, i);
+            });
+        }
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
@@ -273,16 +279,16 @@ public:
         return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t                    index,
+                          const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<vec_t*>&          out_grad,
+                          std::vector<vec_t*>&          in_grad) override {
 
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
         const vec_t& prev_out = *(cws.prev_out_padded_);
-        const vec_t& W = *in_data[1];
+        const vec_t& W = (*in_data[1])[0];
         vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
         vec_t&       dW = *in_grad[1];
         vec_t&       curr_delta = *out_grad[1];

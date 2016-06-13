@@ -98,7 +98,7 @@ class edge {
         : worker_specific_data_(!is_trainable_weight(vtype)),
           shape_(shape),
           vtype_(vtype),
-          data_(1, vec_t(shape.size())),
+          data_(1, tensor_t{ vec_t(shape.size()) }),
           prev_(prev) {
       grad_.resize(1, vec_t(shape.size()));
     }
@@ -125,11 +125,11 @@ class edge {
         grad_.resize(size, grad_[0]);
     }
 
-    vec_t* get_data(cnn_size_t worker_index = 0) {
+    tensor_t* get_data(cnn_size_t worker_index = 0) {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
-    const vec_t* get_data(cnn_size_t worker_index = 0) const {
+    const tensor_t* get_data(cnn_size_t worker_index = 0) const {
         return worker_specific_data_ ? &data_[worker_index] : &data_[0];
     }
 
@@ -153,7 +153,7 @@ class edge {
     bool worker_specific_data_;
     shape3d shape_;
     vector_type vtype_;
-    std::vector<vec_t> data_;
+    std::vector<tensor_t> data_;
     std::vector<vec_t> grad_;
     node* prev_;               // previous node, "producer" of this tensor
     std::vector<node*> next_;  // next nodes, "consumers" of this tensor

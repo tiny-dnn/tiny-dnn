@@ -75,9 +75,9 @@ inline std::string unique_path() {
 
 vec_t forward_pass(layer& src, const vec_t& vec) {
     src.setup(false, 1);
-    *src.get_inputs()[0]->get_data() = vec;
+    (*src.get_inputs()[0]->get_data())[0] = vec;
     src.forward(0);
-    return src.output()[0];
+    return src.output()[0][0];
 }
 
 template <typename N>

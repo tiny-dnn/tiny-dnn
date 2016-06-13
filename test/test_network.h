@@ -156,9 +156,11 @@ TEST(network, multi_out) {
     auto hidden = std::make_shared<layers::fc<tan_h>>(2,4);
     auto out1 = std::make_shared<layers::fc<tan_h>>(4,2);
     auto out2 = std::make_shared<layers::fc<tan_h>>(4,2);
+    auto out3 = std::make_shared<layers::fc<tan_h>>(4,2);
 
     in << hidden << out1;
     hidden << out2;
+    hidden << out3;
 
     for (size_t i = 0; i < tnum; i++) {
         bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
@@ -166,13 +168,14 @@ TEST(network, multi_out) {
         data.push_back({ in[0] * 1.0, in[1] * 1.0 });
 
         out.emplace_back(std::vector<vec_t>{
-            {(in[0]&&in[1])*1.0, (in[0]||in[1])*1.0}, // 1st output train and/or function
-            {(in[0]^in[1])*1.0, (in[0]==in[1])*1.0} // 2nd output train xor/eq function
+            {(in[0]&&in[1])*1.0, (in[0]||in[1])*1.0}, // 1st output: train and/or function
+            {(in[0]^in[1])*1.0, (in[0]==in[1])*1.0},  // 2nd output: train xor/eq function
+            {-1, 0.5}                                 // 3rd output: train constants (purpose: make output channel count different from output dimension)
         });
     }
 
-    // construct single input, dual output network
-    construct_graph(net, {in}, {out1,out2});
+    // construct single input, three output network
+    construct_graph(net, {in}, {out1,out2,out3});
 
     optimizer.alpha *= 10;
 
@@ -184,14 +187,16 @@ TEST(network, multi_out) {
         std::vector<vec_t> actual = net.predict(std::vector<vec_t>{{ in[0] * 1.0, in[1] * 1.0 }});
         vec_t actual_out1 = actual[0];
         vec_t actual_out2 = actual[1];
+        vec_t actual_out3 = actual[2];
 
         EXPECT_NEAR(actual_out1[0], in[0]&&in[1], 0.1);
         EXPECT_NEAR(actual_out1[1], in[0]||in[1], 0.1);
-        EXPECT_NEAR(actual_out2[0], in[0]^in[1], 0.1);
+        EXPECT_NEAR(actual_out2[0], in[0]^in[1],  0.1);
         EXPECT_NEAR(actual_out2[1], in[0]==in[1], 0.1);
+        EXPECT_NEAR(actual_out3[0], -1,  0.05);
+        EXPECT_NEAR(actual_out3[1], 0.5, 0.001);
     }
 }
-
 
 TEST(network, train_predict) {
     // train xor function

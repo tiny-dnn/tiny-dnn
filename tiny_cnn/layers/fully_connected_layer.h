@@ -69,42 +69,49 @@ public:
     }
 
     void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        const vec_t& in  = *in_data[0];
-        const vec_t& W   = *in_data[1];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
+                             const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        const vec_t&    W   = (*in_data[1])[0];
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            a[i] = float_t(0);
-            for (cnn_size_t c = 0; c < in_size_; c++) {
-                a[i] += W[c*out_size_ + i] * in[c];
-            }
+        cnn_size_t sample_count = in_data[0]->size();
 
-            if (has_bias_) {
-                vec_t& b = *in_data[2];
-                a[i] += b[i];
-            }
-        });
+        for (size_t sample = 0; sample < sample_count; ++sample) {
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+            const vec_t& in  = (*in_data[0])[sample];
+            vec_t&       out = (*out_data[0])[sample];
+            vec_t&       a   = (*out_data[1])[sample];
+
+            // @todo consider parallelizing on the sample level instead (do some profiling!)
+            for_i(parallelize_, out_size_, [&](int i) {
+                a[i] = float_t(0);
+                for (cnn_size_t c = 0; c < in_size_; c++) {
+                    a[i] += W[c*out_size_ + i] * in[c];
+                }
+
+                if (has_bias_) {
+                    vec_t& b = (*in_data[2])[0];
+                    a[i] += b[i];
+                }
+            });
+
+            for_i(parallelize_, out_size_, [&](int i) {
+                out[i] = h_.f(a, i);
+            });
+        }
     }
 
-    void back_propagation(cnn_size_t                index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        const vec_t& prev_out   = *in_data[0];
-        const vec_t& W          = *in_data[1];
-        vec_t&       dW         = *in_grad[1];
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
+    void back_propagation(cnn_size_t                    index,
+                          const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<vec_t*>&          out_grad,
+                          std::vector<vec_t*>&          in_grad) override {
+        const tensor_t& prev_out = *in_data[0];
+        const vec_t& W           = (*in_data[1])[0];
+        vec_t&       dW          = *in_grad[1];
+        vec_t&       prev_delta  = *in_grad[0];
+        vec_t&       curr_delta  = *out_grad[1];
 
         CNN_UNREFERENCED_PARAMETER(index);
 
@@ -119,8 +126,9 @@ public:
         for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
             // accumulate weight-step using delta
             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-            for (cnn_size_t c = 0; c < in_size_; c++)
-                vectorize::muladd(&curr_delta[r.begin()], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
+            for (cnn_size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample)
+                for (cnn_size_t c = 0; c < in_size_; c++)
+                    vectorize::muladd(&curr_delta[r.begin()], prev_out[sample][c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
 
             if (has_bias_) {
                 vec_t& db = *in_grad[2];
