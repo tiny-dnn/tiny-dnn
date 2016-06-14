@@ -403,11 +403,26 @@ public:
 	                const float* pi = (const float*) &in[in_padded_.get_index(0, 0, inc)];
 
 #ifdef CNN_USE_AVX
-					__m256 w0 = _mm256_maskload_ps(pw+0, mask);
-					__m256 w1 = _mm256_maskload_ps(pw+5, mask);
-					__m256 w2 = _mm256_maskload_ps(pw+10, mask);
-					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
-					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
+					__m256 w0a = _mm256_maskload_ps(pw+0, mask);
+					__m256 w1a = _mm256_maskload_ps(pw+5, mask);
+					__m256 w2a = _mm256_maskload_ps(pw+10, mask);
+					__m256 w3a = _mm256_maskload_ps(pw+15, mask);
+					__m256 w4a = _mm256_maskload_ps(pw+20, mask);
+					__m256 w0b = leftShift<4>(w0a);
+					__m256 w1b = leftShift<4>(w1a);
+					__m256 w2b = leftShift<4>(w2a);
+					__m256 w3b = leftShift<4>(w3a);
+					__m256 w4b = leftShift<4>(w4a);
+					__m256 w0c = leftShift<8>(w0a);
+					__m256 w1c = leftShift<8>(w1a);
+					__m256 w2c = leftShift<8>(w2a);
+					__m256 w3c = leftShift<8>(w3a);
+					__m256 w4c = leftShift<8>(w4a);
+					__m256 w0d = leftShift<12>(w0a);
+					__m256 w1d = leftShift<12>(w1a);
+					__m256 w2d = leftShift<12>(w2a);
+					__m256 w3d = leftShift<12>(w3a);
+					__m256 w4d = leftShift<12>(w4a);
 					size_t stride = h_stride_ * in_padded_.width_;
 #else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
@@ -444,17 +459,60 @@ public:
 						const float* pi2 = pi0 + 2 * stride;
 						const float* pi3 = pi0 + 3 * stride;
 						const float* pi4 = pi0 + 4 * stride;
-	                    for (cnn_size_t x=0; x<out_.width_; ++x) {
+						cnn_size_t x = 0;
+						if (w_stride_ == 1) {
+							size_t nblocks = out_.width_ >> 2;
+							__m256 dst0, dst1, dst2, dst3;
+							for (size_t i=0; i<nblocks; ++i) {
+								__m256 i0 = _mm256_loadu_ps(pi0);
+								__m256 i1 = _mm256_loadu_ps(pi1);
+								__m256 i2 = _mm256_loadu_ps(pi2);
+								__m256 i3 = _mm256_loadu_ps(pi3);
+								__m256 i4 = _mm256_loadu_ps(pi4);
+								dst0 = _mm256_mul_ps(w0a, i0);
+								dst1 = _mm256_mul_ps(w0b, i0);
+								dst2 = _mm256_mul_ps(w0c, i0);
+								dst3 = _mm256_mul_ps(w0d, i0);
+								dst0 = madd(w1a, i1, dst0);
+								dst1 = madd(w1b, i1, dst1);
+								dst2 = madd(w1c, i1, dst2);
+								dst3 = madd(w1d, i1, dst3);
+								dst0 = madd(w2a, i2, dst0);
+								dst1 = madd(w2b, i2, dst1);
+								dst2 = madd(w2c, i2, dst2);
+								dst3 = madd(w2d, i2, dst3);
+								dst0 = madd(w3a, i3, dst0);
+								dst1 = madd(w3b, i3, dst1);
+								dst2 = madd(w3c, i3, dst2);
+								dst3 = madd(w3d, i3, dst3);
+								dst0 = madd(w4a, i4, dst0);
+								dst1 = madd(w4b, i4, dst1);
+								dst2 = madd(w4c, i4, dst2);
+								dst3 = madd(w4d, i4, dst3);
+								ppa[i*4+0] += sum8(dst0);
+								ppa[i*4+1] += sum8(dst1);
+								ppa[i*4+2] += sum8(dst2);
+								ppa[i*4+3] += sum8(dst3);
+		//						printf("%d %d %d %f\n", inc, y, x, ppa[x]);
+								pi0 += 4;
+								pi1 += 4;
+								pi2 += 4;
+								pi3 += 4;
+								pi4 += 4;
+							}
+							x = (nblocks << 2);
+						}
+	                    for (; x<out_.width_; ++x) {
 							__m256 i0 = _mm256_loadu_ps(pi0);
 							__m256 i1 = _mm256_loadu_ps(pi1);
 							__m256 i2 = _mm256_loadu_ps(pi2);
 							__m256 i3 = _mm256_loadu_ps(pi3);
 							__m256 i4 = _mm256_loadu_ps(pi4);
-							__m256 sum0 = _mm256_mul_ps(w0, i0);
-							__m256 sum1 = _mm256_mul_ps(w1, i1);
-							sum0 = madd(w2, i2, sum0);
-							sum1 = madd(w3, i3, sum1);
-							sum0 = madd(w4, i4, sum0);
+							__m256 sum0 = _mm256_mul_ps(w0a, i0);
+							__m256 sum1 = _mm256_mul_ps(w1a, i1);
+							sum0 = madd(w2a, i2, sum0);
+							sum1 = madd(w3a, i3, sum1);
+							sum0 = madd(w4a, i4, sum0);
 							sum0 = _mm256_add_ps(sum0, sum1);
 							ppa[x] += sum8(sum0);
 	//						printf("%d %d %d %f\n", inc, y, x, ppa[x]);
