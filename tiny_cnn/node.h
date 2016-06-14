@@ -53,6 +53,21 @@ typedef std::shared_ptr<edge> edgeptr_t;
 
 typedef layer* layerptr_t;
 
+#if 0//defined(CNN_USE_AVX2)
+__forceinline __m256 stream_load_ps(const float* p)
+{
+	// this code produces illegal instructions with VS2015 Update3 RC :(
+	__m256i tmp = _mm256_stream_load_si256((const __m256i*)p);
+	__m256 ret = _mm256_castsi256_ps(tmp);
+	return ret;
+}
+#elif defined(CNN_USE_AVX)
+inline __m256 stream_load_ps(const float* p)
+{
+	return _mm256_load_ps(p);
+}
+#endif
+
 /**
  * base class of all kind of tinny-cnn data
  **/
@@ -103,12 +118,169 @@ class edge {
       grad_.resize(1, vec_t(shape.size()));
     }
 
-    void merge_grads(cnn_size_t worker_size, vec_t *dst) {
-        *dst = grad_[0];
+	template <typename Float, typename Vec>
+	static void merge_grads_impl(int begin, int end, cnn_size_t worker_size, std::vector<Vec>& grad, Vec& dst, Float scale) {
+		size_t sz = end - begin;
+		switch (worker_size) {
+		case 1:
+			{
+				auto& g = grad[0];
+				for (size_t i=begin; i<end; ++i) {
+					dst[i] = g[i] * scale;
+				}
+			}
+			break;
+		case 2:
+			{
+				auto& g0 = grad[0];
+				auto& g1 = grad[1];
+				for (size_t i = begin; i<end; ++i) {
+					dst[i] = (g0[i] + g1[i]) * scale;
+				}
+			}
+			break;
+		default:
+			std::copy(&grad[0][begin], &grad[0][end], &dst[begin]);
+			for (cnn_size_t i = 1; i < worker_size; i++) {
+				vectorize::reduce<float_t>(&grad[i][begin], sz, &dst[begin]);
+			}
+			for (int i = begin; i<end; ++i) {
+				dst[i] *= scale;
+			}
+			break;
+		}
+	}
 
-        for (cnn_size_t i = 1; i < worker_size; i++) {
-            vectorize::reduce<float_t>(&grad_[i][0], dst->size(), &(*dst)[0]);
-        }
+#ifdef CNN_USE_AVX
+	static void merge_grads_impl(int begin, int end, cnn_size_t worker_size, std::vector<fvec_t>& grad, fvec_t& dst, float scale) {
+		size_t sz = end - begin;
+		__m256 vscale = _mm256_set1_ps(scale);
+		switch (worker_size) {
+		case 1:
+		{
+			auto& g = grad[0];
+			for (int i = begin; i<end; ++i) {
+				dst[i] = g[i] * scale;
+			}
+		}
+		break;
+		case 2:
+		{
+			auto& g0 = grad[0];
+			auto& g1 = grad[1];
+			const float* pg0 = &g0[begin];
+			const float* pg1 = &g1[begin];
+			float* pdst = &dst[begin];
+			size_t nblocks = sz >> 4;
+			for (size_t i=0; i<nblocks; ++i) {
+				__m256 vg00 = _mm256_loadu_ps(pg0 + 0);
+				__m256 vg01 = _mm256_loadu_ps(pg0 + 8);
+				__m256 vg10 = _mm256_loadu_ps(pg1 + 0);
+				__m256 vg11 = _mm256_loadu_ps(pg1 + 8);
+				__m256 vres0 = _mm256_add_ps(vg00, vg10);
+				__m256 vres1 = _mm256_add_ps(vg01, vg11);
+				vres0 = _mm256_mul_ps(vres0, vscale);
+				vres1 = _mm256_mul_ps(vres1, vscale);
+				_mm256_storeu_ps(pdst + 0, vres0);
+				_mm256_storeu_ps(pdst + 8, vres1);
+				pg0 += 16;
+				pg1 += 16;
+				pdst += 16;
+			}
+			for (int i=begin+(sz << 4); i<end; ++i) {
+				dst[i] = (g0[i] + g1[i]) * scale;
+			}
+		}
+		break;
+		case 4:
+		{
+			auto& g0 = grad[0];
+			auto& g1 = grad[1];
+			auto& g2 = grad[2];
+			auto& g3 = grad[3];
+			if (begin & 7) {
+				int head_size = 8 - (begin & 7);
+				int head_end = std::min(end, begin + head_size);
+				for (int i = begin; i<head_end; ++i) {
+					dst[i] = (g0[i] + g1[i] + g2[i] + g3[i]) * scale;
+				}
+				if (end == head_end) {
+					return;
+				}
+				begin += head_size;
+				sz = end - begin;
+			}
+			const float* pg0 = &g0[begin];
+			const float* pg1 = &g1[begin];
+			const float* pg2 = &g2[begin];
+			const float* pg3 = &g3[begin];
+			float* pdst = &dst[begin];
+			size_t nblocks = sz >> 4;
+			for (size_t i = 0; i<nblocks; ++i) {
+				__m256 vg00 = _mm256_load_ps(pg0 + 0);
+				__m256 vg01 = _mm256_load_ps(pg0 + 8);
+				__m256 vg10 = _mm256_load_ps(pg1 + 0);
+				__m256 vg11 = _mm256_load_ps(pg1 + 8);
+				__m256 vg20 = _mm256_load_ps(pg2 + 0);
+				__m256 vg21 = _mm256_load_ps(pg2 + 8);
+				__m256 vg30 = _mm256_load_ps(pg3 + 0);
+				__m256 vg31 = _mm256_load_ps(pg3 + 8);
+				vg00 = _mm256_add_ps(vg00, vg10);
+				vg01 = _mm256_add_ps(vg01, vg11);
+				vg20 = _mm256_add_ps(vg20, vg30);
+				vg21 = _mm256_add_ps(vg21, vg31);
+				__m256 vres0 = _mm256_add_ps(vg00, vg20);
+				vres0 = _mm256_mul_ps(vres0, vscale);
+				_mm256_store_ps(pdst + 0, vres0);
+				__m256 vres1 = _mm256_add_ps(vg01, vg21);
+				vres1 = _mm256_mul_ps(vres1, vscale);
+				_mm256_store_ps(pdst + 8, vres1);
+				pg0 += 16;
+				pg1 += 16;
+				pg2 += 16;
+				pg3 += 16;
+				pdst += 16;
+			}
+			for (int i = begin + (nblocks << 4); i<end; ++i) {
+				dst[i] = (g0[i] + g1[i] + g2[i] + g3[i]) * scale;
+			}
+		}
+		break;
+		default:
+		{
+			float* pbegin = &grad[0][begin];
+			std::copy(pbegin, (pbegin + sz), &dst[begin]);
+			for (cnn_size_t i = 1; i < worker_size; i++) {
+				vectorize::reduce<float_t>(&grad[i][begin], sz, &dst[begin]);
+			}
+			for (int i = begin; i<end; ++i) {
+				dst[i] *= scale;
+			}
+		}
+		break;
+		}
+	}
+#endif // #ifdef CNN_USE_AVX
+
+	static inline void merge_grads(int begin, int end, cnn_size_t worker_size, std::vector<vec_t>& grad, vec_t& dst, float_t scale) {
+		merge_grads_impl(begin, end, worker_size, grad, dst, scale);
+	}
+
+    void merge_grads(cnn_size_t worker_size, vec_t& dst, float_t scale) {
+		size_t sz = grad_[0].size();
+		if (sz > dst.size()) {
+			dst.resize(sz);
+		}
+		size_t sz_per_thread = sz / std::thread::hardware_concurrency();
+		if (sz_per_thread <= 64) {
+			merge_grads(0, sz, worker_size, grad_, dst, scale);
+		}else {
+			for_(true, 0, sz,
+				[&](const blocked_range& r) {
+					merge_grads(r.begin(), r.end(), worker_size, grad_, dst, scale);
+				}
+			);
+		}
     }
 
     void clear_grads(cnn_size_t worker_size) {

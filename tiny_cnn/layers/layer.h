@@ -463,14 +463,9 @@ class layer : public node {
 		float_t rcp_batch_size = 1.0f / (float_t)batch_size;
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
-                vec_t diff;
                 vec_t& target = *ith_in_node(i)->get_data();
-
-                ith_in_node(i)->merge_grads(worker_size, &diff);
-                std::transform(diff.begin(), diff.end(),
-                               diff.begin(), [&](float_t x) { // NOLINT
-                                  return x * rcp_batch_size; });
-                o->update(diff, target);
+                ith_in_node(i)->merge_grads(worker_size, wdiff_, rcp_batch_size);
+                o->update(wdiff_, target);
             }
         }
         clear_grads(worker_size);
@@ -509,6 +504,7 @@ class layer : public node {
     cnn_size_t out_channels_;  // number of output vectors
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
+	vec_t wdiff_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

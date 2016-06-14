@@ -157,9 +157,17 @@ struct adagrad : public stateful_optimizer<1> {
         });
 #else
 		// compiler may be able to perform vectorization in this way
-        for_(true, 0, static_cast<int>(W.size()), [&](const blocked_range& r) {
-			update_impl(r.begin(), r.end(), g, dW, W);
-        });
+		int sz = static_cast<int>(W.size());
+		int sz_per_thread = sz / std::thread::hardware_concurrency();
+		if (sz < 64) {
+			update_impl(0, sz, g, dW, W);
+		}else {
+			for_(true, 0, sz,
+				[&](const blocked_range& r) {
+					update_impl(r.begin(), r.end(), g, dW, W);
+				}
+			);
+		}
 #endif
 	}
 
