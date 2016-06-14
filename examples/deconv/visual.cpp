@@ -70,12 +70,10 @@ void convert_image(const std::string& imagefilename,
 
 void construct_net(network<sequential>& nn) {
     // construct nets
-    nn << convolutional_layer<tan_h>(64, 64, 5, 1, 6)
-       << average_pooling_layer<tan_h>(60, 60, 6, 2)
-       << convolutional_layer<tan_h>(30, 30, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(28, 28, 3, 16, 6)
-       << average_unpooling_layer<tan_h>(30, 30, 6, 2)
-       << deconvolutional_layer<tan_h>(60, 60, 5, 6, 1);
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6, padding::same)
+       << convolutional_layer<tan_h>(32, 32, 3, 6, 16, padding::same)
+       << deconvolutional_layer<tan_h>(32, 32, 3, 16, 6, padding::same)
+       << deconvolutional_layer<tan_h>(32, 32, 5, 6, 1, padding::same);
 }
 
 void train_network(network<sequential> nn, const string& train_dir_path) {
@@ -123,7 +121,7 @@ void recognize(const std::string& dictionary, const std::string& filename, const
 
     // convert imagefile to vec_t
     vec_t data;
-    convert_image(filename, -1.0, 1.0, 64, 64, data);
+    convert_image(filename, -1.0, 1.0, 32, 32, data);
 
     std::cout << "start predicting on single image..." << std::endl;
 
@@ -148,9 +146,6 @@ void recognize(const std::string& dictionary, const std::string& filename, const
     // visualize filter shape of first convolutional layer
     auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
     cv::imshow("weights:", image2mat(weightc));
-    // visualize filter shape of first deconvolutional layer
-    auto weightd = nn.at<deconvolutional_layer<tan_h>>(0).weight_to_image();
-    cv::imshow("weights:", image2mat(weightd));
 
     cv::waitKey(0);
 }
