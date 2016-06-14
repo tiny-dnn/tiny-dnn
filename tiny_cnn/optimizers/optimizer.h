@@ -67,6 +67,12 @@ protected:
     std::unordered_map<const vec_t*, vec_t> E_[N];
 };
 
+#if 0 //defined(CNN_USE_AVX2)
+inline __m256 madd(__m256 a, __m256 b, __m256 c) { return _mm256_fmadd_ps(a, b, c); }
+#elif defined(CNN_USE_AVX)
+inline __m256 madd(__m256 a, __m256 b, __m256 c) { return _mm256_add_ps(_mm256_mul_ps(a, b), c); }
+#endif
+
 /**
  * adaptive gradient method
  *
@@ -79,43 +85,50 @@ struct adagrad : public stateful_optimizer<1> {
 
 	inline void update_impl(size_t begin, size_t end, fvec_t& g, const fvec_t& dW, fvec_t &W)
 	{
-#if 0 //def CNN_USE_AVX
+#ifdef CNN_USE_AVX
 		size_t sz = end - begin;
-		size_t nblocks = sz >> 3;
+		if (begin & 7) {
+			size_t headLen = 8 - (begin & 7);
+			size_t headEnd = std::min(begin+headLen, end);
+			for (size_t i=begin; i<headEnd; ++i) {
+				g[i] += dW[i] * dW[i];
+				W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+			}
+			begin = headEnd;
+			if (begin == end) {
+				return;
+			}
+		}
+		sz = end - begin;
 		float* pg = &g[begin];
 		const float* pdW = &dW[begin];
 		float* pW = &W[begin];
 
-		// TODO: align8
-
 		__m256 yalpha = _mm256_set1_ps(alpha);
 
-		// load hoisting
-		__m256 yg_next = _mm256_load_ps(pg);
-		__m256 ydw_next = _mm256_load_ps(pdW);
-		__m256 yW_next = _mm256_load_ps(pW);
+		size_t nblocks = sz >> 4;
 		for (cnn_size_t i=0; i<nblocks; ++i) {
-			__m256 yg = yg_next;
-			__m256 ydw = ydw_next;
-			__m256 yW = yW_next;
-			yg_next = _mm256_loadu_ps(pg+8);
-			ydw_next = _mm256_loadu_ps(pdW+8);
-			yW_next = _mm256_loadu_ps(pW+8);
-			
-#ifdef CNN_USE_AVX2
-			yg = _mm256_fmadd_ps(ydw, ydw, yg);
-#else
-			yg = _mm256_add_ps(yg, _mm256_mul_ps(ydw, ydw));
-#endif
-			yW = _mm256_sub_ps(yW, _mm256_mul_ps(yalpha, _mm256_mul_ps(ydw, _mm256_rsqrt_ps(yg))));
-			_mm256_store_ps(pg, yg);
-			_mm256_store_ps(pW, yW);
+			__m256 yg0 = _mm256_loadu_ps(pg);
+			__m256 yg1 = _mm256_loadu_ps(pg+8);
+			__m256 ydw0 = _mm256_loadu_ps(pdW);
+			__m256 ydw1 = _mm256_loadu_ps(pdW+8);
+			__m256 yW0 = _mm256_loadu_ps(pW);
+			__m256 yW1 = _mm256_loadu_ps(pW+8);
 
-			pg += 8;
-			pdW += 8;
-			pW += 8;
+			yg0 = madd(ydw0, ydw0, yg0);
+			yg1 = madd(ydw1, ydw1, yg1);
+			yW0 = _mm256_sub_ps(yW0, _mm256_mul_ps(yalpha, _mm256_mul_ps(ydw0, _mm256_rsqrt_ps(yg0))));
+			yW1 = _mm256_sub_ps(yW1, _mm256_mul_ps(yalpha, _mm256_mul_ps(ydw1, _mm256_rsqrt_ps(yg1))));
+			_mm256_store_ps(pg, yg0);
+			_mm256_store_ps(pg+8, yg1);
+			_mm256_store_ps(pW, yW0);
+			_mm256_store_ps(pW+8, yW1);
+
+			pg += 16;
+			pdW += 16;
+			pW += 16;
 		}
-		for (cnn_size_t i=begin+(nblocks<<3); i<end; ++i) {
+		for (cnn_size_t i=begin+(nblocks<<4); i<end; ++i) {
 			g[i] += dW[i] * dW[i];
 			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
 		}
