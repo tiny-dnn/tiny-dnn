@@ -19,6 +19,9 @@ tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep lea
 
 Check out the [documentation](doc/readme.md) for more info.
 
+## What's New
+- [tiny-cnn v0.1.0 released!](https://github.com/nyanp/tiny-cnn/releases/tag/v0.1.0)
+
 ## Features
 - reasonably fast, without GPU
     - with TBB threading and SSE/AVX vectorization
@@ -56,6 +59,10 @@ Check out the [documentation](doc/readme.md) for more info.
 * contrast normalization layer
 * dropout layer
 * linear operation layer
+* deconvolution layer
+* unpooling layer
+* elementwise-add layer
+* concat layer
 
 ### activation functions
 * tanh
@@ -122,37 +129,39 @@ construct convolutional neural networks
 #include "tiny_cnn/tiny_cnn.h"
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
+using namespace tiny_cnn::layers;
 
 void construct_cnn() {
     using namespace tiny_cnn;
 
-    // specify loss-function and optimization-algorithm
-    network<mse, adagrad> net;
-    //network<cross_entropy, RMSprop> net;
+    network<sequential> net;
 
     // add layers
-    net << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32in, conv5x5, 1-6 f-maps
-        << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28in, 6 f-maps, pool2x2
-        << fully_connected_layer<tan_h>(14 * 14 * 6, 120)
-        << fully_connected_layer<identity>(120, 10);
+    net << conv<tan_h>(32, 32, 5, 1, 6)  // in:32x32x1, 5x5conv, 6fmaps
+        << ave_pool<tan_h>(28, 28, 6, 2) // in:28x28x6, 2x2pooling
+        << fc<tan_h>(14 * 14 * 6, 120)   // in:14x14x6, out:120
+        << fc<identity>(120, 10);        // in:120,     out:10
 
-    assert(net.in_dim() == 32 * 32);
-    assert(net.out_dim() == 10);
-    
+    assert(net.in_data_size() == 32 * 32);
+    assert(net.out_data_size() == 10);
+
     // load MNIST dataset
     std::vector<label_t> train_labels;
     std::vector<vec_t> train_images;
-    
+
     parse_mnist_labels("train-labels.idx1-ubyte", &train_labels);
     parse_mnist_images("train-images.idx3-ubyte", &train_images, -1.0, 1.0, 2, 2);
-    
+
+    // declare optimization algorithm
+    adagrad optimizer;
+
     // train (50-epoch, 30-minibatch)
-    net.train(train_images, train_labels, 30, 50);
-    
+    net.train<mse>(optimizer, train_images, train_labels, 30, 50);
+
     // save
     std::ofstream ofs("weights");
     ofs << net;
-    
+
     // load
     // std::ifstream ifs("weights");
     // ifs >> net;
@@ -164,15 +173,16 @@ construct multi-layer perceptron(mlp)
 #include "tiny_cnn/tiny_cnn.h"
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
+using namespace tiny_cnn::layers;
 
 void construct_mlp() {
-    network<mse, gradient_descent> net;
+    network<sequential> net;
 
-    net << fully_connected_layer<sigmoid>(32 * 32, 300)
-        << fully_connected_layer<identity>(300, 10);
+    net << fc<sigmoid>(32 * 32, 300)
+        << fc<identity>(300, 10);
 
-    assert(net.in_dim() == 32 * 32);
-    assert(net.out_dim() == 10);
+    assert(net.in_data_size() == 32 * 32);
+    assert(net.out_data_size() == 10);
 }
 ```
 
@@ -184,10 +194,10 @@ using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
 void construct_mlp() {
-    auto mynet = make_mlp<mse, gradient_descent, tan_h>({ 32 * 32, 300, 10 });
+    auto mynet = make_mlp<tan_h>({ 32 * 32, 300, 10 });
 
-    assert(mynet.in_dim() == 32 * 32);
-    assert(mynet.out_dim() == 10);
+    assert(mynet.in_data_size() == 32 * 32);
+    assert(mynet.out_data_size() == 10);
 }
 ```
 

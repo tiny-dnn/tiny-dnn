@@ -11,7 +11,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(tiny_cnn)
-set(PROJECT_VERSION "0.0.1")
+set(PROJECT_VERSION "0.1.0")
 string(REGEX MATCHALL "[0-9]" PROJECT_VERSION_PARTS "${PROJECT_VERSION}")
 list(GET PROJECT_VERSION_PARTS 0 PROJECT_VERSION_MAJOR)
 list(GET PROJECT_VERSION_PARTS 1 PROJECT_VERSION_MINOR)
@@ -129,6 +129,7 @@ IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hrds})
     IF (USE_OPENCV)
         ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
+        ADD_EXECUTABLE(example_deconv_visual examples/deconv/visual.cpp ${tiny_cnn_hdrs})
     ELSE()
         FILE(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
         ADD_EXECUTABLE(example_mnist_test examples/mnist/test_with_stb_image.cpp ${tiny_cnn_hdrs} ${stb_image_hdrs})
@@ -136,6 +137,7 @@ IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
     IF (USE_OPENCV)
         target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
+        target_link_libraries( example_deconv_visual ${OpenCV_LIBS} )
         include_directories(${OpenCV_INCLUDE_DIRS})
     ENDIF()
 
@@ -176,7 +178,7 @@ ENDIF()
 
 
 IF(BUILD_TESTS)
-    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp test/test_no_duplicate_symbols.cpp  ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
 ENDIF()
 
 #------------------------------------------------

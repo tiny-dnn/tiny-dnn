@@ -611,7 +611,7 @@ inline void data_mismatch(const layer& layer, const vec_t& data) {
 
     std::string detail_info = os.str();
 
-    throw nn_error("input dimension mismath!" + detail_info);
+    throw nn_error("input dimension mismatch!" + detail_info);
 }
 
 inline void pooling_size_mismatch(cnn_size_t in_width,
