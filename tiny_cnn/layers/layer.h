@@ -460,7 +460,7 @@ class layer : public node {
 
     void update_weight(optimizer *o,
                        cnn_size_t worker_size, cnn_size_t batch_size) {
-		float_t rcp_batch_size = 1.0f / (float_t)batch_size;
+		float_t rcp_batch_size = (float_t)1 / (float_t)batch_size;
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
                 vec_t& target = *ith_in_node(i)->get_data();

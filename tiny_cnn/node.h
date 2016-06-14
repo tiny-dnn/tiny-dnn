@@ -125,7 +125,7 @@ class edge {
 		case 1:
 			{
 				auto& g = grad[0];
-				for (size_t i=begin; i<end; ++i) {
+				for (int i=begin; i<end; ++i) {
 					dst[i] = g[i] * scale;
 				}
 			}
@@ -134,7 +134,7 @@ class edge {
 			{
 				auto& g0 = grad[0];
 				auto& g1 = grad[1];
-				for (size_t i = begin; i<end; ++i) {
+				for (int i = begin; i<end; ++i) {
 					dst[i] = (g0[i] + g1[i]) * scale;
 				}
 			}
@@ -251,7 +251,7 @@ class edge {
 			float* pbegin = &grad[0][begin];
 			std::copy(pbegin, (pbegin + sz), &dst[begin]);
 			for (cnn_size_t i = 1; i < worker_size; i++) {
-				vectorize::reduce<float_t>(&grad[i][begin], sz, &dst[begin]);
+				vectorize::reduce<float>(&grad[i][begin], sz, &dst[begin]);
 			}
 			for (int i = begin; i<end; ++i) {
 				dst[i] *= scale;
