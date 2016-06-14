@@ -93,10 +93,10 @@ namespace {
     {
         if (sample_gradient.size() == sample_cost.size()) {
             // @todo consider adding parallelism
-            for (int channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+            for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
                 if (sample_gradient[channel].size() == sample_cost[channel].size()) {
                     // @todo optimize? (use AVX or so)
-                    for (int element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
+                    for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
                         sample_gradient[channel][element] *= sample_cost[channel][element];
                     }
                 }

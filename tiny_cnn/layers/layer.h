@@ -537,12 +537,12 @@ class layer : public node {
         return next()[i];
     }
 
-    vec_t* get_weight_data(int i) {
+    vec_t* get_weight_data(cnn_size_t i) {
         assert(is_trainable_weight(in_type_[i]));
         return &(*(ith_in_node(i)->get_data(0)))[0];
     }
 
-    const vec_t* get_weight_data(int i) const {
+    const vec_t* get_weight_data(cnn_size_t i) const {
         assert(is_trainable_weight(in_type_[i]));
         return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data(0)))[0];
     }

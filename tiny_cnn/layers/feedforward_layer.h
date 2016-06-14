@@ -45,7 +45,7 @@ protected:
 
     void backward_activation(const vec_t& prev_delta, const tensor_t& this_out, vec_t& curr_delta) {
 
-        for (int sample = 0, sample_count = this_out.size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0, sample_count = this_out.size(); sample < sample_count; ++sample) {
             const vec_t& out_vec = this_out[sample];
 
             if (h_.one_hot()) {

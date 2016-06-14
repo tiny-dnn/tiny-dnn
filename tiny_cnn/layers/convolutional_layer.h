@@ -225,7 +225,7 @@ public:
 
         const vec_t& W = (*in_data[1])[0];
 
-        for (int sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
 
             copy_and_pad_input((*in_data[0])[sample], static_cast<int>(index));
             vec_t&      out = (*out_data[0])[sample];
