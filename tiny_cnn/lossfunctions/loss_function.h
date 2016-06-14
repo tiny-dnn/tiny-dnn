@@ -88,33 +88,35 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
     return grads;
 }
 
-void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
-{
-    if (sample_gradient.size() == sample_cost.size()) {
-        // @todo consider adding parallelism
-        for (int channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
-            if (sample_gradient[channel].size() == sample_cost[channel].size()) {
-                // @todo optimize? (use AVX or so)
-                for (int element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
-                    sample_gradient[channel][element] *= sample_cost[channel][element];
+namespace {
+    void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
+    {
+        if (sample_gradient.size() == sample_cost.size()) {
+            // @todo consider adding parallelism
+            for (int channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+                if (sample_gradient[channel].size() == sample_cost[channel].size()) {
+                    // @todo optimize? (use AVX or so)
+                    for (int element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
+                        sample_gradient[channel][element] *= sample_cost[channel][element];
+                    }
                 }
             }
         }
     }
-}
 
-void add_sample_gradient(const std::vector<vec_t>& sample_gradient, std::vector<vec_t>& gradient_sum)
-{
-    for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; channel++) {
-        if (gradient_sum[channel].empty()) {
-            // init
-            gradient_sum[channel].resize(sample_gradient[channel].size());
-        }
-        assert(gradient_sum[channel].size() == sample_gradient[channel].size());
+    void add_sample_gradient(const std::vector<vec_t>& sample_gradient, std::vector<vec_t>& gradient_sum)
+    {
+        for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; channel++) {
+            if (gradient_sum[channel].empty()) {
+                // init
+                gradient_sum[channel].resize(sample_gradient[channel].size());
+            }
+            assert(gradient_sum[channel].size() == sample_gradient[channel].size());
 
-        // @todo optimize? (use AVX or so)
-        for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
-            gradient_sum[channel][element] += sample_gradient[channel][element];
+            // @todo optimize? (use AVX or so)
+            for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
+                gradient_sum[channel][element] += sample_gradient[channel][element];
+            }
         }
     }
 }
