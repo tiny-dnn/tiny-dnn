@@ -52,9 +52,7 @@ TEST(convolutional, fprop) {
     // short-hand references to the payload vectors
     vec_t &in     = in_tensor[0]
         , &out    = out_tensor[0]
-        , &a      = a_tensor[0]
-        , &weight = weight_tensor[0]
-        , &bias   = bias_tensor[0];
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
