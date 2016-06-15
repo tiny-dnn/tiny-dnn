@@ -43,11 +43,9 @@ public:
 
 protected:
 
-    void backward_activation(const vec_t& prev_delta, const tensor_t& this_out, vec_t& curr_delta) {
+    void backward_activation(const vec_t prev_delta, const tensor_t& this_out, vec_t& curr_delta) {
 
-        for (float_t& cd : curr_delta) {
-            cd = 0.0;
-        }
+        std::fill(curr_delta.begin(), curr_delta.end(), static_cast<float_t>(0));
 
         for (cnn_size_t sample = 0, sample_count = this_out.size(); sample < sample_count; ++sample) {
             const vec_t& out_vec = this_out[sample];
