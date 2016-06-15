@@ -34,4 +34,4 @@ TEST(no_duplicate_symbols, no_duplicate_symbols) {
     // typically caused by missing inline keywords in headers.
     // This is why this test is placed in a separate .cpp file.
     EXPECT_TRUE(true);
-
+}
