@@ -184,16 +184,23 @@ class nodes {
     }
 
     // transform indexing so that it's more suitable for per-layer operations
-    tensor_t get_layer_batch_input_data(const std::vector<tensor_t>& in_data, const cnn_size_t channel_index) {
+    // input:  [sample][channel][feature]
+    // output: [channel][sample][feature]
+    std::vector<tensor_t> reorder_for_layerwise_processing(const std::vector<tensor_t>& in_data) {
+        const cnn_size_t sample_count = in_data.size();
+        const cnn_size_t channel_count = in_data[0].size();
 
         // @todo we could perhaps pass pointers to underlying vec_t objects, in order to avoid copying
-        tensor_t layer_batch;
+        std::vector<tensor_t> output(channel_count, tensor_t(sample_count));
 
-        for (cnn_size_t sample = 0, sample_count = in_data.size(); sample < sample_count; ++sample) {
-            layer_batch.push_back(in_data[sample][channel_index]);
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+            assert(in_data[sample].size() == channel_count);
+            for (cnn_size_t channel = 0; channel < channel_count; ++channel) {
+                output[channel][sample] = in_data[sample][channel];
+            }
         }
 
-        return layer_batch;
+        return output;
     }
 
  protected:
@@ -231,8 +238,8 @@ class sequential : public nodes {
     std::vector<tensor_t> forward(const std::vector<tensor_t>& first,
                                int worker_index) override {
 
-        const tensor_t batch_input_data = get_layer_batch_input_data(first, 0);
-        nodes_.front()->set_in_data(&batch_input_data, batch_input_data.size(), worker_index);
+        const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(first);
+        nodes_.front()->set_in_data(reordered_data, worker_index);
 
         for (auto l : nodes_) {
             l->forward(worker_index);
@@ -315,9 +322,11 @@ class graph : public nodes {
             throw nn_error("input size mismatch");
         }
 
+        const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(in_data);
+        assert(reordered_data.size() == input_data_channel_count);
+
         for (cnn_size_t channel_index = 0; channel_index < input_data_channel_count; channel_index++) {
-            const tensor_t layer_batch_input_data = get_layer_batch_input_data(in_data, channel_index);
-            input_layers_[channel_index]->set_in_data(&layer_batch_input_data, 1, worker_index);
+            input_layers_[channel_index]->set_in_data(reordered_data, worker_index);
         }
 
         for (auto l : nodes_) {

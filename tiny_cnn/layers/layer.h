@@ -194,9 +194,9 @@ class layer : public node {
         }
     }
 
-    void set_in_data(const tensor_t* data,
-                     cnn_size_t dnum, cnn_size_t worker_idx) {
-        cnn_size_t j = 0;
+    void set_in_data(const std::vector<std::vector<vec_t>> data,
+                     cnn_size_t worker_idx) {
+        cnn_size_t j = 0, dnum = data.size();
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (in_type_[i] != vector_type::data) continue;
             assert(j < dnum);
@@ -367,7 +367,7 @@ class layer : public node {
 
     std::vector<tensor_t> forward(const std::vector<tensor_t>& input) {   // for test
         setup(false);
-        set_in_data(&input[0], input.size(), 0);
+        set_in_data(input, 0);
         forward(0);
         return output(0);
     }
