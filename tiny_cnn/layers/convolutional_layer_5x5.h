@@ -349,7 +349,10 @@ public:
 			if (stride == 5) {
 				for (size_t o=0; o<out_.depth_; ++o) {
 //				for_i(parallelize_, out_.depth_, [&](int o) {
-					__m256 sum = _mm256_setzero_ps();
+					__m256 sum0 = _mm256_setzero_ps();
+					__m256 sum1 = _mm256_setzero_ps();
+					__m256 sum2 = _mm256_setzero_ps();
+					__m128 sum3 = _mm_setzero_ps();
 					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
 					size_t inidx = 0;
 					size_t inarea = in_padded_.area();
@@ -361,19 +364,30 @@ public:
 						__m256 w0 = _mm256_loadu_ps(pw+0);
 						__m256 w1 = _mm256_loadu_ps(pw+8);
 						__m256 w2 = _mm256_loadu_ps(pw+16);
-						__m256 w3 = _mm256_castps128_ps256(_mm_load_ss(pw+24));
+						__m128 w3 = _mm_load_ss(pw+24);
 						const float* pi = (const float*) &in[inidx];
 						__m256 i0 = _mm256_loadu_ps(pi+0);
 						__m256 i1 = _mm256_loadu_ps(pi+8);
 						__m256 i2 = _mm256_loadu_ps(pi+16);
-						__m256 i3 = _mm256_castps128_ps256(_mm_load_ss(pi+24));
-						__m256 sum0 = madd(w0, i0, sum);
-						__m256 sum1 = _mm256_mul_ps(w1, i1);
-						__m256 sum2 = madd(w2, i2, sum0);
-						__m256 sum3 = madd(w3, i3, sum1);
-						sum = _mm256_add_ps(sum2, sum3);
+						__m128 i3 = _mm_load_ss(pi+24);
+#ifdef CNN_USE_AVX2
+						sum0 = _mm256_fmadd_ps(w0, i0, sum0);
+						sum1 = _mm256_fmadd_ps(w1, i1, sum1);
+						sum2 = _mm256_fmadd_ps(w2, i2, sum2);
+						sum3 = _mm_fmadd_ps(w3, i3, sum3);
+#else
+						__m256 tmp0 = _mm256_mul_ps(w0, i0);
+						__m256 tmp1 = _mm256_mul_ps(w1, i1);
+						__m256 tmp2 = _mm256_mul_ps(w2, i2);
+						__m128 tmp3 = _mm_mul_ps(w3, i3);
+						sum0 = _mm256_add_ps(tmp0, sum0);
+						sum1 = _mm256_add_ps(tmp1, sum1);
+						sum2 = _mm256_add_ps(tmp2, sum2);
+						sum3 = _mm_add_ps(tmp3, sum3);
+#endif
 					}
-					a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
+					__m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
+					a[o] = _mm_cvtss_f32(_mm_add_ps(hsum256_ps(sum), sum3)) + (has_bias_ ? bias[o] : 0);
 				}
 //				});
 			}else {
@@ -1053,22 +1067,18 @@ public:
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
 //			for_i(in_.depth_, [&](int inc) {
 #ifdef CNN_USE_AVX
-				union {
-					struct {
-						__m256 prevos0;
-						__m256 prevos1;
-						__m256 prevos2;
-						__m256 prevos3;
-					} s;
-					float floats[32];
-				};
+				VECTORIZE_ALIGN(16) float floats[28];
 				size_t base_idx = inc * in_padded_.area();
 				size_t in_padded_width = in_padded_.width_;
-				_mm256_storeu_ps(&floats[0], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 0]));
+				_mm256_store_ps(&floats[0], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 0]));
 				_mm256_storeu_ps(&floats[5], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 1]));
 				_mm256_storeu_ps(&floats[10], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 2]));
 				_mm256_storeu_ps(&floats[15], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 3]));
 				_mm256_storeu_ps(&floats[20], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 4]));
+				__m256 prevos0 = _mm256_load_ps(&floats[0]);
+				__m256 prevos1 = _mm256_load_ps(&floats[8]);
+				__m256 prevos2 = _mm256_load_ps(&floats[16]);
+				__m128 prevos3 = _mm_load_ss(&floats[24]);
 				cnn_size_t widx = 25 * inc;
 				cnn_size_t widx_delta = 25 * in_.depth_;
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=widx_delta) {
@@ -1079,13 +1089,19 @@ public:
 					__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
 					__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
 					__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
-					w0 = madd(s.prevos0, delta, w0);
-					w1 = madd(s.prevos1, delta, w1);
-					w2 = madd(s.prevos2, delta, w2);
+					__m128 w3 = _mm_load_ss(&dW[widx+24]);
+					w0 = madd(prevos0, delta, w0);
+					w1 = madd(prevos1, delta, w1);
+					w2 = madd(prevos2, delta, w2);
+#ifdef CNN_USE_AVX2
+					w3 = _mm_fmadd_ss(prevos3, _mm256_castps256_ps128(delta), w3);
+#else
+					w3 = madd_ss(prevos3, _mm256_castps256_ps128(delta), w3);
+#endif
 					_mm256_storeu_ps(&dW[widx+0], w0);
 					_mm256_storeu_ps(&dW[widx+8], w1);
 					_mm256_storeu_ps(&dW[widx+16], w2);
-					dW[widx+24] += s.prevos3.m256_f32[0] * delta.m256_f32[0];
+					_mm_store_ss(&dW[widx+24], w3);
 				}
 #else // #ifdef CNN_USE_AVX
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
@@ -1304,7 +1320,7 @@ private:
     void copy_and_pad_input(const vec_t& in, cnn_size_t worker_index) {
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[worker_index];
 
-        vec_t* dst = &cws.prev_out_buf_;
+        vec_t& dst = cws.prev_out_buf_;
 
         if (pad_type_ == padding::valid) {
             cws.prev_out_padded_ = &in;
@@ -1312,7 +1328,7 @@ private:
         else {
             // make padded version in order to avoid corner-case in fprop/bprop
             for (cnn_size_t c = 0; c < in_.depth_; c++) {
-                float_t *pimg = &(*dst)[in_padded_.get_index(5 /* weight_.width_ */ / 2, 5 /* weight_.height_ */ / 2, c)];
+                float_t *pimg = &dst[in_padded_.get_index(5 /* weight_.width_ */ / 2, 5 /* weight_.height_ */ / 2, c)];
                 const float_t *pin = &in[in_.get_index(0, 0, c)];
 
                 for (cnn_size_t y = 0; y < in_.height_; y++, pin += in_.width_, pimg += in_padded_.width_) {
