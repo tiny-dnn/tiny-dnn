@@ -344,6 +344,7 @@ public:
 
 #ifdef CNN_USE_AVX
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
+		float bias_scale = has_bias_ ? 1.0f : 0.0f;
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			const size_t stride = h_stride_ * in_padded_.width_;
 			if (stride == 5) {
@@ -387,7 +388,7 @@ public:
 #endif
 					}
 					__m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
-					a[o] = _mm_cvtss_f32(_mm_add_ps(hsum256_ps(sum), sum3)) + (has_bias_ ? bias[o] : 0);
+					a[o] = _mm_cvtss_f32(_mm_add_ps(hsum256_ps(sum), sum3)) + (bias[o] * bias_scale);
 				}
 //				});
 			}else {
@@ -420,7 +421,7 @@ public:
 						sum0 = madd(w4, i4, sum0);
 						sum = _mm256_add_ps(sum0, sum1);
 					}
-					a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
+					a[o] = sum8(sum) + (bias[o] * bias_scale);
 				}
 //				});
 			}
@@ -431,7 +432,8 @@ public:
 //	        for_i(parallelize_, out_.depth_, [&](int o) {
 				cnn_size_t oidx = out_.get_index(0, 0, o);
 				float* pa = &a[oidx];
-				float b = has_bias_ ? bias[o] : 0;
+				// init to bias value
+				float b = bias[o] * bias_scale;
 				const size_t area = out_.area();
 #ifdef CNN_USE_AVX
 				{
