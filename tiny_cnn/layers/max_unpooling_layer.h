@@ -173,7 +173,7 @@ private:
     index3d<cnn_size_t> out_;
 
     static cnn_size_t unpool_out_dim(cnn_size_t in_size, cnn_size_t unpooling_size, cnn_size_t stride) {
-        return (int) (double)in_size * stride + unpooling_size - 1;
+        return (int) (float_t)in_size * stride + unpooling_size - 1;
     }
 
     void connect_kernel(cnn_size_t unpooling_size, cnn_size_t inx, cnn_size_t iny, cnn_size_t  c)

@@ -157,7 +157,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         bool in = bernoulli(p);
         bool label = in ? bernoulli(p1) : bernoulli(p0);
 
-        data.push_back({ in * 1.0 });
+        data.push_back({ static_cast<float_t>(in) });
         labels.push_back(label ? 1 : 0);
     }
 
@@ -187,7 +187,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         // the test data is balanced between the classes
         const bool in = bernoulli(0.5);
         const label_t expected = in ? 1 : 0;
-        const vec_t input = { in * 1.0 };
+        const vec_t input = {static_cast<float_t>(in) };
         const label_t actual_equal_sample_cost = net_equal_sample_cost.predict_label(input);
         const label_t actual_equal_class_cost  = net_equal_class_cost .predict_label(input);
 
@@ -241,7 +241,8 @@ TEST(target_cost, train_unbalanced_data) {
             in1 = !in1;
         }
 
-        data.push_back({ in0 * 1.0, in1 * 1.0 });
+        data.push_back({ static_cast<float_t>(in0),
+                         static_cast<float_t>(in1) });
         labels.push_back(label ? 1 : 0);
     }
 
@@ -260,7 +261,8 @@ TEST(target_cost, train_unbalanced_data) {
         // the test data is balanced between the classes
         const bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
         const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
-        const vec_t input = { in[0] * 1.0, in[1] * 1.0 };
+        const vec_t input = { static_cast<float_t>(in[0]),
+                              static_cast<float_t>(in[1]) };
         const label_t actual_equal_sample_cost = net_equal_sample_cost.predict_label(input);
         const label_t actual_equal_class_cost  = net_equal_class_cost .predict_label(input);
 

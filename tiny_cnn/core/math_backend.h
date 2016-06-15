@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,51 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
-#include "picotest/picotest.h"
-#include "tiny_cnn/tiny_cnn.h"
+#pragma once
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_nodes.h"
-#include "test_core.h"
+#include "tiny_cnn/layers/layer.h"
+#include "tiny_cnn/core/conv_params.h"
 
-int main(void) {
-    return RUN_ALL_TESTS();
-}
+namespace tiny_cnn {
+namespace core {
+
+class context;
+
+enum class backend_t { tiny_cnn, nnpack, libdnn };
+
+struct backend_params {
+    backend_params() {}
+};
+
+class math_backend {
+ public:
+    // context holds solution-dependent parameters
+    // context should be able to hold any types of structures (like boost::any)
+    explicit math_backend(context* ctx_ = nullptr) {}
+
+    // core math functions
+
+    virtual void conv2d(cnn_size_t                 index,
+                        const std::vector<vec_t*>& in_data,
+                        std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void conv2d_back(cnn_size_t                 index,
+                             const std::vector<vec_t*>& in_data,
+                             const std::vector<vec_t*>& out_data,
+                             std::vector<vec_t*>&       out_grad,
+                             std::vector<vec_t*>&       in_grad) = 0;
+
+    virtual void matmul() = 0;
+    virtual void maxpool() = 0;
+
+    context* get_context() const { return ctx_; }
+
+    void set_layer(layerptr_t layer) { layer_ = layer; }
+
+ protected:
+    context* ctx_;
+    layerptr_t layer_;
+};
+
+}  // namespace core
+}  // namespace tiny_cnn

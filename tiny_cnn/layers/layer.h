@@ -34,12 +34,14 @@
 #include <string>
 
 #include "tiny_cnn/node.h"
+#include "tiny_cnn/core/math_backend.h"
+
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/util/weight_init.h"
-#include "tiny_cnn/optimizers/optimizer.h"
 
+#include "tiny_cnn/optimizers/optimizer.h"
 #include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
@@ -90,6 +92,8 @@ class layer : public node {
     void set_parallelize(bool parallelize) {
         parallelize_ = parallelize;
     }
+
+    bool get_parallelize() const { return parallelize_; }
 
     /////////////////////////////////////////////////////////////////////////
     // getter
@@ -303,7 +307,7 @@ class layer : public node {
         initialized_ = true;
     }
 
-    virtual void load(const std::vector<double>& src, int& idx) { // NOLINT
+    virtual void load(const std::vector<float_t>& src, int& idx) { // NOLINT
         auto all_weights = get_weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
@@ -504,10 +508,12 @@ class layer : public node {
  protected:
     bool initialized_;
     bool parallelize_;
-    cnn_size_t in_channels_;  // number of input vectors
+    cnn_size_t in_channels_;   // number of input vectors
     cnn_size_t out_channels_;  // number of output vectors
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
+
+    std::shared_ptr<core::math_backend> backend_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;
@@ -611,7 +617,7 @@ inline void data_mismatch(const layer& layer, const vec_t& data) {
 
     std::string detail_info = os.str();
 
-    throw nn_error("input dimension mismath!" + detail_info);
+    throw nn_error("input dimension mismatch!" + detail_info);
 }
 
 inline void pooling_size_mismatch(cnn_size_t in_width,

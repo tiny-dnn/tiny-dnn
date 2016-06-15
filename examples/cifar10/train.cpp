@@ -25,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
+#include <vector>
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
@@ -36,18 +37,18 @@ void construct_net(N& nn) {
     typedef convolutional_layer<activation::identity> conv;
     typedef max_pooling_layer<relu> pool;
 
-    const int n_fmaps = 32; ///< number of feature maps for upper layer
-    const int n_fmaps2 = 64; ///< number of feature maps for lower layer
-    const int n_fc = 64; ///< number of hidden units in fully-connected layer
+    const cnn_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
+    const cnn_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
+    const cnn_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
 
     nn << conv(32, 32, 5, 3, n_fmaps, padding::same)
-        << pool(32, 32, n_fmaps, 2)
-        << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
-        << pool(16, 16, n_fmaps, 2)
-        << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
-        << pool(8, 8, n_fmaps2, 2)
-        << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-        << fully_connected_layer<softmax>(n_fc, 10);
+       << pool(32, 32, n_fmaps, 2)
+       << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
+       << pool(16, 16, n_fmaps, 2)
+       << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
+       << pool(8, 8, n_fmaps2, 2)
+       << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
+       << fully_connected_layer<softmax>(n_fc, 10);
 }
 
 void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
@@ -77,8 +78,8 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
 
     progress_display disp(train_images.size());
     timer t;
-    const int n_minibatch = 10; ///< minibatch size
-    const int n_train_epochs = 30; ///< training duration
+    const int n_minibatch = 10;     ///< minibatch size
+    const int n_train_epochs = 30;  ///< training duration
 
     optimizer.alpha *= sqrt(n_minibatch) * learning_rate;
 
@@ -97,7 +98,9 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     };
 
     // training
-    nn.train<cross_entropy>(optimizer, train_images, train_labels, n_minibatch, n_train_epochs, on_enumerate_minibatch, on_enumerate_epoch);
+    nn.train<cross_entropy>(optimizer, train_images, train_labels,
+                            n_minibatch, n_train_epochs, on_enumerate_minibatch,
+                            on_enumerate_epoch);
 
     cout << "end training." << endl;
 
