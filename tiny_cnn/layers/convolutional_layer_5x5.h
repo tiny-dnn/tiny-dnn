@@ -590,6 +590,7 @@ public:
 							x = (nblocks << 2);
 						}
 	                    for (; x<out_.width_; ++x) {
+							__m128 sum = _mm_load_ss(&ppa[x]);
 							__m256 i0 = _mm256_loadu_ps(pi0);
 							__m256 i1 = _mm256_loadu_ps(pi1);
 							__m256 i2 = _mm256_loadu_ps(pi2);
@@ -597,11 +598,17 @@ public:
 							__m256 i4 = _mm256_loadu_ps(pi4);
 							__m256 sum0 = _mm256_mul_ps(w0a, i0);
 							__m256 sum1 = _mm256_mul_ps(w1a, i1);
+#if 0 //def CNN_USE_AVX2
+							sum0 = _mm256_fmadd_ps(w2a, i2, sum0);
+							sum1 = _mm256_fmadd_ps(w3a, i3, sum1);
+							sum0 = _mm256_fmadd_ps(w4a, i4, sum0);
+#else
 							sum0 = madd(w2a, i2, sum0);
 							sum1 = madd(w3a, i3, sum1);
 							sum0 = madd(w4a, i4, sum0);
+#endif
 							sum0 = _mm256_add_ps(sum0, sum1);
-							ppa[x] += sum8(sum0);
+							_mm_store_ss(&ppa[x], _mm_add_ss(sum, hsum256_ps(sum0)));
 	//						printf("%d %d %d %f\n", inc, y, x, ppa[x]);
 							pi0 += w_stride_;
 							pi1 += w_stride_;
@@ -763,7 +770,7 @@ public:
 
         const fvec_t& prev_out = *(cws.prev_out_padded_);
         const fvec_t& w = *in_data[1];
-        fvec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        fvec_t&       prev_delta = (pad_type_ == padding::same) ? cws.prev_delta_padded_ : (*in_grad[0]);
         fvec_t&       dW = *in_grad[1];
         fvec_t&       curr_delta = *out_grad[1];
 
@@ -774,18 +781,21 @@ public:
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
 #ifdef CNN_USE_AVX
-		__m256 z = _mm256_setzero_ps();
-		size_t sz = prev_delta->size();
-		size_t cnt = sz / 16;
-		for (size_t i=0; i<cnt; ++i) {
-			_mm256_store_ps(&(*prev_delta)[i*16+0], z);
-			_mm256_store_ps(&(*prev_delta)[i*16+8], z);
-		}
-		for (size_t i=cnt*16; i<sz; ++i) {
-			(*prev_delta)[i] = 0;
+		size_t sz = prev_delta.size();
+		{
+			float* pprev_delta = &prev_delta[0];
+			size_t i = 0;
+			size_t cnt = sz / 16;
+			for (; i<cnt; ++i, pprev_delta+=16) {
+				_mm256_store_ps(pprev_delta, _mm256_setzero_ps());
+				_mm256_store_ps(pprev_delta+8, _mm256_setzero_ps());
+			}
+			for (i*=16; i<sz; ++i, ++pprev_delta) {
+				_mm_store_ss(pprev_delta, _mm_setzero_ps());
+			}
 		}
 #else // #ifdef CNN_USE_AVX
-        std::fill(prev_delta->begin(), prev_delta->end(), float(0));
+        std::fill(prev_delta.begin(), prev_delta.end(), float(0));
 #endif // #ifdef CNN_USE_AVX
 
 #ifdef CNN_USE_AVX
@@ -798,7 +808,7 @@ public:
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
 					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-					float* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+					float* pdelta_dst = &prev_delta[in_padded_.get_index(0, 0, inc)];
 					__m256 w0a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w1a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
 					__m256 w2a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
@@ -901,7 +911,7 @@ public:
 		}else if (out_.height_ == 1 && out_.width_ == 1) {
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
 //			for_i(in_.depth_, [&](int inc) {
-				float* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+				float* pdelta_dst = &prev_delta[in_padded_.get_index(0, 0, inc)];
 				float* delta_dst0 = pdelta_dst;
 				float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
 				float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
@@ -918,18 +928,26 @@ public:
 					if (!tbl_.is_connected(outc, inc)) {
 						continue;
 					}
-					__m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
+					__m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), _mm256_castsi256_ps(mask));
 					const float* pw = (const float*)&w[widx];
-					__m256 w0a = _mm256_maskload_ps(pw+0, mask);
-					__m256 w1a = _mm256_maskload_ps(pw+5, mask);
-					__m256 w2a = _mm256_maskload_ps(pw+10, mask);
-					__m256 w3a = _mm256_maskload_ps(pw+15, mask);
-					__m256 w4a = _mm256_maskload_ps(pw+20, mask);
+					__m256 w0a = _mm256_loadu_ps(pw+0);
+					__m256 w1a = _mm256_loadu_ps(pw+5);
+					__m256 w2a = _mm256_loadu_ps(pw+10);
+					__m256 w3a = _mm256_loadu_ps(pw+15);
+					__m256 w4a = _mm256_loadu_ps(pw+20);
+#if 0//def CNN_USE_AVX2
+					dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
+					dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
+					dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
+					dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
+					dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+#else
 					dst0 = madd(w0a, delta_src, dst0);
 					dst1 = madd(w1a, delta_src, dst1);
 					dst2 = madd(w2a, delta_src, dst2);
 					dst3 = madd(w3a, delta_src, dst3);
 					dst4 = madd(w4a, delta_src, dst4);
+#endif
 				}
 				_mm256_storeu_ps(delta_dst0, dst0);
 				_mm256_storeu_ps(delta_dst1, dst1);
@@ -944,7 +962,7 @@ public:
 		{
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
 //			for_i(in_.depth_, [&](int inc) {
-				float* pdelta_dst_org = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
+				float* pdelta_dst_org = &prev_delta[in_padded_.get_index(0, 0, inc)];
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 
@@ -952,11 +970,11 @@ public:
 					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
 					float* pdelta_dst = pdelta_dst_org;
 #ifdef CNN_USE_AVX
-					__m256 w0a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w1a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w2a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w3a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
-					__m256 w4a = _mm256_maskload_ps((const float*)pw, mask); pw += 5;
+					__m256 w0a = _mm256_maskload_ps(pw+0, mask);
+					__m256 w1a = _mm256_maskload_ps(pw+5, mask);
+					__m256 w2a = _mm256_maskload_ps(pw+10, mask);
+					__m256 w3a = _mm256_maskload_ps(pw+15, mask);
+					__m256 w4a = _mm256_maskload_ps(pw+20, mask);
 #else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
