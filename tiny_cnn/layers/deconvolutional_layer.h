@@ -201,21 +201,17 @@ public:
                 const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * o + inc)];
                 const float_t *pi = &in[in_.get_index(0, 0, inc)];
                 float_t *pa = &a[out_.get_index(0, 0, o)];
-
-                for (cnn_size_t y = 0; y < out_.height_; y++) {
-                    for (cnn_size_t x = 0; x < out_.width_; x++) {
+                for (cnn_size_t y = 0; y < in_.height_; y++) {
+                    for (cnn_size_t x = 0; x < in_.width_; x++) {
                         const float_t * ppw = pw;
-                        const float_t * ppi = pi + (y * h_stride_) * in_.width_ + x * w_stride_;
-                        // float_t sum = float_t(0);
+                        const float_t * ppi = pi + y * in_.width_ + x;
 
                         // should be optimized for small kernel(3x3,5x5)
                         for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                                // sum += *ppw++ * ppi[(weight_.height_-1-wy) * in_.width_ + (weight_.width_-1-wx)];
-                                pa[(y * out_.width_ + x) + (wy * weight_.width_ + wx)] += *ppw++ * ppi[y * in_.width_ + x];
+                                pa[(y+wy) * h_stride_ * out_.width_ + (x+wx) * w_stride_] += ppw[wy * weight_.width_ + wx] * (*ppi);
                             }
                         }
-                        // pa[y * out_.width_ + x] += sum;
                     }
                 }
             }
@@ -272,17 +268,18 @@ public:
                 const float_t *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
                 float_t *pdelta_dst = &(*prev_delta)[in_.get_index(0, 0, inc)];
 
-                for (cnn_size_t y = 0; y < out_.height_; y++) {
-                    for (cnn_size_t x = 0; x < out_.width_; x++) {
+                for (cnn_size_t y = 0; y < in_.height_; y++) {
+                    for (cnn_size_t x = 0; x < in_.width_; x++) {
                         const float_t * ppw = pw;
-                        const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
-                        float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_.width_ + x * w_stride_;
+                        float_t * ppdelta_dst = pdelta_dst + y * in_.width_ + x;
+                        float_t sum = float_t(0);
 
                         for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                                ppdelta_dst[(weight_.height_-1-wy) * in_.width_ + (weight_.width_-1-wx)] += *ppw++ * ppdelta_src;
+                                sum += ppw[wy * weight_.width_ + wx] * pdelta_src[(y+wy) * h_stride_ * in_.width_ + (x+wx) * w_stride_];
                             }
                         }
+                        *ppdelta_dst += sum;
                     }
                 }
             }
@@ -297,13 +294,13 @@ public:
                 for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
                     for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
                         float_t dst = float_t(0);
-                        const float_t * prevo = &prev_out[in_.get_index(wx, wy, inc)];
-                        const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
+                        const float_t * prevo = &prev_out[in_.get_index(0, 0, inc)];
+                        const float_t * delta = &curr_delta[out_.get_index(wx, wy, outc)];
 
-                        for (cnn_size_t y = 0; y < out_.height_; y++) {
-                            dst += vectorize::dot(prevo + y * in_.width_, delta + y * out_.width_, out_.width_);
+                        for (cnn_size_t y = 0; y < in_.height_; y++) {
+                            dst += vectorize::dot(prevo + y * in_.width_, delta + y * out_.width_, in_.width_);
                         }
-                        dW[weight_.get_index(weight_.width_-wx-1, weight_.height_-wy-1, in_.depth_ * outc + inc)] += dst;
+                        dW[weight_.get_index(wx, wy, in_.depth_ * outc + inc)] += dst;
                     }
                 }
             }

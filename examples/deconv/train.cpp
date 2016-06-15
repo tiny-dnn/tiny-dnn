@@ -30,54 +30,37 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void construct_net(network<sequential>& nn) {
+///////////////////////////////////////////////////////////////////////////////
+// recongnition on MNIST similar to LaNet-5 adding deconvolution
+
+void deLaNet(network<sequential>& nn,
+    std::vector<label_t> train_labels,
+    std::vector<label_t> test_labels,
+    std::vector<vec_t> train_images,
+    std::vector<vec_t> test_images) {
+
     // connection table [Y.Lecun, 1998 Table.1]
-#define O true
-#define X false
-    static const bool tbl[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
-#undef O
-#undef X
+    #define O true
+    #define X false
+        static const bool tbl[] = {
+            O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
+            O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
+            O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
+            X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
+            X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
+            X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
+        };
+    #undef O
+    #undef X
 
     // construct nets
-    nn << deconvolutional_layer<tan_h>(32, 32, 3, 1, 6, padding::same)  // D1, 1@32x32-in, 6@32x32-out
-       << average_pooling_layer<tan_h>(32, 32, 6, 2)   // S2, 6@32x32-in, 6@16x16-out
-       << average_unpooling_layer<tan_h>(16, 16, 6, 2) // U3, 6@16x16-in, 6@32x32-out
-       << average_pooling_layer<tan_h>(32, 32, 6, 2)   // S4, 6@32x32-in, 6@16x16-out
-       << deconvolutional_layer<tan_h>(16, 16, 3, 6, 16,
-            connection_table(tbl, 6, 16))              // D5, 6@16x16-in, 16@18x18-out
-       << average_pooling_layer<tan_h>(18, 18, 16, 2)  // S6, 16@18x18-in, 16@9x9-out
-       << convolutional_layer<tan_h>(9, 9, 9, 16, 120) // C7, 16@9x9-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10);       // F8, 120-in, 10-out
-}
-
-void train_lenet(std::string data_dir_path) {
-    // specify loss-function and learning strategy
-    network<sequential> nn;
-    adagrad optimizer;
-
-    construct_net(nn);
-
-    std::cout << "load models..." << std::endl;
-
-    // load MNIST dataset
-    std::vector<label_t> train_labels, test_labels;
-    std::vector<vec_t> train_images, test_images;
-
-    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte",
-                       &train_labels);
-    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte",
-                       &train_images, -1.0, 1.0, 2, 2);
-    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte",
-                       &test_labels);
-    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte",
-                       &test_images, -1.0, 1.0, 2, 2);
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32 in, 5x5 kernel, 1-6 fmaps conv
+       << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28 in, 6 fmaps, 2x2 subsampling
+       << deconvolutional_layer<tan_h>(14, 14, 5, 6, 16,
+                                     connection_table(tbl, 6, 16)) // with connection-table
+       << average_pooling_layer<tan_h>(18, 18, 16, 2)
+       << convolutional_layer<tan_h>(9, 9, 9, 16, 120)
+       << fully_connected_layer<tan_h>(120, 10);
 
     std::cout << "start training" << std::endl;
 
@@ -86,6 +69,7 @@ void train_lenet(std::string data_dir_path) {
     int minibatch_size = 10;
     int num_epochs = 30;
 
+    adagrad optimizer;
     optimizer.alpha *= std::sqrt(minibatch_size);
 
     // create callback
@@ -112,15 +96,74 @@ void train_lenet(std::string data_dir_path) {
     nn.test(test_images, test_labels).print_detail(std::cout);
 
     // save networks
-    std::ofstream ofs("LeNet-weights");
+    std::ofstream ofs("deLeNet-weights");
     ofs << nn;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Deconcolutional Auto-encoder
+void DeAE(network<sequential>& nn, 
+    std::vector<label_t> train_labels,
+    std::vector<label_t> test_labels,
+    std::vector<vec_t> train_images,
+    std::vector<vec_t> test_images) {
+
+    // construct nets
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 18)  // C1, 1@32x32-in, 6@32x32-out
+       << average_pooling_layer<tan_h>(28, 28, 18, 2)   // S2, 6@28x28-in, 6@14x14-out
+       << average_unpooling_layer<tan_h>(14, 14, 18, 2) // U3, 6@14x14-in, 6@28x28-out
+       << deconvolutional_layer<tan_h>(28, 28, 5, 18, 3); // D4, 6@28x28-in, 16@32x32-out
+
+    // load train-data and make corruption
+
+    std::vector<vec_t> training_images_corrupted(train_images);
+
+    for (auto& d : training_images_corrupted) {
+        d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
+    }
+
+    gradient_descent optimizer;
+
+    // learning deconcolutional Auto-encoder
+    nn.train<mse>(optimizer, training_images_corrupted, train_images);
+
+    std::cout << "end training." << std::endl;
+
+    // save networks
+    std::ofstream ofs("DeAE-weights");
+    ofs << nn;
+}
+
+void train(std::string data_dir_path, std::string experiment) {
+
+    std::cout << "load traing and testing data..." << std::endl;
+
+    // load MNIST dataset
+    std::vector<label_t> train_labels, test_labels;
+    std::vector<vec_t> train_images, test_images;
+
+    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte",
+                       &train_labels);
+    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte",
+                       &train_images, -1.0, 1.0, 2, 2);
+    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte",
+                       &test_labels);
+    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte",
+                       &test_images, -1.0, 1.0, 2, 2);
+    // specify loss-function and learning strategy
+    network<sequential> nn;
+
+    if (experiment == "deLaNet")
+        deLaNet(nn, train_labels, test_labels, train_images, test_images); // recongnition on MNIST similar to LaNet-5 adding deconvolution
+    else if (experiment == "DeAE")
+        DeAE(nn, train_labels, test_labels, train_images, test_images); // Deconcolution Auto-encoder on MNIST
+}
+
 int main(int argc, char **argv) {
-    if (argc != 2) {
+    if (argc != 3) {
         std::cerr << "Usage : " << argv[0]
-                  << " path_to_data (example:../data)" << std::endl;
+                  << " path_to_data (example:../data) (example:deLaNet or DeAE)" << std::endl;
         return -1;
     }
-    train_lenet(argv[1]);
+    train(argv[1], argv[2]);
 }
