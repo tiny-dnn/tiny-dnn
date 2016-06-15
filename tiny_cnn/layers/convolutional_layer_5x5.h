@@ -32,10 +32,9 @@
 #ifdef CNN_USE_AVX
 
 // sum __m256 horizontally (sadly, _mm256_hadd_ps isn't good enough)
-#if 1
 // http://stackoverflow.com/a/13222410/4699324
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
-inline float sum8(__m256 x) {
+inline __m128 hsum256_ps(__m256 x) {
     // hiQuad = ( x7, x6, x5, x4 )
     const __m128 hiQuad = _mm256_extractf128_ps(x, 1);
     // loQuad = ( x3, x2, x1, x0 )
@@ -54,28 +53,11 @@ inline float sum8(__m256 x) {
     const __m128 hi = _mm_shuffle_ps(sumDual, sumDual, 0x1);
     // sum = ( -, -, -, x0+x1+x2+x3 + x4+x5+x6+x7 )
     const __m128 sum = _mm_add_ss(lo, hi);
-    return _mm_cvtss_f32(sum);
+    return sum;
 }
-#else
-// http://stackoverflow.com/a/35270026/4699324
-inline __m128 hsum_ps_sse3(__m128 v) {
-    __m128 shuf = _mm_movehdup_ps(v);        // broadcast elements 3,1 to 2,0
-    __m128 sums = _mm_add_ps(v, shuf);
-    shuf        = _mm_movehl_ps(shuf, sums); // high half -> low half
-    sums        = _mm_add_ss(sums, shuf);
-    return        /* _mm_cvtss_f32 */(sums);
+inline float sum8(__m256 x) {
+    return _mm_cvtss_f32(hsum256_ps(x));
 }
-inline __m128 hsum256_ps(__m256 v) {
-    __m128 vlow  = _mm256_castps256_ps128(v);
-    __m128 vhigh = _mm256_extractf128_ps(v, 1); // high 128
-           vlow  = _mm_add_ps(vlow, vhigh);     // add the low 128
-    return hsum_ps_sse3(vlow);         // and inline the sse3 version, which is optimal for AVX
-    // (no wasted instructions, and all of them are the 4B minimum)
-}
-inline float sum8(__m256 v) {
-	return _mm_cvtss_f32(hsum256_ps(v));
-}
-#endif
 #endif // #ifdef CNN_USE_AVX
 
 // byte shifting YMM register across 128-bit lanes (shift amount is immediate)
@@ -542,12 +524,14 @@ public:
 						if (w_stride_ == 1) {
 							size_t nblocks = out_.width_ >> 2;
 							__m256 dst0, dst1, dst2, dst3;
+							float* ppa2 = ppa;
 							for (size_t i=0; i<nblocks; ++i) {
 								__m256 i0 = _mm256_loadu_ps(pi0);
 								__m256 i1 = _mm256_loadu_ps(pi1);
 								__m256 i2 = _mm256_loadu_ps(pi2);
 								__m256 i3 = _mm256_loadu_ps(pi3);
 								__m256 i4 = _mm256_loadu_ps(pi4);
+								__m128 sum = _mm_loadu_ps(ppa2);
 								dst0 = _mm256_mul_ps(w0a, i0);
 								dst1 = _mm256_mul_ps(w0b, i0);
 								dst2 = _mm256_mul_ps(w0c, i0);
@@ -568,16 +552,24 @@ public:
 								dst1 = madd(w4b, i4, dst1);
 								dst2 = madd(w4c, i4, dst2);
 								dst3 = madd(w4d, i4, dst3);
-								ppa[i*4+0] += sum8(dst0);
-								ppa[i*4+1] += sum8(dst1);
-								ppa[i*4+2] += sum8(dst2);
-								ppa[i*4+3] += sum8(dst3);
-		//						printf("%d %d %d %f\n", inc, y, x, ppa[x]);
+								_mm_storeu_ps(
+									ppa2,
+									_mm_add_ps(
+										sum,
+										_mm_castpd_ps(
+											_mm_unpacklo_pd(
+												_mm_castps_pd(_mm_unpacklo_ps(hsum256_ps(dst0), hsum256_ps(dst1))),
+												_mm_castps_pd(_mm_unpacklo_ps(hsum256_ps(dst2), hsum256_ps(dst3)))
+											)
+										)
+									)
+								);
 								pi0 += 4;
 								pi1 += 4;
 								pi2 += 4;
 								pi3 += 4;
 								pi4 += 4;
+								ppa2 += 4;
 							}
 							x = (nblocks << 2);
 						}
