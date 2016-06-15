@@ -78,7 +78,8 @@ public:
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        for_i(parallelize_, out_size_, [&](int i) {
+		for (size_t i=0; i<out_size_; ++i) {
+//        for_i(parallelize_, out_size_, [&](int i) {
             a[i] = float_t(0);
             for (cnn_size_t c = 0; c < in_size_; c++) {
                 a[i] += w[c*out_size_ + i] * in[c];
@@ -88,11 +89,13 @@ public:
                 vec_t& b = *in_data[2];
                 a[i] += b[i];
             }
-        });
+		}
+//        });
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+		h_.f(out, a);
+		//for_i(parallelize_, out_size_, [&](int i) {
+		//	out[i] = h_.f(a, i);
+		//}
     }
 
     void back_propagation(cnn_size_t                index,

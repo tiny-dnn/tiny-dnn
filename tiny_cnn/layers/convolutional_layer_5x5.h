@@ -32,6 +32,7 @@
 #ifdef CNN_USE_AVX
 
 // sum __m256 horizontally (sadly, _mm256_hadd_ps isn't good enough)
+#if 1
 // http://stackoverflow.com/a/13222410/4699324
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
 inline float sum8(__m256 x) {
@@ -55,7 +56,26 @@ inline float sum8(__m256 x) {
     const __m128 sum = _mm_add_ss(lo, hi);
     return _mm_cvtss_f32(sum);
 }
-
+#else
+// http://stackoverflow.com/a/35270026/4699324
+inline __m128 hsum_ps_sse3(__m128 v) {
+    __m128 shuf = _mm_movehdup_ps(v);        // broadcast elements 3,1 to 2,0
+    __m128 sums = _mm_add_ps(v, shuf);
+    shuf        = _mm_movehl_ps(shuf, sums); // high half -> low half
+    sums        = _mm_add_ss(sums, shuf);
+    return        /* _mm_cvtss_f32 */(sums);
+}
+inline __m128 hsum256_ps(__m256 v) {
+    __m128 vlow  = _mm256_castps256_ps128(v);
+    __m128 vhigh = _mm256_extractf128_ps(v, 1); // high 128
+           vlow  = _mm_add_ps(vlow, vhigh);     // add the low 128
+    return hsum_ps_sse3(vlow);         // and inline the sse3 version, which is optimal for AVX
+    // (no wasted instructions, and all of them are the 4B minimum)
+}
+inline float sum8(__m256 v) {
+	return _mm_cvtss_f32(hsum256_ps(v));
+}
+#endif
 #endif // #ifdef CNN_USE_AVX
 
 // byte shifting YMM register across 128-bit lanes (shift amount is immediate)
@@ -344,52 +364,111 @@ public:
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			const size_t stride = h_stride_ * in_padded_.width_;
-	        for_i(parallelize_, out_.depth_, [&](int o) {
-				__m256 sum = _mm256_setzero_ps();
-				size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
-				size_t inidx = 0;
-				size_t inarea = in_padded_.area();
-				for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
-	                if (!tbl_.is_connected(o, inc)) {
-						continue;
+			if (stride == 5) {
+				for (size_t o=0; o<out_.depth_; ++o) {
+//				for_i(parallelize_, out_.depth_, [&](int o) {
+					__m256 sum = _mm256_setzero_ps();
+					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
+					size_t inidx = 0;
+					size_t inarea = in_padded_.area();
+					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
+						if (!tbl_.is_connected(o, inc)) {
+							continue;
+						}
+						const float* pw = (const float*) &w[widx];
+						__m256 w0 = _mm256_loadu_ps(pw+0);
+						__m256 w1 = _mm256_loadu_ps(pw+8);
+						__m256 w2 = _mm256_loadu_ps(pw+16);
+						__m256 w3 = _mm256_castps128_ps256(_mm_load_ss(pw+24));
+						const float* pi = (const float*) &in[inidx];
+						__m256 i0 = _mm256_loadu_ps(pi+0);
+						__m256 i1 = _mm256_loadu_ps(pi+8);
+						__m256 i2 = _mm256_loadu_ps(pi+16);
+						__m256 i3 = _mm256_castps128_ps256(_mm_load_ss(pi+24));
+						__m256 sum0 = madd(w0, i0, sum);
+						__m256 sum1 = _mm256_mul_ps(w1, i1);
+						__m256 sum2 = madd(w2, i2, sum0);
+						__m256 sum3 = madd(w3, i3, sum1);
+						sum = _mm256_add_ps(sum2, sum3);
 					}
-					const float* pw = (const float*) &w[widx];
-					__m256 w0 = _mm256_maskload_ps(pw+0, mask);
-					__m256 w1 = _mm256_maskload_ps(pw+5, mask);
-					__m256 w2 = _mm256_maskload_ps(pw+10, mask);
-					__m256 w3 = _mm256_maskload_ps(pw+15, mask);
-					__m256 w4 = _mm256_maskload_ps(pw+20, mask);
-					const float* pi = (const float*) &in[inidx];
-					__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
-					__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
-					__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
-					__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
-					__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-					__m256 sum0 = madd(w0, i0, sum);
-					__m256 sum1 = _mm256_mul_ps(w1, i1);
-					sum0 = madd(w2, i2, sum0);
-					sum1 = madd(w3, i3, sum1);
-					sum0 = madd(w4, i4, sum0);
-					sum = _mm256_add_ps(sum0, sum1);
-	            }
-				a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
-	        });
+					a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
+				}
+//				});
+			}else {
+				for (size_t o=0; o<out_.depth_; ++o) {
+//				for_i(parallelize_, out_.depth_, [&](int o) {
+					__m256 sum = _mm256_setzero_ps();
+					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
+					size_t inidx = 0;
+					size_t inarea = in_padded_.area();
+					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
+						if (!tbl_.is_connected(o, inc)) {
+							continue;
+						}
+						const float* pw = (const float*) &w[widx];
+						__m256 w0 = _mm256_maskload_ps(pw+0, mask);
+						__m256 w1 = _mm256_maskload_ps(pw+5, mask);
+						__m256 w2 = _mm256_maskload_ps(pw+10, mask);
+						__m256 w3 = _mm256_maskload_ps(pw+15, mask);
+						__m256 w4 = _mm256_maskload_ps(pw+20, mask);
+						const float* pi = (const float*) &in[inidx];
+						__m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
+						__m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
+						__m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
+						__m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
+						__m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
+						__m256 sum0 = madd(w0, i0, sum);
+						__m256 sum1 = _mm256_mul_ps(w1, i1);
+						sum0 = madd(w2, i2, sum0);
+						sum1 = madd(w3, i3, sum1);
+						sum0 = madd(w4, i4, sum0);
+						sum = _mm256_add_ps(sum0, sum1);
+					}
+					a[o] = sum8(sum) + (has_bias_ ? bias[o] : 0);
+				}
+//				});
+			}
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
-	        for_i(parallelize_, out_.depth_, [&](int o) {
-				float* pa = &a[out_.get_index(0, 0, o)];
+			for (size_t o=0; o<out_.depth_; ++o) {
+//	        for_i(parallelize_, out_.depth_, [&](int o) {
+				cnn_size_t oidx = out_.get_index(0, 0, o);
+				float* pa = &a[oidx];
 				float b = has_bias_ ? bias[o] : 0;
 				const size_t area = out_.area();
 #ifdef CNN_USE_AVX
-				__m256 b2 = _mm256_set1_ps(b);
-				size_t cnt = area / 16;
-				for (size_t i=0; i<cnt; ++i) {
-					_mm256_storeu_ps(&pa[i*16+0], b2);
-					_mm256_storeu_ps(&pa[i*16+8], b2);
-				}
-				for (size_t i=cnt*16; i<area; ++i) {
-					pa[i] = b;
+				{
+#if 0
+					__m256 b2 = _mm256_set1_ps(b);
+					size_t cnt = area / 16;
+					for (size_t i=0; i<cnt; ++i) {
+						_mm256_storeu_ps(&pa[i*16+0], b2);
+						_mm256_storeu_ps(&pa[i*16+8], b2);
+					}
+					for (size_t i=cnt*16; i<area; ++i) {
+						pa[i] = b;
+					}
+#else
+					size_t headSize = 0;
+					if (oidx & 7) {
+						headSize = 8 - (oidx & 7);
+						assert(headSize < area);
+						for (size_t i=0; i<headSize; ++i) {
+							pa[i] = b;
+						}
+					}
+					__m256 b2 = _mm256_set1_ps(b);
+					size_t cnt = (area - headSize) / 16;
+					float* pa2 = pa + headSize;
+					for (size_t i=0; i<cnt; ++i) {
+						_mm256_store_ps(&pa2[i*16+0], b2);
+						_mm256_store_ps(&pa2[i*16+8], b2);
+					}
+					for (size_t i=headSize+cnt*16; i<area; ++i) {
+						pa[i] = b;
+					}
+#endif
 				}
 #else // #ifdef CNN_USE_AVX
 				for (size_t i=0; i<area; ++i) {
@@ -564,8 +643,8 @@ public:
 						ppa += out_.width_;
 	                }
 	            }
-	            
-	        });
+			}
+//	        });
 		}
 
 		// apply acativation function
@@ -705,7 +784,8 @@ public:
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
 		// propagate delta to previous layer
 		if (w_stride_ == 1 && out_.width_ >= 4) {
-			for_i(in_.depth_, [&](int inc) {
+			for (size_t inc=0; inc<in_.depth_; ++inc) {
+//			for_i(in_.depth_, [&](int inc) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
@@ -808,9 +888,11 @@ public:
 						pdelta_dst += h_stride_ * in_padded_.width_;
 					}
 				}
-			});
+			}
+//			});
 		}else if (out_.height_ == 1 && out_.width_ == 1) {
-			for_i(in_.depth_, [&](int inc) {
+			for (size_t inc=0; inc<in_.depth_; ++inc) {
+//			for_i(in_.depth_, [&](int inc) {
 				float* pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 				float* delta_dst0 = pdelta_dst;
 				float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
@@ -846,12 +928,14 @@ public:
 				_mm256_storeu_ps(delta_dst2, dst2);
 				_mm256_storeu_ps(delta_dst3, dst3);
 				_mm256_storeu_ps(delta_dst4, dst4);
-			});
+			}
+//			});
 
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
-			for_i(in_.depth_, [&](int inc) {
+			for (size_t inc=0; inc<in_.depth_; ++inc) {
+//			for_i(in_.depth_, [&](int inc) {
 				float* pdelta_dst_org = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
@@ -968,12 +1052,14 @@ public:
 #endif // #ifdef CNN_USE_AVX
 					}
 				}
-			});
+			}
+//			});
 		}
 
         // accumulate dw
 		if (out_.width_ == 1 && out_.height_ == 1) {
-			for_i(in_.depth_, [&](int inc) {
+			for (size_t inc=0; inc<in_.depth_; ++inc) {
+//			for_i(in_.depth_, [&](int inc) {
 #ifdef CNN_USE_AVX
 				union {
 					struct {
@@ -1024,9 +1110,11 @@ public:
 					}
 				}
 #endif // #ifdef CNN_USE_AVX
-			});
+			}
+//			});
 		}else {
-			for_i(in_.depth_, [&](int inc) {
+			for (size_t inc=0; inc<in_.depth_; ++inc) {
+//			for_i(in_.depth_, [&](int inc) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
 					if (!tbl_.is_connected(outc, inc)) continue;
@@ -1077,7 +1165,8 @@ public:
 						}
 					}
 				}
-			});
+			}
+//			});
 		}
 
         // accumulate db
