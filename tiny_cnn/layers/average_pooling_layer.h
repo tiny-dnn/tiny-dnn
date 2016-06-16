@@ -120,10 +120,10 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         CNN_UNREFERENCED_PARAMETER(index);
 
 		auto oarea = out_.area();
+		size_t idx = 0;
 		for (size_t d=0; d<out_.depth_; ++d) {
 			float weight = w[d] * scale_factor_;
 			float bias = b[d];
-			size_t idx = d * oarea;
 			for (size_t i=0; i<oarea; ++i, ++idx) {
 				const wi_connections& connections = out2wi_[idx];
 				float_t value = float_t(0);
@@ -139,7 +139,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 		h_.f(out, a);
     }
 
-    void back_propagation(cnn_size_t                index,
+    void back_propagation(cnn_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
@@ -155,10 +155,13 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-		for (size_t i=0; i<in2wo_.size(); ++i) {
-            const auto& connection = in2wo_[i];
-            float_t delta = w[connection.first] * curr_delta[connection.second]; // 40.6%
-            prev_delta[i] = delta * scale_factor_; // 2.1%
+		auto inarea = in_.area();
+		size_t idx = 0;
+		for (size_t i=0; i<in_.depth_; ++i) {
+			float_t weight = w[i] * scale_factor_;
+			for (size_t j=0; j<inarea; ++j, ++idx) {
+				prev_delta[idx] = weight * curr_delta[in2wo_[idx].second];
+			}
 		}
 
 		for (size_t i=0; i<weight2io_.size(); ++i) {
