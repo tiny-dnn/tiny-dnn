@@ -39,7 +39,6 @@
 #include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/lrn_layer.h"
 #include "tiny_cnn/layers/dropout_layer.h"
-#include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/arithmetic_layer.h"
 #include "tiny_cnn/layers/concat_layer.h"
 #include "tiny_cnn/layers/deconvolutional_layer.h"
