@@ -293,7 +293,7 @@ public:
         
         std::fill(a.begin(), a.end(), double(0));
 
-        for_i(parallelize_, out_.depth_, [&](int o) {
+		for (cnn_size_t o=0; o<out_.depth_; ++o) {
             for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                 if (!tbl_.is_connected(o, inc)) continue;
 
@@ -325,11 +325,9 @@ public:
                 double b = bias[o];
                 std::for_each(pa, pa + out_.width_ * out_.height_, [&](double& f) { f += b; });
             }
-        });
+		}
 
-        for_i(parallelize_, out_.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+		h_.f(out, a);
     }
 
     void forward_propagation_impl(cnn_size_t index,
@@ -349,7 +347,6 @@ public:
 			const size_t stride = h_stride_ * in_padded_.width_;
 			if (stride == 5) {
 				for (size_t o=0; o<out_.depth_; ++o) {
-//				for_i(parallelize_, out_.depth_, [&](int o) {
 					__m256 sum0 = _mm256_setzero_ps();
 					__m256 sum1 = _mm256_setzero_ps();
 					__m256 sum2 = _mm256_setzero_ps();
@@ -390,10 +387,8 @@ public:
 					__m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
 					a[o] = _mm_cvtss_f32(_mm_add_ps(hsum256_ps(sum), sum3)) + (bias[o] * bias_scale);
 				}
-//				});
 			}else {
 				for (size_t o=0; o<out_.depth_; ++o) {
-//				for_i(parallelize_, out_.depth_, [&](int o) {
 					__m256 sum = _mm256_setzero_ps();
 					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
 					size_t inidx = 0;
@@ -423,13 +418,11 @@ public:
 					}
 					a[o] = sum8(sum) + (bias[o] * bias_scale);
 				}
-//				});
 			}
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
 			for (size_t o=0; o<out_.depth_; ++o) {
-//	        for_i(parallelize_, out_.depth_, [&](int o) {
 				cnn_size_t oidx = out_.get_index(0, 0, o);
 				float* pa = &a[oidx];
 				// init to bias value
@@ -659,7 +652,6 @@ public:
 	                }
 	            }
 			}
-//	        });
 		}
 
 		// apply acativation function
@@ -701,7 +693,7 @@ public:
         std::fill(prev_delta->begin(), prev_delta->end(), double(0));
 
         // propagate delta to previous layer
-        for_i(in_.depth_, [&](int inc) {
+		for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
             for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
 
@@ -723,10 +715,10 @@ public:
                     }
                 }
             }
-        });
+		}
 
         // accumulate dw
-        for_i(in_.depth_, [&](int inc) {
+		for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
             for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
                 if (!tbl_.is_connected(outc, inc)) continue;
@@ -744,7 +736,7 @@ public:
                     }
                 }
             }
-        });
+		}
 
         // accumulate db
         if (has_bias_) {
