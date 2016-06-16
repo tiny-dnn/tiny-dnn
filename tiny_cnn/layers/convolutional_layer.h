@@ -445,8 +445,8 @@ private:
     void init() {
         for (conv_layer_worker_specific_storage& cws : conv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {
-                cws.prev_out_buf_.resize(in_padded_.size(), vec_t(1, float_t(0)));
-                cws.prev_delta_padded_.resize(in_padded_.size(), vec_t(1, float_t(0)));
+                cws.prev_out_buf_.resize(1, vec_t(in_padded_.size(), float_t(0)));
+                cws.prev_delta_padded_.resize(1, vec_t(in_padded_.size(), float_t(0)));
             }
             else {
                 cws.prev_out_buf_.clear();
