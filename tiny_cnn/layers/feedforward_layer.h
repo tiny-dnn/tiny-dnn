@@ -43,22 +43,25 @@ public:
 
 protected:
 
-    void backward_activation(const vec_t prev_delta, const tensor_t& this_out, vec_t& curr_delta) {
+    void backward_activation(const tensor_t& prev_delta, const tensor_t& this_out, tensor_t& curr_delta) {
 
-        std::fill(curr_delta.begin(), curr_delta.end(), static_cast<float_t>(0));
-
+        // @todo consider parallelism
         for (cnn_size_t sample = 0, sample_count = this_out.size(); sample < sample_count; ++sample) {
             const vec_t& out_vec = this_out[sample];
+            const vec_t& prev_delta_vec = prev_delta[sample];
+            vec_t& curr_delta_vec = curr_delta[sample];
 
+            const cnn_size_t len = prev_delta_vec.size();
+            
             if (h_.one_hot()) {
-                for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
-                    curr_delta[c] += prev_delta[c] * h_.df(out_vec[c]);
+                for (cnn_size_t c = 0; c < len; c++) {
+                    curr_delta_vec[c] = prev_delta_vec[c] * h_.df(out_vec[c]);
                 }
             }
             else {
-                for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
+                for (cnn_size_t c = 0; c < len; c++) {
                     vec_t df = h_.df(out_vec, c);
-                    curr_delta[c] += vectorize::dot(&prev_delta[0], &df[0], prev_delta.size());
+                    curr_delta_vec[c] = vectorize::dot(&prev_delta_vec[0], &df[0], len);
                 }
             }
         }

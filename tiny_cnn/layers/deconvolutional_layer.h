@@ -183,16 +183,19 @@ public:
         return (weight_.width_ * w_stride_) * (weight_.height_ * h_stride_) * out_.depth_;
     }
 
-    void forward_propagation(cnn_size_t index,
+    void forward_propagation(cnn_size_t worker_index,
                              const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
+
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
+
         const vec_t& W   = (*in_data[1])[0];
         
         // @todo revise parallelism strategy
         for (cnn_size_t sample = 0, sample_count = (*in_data[0]).size(); sample < sample_count; ++sample) {
 
-            deconv_layer_worker_storage_[index].prev_out_ = &(*in_data[0])[sample];
-            const vec_t &in = *(deconv_layer_worker_storage_[index].prev_out_); // input
+            cws.prev_out_[sample] = &((*in_data[0])[sample]);
+            const vec_t &in = *(cws.prev_out_[sample]); // input
             vec_t&       out = (*out_data[0])[sample];
             vec_t&       a   = (*out_data[1])[sample];
 
@@ -235,8 +238,9 @@ public:
             for_i(parallelize_, out_.size(), [&](int i) {
                 out[i] = h_.f(a, i);
             });
-            copy_and_unpad_output(out, static_cast<int>(index));
         }
+
+        copy_and_unpad_output(*out_data[0], static_cast<int>(worker_index));
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
@@ -244,86 +248,92 @@ public:
         return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                    index,
+    void back_propagation(cnn_size_t                    worker_index,
                           const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
-                          std::vector<vec_t*>&          out_grad,
-                          std::vector<vec_t*>&          in_grad) override {
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
 
-        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[index];
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
 
-        const vec_t& prev_out = *(cws.cur_out_padded_);
         const vec_t& W = (*in_data[1])[0];
-        vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
-        vec_t&       dW = *in_grad[1];
-        vec_t&       curr_delta = *out_grad[1];
 
         assert(W.size() == weight_.size());
-        assert(dW.size() == weight_.size());
-        assert(curr_delta.size() == out_shape()[0].size());
 
-        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+        this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
+        // @todo revise parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = (*in_data[0]).size(); sample < sample_count; ++sample) {
 
-        // propagate delta to previous layer
-        for_i(in_.depth_, [&](int inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-                if (!tbl_.is_connected(outc, inc)) continue;
+            const vec_t& prev_out   = *(cws.cur_out_padded_)[sample];
+            vec_t&       dW         = (*in_grad[1])[sample];
+            vec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_[sample] : &((*in_grad[0])[sample]);
+            vec_t&       curr_delta = (*out_grad[1])[sample];
 
-                const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
-                const float_t *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-                float_t *pdelta_dst = &(*prev_delta)[in_.get_index(0, 0, inc)];
+            assert(curr_delta.size() == out_shape()[0].size());
+            assert(dW.size() == weight_.size());
 
-                for (cnn_size_t y = 0; y < out_.height_; y++) {
-                    for (cnn_size_t x = 0; x < out_.width_; x++) {
-                        const float_t * ppw = pw;
-                        const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
-                        float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_.width_ + x * w_stride_;
+            std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-                        for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                            for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                                ppdelta_dst[(weight_.height_-1-wy) * in_.width_ + (weight_.width_-1-wx)] += *ppw++ * ppdelta_src;
+            // propagate delta to previous layer
+            for_i(in_.depth_, [&](int inc) {
+                for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+                    if (!tbl_.is_connected(outc, inc)) continue;
+
+                    const float_t *pw = &W[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
+                    const float_t *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
+                    float_t *pdelta_dst = &(*prev_delta)[in_.get_index(0, 0, inc)];
+
+                    for (cnn_size_t y = 0; y < out_.height_; y++) {
+                        for (cnn_size_t x = 0; x < out_.width_; x++) {
+                            const float_t * ppw = pw;
+                            const float_t ppdelta_src = pdelta_src[y * out_.width_ + x];
+                            float_t * ppdelta_dst = pdelta_dst + y * h_stride_ * in_.width_ + x * w_stride_;
+
+                            for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                                for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                                    ppdelta_dst[(weight_.height_-1-wy) * in_.width_ + (weight_.width_-1-wx)] += *ppw++ * ppdelta_src;
+                                }
                             }
                         }
                     }
                 }
-            }
-        });
+            });
 
-        // accumulate dw
-        for_i(in_.depth_, [&](int inc) {
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+            // accumulate dw
+            for_i(in_.depth_, [&](int inc) {
+                for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
-                if (!tbl_.is_connected(outc, inc)) continue;
+                    if (!tbl_.is_connected(outc, inc)) continue;
 
-                for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
-                    for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
-                        float_t dst = float_t(0);
-                        const float_t * prevo = &prev_out[in_.get_index(wx, wy, inc)];
-                        const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
+                    for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
+                        for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
+                            float_t dst = float_t(0);
+                            const float_t * prevo = &prev_out[in_.get_index(wx, wy, inc)];
+                            const float_t * delta = &curr_delta[out_.get_index(0, 0, outc)];
 
-                        for (cnn_size_t y = 0; y < out_.height_; y++) {
-                            dst += vectorize::dot(prevo + y * in_.width_, delta + y * out_.width_, out_.width_);
+                            for (cnn_size_t y = 0; y < out_.height_; y++) {
+                                dst += vectorize::dot(prevo + y * in_.width_, delta + y * out_.width_, out_.width_);
+                            }
+                            dW[weight_.get_index(weight_.width_-wx-1, weight_.height_-wy-1, in_.depth_ * outc + inc)] += dst;
                         }
-                        dW[weight_.get_index(weight_.width_-wx-1, weight_.height_-wy-1, in_.depth_ * outc + inc)] += dst;
                     }
                 }
-            }
-        });
+            });
 
-        // accumulate db
-        if (has_bias_) {
-            vec_t& db = *in_grad[2];
+            // accumulate db
+            if (has_bias_) {
+                vec_t& db = (*in_grad[2])[sample];
 
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-                const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
-                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
+                for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+                    const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
+                    db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, float_t(0));
+                }
             }
+
+            if (pad_type_ == padding::same)
+                copy_and_pad_delta(cws.prev_delta_padded_[sample], (*in_grad[0])[sample]);
         }
-
-        if (pad_type_ == padding::same)
-            copy_and_pad_delta(cws.prev_delta_padded_, *in_grad[0]);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -403,15 +413,12 @@ private:
     void init() {
         for (deconv_layer_worker_specific_storage& cws : deconv_layer_worker_storage_) {
             if (pad_type_ == padding::same) {
-                cws.prev_out_buf_.resize(in_.size(), float_t(0));
-                cws.prev_delta_padded_.resize(in_.size(), float_t(0));
+                cws.prev_out_buf_.resize(in_.size(), vec_t(1, float_t(0)));
+                cws.prev_delta_padded_.resize(in_.size(), vec_t(1, float_t(0)));
             }
             else {
                 cws.prev_out_buf_.clear();
             }
-        }
-        if (pad_type_ == padding::same) {
-            prev_delta2_padded_.resize(in_.size(), float_t(0));
         }
     }
 
@@ -451,45 +458,45 @@ private:
         }
     }
 
-    void copy_and_unpad_output(const vec_t& out, int worker_index) {
+    void copy_and_unpad_output(const tensor_t& out, int worker_index) {
         deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
 
-        vec_t* dst = &cws.cur_out_buf_;
-
-        if (pad_type_ == padding::valid) {
-            cws.cur_out_padded_ = &out;
-        }
-        else {
-            // make unpadded version in order to restore scale in fprop/bprop
-            for (cnn_size_t c = 0; c < out_.depth_; c++) {
-                float_t *pimg = &(*dst)[out_unpadded_.get_index(0, 0, c)];
-                const float_t *pout = &out[out_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)];
-
-                for (cnn_size_t y = weight_.height_ / 2; y < in_.height_ - weight_.height_ / 2; y++, pout += out_.width_, pimg += (out_.width_ - weight_.width_ + 1)) {
-                    std::copy(pout, pout + out_.width_ - weight_.width_ + 1, pimg);
-                }
+        for (cnn_size_t sample = 0, sample_count = out.size(); sample < sample_count; ++sample) {
+            if (pad_type_ == padding::valid) {
+                cws.cur_out_padded_[sample] = &out[sample];
             }
-            cws.cur_out_padded_ = &cws.cur_out_buf_;
+            else {
+                // make unpadded version in order to restore scale in fprop/bprop
+                vec_t* dst = &cws.cur_out_buf_[sample];
+                for (cnn_size_t c = 0; c < out_.depth_; c++) {
+                    float_t *pimg = &(*dst)[out_unpadded_.get_index(0, 0, c)];
+                    const float_t *pout = &(out[out_.get_index(weight_.width_ / 2, weight_.height_ / 2, c)][0]);
+
+                    for (cnn_size_t y = weight_.height_ / 2; y < in_.height_ - weight_.height_ / 2; y++, pout += out_.width_, pimg += (out_.width_ - weight_.width_ + 1)) {
+                        std::copy(pout, pout + out_.width_ - weight_.width_ + 1, pimg);
+                    }
+                }
+                cws.cur_out_padded_[sample] = &cws.cur_out_buf_[sample];
+            }
         }
     }
 
     struct deconv_layer_worker_specific_storage {
-        const vec_t* prev_out_;
-        const vec_t* cur_out_padded_;
-        vec_t prev_out_buf_;
-        vec_t cur_out_buf_;
-        vec_t prev_delta_padded_;
+        std::vector<const vec_t*> prev_out_;
+        std::vector<const vec_t*> cur_out_padded_;
+        std::vector<vec_t> prev_out_buf_;
+        std::vector<vec_t> cur_out_buf_;
+        std::vector<vec_t> prev_delta_padded_;
     };
 
     std::vector<deconv_layer_worker_specific_storage> deconv_layer_worker_storage_;
 
-    vec_t  prev_delta2_padded_;
-
     connection_table tbl_;
+
     index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> in_padded_;
     index3d<cnn_size_t> out_;
     index3d<cnn_size_t> out_unpadded_;
+
     index3d<cnn_size_t> weight_;
     bool has_bias_;
     padding pad_type_;

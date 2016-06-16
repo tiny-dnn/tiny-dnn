@@ -80,19 +80,22 @@ public:
     void back_propagation(cnn_size_t                    index,
                           const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
-                          std::vector<vec_t*>&          out_grad,
-                          std::vector<vec_t*>&          in_grad) override {
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        tensor_t& prev_delta = *in_grad[0];
+        tensor_t& curr_delta = *out_grad[1];
 
         CNN_UNREFERENCED_PARAMETER(index);
         CNN_UNREFERENCED_PARAMETER(in_data);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        for_i(parallelize_, dim_, [&](int i) {
-            prev_delta[i] = curr_delta[i] * scale_;
-        });
+        // @todo revise parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = prev_delta.size(); sample < sample_count; ++sample) {
+            for_i(parallelize_, dim_, [&](int i) {
+                prev_delta[sample][i] = curr_delta[sample][i] * scale_;
+            });
+        }
     }
 
    /* const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {

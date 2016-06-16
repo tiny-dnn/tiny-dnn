@@ -451,8 +451,8 @@ public:
         for (auto current : net_) { // ignore first input layer
             vec_t& w = *current->get_weights()[0];
             vec_t& b = *current->get_weights()[1];
-            vec_t& dw = *current->get_weight_grads()[0];
-            vec_t& db = *current->get_weight_grads()[1];
+            vec_t& dw = (*current->get_weight_grads()[0])[0];
+            vec_t& db = (*current->get_weight_grads()[1])[0];
 
             if (w.empty()) continue;
 
@@ -753,7 +753,7 @@ private:
 
     template <typename E>
     void bprop(const std::vector<tensor_t>& out, const std::vector<tensor_t>& t, int idx, const std::vector<tensor_t>& t_cost) {
-        tensor_t delta = gradient<E>(out, t, t_cost);
+        std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
         net_.backward(delta, idx);
     }
 

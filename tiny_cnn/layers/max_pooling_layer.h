@@ -131,22 +131,25 @@ public:
     void back_propagation(cnn_size_t                    index,
                           const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
-                          std::vector<vec_t*>&          out_grad,
-                          std::vector<vec_t*>&          in_grad) override {
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        tensor_t& prev_delta = *in_grad[0];
+        tensor_t& curr_delta = *out_grad[1];
         std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
 
         CNN_UNREFERENCED_PARAMETER(in_data);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
-            for (int i = r.begin(); i != r.end(); i++) {
-                cnn_size_t outi = in2out_[i];
-                prev_delta[i] = (max_idx[outi] == i) ? curr_delta[outi] : float_t(0);
-            }
-        });
+        // @todo consider revising the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = in_grad[0]->size(); sample < sample_count; ++sample) {
+            for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i != r.end(); i++) {
+                    cnn_size_t outi = in2out_[i];
+                    prev_delta[sample][i] = (max_idx[outi] == i) ? curr_delta[sample][outi] : float_t(0);
+                }
+            });
+        }
     }
 
     /*void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {

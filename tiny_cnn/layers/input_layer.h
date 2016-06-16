@@ -53,8 +53,8 @@ public:
     void back_propagation(cnn_size_t                    index,
                           const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
-                          std::vector<vec_t*>&          out_grad,
-                          std::vector<vec_t*>&          in_grad) override {
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
         // do nothing
         CNN_UNREFERENCED_PARAMETER(index);
         CNN_UNREFERENCED_PARAMETER(in_data);

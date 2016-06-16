@@ -67,7 +67,7 @@ class nodes {
      * @param worker_index : id of worker-task
      **/
     virtual
-    void backward(const std::vector<vec_t>& first, int worker_index) = 0;
+    void backward(const std::vector<tensor_t>& first, int worker_index) = 0;
 
     /**
      * @param first input  : data vectors
@@ -186,17 +186,17 @@ class nodes {
     // transform indexing so that it's more suitable for per-layer operations
     // input:  [sample][channel][feature]
     // output: [channel][sample][feature]
-    std::vector<tensor_t> reorder_for_layerwise_processing(const std::vector<tensor_t>& in_data) {
-        const cnn_size_t sample_count = in_data.size();
-        const cnn_size_t channel_count = in_data[0].size();
+    std::vector<tensor_t> reorder_for_layerwise_processing(const std::vector<tensor_t>& input) {
+        const cnn_size_t sample_count = input.size();
+        const cnn_size_t channel_count = input[0].size();
 
         // @todo we could perhaps pass pointers to underlying vec_t objects, in order to avoid copying
         std::vector<tensor_t> output(channel_count, tensor_t(sample_count));
 
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
-            assert(in_data[sample].size() == channel_count);
+            assert(input[sample].size() == channel_count);
             for (cnn_size_t channel = 0; channel < channel_count; ++channel) {
-                output[channel][sample] = in_data[sample][channel];
+                output[channel][sample] = input[sample][channel];
             }
         }
 
@@ -227,8 +227,12 @@ class nodes {
  **/
 class sequential : public nodes {
  public:
-    void backward(const std::vector<vec_t>& first, int worker_index) override {
-        nodes_.back()->set_out_grads(&first[0], first.size(), worker_index);
+    void backward(const std::vector<tensor_t>& first, int worker_index) override {
+
+        const std::vector<tensor_t> reordered_grad = reorder_for_layerwise_processing(first);
+        assert(reordered_grad.size() == 1);
+
+        nodes_.back()->set_out_grads({ reordered_grad[0] }, worker_index);
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
             (*l)->backward(worker_index);
@@ -239,7 +243,9 @@ class sequential : public nodes {
                                int worker_index) override {
 
         const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(first);
-        nodes_.front()->set_in_data(reordered_data, worker_index);
+        assert(reordered_data.size() == 1);
+
+        nodes_.front()->set_in_data({ reordered_data[0] }, worker_index);
 
         for (auto l : nodes_) {
             l->forward(worker_index);
@@ -298,14 +304,20 @@ private:
  **/
 class graph : public nodes {
  public:
-    void backward(const std::vector<vec_t>& out_grad,
+    void backward(const std::vector<tensor_t>& out_grad,
                   int worker_index) override {
-        if (out_grad.size() != output_layers_.size()) {
+
+        cnn_size_t output_channel_count = out_grad[0].size();
+
+        if (output_channel_count != output_layers_.size()) {
             throw nn_error("input size mismatch");
         }
 
-        for (cnn_size_t i = 0; i < out_grad.size(); i++) {
-            output_layers_[i]->set_out_grads(&out_grad[i], 1, worker_index);
+        const std::vector<tensor_t> reordered_grad = reorder_for_layerwise_processing(out_grad);
+        assert(reordered_grad.size() == output_channel_count);
+
+        for (cnn_size_t i = 0; i < output_channel_count; i++) {
+            output_layers_[i]->set_out_grads({ reordered_grad[i] }, worker_index);
         }
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
@@ -326,7 +338,7 @@ class graph : public nodes {
         assert(reordered_data.size() == input_data_channel_count);
 
         for (cnn_size_t channel_index = 0; channel_index < input_data_channel_count; channel_index++) {
-            input_layers_[channel_index]->set_in_data(reordered_data, worker_index);
+            input_layers_[channel_index]->set_in_data({ reordered_data[channel_index] }, worker_index);
         }
 
         for (auto l : nodes_) {

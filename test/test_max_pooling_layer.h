@@ -107,7 +107,7 @@ TEST(max_pool, backward) {
     };
 
     l.forward({ {in} })[0];
-    vec_t in_grad = l.backward({out_grad})[0];
+    vec_t in_grad = l.backward(std::vector<tensor_t>{ {out_grad}})[0][0];
 
     for (size_t i = 0; i < in_grad.size(); i++) {
         EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
