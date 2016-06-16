@@ -212,6 +212,20 @@ public:
 #endif // #ifdef CNN_USE_HERUMI_FMATH #else
 	}
 
+	static inline __m256d exp_pd(__m256d x)
+	{
+#if defined(CNN_USE_HERUMI_FMATH) && defined(CNN_USE_AVX2)
+		return fmath::exp_pd256(x);
+#else
+		VECTORIZE_ALIGN(16) double doubles[4];
+		doubles[0] = std::exp(x.m256d_f64[0]);
+		doubles[1] = std::exp(x.m256d_f64[1]);
+		doubles[2] = std::exp(x.m256d_f64[2]);
+		doubles[3] = std::exp(x.m256d_f64[3]);
+		return _mm256_load_pd(doubles);
+#endif
+	}
+
 	void f(fvec_t& dst, const fvec_t& v) const {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
@@ -237,21 +251,49 @@ public:
 		}
 	}
 
+	void f(dvec_t& dst, const dvec_t& v) const {
+		assert(dst.size() == v.size());
+		size_t sz = v.size();
+		size_t nblocks = sz >> 2;
+		for (size_t i = 0; i<nblocks; ++i) {
+			__m256d x = _mm256_load_pd(&v[i*4]);
+			__m256d ep = exp_pd(x);
+			__m256d mx = _mm256_sub_pd(_mm256_setzero_pd(), x);
+			__m256d em = exp_pd(mx);
+			__m256d ep_minus_em = _mm256_sub_pd(ep, em);
+			__m256d ep_plus_em = _mm256_add_pd(ep, em);
+#if 1
+			__m256d ret = _mm256_div_pd(ep_minus_em, ep_plus_em);
+#else
+			__m256d rcp_ep_plus_em = _mm256_rcp_pd(ep_plus_em);
+			// TODO: perform NR iteration to improve numerical precision.
+			__m256d ret = _mm256_mul_pd(ep_minus_em, rcp_ep_plus_em);
+#endif
+			_mm256_store_pd(&dst[i*4], ret);
+		}
+		for (size_t i=(nblocks << 2); i<sz; ++i) {
+			dst[i] = f(v[i]);
+		}
+	}
+
 #else // #ifdef CNN_USE_AVX
 
 	void f(fvec_t& dst, const fvec_t& v) const {
+		assert(dst.size() == v.size());
 		for (size_t i=0; i<v.size(); ++i) {
-			dst[i] = fimpl(v[i]);
+			dst[i] = f(v[i]);
+		}
+	}
+
+	void f(dvec_t& dst, const dvec_t& v) const {
+		assert(dst.size() == v.size());
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v[i]);
 		}
 	}
 
 #endif // #ifdef CNN_USE_AVX #else
 
-	void f(dvec_t& dst, const dvec_t& v) const {
-		for (size_t i=0; i<v.size(); ++i) {
-			dst[i] = f(v[i]);
-		}
-	}
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
     /*float_t f(float_t x) const {
@@ -263,9 +305,13 @@ public:
     float_t df(float_t y) const override { return float_t(1) - sqr(y); }
 
 #ifdef CNN_USE_AVX
-	inline __m256 df_ps(__m256 y) const {
+	inline __m256 df(__m256 y) const {
 		__m256 one = _mm256_set1_ps(1.0f);
 		return _mm256_sub_ps(one, _mm256_mul_ps(y, y));
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d one = _mm256_set1_pd(1.0);
+		return _mm256_sub_pd(one, _mm256_mul_pd(y, y));
 	}
 #endif
 

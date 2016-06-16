@@ -53,21 +53,6 @@ typedef std::shared_ptr<edge> edgeptr_t;
 
 typedef layer* layerptr_t;
 
-#if 0//defined(CNN_USE_AVX2)
-__forceinline __m256 stream_load_ps(const float* p)
-{
-	// this code produces illegal instructions with VS2015 Update3 RC :(
-	__m256i tmp = _mm256_stream_load_si256((const __m256i*)p);
-	__m256 ret = _mm256_castsi256_ps(tmp);
-	return ret;
-}
-#elif defined(CNN_USE_AVX)
-inline __m256 stream_load_ps(const float* p)
-{
-	return _mm256_load_ps(p);
-}
-#endif
-
 /**
  * base class of all kind of tinny-cnn data
  **/
@@ -252,6 +237,115 @@ class edge {
 			std::copy(pbegin, (pbegin + sz), &dst[begin]);
 			for (cnn_size_t i = 1; i < worker_size; i++) {
 				vectorize::reduce<float>(&grad[i][begin], sz, &dst[begin]);
+			}
+			for (int i = begin; i<end; ++i) {
+				dst[i] *= scale;
+			}
+		}
+		break;
+		}
+	}
+
+	static void merge_grads_impl(int begin, int end, cnn_size_t worker_size, std::vector<dvec_t>& grad, dvec_t& dst, double scale) {
+		size_t sz = end - begin;
+		__m256d vscale = _mm256_set1_pd(scale);
+		switch (worker_size) {
+		case 1:
+		{
+			auto& g = grad[0];
+			for (int i = begin; i<end; ++i) {
+				dst[i] = g[i] * scale;
+			}
+		}
+		break;
+		case 2:
+		{
+			auto& g0 = grad[0];
+			auto& g1 = grad[1];
+			const double* pg0 = &g0[begin];
+			const double* pg1 = &g1[begin];
+			double* pdst = &dst[begin];
+			size_t nblocks = sz >> 3;
+			for (size_t i=0; i<nblocks; ++i) {
+				__m256d vg00 = _mm256_loadu_pd(pg0 + 0);
+				__m256d vg01 = _mm256_loadu_pd(pg0 + 4);
+				__m256d vg10 = _mm256_loadu_pd(pg1 + 0);
+				__m256d vg11 = _mm256_loadu_pd(pg1 + 4);
+				__m256d vres0 = _mm256_add_pd(vg00, vg10);
+				__m256d vres1 = _mm256_add_pd(vg01, vg11);
+				vres0 = _mm256_mul_pd(vres0, vscale);
+				vres1 = _mm256_mul_pd(vres1, vscale);
+				_mm256_storeu_pd(pdst + 0, vres0);
+				_mm256_storeu_pd(pdst + 4, vres1);
+				pg0 += 8;
+				pg1 += 8;
+				pdst += 8;
+			}
+			for (int i=begin+(sz << 3); i<end; ++i) {
+				dst[i] = (g0[i] + g1[i]) * scale;
+			}
+		}
+		break;
+		case 4:
+		{
+			auto& g0 = grad[0];
+			auto& g1 = grad[1];
+			auto& g2 = grad[2];
+			auto& g3 = grad[3];
+			if (begin & 3) {
+				int head_size = 4 - (begin & 3);
+				int head_end = std::min(end, begin + head_size);
+				for (int i = begin; i<head_end; ++i) {
+					dst[i] = (g0[i] + g1[i] + g2[i] + g3[i]) * scale;
+				}
+				if (end == head_end) {
+					return;
+				}
+				begin += head_size;
+				sz = end - begin;
+			}
+			const double* pg0 = &g0[begin];
+			const double* pg1 = &g1[begin];
+			const double* pg2 = &g2[begin];
+			const double* pg3 = &g3[begin];
+			double* pdst = &dst[begin];
+			size_t nblocks = sz >> 3;
+			for (size_t i = 0; i<nblocks; ++i) {
+				__m256d vg00 = _mm256_load_pd(pg0 + 0);
+				__m256d vg01 = _mm256_load_pd(pg0 + 4);
+				__m256d vg10 = _mm256_load_pd(pg1 + 0);
+				__m256d vg11 = _mm256_load_pd(pg1 + 4);
+				__m256d vg20 = _mm256_load_pd(pg2 + 0);
+				__m256d vg21 = _mm256_load_pd(pg2 + 4);
+				__m256d vg30 = _mm256_load_pd(pg3 + 0);
+				__m256d vg31 = _mm256_load_pd(pg3 + 4);
+				vg00 = _mm256_add_pd(vg00, vg10);
+				vg01 = _mm256_add_pd(vg01, vg11);
+				vg20 = _mm256_add_pd(vg20, vg30);
+				vg21 = _mm256_add_pd(vg21, vg31);
+				__m256d vres0 = _mm256_add_pd(vg00, vg20);
+				vres0 = _mm256_mul_pd(vres0, vscale);
+				_mm256_store_pd(pdst + 0, vres0);
+				__m256d vres1 = _mm256_add_pd(vg01, vg21);
+				vres1 = _mm256_mul_pd(vres1, vscale);
+				_mm256_store_pd(pdst + 4, vres1);
+				pg0 += 8;
+				pg1 += 8;
+				pg2 += 8;
+				pg3 += 8;
+				pdst += 8;
+			}
+			for (int i = begin + (nblocks << 3); i<end; ++i) {
+				dst[i] = (g0[i] + g1[i] + g2[i] + g3[i]) * scale;
+			}
+		}
+		break;
+		default:
+		{
+			double* pbegin = &grad[0][begin];
+			std::copy(pbegin, (pbegin + sz), &dst[begin]);
+			for (cnn_size_t i = 1; i < worker_size; i++) {
+				vectorize::reduce<double>(&grad[i][begin], sz, &dst[begin]);
 			}
 			for (int i = begin; i<end; ++i) {
 				dst[i] *= scale;

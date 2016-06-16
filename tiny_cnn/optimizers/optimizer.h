@@ -71,6 +71,10 @@ protected:
 inline __m256 madd(__m256 a, __m256 b, __m256 c) { return _mm256_add_ps(_mm256_mul_ps(a, b), c); }
 inline __m128 madd(__m128 a, __m128 b, __m128 c) { return _mm_add_ps(_mm_mul_ps(a, b), c); }
 inline __m128 madd_ss(__m128 a, __m128 b, __m128 c) { return _mm_add_ss(_mm_mul_ss(a, b), c); }
+
+inline __m256d madd(__m256d a, __m256d b, __m256d c) { return _mm256_add_pd(_mm256_mul_pd(a, b), c); }
+inline __m128d madd(__m128d a, __m128d b, __m128d c) { return _mm_add_pd(_mm_mul_pd(a, b), c); }
+inline __m128d madd_sd(__m128d a, __m128d b, __m128d c) { return _mm_add_sd(_mm_mul_sd(a, b), c); }
 #endif
 
 /**
@@ -108,12 +112,12 @@ struct adagrad : public stateful_optimizer<1> {
 
 		size_t nblocks = sz >> 4;
 		for (cnn_size_t i=0; i<nblocks; ++i) {
-			__m256 yg0 = _mm256_loadu_ps(pg);
-			__m256 yg1 = _mm256_loadu_ps(pg+8);
-			__m256 ydw0 = _mm256_loadu_ps(pdW);
-			__m256 ydw1 = _mm256_loadu_ps(pdW+8);
-			__m256 yW0 = _mm256_loadu_ps(pW);
-			__m256 yW1 = _mm256_loadu_ps(pW+8);
+			__m256 yg0 = _mm256_load_ps(pg);
+			__m256 yg1 = _mm256_load_ps(pg+8);
+			__m256 ydw0 = _mm256_load_ps(pdW);
+			__m256 ydw1 = _mm256_load_ps(pdW+8);
+			__m256 yW0 = _mm256_load_ps(pW);
+			__m256 yW1 = _mm256_load_ps(pW+8);
 
 			yg0 = madd(ydw0, ydw0, yg0);
 			yg1 = madd(ydw1, ydw1, yg1);
@@ -142,10 +146,66 @@ struct adagrad : public stateful_optimizer<1> {
 
 	inline void update_impl(size_t begin, size_t end, dvec_t& g, const dvec_t& dW, dvec_t &W)
 	{
+#if defined(CNN_USE_AVX)
+		size_t sz = end - begin;
+		if (begin & 3) {
+			size_t headLen = 4 - (begin & 3);
+			size_t headEnd = std::min(begin+headLen, end);
+			for (size_t i=begin; i<headEnd; ++i) {
+				g[i] += dW[i] * dW[i];
+				W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+			}
+			begin = headEnd;
+			if (begin == end) {
+				return;
+			}
+		}
+		sz = end - begin;
+		double* pg = &g[begin];
+		const double* pdW = &dW[begin];
+		double* pW = &W[begin];
+
+		__m256d yalpha = _mm256_set1_pd(alpha);
+
+		size_t nblocks = sz >> 3;
+		for (cnn_size_t i=0; i<nblocks; ++i) {
+			__m256d yg0 = _mm256_load_pd(pg);
+			__m256d yg1 = _mm256_load_pd(pg+4);
+			__m256d ydw0 = _mm256_load_pd(pdW);
+			__m256d ydw1 = _mm256_load_pd(pdW+4);
+			__m256d yW0 = _mm256_load_pd(pW);
+			__m256d yW1 = _mm256_load_pd(pW+4);
+
+			yg0 = madd(ydw0, ydw0, yg0);
+			yg1 = madd(ydw1, ydw1, yg1);
+#if 1
+			__m128 rsqrt_of_xg0 = _mm_rsqrt_ps(_mm256_cvtpd_ps(yg0));
+			__m128 rsqrt_of_xg1 = _mm_rsqrt_ps(_mm256_cvtpd_ps(yg1));
+			yW0 = _mm256_sub_pd(yW0, _mm256_mul_pd(yalpha, _mm256_mul_pd(ydw0, _mm256_cvtps_pd(rsqrt_of_xg0))));
+			yW1 = _mm256_sub_pd(yW1, _mm256_mul_pd(yalpha, _mm256_mul_pd(ydw1, _mm256_cvtps_pd(rsqrt_of_xg1))));
+#else
+			yW0 = _mm256_sub_pd(yW0, _mm256_mul_pd(yalpha, _mm256_div_pd(ydw0, _mm256_sqrt_pd(yg0))));
+			yW1 = _mm256_sub_pd(yW1, _mm256_mul_pd(yalpha, _mm256_div_pd(ydw1, _mm256_sqrt_pd(yg1))));
+#endif
+			_mm256_store_pd(pg, yg0);
+			_mm256_store_pd(pg+4, yg1);
+			_mm256_store_pd(pW, yW0);
+			_mm256_store_pd(pW+4, yW1);
+
+			pg += 8;
+			pdW += 8;
+			pW += 8;
+		}
+		for (cnn_size_t i=begin+(nblocks<<3); i<end; ++i) {
+			g[i] += dW[i] * dW[i];
+			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+		}
+#else
 		for (size_t i=begin; i<end; ++i) {
 			g[i] += dW[i] * dW[i];
 			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
 		}
+#endif
 	}
 
     void update(const vec_t& dW, vec_t &W) {

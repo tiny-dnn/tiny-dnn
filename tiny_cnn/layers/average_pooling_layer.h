@@ -122,8 +122,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 		auto oarea = out_.area();
 		size_t idx = 0;
 		for (size_t d=0; d<out_.depth_; ++d) {
-			float weight = w[d] * scale_factor_;
-			float bias = b[d];
+			float_t weight = w[d] * scale_factor_;
+			float_t bias = b[d];
 			for (size_t i=0; i<oarea; ++i, ++idx) {
 				const wi_connections& connections = out2wi_[idx];
 				float_t value = float_t(0);

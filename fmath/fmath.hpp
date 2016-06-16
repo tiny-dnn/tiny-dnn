@@ -614,6 +614,41 @@ inline void expd_v(double *px, size_t n)
 	}
 }
 
+#ifdef __AVX2__
+inline __m256d exp_pd256(__m256d x)
+{
+	using namespace local;
+	const ExpdVar<>& c = C<>::expdVar;
+	const double b = double(3ULL << 51);
+	const __m256d mC1 = _mm256_set1_pd(c.C1[0]);
+	const __m256d mC2 = _mm256_set1_pd(c.C2[0]);
+	const __m256d mC3 = _mm256_set1_pd(c.C3[0]);
+	const __m256d ma = _mm256_set1_pd(c.a);
+	const __m256d mra = _mm256_set1_pd(c.ra);
+	const __m256i madj = _mm256_set1_epi64x(c.adj);
+	const __m256i maskSbit = _mm256_set1_epi64x(mask(c.sbit));
+	const __m256d expMax = _mm256_set1_pd(709.78272569338397);
+	const __m256d expMin = _mm256_set1_pd(-708.39641853226408);
+	x = _mm256_min_pd(x, expMax);
+	x = _mm256_max_pd(x, expMin);
+
+	__m256d d = _mm256_mul_pd(x, ma);
+	d = _mm256_add_pd(d, _mm256_set1_pd(b));
+	__m256i adr = _mm256_and_si256(_mm256_castpd_si256(d), maskSbit);
+	__m256i iax = _mm256_i64gather_epi64((const long long*)c.tbl, adr, 8);
+	__m256d t = _mm256_sub_pd(_mm256_mul_pd(_mm256_sub_pd(d, _mm256_set1_pd(b)), mra), x);
+	__m256i u = _mm256_castpd_si256(d);
+	u = _mm256_add_epi64(u, madj);
+	u = _mm256_srli_epi64(u, c.sbit);
+	u = _mm256_slli_epi64(u, 52);
+	u = _mm256_or_si256(u, iax);
+	__m256d y = _mm256_mul_pd(_mm256_sub_pd(mC3, t), _mm256_mul_pd(t, t));
+	y = _mm256_mul_pd(y, mC2);
+	y = _mm256_add_pd(_mm256_sub_pd(y, t), mC1);
+	return _mm256_mul_pd(y, _mm256_castsi256_pd(u));
+}
+#endif
+
 #ifdef FMATH_USE_XBYAK
 inline __m128 exp_psC(__m128 x)
 #else

@@ -74,8 +74,11 @@ namespace tiny_cnn {
  * calculation data type
  * you can change it to float, or user defined class (fixed point,etc)
  **/
- //typedef float float_t;
+#if 0
+typedef float float_t;
+#else
 typedef double float_t;
+#endif
 
 /**
  * size of layer, model, data etc.
