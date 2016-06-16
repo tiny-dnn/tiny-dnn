@@ -614,10 +614,10 @@ public:
         const fvec_t& in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
 		const size_t out_area = out_.area();
 		cnn_size_t oidx = 0;
+		float bias_scale = has_bias_ ? 1.0f : 0.0f;
 
 #ifdef CNN_USE_AVX
 		static const __m256i mask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
-		float bias_scale = has_bias_ ? 1.0f : 0.0f;
 		__m128 y_bias_scale = _mm_set_ss(bias_scale);
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			const size_t stride = h_stride_ * in_padded_.width_;
@@ -750,7 +750,7 @@ public:
 #endif
 				}
 #else // #ifdef CNN_USE_AVX
-				for (size_t i=0; i<area; ++i) {
+				for (size_t i=0; i<out_area; ++i) {
 					pa[i] = b;
 				}
 #endif // #ifdef CNN_USE_AVX
