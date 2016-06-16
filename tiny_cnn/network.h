@@ -366,10 +366,9 @@ public:
     std::vector<vec_t> test(const std::vector<vec_t>& in) {
         std::vector<vec_t> test_result(in.size());
         set_netphase(net_phase::test);
-        for_i(in.size(), [&](int i)
-        {
+        for (size_t i = 0; i < in.size(); i++) {
             test_result[i] = predict(in[i]);
-        });
+        }
         return test_result;
     }
 

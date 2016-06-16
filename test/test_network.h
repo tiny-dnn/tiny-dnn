@@ -229,7 +229,30 @@ TEST(network, set_netphase) {
 }
 
 TEST(network, test) {
-    // TODO: add unit-test for public api
+    network<sequential> net;
+    fully_connected_layer<identity> fc(30, 1);
+    int data_num = 300;
+
+    net << fc;
+    net.weight_init(weight_init::constant(1.0));
+    net.init_weight();
+
+    std::vector<vec_t> in, expected;
+
+    for (int i = 0; i < data_num; i++) {
+        vec_t v(30);
+        uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+        float_t sum = std::accumulate(v.begin(), v.end(), (float_t)0.0);
+
+        in.emplace_back(v);
+        expected.emplace_back(vec_t{sum});
+    }
+
+    auto out = net.test(in);
+    for (int i = 0; i < data_num; i++) { 
+        for (size_t j = 0; j < out[i].size(); j++)
+            EXPECT_FLOAT_EQ(out[i][j], expected[i][0]);
+    }
 }
 
 TEST(network, get_loss) {
