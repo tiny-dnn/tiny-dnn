@@ -186,20 +186,20 @@ class layer : public node {
 
     void set_out_grads(const std::vector<tensor_t>& grad,
                        cnn_size_t worker_idx) {
-        cnn_size_t j = 0, gnum = grad.size();
+        cnn_size_t j = 0;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             if (out_type_[i] != vector_type::data) continue;
-            assert(j < gnum);
+            assert(j < grad.size());
             *ith_out_node(i)->get_gradient(worker_idx) = grad[j++];
         }
     }
 
     void set_in_data(const std::vector<tensor_t>& data,
                      cnn_size_t worker_idx) {
-        cnn_size_t j = 0, dnum = data.size();
+        cnn_size_t j = 0;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (in_type_[i] != vector_type::data) continue;
-            assert(j < dnum);
+            assert(j < data.size());
             *ith_in_node(i)->get_data(worker_idx) = data[j++];
         }
     }
