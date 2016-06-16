@@ -108,6 +108,80 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     std::string layer_type() const override { return "ave-pool"; }
 
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>& out_data) override {
+        const vec_t& in  = *in_data[0];
+        const vec_t& w   = *in_data[1];
+        const vec_t& b   = *in_data[2];
+        vec_t&       out = *out_data[0];
+        vec_t&       a   = *out_data[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+		auto oarea = out_.area();
+		for (size_t d=0; d<out_.depth_; ++d) {
+			float weight = w[d] * scale_factor_;
+			float bias = b[d];
+			size_t idx = d * oarea;
+			for (size_t i=0; i<oarea; ++i, ++idx) {
+				const wi_connections& connections = out2wi_[idx];
+				float_t value = float_t(0);
+				for (auto connection : connections)// 13.1%
+					value += in[connection.second]; // 3.2%
+				value *= weight;
+				value += bias;
+				a[idx] = value;
+			}
+		}
+
+		assert(out.size() == out2wi_.size());
+		h_.f(out, a);
+    }
+
+    void back_propagation(cnn_size_t                index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
+        const vec_t& prev_out = *in_data[0];
+        const vec_t& w  = *in_data[1];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       db = *in_grad[2];
+        vec_t&       prev_delta = *in_grad[0];
+        vec_t&       curr_delta = *out_grad[0];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+		for (size_t i=0; i<in2wo_.size(); ++i) {
+            const auto& connection = in2wo_[i];
+            float_t delta = w[connection.first] * curr_delta[connection.second]; // 40.6%
+            prev_delta[i] = delta * scale_factor_; // 2.1%
+		}
+
+		for (size_t i=0; i<weight2io_.size(); ++i) {
+            const io_connections& connections = weight2io_[i];
+            float_t diff = float_t(0);
+
+            for (auto connection : connections) // 11.9%
+                diff += prev_out[connection.first] * curr_delta[connection.second];
+
+            dW[i] += diff * scale_factor_;
+		}
+
+        for (size_t i = 0; i < bias2out_.size(); i++) {
+            const std::vector<cnn_size_t>& outs = bias2out_[i];
+            float_t diff = float_t(0);
+
+            for (auto o : outs)
+                diff += curr_delta[o];    
+
+            db[i] += diff;
+        }
+    }
+
  private:
     size_t stride_;
     shape3d in_;

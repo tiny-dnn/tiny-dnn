@@ -380,15 +380,15 @@ class layer : public node {
     }
 
     void forward(int worker_index) {
-        std::vector<vec_t*> in_data, out_data;
+        thread_local static std::vector<vec_t*> in_data(16), out_data(16);
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+            in_data[i] = ith_in_node(i)->get_data(worker_index);
         }
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
+            out_data[i] = ith_out_node(i)->get_data(worker_index);
             ith_out_node(i)->clear_grad_onwork(worker_index);
         }
 
@@ -396,20 +396,18 @@ class layer : public node {
     }
 
     void backward(int worker_index) {
-        std::vector<vec_t*> in_data, out_data, in_grad, out_grad;
+        thread_local static std::vector<vec_t*> in_data(16), out_data(16), in_grad(16), out_grad(16);
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+			auto& node = ith_in_node(i);
+            in_data[i] = node->get_data(worker_index);
+            in_grad[i] = node->get_gradient(worker_index);
         }
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
-        }
-        for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_grad.push_back(ith_in_node(i)->get_gradient(worker_index));
-        }
-        for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_grad.push_back(ith_out_node(i)->get_gradient(worker_index));
+			auto& node = ith_out_node(i);
+            out_data[i] = node->get_data(worker_index);
+            out_grad[i] = node->get_gradient(worker_index);
         }
         back_propagation(worker_index, in_data, out_data, out_grad, in_grad);
     }
