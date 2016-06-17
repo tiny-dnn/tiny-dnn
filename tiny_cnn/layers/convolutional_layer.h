@@ -30,9 +30,9 @@
 #include <string>
 #include <algorithm>
 
-#include "tiny_cnn/core/tiny_backend.h"
-#include "tiny_cnn/core/nnp_backend.h"
-#include "tiny_cnn/core/dnn_backend.h"
+#include "tiny_cnn/core/backend_tiny.h"
+#include "tiny_cnn/core/backend_nnp.h"
+#include "tiny_cnn/core/backend_dnn.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -208,7 +208,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
         , conv_layer_worker_storage_(std::move(other.conv_layer_worker_storage_)) {
             init_backend(backend_type_);
-}
+    }
 
     ///< number of incoming connections for each output unit
     virtual size_t fan_in_size() const override {
@@ -256,8 +256,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) {
-        Base::backend_->conv2d_back(worker_index, in_data, out_data,
-                                    out_grad, in_grad);
+        Base::backend_->conv2d(worker_index, in_data,
+                               out_data, out_grad, in_grad);
       }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -338,7 +338,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                 Base::backend_->set_layer(this);
                 break;
             case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>(&params_);
+                Base::backend_ = std::make_shared<core::nnp_backend>(&params_,
+                    [this](const vec_t& in, int worker_index) {
+                        return copy_and_pad_input(in, worker_index);
+                    },
+                    &conv_layer_worker_storage_);
                 Base::backend_->set_layer(this);
                 break;
             case backend_t::libdnn:

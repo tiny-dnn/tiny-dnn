@@ -32,11 +32,8 @@
 
 #include "tiny_cnn/core/session.h"
 #include "tiny_cnn/core/device.h"
-#include "tiny_cnn/core/cpu_device.h"
-#include "tiny_cnn/core/ocl_device.h"
-#include "tiny_cnn/core/math_backend.h"
-#include "tiny_cnn/core/nnp_backend.h"
-#include "tiny_cnn/core/dnn_backend.h"
+#include "tiny_cnn/core/device_cpu.h"
+#include "tiny_cnn/core/device_ocl.h"
 
 #include "tiny_cnn/layers/input_layer.h"
 #include "tiny_cnn/layers/feedforward_layer.h"
@@ -110,14 +107,11 @@ template <class T>
 using deconv = tiny_cnn::deconvolutional_layer<T>;
 
 template <class T>
-<<<<<<< HEAD
 using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
 
 template <class T>
 using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
-=======
-using unpooling = tiny_cnn::max_unpooling_layer<T>;
->>>>>>> Implement on deconvolution and unpooling layer.
+
 
 }
 }

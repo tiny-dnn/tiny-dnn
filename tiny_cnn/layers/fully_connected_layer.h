@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -44,54 +44,62 @@ public:
      * @param out_dim [in] number of elements of the output
      * @param has_bias [in] whether to include additional bias to the layer
      **/
-    fully_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim, bool has_bias = true)
-        : Base(std_input_order(has_bias)), in_size_(in_dim), out_size_(out_dim), has_bias_(has_bias) {}
+    fully_connected_layer(cnn_size_t     in_dim,
+                          cnn_size_t     out_dim,
+                          bool           has_bias = true,
+                          backend_t      backend_type = backend_t::tiny_cnn,
+                          backend_params b_params = backend_params())
+        : Base(std_input_order(has_bias))
+        , backend_type_(backend_type) {
+            set_params(in_dim, out_dim, has_bias);
+            init_backend(backend_type);
+    }
+
+    // move constructor
+    fully_connected_layer(fully_connected_layer&& other)
+        : Base(std::move(other))
+        , params_(std::move(other.params_))
+        , backend_type_(std::move(other.backend_type_)) {
+            init_backend(backend_type_);
+    }
 
     size_t fan_in_size() const override {
-        return in_size_;
+        return params_.in_size_;
     }
 
     size_t fan_out_size() const override {
-        return out_size_;
+        return params_.out_size_;
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
-        if (has_bias_) {
-            return { index3d<cnn_size_t>(in_size_, 1, 1), index3d<cnn_size_t>(in_size_, out_size_, 1), index3d<cnn_size_t>(out_size_, 1, 1) };
-        }
-        else {
-            return { index3d<cnn_size_t>(in_size_, 1, 1), index3d<cnn_size_t>(in_size_, out_size_, 1) };
+        if (params_.has_bias_) {
+            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
+                     index3d<cnn_size_t>(params_.in_size_,
+                                         params_.out_size_, 1),
+                     index3d<cnn_size_t>(params_.out_size_, 1, 1) };
+        } else {
+            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
+                     index3d<cnn_size_t>(params_.in_size_,
+                                         params_.out_size_, 1) };
         }
     }
 
     std::vector<index3d<cnn_size_t>> out_shape() const override {
-        return { index3d<cnn_size_t>(out_size_, 1, 1), index3d<cnn_size_t>(out_size_, 1, 1) };
+        return { index3d<cnn_size_t>(params_.out_size_, 1, 1),
+                 index3d<cnn_size_t>(params_.out_size_, 1, 1) };
     }
 
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
-        const vec_t& in  = *in_data[0];
-        const vec_t& W   = *in_data[1];
-        vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
+        Base::backend_->fully(index, in_data, out_data);
 
-        CNN_UNREFERENCED_PARAMETER(index);
+        // activations
+        vec_t& out     = *out_data[0];
+        const vec_t& a = *out_data[1];
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            a[i] = float_t(0);
-            for (cnn_size_t c = 0; c < in_size_; c++) {
-                a[i] += W[c*out_size_ + i] * in[c];
-            }
-
-            if (has_bias_) {
-                vec_t& b = *in_data[2];
-                a[i] += b[i];
-            }
-        });
-
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
+        for_i(parallelize_, params_.out_size_, [&](int i) {
+            out[i] = this->h_.f(a, i);
         });
     }
 
@@ -100,42 +108,48 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
-        const vec_t& prev_out   = *in_data[0];
-        const vec_t& W          = *in_data[1];
-        vec_t&       dW         = *in_grad[1];
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
-
-        CNN_UNREFERENCED_PARAMETER(index);
-
-        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
-
-        for (cnn_size_t c = 0; c < this->in_size_; c++) {
-            // propagate delta to previous layer
-            // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-            prev_delta[c] += vectorize::dot(&curr_delta[0], &W[c*out_size_], out_size_);
-        }
-
-        for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
-            // accumulate weight-step using delta
-            // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-            for (cnn_size_t c = 0; c < in_size_; c++)
-                vectorize::muladd(&curr_delta[r.begin()], prev_out[c], r.end() - r.begin(), &dW[c*out_size_ + r.begin()]);
-
-            if (has_bias_) {
-                vec_t& db = *in_grad[2];
-                for (int i = r.begin(); i < r.end(); i++)
-                    db[i] += curr_delta[i];
-            }
-        });
+        Base::backend_->fully(index, in_data,
+                              out_data, out_grad, in_grad);
     }
 
     std::string layer_type() const override { return "fully-connected"; }
 
 protected:
-    cnn_size_t in_size_;
-    cnn_size_t out_size_;
-    bool has_bias_;
+    fully_params params_;
+
+    /* The type of backend */
+    backend_t backend_type_;
+
+    void set_params(const cnn_size_t in_size,
+                    const cnn_size_t out_size,
+                    bool             has_bias) {
+        params_.in_size_ = in_size;
+        params_.out_size_ = out_size;
+        params_.has_bias_= has_bias;
+    }
+
+    void init_backend(backend_t backend_type) {
+        switch (backend_type) {
+            case backend_t::tiny_cnn:
+                Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
+                    [this](const vec_t& p_delta,
+                           const vec_t& out, vec_t& c_delta) {
+                        return Base::backward_activation(p_delta, out, c_delta);
+                    });
+                Base::backend_->set_layer(this);
+                break;
+            case backend_t::nnpack:
+                Base::backend_ = std::make_shared<core::nnp_backend>();
+                Base::backend_->set_layer(this);
+                break;
+            case backend_t::libdnn:
+                Base::backend_ = std::make_shared<core::dnn_backend>();
+                Base::backend_->set_layer(this);
+                break;
+            default:
+                throw nn_error("not supported backend type");
+        }
+    }
 };
 
 } // namespace tiny_cnn

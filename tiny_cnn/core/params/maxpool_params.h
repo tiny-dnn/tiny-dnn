@@ -26,22 +26,12 @@
 */
 #pragma once
 
-#include <vector>
-
-#include "tiny_cnn/core/backend.h"
-
 namespace tiny_cnn {
 namespace core {
 
-class device {
- public:
-  explicit device(const int id) : id_(id) {}
-
-  int get_id() const { return id_; }
-
- private:
-  int id_;
-  std::vector<std::shared_ptr<backend>> backends_;
+struct max_pooling_layer_worker_specific_storage {
+    /* mapping out => max_index(in) (1:1) */
+    std::vector<cnn_size_t> out2inmax_;
 };
 
 }  // namespace core

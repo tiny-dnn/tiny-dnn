@@ -26,23 +26,45 @@
 */
 #pragma once
 
-#include <vector>
-
-#include "tiny_cnn/core/backend.h"
-
 namespace tiny_cnn {
 namespace core {
+namespace kernels {
 
-class device {
- public:
-  explicit device(const int id) : id_(id) {}
+void tiny_maxpool_kernel(const vec_t& in,
+                         vec_t&       a,
+                         std::vector<cnn_size_t>& max_idx,
+                         const std::vector<std::vector<cnn_size_t>>& out2in,
+                         const bool layer_parallelize) {
+    for_(layer_parallelize, 0, out2in.size(), [&](const blocked_range& r) {
+        for (int i = r.begin(); i < r.end(); i++) {
+            const auto& in_index = out2in[i];
+            float_t max_value = std::numeric_limits<float_t>::lowest();
 
-  int get_id() const { return id_; }
+            for (auto j : in_index) {
+                if (in[j] > max_value) {
+                    max_value = in[j];
+                    max_idx[i] = j;
+                }
+            }
+            a[i] = max_value;
+        }
+    });
+}
 
- private:
-  int id_;
-  std::vector<std::shared_ptr<backend>> backends_;
-};
+void tiny_maxpool_back_kernel(vec_t& prev_delta,
+                              const vec_t&  curr_delta,
+                              std::vector<cnn_size_t>& max_idx,
+                              const std::vector<cnn_size_t>& in2out,
+                              const bool layer_parallelize) {
+    for_(layer_parallelize, 0, in2out.size(), [&](const blocked_range& r) {
+        for (int i = r.begin(); i != r.end(); i++) {
+            cnn_size_t outi = in2out[i];
+            prev_delta[i] = (max_idx[outi] == static_cast<cnn_size_t>(i)) ?
+                             curr_delta[outi] : float_t(0);
+        }
+    });
+}
 
+}  // namespace kernels
 }  // namespace core
 }  // namespace tiny_cnn

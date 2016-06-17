@@ -27,7 +27,9 @@
 #pragma once
 
 #include "tiny_cnn/layers/layer.h"
-#include "tiny_cnn/core/conv_params.h"
+#include "tiny_cnn/core/params/conv_params.h"
+#include "tiny_cnn/core/params/maxpool_params.h"
+#include "tiny_cnn/core/params/fully_params.h"
 
 namespace tiny_cnn {
 namespace core {
@@ -40,11 +42,11 @@ struct backend_params {
     backend_params() {}
 };
 
-class math_backend {
+class backend {
  public:
     // context holds solution-dependent parameters
     // context should be able to hold any types of structures (like boost::any)
-    explicit math_backend(context* ctx_ = nullptr) {}
+    explicit backend(context* ctx_ = nullptr) {}
 
     // core math functions
 
@@ -52,14 +54,33 @@ class math_backend {
                         const std::vector<vec_t*>& in_data,
                         std::vector<vec_t*>&       out_data) = 0;
 
-    virtual void conv2d_back(cnn_size_t                 index,
-                             const std::vector<vec_t*>& in_data,
-                             const std::vector<vec_t*>& out_data,
-                             std::vector<vec_t*>&       out_grad,
-                             std::vector<vec_t*>&       in_grad) = 0;
+    virtual void conv2d(cnn_size_t                 index,
+                        const std::vector<vec_t*>& in_data,
+                        const std::vector<vec_t*>& out_data,
+                        std::vector<vec_t*>&       out_grad,
+                        std::vector<vec_t*>&       in_grad) = 0;
 
     virtual void matmul() = 0;
-    virtual void maxpool() = 0;
+
+    virtual void maxpool(cnn_size_t                 index,
+                         const std::vector<vec_t*>& in_data,
+                         std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void maxpool(cnn_size_t                 index,
+                         const std::vector<vec_t*>& in_data,
+                         const std::vector<vec_t*>& out_data,
+                         std::vector<vec_t*>&       out_grad,
+                         std::vector<vec_t*>&       in_grad) = 0;
+
+    virtual void fully(cnn_size_t                 index,
+                       const std::vector<vec_t*>& in_data,
+                       std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void fully(cnn_size_t                 index,
+                       const std::vector<vec_t*>& in_data,
+                       const std::vector<vec_t*>& out_data,
+                       std::vector<vec_t*>&       out_grad,
+                       std::vector<vec_t*>&       in_grad) = 0;
 
     context* get_context() const { return ctx_; }
 
