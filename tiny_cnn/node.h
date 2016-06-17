@@ -425,7 +425,7 @@ class edge {
     std::vector<node*> next_;  // next nodes, "consumers" of this tensor
 };
 
-std::vector<node*> node::prev_nodes() const {
+inline std::vector<node*> node::prev_nodes() const {
     std::set<node*> sets;
     for (auto& e : prev_) {
         if (e && e->prev()) sets.insert(e->prev());
@@ -433,7 +433,7 @@ std::vector<node*> node::prev_nodes() const {
     return std::vector<node*>(sets.begin(), sets.end());
 }
 
-std::vector<node*> node::next_nodes() const {
+inline std::vector<node*> node::next_nodes() const {
     std::set<node*> sets;
     for (auto& e : next_) {
         if (e) {

@@ -366,10 +366,9 @@ public:
     std::vector<vec_t> test(const std::vector<vec_t>& in) {
         std::vector<vec_t> test_result(in.size());
         set_netphase(net_phase::test);
-        for_i(in.size(), [&](int i)
-        {
+        for (size_t i = 0; i < in.size(); i++) {
             test_result[i] = predict(in[i]);
-        });
+        }
         return test_result;
     }
 
@@ -898,12 +897,12 @@ std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, Char
     return os;
 }
 
-void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
+inline void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
 {
     graph.net_.construct(inputs, outputs);
 }
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
+inline void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
 {
     std::vector<layer*> in_ptr, out_ptr;
     auto shared2ptr = [](std::shared_ptr<layer> l) { return l.get(); };

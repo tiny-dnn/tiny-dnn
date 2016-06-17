@@ -138,7 +138,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
 SET( tiny_cnn_hdrs tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h tiny_cnn/layers/convolutional_layer_5x5.h tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
-tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/layers/average_pooling_layer_2x2.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/layers/arithmetic_layer.h tiny_cnn/layers/concat_layer.h tiny_cnn/layers/feedforward_layer.h tiny_cnn/layers/dropout_layer.h tiny_cnn/layers/lrn_layer.h tiny_cnn/layers/linear_layer.h tiny_cnn/node.h tiny_cnn/nodes.h tiny_cnn/util/target_cost.h tiny_cnn/util/aligned_allocator.h )
+tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/layers/arithmetic_layer.h tiny_cnn/layers/concat_layer.h tiny_cnn/layers/feedforward_layer.h tiny_cnn/layers/dropout_layer.h tiny_cnn/layers/lrn_layer.h tiny_cnn/layers/linear_layer.h tiny_cnn/node.h tiny_cnn/nodes.h tiny_cnn/util/target_cost.h tiny_cnn/util/aligned_allocator.h )
 
 IF(USE_HERUMI_FMATH)
 	SET( tiny_cnn_hdrs ${tiny_cnn_hdrs} fmath/fmath.hpp)
@@ -148,6 +148,7 @@ SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutio
 
 IF (BUILD_EXAMPLES)
     ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
+    ADD_EXECUTABLE(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hdrs})
     IF (USE_OPENCV)
         ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
     ELSE()
@@ -179,7 +180,7 @@ ENDIF()
 
 
 IF(BUILD_TESTS)
-    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
+    ADD_EXECUTABLE(tiny_cnn_test test/test.cpp test/test_no_duplicate_symbols.cpp  ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
 ENDIF()
 
 #------------------------------------------------
