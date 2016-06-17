@@ -34,8 +34,8 @@ using namespace std;
 
 template <typename N>
 void construct_net(N& nn) {
-    typedef convolutional_layer<activation::identity> conv;
-//    typedef convolutional_layer_5x5<activation::identity> conv;
+//    typedef convolutional_layer<activation::identity> conv;
+    typedef convolutional_layer_5x5<activation::identity> conv;
     typedef max_pooling_layer<relu> pool;
 
     const int n_fmaps = 32; ///< number of feature maps for upper layer
