@@ -74,7 +74,7 @@ namespace tiny_cnn {
  * calculation data type
  * you can change it to float, or user defined class (fixed point,etc)
  **/
-#if 0
+#if 1
 typedef float float_t;
 #else
 typedef double float_t;

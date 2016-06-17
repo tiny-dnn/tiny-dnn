@@ -85,6 +85,8 @@ public:
     float f(const fvec_t& v, cnn_size_t i) const override { return v[i]; }
     double f(const dvec_t& v, cnn_size_t i) const override { return v[i]; }
 
+#if 0
+	// TODO: vectorize
 	virtual void f(fvec_t& dst, const fvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
 			dst[i] = f(v, i);
@@ -95,6 +97,7 @@ public:
 			dst[i] = f(v, i);
 		}
 	}
+#endif
 
     float_t df(float_t /*y*/) const override {
 		return float_t(1);
@@ -117,6 +120,20 @@ public:
     float f(const fvec_t& v, cnn_size_t i) const override { return float(1) / (float(1) + std::exp(-v[i])); }
     double f(const dvec_t& v, cnn_size_t i) const override { return double(1) / (double(1) + std::exp(-v[i])); }
     
+#if 0
+	// TODO: vectorize
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
+
 	float_t df(float_t y) const override {
 		return y * (float_t(1) - y);
 	}
@@ -138,6 +155,20 @@ public:
     using function::df;
     float f(const fvec_t& v, cnn_size_t i) const override { return std::max(float(0), v[i]); }
     double f(const dvec_t& v, cnn_size_t i) const override { return std::max(double(0), v[i]); }
+
+#if 0
+	// TODO: vectorize
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
 
 	float_t df(float_t y) const override {
 		return y > float_t(0) ? float_t(1) : float_t(0);
@@ -165,6 +196,20 @@ public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
 
+#if 0
+	// TODO: vectorize
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
+
     float_t df(float_t y) const override {
 		return y > float_t(0) ? float_t(1) : float_t(0.01);
 	}
@@ -188,6 +233,20 @@ class elu : public function {
 public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
+
+#if 0
+	// TODO: vectorize
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
 
     float_t df(float_t y) const override {
 		return (y > float_t(0) ? float_t(1) : (float_t(1)+y));
@@ -228,6 +287,8 @@ public:
         return fimpl<double>(v, i);
     }
 
+#if 0
+	// TODO: vectorize
 	virtual void f(fvec_t& dst, const fvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
 			dst[i] = f(v, i);
@@ -238,6 +299,7 @@ public:
 			dst[i] = f(v, i);
 		}
 	}
+#endif
 
     float_t df(float_t y) const override {
         return y * (float_t(1) - y);
@@ -356,7 +418,7 @@ public:
 
 #ifdef CNN_USE_AVX
 
-	void f(fvec_t& dst, const fvec_t& v) const {
+	void f(fvec_t& dst, const fvec_t& v) const override {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 3;
@@ -381,7 +443,7 @@ public:
 		}
 	}
 
-	void f(dvec_t& dst, const dvec_t& v) const {
+	void f(dvec_t& dst, const dvec_t& v) const override {
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 2;
@@ -467,6 +529,20 @@ public:
         const float_t ep = std::exp(v[i]);
         return ep / (ep + std::exp(-v[i]));
     }
+
+#if 0
+	// TODO: vectorize
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+#endif
 
     float_t df(float_t y) const override {
 		return 2 * y *(float_t(1) - y);

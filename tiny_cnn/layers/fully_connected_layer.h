@@ -90,7 +90,8 @@ public:
             }
 		}
 
-		h_.f(out, a);
+		tiny_cnn::activation::function& h = h_;
+		h.f(out, a);
     }
 
     void back_propagation(cnn_size_t                index,
