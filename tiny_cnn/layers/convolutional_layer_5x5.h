@@ -622,6 +622,7 @@ public:
 		__m128 y_bias_scale = _mm_set_ss(bias_scale);
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			const size_t stride = h_stride_ * in_padded_.width_;
+			const size_t inarea = in_padded_.area();
 			if (stride == 5) {
 				for (size_t o=0; o<out_.depth_; ++o) {
 					__m256 sum0 = _mm256_setzero_ps();
@@ -630,7 +631,6 @@ public:
 					__m128 sum3 = _mm_setzero_ps();
 					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
 					size_t inidx = 0;
-					size_t inarea = in_padded_.area();
 					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
 						if (!tbl_.is_connected(o, inc)) {
 							continue;
@@ -676,7 +676,6 @@ public:
 					__m256 sum = _mm256_setzero_ps();
 					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
 					size_t inidx = 0;
-					size_t inarea = in_padded_.area();
 					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
 						if (!tbl_.is_connected(o, inc)) {
 							continue;
@@ -718,6 +717,8 @@ public:
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
+			const size_t stride = h_stride_ * in_padded_.width_;
+			const size_t nblocks = out_.width_ / 3;
 			for (size_t o=0; o<out_.depth_; ++o, oidx += out_area) {
 				float* pa = &a[oidx];
 				// init to bias value
@@ -787,7 +788,6 @@ public:
 					__m256 w2c = leftShift<8>(w2a);
 					__m256 w3c = leftShift<8>(w3a);
 					__m256 w4c = leftShift<8>(w4a);
-					size_t stride = h_stride_ * in_padded_.width_;
 #else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
@@ -827,7 +827,6 @@ public:
 						if (w_stride_ == 1) {
 							__m256 dst0, dst1, dst2;
 							float* ppa2 = ppa;
-							size_t nblocks = out_.width_ / 3;
 							for (size_t i=0; i<nblocks; ++i) {
 								__m256 i0 = _mm256_loadu_ps(pi0);
 								__m256 i1 = _mm256_loadu_ps(pi1);
@@ -1083,6 +1082,7 @@ public:
 		static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 		// propagate delta to previous layer
 		if (w_stride_ == 1 && out_.width_ >= 4) {
+			const cnn_size_t nblocks = out_.width_ / 3;
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
@@ -1115,7 +1115,6 @@ public:
 						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
 						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
 						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
-						cnn_size_t nblocks = out_.width_ / 3;
 						for (cnn_size_t n = 0; n < nblocks; ++n) {
 							__m128 delta_src = _mm_loadu_ps(pdelta_src + n * 3);
 							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
@@ -1416,14 +1415,14 @@ public:
 		}else {
 #if defined(CNN_USE_AVX)
 			// prepare load-mask beforehand
-			size_t nblocks = out_.width_ >> 3;
+			const size_t nblocks = out_.width_ >> 3;
 			static const int32_t masks[] = {
 				-1, -1, -1, -1,
 				-1, -1, -1, -1,
 				0, 0, 0, 0,
 				0, 0, 0, 0,
 			};
-			size_t remainder = out_.width_ & 7;
+			const size_t remainder = out_.width_ & 7;
 			__m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
 #endif // #ifdef CNN_USE_AVX
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
