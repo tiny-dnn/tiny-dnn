@@ -53,8 +53,14 @@ public:
 #endif
     virtual ~function() = default;
 
-    virtual float_t f(const vec_t& v, cnn_size_t index) const = 0;
-	virtual void f(vec_t& dst, const vec_t& v) const {
+    virtual float f(const fvec_t& v, cnn_size_t index) const = 0;
+    virtual double f(const dvec_t& v, cnn_size_t index) const = 0;
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
 		for (size_t i=0; i<v.size(); ++i) {
 			dst[i] = f(v, i);
 		}
@@ -76,24 +82,79 @@ public:
 class identity : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return v[i]; }
-    float_t df(float_t /*y*/) const override { return float_t(1); }
+    float f(const fvec_t& v, cnn_size_t i) const override { return v[i]; }
+    double f(const dvec_t& v, cnn_size_t i) const override { return v[i]; }
+
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+
+    float_t df(float_t /*y*/) const override {
+		return float_t(1);
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 /*y*/) const {
+		return _mm256_set1_ps(1.0f);
+	}
+	inline __m256d df(__m256d /*y*/) const {
+		return _mm256_set1_pd(1.0);
+	}
+#endif
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class sigmoid : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
-    float_t df(float_t y) const override { return y * (float_t(1) - y); }
+    float f(const fvec_t& v, cnn_size_t i) const override { return float(1) / (float(1) + std::exp(-v[i])); }
+    double f(const dvec_t& v, cnn_size_t i) const override { return double(1) / (double(1) + std::exp(-v[i])); }
+    
+	float_t df(float_t y) const override {
+		return y * (float_t(1) - y);
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 one = _mm256_set1_ps(1.0f);
+		return _mm256_mul_ps(y, _mm256_sub_ps(one, y));
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d one = _mm256_set1_pd(1.0f);
+		return _mm256_mul_pd(y, _mm256_sub_pd(one, y));
+	}
+#endif
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class relu : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return std::max(float_t(0), v[i]); }
-    float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0); }
+    float f(const fvec_t& v, cnn_size_t i) const override { return std::max(float(0), v[i]); }
+    double f(const dvec_t& v, cnn_size_t i) const override { return std::max(double(0), v[i]); }
+
+	float_t df(float_t y) const override {
+		return y > float_t(0) ? float_t(1) : float_t(0);
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
+		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(1.0f), _mm256_set1_ps(0.0f), mask);
+		return result;
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
+		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(1.0), _mm256_set1_pd(0.0), mask);
+		return result;
+	}
+#endif
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
@@ -103,7 +164,23 @@ class leaky_relu : public function {
 public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
-    float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0.01); }
+
+    float_t df(float_t y) const override {
+		return y > float_t(0) ? float_t(1) : float_t(0.01);
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
+		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(1.0f), _mm256_set1_ps(0.01f), mask);
+		return result;
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
+		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(1.0), _mm256_set1_pd(0.01), mask);
+		return result;
+	}
+#endif
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
@@ -111,25 +188,71 @@ class elu : public function {
 public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
-    float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1)+y)); }
+
+    float_t df(float_t y) const override {
+		return (y > float_t(0) ? float_t(1) : (float_t(1)+y));
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
+		__m256 one = _mm256_set1_ps(1.0f);
+		__m256 result = _mm256_blendv_ps(one, _mm256_add_ps(one, y), mask);
+		return result;
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
+		__m256d one = _mm256_set1_pd(1.0);
+		__m256d result = _mm256_blendv_pd(one, _mm256_add_pd(one, y), mask);
+		return result;
+	}
+#endif
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class softmax : public function {
 public:
-    float_t f(const vec_t& v, cnn_size_t i) const override {
-        // TODO: eradicate the intensive common computations by precomputing alpha and denom variables in advance
-        float_t alpha = *std::max_element(v.begin(), v.end());
-        float_t numer = std::exp(v[i] - alpha);
-        float_t denom = float_t(0);
+	template <typename Float, typename Vec>
+	Float fimpl(const Vec& v, cnn_size_t i) const {
+        Float alpha = *std::max_element(v.begin(), v.end());
+        Float numer = std::exp(v[i] - alpha);
+        Float denom = Float(0);
         for (auto x : v)
             denom += std::exp(x - alpha);
         return numer / denom;
     }
 
+    float f(const fvec_t& v, cnn_size_t i) const override {
+        return fimpl<float>(v, i);
+    }
+    double f(const dvec_t& v, cnn_size_t i) const override {
+        return fimpl<double>(v, i);
+    }
+
+	virtual void f(fvec_t& dst, const fvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+	virtual void f(dvec_t& dst, const dvec_t& v) const {
+		for (size_t i=0; i<v.size(); ++i) {
+			dst[i] = f(v, i);
+		}
+	}
+
     float_t df(float_t y) const override {
         return y * (float_t(1) - y);
     }
+
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 one = _mm256_set1_ps(1.0f);
+		return _mm256_mul_ps(y, _mm256_sub_ps(one, y));
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d one = _mm256_set1_pd(1.0f);
+		return _mm256_mul_pd(y, _mm256_sub_pd(one, y));
+	}
+#endif
 
     virtual vec_t df(const vec_t& y, cnn_size_t index) const override {
         vec_t v(y.size(), 0);
@@ -143,6 +266,51 @@ public:
 
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0), float_t(1)); }
 };
+
+#ifdef CNN_USE_AVX
+
+static inline __m256 exp_ps(__m256 x)
+{
+#ifdef CNN_USE_HERUMI_FMATH
+
+#ifdef CNN_USE_AVX2
+	return fmath::exp_ps256(x);
+#else
+	__m128 lo = fmath::exp_ps(_mm256_castps256_ps128(x));
+	__m128 hi = fmath::exp_ps(_mm256_extractf128_ps(x, 1));
+	return _mm256_setr_m128(lo, hi);
+#endif // #ifdef CNN_USE_AVX2
+
+#else // #ifdef CNN_USE_HERUMI_FMATH
+	//_mm_extract_ps(
+	//_MM_EXTRACT_FLOAT(
+	union {
+		__m256 y;
+		float s[8];
+	};
+	y = x;
+	for (size_t i=0; i<8; ++i) {
+		s[i] = std::exp(s[i]);
+	}
+	return y;
+#endif // #ifdef CNN_USE_HERUMI_FMATH #else
+}
+
+static inline __m256d exp_pd(__m256d x)
+{
+#if defined(CNN_USE_HERUMI_FMATH) && defined(CNN_USE_AVX2)
+	return fmath::exp_pd256(x);
+#else
+	VECTORIZE_ALIGN(16) double doubles[4];
+	doubles[0] = std::exp(x.m256d_f64[0]);
+	doubles[1] = std::exp(x.m256d_f64[1]);
+	doubles[2] = std::exp(x.m256d_f64[2]);
+	doubles[3] = std::exp(x.m256d_f64[3]);
+	return _mm256_load_pd(doubles);
+#endif
+}
+
+#endif // #ifdef CNN_USE_AVX
 
 class tan_h : public function {
 public:
@@ -179,52 +347,14 @@ public:
 	}
 #endif // #ifdef CNN_USE_HERUMI_FMATH #else
 
-    float_t f(const vec_t& v, cnn_size_t i) const override {
+    float f(const fvec_t& v, cnn_size_t i) const override {
+		return f(v[i]);
+    }
+    double f(const dvec_t& v, cnn_size_t i) const override {
 		return f(v[i]);
     }
 
 #ifdef CNN_USE_AVX
-
-	static inline __m256 exp_ps(__m256 x)
-	{
-#ifdef CNN_USE_HERUMI_FMATH
-
-#ifdef CNN_USE_AVX2
-		return fmath::exp_ps256(x);
-#else
-		__m128 lo = fmath::exp_ps(_mm256_castps256_ps128(x));
-		__m128 hi = fmath::exp_ps(_mm256_extractf128_ps(x, 1));
-		return _mm256_setr_m128(lo, hi);
-#endif // #ifdef CNN_USE_AVX2
-
-#else // #ifdef CNN_USE_HERUMI_FMATH
-		//_mm_extract_ps(
-		//_MM_EXTRACT_FLOAT(
-		union {
-			__m256 y;
-			float s[8];
-		};
-		y = x;
-		for (size_t i=0; i<8; ++i) {
-			s[i] = std::exp(s[i]);
-		}
-		return y;
-#endif // #ifdef CNN_USE_HERUMI_FMATH #else
-	}
-
-	static inline __m256d exp_pd(__m256d x)
-	{
-#if defined(CNN_USE_HERUMI_FMATH) && defined(CNN_USE_AVX2)
-		return fmath::exp_pd256(x);
-#else
-		VECTORIZE_ALIGN(16) double doubles[4];
-		doubles[0] = std::exp(x.m256d_f64[0]);
-		doubles[1] = std::exp(x.m256d_f64[1]);
-		doubles[2] = std::exp(x.m256d_f64[2]);
-		doubles[3] = std::exp(x.m256d_f64[3]);
-		return _mm256_load_pd(doubles);
-#endif
-	}
 
 	void f(fvec_t& dst, const fvec_t& v) const {
 		assert(dst.size() == v.size());
@@ -294,7 +424,6 @@ public:
 
 #endif // #ifdef CNN_USE_AVX #else
 
-
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
     /*float_t f(float_t x) const {
         const float_t x2 = x * x;
@@ -302,8 +431,9 @@ public:
         return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
     }*/
 
-    float_t df(float_t y) const override { return float_t(1) - sqr(y); }
-
+    float_t df(float_t y) const override {
+		return float_t(1) - sqr(y);
+	}
 #ifdef CNN_USE_AVX
 	inline __m256 df(__m256 y) const {
 		__m256 one = _mm256_set1_ps(1.0f);
@@ -338,7 +468,24 @@ public:
         return ep / (ep + std::exp(-v[i]));
     }
 
-    float_t df(float_t y) const override { return 2 * y *(float_t(1) - y); }
+    float_t df(float_t y) const override {
+		return 2 * y *(float_t(1) - y);
+	}
+#ifdef CNN_USE_AVX
+	inline __m256 df(__m256 y) const {
+		__m256 one = _mm256_set1_ps(1.0f);
+		__m256 result = _mm256_mul_ps(y, _mm256_sub_ps(one, y));
+		result = _mm256_add_ps(result, result);
+		return result;
+	}
+	inline __m256d df(__m256d y) const {
+		__m256d one = _mm256_set1_pd(1.0);
+		__m256d result = _mm256_mul_pd(y, _mm256_sub_pd(one, y));
+		result = _mm256_add_pd(result, result);
+		return result;
+	}
+#endif
+
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
