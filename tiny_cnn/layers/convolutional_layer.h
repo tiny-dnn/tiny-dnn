@@ -26,7 +26,6 @@
 */
 #pragma once
 
-#include <deque>
 #include <vector>
 #include <string>
 #include <algorithm>
@@ -322,13 +321,19 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
  private:
     void init_backend(backend_t backend_type) {
-        using namespace std::placeholders;  // for _1, _2, _3...
         switch (backend_type) {
             case backend_t::tiny_cnn:
                 Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
-                    std::bind(&convolutional_layer::copy_and_pad_input, this, _1, _2),
-                    std::bind(&convolutional_layer::copy_and_unpad_delta, this, _1, _2),
-                    std::bind(&Base::backward_activation, this, _1, _2, _3),
+                    [this](const vec_t& in, int worker_index) {
+                        return copy_and_pad_input(in, worker_index);
+                    },
+                    [this](const vec_t& delta, vec_t& dst) {
+                        return copy_and_unpad_delta(delta, dst);
+                    },
+                    [this](const vec_t& p_delta,
+                           const vec_t& out, vec_t& c_delta) {
+                        return Base::backward_activation(p_delta, out, c_delta);
+                    },
                     &conv_layer_worker_storage_);
                 Base::backend_->set_layer(this);
                 break;
@@ -444,9 +449,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
            }
            cws.prev_out_padded_ = &cws.prev_out_buf_;
        }
-    }
+   }
 
-    void copy_and_unpad_delta(const vec_t& delta, vec_t& dst) {
+   void copy_and_unpad_delta(const vec_t& delta, vec_t& dst) {
        if (params_.pad_type == padding::valid) {
            dst = delta;
        } else {
