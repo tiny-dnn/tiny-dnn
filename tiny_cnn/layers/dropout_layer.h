@@ -111,9 +111,17 @@ public:
         const tensor_t& in  = *in_data[0];
         tensor_t&       out = *out_data[0];
 
+        dropout_layer_worker_specific_storage& dws = dropout_layer_worker_storage_[index];
+
+        const cnn_size_t sample_count = in.size();
+
+        if (dws.mask_.size() < sample_count) {
+            dws.mask_.resize(sample_count, dws.mask_[0]);
+        }
+
         for (size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
 
-            std::vector<uint8_t>& mask = dropout_layer_worker_storage_[index].mask_[sample];
+            std::vector<uint8_t>& mask = dws.mask_[sample];
 
             const vec_t& in_vec = in[sample];
             vec_t& out_vec = out[sample];
@@ -142,6 +150,7 @@ public:
 
     std::string layer_type() const override { return "dropout"; }
 
+    // currently used by tests only
     const std::vector<uint8_t>& get_mask(cnn_size_t worker_index, cnn_size_t sample_index) const {
         return dropout_layer_worker_storage_[worker_index].mask_[sample_index];
     }
