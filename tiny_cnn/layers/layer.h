@@ -225,7 +225,7 @@ class layer : public node {
      * used only for calculating target value from label-id in final(output) layer
      * override properly if the layer is intended to be used as output layer
      **/
-    virtual std::pair<float_t, float_t> out_value_range() const { return {0.0, 1.0}; }  // NOLINT
+    virtual std::pair<float_t, float_t> out_value_range() const { return {float_t(0), float_t(1)}; }  // NOLINT
 
     /**
      * array of input shapes (width x height x depth)
@@ -303,7 +303,7 @@ class layer : public node {
         initialized_ = true;
     }
 
-    virtual void load(const std::vector<double>& src, int& idx) { // NOLINT
+    virtual void load(const std::vector<float_t>& src, int& idx) { // NOLINT
         auto all_weights = get_weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
