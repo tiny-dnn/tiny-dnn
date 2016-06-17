@@ -600,7 +600,8 @@ public:
 			} // out depth loop
 		}
 
-		h_.f(out, a);
+		tiny_cnn::activation::function& h = h_;
+		h.f(out, a);
     }
 
     void forward_propagation_impl(cnn_size_t index,
@@ -943,7 +944,8 @@ public:
 		}
 
 		// apply acativation function
-		h_.f(out, a);
+		tiny_cnn::activation::function& h = h_;
+		h.f(out, a);
     }
 
     float& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {

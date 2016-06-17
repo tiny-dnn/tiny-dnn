@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
 #include "tiny_cnn/tiny_cnn.h"
+#include "tiny_cnn/layers/convolutional_layer_5x5.h"
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -34,6 +35,7 @@ using namespace std;
 template <typename N>
 void construct_net(N& nn) {
     typedef convolutional_layer<activation::identity> conv;
+//    typedef convolutional_layer_5x5<activation::identity> conv;
     typedef max_pooling_layer<relu> pool;
 
     const int n_fmaps = 32; ///< number of feature maps for upper layer
