@@ -119,21 +119,21 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR} )
 LINK_LIBRARIES(${REQUIRED_LIBRARIES} )
 
-SET( tiny_cnn_hrds tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
+SET( tiny_cnn_hdrs tiny_cnn/activations/activation_function.h  tiny_cnn/io/cifar10_parser.h  tiny_cnn/layers/convolutional_layer.h  tiny_cnn/io/display.h  tiny_cnn/util/image.h  tiny_cnn/layers/layer.h  tiny_cnn/lossfunctions/loss_function.h  tiny_cnn/io/mnist_parser.h  tiny_cnn/optimizers/optimizer.h  tiny_cnn/util/product.h  tiny_cnn/util/util.h
 tiny_cnn/layers/average_pooling_layer.h  tiny_cnn/config.h  tiny_cnn/util/deform.h tiny_cnn/layers/fully_connected_layer.h tiny_cnn/layers/input_layer.h  tiny_cnn/layers/layers.h  tiny_cnn/layers/max_pooling_layer.h  tiny_cnn/network.h  tiny_cnn/layers/partial_connected_layer.h  tiny_cnn/tiny_cnn.h  tiny_cnn/util/weight_init.h tiny_cnn/layers/arithmetic_layer.h tiny_cnn/layers/concat_layer.h tiny_cnn/layers/feedforward_layer.h tiny_cnn/layers/dropout_layer.h tiny_cnn/layers/lrn_layer.h tiny_cnn/layers/linear_layer.h tiny_cnn/node.h tiny_cnn/nodes.h tiny_cnn/util/target_cost.h tiny_cnn/util/aligned_allocator.h tiny_cnn/layers/deconvolutional_layer.h tiny_cnn/layers/max_unpooling_layer.h tiny_cnn/layers/average_unpooling_layer.h)
 
 SET(tiny_cnn_test_headers test/test_average_pooling_layer.h test/test_convolutional_layer.h test/test_fully_connected_layer.h test/test_lrn_layer.h test/test_max_pooling_layer.h test/test_dropout_layer.h test/test_network.h test/test_target_cost.h test/test_large_thread_count.h test/testhelper.h test/picotest/picotest.h)
 
 IF (BUILD_EXAMPLES)
-    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
-    ADD_EXECUTABLE(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
+    ADD_EXECUTABLE(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hdrs})
     IF (USE_OPENCV)
         ADD_EXECUTABLE(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
     ELSE()
         FILE(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
         ADD_EXECUTABLE(example_mnist_test examples/mnist/test_with_stb_image.cpp ${tiny_cnn_hdrs} ${stb_image_hdrs})
     ENDIF()
-    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
+    ADD_EXECUTABLE(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
     IF (USE_OPENCV)
         target_link_libraries( example_mnist_test ${OpenCV_LIBS} )
         include_directories(${OpenCV_INCLUDE_DIRS})
@@ -145,7 +145,7 @@ IF (BUILD_EXAMPLES)
         IF (EXISTS ${proto_file})
             add_executable(example_caffe_converter
                            examples/caffe_converter/caffe_converter.cpp
-                           ${tiny_cnn_hrds} ${proto_file})
+                           ${tiny_cnn_hdrs} ${proto_file})
             target_link_libraries(example_caffe_converter
                                   ${PROTOBUF_LIBRARIES} ${OpenCV_LIBS})
         ELSE()
