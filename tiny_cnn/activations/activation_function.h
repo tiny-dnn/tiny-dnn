@@ -175,13 +175,13 @@ public:
 	}
 #ifdef CNN_USE_AVX
 	inline __m256 df(__m256 y) const {
-		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
-		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(1.0f), _mm256_set1_ps(0.0f), mask);
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OQ);
+		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(0.0f), _mm256_set1_ps(1.0f), mask);
 		return result;
 	}
 	inline __m256d df(__m256d y) const {
-		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
-		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(1.0), _mm256_set1_pd(0.0), mask);
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OQ);
+		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(0.0), _mm256_set1_pd(1.0), mask);
 		return result;
 	}
 #endif
@@ -215,13 +215,13 @@ public:
 	}
 #ifdef CNN_USE_AVX
 	inline __m256 df(__m256 y) const {
-		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
-		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(1.0f), _mm256_set1_ps(0.01f), mask);
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OQ);
+		__m256 result = _mm256_blendv_ps(_mm256_set1_ps(0.01f), _mm256_set1_ps(1.0f), mask);
 		return result;
 	}
 	inline __m256d df(__m256d y) const {
-		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
-		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(1.0), _mm256_set1_pd(0.01), mask);
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OQ);
+		__m256d result = _mm256_blendv_pd(_mm256_set1_pd(0.01), _mm256_set1_pd(1.0), mask);
 		return result;
 	}
 #endif
@@ -253,15 +253,15 @@ public:
 	}
 #ifdef CNN_USE_AVX
 	inline __m256 df(__m256 y) const {
-		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OS);
+		__m256 mask = _mm256_cmp_ps(y, _mm256_setzero_ps(), _CMP_GT_OQ);
 		__m256 one = _mm256_set1_ps(1.0f);
-		__m256 result = _mm256_blendv_ps(one, _mm256_add_ps(one, y), mask);
+		__m256 result = _mm256_blendv_ps(_mm256_add_ps(one, y), one, mask);
 		return result;
 	}
 	inline __m256d df(__m256d y) const {
-		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OS);
+		__m256d mask = _mm256_cmp_pd(y, _mm256_setzero_pd(), _CMP_GT_OQ);
 		__m256d one = _mm256_set1_pd(1.0);
-		__m256d result = _mm256_blendv_pd(one, _mm256_add_pd(one, y), mask);
+		__m256d result = _mm256_blendv_pd(_mm256_add_pd(one, y), one, mask);
 		return result;
 	}
 #endif
@@ -308,11 +308,13 @@ public:
 #ifdef CNN_USE_AVX
 	inline __m256 df(__m256 y) const {
 		__m256 one = _mm256_set1_ps(1.0f);
-		return _mm256_mul_ps(y, _mm256_sub_ps(one, y));
+		__m256 result = _mm256_mul_ps(y, _mm256_sub_ps(one, y));
+		return result;
 	}
 	inline __m256d df(__m256d y) const {
 		__m256d one = _mm256_set1_pd(1.0f);
-		return _mm256_mul_pd(y, _mm256_sub_pd(one, y));
+		__m256d result = _mm256_mul_pd(y, _mm256_sub_pd(one, y));
+		return result;
 	}
 #endif
 
@@ -454,13 +456,7 @@ public:
 			__m256d em = exp_pd(mx);
 			__m256d ep_minus_em = _mm256_sub_pd(ep, em);
 			__m256d ep_plus_em = _mm256_add_pd(ep, em);
-#if 1
 			__m256d ret = _mm256_div_pd(ep_minus_em, ep_plus_em);
-#else
-			__m256d rcp_ep_plus_em = _mm256_rcp_pd(ep_plus_em);
-			// TODO: perform NR iteration to improve numerical precision.
-			__m256d ret = _mm256_mul_pd(ep_minus_em, rcp_ep_plus_em);
-#endif
 			_mm256_store_pd(&dst[i*4], ret);
 		}
 		for (size_t i=(nblocks << 2); i<sz; ++i) {

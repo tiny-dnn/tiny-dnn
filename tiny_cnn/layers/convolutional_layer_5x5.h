@@ -1419,6 +1419,7 @@ public:
 #if defined(CNN_USE_AVX)
 							__m256 dst = _mm256_setzero_ps();
 							__m256 a, b;
+							__m128 sum = _mm_load_ss(&dW[widx]);
 							for (cnn_size_t y = 0; y < out_.height_; y++) {
 								// vectorize::dot
 								const float* pa = prevo + y * in_padded_.width_;
@@ -1434,7 +1435,8 @@ public:
 									dst = madd(a, b, dst);
 								}
 							}
-							dW[widx++] += sum8(dst);
+							_mm_store_ss(&dW[widx], hsum256_ps(dst));
+							++widx;
 #else // #ifdef CNN_USE_AVX
 							float dst = vectorize::dot(prevo, delta, out_.width_);
 							for (cnn_size_t y = 1; y < out_.height_; y++) {

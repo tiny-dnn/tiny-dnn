@@ -45,7 +45,7 @@ protected:
 
     void backward_activation(const fvec_t& prev_delta, const fvec_t& this_out, fvec_t& curr_delta) {
         if (h_.one_hot()) {
-#ifdef CNN_USE_AVX
+#if defined(CNN_USE_AVX)
 			cnn_size_t sz = prev_delta.size();
 			cnn_size_t nblocks = sz >> 3;
 			const float* prev = &prev_delta[0];
