@@ -96,7 +96,7 @@ struct adagrad : public stateful_optimizer<1> {
 			size_t headEnd = std::min(begin+headLen, end);
 			for (size_t i=begin; i<headEnd; ++i) {
 				g[i] += dW[i] * dW[i];
-				W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+				W[i] -= float(alpha * dW[i] / (std::sqrt(g[i]) + eps));
 			}
 			begin = headEnd;
 			if (begin == end) {
@@ -108,7 +108,7 @@ struct adagrad : public stateful_optimizer<1> {
 		const float* pdW = &dW[begin];
 		float* pW = &W[begin];
 
-		__m256 yalpha = _mm256_set1_ps(alpha);
+		__m256 yalpha = _mm256_set1_ps(float(alpha));
 
 		size_t nblocks = sz >> 4;
 		for (cnn_size_t i=0; i<nblocks; ++i) {
@@ -134,7 +134,7 @@ struct adagrad : public stateful_optimizer<1> {
 		}
 		for (cnn_size_t i=begin+(nblocks<<4); i<end; ++i) {
 			g[i] += dW[i] * dW[i];
-			W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
+			W[i] -= float(alpha * dW[i] / (std::sqrt(g[i]) + eps));
 		}
 #else
 		for (size_t i=begin; i<end; ++i) {

@@ -424,10 +424,11 @@ public:
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 3;
+		__m256 zero = _mm256_setzero_ps();
 		for (size_t i = 0; i<nblocks; ++i) {
 			__m256 x = _mm256_load_ps(&v[i*8]);
 			__m256 ep = exp_ps(x);
-			__m256 mx = _mm256_sub_ps(_mm256_setzero_ps(), x);
+			__m256 mx = _mm256_sub_ps(zero, x);
 			__m256 em = exp_ps(mx);
 			__m256 ep_minus_em = _mm256_sub_ps(ep, em);
 			__m256 ep_plus_em = _mm256_add_ps(ep, em);
@@ -449,10 +450,11 @@ public:
 		assert(dst.size() == v.size());
 		size_t sz = v.size();
 		size_t nblocks = sz >> 2;
+		__m256d zero = _mm256_setzero_pd();
 		for (size_t i = 0; i<nblocks; ++i) {
 			__m256d x = _mm256_load_pd(&v[i*4]);
 			__m256d ep = exp_pd(x);
-			__m256d mx = _mm256_sub_pd(_mm256_setzero_pd(), x);
+			__m256d mx = _mm256_sub_pd(zero, x);
 			__m256d em = exp_pd(mx);
 			__m256d ep_minus_em = _mm256_sub_pd(ep, em);
 			__m256d ep_plus_em = _mm256_add_pd(ep, em);
