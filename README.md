@@ -1,4 +1,4 @@
-tiny-cnn: A header only, dependency-free deep learning framework in C++11
+tiny-cnn: A header-only, dependency-free deep learning framework for C++11
 ========
 
 | **Linux/Mac OS** | **Windows** |
@@ -27,14 +27,14 @@ Check out the [documentation](doc/readme.md) for more info.
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
 - portable & header-only
-    - Run anywhere only if only you have a compiler which supports C++11
-    - Just include tiny_cnn.h and write your model in c++. There is nothing to install.
-- easy to integrate with a real application
-    - no output on stdout/stderr
+    - Run anywhere as long as you have a compiler which supports C++11
+    - Just include tiny_cnn.h and write your model in C++. There is nothing to install.
+- easy to integrate with real applications
+    - no output to stdout/stderr
     - a constant throughput (simple parallelization model, no garbage collection)
-    - work without exception
+    - work without throwing an exception
     - [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
-- simple implementation
+- simply implemented
     - be a good library for learning neural networks
 
 ## Comparison with other libraries
@@ -77,7 +77,7 @@ Check out the [documentation](doc/readme.md) for more info.
 * cross-entropy
 * mean-squared-error
 
-### optimization algorithm
+### optimization algorithms
 * stochastic gradient descent (with/without L2 normalization and momentum)
 * stochastic gradient levenberg marquardt
 * adagrad
@@ -86,7 +86,7 @@ Check out the [documentation](doc/readme.md) for more info.
 
 ## Dependencies
 ##### Minimum requirements
-Nothing.All you need is a C++11 compiler.
+Nothing. All you need is a C++11 compiler.
 
 ##### Requirements to build sample/test programs
 [OpenCV](http://opencv.org/)
@@ -108,8 +108,10 @@ Some cmake options are available:
 |USE_OMP|Use OpenMP for parallelization|OFF*|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
+|USE_OPENCV|Use OpenCV for sample/test programs|ON|[Open Source Computer Vision Library](http://opencv.org/)|
 |BUILD_TESTS|Build unist tests|OFF|-**|
 |BUILD_EXAMPLES|Build example projects|ON|-|
+|BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
 *tiny-cnn use c++11 standard library for parallelization by default
 **to build tests, type `git submodule update --init` before build
@@ -201,7 +203,7 @@ void construct_mlp() {
 }
 ```
 
-more sample, read examples/main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter) page.
+more sample, read examples/main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/mnist) page.
 
 ## References
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
