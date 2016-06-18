@@ -306,7 +306,7 @@ public:
         dvec_t&       a   = *out_data[1];
         const dvec_t &in  = *(conv_layer_worker_storage_[index].prev_out_padded_); // input
         double bias_scale = has_bias_ ? 1.0 : 0.0;
-		__m128d y_bias_scale = _mm_set_sd(bias_scale);
+		const __m128d y_bias_scale = _mm_set_sd(bias_scale);
 		cnn_size_t oidx = 0;
 
         const double* pw = &w[0];
@@ -619,29 +619,27 @@ public:
 
 #if defined(CNN_USE_AVX)
 		static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
-		__m128 y_bias_scale = _mm_set_ss(bias_scale);
+		const __m128 y_bias_scale = _mm_set_ss(bias_scale);
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			if (stride == 5) {
+				const float* pw = (const float*) &w[0];
 				for (size_t o=0; o<out_.depth_; ++o) {
 					__m256 sum0 = _mm256_setzero_ps();
 					__m256 sum1 = _mm256_setzero_ps();
 					__m256 sum2 = _mm256_setzero_ps();
 					__m128 sum3 = _mm_setzero_ps();
-					size_t widx = 25/* weight_.area() */ * in_.depth_ * o;
-					size_t inidx = 0;
-					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, widx+=25, inidx+=inarea) {
+					const float* pi = (const float*) &in[0];
+					for (cnn_size_t inc=0; inc<in_.depth_; ++inc, pw+=25, pi+=inarea) {
 						if (!tbl_.is_connected(o, inc)) {
 							continue;
 						}
-						const float* pw = (const float*) &w[widx];
 						__m256 w0 = _mm256_loadu_ps(pw+0);
 						__m256 w1 = _mm256_loadu_ps(pw+8);
 						__m256 w2 = _mm256_loadu_ps(pw+16);
-						__m128 w3 = _mm_load_ss(pw+24);
-						const float* pi = (const float*) &in[inidx];
 						__m256 i0 = _mm256_loadu_ps(pi+0);
 						__m256 i1 = _mm256_loadu_ps(pi+8);
 						__m256 i2 = _mm256_loadu_ps(pi+16);
+						__m128 w3 = _mm_load_ss(pw+24);
 						__m128 i3 = _mm_load_ss(pi+24);
 #ifdef CNN_USE_AVX2
 						sum0 = _mm256_fmadd_ps(w0, i0, sum0);
@@ -1104,12 +1102,13 @@ public:
 #endif // #ifdef CNN_USE_AVX
 
 #if defined(CNN_USE_AVX)
+		const size_t in_padded_area = in_padded_.area();
+		float* pdelta_dst_org = &prev_delta[0];
 		static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 		// propagate delta to previous layer
 		if (w_stride_ == 1 && out_.width_ >= 4) {
 			const cnn_size_t nblocks = out_.width_ / 3;
-			for (size_t inc=0; inc<in_.depth_; ++inc) {
-				float* pdelta_dst_org = &prev_delta[in_padded_.get_index(0, 0, inc)];
+			for (size_t inc=0; inc<in_.depth_; ++inc, pdelta_dst_org+=in_padded_area) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
@@ -1143,16 +1142,15 @@ public:
 						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
 						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						for (cnn_size_t n = 0; n < nblocks; ++n) {
-							__m128 delta_src = _mm_loadu_ps(pdelta_src2);
+							__m256 delta_src = _mm256_broadcast_ps((const __m128*)pdelta_src2);
 							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
 							__m256 dst1 = _mm256_loadu_ps(delta_dst1);
 							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
 							__m256 dst3 = _mm256_loadu_ps(delta_dst3);
 							__m256 dst4 = _mm256_loadu_ps(delta_dst4);
-							__m256 tmp = _mm256_set_m128(delta_src, delta_src);
-							__m256 delta_src0 = _mm256_permute_ps(tmp, _MM_SHUFFLE(0, 0, 0, 0));
-							__m256 delta_src1 = _mm256_permute_ps(tmp, _MM_SHUFFLE(1, 1, 1, 1));
-							__m256 delta_src2 = _mm256_permute_ps(tmp, _MM_SHUFFLE(2, 2, 2, 2));
+							__m256 delta_src0 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
+							__m256 delta_src1 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
+							__m256 delta_src2 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
 							dst0 = madd(w0a, delta_src0, dst0);
 							dst1 = madd(w1a, delta_src0, dst1);
 							dst2 = madd(w2a, delta_src0, dst2);
@@ -1209,13 +1207,12 @@ public:
 				}
 			}
 		}else if (out_.height_ == 1 && out_.width_ == 1) {
-			for (size_t inc=0; inc<in_.depth_; ++inc) {
-				float* pdelta_dst = &prev_delta[in_padded_.get_index(0, 0, inc)];
-				float* delta_dst0 = pdelta_dst;
-				float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
-				float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
-				float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
-				float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
+			for (size_t inc=0; inc<in_.depth_; ++inc, pdelta_dst_org+=in_padded_area) {
+				float* delta_dst0 = pdelta_dst_org;
+				float* delta_dst1 = &pdelta_dst_org[in_padded_.width_ * 1];
+				float* delta_dst2 = &pdelta_dst_org[in_padded_.width_ * 2];
+				float* delta_dst3 = &pdelta_dst_org[in_padded_.width_ * 3];
+				float* delta_dst4 = &pdelta_dst_org[in_padded_.width_ * 4];
 				__m256 dst0 = _mm256_loadu_ps(delta_dst0);
 				__m256 dst1 = _mm256_loadu_ps(delta_dst1);
 				__m256 dst2 = _mm256_loadu_ps(delta_dst2);
@@ -1259,8 +1256,7 @@ public:
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
-			for (size_t inc=0; inc<in_.depth_; ++inc) {
-				float* pdelta_dst_org = &prev_delta[in_padded_.get_index(0, 0, inc)];
+			for (size_t inc=0; inc<in_.depth_; ++inc, pdelta_dst_org+=in_padded_area) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 
@@ -1386,31 +1382,32 @@ public:
 
         // accumulate dw
 		if (out_.width_ == 1 && out_.height_ == 1) {
-			for (size_t inc=0; inc<in_.depth_; ++inc) {
+			const float* pprev_out = &prev_out[0];
+			for (size_t inc=0; inc<in_.depth_; ++inc, pprev_out+=in_padded_area) {
 #if defined(CNN_USE_AVX)
 				VECTORIZE_ALIGN(16) float floats[28];
-				size_t base_idx = inc * in_padded_.area();
 				size_t in_padded_width = in_padded_.width_;
-				_mm256_store_ps(&floats[0], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 0]));
-				_mm256_storeu_ps(&floats[5], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 1]));
-				_mm256_storeu_ps(&floats[10], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 2]));
-				_mm256_storeu_ps(&floats[15], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 3]));
-				_mm256_storeu_ps(&floats[20], _mm256_loadu_ps(&prev_out[base_idx + in_padded_width * 4]));
+				_mm256_store_ps(&floats[0], _mm256_loadu_ps(pprev_out + in_padded_width * 0));
+				_mm256_storeu_ps(&floats[5], _mm256_loadu_ps(pprev_out + in_padded_width * 1));
+				_mm256_storeu_ps(&floats[10], _mm256_loadu_ps(pprev_out + in_padded_width * 2));
+				_mm256_storeu_ps(&floats[15], _mm256_loadu_ps(pprev_out + in_padded_width * 3));
+				_mm256_storeu_ps(&floats[20], _mm256_loadu_ps(pprev_out + in_padded_width * 4));
 				__m256 prevos0 = _mm256_load_ps(&floats[0]);
 				__m256 prevos1 = _mm256_load_ps(&floats[8]);
 				__m256 prevos2 = _mm256_load_ps(&floats[16]);
 				__m128 prevos3 = _mm_load_ss(&floats[24]);
 				cnn_size_t widx = 25 * inc;
 				cnn_size_t widx_delta = 25 * in_.depth_;
-				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=widx_delta) {
+				float* pdW = &dW[widx];
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, pdW+=widx_delta) {
 					if (!tbl_.is_connected(outc, inc)) {
 						continue;
 					}
 					__m256 delta = _mm256_broadcast_ss(&curr_delta[outc]);
-					__m256 w0 = _mm256_loadu_ps(&dW[widx+0]);
-					__m256 w1 = _mm256_loadu_ps(&dW[widx+8]);
-					__m256 w2 = _mm256_loadu_ps(&dW[widx+16]);
-					__m128 w3 = _mm_load_ss(&dW[widx+24]);
+					__m256 w0 = _mm256_loadu_ps(pdW+0);
+					__m256 w1 = _mm256_loadu_ps(pdW+8);
+					__m256 w2 = _mm256_loadu_ps(pdW+16);
+					__m128 w3 = _mm_load_ss(pdW+24);
 					w0 = madd(prevos0, delta, w0);
 					w1 = madd(prevos1, delta, w1);
 					w2 = madd(prevos2, delta, w2);
@@ -1419,10 +1416,10 @@ public:
 #else
 					w3 = madd_ss(prevos3, _mm256_castps256_ps128(delta), w3);
 #endif
-					_mm256_storeu_ps(&dW[widx+0], w0);
-					_mm256_storeu_ps(&dW[widx+8], w1);
-					_mm256_storeu_ps(&dW[widx+16], w2);
-					_mm_store_ss(&dW[widx+24], w3);
+					_mm256_storeu_ps(pdW+0, w0);
+					_mm256_storeu_ps(pdW+8, w1);
+					_mm256_storeu_ps(pdW+16, w2);
+					_mm_store_ss(pdW+24, w3);
 				}
 #else // #ifdef CNN_USE_AVX
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
