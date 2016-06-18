@@ -603,8 +603,13 @@ private:
         set_netphase(net_phase::train);
         net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
 
-        for (auto n : net_)
+        for (auto n : net_) {
+#if 0 //def _DEBUG
+            n->set_parallelize(false);
+#else
             n->set_parallelize(batch_size < CNN_TASK_SIZE);
+#endif
+		}
         optimizer.reset();
         for (int iter = 0; iter < epoch; iter++) {
 

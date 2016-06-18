@@ -72,27 +72,26 @@ public:
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
         const vec_t& in  = *in_data[0];
-        const vec_t& W   = *in_data[1];
+        const vec_t& w   = *in_data[1];
         vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        for_i(parallelize_, out_size_, [&](int i) {
+		for (size_t i=0; i<out_size_; ++i) {
             a[i] = float_t(0);
             for (cnn_size_t c = 0; c < in_size_; c++) {
-                a[i] += W[c*out_size_ + i] * in[c];
+                a[i] += w[c*out_size_ + i] * in[c];
             }
 
             if (has_bias_) {
                 vec_t& b = *in_data[2];
                 a[i] += b[i];
             }
-        });
+		}
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+		tiny_cnn::activation::function& h = h_;
+		h.f(out, a);
     }
 
     void back_propagation(cnn_size_t                index,
@@ -101,7 +100,7 @@ public:
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
         const vec_t& prev_out   = *in_data[0];
-        const vec_t& W          = *in_data[1];
+        const vec_t& w          = *in_data[1];
         vec_t&       dW         = *in_grad[1];
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
@@ -113,7 +112,7 @@ public:
         for (cnn_size_t c = 0; c < this->in_size_; c++) {
             // propagate delta to previous layer
             // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-            prev_delta[c] += vectorize::dot(&curr_delta[0], &W[c*out_size_], out_size_);
+            prev_delta[c] += vectorize::dot(&curr_delta[0], &w[c*out_size_], out_size_);
         }
 
         for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {

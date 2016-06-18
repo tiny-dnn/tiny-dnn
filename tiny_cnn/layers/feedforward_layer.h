@@ -43,11 +43,32 @@ public:
 
 protected:
 
-    void backward_activation(const vec_t& prev_delta, const vec_t& this_out, vec_t& curr_delta) {
+    void backward_activation(const fvec_t& prev_delta, const fvec_t& this_out, fvec_t& curr_delta) {
         if (h_.one_hot()) {
+#if defined(CNN_USE_AVX)
+			cnn_size_t sz = prev_delta.size();
+			cnn_size_t nblocks = sz >> 3;
+			const float* prev = &prev_delta[0];
+			const float* out = &this_out[0];
+			float* curr = &curr_delta[0];
+			for (cnn_size_t i=0; i<nblocks; ++i) {
+				__m256 p = _mm256_load_ps(prev);
+				__m256 o = _mm256_load_ps(out);
+				o = h_.df(o);
+				__m256 c = _mm256_mul_ps(p, o);
+				_mm256_store_ps(curr, c);
+				prev += 8;
+				out += 8;
+				curr += 8;
+			}
+			for (cnn_size_t c=nblocks<<3; c<sz; ++c) {
+                curr_delta[c] = prev_delta[c] * h_.df(this_out[c]);
+			}
+#else
             for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
                 curr_delta[c] = prev_delta[c] * h_.df(this_out[c]);
             }
+#endif
         }
         else {
             for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
@@ -56,6 +77,41 @@ protected:
             }
         }
     }
+
+    void backward_activation(const dvec_t& prev_delta, const dvec_t& this_out, dvec_t& curr_delta) {
+        if (h_.one_hot()) {
+#ifdef CNN_USE_AVX
+			const double* prev = &prev_delta[0];
+			const double* out = &this_out[0];
+			double* curr = &curr_delta[0];
+			cnn_size_t sz = prev_delta.size();
+			cnn_size_t nblocks = sz >> 2;
+			for (cnn_size_t i=0; i<nblocks; ++i) {
+				__m256d p = _mm256_load_pd(prev);
+				__m256d o = _mm256_load_pd(out);
+				o = h_.df(o);
+				__m256d c = _mm256_mul_pd(p, o);
+				_mm256_store_pd(curr, c);
+				prev += 4;
+				out += 4;
+				curr += 4;
+			}
+			for (cnn_size_t c=nblocks<<2; c<sz; ++c) {
+                curr_delta[c] = prev_delta[c] * h_.df(this_out[c]);
+			}
+#else
+            for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
+                curr_delta[c] = prev_delta[c] * h_.df(this_out[c]);
+            }
+#endif
+        }
+        else {
+            for (cnn_size_t c = 0; c < prev_delta.size(); c++) {
+                vec_t df = h_.df(this_out, c);
+                curr_delta[c] = vectorize::dot(&prev_delta[0], &df[0], prev_delta.size());
+            }
+		}
+	}
 
     Activation h_;
 };

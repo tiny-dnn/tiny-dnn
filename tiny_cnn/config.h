@@ -59,7 +59,13 @@
 #ifdef CNN_USE_OMP
 #define CNN_TASK_SIZE 100
 #else
-#define CNN_TASK_SIZE 8
+
+#if 0//def _DEBUG
+#define CNN_TASK_SIZE 1
+#else
+#define CNN_TASK_SIZE std::thread::hardware_concurrency()
+#endif
+
 #endif
 
 namespace tiny_cnn {
@@ -68,7 +74,11 @@ namespace tiny_cnn {
  * calculation data type
  * you can change it to float, or user defined class (fixed point,etc)
  **/
+#if 1
+typedef float float_t;
+#else
 typedef double float_t;
+#endif
 
 /**
  * size of layer, model, data etc.

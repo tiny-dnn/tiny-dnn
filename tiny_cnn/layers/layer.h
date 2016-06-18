@@ -225,7 +225,7 @@ class layer : public node {
      * used only for calculating target value from label-id in final(output) layer
      * override properly if the layer is intended to be used as output layer
      **/
-    virtual std::pair<float_t, float_t> out_value_range() const { return {0.0, 1.0}; }  // NOLINT
+    virtual std::pair<float_t, float_t> out_value_range() const { return {(float_t)0.0, (float_t)1.0}; }  // NOLINT
 
     /**
      * array of input shapes (width x height x depth)
@@ -303,7 +303,7 @@ class layer : public node {
         initialized_ = true;
     }
 
-    virtual void load(const std::vector<double>& src, int& idx) { // NOLINT
+    virtual void load(const std::vector<float_t>& src, int& idx) { // NOLINT
         auto all_weights = get_weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
@@ -380,15 +380,15 @@ class layer : public node {
     }
 
     void forward(int worker_index) {
-        std::vector<vec_t*> in_data, out_data;
+        thread_local static std::vector<vec_t*> in_data(16), out_data(16);
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+            in_data[i] = ith_in_node(i)->get_data(worker_index);
         }
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
+            out_data[i] = ith_out_node(i)->get_data(worker_index);
             ith_out_node(i)->clear_grad_onwork(worker_index);
         }
 
@@ -396,20 +396,18 @@ class layer : public node {
     }
 
     void backward(int worker_index) {
-        std::vector<vec_t*> in_data, out_data, in_grad, out_grad;
+        thread_local static std::vector<vec_t*> in_data(16), out_data(16), in_grad(16), out_grad(16);
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+			auto& node = ith_in_node(i);
+            in_data[i] = node->get_data(worker_index);
+            in_grad[i] = node->get_gradient(worker_index);
         }
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
-        }
-        for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_grad.push_back(ith_in_node(i)->get_gradient(worker_index));
-        }
-        for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_grad.push_back(ith_out_node(i)->get_gradient(worker_index));
+			auto& node = ith_out_node(i);
+            out_data[i] = node->get_data(worker_index);
+            out_grad[i] = node->get_gradient(worker_index);
         }
         back_propagation(worker_index, in_data, out_data, out_grad, in_grad);
     }
@@ -460,16 +458,12 @@ class layer : public node {
 
     void update_weight(optimizer *o,
                        cnn_size_t worker_size, cnn_size_t batch_size) {
+		float_t rcp_batch_size = (float_t)1 / (float_t)batch_size;
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
-                vec_t diff;
                 vec_t& target = *ith_in_node(i)->get_data();
-
-                ith_in_node(i)->merge_grads(worker_size, &diff);
-                std::transform(diff.begin(), diff.end(),
-                               diff.begin(), [&](float_t x) { // NOLINT
-                                  return x / batch_size; });
-                o->update(diff, target);
+                ith_in_node(i)->merge_grads(worker_size, wdiff_, rcp_batch_size);
+                o->update(wdiff_, target);
             }
         }
         clear_grads(worker_size);
@@ -508,6 +502,7 @@ class layer : public node {
     cnn_size_t out_channels_;  // number of output vectors
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
+	vec_t wdiff_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;
