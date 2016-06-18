@@ -310,9 +310,9 @@ public:
 		cnn_size_t oidx = 0;
 
         const double* pw = &w[0];
-		size_t in_stride = h_stride_ * in_padded_.width_;
-		size_t out_area = out_.area();
-		size_t in_padded_area = in_padded_.area();
+		const size_t in_stride = h_stride_ * in_padded_.width_;
+		const size_t out_area = out_.area();
+		const size_t in_padded_area = in_padded_.area();
 #if defined(CNN_USE_AVX)
 		if (out_.height_ == 1 && out_.width_ == 1) {
 			if (in_stride == 5) {
@@ -505,21 +505,19 @@ public:
 					__m128d w3b = _mm_load_sd(pw+19);
 					__m256d w4a = _mm256_loadu_pd(pw+20);
 					__m128d w4b = _mm_load_sd(pw+24);
-					size_t stride = h_stride_ * in_padded_.width_;
 #endif // #ifdef CNN_USE_AVX
 					const double* pi = pi0;
 					double* pa2 = pa;
 					for (cnn_size_t y=0; y<out_.height_; ++y, pi+=in_stride, pa2+=out_.width_) {
 #if defined(CNN_USE_AVX)
-						const double* pi0 = pi;
-						const double* pi1 = pi0 + 1 * stride;
-						const double* pi2 = pi0 + 2 * stride;
-						const double* pi3 = pi0 + 3 * stride;
-						const double* pi4 = pi0 + 4 * stride;
+						const double* pi1 = pi + 1 * in_stride;
+						const double* pi2 = pi + 2 * in_stride;
+						const double* pi3 = pi + 3 * in_stride;
+						const double* pi4 = pi + 4 * in_stride;
 						for (cnn_size_t x=0; x<out_.width_; ++x) {
 							__m128d sum = _mm_load_sd(&pa2[x]);
-							__m256d i0a = _mm256_loadu_pd(pi0);
-							__m128d i0b = _mm_load_sd(pi0 + 4);
+							__m256d i0a = _mm256_loadu_pd(pi);
+							__m128d i0b = _mm_load_sd(pi + 4);
 							__m256d i1a = _mm256_loadu_pd(pi1);
 							__m128d i1b = _mm_load_sd(pi1 + 4);
 							__m256d i2a = _mm256_loadu_pd(pi2);
@@ -616,13 +614,13 @@ public:
 		const size_t out_area = out_.area();
 		cnn_size_t oidx = 0;
 		float bias_scale = has_bias_ ? 1.0f : 0.0f;
+		const size_t stride = h_stride_ * in_padded_.width_;
+		const size_t inarea = in_padded_.area();
 
 #if defined(CNN_USE_AVX)
 		static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 		__m128 y_bias_scale = _mm_set_ss(bias_scale);
 		if (out_.height_ == 1 && out_.width_ == 1) {
-			const size_t stride = h_stride_ * in_padded_.width_;
-			const size_t inarea = in_padded_.area();
 			if (stride == 5) {
 				for (size_t o=0; o<out_.depth_; ++o) {
 					__m256 sum0 = _mm256_setzero_ps();
@@ -717,7 +715,6 @@ public:
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
-			const size_t stride = h_stride_ * in_padded_.width_;
 			const size_t nblocks = out_.width_ / 3;
 			for (size_t o=0; o<out_.depth_; ++o, oidx += out_area) {
 				float* pa = &a[oidx];
@@ -847,10 +844,10 @@ public:
 								dst1 = madd(w3b, i3, dst1);
 								dst2 = madd(w3c, i3, dst2);
 								dst0 = madd(w4a, i4, dst0);
-								dst1 = madd(w4b, i4, dst1);
-								dst2 = madd(w4c, i4, dst2);
 								__m128 hsum0 = hsum256_ps(dst0);
+								dst1 = madd(w4b, i4, dst1);
 								__m128 hsum1 = hsum256_ps(dst1);
+								dst2 = madd(w4c, i4, dst2);
 								__m128 hsum2 = hsum256_ps(dst2);
 								__m128 sum2 = _mm_castpd_ps(
 									_mm_unpacklo_pd(
@@ -968,9 +965,10 @@ public:
 
         const dvec_t& prev_out = *(cws.prev_out_padded_);
         const dvec_t& W = *in_data[1];
-        dvec_t*       prev_delta = (pad_type_ == padding::same) ? &cws.prev_delta_padded_ : in_grad[0];
+        dvec_t&       prev_delta = (pad_type_ == padding::same) ? cws.prev_delta_padded_ : *(in_grad[0]);
         dvec_t&       dW = *in_grad[1];
         dvec_t&       curr_delta = *out_grad[1];
+		const size_t  h_stride2 = h_stride_ * in_padded_.width_;
 
         assert(W.size() == weight_.size());
         assert(dW.size() == weight_.size());
@@ -978,22 +976,41 @@ public:
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        std::fill(prev_delta->begin(), prev_delta->end(), double(0));
+#if 0//defined(CNN_USE_AVX)
+		size_t sz = prev_delta.size();
+		{
+			double* pprev_delta = &(prev_delta[0]);
+			size_t i = 0;
+			size_t cnt = sz / 8;
+			__m256d zero = _mm256_setzero_pd();
+			for (; i<cnt; ++i, pprev_delta+=8) {
+				_mm256_store_pd(pprev_delta, zero);
+				_mm256_store_pd(pprev_delta+4, zero);
+			}
+			size_t remain = sz - i * 8;
+			for (i=0; i<remain; ++i) {
+				_mm_store_sd(pprev_delta + i, _mm256_castpd256_pd128(zero));
+			}
+		}
+#else // #ifdef CNN_USE_AVX
+		// this is faster than the above code
+        std::fill(prev_delta.begin(), prev_delta.end(), double(0));
+#endif // #ifdef CNN_USE_AVX
 
         // propagate delta to previous layer
 		for (cnn_size_t inc=0; inc<in_.depth_; ++inc) {
+            double *pdelta_dst = &prev_delta[in_padded_.get_index(0, 0, inc)];
             for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                 if (!tbl_.is_connected(outc, inc)) continue;
 
                 const double *pw = &W[weight_.get_index(0, 0, in_.depth_ * outc + inc)];
                 const double *pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-                double *pdelta_dst = &(*prev_delta)[in_padded_.get_index(0, 0, inc)];
 
                 for (cnn_size_t y = 0; y < out_.height_; y++) {
                     for (cnn_size_t x = 0; x < out_.width_; x++) {
                         const double * ppw = pw;
                         const double ppdelta_src = pdelta_src[y * out_.width_ + x];
-                        double * ppdelta_dst = pdelta_dst + y * h_stride_ * in_padded_.width_ + x * w_stride_;
+                        double * ppdelta_dst = pdelta_dst + y * h_stride2 + x * w_stride_;
 
                         for (cnn_size_t wy = 0; wy < weight_.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < weight_.width_; wx++) {
@@ -1029,11 +1046,16 @@ public:
         // accumulate db
         if (has_bias_) {
             dvec_t& db = *in_grad[2];
-
-            for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
-                const double *delta = &curr_delta[out_.get_index(0, 0, outc)];
-                db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, double(0));
-            }
+			if (out_.width_ == 1 && out_.height_ == 1) {
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+					db[outc] += curr_delta[outc];
+				}
+			}else {
+				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
+					const double *delta = &curr_delta[out_.get_index(0, 0, outc)];
+					db[outc] += std::accumulate(delta, delta + out_.width_ * out_.height_, double(0));
+				}
+			}
         }
 
         if (pad_type_ == padding::same)
@@ -1053,6 +1075,7 @@ public:
         fvec_t&       prev_delta = (pad_type_ == padding::same) ? cws.prev_delta_padded_ : (*in_grad[0]);
         fvec_t&       dW = *in_grad[1];
         fvec_t&       curr_delta = *out_grad[1];
+		const size_t  h_stride2 = h_stride_ * in_padded_.width_;
 
         assert(w.size() == weight_.size());
         assert(dW.size() == weight_.size());
@@ -1060,21 +1083,23 @@ public:
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-#if defined(CNN_USE_AVX)
+#if 0//defined(CNN_USE_AVX)
 		size_t sz = prev_delta.size();
 		{
 			float* pprev_delta = &prev_delta[0];
 			size_t i = 0;
 			size_t cnt = sz / 16;
+			__m256 zero = _mm256_setzero_ps();
 			for (; i<cnt; ++i, pprev_delta+=16) {
-				_mm256_store_ps(pprev_delta, _mm256_setzero_ps());
-				_mm256_store_ps(pprev_delta+8, _mm256_setzero_ps());
+				_mm256_store_ps(pprev_delta, zero);
+				_mm256_store_ps(pprev_delta+8, zero);
 			}
 			for (i*=16; i<sz; ++i, ++pprev_delta) {
-				_mm_store_ss(pprev_delta, _mm_setzero_ps());
+				_mm_store_ss(pprev_delta, _mm256_castps256_ps128(zero));
 			}
 		}
 #else // #ifdef CNN_USE_AVX
+		// this is faster than the above code
         std::fill(prev_delta.begin(), prev_delta.end(), float(0));
 #endif // #ifdef CNN_USE_AVX
 
@@ -1084,11 +1109,12 @@ public:
 		if (w_stride_ == 1 && out_.width_ >= 4) {
 			const cnn_size_t nblocks = out_.width_ / 3;
 			for (size_t inc=0; inc<in_.depth_; ++inc) {
+				float* pdelta_dst_org = &prev_delta[in_padded_.get_index(0, 0, inc)];
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
 					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
-					float* pdelta_dst = &prev_delta[in_padded_.get_index(0, 0, inc)];
+					float* pdelta_dst = pdelta_dst_org;
 					__m256 w0a = _mm256_loadu_ps(pw+0);
 					__m256 w1a = _mm256_loadu_ps(pw+5);
 					__m256 w2a = _mm256_loadu_ps(pw+10);
@@ -1110,13 +1136,14 @@ public:
 					__m256 w3c = leftShift<8>(w3a);
 					__m256 w4c = leftShift<8>(w4a);
 					for (cnn_size_t y = 0; y < out_.height_; y++) {
+						const float* pdelta_src2 = pdelta_src;
 						float* delta_dst0 = pdelta_dst;
 						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
 						float* delta_dst2 = &pdelta_dst[in_padded_.width_ * 2];
 						float* delta_dst3 = &pdelta_dst[in_padded_.width_ * 3];
 						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						for (cnn_size_t n = 0; n < nblocks; ++n) {
-							__m128 delta_src = _mm_loadu_ps(pdelta_src + n * 3);
+							__m128 delta_src = _mm_loadu_ps(pdelta_src2);
 							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
 							__m256 dst1 = _mm256_loadu_ps(delta_dst1);
 							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
@@ -1137,15 +1164,16 @@ public:
 							dst3 = madd(w3b, delta_src1, dst3);
 							dst4 = madd(w4b, delta_src1, dst4);
 							dst0 = madd(w0c, delta_src2, dst0);
-							dst1 = madd(w1c, delta_src2, dst1);
-							dst2 = madd(w2c, delta_src2, dst2);
-							dst3 = madd(w3c, delta_src2, dst3);
-							dst4 = madd(w4c, delta_src2, dst4);
 							_mm256_storeu_ps(delta_dst0, dst0);
+							dst1 = madd(w1c, delta_src2, dst1);
 							_mm256_storeu_ps(delta_dst1, dst1);
+							dst2 = madd(w2c, delta_src2, dst2);
 							_mm256_storeu_ps(delta_dst2, dst2);
+							dst3 = madd(w3c, delta_src2, dst3);
 							_mm256_storeu_ps(delta_dst3, dst3);
+							dst4 = madd(w4c, delta_src2, dst4);
 							_mm256_storeu_ps(delta_dst4, dst4);
+							pdelta_src2 += 3;
 							delta_dst0 += 3;
 							delta_dst1 += 3;
 							delta_dst2 += 3;
@@ -1176,7 +1204,7 @@ public:
 							++delta_dst4;
 						}
 						pdelta_src += out_.width_;
-						pdelta_dst += h_stride_ * in_padded_.width_;
+						pdelta_dst += h_stride2;
 					}
 				}
 			}
@@ -1308,7 +1336,7 @@ public:
 							delta_dst4 += w_stride_;
 						}
 						pdelta_src += out_.width_;
-						pdelta_dst += h_stride_ * in_padded_.width_;
+						pdelta_dst += h_stride2;
 #else // #ifdef CNN_USE_AVX
 						float* delta_dst0 = pdelta_dst;
 						float* delta_dst1 = &pdelta_dst[in_padded_.width_ * 1];
@@ -1349,7 +1377,7 @@ public:
 							delta_dst4 += w_stride_;
 						}
 						pdelta_src += out_.width_;
-						pdelta_dst += h_stride_ * in_padded_.width_;
+						pdelta_dst += h_stride2;
 #endif // #ifdef CNN_USE_AVX
 					}
 				}
