@@ -68,9 +68,9 @@ void convert_image(const std::string& imagefilename,
 void construct_net(network<sequential>& nn) {
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << convolutional_layer<tan_h>(28, 28, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(26, 26, 3, 16, 6)
-       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+       << convolutional_layer<tan_h>(32, 32, 3, 6, 16)
+       << deconvolutional_layer<tan_h>(32, 32, 3, 16, 6)
+       << deconvolutional_layer<tan_h>(32, 32, 5, 6, 1);
 }
 
 void train_network(network<sequential> nn, const string& train_dir_path) {
