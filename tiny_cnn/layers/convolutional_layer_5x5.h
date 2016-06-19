@@ -713,7 +713,7 @@ public:
 		}else
 #endif // #ifdef CNN_USE_AVX
 		{
-			const size_t nblocks = out_.width_ / 3;
+			const size_t nblocks = out_.width_ / 4;
 			for (size_t o=0; o<out_.depth_; ++o, oidx += out_area) {
 				float* pa = &a[oidx];
 				// init to bias value
@@ -763,16 +763,11 @@ public:
 	                const float* pi = (const float*) &in[in_padded_.get_index(0, 0, inc)];
 
 #if defined(CNN_USE_AVX)
-					__m256 w0a = _mm256_loadu_ps(pw+0);
-					__m256 w1a = _mm256_loadu_ps(pw+5);
-					__m256 w2a = _mm256_loadu_ps(pw+10);
-					__m256 w3a = _mm256_loadu_ps(pw+15);
-					__m256 w4a = _mm256_loadu_ps(pw+20);
-					w0a = _mm256_and_ps(w0a, mask);
-					w1a = _mm256_and_ps(w1a, mask);
-					w2a = _mm256_and_ps(w2a, mask);
-					w3a = _mm256_and_ps(w3a, mask);
-					w4a = _mm256_and_ps(w4a, mask);
+					__m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
+					__m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
+					__m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
+					__m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
+					__m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
 					__m256 w0b = leftShift<4>(w0a);
 					__m256 w1b = leftShift<4>(w1a);
 					__m256 w2b = leftShift<4>(w2a);
@@ -783,6 +778,11 @@ public:
 					__m256 w2c = leftShift<8>(w2a);
 					__m256 w3c = leftShift<8>(w3a);
 					__m256 w4c = leftShift<8>(w4a);
+					__m256 w0d = leftShift<12>(w0a);
+					__m256 w1d = leftShift<12>(w1a);
+					__m256 w2d = leftShift<12>(w2a);
+					__m256 w3d = leftShift<12>(w3a);
+					__m256 w4d = leftShift<12>(w4a);
 #else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
@@ -820,7 +820,7 @@ public:
 						const float* pi4 = pi0 + 4 * stride;
 						cnn_size_t x = 0;
 						if (w_stride_ == 1) {
-							__m256 dst0, dst1, dst2;
+							__m256 dst0, dst1, dst2, dst3;
 							float* ppa2 = ppa;
 							for (size_t i=0; i<nblocks; ++i) {
 								__m256 i0 = _mm256_loadu_ps(pi0);
@@ -832,37 +832,43 @@ public:
 								dst0 = _mm256_mul_ps(w0a, i0);
 								dst1 = _mm256_mul_ps(w0b, i0);
 								dst2 = _mm256_mul_ps(w0c, i0);
+								dst3 = _mm256_mul_ps(w0d, i0);
 								dst0 = madd(w1a, i1, dst0);
 								dst1 = madd(w1b, i1, dst1);
 								dst2 = madd(w1c, i1, dst2);
+								dst3 = madd(w1d, i1, dst3);
 								dst0 = madd(w2a, i2, dst0);
 								dst1 = madd(w2b, i2, dst1);
 								dst2 = madd(w2c, i2, dst2);
+								dst3 = madd(w2d, i2, dst3);
 								dst0 = madd(w3a, i3, dst0);
 								dst1 = madd(w3b, i3, dst1);
 								dst2 = madd(w3c, i3, dst2);
+								dst3 = madd(w3d, i3, dst3);
 								dst0 = madd(w4a, i4, dst0);
 								__m128 hsum0 = hsum256_ps(dst0);
 								dst1 = madd(w4b, i4, dst1);
 								__m128 hsum1 = hsum256_ps(dst1);
 								dst2 = madd(w4c, i4, dst2);
 								__m128 hsum2 = hsum256_ps(dst2);
+								dst3 = madd(w4d, i4, dst3);
+								__m128 hsum3 = hsum256_ps(dst3);
 								__m128 sum2 = _mm_castpd_ps(
 									_mm_unpacklo_pd(
 										_mm_castps_pd(_mm_unpacklo_ps(hsum0, hsum1)),
-										_mm_castps_pd(_mm_move_ss(_mm_setzero_ps(), hsum2))
+										_mm_castps_pd(_mm_unpacklo_ps(hsum2, hsum3))
 									)
 								);
 								sum = _mm_add_ps(sum, sum2);
 								_mm_storeu_ps(ppa2, sum);
-								pi0 += 3;
-								pi1 += 3;
-								pi2 += 3;
-								pi3 += 3;
-								pi4 += 3;
-								ppa2 += 3;
+								pi0 += 4;
+								pi1 += 4;
+								pi2 += 4;
+								pi3 += 4;
+								pi4 += 4;
+								ppa2 += 4;
 							}
-							x = nblocks * 3;
+							x = nblocks * 4;
 						}
 	                    for (; x<out_.width_; ++x) {
 							__m128 sum = _mm_load_ss(&ppa[x]);
@@ -1107,23 +1113,18 @@ public:
 		static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 		// propagate delta to previous layer
 		if (w_stride_ == 1 && out_.width_ >= 4) {
-			const cnn_size_t nblocks = out_.width_ / 3;
+			const cnn_size_t nblocks = out_.width_ / 4;
 			for (size_t inc=0; inc<in_.depth_; ++inc, pdelta_dst_org+=in_padded_area) {
 				for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 					if (!tbl_.is_connected(outc, inc)) continue;
 					const float* pw = &w[25 * (in_.depth_ * outc + inc)];
 					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
 					float* pdelta_dst = pdelta_dst_org;
-					__m256 w0a = _mm256_loadu_ps(pw+0);
-					__m256 w1a = _mm256_loadu_ps(pw+5);
-					__m256 w2a = _mm256_loadu_ps(pw+10);
-					__m256 w3a = _mm256_loadu_ps(pw+15);
-					__m256 w4a = _mm256_loadu_ps(pw+20);
-					w0a = _mm256_and_ps(w0a, mask);
-					w1a = _mm256_and_ps(w1a, mask);
-					w2a = _mm256_and_ps(w2a, mask);
-					w3a = _mm256_and_ps(w3a, mask);
-					w4a = _mm256_and_ps(w4a, mask);
+					__m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
+					__m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
+					__m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
+					__m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
+					__m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
 					__m256 w0b = leftShift<4>(w0a);
 					__m256 w1b = leftShift<4>(w1a);
 					__m256 w2b = leftShift<4>(w2a);
@@ -1134,6 +1135,11 @@ public:
 					__m256 w2c = leftShift<8>(w2a);
 					__m256 w3c = leftShift<8>(w3a);
 					__m256 w4c = leftShift<8>(w4a);
+					__m256 w0d = leftShift<12>(w0a);
+					__m256 w1d = leftShift<12>(w1a);
+					__m256 w2d = leftShift<12>(w2a);
+					__m256 w3d = leftShift<12>(w3a);
+					__m256 w4d = leftShift<12>(w4a);
 					for (cnn_size_t y = 0; y < out_.height_; y++) {
 						const float* pdelta_src2 = pdelta_src;
 						float* delta_dst0 = pdelta_dst;
@@ -1151,6 +1157,7 @@ public:
 							__m256 delta_src0 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
 							__m256 delta_src1 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
 							__m256 delta_src2 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
+							__m256 delta_src3 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
 							dst0 = madd(w0a, delta_src0, dst0);
 							dst1 = madd(w1a, delta_src0, dst1);
 							dst2 = madd(w2a, delta_src0, dst2);
@@ -1162,23 +1169,28 @@ public:
 							dst3 = madd(w3b, delta_src1, dst3);
 							dst4 = madd(w4b, delta_src1, dst4);
 							dst0 = madd(w0c, delta_src2, dst0);
-							_mm256_storeu_ps(delta_dst0, dst0);
 							dst1 = madd(w1c, delta_src2, dst1);
-							_mm256_storeu_ps(delta_dst1, dst1);
 							dst2 = madd(w2c, delta_src2, dst2);
-							_mm256_storeu_ps(delta_dst2, dst2);
 							dst3 = madd(w3c, delta_src2, dst3);
-							_mm256_storeu_ps(delta_dst3, dst3);
 							dst4 = madd(w4c, delta_src2, dst4);
+							dst0 = madd(w0d, delta_src3, dst0);
+							_mm256_storeu_ps(delta_dst0, dst0);
+							dst1 = madd(w1d, delta_src3, dst1);
+							_mm256_storeu_ps(delta_dst1, dst1);
+							dst2 = madd(w2d, delta_src3, dst2);
+							_mm256_storeu_ps(delta_dst2, dst2);
+							dst3 = madd(w3d, delta_src3, dst3);
+							_mm256_storeu_ps(delta_dst3, dst3);
+							dst4 = madd(w4d, delta_src3, dst4);
 							_mm256_storeu_ps(delta_dst4, dst4);
-							pdelta_src2 += 3;
-							delta_dst0 += 3;
-							delta_dst1 += 3;
-							delta_dst2 += 3;
-							delta_dst3 += 3;
-							delta_dst4 += 3;
+							pdelta_src2 += 4;
+							delta_dst0 += 4;
+							delta_dst1 += 4;
+							delta_dst2 += 4;
+							delta_dst3 += 4;
+							delta_dst4 += 4;
 						}
-						for (cnn_size_t x = nblocks * 3; x < out_.width_; x++) {
+						for (cnn_size_t x = nblocks * 4; x < out_.width_; x++) {
 							__m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
 							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
 							__m256 dst1 = _mm256_loadu_ps(delta_dst1);
@@ -1264,16 +1276,11 @@ public:
 					const float* pdelta_src = &curr_delta[out_.get_index(0, 0, outc)];
 					float* pdelta_dst = pdelta_dst_org;
 #if defined(CNN_USE_AVX)
-					__m256 w0a = _mm256_loadu_ps(pw+0);
-					__m256 w1a = _mm256_loadu_ps(pw+5);
-					__m256 w2a = _mm256_loadu_ps(pw+10);
-					__m256 w3a = _mm256_loadu_ps(pw+15);
-					__m256 w4a = _mm256_loadu_ps(pw+20);
-					w0a = _mm256_and_ps(w0a, mask);
-					w1a = _mm256_and_ps(w1a, mask);
-					w2a = _mm256_and_ps(w2a, mask);
-					w3a = _mm256_and_ps(w3a, mask);
-					w4a = _mm256_and_ps(w4a, mask);
+					__m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
+					__m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
+					__m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
+					__m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
+					__m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
 #else // #ifdef CNN_USE_AVX
 					float w00 = *pw++;
 					float w01 = *pw++;
