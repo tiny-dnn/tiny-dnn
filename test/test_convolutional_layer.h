@@ -105,24 +105,18 @@ TEST(convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
     nn << convolutional_layer<tan_h>(5, 5, 3, 1, 1);
 
-    vec_t a(25, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
     nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
 
-    vec_t a(25, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check3) { // rectified - mse
@@ -130,12 +124,9 @@ TEST(convolutional, gradient_check3) { // rectified - mse
 
     nn << convolutional_layer<rectified_linear>(5, 5, 3, 1, 1);
 
-    vec_t a(25, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check4) { // identity - mse
@@ -143,12 +134,9 @@ TEST(convolutional, gradient_check4) { // identity - mse
 
     nn << convolutional_layer<identity>(5, 5, 3, 1, 1);
 
-    vec_t a(25, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
@@ -156,12 +144,9 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
 
     nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
 
-    vec_t a(25, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<cross_entropy>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, read_write)

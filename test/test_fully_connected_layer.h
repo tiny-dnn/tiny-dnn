@@ -108,12 +108,9 @@ TEST(fully_connected, gradient_check) {
     network<sequential> nn;
     nn << fully_connected_layer<tan_h>(50, 10);
 
-    vec_t a(50, 0.0);
-    label_t t = 9;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(fully_connected, read_write)

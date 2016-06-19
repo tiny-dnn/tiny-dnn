@@ -117,4 +117,27 @@ void serialization_test(T& src, T& dst)
     EXPECT_TRUE(is_near_container(r1, r2, 1E-4));
 }
 
+namespace {
+    std::pair<std::vector<tensor_t>, std::vector<std::vector<label_t>>> generate_gradient_check_data(
+        cnn_size_t input_dimension, cnn_size_t sample_count = 5, cnn_size_t class_count = 2)
+    {
+        const cnn_size_t input_channel_count = 1;
+        const cnn_size_t output_channel_count = 1;
+        std::vector<tensor_t> a(sample_count, tensor_t(input_channel_count, vec_t(input_dimension, 0.0)));
+        std::vector<std::vector<label_t>> t(sample_count, std::vector<label_t>(output_channel_count));
+
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+            for (cnn_size_t input_channel = 0; input_channel < input_channel_count; ++input_channel) {
+                vec_t& v = a[sample][input_channel];
+                uniform_rand(v.begin(), v.end(), -1, 1);
+            }
+            for (cnn_size_t output_channel = 0; output_channel < output_channel_count; ++output_channel) {
+                t[sample][output_channel] = sample % class_count;
+            }
+        }
+
+        return std::make_pair(a, t);
+    }
+}
+
 } // namespace tiny_cnn
