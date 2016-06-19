@@ -136,6 +136,7 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LI
 # TARGETS
 #------------------------------------------------
 
+
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${REQUIRED_LIBRARIES})
 
@@ -158,10 +159,13 @@ set(tiny_cnn_hrds
     tiny_cnn/layers/layer.h
     tiny_cnn/layers/layers.h
     tiny_cnn/layers/convolutional_layer.h
+    tiny_cnn/layers/deconvolutional_layer.h
     tiny_cnn/layers/average_pooling_layer.h
+    tiny_cnn/layers/average_unpooling_layer.h
     tiny_cnn/layers/fully_connected_layer.h
     tiny_cnn/layers/input_layer.h
     tiny_cnn/layers/max_pooling_layer.h
+    tiny_cnn/layers/max_unpooling_layer.h
     tiny_cnn/layers/partial_connected_layer.h
     tiny_cnn/layers/arithmetic_layer.h
     tiny_cnn/layers/concat_layer.h
@@ -177,6 +181,7 @@ set(tiny_cnn_test_headers
     test/test_core.h
     test/test_average_pooling_layer.h
     test/test_convolutional_layer.h
+    test/test_deconvolutional_layer.h
     test/test_fully_connected_layer.h
     test/test_lrn_layer.h
     test/test_max_pooling_layer.h
@@ -196,7 +201,9 @@ if(BUILD_EXAMPLES)
 
     if(USE_OPENCV)
         add_executable(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
+        add_executable(example_deconv_visual examples/deconv/visual.cpp ${tiny_cnn_hdrs})
         target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
+        target_link_libraries(example_deconv_visual ${REQUIRED_LIBRARIES})
     else()
         #file(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
         #add_executable(example_mnist_test examples/mnist/test_with_stb_image.cpp
