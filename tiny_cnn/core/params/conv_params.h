@@ -40,6 +40,13 @@ struct conv_layer_worker_specific_storage {
     vec_t prev_delta_padded_;
 };
 
+struct deconv_layer_worker_specific_storage {
+    const vec_t* prev_out_;
+    vec_t* curr_out_unpadded_;
+    vec_t curr_out_buf_;
+    vec_t curr_delta_padded;
+};
+
 struct connection_table {
     connection_table() : rows_(0), cols_(0) {}
     connection_table(const bool *ar, cnn_size_t rows, cnn_size_t cols)
@@ -90,6 +97,10 @@ struct conv_params {
     padding pad_type;
     size_t w_stride;
     size_t h_stride;
+    // deconvolution parameters
+    index3d<cnn_size_t> in_;
+    index3d<cnn_size_t> out_;
+    index3d<cnn_size_t> out_unpadded_;
 };
 
 }  // namespace core
