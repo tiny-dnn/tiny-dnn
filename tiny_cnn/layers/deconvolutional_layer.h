@@ -191,8 +191,14 @@ public:
 
         const vec_t& W   = (*in_data[1])[0];
         
+        const cnn_size_t sample_count = (*in_data[0]).size();
+
+        if (cws.prev_out_.size() < sample_count) {
+            cws.prev_out_.resize(sample_count);
+        }
+
         // @todo revise parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = (*in_data[0]).size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
 
             cws.prev_out_[sample] = &((*in_data[0])[sample]);
             const vec_t &in = *(cws.prev_out_[sample]); // input
@@ -461,7 +467,13 @@ private:
     void copy_and_unpad_output(const tensor_t& out, int worker_index) {
         deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
 
-        for (cnn_size_t sample = 0, sample_count = out.size(); sample < sample_count; ++sample) {
+        const cnn_size_t sample_count = out.size();
+
+        if (cws.cur_out_padded_.size() < sample_count) {
+            cws.cur_out_padded_.resize(sample_count);
+        }
+
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             if (pad_type_ == padding::valid) {
                 cws.cur_out_padded_[sample] = &out[sample];
             }
