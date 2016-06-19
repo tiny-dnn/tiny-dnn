@@ -55,6 +55,30 @@ inline __m128 hsum256_ps(__m256 x) {
     const __m128 sum = _mm_add_ss(lo, hi);
     return sum;
 }
+
+inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
+	// (b3, b2, b1, b0, a3, a2, a1, a0)
+	__m256 x = _mm256_permute2f128_ps(a, b, 0x20);
+	// (b7, b6, b5, b4, a7, a6, a5, a4)
+	__m256 y = _mm256_permute2f128_ps(a, b, 0x31);
+	// (b3+b7, b2+b6, b1+b5, b0+b4, a3+a7, a2+a6, a1+a5, a0+a4)
+	x = _mm256_add_ps(x, y);
+	// (b3+b7, b2+b6, b3+b7, b2+b6, a3+a7, a2+a6, a3+a7, a2+a6)
+	y = _mm256_permute_ps(x, _MM_SHUFFLE(3, 2, 3, 2));
+	// (-, -, b1+b5+b3+b7, b0+b4+b2+b6, -, -, a1+a5+a3+a7, a0+a4+a2+a6)
+	x = _mm256_add_ps(x, y);
+	// (-, -, -, b1+b5+b3+b7, -, -, -, a1+a5+a3+a7)
+	y = _mm256_permute_ps(x, _MM_SHUFFLE(1, 1, 1, 1));
+	// (-, -, -, b1+b5+b3+b7+b0+b4+b2+b6, -, -, -, a1+a5+a3+a7+a0+a4+a2+a6)
+	x = _mm256_add_ps(x, y);
+	// (-, -, -, b1+b5+b3+b7+b0+b4+b2+b6)
+	__m128 upper = _mm256_extractf128_ps(x, 1);
+	// (-, -, -, -, -, -, b1+b5+b3+b7+b0+b4+b2+b6, a1+a5+a3+a7+a0+a4+a2+a6)
+	__m128 ret = _mm_unpacklo_ps(_mm256_castps256_ps128(x), upper);
+	return ret;
+}
+
+
 inline float sum8(__m256 x) {
     return _mm_cvtss_f32(hsum256_ps(x));
 }
@@ -846,19 +870,12 @@ public:
 								dst2 = madd(w3c, i3, dst2);
 								dst3 = madd(w3d, i3, dst3);
 								dst0 = madd(w4a, i4, dst0);
-								__m128 hsum0 = hsum256_ps(dst0);
 								dst1 = madd(w4b, i4, dst1);
-								__m128 hsum1 = hsum256_ps(dst1);
+								__m128 hsum01 = hsum2x256_ps(dst0, dst1);
 								dst2 = madd(w4c, i4, dst2);
-								__m128 hsum2 = hsum256_ps(dst2);
 								dst3 = madd(w4d, i4, dst3);
-								__m128 hsum3 = hsum256_ps(dst3);
-								__m128 sum2 = _mm_castpd_ps(
-									_mm_unpacklo_pd(
-										_mm_castps_pd(_mm_unpacklo_ps(hsum0, hsum1)),
-										_mm_castps_pd(_mm_unpacklo_ps(hsum2, hsum3))
-									)
-								);
+								__m128 hsum23 = hsum2x256_ps(dst2, dst3);
+								__m128 sum2 = _mm_castpd_ps(_mm_unpacklo_pd(_mm_castps_pd(hsum01), _mm_castps_pd(hsum23)));
 								sum = _mm_add_ps(sum, sum2);
 								_mm_storeu_ps(ppa2, sum);
 								pi0 += 4;
