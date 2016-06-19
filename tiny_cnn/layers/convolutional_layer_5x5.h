@@ -31,7 +31,7 @@
 
 #ifdef CNN_USE_AVX
 
-// sum __m256 horizontally (sadly, _mm256_hadd_ps isn't good enough)
+// Horizontally add elements of __m256 type argument (sadly, _mm256_hadd_ps isn't good enough)
 // http://stackoverflow.com/a/13222410/4699324
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
 inline __m128 hsum256_ps(__m256 x) {
@@ -56,6 +56,7 @@ inline __m128 hsum256_ps(__m256 x) {
     return sum;
 }
 
+// Horizontally add elements of each __m256 type arguments at once
 inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
 	// (b3, b2, b1, b0, a3, a2, a1, a0)
 	__m256 x = _mm256_permute2f128_ps(a, b, 0x20);
@@ -63,7 +64,7 @@ inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
 	__m256 y = _mm256_permute2f128_ps(a, b, 0x31);
 	// (b3+b7, b2+b6, b1+b5, b0+b4, a3+a7, a2+a6, a1+a5, a0+a4)
 	x = _mm256_add_ps(x, y);
-	// (b3+b7, b2+b6, b3+b7, b2+b6, a3+a7, a2+a6, a3+a7, a2+a6)
+	// (-, -, b3+b7, b2+b6, -, -, a3+a7, a2+a6)
 	y = _mm256_permute_ps(x, _MM_SHUFFLE(3, 2, 3, 2));
 	// (-, -, b1+b5+b3+b7, b0+b4+b2+b6, -, -, a1+a5+a3+a7, a0+a4+a2+a6)
 	x = _mm256_add_ps(x, y);
@@ -76,11 +77,6 @@ inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
 	// (-, -, -, -, -, -, b1+b5+b3+b7+b0+b4+b2+b6, a1+a5+a3+a7+a0+a4+a2+a6)
 	__m128 ret = _mm_unpacklo_ps(_mm256_castps256_ps128(x), upper);
 	return ret;
-}
-
-
-inline float sum8(__m256 x) {
-    return _mm_cvtss_f32(hsum256_ps(x));
 }
 
 inline __m128d hsum256_pd(__m256d x)
@@ -98,26 +94,9 @@ inline __m128d hsum256_pd(__m256d x)
 
 #endif // #ifdef CNN_USE_AVX
 
-// byte shifting YMM register across 128-bit lanes (shift amount is immediate)
-#if defined(CNN_USE_AVX2)
-
-template <int n>
-inline __m256i leftShift(__m256i a)
-{
-	return _mm256_alignr_epi8(
-		a,
-		_mm256_permute2x128_si256(a, a, _MM_SHUFFLE(0, 0, 2, 0)),
-		16 - n
-	);
-}
-
-template <int n>
-inline __m256 leftShift(__m256 a)
-{
-	return _mm256_castsi256_ps(leftShift<n>(_mm256_castps_si256(a)));
-}
-
-#elif defined(CNN_USE_AVX)
+#if defined(CNN_USE_AVX)
+// Byte Shift YMM Register Across 128-bit Lanes
+// limitation : shift amount is immediate and is multiples of 4
 
 template <int n>
 inline __m256 leftShift(__m256 a)
@@ -129,29 +108,218 @@ inline __m256 leftShift(__m256 a)
 template <>
 inline __m256 leftShift<4>(__m256 x)
 {
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x6, x5, x4, x7, x2, x1, x0, x3)
 	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(2, 1, 0, 3));
-	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 41);
+	// t1 = (x2, x1, x0, x3, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x6, x5, x4, x3, x2, x1, x0, 0)
 	__m256 y = _mm256_blend_ps(t0, t1, 0x11);
 	return y;
 }
 
+// http://stackoverflow.com/q/19516585
 template <>
 inline __m256 leftShift<8>(__m256 x)
 {
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x5, x4, x7, x6, x1, x0, x3, x2)
 	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(1, 0, 3, 2));
-	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 41);
-	__m256 y = _mm256_blend_ps(t0, t1, 0x33);
+	// t1 = (x1, x0, x3, x2, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x5, x4, x3, x2, x1, x0, 0, 0)
+	__m256 y = _mm256_blend_ps(t0, t1, 0x33 /* 0b00110011 */ );
 	return y;
 }
 
 template <>
 inline __m256 leftShift<12>(__m256 x)
 {
-	__m256 y = _mm256_permute2f128_ps(x, x, 41);
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x4, x7, x6, x5, x0, x3, x2, x1)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(0, 3, 2, 1));
+	// t1 = (x0, x3, x2, x1, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x4, x3, x2, x1, x0, 0, 0, 0)
+	__m256 y = _mm256_blend_ps(t0, t1, 0x77 /* 0b01110111 */ );
 	return y;
 }
 
-#endif // #if defined(CNN_USE_AVX2) #elif defined(CNN_USE_AVX)
+template <>
+inline __m256 leftShift<16>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// y  = (x3, x2, x1, x0, 0, 0, 0, 0)
+	__m256 y = _mm256_permute2f128_ps(x, x, 0x08);
+	return y;
+}
+
+template <>
+inline __m256 leftShift<20>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x6, x5, x4, x7, x2, x1, x0, x3)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(2, 1, 0, 3));
+	// t1 = (x2, x1, x0, x3, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x2, x1, x0, 0, 0, 0, 0, 0)
+	__m256 y = _mm256_blend_ps(t1, _mm256_setzero_ps(), 0x10 /* 0b00010000 */ );
+	return y;
+}
+
+template <>
+inline __m256 leftShift<24>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x5, x4, x7, x6, x1, x0, x3, x2)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(1, 0, 3, 2));
+	// t1 = (x1, x0, x3, x2, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x1, x0, 0, 0, 0, 0, 0, 0)
+	__m256 y = _mm256_blend_ps(_mm256_setzero_ps(), t1, 0xC0 /* 0b11000000 */ );
+	return y;
+}
+
+template <>
+inline __m256 leftShift<28>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x4, x7, x6, x5, x0, x3, x2, x1)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(0, 3, 2, 1));
+	// t1 = (x0, x3, x2, x1, 0, 0, 0, 0)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x08);
+	// y  = (x0, 0, 0, 0, 0, 0, 0, 0)
+	__m256 y = _mm256_blend_ps(_mm256_setzero_ps(), t1, 0x80 /* 0b10000000 */ );
+	return y;
+}
+
+template <int n>
+inline __m256 rightShift(__m256 a)
+{
+	static_assert(false);
+}
+
+// http://stackoverflow.com/a/19532415/4699324
+template <>
+inline __m256 rightShift<4>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x4, x7, x6, x5, x0, x3, x2, x1)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(0, 3, 2, 1));
+	// t1 = (0, 0, 0, 0, x4, x7, x6, x5)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -, x7, x6, x5,  -, x3, x2, x1)
+	//      ( 0,  -,  -,  -, x4,  -,  -,  -)
+	// y  = ( 0, x7, x6, x5, x4, x3, x2, x1)
+	__m256 y = _mm256_blend_ps(t0, t1, 0x88 /* 0b10001000 */ );
+	return y;
+}
+
+template <>
+inline __m256 rightShift<8>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x5, x4, x7, x6, x1, x0, x3, x2)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(1, 0, 3, 2));
+	// t1 = (0, 0, 0, 0, x5, x4, x7, x6)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -,  -, x7, x6,  -,  -, x3, x2)
+	//      ( 0,  0,  -,  -, x5, x4,  -,  -)
+	// y  = ( 0,  0, x7, x6, x5, x4, x3, x2)
+	__m256 y = _mm256_blend_ps(t0, t1, 0xCC /* 0b11001100 */ );
+	return y;
+}
+
+template <>
+inline __m256 rightShift<12>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x6, x5, x4, x7, x2, x1, x0, x3)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(2, 1, 0, 3));
+	// t1 = ( 0,  0,  0,  0, x6, x5, x4, x7)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -,  -,  -, x7,  -,  -,  -, x3)
+	//      ( 0,  0,  0,  -, x6, x5, x4,  -)
+	// y  = ( 0,  0,  0, x7, x6, x5, x4, x3)
+	__m256 y = _mm256_blend_ps(t0, t1, 0xEE /* 0b11101110 */ );
+	return y;
+}
+
+template <>
+inline __m256 rightShift<16>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// y  = ( 0,  0,  0,  0, x7, x6, x5, x4)
+	__m256 y = _mm256_permute2f128_ps(x, x, 0x81);
+	return y;
+}
+
+template <>
+inline __m256 rightShift<20>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x4, x7, x6, x5, x0, x3, x2, x1)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(0, 3, 2, 1));
+	// t1 = ( 0,  0,  0,  0, x4, x7, x6, x5)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -,  -,  -,  -,  -, x7, x6, x5)
+	//      ( 0,  0,  0,  0,  0,  -,  -,  -)
+	// y  = ( 0,  0,  0,  0,  0, x7, x6, x5)
+	__m256 y = _mm256_blend_ps(t1, _mm256_setzero_ps(), 0xF8 /* 0b11111000 */ );
+	return y;
+}
+
+template <>
+inline __m256 rightShift<24>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x5, x4, x7, x6, x1, x0, x3, x2)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(1, 0, 3, 2));
+	// t1 = ( 0,  0,  0,  0, x5, x4, x7, x6)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -,  -,  -,  -,  -,  -, x7, x6)
+	//      ( 0,  0,  0,  0,  0,  0,  -,  -)
+	// y  = ( 0,  0,  0,  0,  0,  0, x7, x6)
+	__m256 y = _mm256_blend_ps(t1, _mm256_setzero_ps(), 0xFC /* 0b11111100 */ );
+	return y;
+}
+
+template <>
+inline __m256 rightShift<28>(__m256 x)
+{
+	// x  = (x7, x6, x5, x4, x3, x2, x1, x0)
+
+	// t0 = (x6, x5, x4, x7, x2, x1, x0, x3)
+	__m256 t0 = _mm256_permute_ps(x, _MM_SHUFFLE(2, 1, 0, 3));
+	// t1 = ( 0,  0,  0,  0, x6, x5, x4, x7)
+	__m256 t1 = _mm256_permute2f128_ps(t0, t0, 0x81);
+
+	//      ( -,  -,  -,  -,  -,  -,  -, x7)
+	//      ( 0,  0,  0,  0,  0,  0,  0,  -)
+	// y  = ( 0,  0,  0,  0,  0,  0,  0, x7)
+	__m256 y = _mm256_blend_ps(t1, _mm256_setzero_ps(), 0xFE /* 0b11111110 */ );
+	return y;
+}
+
+#endif // #if defined(CNN_USE_AVX)
 
 namespace tiny_cnn {
 
@@ -1166,11 +1334,11 @@ public:
 						float* delta_dst4 = &pdelta_dst[in_padded_.width_ * 4];
 						for (cnn_size_t n = 0; n < nblocks; ++n) {
 							__m256 delta_src = _mm256_broadcast_ps((const __m128*)pdelta_src2);
-							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
-							__m256 dst1 = _mm256_loadu_ps(delta_dst1);
-							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
-							__m256 dst3 = _mm256_loadu_ps(delta_dst3);
-							__m256 dst4 = _mm256_loadu_ps(delta_dst4);
+							__m256 dst0 = _mm256_loadu_ps(delta_dst0 + 4 * n);
+							__m256 dst1 = _mm256_loadu_ps(delta_dst1 + 4 * n);
+							__m256 dst2 = _mm256_loadu_ps(delta_dst2 + 4 * n);
+							__m256 dst3 = _mm256_loadu_ps(delta_dst3 + 4 * n);
+							__m256 dst4 = _mm256_loadu_ps(delta_dst4 + 4 * n);
 							__m256 delta_src0 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
 							__m256 delta_src1 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
 							__m256 delta_src2 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
@@ -1191,44 +1359,34 @@ public:
 							dst3 = madd(w3c, delta_src2, dst3);
 							dst4 = madd(w4c, delta_src2, dst4);
 							dst0 = madd(w0d, delta_src3, dst0);
-							_mm256_storeu_ps(delta_dst0, dst0);
+							_mm256_storeu_ps(delta_dst0 + 4 * n, dst0);
 							dst1 = madd(w1d, delta_src3, dst1);
-							_mm256_storeu_ps(delta_dst1, dst1);
+							_mm256_storeu_ps(delta_dst1 + 4 * n, dst1);
 							dst2 = madd(w2d, delta_src3, dst2);
-							_mm256_storeu_ps(delta_dst2, dst2);
+							_mm256_storeu_ps(delta_dst2 + 4 * n, dst2);
 							dst3 = madd(w3d, delta_src3, dst3);
-							_mm256_storeu_ps(delta_dst3, dst3);
+							_mm256_storeu_ps(delta_dst3 + 4 * n, dst3);
 							dst4 = madd(w4d, delta_src3, dst4);
-							_mm256_storeu_ps(delta_dst4, dst4);
+							_mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
 							pdelta_src2 += 4;
-							delta_dst0 += 4;
-							delta_dst1 += 4;
-							delta_dst2 += 4;
-							delta_dst3 += 4;
-							delta_dst4 += 4;
 						}
 						for (cnn_size_t x = nblocks * 4; x < out_.width_; x++) {
 							__m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
-							__m256 dst0 = _mm256_loadu_ps(delta_dst0);
-							__m256 dst1 = _mm256_loadu_ps(delta_dst1);
-							__m256 dst2 = _mm256_loadu_ps(delta_dst2);
-							__m256 dst3 = _mm256_loadu_ps(delta_dst3);
-							__m256 dst4 = _mm256_loadu_ps(delta_dst4);
+							__m256 dst0 = _mm256_loadu_ps(delta_dst0 + x);
+							__m256 dst1 = _mm256_loadu_ps(delta_dst1 + x);
+							__m256 dst2 = _mm256_loadu_ps(delta_dst2 + x);
+							__m256 dst3 = _mm256_loadu_ps(delta_dst3 + x);
+							__m256 dst4 = _mm256_loadu_ps(delta_dst4 + x);
 							dst0 = madd(w0a, delta_src, dst0);
 							dst1 = madd(w1a, delta_src, dst1);
 							dst2 = madd(w2a, delta_src, dst2);
 							dst3 = madd(w3a, delta_src, dst3);
 							dst4 = madd(w4a, delta_src, dst4);
-							_mm256_storeu_ps(delta_dst0, dst0);
-							_mm256_storeu_ps(delta_dst1, dst1);
-							_mm256_storeu_ps(delta_dst2, dst2);
-							_mm256_storeu_ps(delta_dst3, dst3);
-							_mm256_storeu_ps(delta_dst4, dst4);
-							++delta_dst0;
-							++delta_dst1;
-							++delta_dst2;
-							++delta_dst3;
-							++delta_dst4;
+							_mm256_storeu_ps(delta_dst0 + x, dst0);
+							_mm256_storeu_ps(delta_dst1 + x, dst1);
+							_mm256_storeu_ps(delta_dst2 + x, dst2);
+							_mm256_storeu_ps(delta_dst3 + x, dst3);
+							_mm256_storeu_ps(delta_dst4 + x, dst4);
 						}
 						pdelta_src += out_.width_;
 						pdelta_dst += h_stride2;
@@ -1247,40 +1405,144 @@ public:
 				__m256 dst2 = _mm256_loadu_ps(delta_dst2);
 				__m256 dst3 = _mm256_loadu_ps(delta_dst3);
 				__m256 dst4 = _mm256_loadu_ps(delta_dst4);
+
+				// *FROM
+				// ---0 0000
+				// ---1 1111
+				// ---2 2222
+				// ---3 3333
+				// ---4 4444
+				//
+				// *TO
+				// 1110 0000
+				// 3222 2211
+				// 4444 3333
+				// ---- ---4
+				__m256 sum0 = _mm256_blend_ps(
+					dst0,
+					leftShift<20>(dst1),
+					0xE0 /* 0b11100000 */
+				);
+				__m256 sum1 = _mm256_blend_ps(
+					leftShift<28>(dst3),
+					_mm256_blend_ps(leftShift<8>(dst2), rightShift<12>(dst1), 0x03 /* 0b00000011 */),
+					0x7F /* 0b01111111 */
+				);
+				__m256 sum2 = _mm256_blend_ps(
+					leftShift<16>(dst4),
+					rightShift<4>(dst3),
+					0x0F /* 0b00001111 */
+				);
+				__m128 sum3 = _mm256_extractf128_ps(dst4, 1);
+
 				size_t widx = 25 * inc;
 				size_t wstep = 25 * in_.depth_;
-				for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=wstep) {
-					if (!tbl_.is_connected(outc, inc)) {
-						continue;
-					}
-					__m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask);
-					const float* pw = (const float*)&w[widx];
-					__m256 w0a = _mm256_loadu_ps(pw+0);
-					__m256 w1a = _mm256_loadu_ps(pw+5);
-					__m256 w2a = _mm256_loadu_ps(pw+10);
-					__m256 w3a = _mm256_loadu_ps(pw+15);
-					__m256 w4a = _mm256_loadu_ps(pw+20);
-#if 0//def CNN_USE_AVX2
-					dst0 = _mm256_fmadd_ps(w0a, delta_src, dst0);
-					dst1 = _mm256_fmadd_ps(w1a, delta_src, dst1);
-					dst2 = _mm256_fmadd_ps(w2a, delta_src, dst2);
-					dst3 = _mm256_fmadd_ps(w3a, delta_src, dst3);
-					dst4 = _mm256_fmadd_ps(w4a, delta_src, dst4);
+				const __m256 mask2 = mask;
+				if (tbl_.is_empty()) {
+					for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=wstep) {
+						__m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
+						const float* pw = (const float*)&w[widx];
+						__m256 w0 = _mm256_loadu_ps(pw+0);
+						__m256 w1 = _mm256_loadu_ps(pw+8);
+						__m256 w2 = _mm256_loadu_ps(pw+16);
+						__m128 w3 = _mm_load_ss(pw+24);
+#if 0//defined(CNN_USE_AVX2)
+						sum0 = _mm256_fmadd_ps(w0, delta_src, sum0);
+						sum1 = _mm256_fmadd_ps(w1, delta_src, sum1);
+						sum2 = _mm256_fmadd_ps(w2, delta_src, sum2);
+						sum3 = _mm_fmadd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
 #else
-					dst0 = madd(w0a, delta_src, dst0);
-					dst1 = madd(w1a, delta_src, dst1);
-					dst2 = madd(w2a, delta_src, dst2);
-					dst3 = madd(w3a, delta_src, dst3);
-					dst4 = madd(w4a, delta_src, dst4);
+						sum0 = madd(w0, delta_src, sum0);
+						sum1 = madd(w1, delta_src, sum1);
+						sum2 = madd(w2, delta_src, sum2);
+						sum3 = madd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
 #endif
+					}
+				}else {
+					for (cnn_size_t outc = 0; outc < out_.depth_; outc++, widx+=wstep) {
+						if (!tbl_.is_connected(outc, inc)) {
+							continue;
+						}
+						__m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
+						const float* pw = (const float*)&w[widx];
+						__m256 w0 = _mm256_loadu_ps(pw+0);
+						__m256 w1 = _mm256_loadu_ps(pw+8);
+						__m256 w2 = _mm256_loadu_ps(pw+16);
+						__m128 w3 = _mm_load_ss(pw+24);
+#if 0//defined(CNN_USE_AVX2)
+						sum0 = _mm256_fmadd_ps(w0, delta_src, sum0);
+						sum1 = _mm256_fmadd_ps(w1, delta_src, sum1);
+						sum2 = _mm256_fmadd_ps(w2, delta_src, sum2);
+						sum3 = _mm_fmadd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+#else
+						sum0 = madd(w0, delta_src, sum0);
+						sum1 = madd(w1, delta_src, sum1);
+						sum2 = madd(w2, delta_src, sum2);
+						sum3 = madd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+#endif
+					}
 				}
+
+#if 0 // for debugging
+				sum0 = _mm256_set_ps(2,2,2,1,1,1,1,1);
+				sum1 = _mm256_set_ps(4,3,3,3,3,3,2,2);
+				sum2 = _mm256_set_ps(5,5,5,5,4,4,4,4);
+				sum3 = _mm_set_ps(0,0,0,5);
+#endif
+
+				// *FROM
+				// 1110 0000
+				// 3222 2211
+				// 4444 3333
+				// ---- ---4
+				//
+				// *TO
+				// ---0 0000
+				// ---1 1111
+				// ---2 2222
+				// ---3 3333
+				// ---4 4444
+				dst0 = _mm256_blend_ps(
+					dst0,
+					sum0,
+					0x1F /* 0b00011111 */
+				);
+				dst1 = _mm256_blend_ps(
+					dst1,
+					_mm256_or_ps(
+						rightShift<20>(sum0),
+						leftShift<12>(sum1)
+					),
+					0x1F /* 0b00011111 */
+				);
+				dst2 = _mm256_blend_ps(
+					dst2,
+					rightShift<8>(sum1),
+					0x1F /* 0b00011111 */
+				);
+				dst3 = _mm256_blend_ps(
+					dst3,
+					_mm256_or_ps(
+						rightShift<28>(sum1),
+						leftShift<4>(sum2)
+					),
+					0x1F /* 0b00011111 */
+				);
+				dst4 = _mm256_blend_ps(
+					dst4,
+					_mm256_set_m128(
+						sum3,
+						_mm256_extractf128_ps(sum2, 1)
+					),
+					0x1F /* 0b00011111 */
+				);
+
 				_mm256_storeu_ps(delta_dst0, dst0);
 				_mm256_storeu_ps(delta_dst1, dst1);
 				_mm256_storeu_ps(delta_dst2, dst2);
 				_mm256_storeu_ps(delta_dst3, dst3);
 				_mm256_storeu_ps(delta_dst4, dst4);
 			}
-//			});
 
 		}else
 #endif // #ifdef CNN_USE_AVX
@@ -1409,7 +1671,7 @@ public:
 			const float* pprev_out = &prev_out[0];
 			for (size_t inc=0; inc<in_.depth_; ++inc, pprev_out+=in_padded_area) {
 #if defined(CNN_USE_AVX)
-				VECTORIZE_ALIGN(16) float floats[28];
+				VECTORIZE_ALIGN(32) float floats[28];
 				size_t in_padded_width = in_padded_.width_;
 				_mm256_store_ps(&floats[0], _mm256_loadu_ps(pprev_out + in_padded_width * 0));
 				_mm256_storeu_ps(&floats[5], _mm256_loadu_ps(pprev_out + in_padded_width * 1));
