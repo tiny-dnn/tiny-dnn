@@ -331,9 +331,9 @@ class layer : public node {
      * @param in_data      input vectors of this layer (data, weight, bias)
      * @param out_data     output vectors
      **/
-    virtual void forward_propagation(cnn_size_t worker_index,
-                                     const std::vector<vec_t*>& in_data,
-                                     std::vector<vec_t*>& out_data) = 0;
+    virtual void forward_propagation(cnn_size_t    worker_index,
+                                     const vec_t** in_data,
+                                     vec_t**       out_data) = 0;
 
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
@@ -343,11 +343,11 @@ class layer : public node {
      * @param out_grad     gradient of output vectors (i-th vector correspond with out_data[i])
      * @param in_grad      gradient of input vectors (i-th vector correspond with in_data[i])
      **/
-    virtual void back_propagation(cnn_size_t                worker_index,
-                                  const std::vector<vec_t*>& in_data,
-                                  const std::vector<vec_t*>& out_data,
-                                  std::vector<vec_t*>&       out_grad,
-                                  std::vector<vec_t*>&       in_grad) = 0;
+    virtual void back_propagation(cnn_size_t    worker_index,
+                                  const vec_t** in_data,
+                                  const vec_t** out_data,
+                                  vec_t**       out_grad,
+                                  vec_t**       in_grad) = 0;
 
     /**
      * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of hessian matrix)
@@ -380,8 +380,10 @@ class layer : public node {
     }
 
     void forward(int worker_index) {
-        thread_local static std::vector<vec_t*> in_data(16), out_data(16);
-
+		assert(in_channels_ <= 16);
+		assert(out_channels_ <= 16);
+		const vec_t* in_data[16];
+		vec_t* out_data[16];
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             in_data[i] = ith_in_node(i)->get_data(worker_index);
@@ -396,7 +398,12 @@ class layer : public node {
     }
 
     void backward(int worker_index) {
-        thread_local static std::vector<vec_t*> in_data(16), out_data(16), in_grad(16), out_grad(16);
+		assert(in_channels_ <= 16);
+		assert(out_channels_ <= 16);
+		const vec_t* in_data[16];
+		const vec_t* out_data[16];
+		vec_t* in_grad[16];
+		vec_t* out_grad[16];
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {

@@ -80,7 +80,7 @@ bool save_image(const std::string& imagefilename,
 	)
 {
 	// no scaling, save at original size
-	int stride_bytes = img.width();
+	int stride_bytes = (int)img.width();
 	int ret = stbi_write_png(
 		imagefilename.c_str(),
 		img.width(),

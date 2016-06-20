@@ -219,9 +219,9 @@ public:
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
+    void forward_propagation(cnn_size_t    index,
+                             const vec_t** in_data,
+                             vec_t**       out_data) override {
         copy_and_pad_input(*in_data[0], static_cast<int>(index));
         const vec_t& W   = *in_data[1];
         vec_t&       out = *out_data[0];
@@ -274,11 +274,11 @@ public:
         return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t    index,
+                          const vec_t** in_data,
+                          const vec_t** out_data,
+                          vec_t**       out_grad,
+                          vec_t**       in_grad) override {
 
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 

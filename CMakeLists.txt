@@ -112,6 +112,7 @@ ELSE()#MSVC
         add_definitions(-DCNN_USE_AVX2)
         SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX2 ")
     ENDIF()
+    SET(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /MP ")
     SET(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj /fp:fast /GL ")
     SET(EXTRA_C_FLAGS_DEBUG " /MTd ")
     SET(EXTRA_EXE_LINKER_FLAGS_RELEASE "/LTCG")

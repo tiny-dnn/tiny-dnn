@@ -86,11 +86,11 @@ public:
         return{ index3d<cnn_size_t>(in_size_, 1, 1) };
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t    index,
+                          const vec_t** in_data,
+                          const vec_t** out_data,
+                          vec_t**       out_grad,
+                          vec_t**       in_grad) override {
         vec_t&       prev_delta = *in_grad[0];
         const vec_t& curr_delta = *out_grad[0];
         const std::vector<uint8_t>& mask = dropout_layer_worker_storage_[index].mask_;
@@ -103,9 +103,9 @@ public:
         }
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
+    void forward_propagation(cnn_size_t    index,
+                             const vec_t** in_data,
+                             vec_t**       out_data) override {
         const vec_t& in  = *in_data[0];
         vec_t&       out = *out_data[0];
 

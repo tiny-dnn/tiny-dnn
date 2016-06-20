@@ -90,9 +90,9 @@ public:
         return in2out_[0].size();
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>&       out_data)  override {
+    void forward_propagation(cnn_size_t    index,
+                             const vec_t** in_data,
+                             vec_t**       out_data)  override {
         const vec_t& in  = *in_data[0];
         vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];

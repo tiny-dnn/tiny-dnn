@@ -57,9 +57,9 @@ public:
 
     std::string layer_type() const override { return "linear"; }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
+    void forward_propagation(cnn_size_t    index,
+                             const vec_t** in_data,
+                             vec_t**       out_data) override {
         const vec_t& in  = *in_data[0];
         vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
@@ -74,11 +74,11 @@ public:
         });
     }
 
-    void back_propagation(cnn_size_t                index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t    index,
+                          const vec_t** in_data,
+                          const vec_t** out_data,
+                          vec_t**       out_grad,
+                          vec_t**       in_grad) override {
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
 

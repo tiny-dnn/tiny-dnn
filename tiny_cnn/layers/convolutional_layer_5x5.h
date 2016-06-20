@@ -482,15 +482,15 @@ public:
         return (5 /* weight_.width_ */ / w_stride_) * (5 /* weight_.height_ */ / h_stride_) * out_.depth_;
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
+    void forward_propagation(cnn_size_t    index,
+                             const vec_t** in_data,
+                             vec_t**       out_data) override {
 		forward_propagation_impl(index, in_data, out_data);
 	}
 
-    void forward_propagation_impl(cnn_size_t index,
-                                  const std::vector<dvec_t*>& in_data,
-                                  std::vector<dvec_t*>& out_data) {
+    void forward_propagation_impl(cnn_size_t     index,
+                                  const dvec_t** in_data,
+                                  dvec_t**       out_data) {
         copy_and_pad_input(*in_data[0], static_cast<int>(index));
         const dvec_t& w   = *in_data[1];
         const dvec_t& bias = *in_data[2];
@@ -794,9 +794,9 @@ public:
 		h.f(out, a);
     }
 
-    void forward_propagation_impl(cnn_size_t index,
-                                  const std::vector<fvec_t*>& in_data,
-                                  std::vector<fvec_t*>& out_data) {
+    void forward_propagation_impl(cnn_size_t     index,
+                                  const fvec_t** in_data,
+                                  fvec_t**       out_data) {
         copy_and_pad_input(*in_data[0], static_cast<int>(index));
         const fvec_t& w   = *in_data[1];
 		const fvec_t& bias = *in_data[2];
@@ -1137,19 +1137,19 @@ public:
         return w[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
+    void back_propagation(cnn_size_t    index,
+                          const vec_t** in_data,
+                          const vec_t** out_data,
+                          vec_t**       out_grad,
+                          vec_t**       in_grad) override {
 		back_propagation_impl(index, in_data, out_data, out_grad, in_grad);
 	}
 
-    void back_propagation_impl(cnn_size_t             index,
-                          const std::vector<dvec_t*>& in_data,
-                          const std::vector<dvec_t*>& out_data,
-                          std::vector<dvec_t*>&       out_grad,
-                          std::vector<dvec_t*>&       in_grad) {
+    void back_propagation_impl(cnn_size_t     index,
+                               const dvec_t** in_data,
+                               const dvec_t** out_data,
+                               dvec_t**       out_grad,
+                               dvec_t**       in_grad) {
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
         const dvec_t& prev_out = *(cws.prev_out_padded_);
@@ -1251,11 +1251,11 @@ public:
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
     }
 
-    void back_propagation_impl(cnn_size_t             index,
-                          const std::vector<fvec_t*>& in_data,
-                          const std::vector<fvec_t*>& out_data,
-                          std::vector<fvec_t*>&       out_grad,
-                          std::vector<fvec_t*>&       in_grad) {
+    void back_propagation_impl(cnn_size_t     index,
+                               const fvec_t** in_data,
+                               const fvec_t** out_data,
+                               fvec_t**       out_grad,
+                               fvec_t**       in_grad) {
 
         conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
