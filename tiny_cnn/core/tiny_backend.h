@@ -235,7 +235,7 @@ class tiny_backend : public math_backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        for_i(layer_->get_parallelize(), params_->out.depth_, [&](int o) {
+        for_i(layer_->get_parallelize(), params_->out_.depth_, [&](int o) {
             for (cnn_size_t inc = 0; inc < params_->in_.depth_; inc++) {
                 if (!params_->tbl.is_connected(o, inc)) continue;
 
@@ -246,7 +246,6 @@ class tiny_backend : public math_backend {
                     for (cnn_size_t x = 0; x < params_->in_.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t * ppi = pi + y * params_->in_.width_ + x;
-
                         // should be optimized for small kernel(3x3,5x5)
                         for (cnn_size_t wy = 0; wy < params_->weight.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < params_->weight.width_; wx++) {
@@ -259,8 +258,8 @@ class tiny_backend : public math_backend {
 
             if (params_->has_bias) {
         const vec_t& bias = *in_data[2];
-        float_t * pa  = &a[params_->out.get_index(0, 0, o)];
-        float_t * paa = pa + params_->out.width_ * params_->out.height_;
+        float_t * pa  = &a[params_->out_.get_index(0, 0, o)];
+        float_t * paa = pa + params_->out_.width_ * params_->out_.height_;
         std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
             }
         });
@@ -348,11 +347,11 @@ class tiny_backend : public math_backend {
     if (params_->has_bias) {
        vec_t& db = *in_grad[2];
 
-       for (cnn_size_t outc = 0; outc < params_->out.depth_; outc++) {
-           cnn_size_t idx = params_->out.get_index(0, 0, outc);
+       for (cnn_size_t outc = 0; outc < params_->out_.depth_; outc++) {
+           cnn_size_t idx = params_->out_.get_index(0, 0, outc);
            const float_t * delta = &curr_delta[idx];
-           const float_t * deltaa = delta + params_->out.width_ *
-                                            params_->out.height_;
+           const float_t * deltaa = delta + params_->out_.width_ *
+                                            params_->out_.height_;
            db[outc] += std::accumulate(delta, deltaa, float_t(0));
        }
     }

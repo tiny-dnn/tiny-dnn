@@ -42,7 +42,7 @@ struct conv_layer_worker_specific_storage {
 
 struct deconv_layer_worker_specific_storage {
     const vec_t* prev_out_;
-    vec_t* curr_out_unpadded_;
+    const vec_t* curr_out_unpadded_;
     vec_t curr_out_buf_;
     vec_t curr_delta_padded;
 };

@@ -235,7 +235,7 @@ public:
         vec_t& out     = *out_data[0];
         const vec_t& a = *out_data[1];
 
-        for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
+        for_i(this->get_parallelize(), params_.out_.size(), [&](int i) {
             out[i] = this->h_.f(a, i);
         });
     }
@@ -433,7 +433,7 @@ private:
         }
     }
 
-    void copy_and_unpad_output(vec_t& out, int worker_index) {
+    void copy_and_unpad_output(const vec_t& out, int worker_index) {
         deconv_layer_worker_specific_storage& cws = 
             deconv_layer_worker_storage_[worker_index];
 
