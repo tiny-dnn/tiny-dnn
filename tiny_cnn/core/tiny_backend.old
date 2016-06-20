@@ -257,10 +257,10 @@ class tiny_backend : public math_backend {
             }
 
             if (params_->has_bias) {
-        const vec_t& bias = *in_data[2];
-        float_t * pa  = &a[params_->out_.get_index(0, 0, o)];
-        float_t * paa = pa + params_->out_.width_ * params_->out_.height_;
-        std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
+              const vec_t& bias = *in_data[2];
+              float_t * pa  = &a[params_->out_.get_index(0, 0, o)];
+              float_t * paa = pa + params_->out_.width_ * params_->out_.height_;
+              std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
             }
         });
 
@@ -367,7 +367,8 @@ class tiny_backend : public math_backend {
 
  private:
     /* Pointer to the convolution parameters */
-    conv_params* params_;
+    conv_params* params_conv;
+    conv_params* params_deconv;
 
     /* Pointer to the convolution workers */
     std::vector<conv_layer_worker_specific_storage>* conv_layer_worker_storage_;

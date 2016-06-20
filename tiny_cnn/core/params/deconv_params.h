@@ -29,62 +29,18 @@
 namespace tiny_cnn {
 namespace core {
 
-enum class padding {
-    valid,  ///< use valid pixels of input
-    same    ///< add zero-padding around input so as to keep image size
+struct deconv_layer_worker_specific_storage {
+    const vec_t* prev_out_;
+    const vec_t* curr_out_unpadded_;
+    vec_t curr_out_buf_;
+    vec_t curr_delta_padded;
 };
 
-struct conv_layer_worker_specific_storage {
-    const vec_t* prev_out_padded_;
-    vec_t prev_out_buf_;
-    vec_t prev_delta_padded_;
-};
-
-struct connection_table {
-    connection_table() : rows_(0), cols_(0) {}
-    connection_table(const bool *ar, cnn_size_t rows, cnn_size_t cols)
-            : connected_(rows * cols), rows_(rows), cols_(cols) {
-        std::copy(ar, ar + rows * cols, connected_.begin());
-    }
-    connection_table(cnn_size_t ngroups, cnn_size_t rows, cnn_size_t cols)
-            : connected_(rows * cols, false), rows_(rows), cols_(cols) {
-        if (rows % ngroups || cols % ngroups) {
-            throw nn_error("invalid group size");
-        }
-
-        cnn_size_t row_group = rows / ngroups;
-        cnn_size_t col_group = cols / ngroups;
-
-        cnn_size_t idx = 0;
-
-        for (cnn_size_t g = 0; g < ngroups; g++) {
-            for (cnn_size_t r = 0; r < row_group; r++) {
-                for (cnn_size_t c = 0; c < col_group; c++) {
-                    idx = (r + g * row_group) * cols_ + c + g * col_group;
-                    connected_[idx] = true;
-                }
-            }
-        }
-    }
-
-    bool is_connected(cnn_size_t x, cnn_size_t y) const {
-        return is_empty() ? true : connected_[y * cols_ + x];
-    }
-
-    bool is_empty() const {
-        return rows_ == 0 && cols_ == 0;
-    }
-
-    std::deque<bool> connected_;
-    cnn_size_t rows_;
-    cnn_size_t cols_;
-};
-
-struct conv_params {
+struct deconv_params {
     connection_table tbl;
-    index3d<cnn_size_t> in;
-    index3d<cnn_size_t> in_padded;
-    index3d<cnn_size_t> out;
+    index3d<cnn_size_t> in_;
+    index3d<cnn_size_t> out_;
+    index3d<cnn_size_t> out_unpadded_;
     index3d<cnn_size_t> weight;
     bool has_bias;
     padding pad_type;
