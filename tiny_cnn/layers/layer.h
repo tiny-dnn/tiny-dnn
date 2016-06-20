@@ -34,7 +34,7 @@
 #include <string>
 
 #include "tiny_cnn/node.h"
-#include "tiny_cnn/core/math_backend.h"
+#include "tiny_cnn/core/backend.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -513,7 +513,7 @@ class layer : public node {
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
 
-    std::shared_ptr<core::math_backend> backend_;
+    std::shared_ptr<core::backend> backend_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

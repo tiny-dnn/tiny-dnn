@@ -102,11 +102,11 @@ TEST(network, construct_multi_by_local_variables) {
 TEST(network, construct_multi_by_temporary_variables) {
     network<sequential> net;
     net << conv<tan_h>(32, 32, 5, 1, 6, padding::same)
-    << conv<sigmoid>(32, 32, 7, 6, 12, padding::same)
-    << max_pool<relu>(32, 32, 12, 2)
-    << lrn_layer<identity>(16, 16, 4, 12)
-    << dropout(16 * 16 * 12, 0.5)
-    << fc<softmax>(16 * 16 * 12, 1);
+        << conv<sigmoid>(32, 32, 7, 6, 12, padding::same)
+        << max_pool<relu>(32, 32, 12, 2)
+        << lrn_layer<identity>(16, 16, 4, 12)
+        << dropout(16 * 16 * 12, 0.5)
+        << fc<softmax>(16 * 16 * 12, 1);
 }
 
 TEST(network, in_dim) {
@@ -163,6 +163,7 @@ TEST(network, multi_out) {
     for (size_t i = 0; i < tnum; i++) {
         bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
         // label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+
         data.push_back({ static_cast<float_t>(in[0]),
                          static_cast<float_t>(in[1]) });
 

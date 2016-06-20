@@ -32,11 +32,8 @@
 
 #include "tiny_cnn/core/session.h"
 #include "tiny_cnn/core/device.h"
-#include "tiny_cnn/core/cpu_device.h"
-#include "tiny_cnn/core/ocl_device.h"
-#include "tiny_cnn/core/math_backend.h"
-#include "tiny_cnn/core/nnp_backend.h"
-#include "tiny_cnn/core/dnn_backend.h"
+#include "tiny_cnn/core/device_cpu.h"
+#include "tiny_cnn/core/device_ocl.h"
 
 #include "tiny_cnn/layers/input_layer.h"
 #include "tiny_cnn/layers/feedforward_layer.h"
@@ -114,6 +111,7 @@ using max_unpool = tiny_cnn::max_unpooling_layer<T>;
 
 template <class T>
 using ave_unpool = tiny_cnn::average_unpooling_layer<T>;
+
 
 }
 }
