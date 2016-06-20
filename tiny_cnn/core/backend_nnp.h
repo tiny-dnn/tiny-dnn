@@ -39,9 +39,12 @@ class nnp_backend : public backend {
     nnp_backend(conv_params* params,
                 std::function<void(const vec_t&, int)> f1,
                 std::vector<conv_layer_worker_specific_storage>* ptr)
-        : params_(params),
+        : params_c_(params),
           conv_layer_worker_storage_(ptr),
           copy_and_pad_input(f1) {}
+
+    nnp_backend(deconv_params* params)
+        : params_d_(params){}
 
     nnp_backend() {}
 
@@ -50,11 +53,11 @@ class nnp_backend : public backend {
     void conv2d(cnn_size_t                 index,
                 const std::vector<vec_t*>& in_data,
                 std::vector<vec_t*>&       out_data) {
-        if (!params_->has_bias) {
+        if (!params_c_->has_bias) {
             throw nn_error("NNPACK Convolution requires a bias term.");
         }
 
-        if (params_->w_stride != 1 || params_->h_stride != 1) {
+        if (params_c_->w_stride != 1 || params_c_->h_stride != 1) {
             throw nn_error("NNPACK Convolution requires stride 1.");
         }
 
@@ -67,7 +70,7 @@ class nnp_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::nnp_conv2d_kernel(*params_, in, W, bias, a);
+        kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
 #else
         throw nn_error("Tiny-cnn has not been compiled with NNPACK support.");
 #endif
@@ -78,6 +81,40 @@ class nnp_backend : public backend {
                 const std::vector<vec_t*>& out_data,
                 std::vector<vec_t*>&       out_grad,
                 std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        if (!params_d_->has_bias) {
+            throw nn_error("NNPACK Convolution requires a bias term.");
+        }
+
+        if (params_d_->w_stride != 1 || params_d_->h_stride != 1) {
+            throw nn_error("NNPACK Convolution requires stride 1.");
+        }
+
+#ifdef CNN_USE_NNPACK
+        copy_and_pad_input(*in_data[0], static_cast<int>(index));
+        const vec_t& W    = *in_data[1];
+        const vec_t& bias = *in_data[2];
+        vec_t&       a    = *out_data[1];
+        const vec_t &in   = *((*deconv_layer_worker_storage_)[index].prev_out_); // input // NOLINT
+
+        std::fill(a.begin(), a.end(), float_t(0));
+
+        kernels::nnp_deconv2d_kernel(*params_d_, in, W, bias, a);
+#else
+        throw nn_error("Tiny-cnn has not been compiled with NNPACK support.");
+#endif
+    }
+
+    void deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -115,10 +152,12 @@ class nnp_backend : public backend {
 
  private:
     /* Pointer to the convolution parameters */
-    conv_params* params_;
+    conv_params* params_c_;
+    deconv_params* params_d_;
 
     /* Pointer to the convolution workers */
     std::vector<conv_layer_worker_specific_storage>* conv_layer_worker_storage_;
+    std::vector<deconv_layer_worker_specific_storage>* deconv_layer_worker_storage_;
 
     /* Pointers to parent class functions */
     std::function<void(const vec_t&, int)> copy_and_pad_input;

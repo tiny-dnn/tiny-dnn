@@ -162,7 +162,7 @@ class tiny_backend : public backend {
         copy_and_unpad_output(a, static_cast<int>(index));
     }
 
-    void deconv2d_back(cnn_size_t                 index,
+    void deconv2d(cnn_size_t                 index,
                        const std::vector<vec_t*>& in_data,
                        const std::vector<vec_t*>& out_data,
                        std::vector<vec_t*>&       out_grad,

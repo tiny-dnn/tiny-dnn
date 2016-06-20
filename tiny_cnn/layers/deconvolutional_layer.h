@@ -27,13 +27,12 @@
 #pragma once
 
 #include <deque>
-#include <vector>
 #include <string>
 #include <algorithm>
 
-#include "tiny_cnn/core/tiny_backend.h"
-#include "tiny_cnn/core/nnp_backend.h"
-#include "tiny_cnn/core/dnn_backend.h"
+#include "tiny_cnn/core/backend_tiny.h"
+#include "tiny_cnn/core/backend_nnp.h"
+#include "tiny_cnn/core/backend_dnn.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -253,8 +252,8 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) {
-        Base::backend_->deconv2d_back(worker_index, in_data, out_data,
-                                    out_grad, in_grad);
+        Base::backend_->deconv2d(worker_index, in_data, out_data,
+                                out_grad, in_grad);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -297,7 +296,7 @@ public:
 
                 for (cnn_size_t y = 0; y < params_.weight.height_; ++y) {
                     for (cnn_size_t x = 0; x < params_.weight.width_; ++x) {
-                        idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
+                        idx = params_.weight.get_index(x, y, c * params_.in_.depth_ + r);
                         const float_t w = W[idx];
 
                         img.at(left + x, top + y)
@@ -426,7 +425,8 @@ private:
                 float_t *pdst = &dst[params_.in_.get_index(0, 0, c)];
                 const float_t *pin = &delta[params_.in_.get_index(0, 0, c)];
 
-                for (cnn_size_t y = 0; y < params_.in_.height_; y++, pdst += params_.in_.width_, pin += params_.in_.width_) {
+                for (cnn_size_t y = 0; y < params_.in_.height_; y++, pdst += 
+                    params_.in_.width_, pin += params_.in_.width_) {
                     std::copy(pin, pin + params_.in_.width_, pdst);
                 }
             }
@@ -456,7 +456,7 @@ private:
     }
 
     /* The convolution parameters */
-    conv_params params_;
+    deconv_params params_;
 
     /* The type of backend */
     backend_t backend_type_;

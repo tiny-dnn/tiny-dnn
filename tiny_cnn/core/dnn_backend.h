@@ -26,12 +26,12 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/backend.h"
+#include "tiny_cnn/core/math_backend.h"
 
 namespace tiny_cnn {
 namespace core {
 
-class dnn_backend : public backend {
+class dnn_backend : public math_backend {
  public:
     // context holds solution-dependent parameters
     // context should be able to hold any types of structures (like boost::any)
@@ -45,25 +45,25 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    void conv2d(cnn_size_t                 index,
+    void conv2d_back(cnn_size_t                 index,
+                     const std::vector<vec_t*>& in_data,
+                     const std::vector<vec_t*>& out_data,
+                     std::vector<vec_t*>&       out_grad,
+                     std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void deconv2d(cnn_size_t                 index,
                 const std::vector<vec_t*>& in_data,
-                const std::vector<vec_t*>& out_data,
-                std::vector<vec_t*>&       out_grad,
-                std::vector<vec_t*>&       in_grad) {
+                std::vector<vec_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
-    void deconv2d(cnn_size_t                 index,
-                  const std::vector<vec_t*>& in_data,
-                  std::vector<vec_t*>&       out_data) {
-        throw nn_error("not implemented yet.");
-    }
-
-    void deconv2d(cnn_size_t                 index,
-                  const std::vector<vec_t*>& in_data,
-                  const std::vector<vec_t*>& out_data,
-                  std::vector<vec_t*>&       out_grad,
-                  std::vector<vec_t*>&       in_grad) {
+    void deconv2d_back(cnn_size_t                 index,
+                     const std::vector<vec_t*>& in_data,
+                     const std::vector<vec_t*>& out_data,
+                     std::vector<vec_t*>&       out_grad,
+                     std::vector<vec_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
 
@@ -71,31 +71,7 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    void maxpool(cnn_size_t                 index,
-                 const std::vector<vec_t*>& in_data,
-                 std::vector<vec_t*>&       out_data) {
-        throw nn_error("not implemented yet.");
-    }
-
-    void maxpool(cnn_size_t                 index,
-                 const std::vector<vec_t*>& in_data,
-                 const std::vector<vec_t*>& out_data,
-                 std::vector<vec_t*>&       out_grad,
-                 std::vector<vec_t*>&       in_grad) {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(cnn_size_t                 index,
-               const std::vector<vec_t*>& in_data,
-               std::vector<vec_t*>&       out_data) {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(cnn_size_t                 index,
-               const std::vector<vec_t*>& in_data,
-               const std::vector<vec_t*>& out_data,
-               std::vector<vec_t*>&       out_grad,
-               std::vector<vec_t*>&       in_grad) {
+    void maxpool() {
         throw nn_error("not implemented yet.");
     }
 };

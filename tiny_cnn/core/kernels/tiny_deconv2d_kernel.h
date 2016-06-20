@@ -60,7 +60,10 @@ void tiny_deconv2d_kernel(const deconv_params& params,
                     // should be optimized for small kernel(3x3,5x5)
                     for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                         for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
-                            pa[(y+wy) * params.h_stride * params.out_.width_ + (x+wx) * params.w_stride] += ppw[wy * params.weight.width_ + wx] * (*ppi);
+                            pa[(y+wy) * params.h_stride * 
+                                params.out_.width_ + (x+wx) * 
+                                params.w_stride] += ppw[wy * 
+                                params.weight.width_ + wx] * (*ppi);
                         }
                     }
                 }
