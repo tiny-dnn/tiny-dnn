@@ -156,7 +156,7 @@ private:
         }
 
         cnn_size_t head = size_ / 2;
-        long tail = ((long) head) - size_;
+        long tail = static_cast<long>(head) - static_cast<long>(size_);
         cnn_size_t channels = in_shape_.depth_;
         const cnn_size_t wxh = in_shape_.area();
         const float_t alpha_div_size = alpha_ / size_;

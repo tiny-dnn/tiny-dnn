@@ -101,23 +101,23 @@ class layer : public node {
     cnn_size_t out_channels() const { return out_channels_; }
 
     cnn_size_t in_data_size() const {
-        return sumif(in_shape(), [&](int i) { // NOLINT
+        return sumif(in_shape(), [&](cnn_size_t i) { // NOLINT
             return in_type_[i] == vector_type::data; }, [](const shape3d& s) {
                 return s.size(); });
     }
 
     cnn_size_t out_data_size() const {
-        return sumif(out_shape(), [&](int i) { // NOLINT
+        return sumif(out_shape(), [&](cnn_size_t i) { // NOLINT
             return out_type_[i] == vector_type::data; }, [](const shape3d& s) {
                 return s.size(); });
     }
 
     std::vector<shape3d> in_data_shape() {
-        return filter(in_shape(), [&](int i) { return in_type_[i] == vector_type::data; });
+        return filter(in_shape(), [&](cnn_size_t i) { return in_type_[i] == vector_type::data; });
     }
 
     std::vector<shape3d> out_data_shape() {
-        return filter(out_shape(), [&](int i) { return out_type_[i] == vector_type::data; });
+        return filter(out_shape(), [&](cnn_size_t i) { return out_type_[i] == vector_type::data; });
     }
 
     ///! @deprecated use in_data_size() instead
