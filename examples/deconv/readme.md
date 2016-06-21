@@ -1,4 +1,4 @@
-# MNIST Reconstruction and Classification with Deconvolutional Auto-encoder 
+# MNIST Reconstruction and Classification with Deconvolutional Auto-encoder
 
 [MNIST](http://yann.lecun.com/exdb/mnist/) is well-known dataset of handwritten digits. We'll use paired convolution and deconvolution with 4 layers in total for an auto-encoder without fully connected layers.
 
@@ -15,10 +15,10 @@ You can add layers from top to bottom by operator <<, we recommand that the conv
 ```cpp
     // construct nets
 void construct_net(network<sequential>& nn) {
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6, padding::same) //conv1
-       << convolutional_layer<tan_h>(32, 32, 3, 6, 16, padding::same) //conv2
-       << deconvolutional_layer<tan_h>(32, 32, 3, 16, 6, padding::same) //deconv2
-       << deconvolutional_layer<tan_h>(32, 32, 5, 6, 1, padding::same); //deconv1
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
+       << convolutional_layer<tan_h>(28, 28, 3, 6, 16)
+       << deconvolutional_layer<tan_h>(26, 26, 3, 16, 6)
+       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 }
 ```
 
@@ -72,8 +72,8 @@ You can just doing so:
 ./example_deconv_visual ~/Desktop/4.png ../data/
 ```
 ## Classification
-We replace a convolutional layer in [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture as a deconvolutional layer for MNIST digits recognition task and got an acceptable accuracy of over 98%, you can doing so to carry out the classification example:
+We replace a convolutional layer in [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture as a deconvolutional layer for MNIST digits recognition task and got an acceptable accuracy over 98%, you can doing so to carry out the classification example:
 ```
-./example_deconv_train ../data/
+./example_deconv_train ../data/ deLaNet
 ```
 

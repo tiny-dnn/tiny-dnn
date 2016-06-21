@@ -53,6 +53,20 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
+    void deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
+    }
+
     void matmul() {
         throw nn_error("not implemented yet.");
     }

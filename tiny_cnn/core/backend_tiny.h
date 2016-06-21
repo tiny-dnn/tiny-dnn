@@ -30,6 +30,8 @@
 
 #include "tiny_cnn/core/kernels/tiny_conv2d_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_conv2d_back_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_deconv2d_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_fully_connected_kernel.h"
 
@@ -47,11 +49,23 @@ class tiny_backend : public backend {
                  std::function<void(const vec_t&, vec_t&)> f2,
                  std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
                  std::vector<conv_layer_worker_specific_storage>* ptr)
-      : params_(params)
+      : params_c_(params)
       , conv_layer_worker_storage_(ptr),
         copy_and_pad_input(f1)
       , copy_and_unpad_delta(f2)
       , backward_activation(f3) {}
+
+    // deconvolution
+    tiny_backend(deconv_params* params,
+                 std::function<void(const vec_t&, int)> f1,
+                 std::function<void(const vec_t&, vec_t&)> f2,
+                 std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
+                 std::vector<deconv_layer_worker_specific_storage>* ptr)
+      : params_d_(params),
+        deconv_layer_worker_storage_(ptr),
+        copy_and_unpad_output(f1),
+        copy_and_pad_delta(f2),
+        backward_activation(f3) {}
 
     // maxpooling
     tiny_backend(std::vector<std::vector<cnn_size_t>>* out2in,
@@ -82,7 +96,7 @@ class tiny_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::tiny_conv2d_kernel(*params_,
+        kernels::tiny_conv2d_kernel(*params_c_,
                                     in,
                                     W,
                                     bias,
@@ -103,18 +117,18 @@ class tiny_backend : public backend {
         vec_t&       dW = *in_grad[1];
         vec_t&       db = *in_grad[2];
         vec_t&       curr_delta = *out_grad[1];
-        vec_t*       prev_delta = (params_->pad_type == padding::same) ?
+        vec_t*       prev_delta = (params_c_->pad_type == padding::same) ?
                                    &cws.prev_delta_padded_ : in_grad[0];
 
-        assert(W.size() == params_->weight.size());
-        assert(dW.size() == params_->weight.size());
+        assert(W.size() == params_c_->weight.size());
+        assert(dW.size() == params_c_->weight.size());
         assert(curr_delta.size() ==  layer_->out_shape()[0].size());
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-        kernels::tiny_conv2d_back_kernel(*params_,
+        kernels::tiny_conv2d_back_kernel(*params_c_,
                                          prev_out,
                                          W,
                                          dW,
@@ -122,11 +136,66 @@ class tiny_backend : public backend {
                                          curr_delta,
                                          prev_delta);
 
-        if (params_->pad_type == padding::same) {
+        if (params_c_->pad_type == padding::same) {
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
         }
     }
 
+    void deconv2d(cnn_size_t        index,
+        const std::vector<vec_t*>&  in_data,
+        std::vector<vec_t*>&        out_data) {
+        (*deconv_layer_worker_storage_)[index].prev_out_ = in_data[0];
+        const vec_t& W   = *in_data[1];
+        const vec_t& bias = *in_data[2];
+        vec_t&       a   = *out_data[1];
+        const vec_t &in  = *in_data[0]; // input
+
+        std::fill(a.begin(), a.end(), float_t(0));
+
+        kernels::tiny_deconv2d_kernel(*params_d_,
+                                      in,
+                                      W,
+                                      bias,
+                                      a,
+                                      layer_->get_parallelize());
+
+        copy_and_unpad_output(a, static_cast<int>(index));
+    }
+
+    void deconv2d(cnn_size_t                 index,
+                       const std::vector<vec_t*>& in_data,
+                       const std::vector<vec_t*>& out_data,
+                       std::vector<vec_t*>&       out_grad,
+                       std::vector<vec_t*>&       in_grad) {
+
+        deconv_layer_worker_specific_storage& cws =
+            (*deconv_layer_worker_storage_)[index];
+        if (params_d_->pad_type == padding::same)
+            copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
+
+        const vec_t& prev_out = *(cws.prev_out_);
+        const vec_t& W = *in_data[1];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       db = *in_grad[2];
+        vec_t&       curr_delta = (params_d_->pad_type == padding::same) ? cws.curr_delta_padded : *out_grad[1];
+        vec_t*       prev_delta = in_grad[0];
+
+        assert(W.size() == params_d_->weight.size());
+        assert(dW.size() == params_d_->weight.size());
+        assert(curr_delta.size() ==  layer_->out_shape()[0].size());
+
+        backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
+
+        kernels::tiny_deconv2d_back_kernel(*params_d_,
+                                           prev_out,
+                                           W,
+                                           dW,
+                                           db,
+                                           curr_delta,
+                                           prev_delta);
+    }
     void matmul() {
         throw nn_error("not implemented yet.");
     }
@@ -213,18 +282,22 @@ class tiny_backend : public backend {
 
  private:
     /* Pointer to the convolution parameters */
-    conv_params* params_;
+    conv_params* params_c_;
+    deconv_params* params_d_;
     fully_params* params_f_;
 
     /* Pointer to the workers */
     std::vector<conv_layer_worker_specific_storage>* conv_layer_worker_storage_;
+    std::vector<deconv_layer_worker_specific_storage>* deconv_layer_worker_storage_;
     std::vector<max_pooling_layer_worker_specific_storage>* max_pooling_layer_worker_storage_;
     std::vector<std::vector<cnn_size_t>>* out2in_;
     std::vector<cnn_size_t>* in2out_;
 
     /* Pointers to parent class functions */
     std::function<void(const vec_t&, int)> copy_and_pad_input;
+    std::function<void(const vec_t&, int)> copy_and_unpad_output;
     std::function<void(const vec_t&, vec_t&)> copy_and_unpad_delta;
+    std::function<void(const vec_t&, vec_t&)> copy_and_pad_delta;
     std::function<void(const vec_t&, const vec_t&, vec_t&)> backward_activation;
 };
 
