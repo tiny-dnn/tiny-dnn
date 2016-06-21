@@ -99,18 +99,18 @@ endif()
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     if(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
-        set(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3 ")
+        set(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3")
     endif()
     if(USE_AVX)
         add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx ")
+        set(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx -mavx2 -march=core-avx2")
     endif()
     if((NOT USE_TBB) AND (NOT USE_OMP))
-        set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -pthread ")
+        set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -pthread")
     endif()
     set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 -Wall -Wpedantic")
-    set(EXTRA_C_FLAGS_RELEASE " -O3 ")
-    set(EXTRA_C_FLAGS_DEBUG " -g3 ")
+    set(EXTRA_C_FLAGS_RELEASE " -O3")
+    set(EXTRA_C_FLAGS_DEBUG " -g3")
 else() # MSVC
     if(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
@@ -138,7 +138,7 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LI
 
 
 include_directories(${PROJECT_SOURCE_DIR})
-link_directories(${REQUIRED_LIBRARIES})
+link_libraries(${REQUIRED_LIBRARIES})
 
 set(tiny_cnn_hrds
     tiny_cnn/tiny_cnn.h

@@ -144,6 +144,25 @@ TEST(fully_connected, forward)
     }
 }
 
+#ifdef CNN_USE_NNPACK
+TEST(fully_connected, forward_nnp)
+{
+    fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
+    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.5));
+
+    vec_t in = {0,1,2,3};
+    vec_t out = l.forward({in})[0];
+    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
+}
+#endif
+
 TEST(fully_connected, forward_nobias)
 {
     fully_connected_layer<identity> l(4, 2, false);

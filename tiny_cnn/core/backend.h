@@ -96,10 +96,13 @@ class backend {
     context* get_context() const { return ctx_; }
 
     void set_layer(layerptr_t layer) { layer_ = layer; }
+    void set_type(const backend_t type) { type_ = type; }
+    backend_t get_type() const { return type_; }
 
  protected:
     context* ctx_;
     layerptr_t layer_;
+    backend_t type_;
 };
 
 }  // namespace core

@@ -25,6 +25,15 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
+#include <string>
+#include <vector>
+#include <algorithm>
+
+#include "tiny_cnn/core/backend_tiny.h"
+#include "tiny_cnn/core/backend_nnp.h"
+#include "tiny_cnn/core/backend_dnn.h"
+
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/activations/activation_function.h"
@@ -36,7 +45,7 @@ namespace tiny_cnn {
  **/
 template <typename Activation = activation::identity>
 class max_pooling_layer : public feedforward_layer<Activation> {
-public:
+ public:
     CNN_USE_LAYER_MEMBERS;
     typedef feedforward_layer<Activation> Base;
 
@@ -52,20 +61,18 @@ public:
                       cnn_size_t     pooling_size,
                       backend_t      backend_type = backend_t::tiny_cnn,
                       backend_params b_params = backend_params())
-        : Base( { vector_type::data } )
-        , pool_size_(pooling_size)
-        , stride_(pooling_size)
-        , backend_type_(backend_type)
-        , in_(in_width, in_height, in_channels)
-        , out_(in_width  / pooling_size,
-               in_height / pooling_size,
-               in_channels) {
+            : Base({ vector_type::data }) {
         if ((in_width % pooling_size) || (in_height % pooling_size)) {
             pooling_size_mismatch(in_width, in_height, pooling_size);
         }
+        set_maxpool_params(shape3d(in_width, in_height, in_channels),
+                           shape3d(in_width  / pooling_size,
+                                   in_height / pooling_size,
+                                   in_channels),
+                           pooling_size, pooling_size);
 
         init_connection();
-        init_backend(backend_type_);
+        init_backend(backend_type);
     }
 
     /**
@@ -82,32 +89,27 @@ public:
                       cnn_size_t     stride,
                       backend_t      backend_type = backend_t::tiny_cnn,
                       backend_params b_params = backend_params())
-        : Base({vector_type::data})
-        , pool_size_(pooling_size)
-        , stride_(stride)
-        , backend_type_(backend_type)
-        , in_(in_width, in_height, in_channels)
-        , out_(pool_out_dim(in_width, pooling_size, stride),
-               pool_out_dim(in_height, pooling_size, stride),
-               in_channels) {
+            : Base({ vector_type::data }) {
+        set_maxpool_params(
+            shape3d(in_width, in_height, in_channels),
+            shape3d(pool_out_dim(in_width, pooling_size, stride),
+                    pool_out_dim(in_height, pooling_size, stride),
+                    in_channels),
+            pooling_size, stride);
+
         init_connection();
-        init_backend(backend_type_);
+        init_backend(backend_type);
     }
 
     // move constructor
-    max_pooling_layer(max_pooling_layer&& other)
+    max_pooling_layer(max_pooling_layer&& other)  // NOLINT
             : Base(std::move(other))
-            , pool_size_(std::move(other.pool_size_))
-            , stride_(std::move(other.stride_))
+            , params_(std::move(other.params_))
             , out2in_(std::move(other.out2in_))
             , in2out_(std::move(other.in2out_))
-            , backend_type_(std::move(other.backend_type_))
             , max_pooling_layer_worker_storage_(
-                std::move(other.max_pooling_layer_worker_storage_))
-            , in_(std::move(other.in_))
-            , out_(std::move(other.out_)) {
+                std::move(other.max_pooling_layer_worker_storage_)) {
         init_connection();
-        init_backend(backend_type_);
     }
 
     size_t fan_in_size() const override {
@@ -128,7 +130,7 @@ public:
         vec_t& out     = *out_data[0];
         const vec_t& a = *out_data[1];
 
-        for_i(parallelize_, out.size(), [&](int i) {
+        for_i(parallelize_, out.size(), [&](int i) {  // NOLINT
             out[i] = h_.f(a, i);
         });
     }
@@ -157,44 +159,39 @@ public:
     }*/
 
     std::vector<index3d<cnn_size_t>>
-    in_shape() const override { return {in_}; }
+    in_shape() const override { return { params_.in_ }; }
 
     std::vector<index3d<cnn_size_t>>
-    out_shape() const override { return {out_, out_}; }
+    out_shape() const override { return { params_.out_, params_.out_ }; }
 
     std::string layer_type() const override { return "max-pool"; }
-    size_t pool_size() const {return pool_size_;}
+    size_t pool_size() const { return params_.pool_size_; }
 
-    virtual void set_worker_count(cnn_size_t worker_count) override {
+    void set_worker_count(cnn_size_t worker_count) override {
         Base::set_worker_count(worker_count);
         max_pooling_layer_worker_storage_.resize(worker_count);
         for (max_pooling_layer_worker_specific_storage& mws :
              max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
+            mws.out2inmax_.resize(params_.out_.size());
         }
     }
 
-private:
-    size_t pool_size_;
-    size_t stride_;
+ private:
+    maxpool_params params_;
 
     /* mapping out => in (1:N) */
     std::vector<std::vector<cnn_size_t> > out2in_;
     /* mapping in => out (N:1) */
     std::vector<cnn_size_t> in2out_;
 
-    /* The type of backend */
-    backend_t backend_type_;
-
-    std::vector<max_pooling_layer_worker_specific_storage> max_pooling_layer_worker_storage_;
-
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
+    std::vector<max_pooling_layer_worker_specific_storage>
+    max_pooling_layer_worker_storage_;
 
     static cnn_size_t pool_out_dim(cnn_size_t in_size,
                                    cnn_size_t pooling_size,
                                    cnn_size_t stride) {
-        return (int) std::ceil(((float_t)in_size - pooling_size) / stride) + 1;
+        float_t tmp = static_cast<float_t>(in_size - pooling_size) / stride;
+        return static_cast<cnn_size_t>(std::ceil(tmp) + float_t(1.0));
     }
 
     void connect_kernel(cnn_size_t pooling_size,
@@ -202,17 +199,19 @@ private:
                         cnn_size_t outy,
                         cnn_size_t c) {
         cnn_size_t dxmax = static_cast<cnn_size_t>(
-            std::min((size_t)pooling_size, in_.width_ - outx * stride_));
+            std::min(static_cast<size_t>(pooling_size),
+                     params_.in_.width_ - outx * params_.stride_));
 
         cnn_size_t dymax = static_cast<cnn_size_t>(
-            std::min((size_t)pooling_size, in_.height_ - outy * stride_));
+            std::min(static_cast<size_t>(pooling_size),
+                     params_.in_.height_ - outy * params_.stride_));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
             for (cnn_size_t dx = 0; dx < dxmax; dx++) {
-                cnn_size_t in_index = in_.get_index(
-                    static_cast<cnn_size_t>(outx * stride_ + dx),
-                    static_cast<cnn_size_t>(outy * stride_ + dy), c);
-                cnn_size_t out_index = out_.get_index(outx, outy, c);
+                cnn_size_t in_index = params_.in_.get_index(
+                    static_cast<cnn_size_t>(outx * params_.stride_ + dx),
+                    static_cast<cnn_size_t>(outy * params_.stride_ + dy), c);
+                cnn_size_t out_index = params_.out_.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size()) {
                     throw nn_error("index overflow");
@@ -227,18 +226,18 @@ private:
     }
 
     void init_connection() {
-        in2out_.resize(in_.size());
-        out2in_.resize(out_.size());
+        in2out_.resize(params_.in_.size());
+        out2in_.resize(params_.out_.size());
 
         for (max_pooling_layer_worker_specific_storage& mws :
              max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
+            mws.out2inmax_.resize(params_.out_.size());
         }
 
-        for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < out_.height_; ++y) {
-                for (cnn_size_t x = 0; x < out_.width_; ++x) {
-                    connect_kernel(static_cast<cnn_size_t>(pool_size_),
+        for (cnn_size_t c = 0; c < params_.in_.depth_; ++c) {
+            for (cnn_size_t y = 0; y < params_.out_.height_; ++y) {
+                for (cnn_size_t x = 0; x < params_.out_.width_; ++x) {
+                    connect_kernel(static_cast<cnn_size_t>(params_.pool_size_),
                                    x, y, c);
                 }
             }
@@ -246,31 +245,44 @@ private:
     }
 
     void init_backend(backend_t backend_type) {
-        switch (backend_type) {
-            case backend_t::tiny_cnn:
-                Base::backend_ = std::make_shared<core::tiny_backend>(
-                    &out2in_,
-                    &in2out_,
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &max_pooling_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>();
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::libdnn:
-                Base::backend_ = std::make_shared<core::dnn_backend>();
-                Base::backend_->set_layer(this);
-                break;
-            default:
-                throw nn_error("not supported backend type");
+        std::shared_ptr<core::backend> backend = nullptr;
+
+        // allocate new backend
+        if (backend_type == backend_t::tiny_cnn) {
+            backend = std::make_shared<core::tiny_backend>(
+                &out2in_,
+                &in2out_,
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &max_pooling_layer_worker_storage_);
+        } else if (backend_type == backend_t::nnpack) {
+            backend = std::make_shared<core::nnp_backend>(&params_);
+        } else if (backend_type == backend_t::libdnn) {
+            backend = std::make_shared<core::dnn_backend>();
+        } else {
+            throw nn_error("Not supported backend type.");
+        }
+
+        if (backend) {
+            Base::set_backend(backend);
+            Base::backend_->set_layer(this);
+            Base::backend_->set_type(backend_type);
+        } else {
+            throw nn_error("Could not allocate the backend.");
         }
     }
 
+    void set_maxpool_params(const shape3d& in,
+                            const shape3d& out,
+                            cnn_size_t pooling_size,
+                            cnn_size_t stride) {
+        params_.in_        = in;
+        params_.out_       = out;
+        params_.pool_size_ = pooling_size;
+        params_.stride_    = stride;
+    }
 };
 
-} // namespace tiny_cnn
+}  // namespace tiny_cnn

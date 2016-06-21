@@ -50,8 +50,8 @@ class tiny_backend : public backend {
                  std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
                  std::vector<conv_layer_worker_specific_storage>* ptr)
       : params_c_(params)
-      , conv_layer_worker_storage_(ptr),
-        copy_and_pad_input(f1)
+      , conv_layer_worker_storage_(ptr)
+      , copy_and_pad_input(f1)
       , copy_and_unpad_delta(f2)
       , backward_activation(f3) {}
 
@@ -61,11 +61,11 @@ class tiny_backend : public backend {
                  std::function<void(const vec_t&, vec_t&)> f2,
                  std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
                  std::vector<deconv_layer_worker_specific_storage>* ptr)
-      : params_d_(params),
-        deconv_layer_worker_storage_(ptr),
-        copy_and_unpad_output(f1),
-        copy_and_pad_delta(f2),
-        backward_activation(f3) {}
+      : params_d_(params)
+      , deconv_layer_worker_storage_(ptr)
+      , copy_and_unpad_output(f1)
+      , copy_and_pad_delta(f2)
+      , backward_activation(f3) {}
 
     // maxpooling
     tiny_backend(std::vector<std::vector<cnn_size_t>>* out2in,
@@ -97,11 +97,7 @@ class tiny_backend : public backend {
         std::fill(a.begin(), a.end(), float_t(0));
 
         kernels::tiny_conv2d_kernel(*params_c_,
-                                    in,
-                                    W,
-                                    bias,
-                                    a,
-                                    layer_->get_parallelize());
+            in, W, bias, a, layer_->get_parallelize());
     }
 
     void conv2d(cnn_size_t                 index,
@@ -129,12 +125,7 @@ class tiny_backend : public backend {
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         kernels::tiny_conv2d_back_kernel(*params_c_,
-                                         prev_out,
-                                         W,
-                                         dW,
-                                         db,
-                                         curr_delta,
-                                         prev_delta);
+            prev_out, W, dW, db, curr_delta, prev_delta);
 
         if (params_c_->pad_type == padding::same) {
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
@@ -153,11 +144,7 @@ class tiny_backend : public backend {
         std::fill(a.begin(), a.end(), float_t(0));
 
         kernels::tiny_deconv2d_kernel(*params_d_,
-                                      in,
-                                      W,
-                                      bias,
-                                      a,
-                                      layer_->get_parallelize());
+            in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
     }
@@ -189,13 +176,9 @@ class tiny_backend : public backend {
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         kernels::tiny_deconv2d_back_kernel(*params_d_,
-                                           prev_out,
-                                           W,
-                                           dW,
-                                           db,
-                                           curr_delta,
-                                           prev_delta);
+            prev_out, W, dW, db, curr_delta, prev_delta);
     }
+
     void matmul() {
         throw nn_error("not implemented yet.");
     }
@@ -208,11 +191,8 @@ class tiny_backend : public backend {
         std::vector<cnn_size_t>& max_idx =
             (*max_pooling_layer_worker_storage_)[index].out2inmax_;
 
-        kernels::tiny_maxpool_kernel(in,
-                                     a,
-                                     max_idx,
-                                     *out2in_,
-                                     layer_->get_parallelize());
+        kernels::tiny_maxpool_kernel(in, a,
+            max_idx, *out2in_, layer_->get_parallelize());
     }
 
     void maxpool(cnn_size_t                 index,
@@ -229,11 +209,8 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_maxpool_back_kernel(prev_delta,
-                                          curr_delta,
-                                          max_idx,
-                                          *in2out_,
-                                          layer_->get_parallelize());
+        kernels::tiny_maxpool_back_kernel(prev_delta, curr_delta,
+            max_idx, *in2out_,  layer_->get_parallelize());
     }
 
     void fully(cnn_size_t                 index,
@@ -247,11 +224,7 @@ class tiny_backend : public backend {
         CNN_UNREFERENCED_PARAMETER(index);
 
         kernels::tiny_fully_connected_kernel(*params_f_,
-                                             in,
-                                             W,
-                                             b,
-                                             a,
-                                             layer_->get_parallelize());
+            in, W, b, a, layer_->get_parallelize());
     }
 
     void fully(cnn_size_t                 index,
@@ -270,15 +243,11 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_fully_connected_back_kernel(*params_f_,
-                                                  prev_out,
-                                                  W,
-                                                  dW,
-                                                  prev_delta,
-                                                  curr_delta,
-                                                  db,
-                                                  layer_->get_parallelize());
+        kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
+            W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
     }
+
+    backend_t get_type() const { return backend_t::tiny_cnn; }
 
  private:
     /* Pointer to the convolution parameters */

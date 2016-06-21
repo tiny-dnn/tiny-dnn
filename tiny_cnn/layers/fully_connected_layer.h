@@ -49,18 +49,16 @@ public:
                           bool           has_bias = true,
                           backend_t      backend_type = backend_t::tiny_cnn,
                           backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias))
-        , backend_type_(backend_type) {
-            set_params(in_dim, out_dim, has_bias);
-            init_backend(backend_type);
+            : Base(std_input_order(has_bias)) {
+        set_params(in_dim, out_dim, has_bias);
+        init_backend(backend_type);
     }
 
     // move constructor
     fully_connected_layer(fully_connected_layer&& other)
-        : Base(std::move(other))
-        , params_(std::move(other.params_))
-        , backend_type_(std::move(other.backend_type_)) {
-            init_backend(backend_type_);
+            : Base(std::move(other))
+            , params_(std::move(other.params_)) {
+        init_backend(std::move(Base::get_backend_type()));
     }
 
     size_t fan_in_size() const override {
@@ -117,38 +115,39 @@ public:
 protected:
     fully_params params_;
 
-    /* The type of backend */
-    backend_t backend_type_;
-
     void set_params(const cnn_size_t in_size,
                     const cnn_size_t out_size,
                     bool             has_bias) {
-        params_.in_size_ = in_size;
+        params_.in_size_  = in_size;
         params_.out_size_ = out_size;
-        params_.has_bias_= has_bias;
+        params_.has_bias_ = has_bias;
     }
 
     void init_backend(backend_t backend_type) {
-        switch (backend_type) {
-            case backend_t::tiny_cnn:
-                Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    });
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>();
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::libdnn:
-                Base::backend_ = std::make_shared<core::dnn_backend>();
-                Base::backend_->set_layer(this);
-                break;
-            default:
-                throw nn_error("not supported backend type");
+        std::shared_ptr<core::backend> backend = nullptr;
+
+        // allocate new backend
+        if (backend_type == backend_t::tiny_cnn) {
+            backend = std::make_shared<core::tiny_backend>(&params_,
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                     return Base::backward_activation(p_delta, out, c_delta);
+                });
+        } else if (backend_type == backend_t::nnpack) {
+            backend = std::make_shared<core::nnp_backend>(&params_);
+        } else if (backend_type == backend_t::libdnn) {
+            backend = std::make_shared<core::dnn_backend>();
+        } else {
+            throw nn_error("Not supported backend type.");
         }
+
+        if (backend) {
+            Base::set_backend(backend);
+            Base::backend_->set_layer(this);
+            Base::backend_->set_type(backend_type);
+        } else {
+            throw nn_error("Could not allocate the backend.");
+        }     
     }
 };
 

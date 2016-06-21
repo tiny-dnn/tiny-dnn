@@ -79,12 +79,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t     h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_cnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type) {
+        : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
-            init_backend(backend_type_);
+            init_backend(backend_type);
     }
 
     /**
@@ -115,12 +115,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t     h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_cnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type)  {
+        : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
-            init_backend(backend_type_);
+            init_backend(backend_type);
     }
 
     /**
@@ -151,13 +151,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t              h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_cnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type)  {
-            params_.tbl = connection_table;
+        : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
                             out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                            w_stride, h_stride,
+                            connection_table);
+            init_backend(backend_type);
     }
 
     /**
@@ -190,34 +190,33 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t              h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_cnn,
                         backend_params b_params = backend_params())
-        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias))
-        , backend_type_(backend_type)  {
-            params_.tbl = connection_table;
+        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
                             out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                            w_stride, h_stride,
+                            connection_table);
+            init_backend(backend_type);
     }
 
     // move constructor
-    convolutional_layer(convolutional_layer&& other)
-        : Base(std::move(other))
-        , params_(std::move(other.params_))
-        , backend_type_(std::move(other.backend_type_))
-        , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
-        , conv_layer_worker_storage_(std::move(other.conv_layer_worker_storage_)) {
-            init_backend(backend_type_);
+    convolutional_layer(convolutional_layer&& other)  // NOLINT
+            : Base(std::move(other))
+            , params_(std::move(other.params_))
+            , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
+            , conv_layer_worker_storage_(
+                std::move(other.conv_layer_worker_storage_)) {
+        init_backend(std::move(Base::get_backend_type()));
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const override {
+    size_t fan_in_size() const override {
         return params_.weight.width_  *
                params_.weight.height_ * params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const override  {
+    size_t fan_out_size() const override  {
         return (params_.weight.width_  / params_.w_stride)  *
                (params_.weight.height_ / params_.h_stride) *
                 params_.out.depth_;
@@ -270,7 +269,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     }
 
     std::vector<index3d<cnn_size_t>>
-    out_shape() const override { return {params_.out, params_.out}; }
+    out_shape() const override { return { params_.out, params_.out }; }
 
     std::string layer_type() const override { return "conv"; }
 
@@ -299,7 +298,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
                 for (cnn_size_t y = 0; y < params_.weight.height_; ++y) {
                     for (cnn_size_t x = 0; x < params_.weight.width_; ++x) {
-                        idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
+                        idx = c * params_.in.depth_ + r;
+                        idx = params_.weight.get_index(x, y, idx);
                         const float_t w = W[idx];
 
                         img.at(left + x, top + y)
@@ -313,47 +313,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return img;
     }
 
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        conv_layer_worker_storage_.resize(worker_count);
-        init();
-    }
-
  private:
-    void init_backend(backend_t backend_type) {
-        switch (backend_type) {
-            case backend_t::tiny_cnn:
-                Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_pad_input(in, worker_index);
-                    },
-                    [this](const vec_t& delta, vec_t& dst) {
-                        return copy_and_unpad_delta(delta, dst);
-                    },
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &conv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_pad_input(in, worker_index);
-                    },
-                    &conv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::libdnn:
-                Base::backend_ = std::make_shared<core::dnn_backend>();
-                Base::backend_->set_layer(this);
-                break;
-            default:
-                throw nn_error("not supported backend type");
-        }
-    }
-
     void conv_set_params(const shape3d& in,
                          cnn_size_t     w_width,
                          cnn_size_t     w_height,
@@ -361,7 +321,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
                          padding        ptype,
                          bool           has_bias,
                          cnn_size_t     w_stride,
-                         cnn_size_t     h_stride) {
+                         cnn_size_t     h_stride,
+                         const connection_table& tbl = connection_table()) {
         params_.in = in;
         params_.in_padded = shape3d(in_length(in.width_, w_width, ptype),
                                     in_length(in.height_, w_height, ptype),
@@ -370,14 +331,15 @@ class convolutional_layer : public feedforward_layer<Activation> {
             shape3d(conv_out_length(in.width_, w_width, w_stride, ptype),
                     conv_out_length(in.height_, w_height, h_stride, ptype),
                     outc);
-        params_.weight = shape3d(w_width, w_height, in.depth_ * outc);
+        params_.weight   = shape3d(w_width, w_height, in.depth_ * outc);
         params_.has_bias = has_bias;
         params_.pad_type = ptype;
         params_.w_stride = w_stride;
         params_.h_stride = h_stride;
+        params_.tbl      = tbl;
     }
 
-    void init() {
+    void init_workers() {
         for (conv_layer_worker_specific_storage& cws :
                 conv_layer_worker_storage_) {
             if (params_.pad_type == padding::same) {
@@ -403,9 +365,15 @@ class convolutional_layer : public feedforward_layer<Activation> {
     static cnn_size_t conv_out_length(cnn_size_t in_length,
                                       cnn_size_t window_size,
                                       cnn_size_t stride, padding pad_type) {
-        return pad_type == padding::same ?
-               static_cast<cnn_size_t>(ceil(static_cast<float_t>(in_length) / stride)) :
-               static_cast<cnn_size_t>(ceil(static_cast<float_t>(in_length - window_size + 1) / stride));
+        float_t tmp;
+        if (pad_type == padding::same) {
+            tmp = static_cast<float_t>(in_length) / stride;
+        } else if (pad_type == padding::valid) {
+            tmp = static_cast<float_t>(in_length - window_size + 1) / stride;
+        } else {
+            throw nn_error("Not recognized pad_type.");
+        }
+        return static_cast<cnn_size_t>(ceil(tmp));
     }
 
     static cnn_size_t conv_out_dim(cnn_size_t in_width,
@@ -427,63 +395,107 @@ class convolutional_layer : public feedforward_layer<Activation> {
                conv_out_length(in_height, window_height, h_stride, pad_type);
     }
 
+    void set_worker_count(cnn_size_t worker_count) override {
+        Base::set_worker_count(worker_count);
+        conv_layer_worker_storage_.resize(worker_count);
+        init_workers();
+    }
+
     void copy_and_pad_input(const vec_t& in, int worker_index) {
-       conv_layer_worker_specific_storage& cws =
-           conv_layer_worker_storage_[worker_index];
+        conv_layer_worker_specific_storage& cws =
+            conv_layer_worker_storage_[worker_index];
 
-       vec_t* dst = &cws.prev_out_buf_;
+        vec_t* dst = &cws.prev_out_buf_;
 
-       if (params_.pad_type == padding::valid) {
-           cws.prev_out_padded_ = &in;
-       } else {
-           // make padded version in order to avoid corner-case in fprop/bprop
-           cnn_size_t idx = 0;
-           for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-               idx = params_.in_padded.get_index(
-                                   params_.weight.width_  / 2,
-                                   params_.weight.height_ / 2, c);
-               float_t *pimg = &(*dst)[idx];
-               const float_t *pin = &in[params_.in.get_index(0, 0, c)];
+        if (params_.pad_type == padding::valid) {
+            cws.prev_out_padded_ = &in;
+        } else {
+            // make padded version in order to avoid corner-case in fprop/bprop
+            cnn_size_t idx = 0;
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                idx = params_.in_padded.get_index(
+                                    params_.weight.width_  / 2,
+                                    params_.weight.height_ / 2, c);
+                float_t *pimg = &(*dst)[idx];
+                const float_t *pin = &in[params_.in.get_index(0, 0, c)];
 
-               for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                   std::copy(pin, pin + params_.in.width_, pimg);
-                   pin += params_.in.width_;
-                   pimg += params_.in_padded.width_;
-               }
-           }
-           cws.prev_out_padded_ = &cws.prev_out_buf_;
-       }
-   }
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pimg);
+                    pin += params_.in.width_;
+                    pimg += params_.in_padded.width_;
+                }
+            }
+            cws.prev_out_padded_ = &cws.prev_out_buf_;
+        }
+    }
 
-   void copy_and_unpad_delta(const vec_t& delta, vec_t& dst) {
-       if (params_.pad_type == padding::valid) {
-           dst = delta;
-       } else {
-           cnn_size_t idx = 0;
-           for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-               float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
-               idx = params_.in_padded.get_index(params_.weight.width_  / 2,
-                                                 params_.weight.height_ / 2, c);
-               const float_t *pin = &delta[idx];
+    void copy_and_unpad_delta(const vec_t& delta, vec_t& dst) {
+        if (params_.pad_type == padding::valid) {
+            dst = delta;
+        } else {
+            cnn_size_t idx = 0;
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
+                idx = params_.in_padded.get_index(params_.weight.width_  / 2,
+                                     params_.weight.height_ / 2, c);
+                const float_t *pin = &delta[idx];
 
-               for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                   std::copy(pin, pin + params_.in.width_, pdst);
-                   pdst += params_.in.width_;
-                   pin += params_.in_padded.width_;
-               }
-           }
-       }
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pdst);
+                    pdst += params_.in.width_;
+                    pin += params_.in_padded.width_;
+                }
+            }
+        }
+    }
+
+    void init_backend(const backend_t backend_type) {
+        std::shared_ptr<core::backend> backend = nullptr;
+
+        // allocate new backend
+        if (backend_type == backend_t::tiny_cnn) {
+            backend = std::make_shared<core::tiny_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_pad_input(in, worker_index);
+                },
+                [this](const vec_t& delta, vec_t& dst) {
+                    return copy_and_unpad_delta(delta, dst);
+                },
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &conv_layer_worker_storage_);
+        } else if (backend_type == backend_t::nnpack) {
+            backend = std::make_shared<core::nnp_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_pad_input(in, worker_index);
+                },
+                &conv_layer_worker_storage_);
+        } else if (backend_type == backend_t::libdnn) {
+            backend = std::make_shared<core::dnn_backend>();
+        } else {
+            throw nn_error("Not supported backend type.");
+        }
+
+        if (backend) {
+            Base::set_backend(backend);
+            Base::backend_->set_layer(this);
+            Base::backend_->set_type(backend_type);
+        } else {
+            throw nn_error("Could not allocate the backend.");
+        }
     }
 
     /* The convolution parameters */
     conv_params params_;
 
     /* The type of backend */
-    backend_t backend_type_;
+    //backend_t backend_type_;
 
     /* Workers buffers */
     vec_t prev_delta2_padded_;
     std::vector<conv_layer_worker_specific_storage> conv_layer_worker_storage_;
 };
 
-} // namespace tiny_cnn
+}  // namespace tiny_cnn
