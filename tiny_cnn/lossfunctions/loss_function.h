@@ -88,4 +88,49 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
     return grads;
 }
 
+namespace {
+    void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
+    {
+        if (sample_gradient.size() == sample_cost.size()) {
+            // @todo consider adding parallelism
+            for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+                if (sample_gradient[channel].size() == sample_cost[channel].size()) {
+                    // @todo optimize? (use AVX or so)
+                    for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
+                        sample_gradient[channel][element] *= sample_cost[channel][element];
+                    }
+                }
+            }
+        }
+    }
+}
+
+// gradient for a minibatch
+template <typename E>
+std::vector<tensor_t> gradient(const std::vector<tensor_t>& y, const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
+
+    const cnn_size_t sample_count = y.size();
+    const cnn_size_t channel_count = y[0].size();
+
+    std::vector<tensor_t> gradients(sample_count);
+ 
+    assert(y.size() == t.size());
+    assert(t_cost.empty() || t_cost.size() == t.size());
+
+    // @todo add parallelism
+    for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+        assert(y[sample].size() == channel_count);
+        assert(t[sample].size() == channel_count);
+        assert(t_cost.empty() || t_cost[sample].empty() || t_cost[sample].size() == channel_count);
+
+        gradients[sample] = gradient<E>(y[sample], t[sample]);
+
+        if (sample < t_cost.size()) {
+            apply_cost_if_defined(gradients[sample], t_cost[sample]);
+        }
+    }
+
+    return gradients;
+}
+
 } // namespace tiny_cnn

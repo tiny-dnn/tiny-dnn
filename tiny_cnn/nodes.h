@@ -67,14 +67,14 @@ class nodes {
      * @param worker_index : id of worker-task
      **/
     virtual
-    void backward(const std::vector<vec_t>& first, int worker_index) = 0;
+    void backward(const std::vector<tensor_t>& first, int worker_index) = 0;
 
     /**
      * @param first input  : data vectors
      * @param worker_index : id of worker-task
      **/
     virtual
-    std::vector<vec_t> forward(const std::vector<vec_t>& first, int worker_index) = 0; // NOLINT
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first, int worker_index) = 0; // NOLINT
 
     /**
      * update weights and clear all gradients
@@ -159,11 +159,11 @@ class nodes {
         }
     }
 
-    void label2vec(const label_t* t, int num, std::vector<vec_t> *vec) const {
+    void label2vec(const label_t* t, cnn_size_t num, std::vector<vec_t> *vec) const {
         cnn_size_t outdim = out_data_size();
 
         vec->reserve(num);
-        for (int i = 0; i < num; i++) {
+        for (cnn_size_t i = 0; i < num; i++) {
             assert(t[i] < outdim);
             vec->emplace_back(outdim, target_value_min());
             vec->back()[t[i]] = target_value_max();
@@ -181,6 +181,26 @@ class nodes {
     void push_back(std::shared_ptr<T> node) {
         own_nodes_.push_back(node);
         nodes_.push_back(own_nodes_.back().get());
+    }
+
+    // transform indexing so that it's more suitable for per-layer operations
+    // input:  [sample][channel][feature]
+    // output: [channel][sample][feature]
+    std::vector<tensor_t> reorder_for_layerwise_processing(const std::vector<tensor_t>& input) {
+        const cnn_size_t sample_count = input.size();
+        const cnn_size_t channel_count = input[0].size();
+
+        // @todo we could perhaps pass pointers to underlying vec_t objects, in order to avoid copying
+        std::vector<tensor_t> output(channel_count, tensor_t(sample_count));
+
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+            assert(input[sample].size() == channel_count);
+            for (cnn_size_t channel = 0; channel < channel_count; ++channel) {
+                output[channel][sample] = input[sample][channel];
+            }
+        }
+
+        return output;
     }
 
  protected:
@@ -207,23 +227,33 @@ class nodes {
  **/
 class sequential : public nodes {
  public:
-    void backward(const std::vector<vec_t>& first, int worker_index) override {
-        nodes_.back()->set_out_grads(&first[0], first.size(), worker_index);
+    void backward(const std::vector<tensor_t>& first, int worker_index) override {
+
+        const std::vector<tensor_t> reordered_grad = reorder_for_layerwise_processing(first);
+        assert(reordered_grad.size() == 1);
+
+        nodes_.back()->set_out_grads({ reordered_grad[0] }, worker_index);
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
             (*l)->backward(worker_index);
         }
     }
 
-    std::vector<vec_t> forward(const std::vector<vec_t>& first,
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first,
                                int worker_index) override {
-        nodes_.front()->set_in_data(&first[0], first.size(), worker_index);
+
+        const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(first);
+        assert(reordered_data.size() == 1);
+
+        nodes_.front()->set_in_data({ reordered_data[0] }, worker_index);
 
         for (auto l : nodes_) {
             l->forward(worker_index);
         }
 
-        return nodes_.back()->output(worker_index);
+        const std::vector<tensor_t> out = nodes_.back()->output(worker_index);
+
+        return normalize_out(out);
     }
 
     template <typename T>
@@ -251,7 +281,21 @@ class sequential : public nodes {
         }
     }
 
- private:
+private:
+    std::vector<tensor_t> normalize_out(const std::vector<tensor_t>& out)
+    {
+        // normalize indexing back to [sample][layer][feature]
+        std::vector<tensor_t> normalized_output;
+
+        const cnn_size_t sample_count = out[0].size();
+        normalized_output.resize(sample_count, tensor_t(1));
+
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+            normalized_output[sample][0] = out[0][sample];
+        }
+
+        return normalized_output;
+    }
 };
 
 /**
@@ -260,14 +304,20 @@ class sequential : public nodes {
  **/
 class graph : public nodes {
  public:
-    void backward(const std::vector<vec_t>& out_grad,
+    void backward(const std::vector<tensor_t>& out_grad,
                   int worker_index) override {
-        if (out_grad.size() != output_layers_.size()) {
+
+        cnn_size_t output_channel_count = out_grad[0].size();
+
+        if (output_channel_count != output_layers_.size()) {
             throw nn_error("input size mismatch");
         }
 
-        for (cnn_size_t i = 0; i < out_grad.size(); i++) {
-            output_layers_[i]->set_out_grads(&out_grad[i], 1, worker_index);
+        const std::vector<tensor_t> reordered_grad = reorder_for_layerwise_processing(out_grad);
+        assert(reordered_grad.size() == output_channel_count);
+
+        for (cnn_size_t i = 0; i < output_channel_count; i++) {
+            output_layers_[i]->set_out_grads({ reordered_grad[i] }, worker_index);
         }
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
@@ -275,14 +325,20 @@ class graph : public nodes {
         }
     }
 
-    std::vector<vec_t> forward(const std::vector<vec_t>& in_data,
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data,
                                int worker_index) {
-        if (in_data.size() != input_layers_.size()) {
+
+        cnn_size_t input_data_channel_count = in_data[0].size();
+
+        if (input_data_channel_count != input_layers_.size()) {
             throw nn_error("input size mismatch");
         }
 
-        for (cnn_size_t i = 0; i < in_data.size(); i++) {
-            input_layers_[i]->set_in_data(&in_data[i], 1, worker_index);
+        const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(in_data);
+        assert(reordered_data.size() == input_data_channel_count);
+
+        for (cnn_size_t channel_index = 0; channel_index < input_data_channel_count; channel_index++) {
+            input_layers_[channel_index]->set_in_data({ reordered_data[channel_index] }, worker_index);
         }
 
         for (auto l : nodes_) {
@@ -335,11 +391,24 @@ class graph : public nodes {
 
  private:
 
-     std::vector<vec_t> merge_outs(int worker_index) {
-         std::vector<vec_t> merged;
-         for (auto& l : output_layers_) {
-             std::vector<vec_t> out = l->output(worker_index);
-             merged.insert(merged.end(), out.begin(), out.end());
+     // normalize indexing back to [sample][layer][feature]
+     std::vector<tensor_t> merge_outs(int worker_index) {
+         std::vector<tensor_t> merged;
+         cnn_size_t output_channel_count = output_layers_.size();
+         for (cnn_size_t output_channel = 0; output_channel < output_channel_count; ++output_channel) {
+             std::vector<tensor_t> out = output_layers_[output_channel]->output(worker_index);
+
+             cnn_size_t sample_count = out[0].size();
+             if (output_channel == 0) {
+                 assert(merged.empty());
+                 merged.resize(sample_count, tensor_t(output_channel_count));
+             }
+
+             assert(merged.size() == sample_count);
+
+             for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+                 merged[sample][output_channel] = out[0][sample];
+             }
          }
          return merged;
      }

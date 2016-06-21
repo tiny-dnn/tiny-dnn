@@ -44,7 +44,7 @@ double rescale(double x) {
 
 // convert tiny_cnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
-    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
+    cv::Mat ori(static_cast<int>(img.height()), static_cast<int>(img.width()), CV_8U, &img.at(0, 0));
     cv::Mat resized;
     cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
     return resized;

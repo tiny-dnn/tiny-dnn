@@ -55,7 +55,7 @@ TEST(max_pool, forward) {
         4, 2
     };
 
-    vec_t res = l.forward({in})[0];
+    vec_t res = l.forward({ {in} })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -78,7 +78,7 @@ TEST(max_pool, forward_stride) {
         4, 3, 2
     };
 
-    vec_t res = l.forward({ in })[0];
+    vec_t res = l.forward({ { in } })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -106,8 +106,8 @@ TEST(max_pool, backward) {
         0, 0, 0, 0
     };
 
-    l.forward({in});
-    vec_t in_grad = l.backward({out_grad})[0];
+    l.forward({ {in} })[0];
+    vec_t in_grad = l.backward(std::vector<tensor_t>{ {out_grad}})[0][0];
 
     for (size_t i = 0; i < in_grad.size(); i++) {
         EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);

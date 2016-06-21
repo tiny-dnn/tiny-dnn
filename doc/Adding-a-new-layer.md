@@ -149,10 +149,10 @@ TEST(network, gradient_check_fully_connected) {
     net << fully_connected(2, 3)
         << fully_connected(3, 2);
 
-    vec_t in{ 0.5,1.0 };
-    label_t t = 1;
+    std::vector<tensor_t> in{ tensor_t{ 1, { 0.5, 1.0 } } };
+    std::vector<std::vector<label_t>> t = { std::vector<label_t>(1, {1}) };
 
-    EXPECT_TRUE(net.gradient_check<mse>(&in, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(net.gradient_check<mse>(in, t, 1e-4, GRAD_CHECK_ALL));
 }
 ```
 

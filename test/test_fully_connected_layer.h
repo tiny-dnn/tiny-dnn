@@ -108,12 +108,9 @@ TEST(fully_connected, gradient_check) {
     network<sequential> nn;
     nn << fully_connected_layer<tan_h>(50, 10);
 
-    vec_t a(50, 0.0);
-    label_t t = 9;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
 TEST(fully_connected, read_write)
@@ -136,7 +133,7 @@ TEST(fully_connected, forward)
     l.bias_init(weight_init::constant(0.5));
 
     vec_t in = {0,1,2,3};
-    vec_t out = l.forward({in})[0];
+    vec_t out = l.forward({ {in} })[0][0];
     vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
 
     for (size_t i = 0; i < out_expected.size(); i++) {
@@ -152,7 +149,7 @@ TEST(fully_connected, forward_nobias)
     l.weight_init(weight_init::constant(1.0));
 
     vec_t in = { 0,1,2,3 };
-    vec_t out = l.forward({ in })[0];
+    vec_t out = l.forward({ { in } })[0][0];
     vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
 
     for (size_t i = 0; i < out_expected.size(); i++) {
