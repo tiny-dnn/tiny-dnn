@@ -96,7 +96,9 @@ class nnp_backend : public backend {
         }
 
 #ifdef CNN_USE_NNPACK
-        copy_and_pad_input(*in_data[0], static_cast<int>(index));
+        deconv_layer_worker_specific_storage& cws =
+            (*deconv_layer_worker_storage_)[index];
+        copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
         const vec_t& W    = *in_data[1];
         const vec_t& bias = *in_data[2];
         vec_t&       a    = *out_data[1];
@@ -161,6 +163,7 @@ class nnp_backend : public backend {
 
     /* Pointers to parent class functions */
     std::function<void(const vec_t&, int)> copy_and_pad_input;
+    std::function<void(const vec_t&, vec_t&)> copy_and_pad_delta;
 };
 
 }  // namespace core

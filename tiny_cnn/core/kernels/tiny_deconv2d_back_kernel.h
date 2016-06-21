@@ -64,7 +64,7 @@ void tiny_deconv2d_back_kernel(const deconv_params& params,
                     for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                         for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
                             sum += ppw[wy * params.weight.width_ + wx] *
-                            pdelta_src[(y+wy) * params.h_stride *
+                                pdelta_src[(y+wy) * params.h_stride *
                                 params.in_.width_ + (x+wx) *
                                 params.w_stride];
                         }
@@ -83,14 +83,21 @@ void tiny_deconv2d_back_kernel(const deconv_params& params,
             for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                 for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
                     float_t dst = float_t(0);
-                    const float_t * prevo = &prev_out[params.in_.get_index(0, 0, inc)];
-                    const float_t * delta = &curr_delta[params.out_.get_index(wx, wy, outc)];
+
+                    cnn_size_t idx = 0;
+                    idx = params.in_.get_index(0, 0, inc);
+                    const float_t * prevo = &prev_out[idx];
+
+                    idx = params.out_.get_index(wx, wy, outc);
+                    const float_t * delta = &curr_delta[idx];
 
                     for (cnn_size_t y = 0; y < params.in_.height_; y++) {
                         dst += vectorize::dot(prevo + y * params.in_.width_,
                             delta + y * params.out_.width_, params.in_.width_);
                     }
-                    dW[params.weight.get_index(wx, wy, params.in_.depth_ * outc + inc)] += dst;
+
+                    idx = params.in_.depth_ * outc + inc;
+                    dW[params.weight.get_index(wx, wy, idx)] += dst;
                 }
             }
         }

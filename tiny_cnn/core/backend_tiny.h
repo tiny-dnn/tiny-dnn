@@ -55,7 +55,7 @@ class tiny_backend : public backend {
       , copy_and_unpad_delta(f2)
       , backward_activation(f3) {}
 
-    // deconvolution      
+    // deconvolution
     tiny_backend(deconv_params* params,
                  std::function<void(const vec_t&, int)> f1,
                  std::function<void(const vec_t&, vec_t&)> f2,
@@ -168,7 +168,7 @@ class tiny_backend : public backend {
                        std::vector<vec_t*>&       out_grad,
                        std::vector<vec_t*>&       in_grad) {
 
-        deconv_layer_worker_specific_storage& cws = 
+        deconv_layer_worker_specific_storage& cws =
             (*deconv_layer_worker_storage_)[index];
         if (params_d_->pad_type == padding::same)
             copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);

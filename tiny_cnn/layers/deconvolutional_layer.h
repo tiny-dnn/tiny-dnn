@@ -356,12 +356,14 @@ private:
                          cnn_size_t     w_stride,
                          cnn_size_t     h_stride) {
         params_.in_ = in;
-        params_.out_ = shape3d(deconv_out_length(in.width_, w_width, w_stride),
-                                deconv_out_length(in.height_, w_height, h_stride),
-                                outc);
-        params_.out_unpadded_ = shape3d(deconv_out_unpadded_length(in.width_, w_width, w_stride, ptype),
-                                        deconv_out_unpadded_length(in.height_, w_height, h_stride, ptype),
-                                        outc);
+        params_.out_ =
+              shape3d(deconv_out_length(in.width_, w_width, w_stride),
+                      deconv_out_length(in.height_, w_height, h_stride),
+                      outc);
+        params_.out_unpadded_ =
+              shape3d(deconv_out_unpadded_length(in.width_, w_width, w_stride, ptype),
+                      deconv_out_unpadded_length(in.height_, w_height, h_stride, ptype),
+                      outc);
         params_.weight = shape3d(w_width, w_height, in.depth_ * outc);
         params_.has_bias = has_bias;
         params_.pad_type = ptype;
@@ -449,12 +451,21 @@ private:
             cws.curr_out_unpadded_ = &out;
         } else {
             // make unpadded version in order to restore scale in fprop/bprop
+            cnn_size_t idx = 0;
             for (cnn_size_t c = 0; c < params_.out_.depth_; c++) {
                 float_t *pimg = &(*dst)[params_.out_unpadded_.get_index(0, 0, c)];
-                const float_t *pout = &out[params_.out_.get_index(params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
+                idx = params_.out_.get_index(params_.weight.width_ / 2,
+                                             params_.weight.height_ / 2, c);
+                const float_t *pout = &out[idx];
 
-                for (cnn_size_t y = params_.weight.height_ / 2; y < params_.in_.height_ - params_.weight.height_ / 2; y++, pout += params_.out_.width_, pimg += (params_.out_.width_ - params_.weight.width_ + 1)) {
-                    std::copy(pout, pout + params_.out_.width_ - params_.weight.width_ + 1, pimg);
+                for (cnn_size_t y = params_.weight.height_ / 2;
+                    y < params_.in_.height_ - params_.weight.height_ / 2;
+                    y++,
+                    pout += params_.out_.width_,
+                    pimg += (params_.out_.width_ - params_.weight.width_ + 1)) {
+                    std::copy(pout,
+                              pout + params_.out_.width_ - params_.weight.width_ + 1,
+                              pimg);
                 }
             }
             cws.curr_out_unpadded_ = &cws.curr_out_buf_;
