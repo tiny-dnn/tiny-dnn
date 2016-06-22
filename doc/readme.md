@@ -12,6 +12,12 @@ tiny-cnn is a header only, dependency free deep learning library written in C++.
     - [Cifar-10 classification](../examples/cifar10/readme.md)
     - [Importing caffe's model](../examples/caffe_converter/readme.md)
 
+## Application Links
+I'm willing to update this list if your software use tiny-cnn. Please contact me at Email(see my github profile).
+
+- [zhangqianhui/CnnForAndroid](https://github.com/zhangqianhui/CnnForAndroid) - A Vehicle Recognition Project using Convolutional Neural Network(CNN) in Android platform
+- [edgarriba/opencv_contrib](https://github.com/edgarriba/opencv_contrib) (in progress) - A new opencv's dnn module which use tiny-cnn as its backend
+
 ## Developer guides
 - [Adding a new layer](Adding-a-new-layer.md)
 
