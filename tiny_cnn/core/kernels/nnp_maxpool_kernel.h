@@ -26,95 +26,72 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/params/deconv_params.h"
-
 #ifdef CNN_USE_NNPACK
 #include "nnpack.h"
+#endif
 
 namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-/*nnp_deconvolution_algorithm nnp_algorithm() {
-    return nnp_deconvolution_algorithm_auto;
-}
+void nnp_maxpool_kernel(const maxpool_params& params,
+                        const vec_t&          in,
+                        vec_t&                a) {
+#ifdef CNN_USE_NNPACK
 
-nnp_deconvolution_kernel_transform_strategy nnp_kts() {
-    return nnp_deconvolution_kernel_transform_strategy_reuse;
-}*/
-
-void nnp_deconv2d_kernel(const deconv_params& params,
-                         const vec_t&      in,
-                         const vec_t&      W,
-                         const vec_t&      bias,
-                         vec_t&            a) {
-    // TOOD: use input config
-    /*const auto algorithm = nnp_algorithm();
-    const auto kernel_transform_strategy = nnp_kts();
-
-    const cnn_size_t input_channels = params.in_.depth_;
-    const cnn_size_t output_channels = params.out_unpadded_.depth_;
+    const cnn_size_t input_channels  = params.in_.depth_;
+    const cnn_size_t output_channels = params.out_.depth_;
 
     const nnp_size input_size = {
         static_cast<size_t>(params.in_.width_),
         static_cast<size_t>(params.in_.height_)
     };
 
-    const nnp_size kernel_size = {
-        static_cast<size_t>(params.weight.width_),
-        static_cast<size_t>(params.weight.height_)
+    const nnp_padding input_padding = {
+        static_cast<size_t>(0),  // top
+        static_cast<size_t>(0),  // right
+        static_cast<size_t>(0),  // bottom
+        static_cast<size_t>(0)   // left
     };
 
-    const float_t dx = params.in_padded.width_  - params.in_.width_;
-    const float_t dy = params.in_padded.height_ - params.in_.height_;
-
-    // we'll assume that padding is symmetric
-
-    const nnp_padding padding = {
-        static_cast<size_t>(dy/2),  // top
-        static_cast<size_t>(dx/2),  // right
-        static_cast<size_t>(dy/2),  // bottom
-        static_cast<size_t>(dx/2)   // left
+    const nnp_size pooling_size = {
+        static_cast<size_t>(params.pool_size_),
+        static_cast<size_t>(params.pool_size_)
     };
 
-    const float* input_ptr  = reinterpret_cast<const float*>(&in_);
-    const float* kernel_ptr = reinterpret_cast<const float*>(&W);
-    const float* bias_ptr   = reinterpret_cast<const float*>(&bias);
+    const nnp_size pooling_stride = {
+        static_cast<size_t>(params.stride_),
+        static_cast<size_t>(params.stride_)
+    };
 
-    float* output_ptr = reinterpret_cast<float*>(&a);
+    const float* input_ptr = reinterpret_cast<const float*>(&in[0]);
+    float*      output_ptr = reinterpret_cast<float*>(&a[0]);
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
     pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
-    nnp_profile* profile = nullptr;
-
-    nnp_status status =
-        nnp_dedeconvolution_inference(
-            algorithm,
-            kernel_transform_strategy,
+    const auto status =
+        nnp_max_pooling_output(
             input_channels,
             output_channels,
             input_size,
-            padding,
-            kernel_size,
+            input_padding,
+            pooling_size,
+            pooling_stride,
             input_ptr,
-            kernel_ptr,
-            bias_ptr,
             output_ptr,
-            threadpool,
-            profile);
+            threadpool);
 
     if (status != nnp_status_success) {
-        throw nn_error("Could not succeed with nnp_convolution_inference");
-    }*/
+        throw nn_error("Could not succeed with nnp_max_pooling_output");
+    }
 
     // TODO: embed it into a class
-    //pthreadpool_destroy(threadpool);
+    pthreadpool_destroy(threadpool);
+#endif
 }
 
 }  // namespace kernels
 }  // namespace core
 }  // namespace tiny_cnn
-
-#endif

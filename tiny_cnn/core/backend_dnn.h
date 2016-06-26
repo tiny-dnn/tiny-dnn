@@ -98,6 +98,8 @@ class dnn_backend : public backend {
                std::vector<vec_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
+
+    backend_t get_type() const { return backend_t::libdnn; }
 };
 
 }  // namespace core

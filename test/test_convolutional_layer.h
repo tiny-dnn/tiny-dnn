@@ -31,6 +31,54 @@
 
 namespace tiny_cnn {
 
+TEST(convolutional, setup_tiny) {
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::tiny_cnn);
+
+    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
+    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
+    EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
+    EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
+    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
+    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
+    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
+    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
+    EXPECT_TRUE(l.get_backend_type() == backend_t::tiny_cnn);
+}
+
+#ifdef CNN_USE_NNPACK
+TEST(convolutional, setup_nnp) {
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::nnpack);
+
+    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
+    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
+    EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
+    EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
+    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
+    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
+    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
+    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
+    EXPECT_TRUE(l.get_backend_type() == backend_t::nnpack);
+}
+#endif
+
 TEST(convolutional, fprop) {
     typedef network<sequential> CNN;
     CNN nn;
@@ -85,6 +133,64 @@ TEST(convolutional, fprop) {
         EXPECT_NEAR(0.6899745, out[8], 1E-5);
     }
 }
+
+#ifdef CNN_USE_NNPACK
+TEST(convolutional, fprop_nnp) {
+    typedef network<sequential> CNN;
+    CNN nn;
+
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, core::backend_t::nnpack);
+
+    vec_t in(25), out(18), a(18), weight(18), bias(2);
+
+    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+
+    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+    std::vector<vec_t*> in_data, out_data;
+    in_data.push_back(&in);
+    in_data.push_back(&weight);
+    in_data.push_back(&bias);
+    out_data.push_back(&out);
+    out_data.push_back(&a);
+    l.setup(false, 1);
+    {
+        l.forward_propagation(0, in_data, out_data);
+
+        for (auto o: out)
+            EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
+    }
+
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+
+    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+
+    in[0] = 3;  in[1] = 2;  in[2] = 1;  in[3] = 5; in[4] = 2;
+    in[5] = 3;  in[6] = 0;  in[7] = 2;  in[8] = 0; in[9] = 1;
+    in[10] = 0; in[11] = 6; in[12] = 1; in[13] = 1; in[14] = 10;
+    in[15] = 3; in[16] =-1; in[17] = 2; in[18] = 9; in[19] = 0;
+    in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
+
+    {
+        l.forward_propagation(0, in_data, out_data);
+
+        EXPECT_NEAR(0.4875026, out[0], 1E-5);
+        EXPECT_NEAR(0.8388910, out[1], 1E-5);
+        EXPECT_NEAR(0.8099984, out[2], 1E-5);
+        EXPECT_NEAR(0.7407749, out[3], 1E-5);
+        EXPECT_NEAR(0.5000000, out[4], 1E-5);
+        EXPECT_NEAR(0.1192029, out[5], 1E-5);
+        EXPECT_NEAR(0.5986877, out[6], 1E-5);
+        EXPECT_NEAR(0.7595109, out[7], 1E-5);
+        EXPECT_NEAR(0.6899745, out[8], 1E-5);
+    }
+}
+#endif
 
 TEST(convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;

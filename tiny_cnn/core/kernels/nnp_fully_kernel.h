@@ -26,20 +26,52 @@
 */
 #pragma once
 
+#include "tiny_cnn/core/params/fully_params.h"
+
 namespace tiny_cnn {
 namespace core {
+namespace kernels {
 
-struct maxpool_params {
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
-    size_t              pool_size_;
-    size_t              stride_;
-};
+void nnp_fully_connected_kernel(const fully_params& params,
+                                const vec_t&        in,
+                                const vec_t&        W,
+                                vec_t&              b,
+                                vec_t&              a,
+                                const bool          layer_parallelize) {
+#ifdef CNN_USE_NNPACK
+    const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
+    const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);
+    float*       output_ptr = reinterpret_cast<float*>(&a[0]);
 
-struct max_pooling_layer_worker_specific_storage {
-    /* mapping out => max_index(in) (1:1) */
-    std::vector<cnn_size_t> out2inmax_;
-};
+    // TODO: embed it into a class
+    const size_t num_mkl_threads = 1;
+    pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
+    const auto status =
+        nnp_fully_connected_inference(
+            params.in_size_,
+            params.out_size_,
+            input_ptr,
+            kernel_ptr,
+            output_ptr,
+            threadpool);
+
+     if (status != nnp_status_success) {
+        throw nn_error("Could not succeed with nnp_max_pooling_output");
+    }
+
+    // TODO: embed it into a class
+    pthreadpool_destroy(threadpool);
+
+    // TODO: find a proper way to do this
+    if (params.has_bias_) {
+        for_i(layer_parallelize, params.out_size_, [&](int i) {
+            a[i] += b[i];
+        });
+    }
+#endif
+}
+
+}  // namespace kernels
 }  // namespace core
 }  // namespace tiny_cnn

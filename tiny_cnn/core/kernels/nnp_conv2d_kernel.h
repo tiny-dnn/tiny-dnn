@@ -31,10 +31,6 @@
 #ifdef CNN_USE_NNPACK
 #include "nnpack.h"
 
-namespace tiny_cnn {
-namespace core {
-namespace kernels {
-
 nnp_convolution_algorithm nnp_algorithm() {
     return nnp_convolution_algorithm_auto;
 }
@@ -42,12 +38,18 @@ nnp_convolution_algorithm nnp_algorithm() {
 nnp_convolution_kernel_transform_strategy nnp_kts() {
     return nnp_convolution_kernel_transform_strategy_reuse;
 }
+#endif
+
+namespace tiny_cnn {
+namespace core {
+namespace kernels {
 
 void nnp_conv2d_kernel(const conv_params& params,
                        const vec_t&      in,
                        const vec_t&      W,
                        const vec_t&      bias,
                        vec_t&            a) {
+#ifdef CNN_USE_NNPACK
     // TOOD: use input config
     const auto algorithm = nnp_algorithm();
     const auto kernel_transform_strategy = nnp_kts();
@@ -77,11 +79,11 @@ void nnp_conv2d_kernel(const conv_params& params,
         static_cast<size_t>(dx/2)   // left
     };
 
-    const float* input_ptr  = reinterpret_cast<const float*>(&in);
-    const float* kernel_ptr = reinterpret_cast<const float*>(&W);
-    const float* bias_ptr   = reinterpret_cast<const float*>(&bias);
+    const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);
+    const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
+    const float* bias_ptr   = reinterpret_cast<const float*>(&bias[0]);
 
-    float* output_ptr = reinterpret_cast<float*>(&a);
+    float* output_ptr = reinterpret_cast<float*>(&a[0]);
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -111,10 +113,9 @@ void nnp_conv2d_kernel(const conv_params& params,
 
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
+#endif
 }
 
 }  // namespace kernels
 }  // namespace core
 }  // namespace tiny_cnn
-
-#endif

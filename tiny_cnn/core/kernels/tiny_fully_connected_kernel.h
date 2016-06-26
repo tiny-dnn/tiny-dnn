@@ -35,7 +35,7 @@ namespace kernels {
 void tiny_fully_connected_kernel(const fully_params& params,
                                  const vec_t&        in,
                                  const vec_t&        W,
-                                 vec_t&        b,
+                                 vec_t&              b,
                                  vec_t&              a,
                                  const bool          layer_parallelize) {
     for_i(layer_parallelize, params.out_size_, [&](int i) {
