@@ -117,7 +117,7 @@ size_t epochs = 30;
 net.fit<mse>(opt, input_data, desired_out, bacth_size, epochs);
 ```
 
-If you want to do something for each epoch / minibatch (profiling, evaluaing accuracy, saving networks, changing learning rate of optimizer, etc), you can register callbacks for this purpose.
+If you want to do something for each epoch / minibatch (profiling, evaluating accuracy, saving networks, changing learning rate of optimizer, etc), you can register callbacks for this purpose.
 
 ```cpp
 // test&save for each epoch
