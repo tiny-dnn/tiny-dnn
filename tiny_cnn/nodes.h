@@ -220,7 +220,11 @@ class sequential : public nodes {
         nodes_.front()->set_in_data(&first[0], first.size(), worker_index);
 
         for (auto l : nodes_) {
-            l->forward(worker_index);
+            if (l->get_initialize()) {
+                l->forward(worker_index);
+            } else {
+                throw nn_error("Layer " + l->layer_type() + " not initialized.");
+            }
         }
 
         return nodes_.back()->output(worker_index);

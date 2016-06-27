@@ -175,10 +175,12 @@ set(tiny_cnn_hrds
     tiny_cnn/layers/linear_layer.h
     tiny_cnn/optimizers/optimizer.h
     tiny_cnn/activations/activation_function.h
-    tiny_cnn/lossfunctions/loss_function.h)
+    tiny_cnn/lossfunctions/loss_function.h
+    tiny_cnn/models/alexnet.h)
 
 set(tiny_cnn_test_headers
     test/test_core.h
+    test/test_models.h
     test/test_average_pooling_layer.h
     test/test_convolutional_layer.h
     test/test_deconvolutional_layer.h
@@ -192,7 +194,9 @@ set(tiny_cnn_test_headers
     test/testhelper.h
     test/picotest/picotest.h)
 
+
 if(BUILD_EXAMPLES)
+    add_executable(benchmarks examples/benchmarks/main.cpp ${tiny_cnn_hdrs})
     add_executable(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
     target_link_libraries(example_mnist_train ${REQUIRED_LIBRARIES})
 

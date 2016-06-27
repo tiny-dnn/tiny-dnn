@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,25 +24,33 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_deconvolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_nodes.h"
-#include "test_core.h"
-#include "test_models.h"
+using namespace tiny_cnn;
 
-int main(void) {
-    return RUN_ALL_TESTS();
+namespace tiny_cnn {
+
+TEST(models, alexnet) {
+    models::alexnet nn("alexnet");
+ 
+    ASSERT_EQ(nn.name(), "alexnet");
+    EXPECT_EQ(nn.in_data_size(), 224*224*3);
+
+    vec_t in(nn.in_data_size());
+
+    // generate random variables
+    uniform_rand(in.begin(), in.end(), 0, 1);
+
+    // init wieghts and biases
+    nn.weight_init(weight_init::constant(2.0));
+    nn.bias_init(weight_init::constant(2.0));
+    nn.init_weight();
+
+    // predict
+    auto res = nn.predict(in);
 }
+
+} // namespace tiny-cnn

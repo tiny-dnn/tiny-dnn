@@ -71,6 +71,7 @@
 #include "tiny_cnn/io/caffe/layer_factory.h"
 #endif
 
+
 // shortcut version of layer names
 namespace tiny_cnn {
 namespace layers {
@@ -112,6 +113,8 @@ using max_unpool = tiny_cnn::max_unpooling_layer<T>;
 template <class T>
 using ave_unpool = tiny_cnn::average_unpooling_layer<T>;
 
-
 }
+
+#include "tiny_cnn/models/alexnet.h"
+
 }

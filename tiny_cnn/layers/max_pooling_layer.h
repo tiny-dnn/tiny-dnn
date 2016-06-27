@@ -110,6 +110,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             , max_pooling_layer_worker_storage_(
                 std::move(other.max_pooling_layer_worker_storage_)) {
         init_connection();
+        init_backend(std::move(Base::get_backend_type()));
     }
 
     size_t fan_in_size() const override {
