@@ -29,6 +29,7 @@
 #include "tiny_cnn/core/backend.h"
 
 #include "tiny_cnn/core/kernels/tiny_conv2d_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_quantized_conv2d_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_conv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_deconv2d_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"

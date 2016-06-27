@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -25,65 +25,15 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include <cstddef>
 
-/**
- * define if you want to use intel TBB library
- */
-//#define CNN_USE_TBB
-
-/**
- * define to enable avx vectorization
- */
-//#define CNN_USE_AVX
-
-/**
- * define to enable sse2 vectorization
- */
-//#define CNN_USE_SSE
-
-/**
- * define to enable OMP parallelization
- */
-//#define CNN_USE_OMP
-
-/**
- * define to use exceptions
- */
-#define CNN_USE_EXCEPTIONS
-
-/**
- * number of task in batch-gradient-descent.
- * @todo automatic optimization
- */
-#ifdef CNN_USE_OMP
-#define CNN_TASK_SIZE 100
-#else
-#define CNN_TASK_SIZE 8
-#endif
+#include "tiny_cnn/core/params/conv_params.h"
+#include "tiny_cnn/core/kernels/tiny_quantization_kernel.h"
 
 namespace tiny_cnn {
+namespace core {
+namespace kernels {
 
-/**
- * calculation data type
- * you can change it to float, or user defined class (fixed point,etc)
- **/
-typedef float float_t;
-typedef long long int64;
-typedef int int32;
-typedef short int16;
-typedef signed char int8;
-typedef int qint32;
-typedef short qint16;
-typedef signed char qint8;
-typedef unsigned int quint32;
-typedef unsigned short quint16;
-typedef unsigned char  quint8;
 
-/**
- * size of layer, model, data etc.
- * change to smaller type if memory footprint is severe
- **/
-typedef std::size_t cnn_size_t;
-
-}
+}  // namespace kernels
+}  // namespace core
+}  // namespace tiny_cnn
