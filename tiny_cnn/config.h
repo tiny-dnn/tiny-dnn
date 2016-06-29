@@ -59,7 +59,7 @@
 #ifdef CNN_USE_OMP
 #define CNN_TASK_SIZE 100
 #else
-#define CNN_TASK_SIZE 8
+#define CNN_TASK_SIZE 1 
 #endif
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013

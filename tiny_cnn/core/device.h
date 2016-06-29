@@ -30,6 +30,11 @@
 
 #include "tiny_cnn/core/backend.h"
 
+#ifdef CNN_USE_LIBDNN
+#include <libdnn.hpp>
+#endif
+
+
 namespace tiny_cnn {
 namespace core {
 

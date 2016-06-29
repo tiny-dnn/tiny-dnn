@@ -136,6 +136,13 @@ else((NOT USE_TBB) AND (NOT USE_OMP))
     set(USE_THREADS OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
 
+if(USE_LIBDNN)
+   find_package(Greentea REQUIRED)
+   add_definitions(-DCNN_USE_LIBDNN)
+   include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
+   set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${GREENTEA_LIBRARIES})
+endif()
+
 ####
 # Setup the compiler options
 

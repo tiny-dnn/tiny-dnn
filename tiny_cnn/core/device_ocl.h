@@ -31,10 +31,9 @@
 namespace tiny_cnn {
 namespace core {
 
-class ocl_device : public device {
+class ocl_device /*: public device*/ {
  public:
     explicit ocl_device(const int id) : device(id) {}
-
 };
 
 }  // namespace core

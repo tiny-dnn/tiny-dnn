@@ -40,11 +40,9 @@ TEST(core, session) {
 }
 
 TEST(core, devices) {
-    core::cpu_device my_cpu_device(1);
-    core::ocl_device my_ocl_device(2);
+    core::device my_device(0, 0, core::backend_t::libdnn);
 
-    ASSERT_EQ(my_cpu_device.get_id(), 1);
-    ASSERT_EQ(my_ocl_device.get_id(), 2);
+    ASSERT_EQ(my_device.get_id(), 0);
 }
 
 TEST(core, backends) {
