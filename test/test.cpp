@@ -43,6 +43,7 @@ using namespace tiny_cnn::activation;
 #include "test_core.h"
 #include "test_models.h"
 #include "test_quantization.h"
+#include "test_quantized_convolutional_layer.h"
 
 int main(void) {
     return RUN_ALL_TESTS();

@@ -86,6 +86,12 @@ class nnp_backend : public backend {
         kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
     }
 
+    void q_conv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("NNPACK haven't implemented.");
+    }
+
     void conv2d(cnn_size_t                 index,
                 const std::vector<vec_t*>& in_data,
                 const std::vector<vec_t*>& out_data,

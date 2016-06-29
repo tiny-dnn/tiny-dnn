@@ -38,6 +38,7 @@
 #include "tiny_cnn/layers/input_layer.h"
 #include "tiny_cnn/layers/feedforward_layer.h"
 #include "tiny_cnn/layers/convolutional_layer.h"
+#include "tiny_cnn/layers/quantized_convolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
 #include "tiny_cnn/layers/max_pooling_layer.h"
@@ -78,6 +79,9 @@ namespace layers {
 
 template <class T>
 using conv = tiny_cnn::convolutional_layer<T>;
+
+template <class T>
+using q_conv = tiny_cnn::quantized_convolutional_layer<T>;
 
 template <class T>
 using max_pool = tiny_cnn::max_pooling_layer<T>;
