@@ -40,7 +40,55 @@ void libdnn_conv2d_kernel(const conv_params& params,
                        const vec_t&      W,
                        const vec_t&      bias,
                        vec_t&            a) {
+    // instantiate pointer to device
+    std::shared_ptr<greentea::device> dev_ptr =
+        std::make_shared<greentea::device>(
+            0, 0, greentea::Backend::BACKEND_OpenCL);
+ 
+    // setup libdnn params
+    greentea::LibDNNConfig config;
 
+    config.dev_ptr = dev_ptr.get();
+
+    config.in_shape[0] = params.in.width_;
+    config.in_shape[1] = params.in.height_;
+    config.in_shape[2] = params.in.depth_;
+ 
+    config.out_shape[0] = params.out.width_;
+    config.out_shape[1] = params.out.height_;
+    config.out_shape[2] = params.out.depth_;
+
+    config.kernel[0] = params.weight.width_;
+    // config.kernel[1] = params.weight.height_;
+
+    // const float_t dx = params.in_padded.width_  - params.in.width_;
+    const float_t dy = params.in_padded.height_ - params.in.height_;
+
+    config.pad[0] = static_cast<size_t>(dy/2);
+    // config.pad[1] = static_cast<size_t>(dx/2);
+    
+    config.stride[0] = params.w_stride;
+    // config.stride[1] = params.h_stride;
+
+    config.bias_term = params.has_bias;
+
+    config.fast_unsafe_math = false;
+    config.weights_backward = false;
+    config.bias_backward    = false;
+
+    // call libdnn forward
+    greentea::LibDNNConv<float_t> kernel(config);
+
+    const float_t* input_ptr   = reinterpret_cast<const float_t*>(&in[0]);
+    const float_t* weights_ptr = reinterpret_cast<const float_t*>(&W[0]);
+    const float_t* bias_ptr    = reinterpret_cast<const float_t*>(&bias[0]);
+
+    float_t* output_ptr = reinterpret_cast<float_t*>(&a[0]);
+    
+    const int batch_sz = 1;
+    
+    // call libdnn kernel
+    kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
 }
 
 }  // namespace kernels

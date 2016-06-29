@@ -464,7 +464,11 @@ private:
                 },
                 &cws_);
         } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
+            backend = std::make_shared<core::dnn_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_pad_input(in, worker_index);
+                },
+                &conv_layer_worker_storage_);
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,
