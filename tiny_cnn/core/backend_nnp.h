@@ -55,7 +55,7 @@ class nnp_backend : public backend {
     // maxpool
     explicit nnp_backend(maxpool_params* params)
         : params_m_(params) { init_nnp_engine(); }
-    
+
     // fully_connected
     explicit nnp_backend(fully_params* params)
         : params_f_(params) { init_nnp_engine(); }

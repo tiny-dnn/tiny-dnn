@@ -64,13 +64,13 @@ int64_t float_to_quantized_unclamped(float input, float range_min, float range_m
 // any over or underflows.
 template <class T>
 T float_to_quantized(float input, float range_min, float range_max) {
-  int64 quantized = float_to_quantized_unclamped<T>(input, range_min, range_max);
+  int64_t quantized = float_to_quantized_unclamped<T>(input, range_min, range_max);
   const int64_t lowest_quantized =
       static_cast<int64>(lowest<T>());
   const int64_t highest_quantized =
       static_cast<int64>(highest<T>());
-  quantized = std::max(quantized, lowest_quantized);
-  quantized = std::min(quantized, highest_quantized);
+  quantized = std::max<int64_t>(quantized, lowest_quantized);
+  quantized = std::min<int64_t>(quantized, highest_quantized);
   return static_cast<T>(static_cast<int32>(quantized));
 }
 
@@ -170,8 +170,8 @@ inline void requantize_many_in_new_range<int32_t, uint8_t>(
                          : (fp_value - rounding_delta)) >>
         fp_shift;
     int64_t quantized_int64 = (round_intermediate - output_offset_fp);
-    quantized_int64 = std::max(quantized_int64, 0LL);
-    quantized_int64 = std::min(quantized_int64, 255LL);
+    quantized_int64 = std::max<int64_t>(quantized_int64, 0LL);
+    quantized_int64 = std::min<int64_t>(quantized_int64, 255LL);
     output[index] = static_cast<uint8_t>(static_cast<int32_t>(quantized_int64));
   }
 }

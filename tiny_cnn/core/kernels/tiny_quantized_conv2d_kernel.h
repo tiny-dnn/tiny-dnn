@@ -123,8 +123,8 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                     const int32_t output =
                         ((((sum + offset_output) * mult_output) + rounding) >>
                          shift_output);
-                    const int32_t top_clamped_output = std::min(output, highest_);
-                    const int32_t clamped_output = std::max(top_clamped_output, lowest_);
+                    const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
+                    const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
                     pa_quantized[y * params.out.width_ + x] += output;
                     // pa_quantized[y * params.out.width_ + x] += clamped_output;
                 }
