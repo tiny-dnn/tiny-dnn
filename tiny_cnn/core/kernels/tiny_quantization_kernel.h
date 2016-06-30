@@ -48,7 +48,7 @@ int64_t float_to_quantized_unclamped(float input, float range_min, float range_m
     return 0;
   }
   const int number_of_bits = sizeof(T) * 8;
-  const int64 number_of_steps = static_cast<int64>(1) << number_of_bits;
+  const int64_t number_of_steps = static_cast<int64_t>(1) << number_of_bits;
   const double range_adjust = (number_of_steps / (number_of_steps - 1.0));
   const double range = ((range_max - range_min) * range_adjust);
   const double range_scale = (number_of_steps / range);
@@ -66,12 +66,12 @@ template <class T>
 T float_to_quantized(float input, float range_min, float range_max) {
   int64_t quantized = float_to_quantized_unclamped<T>(input, range_min, range_max);
   const int64_t lowest_quantized =
-      static_cast<int64>(lowest<T>());
+      static_cast<int64_t>(lowest<T>());
   const int64_t highest_quantized =
-      static_cast<int64>(highest<T>());
+      static_cast<int64_t>(highest<T>());
   quantized = std::max<int64_t>(quantized, lowest_quantized);
   quantized = std::min<int64_t>(quantized, highest_quantized);
-  return static_cast<T>(static_cast<int32>(quantized));
+  return static_cast<T>(static_cast<int32_t>(quantized));
 }
 
 template <class T>
@@ -80,12 +80,12 @@ float quantized_to_float(T input, float range_min, float range_max) {
     return range_min;
   }
   const int number_of_bits = sizeof(T) * 8;
-  const int64_t number_of_steps = static_cast<int64>(1) << number_of_bits;
+  const int64_t number_of_steps = static_cast<int64_t>(1) << number_of_bits;
   const double range_adjust = (number_of_steps / (number_of_steps - 1.0));
   const double range = ((range_max - range_min) * range_adjust);
   const double range_scale = (range / number_of_steps);
   const int64_t lowest_quantized =
-      static_cast<int64>(lowest<T>());
+      static_cast<int64_t>(lowest<T>());
   const double offset_input = static_cast<double>(input) - lowest_quantized;
   const double result = range_min + (offset_input * range_scale);
   return static_cast<float>(result);
@@ -93,8 +93,8 @@ float quantized_to_float(T input, float range_min, float range_max) {
 
 template <class T>
 float float_for_one_quantized_level(float range_min, float range_max) {
-  const int64_t highest_ = static_cast<int64>(highest<T>());
-  const int64_t lowest_ = static_cast<int64>(lowest<T>());
+  const int64_t highest_ = static_cast<int64_t>(highest<T>());
+  const int64_t lowest_ = static_cast<int64_t>(lowest<T>());
   const float float_for_one_quantized_level =
       (range_max - range_min) / (highest_ - lowest_);
   return float_for_one_quantized_level;
@@ -109,8 +109,8 @@ void quantization_range_for_multiplication(float min_a, float max_a, float min_b
   const float b_float_for_one_quant_level =
       float_for_one_quantized_level<T2>(min_b, max_b);
 
-  const int64_t c_highest = static_cast<int64>(highest<T3>());
-  const int64_t c_lowest = static_cast<int64>(lowest<T3>());
+  const int64_t c_highest = static_cast<int64_t>(highest<T3>());
+  const int64_t c_lowest = static_cast<int64_t>(lowest<T3>());
   const float c_float_for_one_quant_level =
       a_float_for_one_quant_level * b_float_for_one_quant_level;
 

@@ -271,7 +271,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     std::vector<index3d<cnn_size_t>>
     out_shape() const override { return { params_.out, params_.out }; }
 
-    std::string layer_type() const override { return "conv"; }
+    std::string layer_type() const override { return "q_conv"; }
 
     image<> weight_to_image() const {
         image<> img;

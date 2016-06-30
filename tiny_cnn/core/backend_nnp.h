@@ -89,7 +89,7 @@ class nnp_backend : public backend {
     void q_conv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
-        throw nn_error("NNPACK haven't implemented.");
+        throw nn_error("not implemented yet.");
     }
 
     void conv2d(cnn_size_t                 index,
@@ -103,25 +103,12 @@ class nnp_backend : public backend {
     void deconv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
-        /*if (!params_d_->has_bias) {
-            throw nn_error("NNPACK Convolution requires a bias term.");
-        }
+    }
 
-        if (params_d_->w_stride != 1 || params_d_->h_stride != 1) {
-            throw nn_error("NNPACK Convolution requires stride 1.");
-        }
-
-        deconv_layer_worker_specific_storage& cws =
-            (*deconv_layer_worker_storage_)[index];
-        copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]); //  *in_grad[0] does not exist here!
-        const vec_t& W    = *in_data[1];
-        const vec_t& bias = *in_data[2];
-        vec_t&       a    = *out_data[1];
-        const vec_t &in   = *((*deconv_layer_worker_storage_)[index].prev_out_); // input // NOLINT
-
-        std::fill(a.begin(), a.end(), float_t(0));
-
-        kernels::nnp_deconv2d_kernel(*params_d_, in, W, bias, a);*/
+    void q_deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
     }
 
     void deconv2d(cnn_size_t                 index,

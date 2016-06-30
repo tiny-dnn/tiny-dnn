@@ -33,9 +33,6 @@
 #include "tiny_cnn/core/backend_tiny.h"
 #include "tiny_cnn/core/backend_nnp.h"
 #include "tiny_cnn/core/backend_dnn.h"
-#ifdef CNN_USE_AVX
-#include "tiny_cnn/core/backend_avx.h"
-#endif
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -51,7 +48,7 @@ namespace tiny_cnn {
  * take input as two-dimensional *image* and applying filtering operation.
  **/
 template<typename Activation = activation::identity>
-class deconvolutional_layer : public feedforward_layer<Activation> {
+class quantized_deconvolutional_layer : public feedforward_layer<Activation> {
 public:
     typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
@@ -71,7 +68,7 @@ public:
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    deconvolutional_layer(cnn_size_t     in_width,
+    quantized_deconvolutional_layer(cnn_size_t     in_width,
                           cnn_size_t     in_height,
                           cnn_size_t     window_size,
                           cnn_size_t     in_channels,
@@ -106,7 +103,7 @@ public:
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    deconvolutional_layer(cnn_size_t     in_width,
+    quantized_deconvolutional_layer(cnn_size_t     in_width,
                           cnn_size_t     in_height,
                           cnn_size_t     window_width,
                           cnn_size_t     window_height,
@@ -142,7 +139,7 @@ public:
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    deconvolutional_layer(cnn_size_t              in_width,
+    quantized_deconvolutional_layer(cnn_size_t              in_width,
                           cnn_size_t              in_height,
                           cnn_size_t              window_size,
                           cnn_size_t              in_channels,
@@ -180,7 +177,7 @@ public:
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    deconvolutional_layer(cnn_size_t              in_width,
+    quantized_deconvolutional_layer(cnn_size_t              in_width,
                           cnn_size_t              in_height,
                           cnn_size_t              window_width,
                           cnn_size_t              window_height,
@@ -204,7 +201,7 @@ public:
     }
 
     // move constructor
-    deconvolutional_layer(deconvolutional_layer&& other)
+    quantized_deconvolutional_layer(quantized_deconvolutional_layer&& other)
         : Base(std::move(other))
         , params_(std::move(other.params_))
         , backend_type_(std::move(other.backend_type_))
@@ -231,7 +228,7 @@ public:
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>&       out_data) {
         // launch deconvolutional kernel
-        Base::backend_->deconv2d(worker_index, in_data, out_data);
+        Base::backend_->q_deconv2d(worker_index, in_data, out_data);
 
         // activations
         vec_t& out     = *out_data[0];
@@ -272,7 +269,7 @@ public:
         return {params_.out_unpadded, params_.out_unpadded};
     }
 
-    std::string layer_type() const override { return "deconv"; }
+    std::string layer_type() const override { return "q_deconv"; }
 
     image<> weightto_image() const {
         image<> img;
@@ -321,49 +318,36 @@ public:
 
 private:
     void init_backend(backend_t backend_type) {
-        switch (backend_type) {
-            case backend_t::tiny_cnn:
-                Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_unpad_output(in, worker_index);
-                    },
-                    [this](const vec_t& delta, vec_t& dst) {
-                        return copy_and_pad_delta(delta, dst);
-                    },
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &deconv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>(&params_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::libdnn:
-                Base::backend_ = std::make_shared<core::dnn_backend>();
-                Base::backend_->set_layer(this);
-                break;
-#ifdef CNN_USE_AVX
-            case backend_t::avx:
-                Base::backend_ = std::make_shared<core::avx_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_unpad_output(in, worker_index);
-                    },
-                    [this](const vec_t& delta, vec_t& dst) {
-                        return copy_and_pad_delta(delta, dst);
-                    },
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &deconv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-#endif
-            default:
-                throw nn_error("not supported backend type");
+        std::shared_ptr<core::backend> backend = nullptr;
+
+        // allocate new backend
+        if (backend_type == backend_t::tiny_cnn) {
+            backend = std::make_shared<core::tiny_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_unpad_output(in, worker_index);
+                },
+                [this](const vec_t& delta, vec_t& dst) {
+                    return copy_and_pad_delta(delta, dst);
+                },
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &deconv_layer_worker_storage_);
+        } else if (backend_type == backend_t::nnpack) {
+            throw nn_error("not implemented.");
+        } else if (backend_type == backend_t::libdnn) {
+            backend = std::make_shared<core::dnn_backend>();
+        } else {
+            throw nn_error("Not supported backend type.");
+        }
+
+        if (backend) {
+            Base::set_backend(backend);
+            Base::backend_->set_layer(this);
+            Base::backend_->set_type(backend_type);
+        } else {
+            throw nn_error("Could not allocate the backend.");
         }
     }
 

@@ -39,6 +39,8 @@
 #include "tiny_cnn/layers/feedforward_layer.h"
 #include "tiny_cnn/layers/convolutional_layer.h"
 #include "tiny_cnn/layers/quantized_convolutional_layer.h"
+#include "tiny_cnn/layers/deconvolutional_layer.h"
+#include "tiny_cnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
 #include "tiny_cnn/layers/max_pooling_layer.h"
@@ -48,7 +50,6 @@
 #include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/arithmetic_layer.h"
 #include "tiny_cnn/layers/concat_layer.h"
-#include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/max_unpooling_layer.h"
 #include "tiny_cnn/layers/average_unpooling_layer.h"
 

@@ -48,7 +48,7 @@ class dnn_backend : public backend {
     void q_conv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
-        throw nn_error("NNPACK haven't implemented.");
+        throw nn_error("not implemented yet.");
     }
 
     void conv2d(cnn_size_t                 index,
@@ -60,6 +60,12 @@ class dnn_backend : public backend {
     }
 
     void deconv2d(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void q_deconv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
         throw nn_error("not implemented yet.");

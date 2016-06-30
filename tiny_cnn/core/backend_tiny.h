@@ -32,6 +32,7 @@
 #include "tiny_cnn/core/kernels/tiny_quantized_conv2d_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_conv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_deconv2d_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_quantized_deconv2d_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_fully_connected_kernel.h"
@@ -101,6 +102,7 @@ class tiny_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
     }
 
+    // quantized convolution
     void q_conv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
@@ -160,6 +162,24 @@ class tiny_backend : public backend {
         std::fill(a.begin(), a.end(), float_t(0));
 
         kernels::tiny_deconv2d_kernel(*params_d_,
+            in, W, bias, a, layer_->get_parallelize());
+
+        copy_and_unpad_output(a, static_cast<int>(index));
+    }
+
+    // quantized deconvolution
+    void q_deconv2d(cnn_size_t        index,
+        const std::vector<vec_t*>&  in_data,
+        std::vector<vec_t*>&        out_data) {
+        (*deconv_layer_worker_storage_)[index].prev_out_ = in_data[0];
+        const vec_t& W   = *in_data[1];
+        const vec_t& bias = *in_data[2];
+        vec_t&       a   = *out_data[1];
+        const vec_t &in  = *in_data[0]; // input
+
+        std::fill(a.begin(), a.end(), float_t(0));
+
+        kernels::tiny_quantized_deconv2d_kernel(*params_d_,
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));

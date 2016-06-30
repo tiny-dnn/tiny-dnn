@@ -26,14 +26,14 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/params/conv_params.h"
+#include "tiny_cnn/core/params/deconv_params.h"
 #include "tiny_cnn/core/kernels/tiny_quantization_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void tiny_quantized_conv2d_kernel(const conv_params& params,
+void tiny_quantized_deconv2d_kernel(const deconv_params& params,
                         const vec_t&       in,
                         const vec_t&       W,
                         const vec_t&       bias,
@@ -43,8 +43,8 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     float min_input((&in[0])[0]);
     float max_input((&in[0])[0]);
     for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
-        for (cnn_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
-            cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
+        for (cnn_size_t ins = 0; ins < params.in.height_*params.in.height_; ins++) {
+            cnn_size_t idx = params.in.get_index(0, 0, inc);
             min_input = std::min(min_input, (&in[idx])[ins]);
             max_input = std::max(max_input, (&in[idx])[ins]);
         }
@@ -54,9 +54,9 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     // filter quantization
     float min_filter((&W[0])[0]);
     float max_filter((&W[0])[0]);
-    for (cnn_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
+    for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
-            cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
+            cnn_size_t idx = params.in.get_index(0, 0, inc);
             min_filter = std::min(min_filter, (&W[idx])[ins]);
             max_filter = std::max(max_filter, (&W[idx])[ins]);
         }
@@ -96,35 +96,38 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
             idx = params.weight.get_index(0, 0, idx);
             const uint8_t *pw = &W_quantized[idx];
 
-            idx = params.in_padded.get_index(0, 0, inc);
+            idx = params.in.get_index(0, 0, inc);
             const uint8_t *pi = &in_quantized[idx];
 
             idx = params.out.get_index(0, 0, o);
             int32_t *pa_quantized = &a_quantized[idx];
 
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
+            for (cnn_size_t y = 0; y < params.in.height_; y++) {
+                for (cnn_size_t x = 0; x < params.in.width_; x++) {
                     const uint8_t * ppw = pw;
-                    const uint8_t * ppi = pi + params.in_padded.width_ *
-                                        (y * params.h_stride) +
-                                         x * params.w_stride;
-                    int32_t sum = 0;
-
+                    const uint8_t * ppi = pi + y * params.in.width_ + x;
                     // should be optimized for small kernel(3x3,5x5)
                     for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                         for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
-                            idx = wy * params.in_padded.width_ + wx;
-                            sum += (static_cast<int32_t>(*ppw++) - offset_filter)
-                                    * (static_cast<int32_t>(ppi[idx]) - offset_input);
+                            pa_quantized[(y+wy) * params.h_stride *
+                                    params.out.width_ + (x+wx) *
+                                    params.w_stride] += static_cast<int32_t>(ppw[wy *
+                                    params.weight.width_ + wx] - offset_filter) *
+                                    static_cast<int32_t>(*ppi - offset_input);
                         }
                     }
+                }
+            }
+
+            // here we can consider whether to choose the clamped_output or not;
+            for (cnn_size_t y = 0; y < params.out.height_; y++) {
+                for (cnn_size_t x = 0; x < params.out.width_; x++) {
                     const int32_t output =
-                        ((((sum + offset_output) * mult_output) + rounding) >>
+                        ((((pa_quantized[y * params.out.width_ + x] + offset_output) * mult_output) + rounding) >>
                          shift_output);
                     const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
                     const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
-                    pa_quantized[y * params.out.width_ + x] += output;
-                    // here we can consider whether to choose the clamped_output or not;
+                    // pa_quantized[y * params.out.width_ + x] += output;
                 }
             }
         }

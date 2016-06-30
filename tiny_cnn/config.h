@@ -69,16 +69,6 @@ namespace tiny_cnn {
  * you can change it to float, or user defined class (fixed point,etc)
  **/
 typedef float float_t;
-typedef long long int64;
-typedef int int32;
-typedef short int16;
-typedef signed char int8;
-typedef int qint32;
-typedef short qint16;
-typedef signed char qint8;
-typedef unsigned int quint32;
-typedef unsigned short quint16;
-typedef unsigned char  quint8;
 
 /**
  * size of layer, model, data etc.

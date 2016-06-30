@@ -69,11 +69,15 @@ class backend {
                           const std::vector<vec_t*>& in_data,
                           std::vector<vec_t*>&       out_data) = 0;
 
+    virtual void q_deconv2d(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          std::vector<vec_t*>&       out_data) = 0;
+
     virtual void deconv2d(cnn_size_t                 index,
-                               const std::vector<vec_t*>& in_data,
-                               const std::vector<vec_t*>& out_data,
-                               std::vector<vec_t*>&       out_grad,
-                               std::vector<vec_t*>&       in_grad) = 0;
+                           const std::vector<vec_t*>& in_data,
+                           const std::vector<vec_t*>& out_data,
+                           std::vector<vec_t*>&       out_grad,
+                           std::vector<vec_t*>&       in_grad) = 0;
 
     virtual void matmul() = 0;
 
