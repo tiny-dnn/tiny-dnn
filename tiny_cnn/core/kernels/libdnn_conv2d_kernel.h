@@ -41,22 +41,29 @@ void libdnn_conv2d_kernel(const conv_params& params,
                        const vec_t&      bias,
                        vec_t&            a) {
     // instantiate pointer to device
+    const int id = 0;
+    const int list_id = 0;
+
     std::shared_ptr<greentea::device> dev_ptr =
         std::make_shared<greentea::device>(
-            0, 0, greentea::Backend::BACKEND_OpenCL);
+            id, list_id, greentea::Backend::BACKEND_OpenCL);
+
+    //viennacl::ocl::context &ctx = viennacl::ocl::get_context(id);
+    //dev_ptr->setuViennaCLContext(id, ctx, ctx.devices()[0], ctx.get_queue().handle().get());
+    dev_ptr->Init();
  
     // setup libdnn params
     greentea::LibDNNConfig config;
 
     config.dev_ptr = dev_ptr.get();
 
-    config.in_shape[0] = params.in.width_;
+    config.in_shape[0] = params.in.depth_;
     config.in_shape[1] = params.in.height_;
-    config.in_shape[2] = params.in.depth_;
+    config.in_shape[2] = params.in.width_;
  
-    config.out_shape[0] = params.out.width_;
+    config.out_shape[0] = params.out.depth_;
     config.out_shape[1] = params.out.height_;
-    config.out_shape[2] = params.out.depth_;
+    config.out_shape[2] = params.out.width_;
 
     config.kernel[0] = params.weight.width_;
     // config.kernel[1] = params.weight.height_;
