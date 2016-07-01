@@ -95,6 +95,10 @@ class backend {
                        const std::vector<vec_t*>& in_data,
                        std::vector<vec_t*>&       out_data) = 0;
 
+    virtual void q_fully(cnn_size_t                 index,
+                       const std::vector<vec_t*>& in_data,
+                       std::vector<vec_t*>&       out_data) = 0;
+
     virtual void fully(cnn_size_t                 index,
                        const std::vector<vec_t*>& in_data,
                        const std::vector<vec_t*>& out_data,

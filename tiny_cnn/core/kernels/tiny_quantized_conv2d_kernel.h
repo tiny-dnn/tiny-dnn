@@ -61,6 +61,10 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
             max_filter = std::max(max_filter, (&W[idx])[ins]);
         }
     }
+    if (min_filter == max_filter) {
+      max_filter = W[0] + 1e-2f;
+      min_filter = W[0] - 1e-2f;
+    }
     std::vector<uint8_t> W_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
 
@@ -118,13 +122,13 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                                     * (static_cast<int32_t>(ppi[idx]) - offset_input);
                         }
                     }
+                    // here we can consider whether to choose the clamped_output or not;
                     const int32_t output =
                         ((((sum + offset_output) * mult_output) + rounding) >>
                          shift_output);
                     const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
                     const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
                     pa_quantized[y * params.out.width_ + x] += output;
-                    // here we can consider whether to choose the clamped_output or not;
                 }
             }
         }

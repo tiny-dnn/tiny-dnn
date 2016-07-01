@@ -61,6 +61,10 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
             max_filter = std::max(max_filter, (&W[idx])[ins]);
         }
     }
+    if (min_filter == max_filter) {
+      max_filter = W[0] + 1e-2f;
+      min_filter = W[0] - 1e-2f;
+    }
     std::vector<uint8_t> W_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
 

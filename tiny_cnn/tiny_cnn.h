@@ -42,6 +42,7 @@
 #include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
+#include "tiny_cnn/layers/quantized_fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
 #include "tiny_cnn/layers/max_pooling_layer.h"
 #include "tiny_cnn/layers/linear_layer.h"

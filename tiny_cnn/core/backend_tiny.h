@@ -36,6 +36,7 @@
 #include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
 #include "tiny_cnn/core/kernels/tiny_fully_connected_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_quantized_fully_connected_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
@@ -260,6 +261,20 @@ class tiny_backend : public backend {
         CNN_UNREFERENCED_PARAMETER(index);
 
         kernels::tiny_fully_connected_kernel(*params_f_,
+            in, W, b, a, layer_->get_parallelize());
+    }
+
+    void q_fully(cnn_size_t                 index,
+               const std::vector<vec_t*>& in_data,
+               std::vector<vec_t*>&       out_data) {
+        const vec_t& in  = *in_data[0];
+        const vec_t& W   = *in_data[1];
+        vec_t&       b   = *in_data[2];
+        vec_t&       a   = *out_data[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        kernels::tiny_quantized_fully_connected_kernel(*params_f_,
             in, W, b, a, layer_->get_parallelize());
     }
 
