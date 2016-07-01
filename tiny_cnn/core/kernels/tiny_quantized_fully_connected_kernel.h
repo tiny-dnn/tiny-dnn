@@ -93,11 +93,11 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
 
+    if (params.has_bias_) {
     for_i(layer_parallelize, params.out_size_, [&](int i) {
-        if (params.has_bias_) {
             a[i] += b[i];
-        }
-    });
+        });
+    }
 }
 
 }  // namespace kernels

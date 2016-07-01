@@ -250,8 +250,8 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Templates/${cmake_conf_file}.in"
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_file}"
-    PATH_VARS include_install_dir_full 
-    INSTALL_DESTINATION ${config_install_dir}) 
+    PATH_VARS include_install_dir_full
+    INSTALL_DESTINATION ${config_install_dir})
 
 write_basic_package_version_file(
     ${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}
@@ -272,7 +272,7 @@ install(EXPORT      ${targets_export_name}
         DESTINATION ${config_install_dir})
 
 # Install config files
-install(FILES 
+install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_file}"
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"

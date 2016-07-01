@@ -30,7 +30,7 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-static void construct_net(network<sequential>& nn) {
+void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -45,24 +45,17 @@ static void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
-    core::backend_t backend_type = core::backend_t::tiny_cnn;
-
     // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
-            padding::valid, true, 1, 1, backend_type)
+    nn << quantized_convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
        << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-in
-            connection_table(tbl, 6, 16),
-            padding::valid, true, 1, 1, backend_type)
+       << quantized_convolutional_layer<tan_h>(14, 14, 5, 6, 16,
+            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
        << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
-            padding::valid, true, 1, 1, backend_type)
-       << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
-            true, backend_type)
-    ;
+       << quantized_convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
+       << quantized_fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
 }
 
-static void train_lenet(const std::string& data_dir_path) {
+void train_lenet(std::string data_dir_path) {
     // specify loss-function and learning strategy
     network<sequential> nn;
     adagrad optimizer;
@@ -86,12 +79,12 @@ static void train_lenet(const std::string& data_dir_path) {
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp((unsigned long)train_images.size());
+    progress_display disp(train_images.size());
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
 
-    optimizer.alpha *= tiny_cnn::float_t(std::sqrt(minibatch_size));
+    optimizer.alpha *= std::sqrt(minibatch_size);
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -99,7 +92,7 @@ static void train_lenet(const std::string& data_dir_path) {
         tiny_cnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart((unsigned long)train_images.size());
+        disp.restart(train_images.size());
         t.restart();
     };
 
@@ -128,5 +121,4 @@ int main(int argc, char **argv) {
         return -1;
     }
     train_lenet(argv[1]);
-    return 0;
 }

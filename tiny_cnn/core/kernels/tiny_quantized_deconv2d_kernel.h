@@ -113,9 +113,9 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
                     // should be optimized for small kernel(3x3,5x5)
                     for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                         for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
-                            pa_quantized[(y+wy) * params.h_stride *
-                                    params.out.width_ + (x+wx) *
-                                    params.w_stride] += static_cast<int32_t>(ppw[wy *
+                            pa_quantized[(y * params.h_stride + wy) *
+                                    params.out.width_ + (x *
+                                    params.w_stride + wx)] += static_cast<int32_t>(ppw[wy *
                                     params.weight.width_ + wx] - offset_filter) *
                                     static_cast<int32_t>(*ppi - offset_input);
                         }
@@ -139,13 +139,13 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
 
-    for_i(layer_parallelize, params.out.depth_, [&](int o) {
-        if (params.has_bias) {
+    if (params.has_bias) {
+        for_i(layer_parallelize, params.out.depth_, [&](int o) {
             float_t * pa  = &a[params.out.get_index(0, 0, o)];
             float_t * paa = pa + params.out.width_ * params.out.height_;
             std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
-        }
-    });
+        });
+    }
 }
 
 }  // namespace kernels

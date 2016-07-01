@@ -136,13 +136,13 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
 
-    for_i(layer_parallelize, params.out.depth_, [&](int o) {
-        if (params.has_bias) {
+    if (params.has_bias) {
+        for_i(layer_parallelize, params.out.depth_, [&](int o) {
             float_t * pa  = &a[params.out.get_index(0, 0, o)];
             float_t * paa = pa + params.out.width_ * params.out.height_;
             std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
-        }
-    });
+        });
+    }
 }
 
 }  // namespace kernels
