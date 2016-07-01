@@ -1,326 +1,305 @@
-#Command line options
-#-DUSE_TBB=ON/OFF  (default off)
-#-DUSE_OMP=ON/OFF  (default off)
-#-DUSE_SSE=ON/OFF  (default on)
-#-DUSE_AVX=ON/OFF  (default on)
+####
+# Set minimum version of CMake. Since command 'project' use
+# VERSION sub-option we need at least 3.0.
+# Note: If you use 2.6 or 2.4, God kills a kitten. Seriously.
+cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 
-# ----------------------------------------------------------------------------
-#   Basic Configuration
-# ----------------------------------------------------------------------------
-cmake_minimum_required(VERSION 2.6)
+####
+# Set variables:
+#   * PROJECT_NAME
+#   * PROJECT_VERSION
+project(tiny_cnn VERSION 0.1.0 LANGUAGES C CXX)
 
-project(tiny_cnn C CXX)
-cmake_policy(SET CMP0015 NEW)
+#####
+# Enables link_directories() treat paths relative
+# to the source dir.
+if(POLICY CMP0015)
+    cmake_policy(SET CMP0015 NEW)
+endif(POLICY CMP0015)
 
-set(PROJECT_VERSION "0.1.0")
-
-string(REGEX MATCHALL "[0-9]" PROJECT_VERSION_PARTS "${PROJECT_VERSION}")
-list(GET PROJECT_VERSION_PARTS 0 PROJECT_VERSION_MAJOR)
-list(GET PROJECT_VERSION_PARTS 1 PROJECT_VERSION_MINOR)
-list(GET PROJECT_VERSION_PARTS 2 PROJECT_VERSION_PATCH)
-set(PROJECT_SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
-
-#------------------------------------------------------
-# Build type
-#------------------------------------------------------
-
+#####
+# Change the default build type from Debug to Release, while still
+# supporting overriding the build type.
+#
+# The CACHE STRING logic here and elsewhere is needed to force CMake
+# to pay attention to the value of these variables.
 if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE "Release")
-endif()
+    message(STATUS "No build type specified; defaulting to CMAKE_BUILD_TYPE=Release.")
+    set(CMAKE_BUILD_TYPE Release CACHE STRING
+        "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel."
+        FORCE)
+else(NOT CMAKE_BUILD_TYPE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message("==========================================================================================")
+        message(STATUS "Build type: Debug. Performance will be terrible!")
+        message(STATUS "Add -DCMAKE_BUILD_TYPE=Release to the CMake command line to get an optimized build.")
+        message("==========================================================================================")
+    endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+endif(NOT CMAKE_BUILD_TYPE)
 
-#------------------------------------------------------
-# Lib Names and Dirs
-#------------------------------------------------------
-
-if(WIN32)
-    # Postfix of DLLs:
-    set(PROJECT_DLLVERSION "${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}")
-    set(RUNTIME_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for dlls and binaries")
-    set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for binaries")
-    set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for dlls")
-else()
-    # Postfix of so's:
-    set(PROJECT_DLLVERSION)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_INSTALL_PREFIX}/lib/cmake/ /usr/lib/cmake)
-endif()
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}")
-
-option(USE_SSE    "Build tiny-cnn with SSE library support" ON)
-option(USE_AVX    "Build tiny-cnn with AVX library support" ON)
-option(USE_TBB    "Build tiny-cnn with TBB library support" OFF)
-option(USE_OMP    "Build tiny-cnn with OMP library support" OFF)
+####
+# Define user options
+option(USE_SSE    "Build tiny-cnn with SSE library support"     ON)
+option(USE_AVX    "Build tiny-cnn with AVX library support"     ON)
+option(USE_AVX2   "Build tiny-cnn with AVX2 library support"   OFF)
+option(USE_TBB    "Build tiny-cnn with TBB library support"    OFF)
+option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
+option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
 
-option(BUILD_TESTS "Set to ON to build tests" OFF)
-option(BUILD_EXAMPLES "Set to ON to build examples" ON)
-option(BUILD_DOCS "Set to ON to build documentation" OFF)
+option(BUILD_TESTS    "Set to ON to build tests"         OFF)
+option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
+option(BUILD_DOCS     "Set to ON to build documentation" OFF)
 
-# ----------------------------------------------------------------------------
-#   Find Dependencies
-# ----------------------------------------------------------------------------
+####
+# Create the library target
+
+set(project_library_target_name ${PROJECT_NAME})
+set(PACKAGE_NAME TinyCNN)
+
+add_library(${project_library_target_name} INTERFACE)
+
+####
+# Setup the optional dependencies
 
 # Using cmake scripts and modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-if(BUILD_EXAMPLES)
-    find_package(OpenCV)
-    if(OpenCV_FOUND)
-      add_definitions(-DUSE_OPENCV)
-      include_directories(${OpenCV_INCLUDE_DIRS})
-      set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${OpenCV_LIBS})
-    endif()
-endif()
+# Tiny-cnn provides a couple of multithreading solutions.
+# The user can specify to use Intel Threading Building Blocks (TBB)
+# or Open Multi-Processing (OpenMP) as a backend for multi threading
+# processing. In case that none of this libraries are required, tiny-cnn
+# will use the standard C++11 Thread support library.
 
-if(USE_TBB)
-    find_package(TBB REQUIRED)
+# Find Intel Threading Building Blocks (TBB)
+find_package(TBB QUIET)
+if(USE_TBB AND TBB_FOUND)
+    message(STATUS "Found Intel TBB: ${TBB_INCLUDE_DIR}")
+    # In case that TBB is found we force to disable OpenMP since
+    # tiny-cnn does not support mutiple multithreading backends.
+    set(USE_OMP OFF)
+    #TODO: add definitions in configure
     add_definitions(-DCNN_USE_TBB)
     include_directories(${TBB_INCLUDE_DIRS})
     link_directories(${TBB_LIBRARY_DIRS})
     set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES})
-elseif(USE_OMP)
-    find_package(OpenMP REQUIRED)
+elseif(USE_TBB AND NOT TBB_FOUND)
+    # In case the user sets the flag USE_TBB to ON, the CMake build-tree
+    # will require to find TBB in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Intel TBB not found. Please set TBB_INCLUDE_DIRS & "
+            "TBB_LIBRARIES")
+endif()
+
+# Find Open Multi-Processing (OpenMP)
+find_package(OpenMP QUIET)
+if(USE_OMP AND OPENMP_FOUND)
+    message(STATUS "Found OpenMP")
+    # In case that OMP is found we force to disable Intel TBB since
+    # tiny-cnn does not support mutiple multithreading backends.
+    set(USE_TBB OFF)
     add_definitions(-DCNN_USE_OMP)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+elseif(USE_OMP AND NOT OPENMP_FOUND)
+    # In case the user sets the flag USE_OMP to ON, the CMake build-tree
+    # will require to find OMP in your system. Otherwise, the user can
+    # set the CMAKE_C_FLAGS and CMAKE_CXX_FLAGS by hand.
+    message(FATAL_ERROR "Can't find OpenMP. Please set OpenMP_C_FLAGS & "
+            "OpenMP_CXX_FLAGS")
 endif()
 
-if(USE_NNPACK)
-   find_package(NNPACK REQUIRED)
-   add_definitions(-DCNN_USE_NNPACK)
-   include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
-   include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
-   set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${NNPACK_LIB})
+# Find NNPACK: Acceleration package for neural networks on multi-core CPUs
+find_package(NNPACK QUIET)
+if(USE_NNPACK AND NNPACK_FOUND)
+    add_definitions(-DCNN_USE_NNPACK)
+    include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
+    include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
+    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${NNPACK_LIB})
+elseif(USE_NNPACK AND NOT NNPACK_FOUND)
+    # In case the user sets the flag USE_NNPACK to ON, the CMake build-tree
+    # will require to find NNPACK in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find NNPACK. Please set NNPACK_INCLUDE_DIR "
+            " & NNPACK_LIB")
 endif()
 
-# ----------------------------------------------------------------------------
-# COMPILER OPTIONS
-# ----------------------------------------------------------------------------
+# in case that TBB and OMP are not enabled/found,
+# we enable standard C++11 multithread support.
+if((NOT USE_TBB) AND (NOT USE_OMP))
+    #list(APPEND EXTRA_C_FLAGS -pthread)
+    set(USE_THREADS ON)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+    message(STATUS "TBB and OMP disabled: Using Threads instead.")
+else((NOT USE_TBB) AND (NOT USE_OMP))
+    set(USE_THREADS OFF)
+endif((NOT USE_TBB) AND (NOT USE_OMP))
 
-if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if(USE_SSE)
-        add_definitions(-DCNN_USE_SSE)
-        set(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} -msse3")
-    endif()
-    if(USE_AVX)
-        add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS} -mavx -mavx2 -march=core-avx2")
-    endif()
-    if((NOT USE_TBB) AND (NOT USE_OMP))
-        set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -pthread")
-    endif()
-    set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 -Wall -Wpedantic")
-    set(EXTRA_C_FLAGS_RELEASE " -O3")
-    set(EXTRA_C_FLAGS_DEBUG " -g3")
-elseif(MSVC)
-    if(USE_SSE)
-        add_definitions(-DCNN_USE_SSE)
-        set(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} /arch:SSE2 ")
-    endif()
-    if(USE_AVX)
-        add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
-    endif()
-    set(EXTRA_C_FLAGS_RELEASE " /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj ")
-    set(EXTRA_EXE_LINKER_FLAGS_RELEASE "${EXTRA_EXE_LINKER_FLAGS_RELEASE} /LTCG")
-    add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+####
+# Setup the compiler options
+
+# set c++ standard to c++11.
+# Note: not working on CMake 2.8. We assume that user has
+#       a compiler with C++11 support.
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+message(STATUS "C++11 support has been enabled by default.")
+
+# Unix
+if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
+   CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag("-msse3" COMPILER_HAS_SSE_FLAG)
+    check_cxx_compiler_flag("-mavx"  COMPILER_HAS_AVX_FLAG)
+    check_cxx_compiler_flag("-mavx2" COMPILER_HAS_AVX2_FLAG)
+
+    # set Streaming SIMD Extension (SSE) instructions
+    if(USE_SSE AND COMPILER_HAS_SSE_FLAG)
+    	add_definitions(-DCNN_USE_SSE)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -msse3")
+    endif(USE_SSE AND COMPILER_HAS_SSE_FLAG)
+    # set Advanced Vector Extensions (AVX)
+    if(USE_AVX AND COMPILER_HAS_AVX_FLAG)
+    	add_definitions(-DCNN_USE_AVX)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx")
+    endif(USE_AVX AND COMPILER_HAS_AVX_FLAG)
+    # set Advanced Vector Extensions 2 (AVX2)
+    if(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
+    	add_definitions(-DCNN_USE_AVX)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -march=core-avx2")
+    endif(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
+
+	# include extra flags to the compiler
+	# TODO: add info about those flags.
+
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic")
+    set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
+    set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3")
+elseif(WIN32) # MSVC
+	if(USE_SSE)
+		add_definitions(-DCNN_USE_SSE)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:SSE2")
+	endif(USE_SSE)
+	if(USE_AVX)
+		add_definitions(-DCNN_USE_AVX)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX")
+	endif(USE_AVX)
+	# include specific flags for release and debug modes.
+    set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}
+        /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj /LTCG")
+	add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+endif()
+
+####
+# Set compiler options
+set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
+set(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG}")
+
+####
+# Write the config.h
+# TODO: replace for tiny_cnn/config.h
+# configure_file(cmake/Templates/tinycnn_config.h.in
+#               "${PROJECT_BINARY_DIR}/tinycnn_config.h")
+
+####
+# Setup the cmake config files
+string(REGEX REPLACE "_" "" PROJECT_NAME_JOINED ${PROJECT_NAME})
+
+set(cmake_conf_file         "${PROJECT_NAME_JOINED}-config.cmake")
+set(cmake_conf_version_file "${PROJECT_NAME_JOINED}-config-version.cmake")
+set(cmake_targets_file      "${PROJECT_NAME_JOINED}-targets.cmake")
+
+set(targets_export_name "${PROJECT_NAME_JOINED}-targets")
+set(namespace "${PACKAGE_NAME}::")
+
+# Set up install directories. INCLUDE_INSTALL_DIR and
+# CMAKECONFIG_INSTALL_DIR must not be absolute paths.
+if(WIN32)
+    set(include_install_dir Include)
+    set(include_install_dir_full Include)
+    set(config_install_dir CMake)
+elseif(UNIX)
+    set(include_install_dir include)
+    set(include_install_dir_postfix "${project_library_target_name}")
+    set(include_install_dir_full    "${include_install_dir}/${include_install_dir_postfix}")
+
+    set(config_install_dir share/${PACKAGE_NAME})
 else()
-    message( FATAL_ERROR "You are using unsupported compiler." )
+    message(FATAL_ERROR "Not supported system type. Options: UNIX or WIN32.")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
-set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
+# configure the library target
+target_include_directories(
+    ${project_library_target_name} INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${include_install_dir_full}>)
 
+# uninstall target
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Templates/cmake-uninstall.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/cmake-uninstall.cmake"
+    IMMEDIATE @ONLY)
 
-#------------------------------------------------
-# TARGETS
-#------------------------------------------------
+add_custom_target(uninstall
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake-uninstall.cmake)
 
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Templates/${cmake_conf_file}.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_file}"
+    PATH_VARS include_install_dir_full 
+    INSTALL_DESTINATION ${config_install_dir}) 
 
-include_directories(${PROJECT_SOURCE_DIR})
-link_libraries(${REQUIRED_LIBRARIES})
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
 
-set(tiny_cnn_hdrs
-    tiny_cnn/tiny_cnn.h
-    tiny_cnn/config.h
-    tiny_cnn/network.h
-    tiny_cnn/node.h
-    tiny_cnn/nodes.h
-    tiny_cnn/io/cifar10_parser.h
-    tiny_cnn/io/display.h
-    tiny_cnn/io/mnist_parser.h
-    tiny_cnn/util/image.h
-    tiny_cnn/util/product.h
-    tiny_cnn/util/util.h
-    tiny_cnn/util/deform.h
-    tiny_cnn/util/weight_init.h
-    tiny_cnn/util/target_cost.h
-    tiny_cnn/util/aligned_allocator.h
-    tiny_cnn/layers/layer.h
-    tiny_cnn/layers/layers.h
-    tiny_cnn/layers/convolutional_layer.h
-    tiny_cnn/layers/deconvolutional_layer.h
-    tiny_cnn/layers/average_pooling_layer.h
-    tiny_cnn/layers/average_unpooling_layer.h
-    tiny_cnn/layers/fully_connected_layer.h
-    tiny_cnn/layers/input_layer.h
-    tiny_cnn/layers/max_pooling_layer.h
-    tiny_cnn/layers/max_unpooling_layer.h
-    tiny_cnn/layers/partial_connected_layer.h
-    tiny_cnn/layers/arithmetic_layer.h
-    tiny_cnn/layers/concat_layer.h
-    tiny_cnn/layers/feedforward_layer.h
-    tiny_cnn/layers/dropout_layer.h
-    tiny_cnn/layers/lrn_layer.h
-    tiny_cnn/layers/linear_layer.h
-    tiny_cnn/optimizers/optimizer.h
-    tiny_cnn/activations/activation_function.h
-    tiny_cnn/lossfunctions/loss_function.h
-    tiny_cnn/models/alexnet.h)
+# Create *-targets.cmake file for build directory
+install(TARGETS ${project_library_target_name}
+        EXPORT  ${targets_export_name}
+        INCLUDES DESTINATION ${include_install_dir})
 
-set(tiny_cnn_test_headers
-    test/test_core.h
-    test/test_models.h
-    test/test_average_pooling_layer.h
-    test/test_convolutional_layer.h
-    test/test_deconvolutional_layer.h
-    test/test_fully_connected_layer.h
-    test/test_lrn_layer.h
-    test/test_max_pooling_layer.h
-    test/test_dropout_layer.h
-    test/test_network.h
-    test/test_target_cost.h
-    test/test_large_thread_count.h
-    test/testhelper.h
-    test/picotest/picotest.h)
+export(EXPORT ${targets_export_name}
+       FILE   ${CMAKE_CURRENT_BINARY_DIR}/${cmake_targets_file})
 
+# Install *-targets.cmake file
+install(EXPORT      ${targets_export_name}
+        NAMESPACE   ${namespace}
+        DESTINATION ${config_install_dir})
 
+# Install config files
+install(FILES 
+    "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_file}"
+    "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindNNPACK.cmake"
+    DESTINATION ${config_install_dir} COMPONENT cmake)
+
+# Install headers
+install(DIRECTORY   ${PROJECT_SOURCE_DIR}/${project_library_target_name}
+        DESTINATION ${include_install_dir})
+
+# Subdirectories for examples, testing and documentation
+# TODO: explain in brief about different examples, test and docs.
 if(BUILD_EXAMPLES)
-    add_executable(benchmarks examples/benchmarks/main.cpp ${tiny_cnn_hdrs})
-    add_executable(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
-    target_link_libraries(example_mnist_train ${REQUIRED_LIBRARIES})
-
-    add_executable(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hdrs})
-    target_link_libraries(example_deconv_train ${REQUIRED_LIBRARIES})
-
-    if(USE_OPENCV)
-        add_executable(example_mnist_test examples/mnist/test.cpp ${tiny_cnn_hdrs})
-        add_executable(example_deconv_visual examples/deconv/visual.cpp ${tiny_cnn_hdrs})
-        target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
-        target_link_libraries(example_deconv_visual ${REQUIRED_LIBRARIES})
-    else()
-        file(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
-        add_executable(example_mnist_test examples/mnist/test_with_stb_image.cpp
-                       ${tiny_cnn_hdrs} ${stb_image_hdrs})
-        target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
-    endif()
-
-    add_executable(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
-    target_link_libraries(example_cifar_train ${REQUIRED_LIBRARIES})
-
-    find_package(Protobuf)
-    if(PROTOBUF_FOUND)
-        set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.pb.cc")
-        if(EXISTS ${proto_file})
-            add_executable(example_caffe_converter
-                           examples/caffe_converter/caffe_converter.cpp
-                           ${tiny_cnn_hdrs} ${proto_file})
-            target_link_libraries(example_caffe_converter
-                                  ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
-# As of Ubuntu 14.04 protoc is no longer a part of libprotobuf-dev package
-# and should be installed separately as in: sudo apt-get install protobuf-compiler
-        elseif(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
-            message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
-            if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
-                PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
-                if(EXISTS ${PROTO_HDRS})
-                    file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
-                    file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
-                endif()
-                add_executable(example_caffe_converter
-                               examples/caffe_converter/caffe_converter.cpp
-                               ${tiny_cnn_hdrs} ${PROTO_SRCS} ${PROTO_HDRS})
-                target_link_libraries(example_caffe_converter
-                                      ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
-            else()
-                message(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
-            endif()
-        else()
-            message(STATUS "Proto is not linked correctly, please make sure file exists.")
-        endif()
-    else()
-        message(STATUS "Cannot generate Caffe Importer. Please install Protobuf.")
-    endif()
-endif()
+    add_subdirectory(examples)
+endif(BUILD_EXAMPLES)
 
 if(BUILD_TESTS)
-    add_executable(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
-    target_link_libraries(tiny_cnn_test ${REQUIRED_LIBRARIES})
-endif()
-
-#------------------------------------------------
-# DOCUMENTATION
-#------------------------------------------------
-
-# ========= Doxygen docs =========
-
-find_package(Doxygen)
+    add_subdirectory(test)
+endif(BUILD_TESTS)
 
 if(BUILD_DOCS)
-    if(NOT DOXYGEN_FOUND)
-        message(FATAL_ERROR "Doxygen is needed to build the documentation.")
-    endif()
+    add_subdirectory(doc)
+endif(BUILD_DOCS)
 
-    set(doxyfile_in ${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in)
-    set(doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-    set(doxy_main_page doc/readme.md)
-
-    configure_file(${doxyfile_in} ${doxyfile} @ONLY)
-
-    add_custom_target(doc
-        COMMAND ${DOXYGEN_EXECUTABLE} ${doxyfile}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/doc
-        COMMENT "Generating API documentation with Doxygen"
-        VERBATIM)
-
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION share/doc)
-endif()
+####
+# Configuration summary
+include(cmake/summary.cmake)
+tinycnn_print_configuration_summary()
 
 
-# ----------------------------------------------------------------------------
-# display status message for important variables
-# ----------------------------------------------------------------------------
-message( STATUS )
-message( STATUS "-------------------------------------------------------------------------------" )
-message( STATUS "General configuration for ${PROJECT_NAME} ${PROJECT_VERSION}")
-message( STATUS "-------------------------------------------------------------------------------" )
-
-
-message( STATUS "BUILD_EXAMPLES=${BUILD_EXAMPLES} BUILD_TESTS=${BUILD_TESTS} USE_TBB=${USE_TBB} USE_OMP=${USE_OMP} USE_SSE=${USE_SSE} USE_AVX=${USE_AVX}")
-
-
-message( STATUS "-------------------------------------------------------------------------------" )
-
-message( STATUS )
-message("    Built as dynamic libs?:" ${BUILD_SHARED_LIBS})
-message("    Compiler:"                   "${CMAKE_COMPILER}"   "${CMAKE_CXX_COMPILER}")
-message( STATUS "C++ flags (Release):      ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
-message( STATUS "C++ flags (Debug):        ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-message( STATUS "CMAKE_CXX_FLAGS:          ${CMAKE_CXX_FLAGS}")
-message( STATUS "CMAKE_BINARY_DIR:         ${CMAKE_BINARY_DIR}")
-message( STATUS "OpenCV libs:              ${OpenCV_LIBS}")
-
-message( STATUS )
-message( STATUS "CMAKE_SYSTEM_PROCESSOR = ${CMAKE_SYSTEM_PROCESSOR}" )
-message( STATUS "REQUIRED_LIBRARIES = ${REQUIRED_LIBRARIES}" )
-message( STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}" )
-message( STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}" )
-message( STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}" )
-message( STATUS "CMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}")
-message( STATUS )
-message( STATUS )
-message( STATUS "Change a value with: cmake -D<Variable>=<Value>" )
-message( STATUS )

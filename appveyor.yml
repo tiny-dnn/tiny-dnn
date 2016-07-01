@@ -27,7 +27,7 @@ before_build:
   - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DBOOST_ROOT=C:\Libraries\boost_1_59_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_59_0\lib64-msvc-14.0 -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-cnn'
 
 after_build:
-  - cmd: 'cd C:\projects\build\bin\Release'
+  - cmd: 'cd C:\projects\build\test\Release'
   - cmd: 'copy "C:\Libraries\boost_1_59_0\lib64-msvc-14.0\boost_system-vc140-mt-1_59.dll" .'
   - cmd: 'copy "C:\Libraries\boost_1_59_0\lib64-msvc-14.0\boost_filesystem-vc140-mt-1_59.dll" .'
   - cmd: tiny_cnn_test.exe
