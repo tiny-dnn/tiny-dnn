@@ -137,6 +137,10 @@ protected:
             backend = std::make_shared<core::nnp_backend>(&params_);
         } else if (backend_type == backend_t::libdnn) {
             backend = std::make_shared<core::dnn_backend>();
+#ifdef CNN_USE_AVX
+        } else if (backend_type == backend_t::avx) {
+            backend = std::make_shared<core::avx_backend>();
+#endif
         } else {
             throw nn_error("Not supported backend type.");
         }

@@ -33,6 +33,9 @@
 #include "tiny_cnn/core/backend_tiny.h"
 #include "tiny_cnn/core/backend_nnp.h"
 #include "tiny_cnn/core/backend_dnn.h"
+#ifdef CNN_USE_AVX
+#include "tiny_cnn/core/backend_avx.h"
+#endif
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -342,6 +345,12 @@ private:
                 Base::backend_ = std::make_shared<core::dnn_backend>();
                 Base::backend_->set_layer(this);
                 break;
+#ifdef CNN_USE_AVX
+            case backend_t::avx:
+                Base::backend_ = std::make_shared<core::avx_backend>();
+                Base::backend_->set_layer(this);
+                break;
+#endif
             default:
                 throw nn_error("not supported backend type");
         }
