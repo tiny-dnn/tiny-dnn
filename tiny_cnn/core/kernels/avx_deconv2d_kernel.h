@@ -32,12 +32,12 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void tiny_deconv2d_kernel(const deconv_params& params,
-                        const vec_t&       in,
-                        const vec_t&       W,
-                        const vec_t&       bias,
-                        vec_t&             a,
-                        const bool layer_parallelize) {
+void avx_deconv2d_kernel(const deconv_params& params,
+                         const vec_t&       in,
+                         const vec_t&       W,
+                         const vec_t&       bias,
+                         vec_t&             a,
+                         const bool layer_parallelize) {
     for_i(layer_parallelize, params.out_.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in_.depth_; inc++) {
             if (!params.tbl.is_connected(o, inc)) continue;

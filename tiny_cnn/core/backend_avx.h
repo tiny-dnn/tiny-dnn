@@ -107,7 +107,7 @@ class avx_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::tiny_conv2d_kernel(*params_c_,
+        kernels::avx_conv2d_kernel(*params_c_,
             in, W, bias, a, layer_->get_parallelize());
     }
 
@@ -135,7 +135,7 @@ class avx_backend : public backend {
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-        kernels::tiny_conv2d_back_kernel(*params_c_,
+        kernels::avx_conv2d_back_kernel(*params_c_,
             prev_out, W, dW, db, curr_delta, prev_delta);
 
         if (params_c_->pad_type == padding::same) {
@@ -154,7 +154,7 @@ class avx_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::tiny_deconv2d_kernel(*params_d_,
+        kernels::avx_deconv2d_kernel(*params_d_,
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
@@ -186,7 +186,7 @@ class avx_backend : public backend {
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-        kernels::tiny_deconv2d_back_kernel(*params_d_,
+        kernels::avx_deconv2d_back_kernel(*params_d_,
             prev_out, W, dW, db, curr_delta, prev_delta);
     }
 
@@ -202,7 +202,7 @@ class avx_backend : public backend {
         std::vector<cnn_size_t>& max_idx =
             (*max_pooling_layer_worker_storage_)[index].out2inmax_;
 
-        kernels::tiny_maxpool_kernel(in, a,
+        kernels::avx_maxpool_kernel(in, a,
             max_idx, *out2in_, layer_->get_parallelize());
     }
 
@@ -220,7 +220,7 @@ class avx_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_maxpool_back_kernel(prev_delta, curr_delta,
+        kernels::avx_maxpool_back_kernel(prev_delta, curr_delta,
             max_idx, *in2out_,  layer_->get_parallelize());
     }
 
@@ -234,7 +234,7 @@ class avx_backend : public backend {
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        kernels::tiny_fully_connected_kernel(*params_f_,
+        kernels::avx_fully_connected_kernel(*params_f_,
             in, W, b, a, layer_->get_parallelize());
     }
 
@@ -254,7 +254,7 @@ class avx_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
+        kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
             W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
     }
 

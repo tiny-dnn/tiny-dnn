@@ -347,7 +347,18 @@ private:
                 break;
 #ifdef CNN_USE_AVX
             case backend_t::avx:
-                Base::backend_ = std::make_shared<core::avx_backend>();
+                Base::backend_ = std::make_shared<core::avx_backend>(&params_,
+                        [this](const vec_t& in, int worker_index) {
+                        return copy_and_unpad_output(in, worker_index);
+                    },
+                        [this](const vec_t& delta, vec_t& dst) {
+                        return copy_and_pad_delta(delta, dst);
+                    },
+                        [this](const vec_t& p_delta,
+                            const vec_t& out, vec_t& c_delta) {
+                        return Base::backward_activation(p_delta, out, c_delta);
+                    },
+                    &deconv_layer_worker_storage_);
                 Base::backend_->set_layer(this);
                 break;
 #endif

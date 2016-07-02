@@ -139,7 +139,11 @@ protected:
             backend = std::make_shared<core::dnn_backend>();
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
-            backend = std::make_shared<core::avx_backend>();
+            backend = std::make_shared<core::avx_backend>(&params_,
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                });
 #endif
         } else {
             throw nn_error("Not supported backend type.");
