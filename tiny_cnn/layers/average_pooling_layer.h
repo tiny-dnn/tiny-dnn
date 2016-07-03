@@ -147,12 +147,12 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         cnn_size_t dxmax = std::min(pooling_size, in_.width_ - x);
         cnn_size_t dstx = x / stride_;
         cnn_size_t dsty = y / stride_;
-
+		cnn_size_t outidx = out_.get_index(dstx, dsty, inc);
         for (cnn_size_t dy = 0; dy < dymax; ++dy) {
             for (cnn_size_t dx = 0; dx < dxmax; ++dx) {
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc),
-                    out_.get_index(dstx, dsty, inc),
+                    outidx,
                     inc);
             }
         }
