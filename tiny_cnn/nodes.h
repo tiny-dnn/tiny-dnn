@@ -159,11 +159,11 @@ class nodes {
         }
     }
 
-    void label2vec(const label_t* t, int num, std::vector<vec_t> *vec) const {
+    void label2vec(const label_t* t, size_t num, std::vector<vec_t> *vec) const {
         cnn_size_t outdim = out_data_size();
 
         vec->reserve(num);
-        for (int i = 0; i < num; i++) {
+        for (size_t i = 0; i < num; i++) {
             assert(t[i] < outdim);
             vec->emplace_back(outdim, target_value_min());
             vec->back()[t[i]] = target_value_max();
