@@ -45,7 +45,7 @@ struct result {
     result() : num_success(0), num_total(0) {}
 
     float_t accuracy() const {
-        return num_success * 100.0 / num_total;
+        return float_t(num_success * 100.0 / num_total);
     }
 
     template <typename Char, typename CharTraits>

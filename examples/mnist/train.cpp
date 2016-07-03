@@ -87,12 +87,12 @@ void train_lenet(std::string data_dir_path) {
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp(train_images.size());
+    progress_display disp((unsigned long)train_images.size());
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
 
-    optimizer.alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= tiny_cnn::float_t(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -100,7 +100,7 @@ void train_lenet(std::string data_dir_path) {
         tiny_cnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart(train_images.size());
+        disp.restart((unsigned long)train_images.size());
         t.restart();
     };
 

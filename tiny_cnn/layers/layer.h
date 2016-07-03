@@ -248,7 +248,7 @@ class layer : public node {
      * override properly if the layer is intended to be used as output layer
      **/
     virtual std::pair<float_t, float_t>
-    out_value_range() const { return {0.0, 1.0}; }  // NOLINT
+    out_value_range() const { return {float_t(0.0), float_t(1.0)}; }  // NOLINT
 
     /**
      * array of input shapes (width x height x depth)
@@ -485,6 +485,7 @@ class layer : public node {
 
     void update_weight(optimizer *o,
                        cnn_size_t worker_size, cnn_size_t batch_size) {
+		float_t rcp_batch_size = float_t(1) / float_t(batch_size);
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
                 vec_t diff;
@@ -493,7 +494,7 @@ class layer : public node {
                 ith_in_node(i)->merge_grads(worker_size, &diff);
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
-                                  return x / batch_size; });
+                                  return x * rcp_batch_size; });
                 o->update(diff, target);
             }
         }
