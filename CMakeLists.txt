@@ -111,7 +111,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(EXTRA_C_FLAGS " ${EXTRA_C_FLAGS} -std=c++11 -Wall -Wpedantic")
     set(EXTRA_C_FLAGS_RELEASE " -O3")
     set(EXTRA_C_FLAGS_DEBUG " -g3")
-else() # MSVC
+elseif(MSVC)
     if(USE_SSE)
         add_definitions(-DCNN_USE_SSE)
         set(EXTRA_C_FLAGS  " ${EXTRA_C_FLAGS} /arch:SSE2 ")
@@ -120,13 +120,16 @@ else() # MSVC
         add_definitions(-DCNN_USE_AVX)
         set(EXTRA_C_FLAGS  "${EXTRA_C_FLAGS}  /arch:AVX ")
     endif()
-    set(EXTRA_C_FLAGS_RELEASE " /Ox /bigobj ")
+    set(EXTRA_C_FLAGS_RELEASE " /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj ")
+    set(EXTRA_EXE_LINKER_FLAGS_RELEASE "${EXTRA_EXE_LINKER_FLAGS_RELEASE} /LTCG")
     add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+else()
+    message( FATAL_ERROR "You are using unsupported compiler." )
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${EXTRA_EXE_LINKER_FLAGS}")
 set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} ${EXTRA_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LINKER_FLAGS_DEBUG}")
@@ -140,7 +143,7 @@ set(CMAKE_EXE_LINKER_FLAGS_DEBUG "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${EXTRA_EXE_LI
 include_directories(${PROJECT_SOURCE_DIR})
 link_libraries(${REQUIRED_LIBRARIES})
 
-set(tiny_cnn_hrds
+set(tiny_cnn_hdrs
     tiny_cnn/tiny_cnn.h
     tiny_cnn/config.h
     tiny_cnn/network.h
@@ -197,10 +200,10 @@ set(tiny_cnn_test_headers
 
 if(BUILD_EXAMPLES)
     add_executable(benchmarks examples/benchmarks/main.cpp ${tiny_cnn_hdrs})
-    add_executable(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hrds})
+    add_executable(example_mnist_train examples/mnist/train.cpp ${tiny_cnn_hdrs})
     target_link_libraries(example_mnist_train ${REQUIRED_LIBRARIES})
 
-    add_executable(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hrds})
+    add_executable(example_deconv_train examples/deconv/train.cpp ${tiny_cnn_hdrs})
     target_link_libraries(example_deconv_train ${REQUIRED_LIBRARIES})
 
     if(USE_OPENCV)
@@ -215,7 +218,7 @@ if(BUILD_EXAMPLES)
         #target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
     endif()
 
-    add_executable(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
+    add_executable(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hdrs})
     target_link_libraries(example_cifar_train ${REQUIRED_LIBRARIES})
 
     find_package(Protobuf)
@@ -224,7 +227,7 @@ if(BUILD_EXAMPLES)
         if(EXISTS ${proto_file})
             add_executable(example_caffe_converter
                            examples/caffe_converter/caffe_converter.cpp
-                           ${tiny_cnn_hrds} ${proto_file})
+                           ${tiny_cnn_hdrs} ${proto_file})
             target_link_libraries(example_caffe_converter
                                   ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
 # As of Ubuntu 14.04 protoc is no longer a part of libprotobuf-dev package
@@ -239,7 +242,7 @@ if(BUILD_EXAMPLES)
                 endif()
                 add_executable(example_caffe_converter
                                examples/caffe_converter/caffe_converter.cpp
-                               ${tiny_cnn_hrds} ${PROTO_SRCS} ${PROTO_HDRS})
+                               ${tiny_cnn_hdrs} ${PROTO_SRCS} ${PROTO_HDRS})
                 target_link_libraries(example_caffe_converter
                                       ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
             else()
@@ -254,7 +257,7 @@ if(BUILD_EXAMPLES)
 endif()
 
 if(BUILD_TESTS)
-    add_executable(tiny_cnn_test test/test.cpp ${tiny_cnn_hrds} ${tiny_cnn_test_headers})
+    add_executable(tiny_cnn_test test/test.cpp ${tiny_cnn_hdrs} ${tiny_cnn_test_headers})
     target_link_libraries(tiny_cnn_test ${REQUIRED_LIBRARIES})
 endif()
 
@@ -304,9 +307,9 @@ message( STATUS "---------------------------------------------------------------
 message( STATUS )
 message("    Built as dynamic libs?:" ${BUILD_SHARED_LIBS})
 message("    Compiler:"                   "${CMAKE_COMPILER}"   "${CMAKE_CXX_COMPILER}")
-message( STATUS "C++ flags (Release):       ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
-message( STATUS "C++ flags (Debug):         ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
-message( STATUS "CMAKE_CXX_FLAGS:         ${CMAKE_CXX_FLAGS}")
+message( STATUS "C++ flags (Release):      ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+message( STATUS "C++ flags (Debug):        ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+message( STATUS "CMAKE_CXX_FLAGS:          ${CMAKE_CXX_FLAGS}")
 message( STATUS "CMAKE_BINARY_DIR:         ${CMAKE_BINARY_DIR}")
 message( STATUS "OpenCV libs:              ${OpenCV_LIBS}")
 
