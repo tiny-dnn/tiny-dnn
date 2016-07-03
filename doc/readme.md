@@ -19,6 +19,7 @@ I'm willing to update this list if your software use tiny-cnn. Please contact me
 - [edgarriba/opencv_contrib](https://github.com/edgarriba/opencv_contrib) (in progress) - A new opencv's dnn module which use tiny-cnn as its backend
 
 ## Developer guides
+- [How to contribute](CONTRIBUTING.md)
 - [Adding a new layer](Adding-a-new-layer.md)
 
 ## A quick introduction to tiny-cnn

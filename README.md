@@ -13,6 +13,7 @@ tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep lea
 * [Dependencies](#dependencies)
 * [Build](#build)
 * [Examples](#examples)
+* [Contributing](#contributing)
 * [References](#references)
 * [License](#license)
 * [Mailing list](#mailing-list)
@@ -204,6 +205,10 @@ void construct_mlp() {
 ```
 
 more sample, read examples/main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/mnist) page.
+
+## Contributing
+Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-cnn development!
+For a quick guide to contributing, take a look at the [Contribution Documents](doc/CONTRIBUTING.md).
 
 ## References
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
