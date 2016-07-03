@@ -95,7 +95,7 @@ public:
         for_i(parallelize_, out2wi_.size(), [&](int i) {
             const wi_connections& connections = out2wi_[i];
 
-			float_t value = float_t(0);
+            float_t value = float_t(0);
 
             for (auto connection : connections)// 13.1%
                 value += W[connection.first] * in[connection.second]; // 3.2%

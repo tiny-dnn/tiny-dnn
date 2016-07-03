@@ -429,15 +429,15 @@ public:
      * @attention this loads only network *weights*, not network configuration
      **/
     void fast_load(const char* filepath) {
-		FILE* stream = fopen(filepath, "r");
-		std::vector<float_t> data;
-		float_t temp;
-		while (fscanf(stream, "%lf", &temp) > 0)
-			data.push_back(temp);
-		fclose(stream);
+        FILE* stream = fopen(filepath, "r");
+        std::vector<float_t> data;
+        float_t temp;
+        while (fscanf(stream, "%lf", &temp) > 0)
+            data.push_back(temp);
+        fclose(stream);
 
-		net_.load(data);
-	}
+        net_.load(data);
+    }
 
     /**
     * checking gradients calculated by bprop
