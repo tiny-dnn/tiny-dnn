@@ -136,6 +136,13 @@ else((NOT USE_TBB) AND (NOT USE_OMP))
     set(USE_THREADS OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
 
+if(USE_OPENCL)
+    find_package(OpenCL REQUIRED)
+    add_definitions(-DCNN_USE_OPENCL)
+    include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
+    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${OpenCL_LIBRARY})
+endif(USE_OPENCL)
+
 if(USE_LIBDNN)
    find_package(Greentea REQUIRED)
    add_definitions(-DCNN_USE_LIBDNN)

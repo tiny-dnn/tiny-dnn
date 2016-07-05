@@ -49,8 +49,8 @@ class session {
     void run_session(/* data */);
 
  private:
-    std::string name_;
-    std::vector<std::shared_ptr<device>> devices_;
+  std::string name_;
+  std::vector<std::shared_ptr<tiny_cnn::core::device>> devices_;
 };
 
 }  // namespace core

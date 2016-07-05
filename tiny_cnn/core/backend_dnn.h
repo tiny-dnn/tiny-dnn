@@ -36,6 +36,8 @@ class dnn_backend : public backend {
  public:
     // context holds solution-dependent parameters
     // context should be able to hold any types of structures (like boost::any)
+    dnn_backend() {}
+
     dnn_backend(conv_params* params,
                 std::function<void(const vec_t&, int)> f1,
                 std::vector<conv_layer_worker_specific_storage>* ptr)

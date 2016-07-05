@@ -31,23 +31,41 @@
 #include "tiny_cnn/core/backend.h"
 
 #ifdef CNN_USE_LIBDNN
-#include <libdnn.hpp>
+#include "libdnn.hpp"
 #endif
-
 
 namespace tiny_cnn {
 namespace core {
 
 class device {
  public:
-    explicit device(const int id) : id_(id) {}
+  explicit device(const int id, const int list_id,
+                  const backend_t backend_type=backend_t::libdnn) {
+#ifndef CNN_USE_LIBDNN
+    }
+#else
+    if (backend_type == backend_t::tiny_cnn ||
+        backend_type == backend_t::nnpack) {
+        dev_ptr_ = std::make_shared<greentea::device>(
+            id, list_id, greentea::Backend::BACKEND_CPU);
+    } else if (backend_type == backend_t::libdnn) {
+         dev_ptr_ = std::make_shared<greentea::device>(
+            id, list_id, greentea::Backend::BACKEND_OpenCL);
+    } else {
+        throw nn_error("Not supported backend type");
+    }
+  }
 
     int get_id() const { return id_; }
 
  private:
-    int id_;
-    std::vector<std::shared_ptr<backend>> backends_;
+  std::shared_ptr<greentea::device> dev_ptr_;
+
+  // TODO(edgar): revise API and decide how to handle this
+  std::vector<std::shared_ptr<backend>> backends_;
+#endif
 };
 
 }  // namespace core
 }  // namespace tiny_cnn
+

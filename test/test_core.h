@@ -42,7 +42,6 @@ TEST(core, session) {
 TEST(core, devices) {
     core::device my_device(0, 0, core::backend_t::libdnn);
 
-    ASSERT_EQ(my_device.get_id(), 0);
 }
 
 TEST(core, backends) {
