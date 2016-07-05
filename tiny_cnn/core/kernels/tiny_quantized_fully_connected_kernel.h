@@ -27,6 +27,8 @@
 #pragma once
 
 #include "tiny_cnn/core/params/fully_params.h"
+#include "tiny_cnn/core/kernels/tiny_quantization_kernel.h"
+#include "tiny_cnn/core/kernels/tiny_quantized_matmul_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
@@ -84,12 +86,26 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
     const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
     const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
 
-    for_i(layer_parallelize, params.out_size_, [&](int i) {
-        for (cnn_size_t c = 0; c < params.in_size_; c++) {
-            a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
-             static_cast<int32_t>(in_quantized[c] - offset_input);
-        }
-    });
+    bool use_gemm = false;
+    if (use_gemm) {
+        std::vector<size_t> shape{params.in_size_, 1, params.out_size_, params.in_size_};
+        tiny_quantized_matmul(in_quantized,
+                            W_quantized,
+                            a_quantized,
+                            shape,
+                            offset_input,
+                            offset_filter,
+                            offset_output,
+                            mult_output,
+                            shift_output);
+    } else {
+        for_i(layer_parallelize, params.out_size_, [&](int i) {
+            for (cnn_size_t c = 0; c < params.in_size_; c++) {
+                a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
+                 static_cast<int32_t>(in_quantized[c] - offset_input);
+            }
+        });
+    }
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
 
