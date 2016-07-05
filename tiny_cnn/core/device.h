@@ -30,6 +30,14 @@
 
 #include "tiny_cnn/core/backend.h"
 
+#ifdef CNN_HAVE_OPENCL
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.h>
+#endif
+#endif
+
 #ifdef CNN_USE_LIBDNN
 #include "libdnn.hpp"
 #endif

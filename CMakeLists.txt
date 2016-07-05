@@ -138,7 +138,7 @@ endif((NOT USE_TBB) AND (NOT USE_OMP))
 
 if(USE_OPENCL)
     find_package(OpenCL REQUIRED)
-    add_definitions(-DCNN_USE_OPENCL)
+    add_definitions(-DCNN_HAVE_OPENCL)
     include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
     set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${OpenCL_LIBRARY})
 endif(USE_OPENCL)
