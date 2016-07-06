@@ -15,7 +15,7 @@ limitations under the License.
 
 // Implements a quantized eight-bit version of the matmul operation.
 
-#include "external/gemmlowp/public/gemmlowp.h"
+#include "tiny_cnn/gemmlowp/public/gemmlowp.h"
 #include "tiny_cnn/core/kernels/tiny_quantization_kernel.h"
 // #include "external/gemmlowp/public/reference_gemm.h"
 
