@@ -48,8 +48,24 @@ void libdnn_conv2d_kernel(const conv_params& params,
         std::make_shared<greentea::device>(
             id, list_id, greentea::Backend::BACKEND_OpenCL);
 
-    //viennacl::ocl::context &ctx = viennacl::ocl::get_context(id);
-    //dev_ptr->setuViennaCLContext(id, ctx, ctx.devices()[0], ctx.get_queue().handle().get());
+    cl_platform_id platform;
+    cl_device_id device;
+ 
+    // get first available platform
+    clGetPlatformIDs(1, &platform, NULL);
+ 
+    // get first available gpu device
+    clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device, NULL);
+ 
+    // create context
+    cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, NULL);
+
+    cl_command_queue queue;
+    queue = clCreateCommandQueue(context, device,
+        CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, NULL);
+   
+    // error: ‘class greentea::device’ has no member named ‘setupViennaCLContext’
+    // dev_ptr->setupViennaCLContext(id, context, device, queue);
     dev_ptr->Init();
  
     // setup libdnn params

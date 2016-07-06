@@ -68,7 +68,7 @@ TEST(core, opencl) {
     platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
     clGetPlatformIDs(platformCount, platforms, NULL);
 
-    //EXPECT_TRUE(platformCount != 0);
+    EXPECT_TRUE(platformCount != 0);
 
     for (int i = 0; i < (int)platformCount; i++) {
  
