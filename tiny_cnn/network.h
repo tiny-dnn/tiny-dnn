@@ -712,10 +712,8 @@ private:
 
     template <typename E>
     float_t get_loss(const vec_t& out, const vec_t& t) {
-        float_t e = float_t(0);
         assert(out.size() == t.size());
-        for(size_t i = 0; i < out.size(); i++){ e += E::f(out[i], t[i]); }
-        return e;
+        return E::f(out, t);
     }
 
     template <typename E>
