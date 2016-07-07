@@ -36,7 +36,16 @@ namespace tiny_cnn {
 TEST(core, session) {
     core::session my_session(std::string("my_session"));
 
-    ASSERT_EQ(my_session.get_num_devices(), 0);
+    ASSERT_EQ(my_session.num_devices(), 0);
+    EXPECT_STREQ(my_session.name().c_str(), "my_session");
+
+    my_session.init_session();
+
+    EXPECT_TRUE(my_session.num_devices() != 0);
+
+    for (cnn_size_t i = 0; i < my_session.num_devices(); i++) {
+        my_session.print_device_info(i);
+    }
 }
 
 TEST(core, devices) {
@@ -51,74 +60,5 @@ TEST(core, backends) {
     // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
     // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
 }
-
-#ifdef CNN_HAVE_OPENCL
-TEST(core, opencl) {
-
-    char* value;
-    size_t valueSize;
-    cl_uint platformCount;
-    cl_platform_id* platforms;
-    cl_uint deviceCount;
-    cl_device_id* devices;
-    cl_uint maxComputeUnits;
- 
-    // get all platforms
-    clGetPlatformIDs(0, NULL, &platformCount);
-    platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
-    clGetPlatformIDs(platformCount, platforms, NULL);
-
-    EXPECT_TRUE(platformCount != 0);
-
-    for (int i = 0; i < (int)platformCount; i++) {
- 
-        // get all devices
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
-        devices = (cl_device_id*) malloc(sizeof(cl_device_id) * deviceCount);
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
- 
-        // for each device print critical attributes
-        for (int j = 0; j < (int)deviceCount; j++) {
- 
-            // print device name
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
-            printf("%d. Device: %sn", j+1, value);
-            free(value);
- 
-            // print hardware device version
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Hardware version: %sn", j+1, 1, value);
-            free(value);
- 
-            // print software driver version
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Software version: %sn", j+1, 2, value);
-            free(value);
- 
-            // print c version supported by compiler for device
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, valueSize, value, NULL);
-            printf(" %d.%d OpenCL C version: %sn", j+1, 3, value);
-            free(value);
- 
-            // print parallel compute units
-            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS,
-                    sizeof(maxComputeUnits), &maxComputeUnits, NULL);
-            printf(" %d.%d Parallel compute units: %dn", j+1, 4, maxComputeUnits);
-        }
-        free(devices);
- 
-    }
-    free(platforms);
-
-}
-#endif
 
 } // namespace tiny-cnn
