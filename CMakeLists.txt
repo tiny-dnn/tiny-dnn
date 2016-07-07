@@ -209,10 +209,10 @@ if(BUILD_EXAMPLES)
         target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
         target_link_libraries(example_deconv_visual ${REQUIRED_LIBRARIES})
     else()
-        #file(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
-        #add_executable(example_mnist_test examples/mnist/test_with_stb_image.cpp
-        #               ${tiny_cnn_hdrs} ${stb_image_hdrs})
-        #target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
+        file(GLOB stb_image_hdrs examples/mnist/stb_image/*.h)
+        add_executable(example_mnist_test examples/mnist/test_with_stb_image.cpp
+                       ${tiny_cnn_hdrs} ${stb_image_hdrs})
+        target_link_libraries(example_mnist_test ${REQUIRED_LIBRARIES})
     endif()
 
     add_executable(example_cifar_train examples/cifar10/train.cpp ${tiny_cnn_hrds})
