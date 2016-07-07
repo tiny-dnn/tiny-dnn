@@ -114,7 +114,7 @@ std::vector<vec_t> desired_out {    { 2 },    { 1 } };
 size_t batch_size = 1;
 size_t epochs = 30;
 
-net.fit<mse>(opt, input_data, desired_out, bacth_size, epochs);
+net.fit<mse>(opt, input_data, desired_out, batch_size, epochs);
 ```
 
 If you want to do something for each epoch / minibatch (profiling, evaluating accuracy, saving networks, changing learning rate of optimizer, etc), you can register callbacks for this purpose.
@@ -153,7 +153,7 @@ std::vector<label_t> desired_out {        3,        1 };
 size_t batch_size = 1;
 size_t epochs = 30;
 
-net.train<mse>(opt, input_data, desired_out, bacth_size, epochs);
+net.train<mse>(opt, input_data, desired_out, batch_size, epochs);
 ```
 
 #### <a name="train-graph-model"></a>train graph model
