@@ -40,8 +40,8 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                         vec_t&             a,
                         const bool layer_parallelize) {
     // image quantization
-    float min_input((&in[0])[0]);
-    float max_input((&in[0])[0]);
+    float min_input(in[0]);
+    float max_input(in[0]);
     for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -52,8 +52,8 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     std::vector<uint8_t> in_quantized =
         float_tensor_to_quantized<uint8_t>(in, min_input, max_input);
     // filter quantization
-    float min_filter((&W[0])[0]);
-    float max_filter((&W[0])[0]);
+    float min_filter(W[0]);
+    float max_filter(W[0]);
     for (cnn_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -62,12 +62,27 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         }
     }
     if (min_filter == max_filter) {
-      max_filter = W[0] + 1e-2f;
-      min_filter = W[0] - 1e-2f;
+      max_filter = W[0] + 1e-3f;
+      min_filter = W[0] - 1e-3f;
     }
     std::vector<uint8_t> W_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
-
+    // bias quantization
+    float min_bias(0);
+    float max_bias(0);
+    std::vector<uint8_t> bias_quantized;
+    if (params.has_bias) {
+        for (cnn_size_t inc = 0; inc < params.out.depth_; inc++) {
+            min_bias = std::min(min_bias, bias[inc]);
+            max_bias = std::max(max_bias, bias[inc]);
+        }
+        if (min_bias == max_bias) {
+          max_bias = bias[0] + 1e-3f;
+          min_bias = bias[0] - 1e-3f;
+        }
+        bias_quantized =
+            float_tensor_to_quantized<uint8_t>(bias, min_bias, max_bias);
+    }
     // output range
     float min_output_value;
     float max_output_value;
@@ -82,6 +97,8 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input);
     const int32_t offset_filter =
         float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+    const int32_t zero_in_total_space =
+        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
 
     const int32_t offset_output = 0;
     const int32_t mult_output = 1;
@@ -132,17 +149,16 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                 }
             }
         }
+        if (params.has_bias) {
+            int32_t * pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
+            int32_t * paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
+            std::for_each(pa_quantized, paa_quantized, [&](int32_t& f) {
+                f += (bias_quantized[o] - zero_in_total_space);
+            });
+        }
     });
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
-
-    if (params.has_bias) {
-        for_i(layer_parallelize, params.out.depth_, [&](int o) {
-            float_t * pa  = &a[params.out.get_index(0, 0, o)];
-            float_t * paa = pa + params.out.width_ * params.out.height_;
-            std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
-        });
-    }
 }
 
 }  // namespace kernels

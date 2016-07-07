@@ -102,7 +102,7 @@ TEST(quantized_deconvolutional, fprop) {
         l.forward_propagation(0, in_data, out_data);
 
         for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
+            EXPECT_NEAR(0.5, o, 1E-3);
     }
 
     weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;

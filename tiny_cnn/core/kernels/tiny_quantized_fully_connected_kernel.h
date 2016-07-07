@@ -37,15 +37,15 @@ namespace kernels {
 void tiny_quantized_fully_connected_kernel(const fully_params& params,
                                  const vec_t&        in,
                                  const vec_t&        W,
-                                 vec_t&              b,
+                                 const vec_t&        b,
                                  vec_t&              a,
                                  const bool          layer_parallelize) {
     // input quantization
     float min_input(in[0]);
     float max_input(in[0]);
     for (cnn_size_t c = 0; c < params.in_size_; c++) {
-            min_input = std::min(min_input, in[c]);
-            max_input = std::max(max_input, in[c]);
+        min_input = std::min(min_input, in[c]);
+        max_input = std::max(max_input, in[c]);
     }
     std::vector<uint8_t> in_quantized =
         float_tensor_to_quantized<uint8_t>(in, min_input, max_input);
@@ -53,22 +53,39 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
     float min_filter(W[0]);
     float max_filter(W[0]);
     for (cnn_size_t c = 0; c < W.size(); c++) {
-            min_filter = std::min(min_filter, W[c]);
-            max_filter = std::max(max_filter, W[c]);
+        min_filter = std::min(min_filter, W[c]);
+        max_filter = std::max(max_filter, W[c]);
     }
     if (min_filter == max_filter) {
-      max_filter = W[0] + 1e-2f;
-      min_filter = W[0] - 1e-2f;
+      max_filter = W[0] + 1e-3f;
+      min_filter = W[0] - 1e-3f;
     }
     std::vector<uint8_t> W_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
-
     // output range
     float min_output_value;
     float max_output_value;
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         min_input, max_input, min_filter, max_filter, &min_output_value,
         &max_output_value);
+    // bias quantization
+    float min_bias(0);
+    float max_bias(0);
+    std::vector<uint8_t> bias_quantized;
+    if (params.has_bias_) {
+        for (cnn_size_t inc = 0; inc < b.size(); inc++) {
+            min_bias = std::min(min_bias, b[inc]);
+            max_bias = std::max(max_bias, b[inc]);
+        }
+        if (min_bias == max_bias) {
+          max_bias = b[0] + 1e-3f;
+          min_bias = b[0] - 1e-3f;
+        }
+        bias_quantized =
+            float_tensor_to_quantized<uint8_t>(b, min_bias, max_bias);
+    }
+    min_output_value += min_bias;
+    max_output_value += max_bias;
 
     std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
 
@@ -77,6 +94,8 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
         float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input);
     const int32_t offset_filter =
         float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+    const int32_t zero_in_total_space =
+        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
 
     const int32_t offset_output = 0;
     const int32_t mult_output = 1;
@@ -98,22 +117,24 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
                             offset_output,
                             mult_output,
                             shift_output);
+        if (params.has_bias_) {
+            for_i(layer_parallelize, params.out_size_, [&](int i) {
+            a[i] += b[i];
+        });
+    }
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
             for (cnn_size_t c = 0; c < params.in_size_; c++) {
                 a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }
+            if (params.has_bias_) {
+                a_quantized[i] += (bias_quantized[i] - zero_in_total_space);
+            }
         });
     }
 
     a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
-
-    if (params.has_bias_) {
-    for_i(layer_parallelize, params.out_size_, [&](int i) {
-            a[i] += b[i];
-        });
-    }
 }
 
 }  // namespace kernels

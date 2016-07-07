@@ -180,11 +180,7 @@ inline void requantize_many_in_new_range<int32_t, uint8_t>(
 template <class T>
 void float_tensor_to_quantized_in_place(const vec_t& input, float min, float max,
                                    std::vector<T>* result) {
-  // DCHECK_EQ(DataTypeToEnum<T>::v(), result->dtype());
-  // auto flat_input = input.flat<float>();
-  // auto flat_result = result->flat<T>();
   const int data_size = input.size();
-  // ASSERT_EQ(data_size, result->size());
   for (int i = 0; i < data_size; ++i) {
     (*result)[i] = float_to_quantized<T>(input[i], min, max);
   }
@@ -201,11 +197,7 @@ std::vector<T> float_tensor_to_quantized(const vec_t& input, float min, float ma
 template <class T>
 void quantized_tensor_to_float_in_place(const std::vector<T>& input, float min, float max,
                                    vec_t* result) {
-  // DCHECK_EQ(DataTypeToEnum<T>::v(), input.dtype());
-  // auto flat_input = input.flat<T>();
-  // auto flat_result = result->flat<float>();
   const int data_size = input.size();
-  // ASSERT_EQ(data_size, result->size());
   for (int i = 0; i < data_size; ++i) {
     (*result)[i] = quantized_to_float<T>(input[i], min, max);
   }
