@@ -32,13 +32,13 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void tiny_conv2d_back_kernel(const conv_params& params,
-                             const vec_t& prev_out,
-                             const vec_t& W,
-                             vec_t&       dW,
-                             vec_t&       db,
-                             vec_t&       curr_delta,
-                             vec_t*       prev_delta) {
+inline void tiny_conv2d_back_kernel(const conv_params& params,
+                                    const vec_t& prev_out,
+                                    const vec_t& W,
+                                    vec_t&       dW,
+                                    vec_t&       db,
+                                    vec_t&       curr_delta,
+                                    vec_t*       prev_delta) {
     // propagate delta to previous layer
     for_i(params.in.depth_, [&](int inc) {
         for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {

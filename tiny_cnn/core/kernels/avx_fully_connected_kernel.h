@@ -32,12 +32,12 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void avx_fully_connected_kernel(const fully_params& params,
-                                const vec_t&        in,
-                                const vec_t&        W,
-                                vec_t&              b,
-                                vec_t&              a,
-                                const bool          layer_parallelize) {
+inline void avx_fully_connected_kernel(const fully_params& params,
+                                       const vec_t& in,
+                                       const vec_t& W,
+                                       vec_t&       b,
+                                       vec_t&       a,
+                                       const bool   layer_parallelize) {
     for_i(layer_parallelize, params.out_size_, [&](int i) {
         a[i] = float_t(0);
         for (cnn_size_t c = 0; c < params.in_size_; c++) {
@@ -50,14 +50,14 @@ void avx_fully_connected_kernel(const fully_params& params,
     });
 }
 
-void avx_fully_connected_back_kernel(const fully_params& params,
-                                     const vec_t& prev_out,
-                                     const vec_t& W,
-                                     vec_t&       dW,
-                                     vec_t&       prev_delta,
-                                     vec_t&       curr_delta,
-                                     vec_t&       db,
-                                     const bool   layer_parallelize) {
+inline void avx_fully_connected_back_kernel(const fully_params& params,
+                                            const vec_t& prev_out,
+                                            const vec_t& W,
+                                            vec_t&       dW,
+                                            vec_t&       prev_delta,
+                                            vec_t&       curr_delta,
+                                            vec_t&       db,
+                                            const bool   layer_parallelize) {
     for (cnn_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]

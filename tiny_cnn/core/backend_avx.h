@@ -28,17 +28,6 @@
 
 #include "tiny_cnn/core/backend.h"
 
-#include "tiny_cnn/core/kernels/tiny_conv2d_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_conv2d_back_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_deconv2d_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_fully_connected_kernel.h"
-
-#ifndef CNN_USE_AVX
-#error Advanced Vector Extensions required.
-#endif
-
 #include "tiny_cnn/core/kernels/avx_conv2d_kernel.h"
 #include "tiny_cnn/core/kernels/avx_conv2d_back_kernel.h"
 #include "tiny_cnn/core/kernels/avx_deconv2d_kernel.h"

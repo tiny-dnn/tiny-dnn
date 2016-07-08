@@ -35,7 +35,7 @@ namespace kernels {
 
 // float ver
 template <typename Allocator>
-void avx_conv2d_5x5_kernel(const conv_params&                   params,
+void avx_conv2d_5x5_kernel(const conv_params& params,
                            const std::vector<float, Allocator>& in,
                            const std::vector<float, Allocator>& W,
                            const std::vector<float, Allocator>& bias,
@@ -65,7 +65,7 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                 __m256 sum2 = _mm256_setzero_ps();
                 __m128 sum3 = _mm_setzero_ps();
                 const float* pi = (const float*) &in[0];
-                for (cnn_size_t inc=0; inc<params.in.depth_; ++inc, pw+=25, pi+=inarea) {
+                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, pi += inarea) {
                     if (!tbl.is_connected(o, inc)) {
                         continue;
                     }
@@ -92,12 +92,12 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                 b = madd_ss(b, y_bias_scale, sum3);
                 _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
             }
-        }else {
-            for (size_t o=0; o<out.depth_; ++o) {
+        } else {
+            for (size_t o = 0; o < out.depth_; ++o) {
                 __m256 sum = _mm256_setzero_ps();
                 size_t widx = 25/* weight_.area() */ * params.in.depth_ * o;
                 size_t inidx = 0;
-                for (cnn_size_t inc=0; inc<params.in.depth_; ++inc, widx+=25, inidx+=inarea) {
+                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, widx += 25, inidx += inarea) {
                     if (!tbl.is_connected(o, inc)) {
                         continue;
                     }
@@ -131,9 +131,9 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                 _mm_store_ss(&a[o], hsum);
             }
         }
-    }else {
+    } else {
         const size_t nblocks = out.width_ / 4;
-        for (size_t o=0; o<out.depth_; ++o, oidx += out_area) {
+        for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
             float* pa = &a[oidx];
             // init to bias value
             float b = bias[o] * bias_scale;
@@ -157,7 +157,7 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                     pa[i] = b;
                 }
             }
-            for (cnn_size_t inc=0; inc<params.in.depth_; ++inc) {
+            for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc) {
                 if (!tbl.is_connected(o, inc)) continue;
 
                 const float* pw = (const float*) &W[25 * (params.in.depth_ * o + inc)];
@@ -194,7 +194,7 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                     if (w_stride == 1) {
                         __m256 dst0, dst1, dst2, dst3;
                         float* ppa2 = ppa;
-                        for (size_t i=0; i<nblocks; ++i) {
+                        for (size_t i = 0; i < nblocks; ++i) {
                             __m256 i0 = _mm256_loadu_ps(pi0);
                             __m256 i1 = _mm256_loadu_ps(pi1);
                             __m256 i2 = _mm256_loadu_ps(pi2);
@@ -235,7 +235,7 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
                         }
                         x = nblocks * 4;
                     }
-                    for (; x<out.width_; ++x) {
+                    for (; x < out.width_; ++x) {
                         __m128 sum = _mm_load_ss(&ppa[x]);
                         __m256 i0 = _mm256_loadu_ps(pi0);
                         __m256 i1 = _mm256_loadu_ps(pi1);
@@ -265,7 +265,7 @@ void avx_conv2d_5x5_kernel(const conv_params&                   params,
 
 // double ver
 template <typename Allocator>
-void avx_conv2d_5x5_kernel(const conv_params&         params,
+void avx_conv2d_5x5_kernel(const conv_params& params,
                            const std::vector<double, Allocator>& in,
                            const std::vector<double, Allocator>& W,
                            const std::vector<double, Allocator>& bias,
@@ -288,7 +288,7 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
     const size_t in_padded_area = in_padded.area();
     if (out.height_ == 1 && out.width_ == 1) {
         if (in_stride == 5) {
-            for (size_t o=0; o<out.depth_; ++o) {
+            for (size_t o = 0; o < out.depth_; ++o) {
                 __m256d sum0 = _mm256_setzero_pd();
                 __m256d sum1 = _mm256_setzero_pd();
                 __m256d sum2 = _mm256_setzero_pd();
@@ -297,7 +297,7 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
                 __m256d sum5 = _mm256_setzero_pd();
                 __m128d sum6 = _mm_setzero_pd();
                 size_t inidx = 0;
-                for (cnn_size_t inc=0; inc<params.in.depth_; ++inc, pw+=25, inidx+=in_padded_area) {
+                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, inidx += in_padded_area) {
                     if (!tbl.is_connected(o, inc)) {
                         continue;
                     }
@@ -341,12 +341,12 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
                 b = madd_sd(b, y_bias_scale, sum6);
                 _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
             }
-        }else {
+        } else {
             for (size_t o=0; o<out.depth_; ++o) {
                 __m256d sum_a = _mm256_setzero_pd();
                 __m128d sum_b = _mm_setzero_pd();
                 size_t inidx = 0;
-                for (cnn_size_t inc=0; inc<params.in.depth_; ++inc, pw+=25, inidx+=in_padded_area) {
+                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, inidx += in_padded_area) {
                     if (!tbl.is_connected(o, inc)) {
                         continue;
                     }
@@ -388,8 +388,8 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
                 _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
             }
         }
-    }else {
-        for (cnn_size_t o=0; o<out.depth_; ++o, oidx+=out_area) {
+    } else {
+        for (cnn_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
             double* pa = &a[oidx];
             double b = bias[o] * bias_scale;
             {
@@ -398,22 +398,22 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
                 if (oidx & 3) {
                     headSize = 4 - (oidx & 3);
                     assert(headSize < out_area);
-                    for (size_t i=0; i<headSize; ++i) {
+                    for (size_t i = 0; i < headSize; ++i) {
                         _mm_store_sd(&pa[i], _mm256_castpd256_pd128(b2));
                     }
                 }
                 size_t cnt = (out_area - headSize) / 8;
                 double* pa2 = pa + headSize;
-                for (size_t i=0; i<cnt; ++i) {
+                for (size_t i = 0; i < cnt; ++i) {
                     _mm256_store_pd(&pa2[i*8+0], b2);
                     _mm256_store_pd(&pa2[i*8+4], b2);
                 }
-                for (size_t i=headSize+cnt*8; i<out_area; ++i) {
+                for (size_t i = headSize + cnt*8; i < out_area; ++i) {
                     _mm_store_sd(&pa[i], _mm256_castpd256_pd128(b2));
                 }
             }
             const double* pi0 = &in[0];
-            for (cnn_size_t inc=0; inc<params.in.depth_; ++inc, pw+=25, pi0+=in_padded_area) {
+            for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, pi0 += in_padded_area) {
                 if (!tbl.is_connected(o, inc)) continue;
                 __m256d w0a = _mm256_loadu_pd(pw+0);
                 __m128d w0b = _mm_load_sd(pw+4);
@@ -427,12 +427,12 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
                 __m128d w4b = _mm_load_sd(pw+24);
                 const double* pi = pi0;
                 double* pa2 = pa;
-                for (cnn_size_t y=0; y<out.height_; ++y, pi+=in_stride, pa2+=out.width_) {
+                for (cnn_size_t y = 0; y < out.height_; ++y, pi += in_stride, pa2 += out.width_) {
                     const double* pi1 = pi + 1 * in_stride;
                     const double* pi2 = pi + 2 * in_stride;
                     const double* pi3 = pi + 3 * in_stride;
                     const double* pi4 = pi + 4 * in_stride;
-                    for (cnn_size_t x=0; x<out.width_; ++x) {
+                    for (cnn_size_t x = 0; x < out.width_; ++x) {
                         __m128d sum = _mm_load_sd(&pa2[x]);
                         __m256d i0a = _mm256_loadu_pd(pi);
                         __m128d i0b = _mm_load_sd(pi + 4);
@@ -469,12 +469,12 @@ void avx_conv2d_5x5_kernel(const conv_params&         params,
     } // else
 } // avx_conv2d_5x5_kernel double ver
 
-void avx_conv2d_kernel(const conv_params& params,
-                       const vec_t&       in,
-                       const vec_t&       W,
-                       const vec_t&       bias,
-                       vec_t&             a,
-                       const bool layer_parallelize) {
+inline void avx_conv2d_kernel(const conv_params& params,
+                              const vec_t& in,
+                              const vec_t& W,
+                              const vec_t& bias,
+                              vec_t&       a,
+                              const bool   layer_parallelize) {
     
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
         avx_conv2d_5x5_kernel(params, in, W, bias, a, layer_parallelize);

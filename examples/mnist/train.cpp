@@ -45,8 +45,7 @@ void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
-	core::backend_t backend_type = core::backend_t::tiny_cnn;
-	backend_type = core::backend_t::avx;
+    core::backend_t backend_type = core::backend_t::tiny_cnn;
 
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out

@@ -43,7 +43,7 @@ int  main(int argc, char** argv) {
     nn.init_weight();
 
     vec_t in(224*224*3);
-	
+    
     // generate random variables
     uniform_rand(in.begin(), in.end(), 0, 1);
 
