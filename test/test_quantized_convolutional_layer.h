@@ -102,15 +102,15 @@ TEST(quantized_convolutional, fprop) {
     {
         l.forward_propagation(0, in_data, out_data);
 
-        EXPECT_NEAR(0.4875026, out[0], 1E-2);
-        EXPECT_NEAR(0.8388910, out[1], 1E-2);
-        EXPECT_NEAR(0.8099984, out[2], 1E-2);
-        EXPECT_NEAR(0.7407749, out[3], 1E-2);
-        EXPECT_NEAR(0.5000000, out[4], 1E-2);
-        EXPECT_NEAR(0.1192029, out[5], 1E-2);
-        EXPECT_NEAR(0.5986877, out[6], 1E-2);
-        EXPECT_NEAR(0.7595109, out[7], 1E-2);
-        EXPECT_NEAR(0.6899745, out[8], 1E-2);
+        EXPECT_NEAR(0.4875026, out[0], 2E-2);
+        EXPECT_NEAR(0.8388910, out[1], 2E-2);
+        EXPECT_NEAR(0.8099984, out[2], 2E-2);
+        EXPECT_NEAR(0.7407749, out[3], 2E-2);
+        EXPECT_NEAR(0.5000000, out[4], 2E-2);
+        EXPECT_NEAR(0.1192029, out[5], 2E-2);
+        EXPECT_NEAR(0.5986877, out[6], 2E-2);
+        EXPECT_NEAR(0.7595109, out[7], 2E-2);
+        EXPECT_NEAR(0.6899745, out[8], 2E-2);
     }
 }
 
@@ -159,15 +159,15 @@ TEST(quantized_convolutional, fprop_nnp) {
     {
         l.forward_propagation(0, in_data, out_data);
 
-        EXPECT_NEAR(0.4875026, out[0], 1E-2);
-        EXPECT_NEAR(0.8388910, out[1], 1E-2);
-        EXPECT_NEAR(0.8099984, out[2], 1E-2);
-        EXPECT_NEAR(0.7407749, out[3], 1E-2);
-        EXPECT_NEAR(0.5000000, out[4], 1E-2);
-        EXPECT_NEAR(0.1192029, out[5], 1E-2);
-        EXPECT_NEAR(0.5986877, out[6], 1E-2);
-        EXPECT_NEAR(0.7595109, out[7], 1E-2);
-        EXPECT_NEAR(0.6899745, out[8], 1E-2);
+        EXPECT_NEAR(0.4875026, out[0], 2E-2);
+        EXPECT_NEAR(0.8388910, out[1], 2E-2);
+        EXPECT_NEAR(0.8099984, out[2], 2E-2);
+        EXPECT_NEAR(0.7407749, out[3], 2E-2);
+        EXPECT_NEAR(0.5000000, out[4], 2E-2);
+        EXPECT_NEAR(0.1192029, out[5], 2E-2);
+        EXPECT_NEAR(0.5986877, out[6], 2E-2);
+        EXPECT_NEAR(0.7595109, out[7], 2E-2);
+        EXPECT_NEAR(0.6899745, out[8], 2E-2);
     }
 }
 #endif

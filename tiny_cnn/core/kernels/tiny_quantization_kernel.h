@@ -210,6 +210,28 @@ vec_t quantized_tensor_to_float(const std::vector<T>& input, float min, float ma
   return result;
 }
 
+template <class T1, class T2>
+void quantize_down_and_shrink_range( std::vector<T1>& input, float min_input, float max_input,
+                               float* min_new, float* max_new, std::vector<T2>* output){
+  const int32_t input_lowest_quantized = static_cast<int32_t>(lowest<T1>());
+  const int32_t input_highest_quantized = static_cast<int32_t>(highest<T1>());
+  T1 actual_min_quantized = input_highest_quantized;
+  T1 actual_max_quantized = input_lowest_quantized;
+  for (int i = 0; i < input.size(); ++i) {
+    const T1 value = input[i];
+    actual_min_quantized = std::min(actual_min_quantized, value);
+    actual_max_quantized = std::max(actual_max_quantized, value);
+  }
+  // We want to make sure that the minimum is no larger than zero, so that the
+  // convolution operation can run efficiently.
+  *min_new = std::min(0.0f, quantized_to_float(actual_min_quantized, min_input,
+                                      max_input));
+  *max_new = quantized_to_float(actual_max_quantized, min_input, max_input);
+  requantize_many_in_new_range<int32_t, uint8_t>(&input[0], input.size(),
+                           min_input, max_input, *min_new,
+                           *max_new, &(*output)[0]);
+}
+
 }  // namespace kernels
 }  // namespace core
 }  // namespace tiny_cnn

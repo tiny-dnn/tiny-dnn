@@ -158,7 +158,16 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         }
     });
 
-    a = quantized_tensor_to_float<int32_t>(a_quantized, min_output_value, max_output_value);
+    float min_output_requantized;
+    float max_output_requantized;
+    std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
+
+    // Requantize from 32bits to 8 bits for next layer
+    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
+    &min_output_requantized, &max_output_requantized, &a_requantized);
+
+    // dequantize to flaot, this could be removed within concatenated quantized network
+    a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
 }
 
 }  // namespace kernels

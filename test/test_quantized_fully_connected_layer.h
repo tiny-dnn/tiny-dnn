@@ -95,13 +95,13 @@ TEST(quantized_fully_connected, train2) {
 
     vec_t predicted = nn.predict(a);
 
-    EXPECT_NEAR(predicted[0], t[0], 1E-1);
-    EXPECT_NEAR(predicted[1], t[1], 1E-2);
+    EXPECT_NEAR(predicted[0], t[0], 2E-2);
+    EXPECT_NEAR(predicted[1], t[1], 2E-2);
 
     predicted = nn.predict(a2);
 
-    EXPECT_NEAR(predicted[0], t2[0], 1E-2);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-1);
+    EXPECT_NEAR(predicted[0], t2[0], 2E-2);
+    EXPECT_NEAR(predicted[1], t2[1], 2E-2);
 }
 /*
 TEST(quantized_fully_connected, gradient_check) {
