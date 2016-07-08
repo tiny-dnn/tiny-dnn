@@ -239,4 +239,26 @@ TEST(quantization_utils, quantized_tensor_to_float) {
   }
 }
 
+TEST(quantization_utils, quantize_down_and_shrink_range) {
+  // For this test we have an input that has the theoretical range of -256.0f to
+  // +256.0f, but the actual values present only span -1.0f to 1.0f. We expect
+  // the operator to take advantage of this, and rescale the output to fill up
+  // the available range in the lower bit depth, and update to the true min and
+  // max ranges.
+  const float_t input_min = -256.0f;
+  const float_t input_max = 256.0f;
+  float_t output_min;
+  float_t output_max;
+  std::vector<int32_t> input = {-(1 << 23), 0, (1 << 23)};
+  std::vector<uint8_t> output(input.size(), static_cast<uint8_t>(0));
+  core::kernels::quantize_down_and_shrink_range<int32_t, uint8_t>(input, input_min, input_max,
+    &output_min, &output_max, &output);
+  const std::vector<uint8_t> expected = {0, 127, 255};
+  for (size_t value_index = 0; value_index < expected.size(); ++value_index) {
+    EXPECT_EQ(expected[value_index], output[value_index]);
+  }
+  EXPECT_NEAR(-1.0f, output_min, 1E-5);
+  EXPECT_NEAR(1.0f, output_max, 1E-5);
+}
+
 } // namespace tiny-cnn
