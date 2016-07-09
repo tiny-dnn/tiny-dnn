@@ -132,9 +132,9 @@ class avx_backend : public backend {
         }
     }
 
-    void deconv2d(cnn_size_t        index,
-        const std::vector<vec_t*>&  in_data,
-        std::vector<vec_t*>&        out_data) {
+    void deconv2d(cnn_size_t                  index,
+                  const std::vector<vec_t*>&  in_data,
+                  std::vector<vec_t*>&        out_data) {
         (*deconv_layer_worker_storage_)[index].prev_out_ = in_data[0];
         const vec_t& W   = *in_data[1];
         const vec_t& bias = *in_data[2];
@@ -150,10 +150,10 @@ class avx_backend : public backend {
     }
 
     void deconv2d(cnn_size_t                 index,
-                       const std::vector<vec_t*>& in_data,
-                       const std::vector<vec_t*>& out_data,
-                       std::vector<vec_t*>&       out_grad,
-                       std::vector<vec_t*>&       in_grad) {
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
 
         deconv_layer_worker_specific_storage& cws =
             (*deconv_layer_worker_storage_)[index];
