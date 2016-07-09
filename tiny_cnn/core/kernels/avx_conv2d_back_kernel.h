@@ -432,12 +432,12 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
 // double ver
 template <typename Allocator>
 void avx_conv2d_5x5_back_kernel(const conv_params& params,
-                            const std::vector<double, Allocator>& prev_out,
-                            const std::vector<double, Allocator>& W,
-                            std::vector<double, Allocator>&       dW,
-                            std::vector<double, Allocator>&       db,
-                            std::vector<double, Allocator>&       curr_delta,
-                            std::vector<double, Allocator>*       prev_delta) {
+                                const std::vector<double, Allocator>& prev_out,
+                                const std::vector<double, Allocator>& W,
+                                std::vector<double, Allocator>&       dW,
+                                std::vector<double, Allocator>&       db,
+                                std::vector<double, Allocator>&       curr_delta,
+                                std::vector<double, Allocator>*       prev_delta) {
     // propagate delta to previous layer
     for_i(params.in.depth_, [&](int inc) {
         for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
@@ -521,12 +521,12 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
 } // avx_conv2d_5x5_back_kernel double ver
 
 inline void avx_conv2d_back_kernel(const conv_params& params,
-                                    const vec_t& prev_out,
-                                    const vec_t& W,
-                                    vec_t&       dW,
-                                    vec_t&       db,
-                                    vec_t&       curr_delta,
-                                    vec_t*       prev_delta) {
+                                   const vec_t& prev_out,
+                                   const vec_t& W,
+                                   vec_t&       dW,
+                                   vec_t&       db,
+                                   vec_t&       curr_delta,
+                                   vec_t*       prev_delta) {
                              
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
         avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db, curr_delta, prev_delta);
