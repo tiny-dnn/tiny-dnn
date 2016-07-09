@@ -30,6 +30,11 @@
 #error Advanced Vector Extensions required.
 #endif
 
+#ifndef _mm256_set_m128
+#define _mm256_set_m128(va, vb) \
+        _mm256_insertf128_ps(_mm256_castps128_ps256(vb), va, 1)
+#endif
+
 inline __m256 madd(__m256 a, __m256 b, __m256 c) { return _mm256_add_ps(_mm256_mul_ps(a, b), c); }
 inline __m128 madd(__m128 a, __m128 b, __m128 c) { return _mm_add_ps(_mm_mul_ps(a, b), c); }
 inline __m128 madd_ss(__m128 a, __m128 b, __m128 c) { return _mm_add_ss(_mm_mul_ss(a, b), c); }
@@ -94,16 +99,22 @@ inline __m128d hsum256_pd(__m256d x) {
     // sumQuad = ( x2+x3, x0+x1 )
     const __m128d sumDual = _mm_add_pd(loDual, hiDual);
     // sum = ( 0, x0+x1+x2+x3 );
-    const __m128d sum = _mm_hadd_pd(loDual, _mm_setzero_pd());
+    const __m128d sum = _mm_hadd_pd(sumDual, _mm_setzero_pd());
     return sum;
 }
+
+template<int n>
+struct foobar : std::false_type
+{ };
+
 
 // Byte Shift YMM Register Across 128-bit Lanes
 // limitation : shift amount is immediate and is multiples of 4
 
 template <int n>
 inline __m256 leftShift(__m256 a) {
-    static_assert(false);
+    static_assert(foobar<n>::value, "unsupported shift amount");
+    return a;
 }
 
 // http://stackoverflow.com/q/19516585
@@ -198,7 +209,8 @@ inline __m256 leftShift<28>(__m256 x) {
 template <int n>
 inline __m256 rightShift(__m256 a)
 {
-    static_assert(false);
+    static_assert(foobar<n>::value, "unsupported shift amount");
+    return a;
 }
 
 // http://stackoverflow.com/a/19532415/4699324

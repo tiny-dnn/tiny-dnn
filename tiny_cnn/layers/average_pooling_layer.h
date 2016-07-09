@@ -44,7 +44,7 @@ void tiny_average_pooling_kernel(bool parallelize,
                                  std::vector<vec_t*>&         out_data,
                                  const shape3d&               out_dim,
                                  float_t                      scale_factor,
-                                 std::vector<partial_connected_layer::wi_connections>& out2wi,
+                                 std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
                                  Activation&                  h) {
     const vec_t& in  = *in_data[0];
     const vec_t& W   = *in_data[1];
@@ -82,8 +82,8 @@ void tiny_average_pooling_back_kernel(const std::vector<vec_t*>&   in_data,
                                       std::vector<vec_t*>&         in_grad,
                                       const shape3d&               in_dim,
                                       float_t                      scale_factor,
-                                      std::vector<partial_connected_layer::io_connections>& weight2io,
-                                      std::vector<partial_connected_layer::wo_connections>& in2wo,
+                                      std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
+                                      std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
                                       std::vector<std::vector<cnn_size_t>>& bias2out) {
 
     const vec_t& prev_out = *in_data[0];
@@ -206,9 +206,9 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             in_data,
             out_data,
             out_,
-            scale_factor_,
-            out2wi_,
-            h_);
+            Base::scale_factor_,
+            Base::out2wi_,
+            Base::h_);
         
     }
 
@@ -228,10 +228,10 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             out_grad,
             in_grad,
             in_,
-            scale_factor_,
-            weight2io_,
-            in2wo_,
-            bias2out_);
+            Base::scale_factor_,
+            Base::weight2io_,
+            Base::in2wo_,
+            Base::bias2out_);
         
     }
 

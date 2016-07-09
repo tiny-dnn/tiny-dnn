@@ -26,7 +26,9 @@
 */
 #pragma once
 
+#include <vector>
 #include "tiny_cnn/core/params/conv_params.h"
+#include "tiny_cnn/core/kernels/avx_kernel_common.h"
 
 namespace tiny_cnn {
 namespace core {
