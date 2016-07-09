@@ -75,9 +75,9 @@ inline void parse_mnist_image(std::ifstream& ifs,
     dst.resize(width * height, scale_min);
 
     for (uint32_t y = 0; y < header.num_rows; y++)
-      for (uint32_t x = 0; x < header.num_cols; x++)
-        dst[width * (y + y_padding) + x + x_padding]
-        = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
+        for (uint32_t x = 0; x < header.num_cols; x++)
+            dst[width * (y + y_padding) + x + x_padding]
+            = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
 }
 
 } // namespace detail

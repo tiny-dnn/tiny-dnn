@@ -30,7 +30,7 @@
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
 
-void construct_net(network<sequential>& nn) {
+static void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -62,7 +62,7 @@ void construct_net(network<sequential>& nn) {
     ;
 }
 
-void train_lenet(std::string data_dir_path) {
+static void train_lenet(const std::string& data_dir_path) {
     // specify loss-function and learning strategy
     network<sequential> nn;
     adagrad optimizer;
@@ -128,4 +128,5 @@ int main(int argc, char **argv) {
         return -1;
     }
     train_lenet(argv[1]);
+    return 0;
 }

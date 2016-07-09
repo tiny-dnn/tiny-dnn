@@ -35,13 +35,13 @@ namespace core {
 
 class device {
  public:
-  explicit device(const int id) : id_(id) {}
+    explicit device(const int id) : id_(id) {}
 
-  int get_id() const { return id_; }
+    int get_id() const { return id_; }
 
  private:
-  int id_;
-  std::vector<std::shared_ptr<backend>> backends_;
+    int id_;
+    std::vector<std::shared_ptr<backend>> backends_;
 };
 
 }  // namespace core
