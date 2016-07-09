@@ -33,6 +33,9 @@
 #include "tiny_cnn/core/backend_tiny.h"
 #include "tiny_cnn/core/backend_nnp.h"
 #include "tiny_cnn/core/backend_dnn.h"
+#ifdef CNN_USE_AVX
+#include "tiny_cnn/core/backend_avx.h"
+#endif
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -474,6 +477,21 @@ class convolutional_layer : public feedforward_layer<Activation> {
                 &conv_layer_worker_storage_);
         } else if (backend_type == backend_t::libdnn) {
             backend = std::make_shared<core::dnn_backend>();
+#ifdef CNN_USE_AVX
+        } else if (backend_type == backend_t::avx) {
+            backend = std::make_shared<core::avx_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_pad_input(in, worker_index);
+                },
+                [this](const vec_t& delta, vec_t& dst) {
+                    return copy_and_unpad_delta(delta, dst);
+                },
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &conv_layer_worker_storage_);
+#endif
         } else {
             throw nn_error("Not supported backend type.");
         }

@@ -33,6 +33,9 @@
 #include "tiny_cnn/core/backend_tiny.h"
 #include "tiny_cnn/core/backend_nnp.h"
 #include "tiny_cnn/core/backend_dnn.h"
+#ifdef CNN_USE_AVX
+#include "tiny_cnn/core/backend_avx.h"
+#endif
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
@@ -262,6 +265,17 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             backend = std::make_shared<core::nnp_backend>(&params_);
         } else if (backend_type == backend_t::libdnn) {
             backend = std::make_shared<core::dnn_backend>();
+#ifdef CNN_USE_AVX
+        } else if (backend_type == backend_t::avx) {
+            backend = std::make_shared<core::avx_backend>(
+                &out2in_,
+                &in2out_,
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &max_pooling_layer_worker_storage_);
+#endif
         } else {
             throw nn_error("Not supported backend type.");
         }

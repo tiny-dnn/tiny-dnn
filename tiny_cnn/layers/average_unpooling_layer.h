@@ -140,11 +140,11 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
         cnn_size_t dxmax = std::min(pooling_size, out_.width_ - x);
         cnn_size_t dstx = x * stride_;
         cnn_size_t dsty = y * stride_;
-
+        cnn_size_t inidx = in_.get_index(x, y, inc);
         for (cnn_size_t dy = 0; dy < dymax; ++dy) {
             for (cnn_size_t dx = 0; dx < dxmax; ++dx) {
                 this->connect_weight(
-                    in_.get_index(x, y, inc),
+                    inidx,
                     out_.get_index(dstx + dx, dsty + dy, inc),
                     inc);
             }

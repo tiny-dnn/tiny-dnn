@@ -28,27 +28,27 @@
 
 #include "tiny_cnn/core/backend.h"
 
-#include "tiny_cnn/core/kernels/tiny_conv2d_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_conv2d_back_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_deconv2d_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_deconv2d_back_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
-#include "tiny_cnn/core/kernels/tiny_fully_connected_kernel.h"
+#include "tiny_cnn/core/kernels/avx_conv2d_kernel.h"
+#include "tiny_cnn/core/kernels/avx_conv2d_back_kernel.h"
+#include "tiny_cnn/core/kernels/avx_deconv2d_kernel.h"
+#include "tiny_cnn/core/kernels/avx_deconv2d_back_kernel.h"
+#include "tiny_cnn/core/kernels/avx_maxpool_kernel.h"
+#include "tiny_cnn/core/kernels/avx_fully_connected_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
 
-class tiny_backend : public backend {
+class avx_backend : public backend {
  public:
     // context holds solution-dependent parameters
     // context should be able to hold any types of structures (like boost::any)
 
     // convolution
-    tiny_backend(conv_params* params,
-                 std::function<void(const vec_t&, int)> f1,
-                 std::function<void(const vec_t&, vec_t&)> f2,
-                 std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
-                 std::vector<conv_layer_worker_specific_storage>* ptr)
+    avx_backend(conv_params* params,
+                std::function<void(const vec_t&, int)> f1,
+                std::function<void(const vec_t&, vec_t&)> f2,
+                std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
+                std::vector<conv_layer_worker_specific_storage>* ptr)
       : params_c_(params)
       , conv_layer_worker_storage_(ptr)
       , copy_and_pad_input(f1)
@@ -56,11 +56,11 @@ class tiny_backend : public backend {
       , backward_activation(f3) {}
 
     // deconvolution
-    tiny_backend(deconv_params* params,
-                 std::function<void(const vec_t&, int)> f1,
-                 std::function<void(const vec_t&, vec_t&)> f2,
-                 std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
-                 std::vector<deconv_layer_worker_specific_storage>* ptr)
+    avx_backend(deconv_params* params,
+                std::function<void(const vec_t&, int)> f1,
+                std::function<void(const vec_t&, vec_t&)> f2,
+                std::function<void(const vec_t&, const vec_t&, vec_t&)> f3,
+                std::vector<deconv_layer_worker_specific_storage>* ptr)
       : params_d_(params)
       , deconv_layer_worker_storage_(ptr)
       , copy_and_unpad_output(f1)
@@ -68,18 +68,18 @@ class tiny_backend : public backend {
       , backward_activation(f3) {}
 
     // maxpooling
-    tiny_backend(std::vector<std::vector<cnn_size_t>>* out2in,
-                 std::vector<cnn_size_t>* in2out,
-                 std::function<void(const vec_t&, const vec_t&, vec_t&)> f,
-                 std::vector<max_pooling_layer_worker_specific_storage>* ptr)
+    avx_backend(std::vector<std::vector<cnn_size_t>>* out2in,
+                std::vector<cnn_size_t>* in2out,
+                std::function<void(const vec_t&, const vec_t&, vec_t&)> f,
+                std::vector<max_pooling_layer_worker_specific_storage>* ptr)
       : max_pooling_layer_worker_storage_(ptr)
       , out2in_(out2in)
       , in2out_(in2out)
       , backward_activation(f) {}
 
     // fully_connected
-    tiny_backend(fully_params* params,
-                 std::function<void(const vec_t&, const vec_t&, vec_t&)> f)
+    avx_backend(fully_params* params,
+                std::function<void(const vec_t&, const vec_t&, vec_t&)> f)
       : params_f_(params)
       , backward_activation(f) {}
 
@@ -96,7 +96,7 @@ class tiny_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::tiny_conv2d_kernel(*params_c_,
+        kernels::avx_conv2d_kernel(*params_c_,
             in, W, bias, a, layer_->get_parallelize());
     }
 
@@ -124,7 +124,7 @@ class tiny_backend : public backend {
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-        kernels::tiny_conv2d_back_kernel(*params_c_,
+        kernels::avx_conv2d_back_kernel(*params_c_,
             prev_out, W, dW, db, curr_delta, prev_delta);
 
         if (params_c_->pad_type == padding::same) {
@@ -143,7 +143,7 @@ class tiny_backend : public backend {
 
         std::fill(a.begin(), a.end(), float_t(0));
 
-        kernels::tiny_deconv2d_kernel(*params_d_,
+        kernels::avx_deconv2d_kernel(*params_d_,
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
@@ -175,7 +175,7 @@ class tiny_backend : public backend {
 
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
-        kernels::tiny_deconv2d_back_kernel(*params_d_,
+        kernels::avx_deconv2d_back_kernel(*params_d_,
             prev_out, W, dW, db, curr_delta, prev_delta);
     }
 
@@ -191,7 +191,7 @@ class tiny_backend : public backend {
         std::vector<cnn_size_t>& max_idx =
             (*max_pooling_layer_worker_storage_)[index].out2inmax_;
 
-        kernels::tiny_maxpool_kernel(in, a,
+        kernels::avx_maxpool_kernel(in, a,
             max_idx, *out2in_, layer_->get_parallelize());
     }
 
@@ -209,7 +209,7 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_maxpool_back_kernel(prev_delta, curr_delta,
+        kernels::avx_maxpool_back_kernel(prev_delta, curr_delta,
             max_idx, *in2out_,  layer_->get_parallelize());
     }
 
@@ -223,7 +223,7 @@ class tiny_backend : public backend {
 
         CNN_UNREFERENCED_PARAMETER(index);
 
-        kernels::tiny_fully_connected_kernel(*params_f_,
+        kernels::avx_fully_connected_kernel(*params_f_,
             in, W, b, a, layer_->get_parallelize());
     }
 
@@ -243,11 +243,11 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
+        kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
             W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
     }
 
-    backend_t get_type() const { return backend_t::tiny_cnn; }
+    backend_t get_type() const { return backend_t::avx; }
 
  private:
     /* Pointer to the convolution parameters */

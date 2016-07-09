@@ -118,25 +118,25 @@ class layer : public node {
     cnn_size_t out_channels() const { return out_channels_; }
 
     cnn_size_t in_data_size() const {
-        return sumif(in_shape(), [&](int i) { // NOLINT
+        return sumif(in_shape(), [&](size_t i) { // NOLINT
             return in_type_[i] == vector_type::data; }, [](const shape3d& s) {
                 return s.size(); });
     }
 
     cnn_size_t out_data_size() const {
-        return sumif(out_shape(), [&](int i) { // NOLINT
+        return sumif(out_shape(), [&](size_t i) { // NOLINT
             return out_type_[i] == vector_type::data; }, [](const shape3d& s) {
                 return s.size(); });
     }
 
     std::vector<shape3d> in_data_shape() {
-        return filter(in_shape(), [&](int i) { // NOLINT
+        return filter(in_shape(), [&](size_t i) { // NOLINT
             return in_type_[i] == vector_type::data;
         });
     }
 
     std::vector<shape3d> out_data_shape() {
-        return filter(out_shape(), [&](int i) { // NOLINT
+        return filter(out_shape(), [&](size_t i) { // NOLINT
             return out_type_[i] == vector_type::data;
         });
     }
@@ -248,7 +248,7 @@ class layer : public node {
      * override properly if the layer is intended to be used as output layer
      **/
     virtual std::pair<float_t, float_t>
-    out_value_range() const { return {0.0, 1.0}; }  // NOLINT
+    out_value_range() const { return {float_t(0.0), float_t(1.0)}; }  // NOLINT
 
     /**
      * array of input shapes (width x height x depth)
@@ -485,6 +485,7 @@ class layer : public node {
 
     void update_weight(optimizer *o,
                        cnn_size_t worker_size, cnn_size_t batch_size) {
+        float_t rcp_batch_size = float_t(1) / float_t(batch_size);
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
                 vec_t diff;
@@ -493,7 +494,7 @@ class layer : public node {
                 ith_in_node(i)->merge_grads(worker_size, &diff);
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
-                                  return x / batch_size; });
+                                  return x * rcp_batch_size; });
                 o->update(diff, target);
             }
         }

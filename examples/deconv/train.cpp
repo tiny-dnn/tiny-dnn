@@ -64,13 +64,13 @@ void deLaNet(network<sequential>& nn,
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp(train_images.size());
+    progress_display disp((unsigned long)train_images.size());
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
 
     adagrad optimizer;
-    optimizer.alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= tiny_cnn::float_t(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -78,7 +78,7 @@ void deLaNet(network<sequential>& nn,
         tiny_cnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart(train_images.size());
+        disp.restart((unsigned long)train_images.size());
         t.restart();
     };
 
@@ -119,7 +119,7 @@ void DeAE(network<sequential>& nn,
     std::vector<vec_t> training_images_corrupted(train_images);
 
     for (auto& d : training_images_corrupted) {
-        d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
+        d = corrupt(move(d), tiny_cnn::float_t(0.1), tiny_cnn::float_t(0.0)); // corrupt 10% data
     }
 
     gradient_descent optimizer;

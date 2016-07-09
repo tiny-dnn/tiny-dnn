@@ -32,12 +32,12 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void nnp_fully_connected_kernel(const fully_params& params,
-                                const vec_t&        in,
-                                const vec_t&        W,
-                                vec_t&              b,
-                                vec_t&              a,
-                                const bool          layer_parallelize) {
+inline void nnp_fully_connected_kernel(const fully_params& params,
+                                       const vec_t&        in,
+                                       const vec_t&        W,
+                                       vec_t&              b,
+                                       vec_t&              a,
+                                       const bool          layer_parallelize) {
 #ifdef CNN_USE_NNPACK
     const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
     const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);

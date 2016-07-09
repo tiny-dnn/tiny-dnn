@@ -26,60 +26,58 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/params/conv_params.h"
+#include "tiny_cnn/core/params/deconv_params.h"
 
 namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-inline void tiny_conv2d_back_kernel(const conv_params& params,
-                                    const vec_t& prev_out,
-                                    const vec_t& W,
-                                    vec_t&       dW,
-                                    vec_t&       db,
-                                    vec_t&       curr_delta,
-                                    vec_t*       prev_delta) {
+inline void avx_deconv2d_back_kernel(const deconv_params& params,
+                                     const vec_t& prev_out,
+                                     const vec_t& W,
+                                     vec_t&       dW,
+                                     vec_t&       db,
+                                     vec_t&       curr_delta,
+                                     vec_t*       prev_delta) {
     // propagate delta to previous layer
-    for_i(params.in.depth_, [&](int inc) {
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
+    for_i(params.in_.depth_, [&](int inc) {
+        for (cnn_size_t outc = 0; outc < params.out_.depth_; outc++) {
             if (!params.tbl.is_connected(outc, inc)) continue;
 
             cnn_size_t idx = 0;
-            idx = params.in.depth_ * outc + inc;
+            idx = params.in_.depth_ * outc + inc;
             idx = params.weight.get_index(0, 0, idx);
             const float_t *pw = &W[idx];
 
-            idx = params.out.get_index(0, 0, outc);
+            idx = params.out_unpadded_.get_index(0, 0, outc);
             const float_t *pdelta_src = &curr_delta[idx];
 
-            idx = params.in_padded.get_index(0, 0, inc);
+            idx = params.in_.get_index(0, 0, inc);
             float_t *pdelta_dst = &(*prev_delta)[idx];
 
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
+            for (cnn_size_t y = 0; y < params.in_.height_; y++) {
+                for (cnn_size_t x = 0; x < params.in_.width_; x++) {
                     const float_t * ppw = pw;
+                    float_t * ppdelta_dst = pdelta_dst + y * params.in_.width_ + x;
+                    float_t sum = float_t(0);
 
-                    idx = y * params.out.width_ + x;
-                    const float_t ppdelta_src = pdelta_src[idx];
-
-                    float_t * ppdelta_dst = pdelta_dst +
-                          y * params.h_stride * params.in_padded.width_ +
-                          x * params.w_stride;
-
-                    for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {    // NOLINT
-                        for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) { // NOLINT
-                            idx = wy * params.in_padded.width_ + wx;
-                            ppdelta_dst[idx] += *ppw++ * ppdelta_src;
+                    for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
+                        for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
+                            sum += ppw[wy * params.weight.width_ + wx] *
+                                pdelta_src[(y+wy) * params.h_stride *
+                                params.in_.width_ + (x+wx) *
+                                params.w_stride];
                         }
                     }
+                    *ppdelta_dst += sum;
                 }
             }
         }
     });
 
     // accumulate dw
-    for_i(params.in.depth_, [&](int inc) {
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
+    for_i(params.in_.depth_, [&](int inc) {
+        for (cnn_size_t outc = 0; outc < params.out_.depth_; outc++) {
             if (!params.tbl.is_connected(outc, inc)) continue;
 
             for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
@@ -87,20 +85,18 @@ inline void tiny_conv2d_back_kernel(const conv_params& params,
                     float_t dst = float_t(0);
 
                     cnn_size_t idx = 0;
-                    idx = params.in_padded.get_index(wx, wy, inc);
+                    idx = params.in_.get_index(0, 0, inc);
                     const float_t * prevo = &prev_out[idx];
 
-                    idx = params.out.get_index(0, 0, outc);
+                    idx = params.out_.get_index(wx, wy, outc);
                     const float_t * delta = &curr_delta[idx];
 
-                    for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                        dst += vectorize::dot(
-                            prevo + y * params.in_padded.width_,
-                            delta + y * params.out.width_,
-                            params.out.width_);
+                    for (cnn_size_t y = 0; y < params.in_.height_; y++) {
+                        dst += vectorize::dot(prevo + y * params.in_.width_,
+                            delta + y * params.out_.width_, params.in_.width_);
                     }
 
-                    idx = params.in.depth_ * outc + inc;
+                    idx = params.in_.depth_ * outc + inc;
                     dW[params.weight.get_index(wx, wy, idx)] += dst;
                 }
             }
@@ -111,11 +107,11 @@ inline void tiny_conv2d_back_kernel(const conv_params& params,
     if (params.has_bias) {
         //vec_t& db = *in_grad[2];
 
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
-            cnn_size_t idx = params.out.get_index(0, 0, outc);
+        for (cnn_size_t outc = 0; outc < params.out_.depth_; outc++) {
+            cnn_size_t idx = params.out_.get_index(0, 0, outc);
             const float_t * delta = &curr_delta[idx];
-            const float_t * deltaa = delta + params.out.width_ *
-                                             params.out.height_;
+            const float_t * deltaa = delta + params.out_.width_ *
+                                             params.out_.height_;
             db[outc] += std::accumulate(delta, deltaa, float_t(0));
         }
     }

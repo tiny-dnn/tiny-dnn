@@ -37,6 +37,93 @@
 
 namespace tiny_cnn {
 
+// forward_propagation
+template <typename Activation>
+void tiny_average_pooling_kernel(bool parallelize,
+                                 const std::vector<vec_t*>&   in_data,
+                                 std::vector<vec_t*>&         out_data,
+                                 const shape3d&               out_dim,
+                                 float_t                      scale_factor,
+                                 std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
+                                 Activation&                  h) {
+    const vec_t& in  = *in_data[0];
+    const vec_t& W   = *in_data[1];
+    const vec_t& b   = *in_data[2];
+    vec_t&       out = *out_data[0];
+    vec_t&       a   = *out_data[1];
+
+    auto oarea = out_dim.area();
+    size_t idx = 0;
+    for (size_t d = 0; d < out_dim.depth_; ++d) {
+        float_t weight = W[d] * scale_factor;
+        float_t bias = b[d];
+        for (size_t i= 0 ; i < oarea; ++i, ++idx) {
+            const auto& connections = out2wi[idx];
+            float_t value = float_t(0);
+            for (auto connection : connections)// 13.1%
+                value += in[connection.second]; // 3.2%
+            value *= weight;
+            value += bias;
+            a[idx] = value;
+        }
+    }
+
+    assert(out.size() == out2wi.size());
+    for_i(parallelize, out2wi.size(), [&](int i) {
+        out[i] = h.f(a, i);
+    });
+}
+
+// back_propagation
+template<typename Activation>
+void tiny_average_pooling_back_kernel(const std::vector<vec_t*>&   in_data,
+                                      const std::vector<vec_t*>&   out_data,
+                                      std::vector<vec_t*>&         out_grad,
+                                      std::vector<vec_t*>&         in_grad,
+                                      const shape3d&               in_dim,
+                                      float_t                      scale_factor,
+                                      std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
+                                      std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
+                                      std::vector<std::vector<cnn_size_t>>& bias2out) {
+
+    const vec_t& prev_out = *in_data[0];
+    const vec_t& W  = *in_data[1];
+    vec_t&       dW = *in_grad[1];
+    vec_t&       db = *in_grad[2];
+    vec_t&       prev_delta = *in_grad[0];
+    vec_t&       curr_delta = *out_grad[0];
+
+    auto inarea = in_dim.area();
+    size_t idx = 0;
+    for (size_t i = 0; i < in_dim.depth_; ++i) {
+        float_t weight = W[i] * scale_factor;
+        for (size_t j = 0; j < inarea; ++j, ++idx) {
+            prev_delta[idx] = weight * curr_delta[in2wo[idx][0].second];
+        }
+    }
+
+    for (size_t i = 0; i < weight2io.size(); ++i) {
+        const auto& connections = weight2io[i];
+        float_t diff = float_t(0);
+
+        for (auto connection : connections)
+            diff += prev_out[connection.first] * curr_delta[connection.second];
+
+        dW[i] += diff * scale_factor;
+    }
+
+    for (size_t i = 0; i < bias2out.size(); i++) {
+        const std::vector<cnn_size_t>& outs = bias2out[i];
+        float_t diff = float_t(0);
+
+        for (auto o : outs)
+            diff += curr_delta[o];    
+
+        db[i] += diff;
+    }
+}
+
+
 /**
  * average pooling with trainable weights
  **/
@@ -108,6 +195,46 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     std::string layer_type() const override { return "ave-pool"; }
 
+    void forward_propagation(cnn_size_t index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>& out_data) override {
+        
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        tiny_average_pooling_kernel<Activation>(
+            parallelize_,
+            in_data,
+            out_data,
+            out_,
+            Base::scale_factor_,
+            Base::out2wi_,
+            Base::h_);
+        
+    }
+
+    void back_propagation(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) override {
+        
+        CNN_UNREFERENCED_PARAMETER(index);
+        vec_t& curr_delta = *out_grad[0];
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        tiny_average_pooling_back_kernel<Activation>(
+            in_data,
+            out_data,
+            out_grad,
+            in_grad,
+            in_,
+            Base::scale_factor_,
+            Base::weight2io_,
+            Base::in2wo_,
+            Base::bias2out_);
+        
+    }
+
  private:
     size_t stride_;
     shape3d in_;
@@ -147,12 +274,12 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         cnn_size_t dxmax = std::min(pooling_size, in_.width_ - x);
         cnn_size_t dstx = x / stride_;
         cnn_size_t dsty = y / stride_;
-
+        cnn_size_t outidx = out_.get_index(dstx, dsty, inc);
         for (cnn_size_t dy = 0; dy < dymax; ++dy) {
             for (cnn_size_t dx = 0; dx < dxmax; ++dx) {
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc),
-                    out_.get_index(dstx, dsty, inc),
+                    outidx,
                     inc);
             }
         }

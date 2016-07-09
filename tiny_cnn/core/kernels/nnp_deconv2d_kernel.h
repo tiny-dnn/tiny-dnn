@@ -43,11 +43,11 @@ nnp_deconvolution_kernel_transform_strategy nnp_kts() {
     return nnp_deconvolution_kernel_transform_strategy_reuse;
 }*/
 
-void nnp_deconv2d_kernel(const deconv_params& params,
-                         const vec_t&      in,
-                         const vec_t&      W,
-                         const vec_t&      bias,
-                         vec_t&            a) {
+inline void nnp_deconv2d_kernel(const deconv_params& params,
+                                const vec_t&      in,
+                                const vec_t&      W,
+                                const vec_t&      bias,
+                                vec_t&            a) {
     // TOOD: use input config
     /*const auto algorithm = nnp_algorithm();
     const auto kernel_transform_strategy = nnp_kts();

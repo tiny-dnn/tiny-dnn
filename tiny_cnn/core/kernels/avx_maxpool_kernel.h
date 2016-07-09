@@ -30,11 +30,11 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-inline void tiny_maxpool_kernel(const vec_t& in,
-                                vec_t&       a,
-                                std::vector<cnn_size_t>& max_idx,
-                                const std::vector<std::vector<cnn_size_t>>& out2in,
-                                const bool layer_parallelize) {
+void avx_maxpool_kernel(const vec_t& in,
+                        vec_t&       a,
+                        std::vector<cnn_size_t>& max_idx,
+                        const std::vector<std::vector<cnn_size_t>>& out2in,
+                        const bool layer_parallelize) {
     for_(layer_parallelize, 0, out2in.size(), [&](const blocked_range& r) {
         for (int i = r.begin(); i < r.end(); i++) {
             const auto& in_index = out2in[i];
@@ -51,11 +51,11 @@ inline void tiny_maxpool_kernel(const vec_t& in,
     });
 }
 
-inline void tiny_maxpool_back_kernel(vec_t& prev_delta,
-                                     const vec_t&  curr_delta,
-                                     std::vector<cnn_size_t>& max_idx,
-                                     const std::vector<cnn_size_t>& in2out,
-                                     const bool layer_parallelize) {
+void avx_maxpool_back_kernel(vec_t& prev_delta,
+                             const vec_t&  curr_delta,
+                             std::vector<cnn_size_t>& max_idx,
+                             const std::vector<cnn_size_t>& in2out,
+                             const bool layer_parallelize) {
     for_(layer_parallelize, 0, in2out.size(), [&](const blocked_range& r) {
         for (int i = r.begin(); i != r.end(); i++) {
             cnn_size_t outi = in2out[i];

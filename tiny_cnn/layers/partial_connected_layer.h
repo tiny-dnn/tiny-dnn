@@ -95,13 +95,14 @@ public:
         for_i(parallelize_, out2wi_.size(), [&](int i) {
             const wi_connections& connections = out2wi_[i];
 
-            a[i] = float_t(0);
+            float_t value = float_t(0);
 
             for (auto connection : connections)// 13.1%
-                a[i] += W[connection.first] * in[connection.second]; // 3.2%
+                value += W[connection.first] * in[connection.second]; // 3.2%
 
-            a[i] *= scale_factor_;
-            a[i] += b[out2bias_[i]];
+            value *= scale_factor_;
+            value += b[out2bias_[i]];
+            a[i] = value;
         });
 
         for_i(parallelize_, out2wi_.size(), [&](int i) {
