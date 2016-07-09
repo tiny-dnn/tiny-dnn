@@ -239,6 +239,23 @@ public:
         });
     }
 
+    void forward_propagation(cnn_size_t                                worker_index,
+                             const std::vector<std::vector<uint8_t>*>& in_data,
+                             const std::vector<vec_t*>&                in_range,
+                             std::vector<std::vector<uint8_t>*>&       out_data,
+                             std::vector<vec_t*>&                      out_range) {
+        // launch deconvolutional kernel
+        Base::backend_->q_deconv2d(worker_index, in_data, in_range, out_data, out_range);
+
+        // activations
+        std::vector<uint8_t>& out     = *out_data[0];
+        const std::vector<uint8_t>& a = *out_data[1];
+
+        for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
+            out[i] = this->h_.f(a, i);
+        });
+    }
+
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
      * @param worker_index id of current worker-task
