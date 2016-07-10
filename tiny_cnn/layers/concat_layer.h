@@ -68,13 +68,10 @@ public:
         return {out_shape_};
     }
 
-    void forward_propagation(cnn_size_t worker_index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
         const tensor_t& in1 = *in_data[0];
         tensor_t& out = *out_data[0];
-
-        CNN_UNREFERENCED_PARAMETER(worker_index);
 
         auto outiter = out.begin();
 
@@ -82,12 +79,10 @@ public:
             outiter = std::copy(in1.begin(), in1.end(), outiter);
     }
 
-    void back_propagation(cnn_size_t                    worker_index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(worker_index);
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
 

@@ -94,8 +94,7 @@ public:
         return 1;
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>&       out_data)  override {
 
         // @todo revise the parallelism strategy
@@ -105,7 +104,7 @@ public:
             vec_t&       out = (*out_data[0])[sample];
             vec_t&       a   = (*out_data[1])[sample];
 
-            std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+            std::vector<cnn_size_t>& max_idx = out2inmax_;
 
             for_(parallelize_, 0, out2in_.size(), [&](const blocked_range& r) {
                 for (int i = r.begin(); i < r.end(); i++) {
@@ -128,14 +127,13 @@ public:
         }
     }
 
-    void back_propagation(cnn_size_t                    index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
         tensor_t& prev_delta = *in_grad[0];
         tensor_t& curr_delta = *out_grad[1];
-        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+        std::vector<cnn_size_t>& max_idx = out2inmax_;
 
         CNN_UNREFERENCED_PARAMETER(in_data);
 
@@ -152,43 +150,17 @@ public:
         }
     }
 
-    /*void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {
-        const vec_t& current_delta2 = delta_in[0];
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        max_pooling_layer_worker_specific_storage& mws = max_pooling_layer_worker_storage_[0];
-
-        for (cnn_size_t i = 0; i < in_size_; i++) {
-            cnn_size_t outi = in2out_[i];
-            prev_delta2_[i] = (mws.out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
-        }
-    }*/
-
     std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
     std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const {return pool_size_;}
-
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        max_pooling_layer_worker_storage_.resize(worker_count);
-        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
-        }
-    }
 
 private:
     size_t pool_size_;
     size_t stride_;
     std::vector<std::vector<cnn_size_t> > out2in_; // mapping out => in (1:N)
     std::vector<cnn_size_t> in2out_; // mapping in => out (N:1)
-
-    struct max_pooling_layer_worker_specific_storage {
-        std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
-    };
-
-    std::vector<max_pooling_layer_worker_specific_storage> max_pooling_layer_worker_storage_;
+    std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
 
     index3d<cnn_size_t> in_;
     index3d<cnn_size_t> out_;
@@ -222,10 +194,7 @@ private:
     {
         in2out_.resize(in_.size());
         out2in_.resize(out_.size());
-
-        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
-        }
+		out2inmax_.resize(out_.size());
 
         for (cnn_size_t c = 0; c < in_.depth_; ++c)
             for (cnn_size_t y = 0; y < out_.height_; ++y)

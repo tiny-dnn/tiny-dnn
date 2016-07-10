@@ -44,6 +44,7 @@
 #include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/max_unpooling_layer.h"
 #include "tiny_cnn/layers/average_unpooling_layer.h"
+#include "tiny_cnn/layers/batch_normalization_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -105,6 +106,8 @@ using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
 
 template <class T>
 using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
+
+using batch_norm = tiny_cnn::batch_normalization_layer;
 
 }
 }

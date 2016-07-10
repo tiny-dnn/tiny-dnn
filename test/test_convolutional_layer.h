@@ -64,9 +64,9 @@ TEST(convolutional, fprop) {
     in_data.push_back(&bias_tensor);
     out_data.push_back(&out_tensor);
     out_data.push_back(&a_tensor);
-    l.setup(false, 1);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -87,7 +87,7 @@ TEST(convolutional, fprop) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);

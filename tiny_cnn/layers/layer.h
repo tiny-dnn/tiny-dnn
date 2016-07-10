@@ -154,7 +154,7 @@ class layer : public node {
         std::vector<tensor_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
-                v.push_back(ith_in_node(i)->get_gradient(0));
+                v.push_back(ith_in_node(i)->get_gradient());
             }
         }
         return v;
@@ -184,32 +184,30 @@ class layer : public node {
         return nodes;
     }
 
-    void set_out_grads(const std::vector<tensor_t>& grad,
-                       cnn_size_t worker_idx) {
+    void set_out_grads(const std::vector<tensor_t>& grad) {
         cnn_size_t j = 0;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             if (out_type_[i] != vector_type::data) continue;
             assert(j < grad.size());
-            *ith_out_node(i)->get_gradient(worker_idx) = grad[j++];
+            *ith_out_node(i)->get_gradient() = grad[j++];
         }
     }
 
-    void set_in_data(const std::vector<tensor_t>& data,
-                     cnn_size_t worker_idx) {
+    void set_in_data(const std::vector<tensor_t>& data) {
         cnn_size_t j = 0;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (in_type_[i] != vector_type::data) continue;
             assert(j < data.size());
-            *ith_in_node(i)->get_data(worker_idx) = data[j++];
+            *ith_in_node(i)->get_data() = data[j++];
         }
     }
 
-    std::vector<tensor_t> output(int worker_index = 0) const {
+    std::vector<tensor_t> output() const {
         std::vector<tensor_t> out;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             if (out_type_[i] == vector_type::data) {
                 out.push_back(*(const_cast<layerptr_t>(this))
-                    ->ith_out_node(i)->get_data(worker_index));
+                    ->ith_out_node(i)->get_data());
             }
         }
         return out;
@@ -317,9 +315,8 @@ class layer : public node {
     ///< visualize latest output of this layer
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
-    virtual image<> output_to_image(size_t channel = 0,
-                                    size_t worker_index = 0) const {
-        const vec_t* output = &(*(get_outputs()[channel]->get_data(worker_index)))[0];
+    virtual image<> output_to_image(size_t channel = 0) const {
+        const vec_t* output = &(*(get_outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
 
@@ -327,24 +324,20 @@ class layer : public node {
     // fprop/bprop
 
     /**
-     * @param worker_index id of current worker-task
      * @param in_data      input vectors of this layer (data, weight, bias)
      * @param out_data     output vectors
      **/
-    virtual void forward_propagation(cnn_size_t worker_index,
-                                     const std::vector<tensor_t*>& in_data,
+    virtual void forward_propagation(const std::vector<tensor_t*>& in_data,
                                      std::vector<tensor_t*>& out_data) = 0;
 
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
-     * @param worker_index id of current worker-task
      * @param in_data      input vectors (same vectors as forward_propagation)
      * @param out_data     output vectors (same vectors as forward_propagation)
      * @param out_grad     gradient of output vectors (i-th vector correspond with out_data[i])
      * @param in_grad      gradient of input vectors (i-th vector correspond with in_data[i])
      **/
-    virtual void back_propagation(cnn_size_t                    worker_index,
-                                  const std::vector<tensor_t*>& in_data,
+    virtual void back_propagation(const std::vector<tensor_t*>& in_data,
                                   const std::vector<tensor_t*>& out_data,
                                   std::vector<tensor_t*>&       out_grad,
                                   std::vector<tensor_t*>&       in_grad) = 0;
@@ -367,58 +360,58 @@ class layer : public node {
 
     std::vector<tensor_t> forward(const std::vector<tensor_t>& input) {   // for test
         setup(false);
-        set_in_data(input, 0);
-        forward(0);
-        return output(0);
+        set_in_data(input);
+        forward();
+        return output();
     }
 
     std::vector<tensor_t> backward(const std::vector<tensor_t>& out_grads) {   // for test
         setup(false);
-        set_out_grads(out_grads, 0);
-        backward(0);
+        set_out_grads(out_grads);
+        backward();
         return map_<tensor_t>(get_inputs(), [](edgeptr_t e) { return *e->get_gradient(); });
     }
 
-    void forward(int worker_index) {
+    void forward() {
         std::vector<tensor_t*> in_data, out_data;
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+            in_data.push_back(ith_in_node(i)->get_data());
         }
 
         // resize outs and stuff to have room for every input sample in the batch
-        set_sample_count(in_data[0]->size(), worker_index);
+        set_sample_count(in_data[0]->size());
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
-            ith_out_node(i)->clear_grad_onwork(worker_index);
+            out_data.push_back(ith_out_node(i)->get_data());
+            ith_out_node(i)->clear_grads();
         }
 
-        forward_propagation(worker_index, in_data, out_data);
+        forward_propagation(in_data, out_data);
     }
 
-    void backward(int worker_index) {
+    void backward() {
         std::vector<tensor_t*> in_data, out_data, in_grad, out_grad;
 
         // organize input/output vectors from storage
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data(worker_index));
+            in_data.push_back(ith_in_node(i)->get_data());
         }
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data(worker_index));
+            out_data.push_back(ith_out_node(i)->get_data());
         }
         for (cnn_size_t i = 0; i < in_channels_; i++) {
-            in_grad.push_back(ith_in_node(i)->get_gradient(worker_index));
+            in_grad.push_back(ith_in_node(i)->get_gradient());
         }
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            out_grad.push_back(ith_out_node(i)->get_gradient(worker_index));
+            out_grad.push_back(ith_out_node(i)->get_gradient());
         }
-        back_propagation(worker_index, in_data, out_data, out_grad, in_grad);
+        back_propagation(in_data, out_data, out_grad, in_grad);
     }
 
     // allocate & reset weight
-    void setup(bool reset_weight, int max_task_size = CNN_TASK_SIZE) {
+    void setup(bool reset_weight) {
         if (in_shape().size() != in_channels_ ||
             out_shape().size() != out_channels_) {
                 throw nn_error("Connection mismatch at setup layer");
@@ -431,7 +424,6 @@ class layer : public node {
             }
         }
 
-        set_worker_count(max_task_size);
         if (reset_weight || !initialized_) {
             init_weight();
         }
@@ -455,38 +447,27 @@ class layer : public node {
         initialized_ = true;
     }
 
-    void clear_grads(cnn_size_t worker_size) {
+    void clear_grads() {
         for (size_t i = 0; i < in_type_.size(); i++) {
-            ith_in_node(i)->clear_grads(worker_size);
+            ith_in_node(i)->clear_grads();
         }
     }
 
-    void update_weight(optimizer *o,
-                       cnn_size_t worker_size, cnn_size_t batch_size) {
+    void update_weight(optimizer *o, cnn_size_t batch_size) {
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
                 vec_t diff;
                 vec_t& target = *get_weight_data(i);
 
-                ith_in_node(i)->merge_grads(worker_size, &diff);
+                ith_in_node(i)->merge_grads(&diff);
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
                                   return x / batch_size; });
                 o->update(diff, target);
             }
         }
-        clear_grads(worker_size);
+        clear_grads();
         post_update();
-    }
-
-    virtual void set_worker_count(cnn_size_t worker_count) {
-        for (cnn_size_t i = 0; i < in_channels_; i++) {
-            ith_in_node(i)->set_worker_size(worker_count);
-        }
-
-        for (cnn_size_t i = 0; i < out_channels_; i++) {
-            ith_out_node(i)->set_worker_size(worker_count);
-        }
     }
 
     bool has_same_weights(const layer& rhs, float_t eps) const {
@@ -538,15 +519,15 @@ class layer : public node {
 
     vec_t* get_weight_data(cnn_size_t i) {
         assert(is_trainable_weight(in_type_[i]));
-        return &(*(ith_in_node(i)->get_data(0)))[0];
+        return &(*(ith_in_node(i)->get_data()))[0];
     }
 
     const vec_t* get_weight_data(cnn_size_t i) const {
         assert(is_trainable_weight(in_type_[i]));
-        return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data(0)))[0];
+        return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data()))[0];
     }
 
-    virtual void set_sample_count(cnn_size_t sample_count, cnn_size_t worker_idx) {
+    virtual void set_sample_count(cnn_size_t sample_count) {
 
         // increase the size if necessary - but do not decrease
         auto resize = [sample_count](tensor_t* tensor) {
@@ -557,16 +538,16 @@ class layer : public node {
 
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (!is_trainable_weight(in_type_[i])) {
-                resize(ith_in_node(i)->get_data(worker_idx));
+                resize(ith_in_node(i)->get_data());
             }
-            resize(ith_in_node(i)->get_gradient(worker_idx));
+            resize(ith_in_node(i)->get_gradient());
         }
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             if (!is_trainable_weight(out_type_[i])) {
-                resize(ith_out_node(i)->get_data(worker_idx));
+                resize(ith_out_node(i)->get_data());
             }
-            resize(ith_out_node(i)->get_gradient(worker_idx));
+            resize(ith_out_node(i)->get_gradient());
         }
     }
 };

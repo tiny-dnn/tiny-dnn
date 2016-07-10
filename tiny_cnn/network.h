@@ -151,7 +151,7 @@ public:
     /**
      * explicitly initialize weights of all layers
      **/
-    void         init_weight()          { net_.setup(true, 1); }
+    void         init_weight()          { net_.setup(true); }
 
     /**
      * executes forward-propagation and returns output
@@ -579,8 +579,8 @@ protected:
         return *std::max_element(std::begin(prediction), std::end(prediction));
     }
 
-    label_t fprop_max_index(const vec_t& in, int idx = 0) {
-        return label_t(max_index(fprop(in, idx)));
+    label_t fprop_max_index(const vec_t& in) {
+        return label_t(max_index(fprop(in)));
     }
 private:
 
@@ -606,10 +606,10 @@ private:
         //check_training_data(in, t);
         check_target_cost_matrix(desired_outputs, t_cost);
         set_netphase(net_phase::train);
-        net_.setup(reset_weights, std::min(n_threads, (int)batch_size));
+        net_.setup(reset_weights);
 
         for (auto n : net_)
-            n->set_parallelize(batch_size < CNN_TASK_SIZE);
+            n->set_parallelize(true);
         optimizer.reset();
         for (int iter = 0; iter < epoch; iter++) {
 
@@ -644,8 +644,8 @@ private:
                     const int nbThreads,
                     const tensor_t* t_cost) {
         if (size == 1) {
-            bprop<E>(fprop(in[0]), t[0], 0, t_cost ? t_cost[0] : tensor_t());
-            net_.update_weights(&optimizer, 1, 1);
+            bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
+            net_.update_weights(&optimizer, 1);
         } else {
             train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
         }
@@ -665,49 +665,31 @@ private:
                         int             batch_size,
                         const int       num_tasks,
                         const tensor_t* t_cost) {
-        int num_threads = std::min(batch_size, num_tasks);
+		std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
+		std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
+		std::vector<tensor_t> t_cost_batch = t_cost
+			? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
+			: std::vector<tensor_t>();
 
-        net_.set_worker_count(num_threads);
+		bprop<E>(fprop(in_batch), t_batch, t_cost_batch);
 
-        // number of data points to use in each thread
-        int data_per_thread = (batch_size + num_threads - 1) / num_threads;
-
-        // i is the thread / worker index
-        for_i(num_threads, [&](int i) {
-            int start_index = i * data_per_thread;
-            int end_index = std::min(batch_size, start_index + data_per_thread);
-            
-            if (start_index < end_index) { // any data for this thread to process?
-                // process data points in this batch assigned to thread i
-                std::vector<tensor_t> in_batch(&in[start_index], &in[end_index]);
-                std::vector<tensor_t> t_batch(&t[start_index], &t[end_index]);
-                std::vector<tensor_t> t_cost_batch
-                    = t_cost
-                    ? std::vector<tensor_t>(&t_cost[start_index], &t_cost[end_index])
-                    : std::vector<tensor_t>();
-
-                bprop<E>(fprop(in_batch, i), t_batch, i, t_cost_batch);
-            }
-        }, 1);
-        
-        // merge all dW and update W by optimizer
-        net_.update_weights(&optimizer, num_threads, batch_size);
+        net_.update_weights(&optimizer, batch_size);
     }
 
-    vec_t fprop(const vec_t& in, int idx = 0) {
+    vec_t fprop(const vec_t& in) {
         if (in.size() != (size_t)in_data_size())
             data_mismatch(**net_.begin(), in);
 
-        return fprop(std::vector<vec_t>{ in }, idx)[0];
+        return fprop(std::vector<vec_t>{ in })[0];
     }
 
     // convenience wrapper for the function below
-    std::vector<vec_t> fprop(const std::vector<vec_t>& in, int idx = 0) {
+    std::vector<vec_t> fprop(const std::vector<vec_t>& in) {
         return fprop(std::vector<tensor_t>{ in })[0];
     }
 
-    std::vector<tensor_t> fprop(const std::vector<tensor_t>& in, int idx = 0) {
-        return net_.forward(in, idx);
+    std::vector<tensor_t> fprop(const std::vector<tensor_t>& in) {
+        return net_.forward(in);
     }
 
     template <typename E>
@@ -752,27 +734,27 @@ private:
         w[check_index] = prev_w;
 
         // calculate dw/dE by bprop
-        bprop<E>(fprop(in, 0), v, 0, std::vector<tensor_t>());
+        bprop<E>(fprop(in), v, std::vector<tensor_t>());
 
         float_t delta_by_bprop = 0;
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             delta_by_bprop += dw[sample][check_index];
         }
-        net_.clear_grads(1);
+        net_.clear_grads();
 
         return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 
     // convenience wrapper for the function below
     template <typename E>
-    void bprop(const std::vector<vec_t>& out, const std::vector<vec_t>& t, int idx, const std::vector<vec_t>& t_cost) {
-        bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t}, idx, std::vector<tensor_t>{t_cost});
+    void bprop(const std::vector<vec_t>& out, const std::vector<vec_t>& t, const std::vector<vec_t>& t_cost) {
+        bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t}, std::vector<tensor_t>{t_cost});
     }
 
     template <typename E>
-    void bprop(const std::vector<tensor_t>& out, const std::vector<tensor_t>& t, int idx, const std::vector<tensor_t>& t_cost) {
+    void bprop(const std::vector<tensor_t>& out, const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
         std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
-        net_.backward(delta, idx);
+        net_.backward(delta);
     }
 
     void check_t(size_t i, label_t t, cnn_size_t dim_out) {

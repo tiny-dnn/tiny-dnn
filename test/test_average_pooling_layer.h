@@ -101,8 +101,8 @@ TEST(ave_pool, read_write) {
     average_pooling_layer<tan_h> l1(100, 100, 5, 2);
     average_pooling_layer<tan_h> l2(100, 100, 5, 2);
 
-    l1.setup(true, 1);
-    l2.setup(true, 1);
+    l1.setup(true);
+    l2.setup(true);
 
     serialization_test(l1, l2);
 }

@@ -219,24 +219,21 @@ public:
         return (weight_.width_ / w_stride_) * (weight_.height_ / h_stride_) * out_.depth_;
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
 
         const vec_t& W = (*in_data[1])[0];
 
-        copy_and_pad_input(*in_data[0], static_cast<int>(index));
+        copy_and_pad_input(*in_data[0]);
 
-        for (cnn_size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
-
+        for_i(parallelize_, in_data[0]->size(), [&](int sample) {
             vec_t&      out = (*out_data[0])[sample];
             vec_t&      a   = (*out_data[1])[sample];
-            const vec_t &in = *((conv_layer_worker_storage_[index].prev_out_padded_)[sample]); // input
+            const vec_t &in = *((cws_.prev_out_padded_)[sample]); // input
 
             std::fill(a.begin(), a.end(), float_t(0));
 
-            // @todo consider parallelizing on the sample level instead (do some profiling!)
-            for_i(parallelize_, out_.depth_, [&](int o) {
+			for (size_t o = 0; o < out_.depth_; o++) {
                 for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                     if (!tbl_.is_connected(o, inc)) continue;
 
@@ -267,12 +264,12 @@ public:
                     float_t b = bias[o];
                     std::for_each(pa, pa + out_.width_ * out_.height_, [&](float_t& f) { f += b; });
                 }
-            });
+            };
 
-            for_i(parallelize_, out_.size(), [&](int i) {
-                out[i] = h_.f(a, i);
-            });
-        }
+			for (size_t i = 0; i < out_.size(); i++) {
+				out[i] = h_.f(a, i);
+			}
+		});
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
@@ -280,13 +277,10 @@ public:
         return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                    index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-
-        conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[index];
 
         const vec_t& W = (*in_data[1])[0];
         vec_t&       dW = (*in_grad[1])[0];
@@ -296,11 +290,9 @@ public:
 
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        // @todo consider revising the parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = in_grad[0]->size(); sample < sample_count; ++sample) {
-
-            const vec_t& prev_out = *(cws.prev_out_padded_[sample]);
-            vec_t*       prev_delta = (pad_type_ == padding::same) ? &(cws.prev_delta_padded_[sample]) : &((*in_grad[0])[sample]);
+		for_i(parallelize_, in_grad[0]->size(), [&](int sample) {
+            const vec_t& prev_out = *(cws_.prev_out_padded_[sample]);
+            vec_t*       prev_delta = (pad_type_ == padding::same) ? &(cws_.prev_delta_padded_[sample]) : &((*in_grad[0])[sample]);
             vec_t&       curr_delta = (*out_grad[1])[sample];
 
             assert(curr_delta.size() == out_shape()[0].size());
@@ -308,7 +300,7 @@ public:
             std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
             // propagate delta to previous layer
-            for_i(in_.depth_, [&](int inc) {
+			for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                 for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                     if (!tbl_.is_connected(outc, inc)) continue;
 
@@ -330,10 +322,10 @@ public:
                         }
                     }
                 }
-            });
+            }
 
             // accumulate dw
-            for_i(in_.depth_, [&](int inc) {
+			for (cnn_size_t inc = 0; inc < in_.depth_; inc++) {
                 for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
 
                     if (!tbl_.is_connected(outc, inc)) continue;
@@ -351,7 +343,7 @@ public:
                         }
                     }
                 }
-            });
+            }
 
             // accumulate db
             if (has_bias_) {
@@ -364,8 +356,8 @@ public:
             }
 
             if (pad_type_ == padding::same)
-                copy_and_unpad_delta(cws.prev_delta_padded_[sample], (*in_grad[0])[sample]);
-        }
+                copy_and_unpad_delta(cws_.prev_delta_padded_[sample], (*in_grad[0])[sample]);
+		});
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -413,12 +405,6 @@ public:
         return img;
     }
 
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        conv_layer_worker_storage_.resize(worker_count);
-        init();
-    }
-
 private:
     void conv_set_params(const shape3d& in,
                          cnn_size_t     w_width,
@@ -440,18 +426,18 @@ private:
         pad_type_ = ptype;
         w_stride_ = w_stride;
         h_stride_ = h_stride;
+
+		init();
     }
 
     void init() {
-        for (conv_layer_worker_specific_storage& cws : conv_layer_worker_storage_) {
-            if (pad_type_ == padding::same) {
-                cws.prev_out_buf_.resize(1, vec_t(in_padded_.size(), float_t(0)));
-                cws.prev_delta_padded_.resize(1, vec_t(in_padded_.size(), float_t(0)));
-            }
-            else {
-                cws.prev_out_buf_.clear();
-            }
-        }
+		if (pad_type_ == padding::same) {
+			cws_.prev_out_buf_.resize(1, vec_t(in_padded_.size(), float_t(0)));
+			cws_.prev_delta_padded_.resize(1, vec_t(in_padded_.size(), float_t(0)));
+		}
+		else {
+			cws_.prev_out_buf_.clear();
+		}
     }
 
     cnn_size_t in_length(cnn_size_t in_length, cnn_size_t window_size, padding pad_type) const {
@@ -486,8 +472,8 @@ private:
         }
     }
 
-    void copy_and_pad_input(const tensor_t& in, int worker_index) {
-        conv_layer_worker_specific_storage& cws = conv_layer_worker_storage_[worker_index];
+    void copy_and_pad_input(const tensor_t& in) {
+        conv_layer_worker_specific_storage& cws = cws_;
         
         cnn_size_t sample_count = in.size();
 
@@ -527,7 +513,7 @@ private:
         std::vector<vec_t> prev_delta_padded_;
     };
 
-    std::vector<conv_layer_worker_specific_storage> conv_layer_worker_storage_;
+    conv_layer_worker_specific_storage cws_;
 
     connection_table tbl_;
 
