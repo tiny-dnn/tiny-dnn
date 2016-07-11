@@ -86,9 +86,15 @@ class nnp_backend : public backend {
         kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
     }
 
-    void q_conv2d(cnn_size_t                 index,
+    void conv2d_q(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void conv2d_eq(cnn_size_t                 index,
+                   const std::vector<vec_t*>& in_data,
+                   std::vector<vec_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
@@ -105,9 +111,15 @@ class nnp_backend : public backend {
                   std::vector<vec_t*>&       out_data) {
     }
 
-    void q_deconv2d(cnn_size_t                 index,
-                  const std::vector<vec_t*>& in_data,
-                  std::vector<vec_t*>&       out_data) {
+    void deconv2d_q(cnn_size_t                 index,
+                    const std::vector<vec_t*>& in_data,
+                    std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void deconv2d_eq(cnn_size_t                 index,
+                     const std::vector<vec_t*>& in_data,
+                     std::vector<vec_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
@@ -163,9 +175,15 @@ class nnp_backend : public backend {
             in, W, b, a, layer_->get_parallelize());
     }
 
-    void q_fully(cnn_size_t                 index,
-               const std::vector<vec_t*>& in_data,
-               std::vector<vec_t*>&       out_data) {
+    void fully_q(cnn_size_t                 index,
+                 const std::vector<vec_t*>& in_data,
+                 std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void fully_eq(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 

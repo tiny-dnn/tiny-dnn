@@ -55,9 +55,13 @@ class backend {
                         const std::vector<vec_t*>& in_data,
                         std::vector<vec_t*>&       out_data) = 0;
 
-    virtual void q_conv2d(cnn_size_t                 index,
+    virtual void conv2d_q(cnn_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void conv2d_eq(cnn_size_t                 index,
+                           const std::vector<vec_t*>& in_data,
+                           std::vector<vec_t*>&       out_data) = 0;
 
     virtual void conv2d(cnn_size_t                 index,
                         const std::vector<vec_t*>& in_data,
@@ -69,15 +73,19 @@ class backend {
                           const std::vector<vec_t*>& in_data,
                           std::vector<vec_t*>&       out_data) = 0;
 
-    virtual void q_deconv2d(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          std::vector<vec_t*>&       out_data) = 0;
+    virtual void deconv2d_q(cnn_size_t                 index,
+                            const std::vector<vec_t*>& in_data,
+                            std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void deconv2d_eq(cnn_size_t                 index,
+                             const std::vector<vec_t*>& in_data,
+                             std::vector<vec_t*>&       out_data) = 0;
 
     virtual void deconv2d(cnn_size_t                 index,
-                           const std::vector<vec_t*>& in_data,
-                           const std::vector<vec_t*>& out_data,
-                           std::vector<vec_t*>&       out_grad,
-                           std::vector<vec_t*>&       in_grad) = 0;
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) = 0;
 
     virtual void matmul() = 0;
 
@@ -95,9 +103,13 @@ class backend {
                        const std::vector<vec_t*>& in_data,
                        std::vector<vec_t*>&       out_data) = 0;
 
-    virtual void q_fully(cnn_size_t                 index,
-                       const std::vector<vec_t*>& in_data,
-                       std::vector<vec_t*>&       out_data) = 0;
+    virtual void fully_q(cnn_size_t                 index,
+                         const std::vector<vec_t*>& in_data,
+                         std::vector<vec_t*>&       out_data) = 0;
+
+    virtual void fully_eq(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          std::vector<vec_t*>&       out_data) = 0;
 
     virtual void fully(cnn_size_t                 index,
                        const std::vector<vec_t*>& in_data,

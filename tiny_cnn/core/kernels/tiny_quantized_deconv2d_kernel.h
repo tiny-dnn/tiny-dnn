@@ -34,11 +34,11 @@ namespace core {
 namespace kernels {
 
 void tiny_quantized_deconv2d_kernel(const deconv_params& params,
-                        const vec_t&       in,
-                        const vec_t&       W,
-                        const vec_t&       bias,
-                        vec_t&             a,
-                        const bool layer_parallelize) {
+                                    const vec_t&         in,
+                                    const vec_t&         W,
+                                    const vec_t&         bias,
+                                    vec_t&               a,
+                                    const bool layer_parallelize) {
     // image quantization
     float min_input(in[0]);
     float max_input(in[0]);
@@ -175,29 +175,29 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
 }
 
 void tiny_quantized_deconv2d_kernel(const deconv_params& params,
-                        const std::vector<uint8_t>&       in,
-                        const std::vector<uint8_t>&       W,
-                        const std::vector<uint8_t>&       bias,
-                        const vec_t&                      in_r,
-                        const vec_t&                      W_r,
-                        const vec_t&                      b_r,
-                        std::vector<uint8_t>&             a,
-                        vec_t&                            a_r,
-                        const bool layer_parallelize) {
-    // filter
+                                    const vec_t&         in,
+                                    const vec_t&         W,
+                                    const vec_t&         bias,
+                                    const vec_t&         in_r,
+                                    const vec_t&         W_r,
+                                    const vec_t&         b_r,
+                                    vec_t&               a,
+                                    vec_t&               a_r,
+                                    const bool layer_parallelize) {
+    // filter range
     float min_filter(W_r[0]);
     float max_filter(W_r[1]);
     if (W_r[0] == W_r[1]) {
-      max_filter = W[0] + 1e-3f;
-      min_filter = W[0] - 1e-3f;
+      max_filter = W_r[1] + 1e-3f;
+      min_filter = W_r[0] - 1e-3f;
     }
-    // bias
+    // bias range
     float min_bias(b_r[0]);
     float max_bias(b_r[1]);
     if (params.has_bias) {
         if (min_bias == max_bias) {
-          max_bias = bias[0] + 1e-3f;
-          min_bias = bias[0] - 1e-3f;
+          max_bias = b_r[1] + 1e-3f;
+          min_bias = b_r[0] - 1e-3f;
         }
     }
     // output range
@@ -206,6 +206,17 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         in_r[0], in_r[1], min_filter, max_filter, &min_output_value,
         &max_output_value);
+    // data type restore
+    std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
+    for (int i = 0; i < in.size(); i++) {
+       in_quantized.push_back(static_cast<uint8_t>(in[i]));
+    }
+    for (int i = 0; i < W.size(); i++) {
+        W_quantized.push_back(static_cast<uint8_t>(W[i]));
+    }
+    for (int i = 0; i < bias.size(); i++) {
+        bias_quantized.push_back(static_cast<uint8_t>(bias[i]));
+    }
 
     std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
 
@@ -232,10 +243,10 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
             cnn_size_t idx = 0;
             idx = params.in.depth_ * o + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t *pw = &W[idx];
+            const uint8_t *pw = &W_quantized[idx];
 
             idx = params.in.get_index(0, 0, inc);
-            const uint8_t *pi = &in[idx];
+            const uint8_t *pi = &in_quantized[idx];
 
             idx = params.out.get_index(0, 0, o);
             int32_t *pa_quantized = &a_quantized[idx];
@@ -284,7 +295,13 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
 
     // Requantize from 32bits to 8 bits for next layer
     quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
-    &min_output_requantized, &max_output_requantized, &a_requantized);
+        &min_output_requantized, &max_output_requantized, &a_requantized);
+    // store directly in float datatype
+    for (int i = 0; i < a_requantized.size(); i++) {
+        a[i] = static_cast<float>(a_requantized[i]);
+    }
+    a_r[0] = min_output_requantized;
+    a_r[1] = max_output_requantized;
 }
 
 }  // namespace kernels

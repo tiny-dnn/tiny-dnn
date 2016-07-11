@@ -69,16 +69,16 @@ public:
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     quantized_deconvolutional_layer(cnn_size_t     in_width,
-                          cnn_size_t     in_height,
-                          cnn_size_t     window_size,
-                          cnn_size_t     in_channels,
-                          cnn_size_t     out_channels,
-                          padding        pad_type = padding::valid,
-                          bool           has_bias = true,
-                          cnn_size_t     w_stride = 1,
-                          cnn_size_t     h_stride = 1,
-                          backend_t      backend_type = backend_t::tiny_cnn,
-                          backend_params b_params = backend_params())
+                                    cnn_size_t     in_height,
+                                    cnn_size_t     window_size,
+                                    cnn_size_t     in_channels,
+                                    cnn_size_t     out_channels,
+                                    padding        pad_type = padding::valid,
+                                    bool           has_bias = true,
+                                    cnn_size_t     w_stride = 1,
+                                    cnn_size_t     h_stride = 1,
+                                    backend_t      backend_type = backend_t::tiny_cnn,
+                                    backend_params b_params = backend_params())
         : Base(std_input_order(has_bias)), backend_type_(backend_type) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
@@ -104,17 +104,17 @@ public:
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
     quantized_deconvolutional_layer(cnn_size_t     in_width,
-                          cnn_size_t     in_height,
-                          cnn_size_t     window_width,
-                          cnn_size_t     window_height,
-                          cnn_size_t     in_channels,
-                          cnn_size_t     out_channels,
-                          padding        pad_type = padding::valid,
-                          bool           has_bias = true,
-                          cnn_size_t     w_stride = 1,
-                          cnn_size_t     h_stride = 1,
-                          backend_t      backend_type = backend_t::tiny_cnn,
-                          backend_params b_params = backend_params())
+                                    cnn_size_t     in_height,
+                                    cnn_size_t     window_width,
+                                    cnn_size_t     window_height,
+                                    cnn_size_t     in_channels,
+                                    cnn_size_t     out_channels,
+                                    padding        pad_type = padding::valid,
+                                    bool           has_bias = true,
+                                    cnn_size_t     w_stride = 1,
+                                    cnn_size_t     h_stride = 1,
+                                    backend_t      backend_type = backend_t::tiny_cnn,
+                                    backend_params b_params = backend_params())
         : Base(std_input_order(has_bias)), backend_type_(backend_type) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -140,17 +140,17 @@ public:
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
     quantized_deconvolutional_layer(cnn_size_t              in_width,
-                          cnn_size_t              in_height,
-                          cnn_size_t              window_size,
-                          cnn_size_t              in_channels,
-                          cnn_size_t              out_channels,
-                          const connection_table& connection_table,
-                          padding                 pad_type = padding::valid,
-                          bool                    has_bias = true,
-                          cnn_size_t              w_stride = 1,
-                          cnn_size_t              h_stride = 1,
-                          backend_t               backend_type = backend_t::tiny_cnn,
-                          backend_params          b_params = backend_params())
+                                    cnn_size_t              in_height,
+                                    cnn_size_t              window_size,
+                                    cnn_size_t              in_channels,
+                                    cnn_size_t              out_channels,
+                                    const connection_table& connection_table,
+                                    padding                 pad_type = padding::valid,
+                                    bool                    has_bias = true,
+                                    cnn_size_t              w_stride = 1,
+                                    cnn_size_t              h_stride = 1,
+                                    backend_t               backend_type = backend_t::tiny_cnn,
+                                    backend_params          b_params = backend_params())
         : Base(std_input_order(has_bias)), backend_type_(backend_type) {
             params_.tbl = connection_table;
             deconv_set_params(shape3d(in_width, in_height, in_channels),
@@ -178,18 +178,18 @@ public:
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
     quantized_deconvolutional_layer(cnn_size_t              in_width,
-                          cnn_size_t              in_height,
-                          cnn_size_t              window_width,
-                          cnn_size_t              window_height,
-                          cnn_size_t              in_channels,
-                          cnn_size_t              out_channels,
-                          const connection_table& connection_table,
-                          padding                 pad_type = padding::valid,
-                          bool                    has_bias = true,
-                          cnn_size_t              w_stride = 1,
-                          cnn_size_t              h_stride = 1,
-                          backend_t               backend_type = backend_t::tiny_cnn,
-                          backend_params          b_params = backend_params())
+                                    cnn_size_t              in_height,
+                                    cnn_size_t              window_width,
+                                    cnn_size_t              window_height,
+                                    cnn_size_t              in_channels,
+                                    cnn_size_t              out_channels,
+                                    const connection_table& connection_table,
+                                    padding                 pad_type = padding::valid,
+                                    bool                    has_bias = true,
+                                    cnn_size_t              w_stride = 1,
+                                    cnn_size_t              h_stride = 1,
+                                    backend_t               backend_type = backend_t::tiny_cnn,
+                                    backend_params          b_params = backend_params())
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias))
         , backend_type_(backend_type) {
             params_.tbl = connection_table;
@@ -228,32 +228,18 @@ public:
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>&       out_data) {
         // launch deconvolutional kernel
-        Base::backend_->q_deconv2d(worker_index, in_data, out_data);
+        if (in_data.size() == 3) {
+            Base::backend_->deconv2d_q(worker_index, in_data, out_data);
+            // activations
+            vec_t& out     = *out_data[0];
+            const vec_t& a = *out_data[1];
 
-        // activations
-        vec_t& out     = *out_data[0];
-        const vec_t& a = *out_data[1];
-
-        for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
-            out[i] = this->h_.f(a, i);
-        });
-    }
-
-    void forward_propagation(cnn_size_t                                worker_index,
-                             const std::vector<std::vector<uint8_t>*>& in_data,
-                             const std::vector<vec_t*>&                in_range,
-                             std::vector<std::vector<uint8_t>*>&       out_data,
-                             std::vector<vec_t*>&                      out_range) {
-        // launch deconvolutional kernel
-        Base::backend_->q_deconv2d(worker_index, in_data, in_range, out_data, out_range);
-
-        // activations
-        std::vector<uint8_t>& out     = *out_data[0];
-        const std::vector<uint8_t>& a = *out_data[1];
-
-        for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
-            out[i] = this->h_.f(a, i);
-        });
+            for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
+                out[i] = this->h_.f(a, i);
+            });
+        } else if (in_data.size() == 6) {
+            Base::backend_->deconv2d_eq(worker_index, in_data, out_data);
+        }
     }
 
     /**

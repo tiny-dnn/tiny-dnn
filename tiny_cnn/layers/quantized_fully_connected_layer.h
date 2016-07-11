@@ -45,10 +45,10 @@ public:
      * @param has_bias [in] whether to include additional bias to the layer
      **/
     quantized_fully_connected_layer(cnn_size_t     in_dim,
-                          cnn_size_t     out_dim,
-                          bool           has_bias = true,
-                          backend_t      backend_type = backend_t::tiny_cnn,
-                          backend_params b_params = backend_params())
+                                    cnn_size_t     out_dim,
+                                    bool           has_bias = true,
+                                    backend_t      backend_type = backend_t::tiny_cnn,
+                                    backend_params b_params = backend_params())
             : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
@@ -90,18 +90,21 @@ public:
     void forward_propagation(cnn_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>& out_data) override {
-        Base::backend_->q_fully(index, in_data, out_data);
+        if (in_data.size() == 2 || in_data.size() == 3) {
+            Base::backend_->fully_q(index, in_data, out_data);
+            // activations
+            vec_t& out     = *out_data[0];
+            const vec_t& a = *out_data[1];
 
-        // activations
-        vec_t& out     = *out_data[0];
-        const vec_t& a = *out_data[1];
-
-        for_i(parallelize_, params_.out_size_, [&](int i) {
-            out[i] = this->h_.f(a, i);
-        });
+            for_i(this->get_parallelize(), params_.out_size_, [&](int i) {
+                out[i] = this->h_.f(a, i);
+            });
+        } else if (in_data.size() == 4 || in_data.size() == 6) {
+            Base::backend_->fully_eq(index, in_data, out_data);
+        }
     }
 
-    void back_propagation(cnn_size_t                index,
+    void back_propagation(cnn_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
