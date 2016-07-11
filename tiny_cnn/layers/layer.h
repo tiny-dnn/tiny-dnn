@@ -71,7 +71,7 @@ class layer : public node {
      * @param out_type[M] type of output vector
      **/
     layer(const std::vector<vector_type>& in_type,
-               const std::vector<vector_type>& out_type)
+          const std::vector<vector_type>& out_type)
             : node(in_type.size(), out_type.size()),
               initialized_(false),
               parallelize_(true),

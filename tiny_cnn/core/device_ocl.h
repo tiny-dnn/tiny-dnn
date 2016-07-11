@@ -33,7 +33,7 @@ namespace core {
 
 class ocl_device : public device {
  public:
-   explicit ocl_device(const int id) : device(id) {}
+    explicit ocl_device(const int id) : device(id) {}
 
 };
 

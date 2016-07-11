@@ -47,9 +47,9 @@ public:
      * @param unpooling_size [in] factor by which to upscale
      **/
     max_unpooling_layer(cnn_size_t in_width,
-                      cnn_size_t in_height,
-                      cnn_size_t in_channels,
-                      cnn_size_t unpooling_size)
+                        cnn_size_t in_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t unpooling_size)
         : Base({vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(unpooling_size),
@@ -68,10 +68,10 @@ public:
      * @param stride       [in] interval at which to apply the filters to the input
     **/
     max_unpooling_layer(cnn_size_t in_width,
-                      cnn_size_t in_height,
-                      cnn_size_t in_channels,
-                      cnn_size_t unpooling_size,
-                      cnn_size_t stride)
+                        cnn_size_t in_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t unpooling_size,
+                        cnn_size_t stride)
         : Base({vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(stride),

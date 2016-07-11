@@ -431,9 +431,9 @@ public:
     void fast_load(const char* filepath) {
         FILE* stream = fopen(filepath, "r");
         std::vector<float_t> data;
-        float_t temp;
+        double temp;
         while (fscanf(stream, "%lf", &temp) > 0)
-            data.push_back(temp);
+            data.push_back(float_t(temp));
         fclose(stream);
 
         net_.load(data);

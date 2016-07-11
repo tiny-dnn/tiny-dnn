@@ -31,11 +31,11 @@
 #ifdef CNN_USE_NNPACK
 #include "nnpack.h"
 
-nnp_convolution_algorithm nnp_algorithm() {
+inline nnp_convolution_algorithm nnp_algorithm() {
     return nnp_convolution_algorithm_auto;
 }
 
-nnp_convolution_kernel_transform_strategy nnp_kts() {
+inline nnp_convolution_kernel_transform_strategy nnp_kts() {
     return nnp_convolution_kernel_transform_strategy_reuse;
 }
 #endif
