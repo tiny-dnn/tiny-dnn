@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -24,23 +24,19 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#define _CRT_SECURE_NO_WARNINGS
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_cnn/tiny_cnn.h"
 
-using namespace tiny_cnn::activation;
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_batch_norm_layer.h"
-#include "test_nodes.h"
+namespace tiny_cnn {
 
-int main(void) {
-    return RUN_ALL_TESTS();
+TEST(batchnorm, gradient_check) {
+ 
 }
+
+TEST(batchnorm, read_write) {
+
+}
+
+} // namespace tiny-cnn

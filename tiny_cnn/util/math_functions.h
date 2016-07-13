@@ -33,50 +33,55 @@ namespace tiny_cnn {
 
 // x = x / denom
 inline void vector_div(vec_t& x, float_t denom) {
-	std::transform(x.begin(), x.end(), x.begin(), [=](float_t x) { return x / denom; });
+    std::transform(x.begin(), x.end(), x.begin(), [=](float_t x) { return x / denom; });
 }
 
 /** 
  * calculate mean/variance across channels
  */
 inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t channels, vec_t *mean, vec_t *variance) {
-	cnn_size_t num_examples = in.size();
+    cnn_size_t num_examples = in.size();
 
-	assert(in[0].size() == spatial_dim * channels);
-	assert(mean->size() == channels);
-	assert(variance->size() == channels);
+    assert(in[0].size() == spatial_dim * channels);
 
-	std::fill(mean->begin(), mean->end(), (float_t)0.0);
-	std::fill(variance->begin(), variance->end(), (float_t)0.0);
+    mean->resize(channels);
+    std::fill(mean->begin(), mean->end(), (float_t)0.0);
 
-	// calculate mean
-	for (cnn_size_t i = 0; i < num_examples; i++) {
-		for (cnn_size_t j = 0; j < channels; j++) {
-			float_t*       pmean = &mean->at(j);
-			const float_t* X     = &in[i][j*spatial_dim];
+    if (variance != nullptr) {
+        variance->resize(channels);
+        std::fill(variance->begin(), variance->end(), (float_t)0.0);
+    }
 
-			for (cnn_size_t k = 0; k < spatial_dim; k++) {
-				*pmean += *X++;
-			}
-		}
-	}
+    // calculate mean
+    for (cnn_size_t i = 0; i < num_examples; i++) {
+        for (cnn_size_t j = 0; j < channels; j++) {
+            float_t*       pmean = &mean->at(j);
+            const float_t* X = &in[i][j*spatial_dim];
 
-	vector_div(*mean, num_examples*spatial_dim);
+            for (cnn_size_t k = 0; k < spatial_dim; k++) {
+                *pmean += *X++;
+            }
+        }
+    }
 
-	// calculate variance
-	for (cnn_size_t i = 0; i < num_examples; i++) {
-		for (cnn_size_t j = 0; j < channels; j++) {
-			float_t* pvar = &variance->at(j);
-			const float_t* X  = &in[i][j*spatial_dim];
-			float_t        EX = (*mean)[j];
+    vector_div(*mean, num_examples*spatial_dim);
 
-			for (cnn_size_t k = 0; k < spatial_dim; k++) {
-				*pvar += pow(*X++ - EX, 2.0);
-			}
-		}
-	}
+    // calculate variance
+    if (variance != nullptr) {
+        for (cnn_size_t i = 0; i < num_examples; i++) {
+            for (cnn_size_t j = 0; j < channels; j++) {
+                float_t* pvar = &variance->at(j);
+                const float_t* X = &in[i][j*spatial_dim];
+                float_t        EX = (*mean)[j];
 
-	vector_div(*variance, num_examples*spatial_dim);
+                for (cnn_size_t k = 0; k < spatial_dim; k++) {
+                    *pvar += pow(*X++ - EX, 2.0);
+                }
+            }
+        }
+
+        vector_div(*variance, num_examples*spatial_dim);
+    }
 }
 
 }
