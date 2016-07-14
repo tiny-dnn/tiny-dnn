@@ -32,7 +32,60 @@
 namespace tiny_cnn {
 
 TEST(batchnorm, gradient_check) {
- 
+}
+
+TEST(batchnorm, forward) {
+    batch_normalization_layer bn(/*channel=*/3, /*spatial-size=*/4);
+
+    /*
+          mean   var
+    ch0:  0.0    0.0
+    ch1: -1.0    6.0
+    ch2:  2.875 10.696
+    */
+    tensor_t in = {
+      {
+         0.0f,  0.0f,  0.0f,  0.0f, // ch-0 of data#0
+        -4.0f,  0.0f, -1.0f,  2.0f, // ch-1 of data#0
+         1.0f,  0.0f,  1.0f,  3.0f, // ch-2 of data#0
+      }, {
+         0.0f,  0.0f,  0.0f,  0.0f,  // ch-0 of data#1  
+         2.0f,  0.0f, -4.0f, -3.0f,  // ch-1 of data#1
+         2.0f,  5.0f,  1.0f, 10.0f   // ch-2 of data#1
+      }
+    };
+
+    /* y = (x - mean) ./ sqrt(variance + eps) */
+    tensor_t expect = {
+        {
+            0.0f,    0.0f,    0.0f,   0.0f,   // ch-0 of data#0
+           -1.225f,  0.408f,  0.0f,   1.225f, // ch-1 of data#0
+           -0.573f, -0.879f, -0.573f, 0.038f, // ch-2 of data#0
+        },{
+            0.0f,   0.0f,    0.0f,    0.0f,  // ch-0 of data#1  
+            1.225f, 0.408f, -1.225f, -0.816f,  // ch-1 of data#1
+           -0.268f, 0.650f, -0.573f,  2.179f   // ch-2 of data#1
+        }
+    };
+
+    auto result = bn.forward({ in });
+
+    for (size_t i = 0; i < 2; i++) {
+        for (size_t j = 0; j < 3 * 4; j++) {
+            EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
+        }
+    }
+
+    bn.post_update();
+
+    // confirming that calculating the moving average doesn't affect the result
+    // while we feed the same data
+    result = bn.forward({ in });
+    for (size_t i = 0; i < 2; i++) {
+        for (size_t j = 0; j < 3 * 4; j++) {
+            EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
+        }
+    }
 }
 
 TEST(batchnorm, read_write) {

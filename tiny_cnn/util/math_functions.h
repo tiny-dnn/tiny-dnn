@@ -80,7 +80,7 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
             }
         }
 
-        vector_div(*variance, num_examples*spatial_dim);
+        vector_div(*variance, std::max(1.0f, num_examples*spatial_dim-1.0f));
     }
 }
 
