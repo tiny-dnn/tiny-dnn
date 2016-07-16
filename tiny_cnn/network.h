@@ -453,6 +453,11 @@ public:
         }
 
         for (auto current : net_) { // ignore first input layer
+            if (current->get_weights().size() < 2) {
+                continue;
+            }
+
+
             vec_t& w = *current->get_weights()[0];
             vec_t& b = *current->get_weights()[1];
             tensor_t& dw = (*current->get_weight_grads()[0]);
@@ -516,7 +521,12 @@ public:
     const T& at(size_t index) const {
         return net_.template at<T>(index);
     }
-    
+
+    template <typename T>
+    T& at(size_t index) {
+        return net_.template at<T>(index);
+    }
+
     /**
      * return total number of elements of output data
      **/
@@ -702,7 +712,7 @@ private:
 
     template <typename E>
     bool calc_delta(const std::vector<tensor_t>& in, const std::vector<tensor_t>& v, vec_t& w, tensor_t& dw, int check_index, double eps) {
-        static const float_t delta = 1e-10;
+        static const float_t delta = 1e-7;
 
         assert(in.size() == v.size());
 
@@ -719,6 +729,13 @@ private:
             std::fill(dw_sample.begin(), dw_sample.end(), float_t(0));
         }
 
+        //set_netphase(net_phase::train);
+
+        // calculate dw/dE by bprop
+        bprop<E>(fprop(in), v, std::vector<tensor_t>());
+
+        set_netphase(net_phase::test);
+
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
 
@@ -733,16 +750,14 @@ private:
         float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
-        // calculate dw/dE by bprop
-        bprop<E>(fprop(in), v, std::vector<tensor_t>());
-
         float_t delta_by_bprop = 0;
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             delta_by_bprop += dw[sample][check_index];
         }
         net_.clear_grads();
 
-        return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
+        bool ret = std::abs(delta_by_bprop - delta_by_numerical) <= eps;
+        return ret;
     }
 
     // convenience wrapper for the function below

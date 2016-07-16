@@ -58,7 +58,8 @@ public:
         in_spatial_size_(prev_layer.out_shape()[0].area()),
         phase_(phase),
         momentum_(momentum),
-        eps_(epsilon)
+        eps_(epsilon),
+        update_immidiately_(false)
     {
         init();
     }
@@ -80,7 +81,8 @@ public:
         in_spatial_size_(in_spatial_size),
         phase_(phase),
         momentum_(momentum),
-        eps_(epsilon)
+        eps_(epsilon),
+        update_immidiately_(false)
     {
         init();
     }
@@ -116,7 +118,7 @@ public:
         cnn_size_t num_samples   = prev_out.size();
 
         tensor_t delta_dot_y = curr_out;
-        vec_t mean_delta_dot_y, mean_delta;
+        vec_t mean_delta_dot_y, mean_delta, mean_Y;
 
         for (cnn_size_t i = 0; i < num_samples; i++) {
             for (cnn_size_t j = 0; j < curr_out[0].size(); j++) {
@@ -125,14 +127,14 @@ public:
         }
         moments(delta_dot_y, in_spatial_size_, in_channels_, &mean_delta_dot_y, nullptr);
         moments(curr_delta, in_spatial_size_, in_channels_, &mean_delta, nullptr);
-
+ 
         // if Y = (X-mean(X))/(sqrt(var(X)+eps)), then
         //
         // dE(Y)/dX =
         //   (dE/dY - mean(dE/dY) - mean(dE/dY \cdot Y) \cdot Y)
         //     ./ sqrt(var(X) + eps)
         //
-        for (cnn_size_t i = 0; i < num_samples; i++) {
+        for_i(num_samples, [&](int i) {
             for (cnn_size_t j = 0; j < in_channels_; j++) {
                 for (cnn_size_t k = 0; k < in_spatial_size_; k++) {
                     cnn_size_t index = j*in_spatial_size_ + k;
@@ -144,7 +146,7 @@ public:
                     prev_delta[i][index] /= stddev_[j];
                 }            
             }
-        }
+        });
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
@@ -183,6 +185,11 @@ public:
                 }
             }
         });
+
+        if (phase_ == net_phase::train && update_immidiately_) {
+            mean_ = mean_current_;
+            variance_ = variance_current_;
+        }
     }
 
     void set_context(net_phase ctx) override
@@ -217,6 +224,10 @@ public:
         for (auto& v : variance_) v = src[idx++];
     }
 
+    void update_immidiately(bool update) {
+        update_immidiately_ = update;
+    }
+
 private:
     void init() {
         mean_current_.resize(in_channels_);
@@ -245,6 +256,8 @@ private:
     vec_t variance_;
     vec_t stddev_;
 
+    // for test
+    bool update_immidiately_;
 };
 
 } // namespace tiny_cnn

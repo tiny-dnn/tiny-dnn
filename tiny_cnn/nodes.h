@@ -118,6 +118,13 @@ class nodes {
         throw nn_error("failed to cast");
     }
 
+    template <typename T>
+    T& at(size_t index) {
+        T* v = dynamic_cast<T*>(nodes_[index]);
+        if (v) return *v;
+        throw nn_error("failed to cast");
+    }
+
     // @todo: multiple output
     virtual float_t target_value_min(int out_channel = 0) const {
         CNN_UNREFERENCED_PARAMETER(out_channel);

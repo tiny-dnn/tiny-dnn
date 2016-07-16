@@ -32,6 +32,17 @@
 namespace tiny_cnn {
 
 TEST(batchnorm, gradient_check) {
+    network<sequential> nn;
+    nn << convolutional_layer<relu>(5, 5, 3, 3, 3, padding::same)
+        << batch_normalization_layer(3, 5 * 5)
+        << fully_connected_layer<tan_h>(3 * 5 * 5, 10);
+    
+    nn.at<batch_normalization_layer>(1).update_immidiately(true);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size(), 2);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
+
 }
 
 TEST(batchnorm, forward) {
