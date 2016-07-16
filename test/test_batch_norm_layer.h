@@ -35,7 +35,7 @@ TEST(batchnorm, gradient_check) {
     int num = 4;
     int spatial_dim = 4;
     int channels = 2;
-    batch_normalization_layer bn(channels, spatial_dim);
+    batch_normalization_layer bn(spatial_dim, channels);
 
     /* following values are extracted from caffe */
     /* confirming that batch-norm layer is compatible with caffe's bn */
@@ -147,7 +147,7 @@ TEST(batchnorm, gradient_check) {
 }
 
 TEST(batchnorm, forward) {
-    batch_normalization_layer bn(/*channel=*/3, /*spatial-size=*/4);
+    batch_normalization_layer bn(/*spatial-size=*/4, /*channel=*/3);
 
     /*
           mean   var
