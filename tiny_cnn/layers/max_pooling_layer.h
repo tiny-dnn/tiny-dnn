@@ -110,8 +110,8 @@ public:
         : Base({vector_type::data}),
         pool_size_width_(pooling_size),
         pool_size_height_(pooling_size),
-        stride_width_(pooling_size),
-        stride_height_(pooling_size),
+        stride_width_(stride),
+        stride_height_(stride),
         in_(in_width, in_height, in_channels),
         out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels)
     {
