@@ -111,11 +111,12 @@ public:
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        const tensor_t& prev_out = *in_data[0];
         tensor_t& prev_delta     = *in_grad[0];
         tensor_t& curr_delta     = *out_grad[0];
         const tensor_t& curr_out = *out_data[0];
-        cnn_size_t num_samples   = prev_out.size();
+        cnn_size_t num_samples   = curr_out.size();
+
+        CNN_UNREFERENCED_PARAMETER(in_data);
 
         tensor_t delta_dot_y = curr_out;
         vec_t mean_delta_dot_y, mean_delta, mean_Y;
@@ -140,7 +141,7 @@ public:
                     cnn_size_t index = j*in_spatial_size_ + k;
 
                     prev_delta[i][index]
-                        = curr_delta[i][index] + mean_delta[j] + mean_delta_dot_y[j] * curr_out[i][index];
+                        = curr_delta[i][index] - mean_delta[j] - mean_delta_dot_y[j] * curr_out[i][index];
 
                     // stddev_ is calculated in the forward pass 
                     prev_delta[i][index] /= stddev_[j];
@@ -226,6 +227,10 @@ public:
 
     void update_immidiately(bool update) {
         update_immidiately_ = update;
+    }
+
+    void set_stddev(const vec_t& stddev) {
+        stddev_ = stddev;
     }
 
 private:
