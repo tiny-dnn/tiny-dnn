@@ -283,10 +283,8 @@ public:
                           std::vector<tensor_t*>&       in_grad) override {
 
         const vec_t& W = (*in_data[1])[0];
-        vec_t&       dW = (*in_grad[1])[0];
 
         assert(W.size() == weight_.size());
-        assert(dW.size() == weight_.size());
 
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
@@ -294,7 +292,9 @@ public:
             const vec_t& prev_out = *(cws_.prev_out_padded_[sample]);
             vec_t*       prev_delta = (pad_type_ == padding::same) ? &(cws_.prev_delta_padded_[sample]) : &((*in_grad[0])[sample]);
             vec_t&       curr_delta = (*out_grad[1])[sample];
+            vec_t&       dW = (*in_grad[1])[sample];
 
+            assert(dW.size() == weight_.size());
             assert(curr_delta.size() == out_shape()[0].size());
 
             std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
