@@ -381,7 +381,7 @@ public:
 
         for (size_t i = 0; i < in.size(); i++) {
             const vec_t predicted = predict(in[i]);
-            sum_loss += get_loss<E>(predicted, t[i]);
+            sum_loss += E::f(predicted, t[i]);
         }
         return sum_loss;
     }
@@ -399,7 +399,7 @@ public:
 
             const tensor_t predicted = predict(in_tensor[i]);
             for (size_t j = 0; j < predicted.size(); j++)
-                sum_loss += get_loss<E>(predicted[j], t[i][j]);
+                sum_loss += E::f(predicted[j], t[i][j]);
         }
         return sum_loss;
     }
@@ -702,13 +702,11 @@ private:
         return net_.forward(in);
     }
 
-    template <typename E>
-    float_t get_loss(const vec_t& out, const vec_t& t) {
-        float_t e = float_t(0);
-        assert(out.size() == t.size());
-        for(size_t i = 0; i < out.size(); i++){ e += E::f(out[i], t[i]); }
-        return e;
-    }
+//    template <typename E>
+//    float_t get_loss(const vec_t& out, const vec_t& t) {
+//        assert(out.size() == t.size());
+//        return E::f(out, t);
+//    }
 
     template <typename E>
     bool calc_delta(const std::vector<tensor_t>& in, const std::vector<tensor_t>& v, vec_t& w, tensor_t& dw, int check_index, double eps) {

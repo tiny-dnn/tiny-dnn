@@ -51,13 +51,44 @@ public:
                       cnn_size_t in_channels,
                       cnn_size_t pooling_size)
         : Base({vector_type::data}),
-        pool_size_(pooling_size),
-        stride_(pooling_size),
+        pool_size_width_(pooling_size),
+        pool_size_height_(pooling_size),
+        stride_width_(pooling_size),
+        stride_height_(pooling_size),
         in_(in_width, in_height, in_channels),
         out_(in_width / pooling_size, in_height / pooling_size, in_channels)
     {
         if ((in_width % pooling_size) || (in_height % pooling_size)) {
             pooling_size_mismatch(in_width, in_height, pooling_size);
+        }
+
+        //set_worker_count(CNN_TASK_SIZE);
+        init_connection();
+    }
+
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale in width direction
+     **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      std::pair<cnn_size_t, cnn_size_t> pooling_size)
+        : Base({vector_type::data}),
+        pool_size_width_(pooling_size.first),
+        pool_size_height_(pooling_size.second),
+        stride_width_(pooling_size.first),
+        stride_height_(pooling_size.second),
+        in_(in_width, in_height, in_channels),
+        out_(in_width / pooling_size.first, in_height / pooling_size.second, in_channels)
+    {
+        if ((in_width % pooling_size.first)){
+            pooling_size_mismatch(in_width, in_height, pooling_size.first);
+        }
+        if ((in_height % pooling_size.second)) {
+            pooling_size_mismatch(in_width, in_height, pooling_size.second);
         }
 
         //set_worker_count(CNN_TASK_SIZE);
@@ -77,10 +108,37 @@ public:
                       cnn_size_t pooling_size,
                       cnn_size_t stride)
         : Base({vector_type::data}),
-        pool_size_(pooling_size),
-        stride_(stride),
+        pool_size_width_(pooling_size),
+        pool_size_height_(pooling_size),
+        stride_width_(stride),
+        stride_height_(stride),
         in_(in_width, in_height, in_channels),
         out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels)
+    {
+        //set_worker_count(CNN_TASK_SIZE);
+        init_connection();
+    }
+
+    /**
+     * @param in_width            [in] width of input image
+     * @param in_height           [in] height of input image
+     * @param in_channels         [in] the number of input image channels(depth)
+     * @param pooling_size_width  [in] factor by which to downscale in width direction
+     * @param pooling_size_height [in] factor by which to downscale in height direction
+     * @param stride              [in] interval at which to apply the filters to the input
+    **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      std::pair<cnn_size_t, cnn_size_t> pooling_size,
+                      std::pair<cnn_size_t, cnn_size_t> stride)
+        : Base({vector_type::data}),
+        pool_size_width_(pooling_size.first),
+        pool_size_height_(pooling_size.second),
+        stride_width_(stride.first),
+        stride_height_(stride.second),
+        in_(in_width, in_height, in_channels),
+        out_(pool_out_dim(in_width, pooling_size.first, stride), pool_out_dim(in_height, pooling_size.second, stride), in_channels)
     {
         //set_worker_count(CNN_TASK_SIZE);
         init_connection();
@@ -153,11 +211,16 @@ public:
     std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
     std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-pool"; }
-    size_t pool_size() const {return pool_size_;}
+    size_t pool_size() const {return pool_size_width_;} //legacy getter used for symmetric layers
+    size_t pool_size_width() const {return pool_size_width_;}
+    size_t pool_size_height() const {return pool_size_height_;}
+
 
 private:
-    size_t pool_size_;
-    size_t stride_;
+    size_t pool_size_width_;
+    size_t pool_size_height_;
+    size_t stride_width_;
+    size_t stride_height_;
     std::vector<std::vector<cnn_size_t> > out2in_; // mapping out => in (1:N)
     std::vector<cnn_size_t> in2out_; // mapping in => out (N:1)
     std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
@@ -169,15 +232,15 @@ private:
         return (int) std::ceil(((double)in_size - pooling_size) / stride) + 1;
     }
 
-    void connect_kernel(cnn_size_t pooling_size, cnn_size_t outx, cnn_size_t outy, cnn_size_t  c)
+    void connect_kernel(cnn_size_t pooling_size_width, cnn_size_t pooling_size_height, cnn_size_t outx, cnn_size_t outy, cnn_size_t  c)
     {
-        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min((size_t)pooling_size, in_.width_ - outx * stride_));
-        cnn_size_t dymax = static_cast<cnn_size_t>(std::min((size_t)pooling_size, in_.height_ - outy * stride_));
+        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min((size_t)pooling_size_width, in_.width_ - outx * stride_width_));
+        cnn_size_t dymax = static_cast<cnn_size_t>(std::min((size_t)pooling_size_height, in_.height_ - outy * stride_height_));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
             for (cnn_size_t dx = 0; dx < dxmax; dx++) {
-                cnn_size_t in_index = in_.get_index(static_cast<cnn_size_t>(outx * stride_ + dx),
-                                                      static_cast<cnn_size_t>(outy * stride_ + dy), c);
+                cnn_size_t in_index = in_.get_index(static_cast<cnn_size_t>(outx * stride_width_  + dx),
+                                                    static_cast<cnn_size_t>(outy * stride_height_ + dy), c);
                 cnn_size_t out_index = out_.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size())
@@ -199,7 +262,7 @@ private:
         for (cnn_size_t c = 0; c < in_.depth_; ++c)
             for (cnn_size_t y = 0; y < out_.height_; ++y)
                 for (cnn_size_t x = 0; x < out_.width_; ++x)
-                    connect_kernel(static_cast<cnn_size_t>(pool_size_),
+                    connect_kernel(static_cast<cnn_size_t>(pool_size_width_), static_cast<cnn_size_t>(pool_size_height_),
                                    x, y, c);
     }
 
