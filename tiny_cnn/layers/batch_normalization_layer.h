@@ -170,9 +170,7 @@ public:
         }
 
         // y = (x - mean) ./ sqrt(variance + eps)
-        for (size_t i = 0; i < in_channels_; i++) {
-            stddev_[i] = sqrt((*variance)[i] + eps_);
-        }
+        calc_stddev(*variance);
 
         for_i(parallelize_, in_data[0]->size(), [&](int i) {
             const float_t* inptr  = &in[i][0];
@@ -233,7 +231,22 @@ public:
         stddev_ = stddev;
     }
 
+    void set_mean(const vec_t& mean) {
+        mean_ = mean;
+    }
+
+    void set_variance(const vec_t& variance) {
+        variance_ = variance;
+        calc_stddev(variance);
+    }
+
 private:
+    void calc_stddev(const vec_t& variance) {
+        for (size_t i = 0; i < in_channels_; i++) {
+            stddev_[i] = sqrt(variance[i] + eps_);
+        }
+    }
+
     void init() {
         mean_current_.resize(in_channels_);
         mean_.resize(in_channels_);
