@@ -347,7 +347,7 @@ public:
 
             // accumulate db
             if (has_bias_) {
-                vec_t& db = (*in_grad[2])[0];
+                vec_t& db = (*in_grad[2])[sample];
 
                 for (cnn_size_t outc = 0; outc < out_.depth_; outc++) {
                     const float_t *delta = &curr_delta[out_.get_index(0, 0, outc)];
