@@ -138,7 +138,7 @@ public:
         stride_width_(stride.first),
         stride_height_(stride.second),
         in_(in_width, in_height, in_channels),
-        out_(pool_out_dim(in_width, pooling_size.first, stride), pool_out_dim(in_height, pooling_size.second, stride), in_channels)
+        out_(pool_out_dim(in_width, pooling_size.first, stride.first), pool_out_dim(in_height, pooling_size.second, stride.second), in_channels)
     {
         //set_worker_count(CNN_TASK_SIZE);
         init_connection();

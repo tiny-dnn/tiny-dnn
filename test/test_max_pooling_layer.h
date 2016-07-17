@@ -63,6 +63,30 @@ TEST(max_pool, forward) {
 }
 
 
+TEST(max_pool, forward_asymmetric) {
+    max_pooling_layer<identity> l(4, 4, 1, {2,1}, {2,1});
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        1, 3,
+        8, 6,
+        4, 2,
+        0, -2
+    };
+
+    vec_t res = l.forward({ {in} })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+
 TEST(max_pool, forward_stride) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 1);
     vec_t in = {
