@@ -183,11 +183,10 @@ public:
         return (weight_.width_ * w_stride_) * (weight_.height_ * h_stride_) * out_.depth_;
     }
 
-    void forward_propagation(cnn_size_t worker_index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
 
-        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_;
 
         const vec_t& W   = (*in_data[1])[0];
         
@@ -246,7 +245,7 @@ public:
             });
         }
 
-        copy_and_unpad_output(*out_data[0], static_cast<int>(worker_index));
+        copy_and_unpad_output(*out_data[0]);
     }
 
     float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
@@ -254,13 +253,12 @@ public:
         return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
     }
 
-    void back_propagation(cnn_size_t                    worker_index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
 
-        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_;
 
         const vec_t& W = (*in_data[1])[0];
 
@@ -387,12 +385,6 @@ public:
         return img;
     }
 
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        deconv_layer_worker_storage_.resize(worker_count);
-        init();
-    }
-
 private:
     void deconv_set_params(const shape3d& in,
                          cnn_size_t     w_width,
@@ -414,17 +406,18 @@ private:
         pad_type_ = ptype;
         w_stride_ = w_stride;
         h_stride_ = h_stride;
+        init();
     }
 
     void init() {
-        for (deconv_layer_worker_specific_storage& cws : deconv_layer_worker_storage_) {
-            if (pad_type_ == padding::same) {
-                cws.prev_out_buf_.resize(in_.size(), vec_t(1, float_t(0)));
-                cws.prev_delta_padded_.resize(in_.size(), vec_t(1, float_t(0)));
-            }
-            else {
-                cws.prev_out_buf_.clear();
-            }
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_;
+
+        if (pad_type_ == padding::same) {
+            cws.prev_out_buf_.resize(in_.size(), vec_t(1, float_t(0)));
+            cws.prev_delta_padded_.resize(in_.size(), vec_t(1, float_t(0)));
+        }
+        else {
+            cws.prev_out_buf_.clear();
         }
     }
 
@@ -464,8 +457,8 @@ private:
         }
     }
 
-    void copy_and_unpad_output(const tensor_t& out, int worker_index) {
-        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_[worker_index];
+    void copy_and_unpad_output(const tensor_t& out) {
+        deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_;
 
         const cnn_size_t sample_count = out.size();
 
@@ -501,7 +494,7 @@ private:
         std::vector<vec_t> prev_delta_padded_;
     };
 
-    std::vector<deconv_layer_worker_specific_storage> deconv_layer_worker_storage_;
+    deconv_layer_worker_specific_storage deconv_layer_worker_storage_;
 
     connection_table tbl_;
 
