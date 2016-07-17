@@ -147,9 +147,9 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
           stride_width_(stride.first),
           stride_height_(stride.second),
           in_(in_width, in_height, in_channels),
-          out_(pool_out_dim(in_width, pooling_size, stride),
-               pool_out_dim(in_height, pooling_size, stride), in_channels),
-          w_(pooling_size, pooling_size, in_channels) {
+          out_(pool_out_dim(in_width, pooling_size.first, stride.first),
+               pool_out_dim(in_height, pooling_size.second, stride.second), in_channels),
+          w_(pooling_size.first, pooling_size.second, in_channels) {
         if ((in_width % pooling_size.first)) {
             pooling_size_mismatch(in_width, in_height, pooling_size.first);
         }
