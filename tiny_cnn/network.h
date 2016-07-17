@@ -712,7 +712,7 @@ private:
 
     template <typename E>
     bool calc_delta(const std::vector<tensor_t>& in, const std::vector<tensor_t>& v, vec_t& w, tensor_t& dw, int check_index, double eps) {
-        static const float_t delta = 1e-7;
+        static const float_t delta = 1e-10;
 
         assert(in.size() == v.size());
 
@@ -729,13 +729,6 @@ private:
             std::fill(dw_sample.begin(), dw_sample.end(), float_t(0));
         }
 
-        //set_netphase(net_phase::train);
-
-        // calculate dw/dE by bprop
-        bprop<E>(fprop(in), v, std::vector<tensor_t>());
-
-        set_netphase(net_phase::test);
-
         // calculate dw/dE by numeric
         float_t prev_w = w[check_index];
 
@@ -750,14 +743,16 @@ private:
         float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
         w[check_index] = prev_w;
 
+        // calculate dw/dE by bprop
+        bprop<E>(fprop(in), v, std::vector<tensor_t>());
+
         float_t delta_by_bprop = 0;
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             delta_by_bprop += dw[sample][check_index];
         }
         net_.clear_grads();
 
-        bool ret = std::abs(delta_by_bprop - delta_by_numerical) <= eps;
-        return ret;
+        return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 
     // convenience wrapper for the function below
