@@ -186,8 +186,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     void init_connection(cnn_size_t pooling_size_width, cnn_size_t pooling_size_height) {
         for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < in_.height_ - pooling_size_height + 1; y += stride_width_) {
-                for (cnn_size_t x = 0; x < in_.width_ - pooling_size_width + 1; x += stride_height_) {
+            for (cnn_size_t y = 0; y < in_.height_ - pooling_size_height + 1; y += stride_height_) {
+                for (cnn_size_t x = 0; x < in_.width_ - pooling_size_width + 1; x += stride_width_) {
                     connect_kernel(pooling_size_width, pooling_size_height, x, y, c);
                 }
             }
