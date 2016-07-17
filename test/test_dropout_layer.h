@@ -39,10 +39,10 @@ TEST(dropout, randomized) {
     vec_t v(num_units, 1.0);
 
     l.forward({ {v} });
-    const auto mask1 = l.get_mask(0, 0);
+    const auto mask1 = l.get_mask(0);
 
     l.forward({ {v} });
-    const auto mask2 = l.get_mask(0, 0);
+    const auto mask2 = l.get_mask(0);
 
     // mask should change for each fprop
     EXPECT_TRUE(is_different_container(mask1, mask2));

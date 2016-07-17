@@ -38,6 +38,7 @@ using namespace tiny_cnn::activation;
 #include "test_target_cost.h"
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
+#include "test_batch_norm_layer.h"
 #include "test_nodes.h"
 
 int main(void) {

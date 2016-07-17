@@ -68,23 +68,18 @@ public:
         return { index3d<cnn_size_t>(out_size_, 1, 1), index3d<cnn_size_t>(out_size_, 1, 1) };
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
         const vec_t&    W   = (*in_data[1])[0];
 
-        CNN_UNREFERENCED_PARAMETER(index);
-
         cnn_size_t sample_count = in_data[0]->size();
 
-        for (size_t sample = 0; sample < sample_count; ++sample) {
-
+	    for_i(parallelize_, sample_count, [&](int sample) {
             const vec_t& in  = (*in_data[0])[sample];
             vec_t&       out = (*out_data[0])[sample];
             vec_t&       a   = (*out_data[1])[sample];
 
-            // @todo consider parallelizing on the sample level instead (do some profiling!)
-            for_i(parallelize_, out_size_, [&](int i) {
+			for (cnn_size_t i = 0; i < out_size_; ++i) {
                 a[i] = float_t(0);
                 for (cnn_size_t c = 0; c < in_size_; c++) {
                     a[i] += W[c*out_size_ + i] * in[c];
@@ -94,16 +89,15 @@ public:
                     vec_t& b = (*in_data[2])[0];
                     a[i] += b[i];
                 }
-            });
+            };
 
-            for_i(parallelize_, out_size_, [&](int i) {
+            for (cnn_size_t i = 0; i < out_size_; i++) {
                 out[i] = h_.f(a, i);
-            });
-        }
+            }
+		});
     }
 
-    void back_propagation(cnn_size_t                    index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
@@ -113,31 +107,26 @@ public:
         tensor_t&    prev_delta  = *in_grad[0];
         tensor_t&    curr_delta  = *out_grad[1];
 
-        CNN_UNREFERENCED_PARAMETER(index);
-
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        // @todo consider refactoring parallelism
-        for (cnn_size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
+		for_i(parallelize_, in_data[0]->size(), [&](int sample) {
             for (cnn_size_t c = 0; c < this->in_size_; c++) {
                 // propagate delta to previous layer
                 // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
                 prev_delta[sample][c] += vectorize::dot(&curr_delta[sample][0], &W[c*out_size_], out_size_);
             }
 
-            for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
-                // accumulate weight-step using delta
-                // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-                for (cnn_size_t c = 0; c < in_size_; c++)
-                    vectorize::muladd(&curr_delta[sample][r.begin()], prev_out[sample][c], r.end() - r.begin(), &dW[sample][c*out_size_ + r.begin()]);
+			// accumulate weight-step using delta
+			// dW[c * out_size + i] += current_delta[i] * prev_out[c]
+			for (cnn_size_t c = 0; c < in_size_; c++)
+				vectorize::muladd(&curr_delta[sample][0], prev_out[sample][c], out_size_, &dW[sample][c*out_size_]);
 
-                if (has_bias_) {
-                    vec_t& db = (*in_grad[2])[sample];
-                    for (int i = r.begin(); i < r.end(); i++)
-                        db[i] += curr_delta[sample][i];
-                }
-            });
-        }
+			if (has_bias_) {
+				vec_t& db = (*in_grad[2])[sample];
+				for (cnn_size_t i = 0; i < out_size_; i++)
+					db[i] += curr_delta[sample][i];
+			}
+		});
     }
 
     std::string layer_type() const override { return "fully-connected"; }

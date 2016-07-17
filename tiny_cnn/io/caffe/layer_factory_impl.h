@@ -259,6 +259,50 @@ std::shared_ptr<layer> create_relu(const caffe::LayerParameter& layer,
     return relu;
 }
 
+inline std::shared_ptr<layer> create_batchnorm(const caffe::LayerParameter& layer,
+    const shape_t& bottom_shape, shape_t *top_shape) {
+    using bn_layer = batch_normalization_layer;
+
+    *top_shape = bottom_shape;
+
+    float_t eps = 1e-5;
+    float_t momentum = 0.999;
+
+    if (layer.has_batch_norm_param()) {
+        auto bn_param = layer.batch_norm_param();
+
+        if (bn_param.has_eps()) {
+            eps = bn_param.eps();
+        }
+        if (bn_param.has_moving_average_fraction()) {
+            momentum = bn_param.moving_average_fraction();
+        }
+    }
+
+    auto bn = std::make_shared<bn_layer>(bottom_shape.area(), bottom_shape.depth_, eps, momentum, net_phase::test);
+
+    // weight
+    if (layer.blobs_size() > 0) {
+        auto global_stats = layer.blobs();
+        if (global_stats.size() != 3) {
+            throw std::runtime_error("unexpected bn stored statistics");
+        }       
+
+        float_t scale_factor = global_stats.Get(2).data(0) == 0 ? 0 : 1 / global_stats.Get(2).data(0);
+        vec_t mean(bottom_shape.depth_);
+        vec_t variance(bottom_shape.depth_);
+
+        for (size_t i = 0; i < mean.size(); i++) {
+            mean[i]     = global_stats.Get(0).data(i) * scale_factor;
+            variance[i] = global_stats.Get(1).data(i) * scale_factor;
+        }
+        bn->set_mean(mean);
+        bn->set_variance(variance);
+    }
+
+    return bn;
+}
+
 
 inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
                                         layer *dst) {
@@ -586,7 +630,7 @@ inline bool layer_supported(const std::string& type) {
     static const char* supported[] = {
         "InnerProduct", "Convolution", "Pooling", "LRN", "Dropout",
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss",
-        "ReLU", "Sigmoid", "TanH", "Softmax"
+        "ReLU", "Sigmoid", "TanH", "Softmax", "BatchNorm"
     };
 
     for (size_t i = 0; i < sizeof(supported) / sizeof(supported[0]); i++) {
@@ -626,6 +670,10 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
 
     if (layer_type == "Pooling") {
         return detail::create_pooling(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "BatchNorm") {
+        return detail::create_batchnorm(layer, in_shape, out_shape);
     }
 
     if (layer_type == "LRN") {

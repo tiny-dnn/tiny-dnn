@@ -81,16 +81,13 @@ public:
         bias2out_[bias_index].push_back(output_index);
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<tensor_t*>& in_data,
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
         const tensor_t& in  = *in_data[0];
         const vec_t&    W   = (*in_data[1])[0];
         const vec_t&    b   = (*in_data[2])[0];
         tensor_t&       out = *out_data[0];
         tensor_t&       a   = *out_data[1];
-
-        CNN_UNREFERENCED_PARAMETER(index);
 
         // @todo revise the parallelism strategy
         for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
@@ -117,8 +114,7 @@ public:
         }
     }
 
-    void back_propagation(cnn_size_t                    index,
-                          const std::vector<tensor_t*>& in_data,
+    void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
@@ -128,8 +124,6 @@ public:
         vec_t&          db          = (*in_grad[2])[0];
         tensor_t&       prev_delta  = *in_grad[0];
         tensor_t&       curr_delta  = *out_grad[0];
-
-        CNN_UNREFERENCED_PARAMETER(index);
 
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 

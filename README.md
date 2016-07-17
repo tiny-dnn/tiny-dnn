@@ -58,6 +58,7 @@ Check out the [documentation](doc/readme.md) for more info.
 * average pooling layer
 * max-pooling layer
 * contrast normalization layer
+* batch normalization layer
 * dropout layer
 * linear operation layer
 * deconvolution layer

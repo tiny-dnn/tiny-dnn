@@ -67,46 +67,37 @@ class nodes {
      * @param worker_index : id of worker-task
      **/
     virtual
-    void backward(const std::vector<tensor_t>& first, int worker_index) = 0;
+    void backward(const std::vector<tensor_t>& first) = 0;
 
     /**
      * @param first input  : data vectors
      * @param worker_index : id of worker-task
      **/
     virtual
-    std::vector<tensor_t> forward(const std::vector<tensor_t>& first, int worker_index) = 0; // NOLINT
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first) = 0; // NOLINT
 
     /**
      * update weights and clear all gradients
      **/
     virtual
-    void update_weights(optimizer *opt, int num_workers, int batch_size) {
+    void update_weights(optimizer *opt, int batch_size) {
         for (auto l : nodes_) {
-            l->update_weight(opt, num_workers, batch_size);
-        }
-    }
-
-    /**
-     * change max number of task
-     **/
-    virtual void set_worker_count(cnn_size_t worker) {
-        for (auto l : nodes_) {
-            l->set_worker_count(worker);
+            l->update_weight(opt, batch_size);
         }
     }
 
     /**
      * setup all weights, must be called before forward/backward
      **/
-    virtual void setup(bool reset_weight, int max_task_size) {
+    virtual void setup(bool reset_weight) {
         for (auto l : nodes_) {
-            l->setup(reset_weight, max_task_size);
+            l->setup(reset_weight);
         }
     }
 
-    void clear_grads(int max_task_size) {
+    void clear_grads() {
         for (auto l : nodes_) {
-            l->clear_grads(max_task_size);
+            l->clear_grads();
         }
     }
 
@@ -123,6 +114,13 @@ class nodes {
     template <typename T>
     const T& at(size_t index) const {
         const T* v = dynamic_cast<const T*>(nodes_[index]);
+        if (v) return *v;
+        throw nn_error("failed to cast");
+    }
+
+    template <typename T>
+    T& at(size_t index) {
+        T* v = dynamic_cast<T*>(nodes_[index]);
         if (v) return *v;
         throw nn_error("failed to cast");
     }
@@ -145,7 +143,7 @@ class nodes {
     }
 
     virtual void load(std::istream& is) { // NOLINT
-        setup(false, 1);
+        setup(false);
         for (auto& l : nodes_) {
             l->load(is);
         }
@@ -153,7 +151,7 @@ class nodes {
 
     virtual void load(const std::vector<float_t>& vec) {
         int idx = 0;
-        setup(false, 1);
+        setup(false);
         for (auto& l : nodes_) {
             l->load(vec, idx);
         }
@@ -227,31 +225,30 @@ class nodes {
  **/
 class sequential : public nodes {
  public:
-    void backward(const std::vector<tensor_t>& first, int worker_index) override {
+    void backward(const std::vector<tensor_t>& first) override {
 
         const std::vector<tensor_t> reordered_grad = reorder_for_layerwise_processing(first);
         assert(reordered_grad.size() == 1);
 
-        nodes_.back()->set_out_grads({ reordered_grad[0] }, worker_index);
+        nodes_.back()->set_out_grads({ reordered_grad[0] });
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
-            (*l)->backward(worker_index);
+            (*l)->backward();
         }
     }
 
-    std::vector<tensor_t> forward(const std::vector<tensor_t>& first,
-                               int worker_index) override {
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& first) override {
 
         const std::vector<tensor_t> reordered_data = reorder_for_layerwise_processing(first);
         assert(reordered_data.size() == 1);
 
-        nodes_.front()->set_in_data({ reordered_data[0] }, worker_index);
+        nodes_.front()->set_in_data({ reordered_data[0] });
 
         for (auto l : nodes_) {
-            l->forward(worker_index);
+            l->forward();
         }
 
-        const std::vector<tensor_t> out = nodes_.back()->output(worker_index);
+        const std::vector<tensor_t> out = nodes_.back()->output();
 
         return normalize_out(out);
     }
@@ -304,8 +301,7 @@ private:
  **/
 class graph : public nodes {
  public:
-    void backward(const std::vector<tensor_t>& out_grad,
-                  int worker_index) override {
+    void backward(const std::vector<tensor_t>& out_grad) override {
 
         cnn_size_t output_channel_count = out_grad[0].size();
 
@@ -317,16 +313,15 @@ class graph : public nodes {
         assert(reordered_grad.size() == output_channel_count);
 
         for (cnn_size_t i = 0; i < output_channel_count; i++) {
-            output_layers_[i]->set_out_grads({ reordered_grad[i] }, worker_index);
+            output_layers_[i]->set_out_grads({ reordered_grad[i] });
         }
 
         for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
-            (*l)->backward(worker_index);
+            (*l)->backward();
         }
     }
 
-    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data,
-                               int worker_index) {
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data) {
 
         cnn_size_t input_data_channel_count = in_data[0].size();
 
@@ -338,13 +333,13 @@ class graph : public nodes {
         assert(reordered_data.size() == input_data_channel_count);
 
         for (cnn_size_t channel_index = 0; channel_index < input_data_channel_count; channel_index++) {
-            input_layers_[channel_index]->set_in_data({ reordered_data[channel_index] }, worker_index);
+            input_layers_[channel_index]->set_in_data({ reordered_data[channel_index] });
         }
 
         for (auto l : nodes_) {
-            l->forward(worker_index);
+            l->forward();
         }
-        return merge_outs(worker_index);
+        return merge_outs();
     }
 
     void construct(const std::vector<layerptr_t>& input,
@@ -386,17 +381,17 @@ class graph : public nodes {
         input_layers_ = input;
         output_layers_ = output;
 
-        setup(false, 1);
+        setup(false);
     }
 
  private:
 
      // normalize indexing back to [sample][layer][feature]
-     std::vector<tensor_t> merge_outs(int worker_index) {
+     std::vector<tensor_t> merge_outs() {
          std::vector<tensor_t> merged;
          cnn_size_t output_channel_count = output_layers_.size();
          for (cnn_size_t output_channel = 0; output_channel < output_channel_count; ++output_channel) {
-             std::vector<tensor_t> out = output_layers_[output_channel]->output(worker_index);
+             std::vector<tensor_t> out = output_layers_[output_channel]->output();
 
              cnn_size_t sample_count = out[0].size();
              if (output_channel == 0) {
