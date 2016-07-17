@@ -485,6 +485,30 @@ class layer : public node {
         return true;
     }
 
+    virtual void set_sample_count(cnn_size_t sample_count) {
+
+        // increase the size if necessary - but do not decrease
+        auto resize = [sample_count](tensor_t* tensor) {
+            if (tensor->size() < sample_count) {
+                tensor->resize(sample_count, (*tensor)[0]);
+            }
+        };
+
+        for (cnn_size_t i = 0; i < in_channels_; i++) {
+            if (!is_trainable_weight(in_type_[i])) {
+                resize(ith_in_node(i)->get_data());
+            }
+            resize(ith_in_node(i)->get_gradient());
+        }
+
+        for (cnn_size_t i = 0; i < out_channels_; i++) {
+            if (!is_trainable_weight(out_type_[i])) {
+                resize(ith_out_node(i)->get_data());
+            }
+            resize(ith_out_node(i)->get_gradient());
+        }
+    }
+
  protected:
     bool initialized_;
     bool parallelize_;
@@ -525,30 +549,6 @@ class layer : public node {
     const vec_t* get_weight_data(cnn_size_t i) const {
         assert(is_trainable_weight(in_type_[i]));
         return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data()))[0];
-    }
-
-    virtual void set_sample_count(cnn_size_t sample_count) {
-
-        // increase the size if necessary - but do not decrease
-        auto resize = [sample_count](tensor_t* tensor) {
-            if (tensor->size() < sample_count) {
-                tensor->resize(sample_count, (*tensor)[0]);
-            }
-        };
-
-        for (cnn_size_t i = 0; i < in_channels_; i++) {
-            if (!is_trainable_weight(in_type_[i])) {
-                resize(ith_in_node(i)->get_data());
-            }
-            resize(ith_in_node(i)->get_gradient());
-        }
-
-        for (cnn_size_t i = 0; i < out_channels_; i++) {
-            if (!is_trainable_weight(out_type_[i])) {
-                resize(ith_out_node(i)->get_data());
-            }
-            resize(ith_out_node(i)->get_gradient());
-        }
     }
 };
 
