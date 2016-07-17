@@ -82,7 +82,7 @@ class layer : public node {
     layer(const layer&) = default;
     layer &operator =(const layer&) = default;
 
-#if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     layer(layer&&) = default;
     layer &operator = (layer&&) = default;
 #endif

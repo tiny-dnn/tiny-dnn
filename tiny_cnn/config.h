@@ -62,6 +62,10 @@
 #define CNN_TASK_SIZE 8
 #endif
 
+#if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
+#define CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+#endif
+
 namespace tiny_cnn {
 
 /**
