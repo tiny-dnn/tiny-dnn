@@ -529,11 +529,8 @@ class layer : public node {
 
     virtual void set_sample_count(cnn_size_t sample_count) {
 
-        // increase the size if necessary - but do not decrease
         auto resize = [sample_count](tensor_t* tensor) {
-            if (tensor->size() < sample_count) {
-                tensor->resize(sample_count, (*tensor)[0]);
-            }
+            tensor->resize(sample_count, (*tensor)[0]);
         };
 
         for (cnn_size_t i = 0; i < in_channels_; i++) {
