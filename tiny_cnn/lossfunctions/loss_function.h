@@ -32,48 +32,68 @@ namespace tiny_cnn {
 // mean-squared-error loss function for regression
 class mse {
 public:
-    static float_t f(float_t y, float_t t) {
-        return (y - t) * (y - t) / 2;
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += (y[i] - t[i]) * (y[i] - t[i]);
+        return d/y.size();
     }
 
-    static float_t df(float_t y, float_t t) {
-        return y - t;
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        float_t factor = 2.f/static_cast<float_t>(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = factor*(y[i] - t[i]);
+        return d;
     }
 };
 
 // cross-entropy loss function for (multiple independent) binary classifications
 class cross_entropy {
 public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y) - (float_t(1) - t) * std::log(float_t(1) - y);
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += -t[i] * std::log(y[i]) - (float_t(1) - t[i]) * std::log(float_t(1) - y[i]);
+        return d;
     }
 
-    static float_t df(float_t y, float_t t) {
-        return (y - t) / (y * (float_t(1) - y));
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+        return d;
     }
 };
 
 // cross-entropy loss function for multi-class classification
 class cross_entropy_multiclass {
 public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y);
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += -t[i] * std::log(y[i]);
+        return d;
     }
 
-    static float_t df(float_t y, float_t t) {
-        return - t / y;
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = - t[i] / y[i];
+        return d;
     }
 };
 
 template <typename E>
 vec_t gradient(const vec_t& y, const vec_t& t) {
-    vec_t grad(y.size());
     assert(y.size() == t.size());
-
-    for (cnn_size_t i = 0; i < y.size(); i++)
-        grad[i] = E::df(y[i], t[i]);
-
-    return grad;
+    return E::df(y, t);
 }
 
 template <typename E>
