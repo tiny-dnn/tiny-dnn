@@ -45,7 +45,7 @@ public:
         vec_t d; d.resize(t.size());
         float_t factor = 2.f/static_cast<float_t>(t.size());
         for(unsigned int i = 0; i < y.size(); ++i)
-            d[i] = factor*y[i] - t[i];
+            d[i] = factor*(y[i] - t[i]);
         return d;
     }
 };
