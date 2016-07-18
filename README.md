@@ -53,18 +53,25 @@ Check out the [documentation](doc/readme.md) for more info.
 
 ## Supported networks
 ### layer-types
-* fully-connected layer
-* convolutional layer
-* average pooling layer
-* max-pooling layer
-* contrast normalization layer
-* batch normalization layer
-* dropout layer
-* linear operation layer
-* deconvolution layer
-* unpooling layer
-* elementwise-add layer
-* concat layer
+- core
+    - fully-connected
+    - dropout
+    - linear operation
+    - power
+- convolution
+    - convolutional
+    - average pooling
+    - max pooling
+    - deconvolutional
+    - average unpooling
+	- max unpooling
+- normalization
+    - contrast normalization
+    - batch normalization
+- split/merge
+    - concat
+    - slice
+    - elementwise-add
 
 ### activation functions
 * tanh
@@ -81,7 +88,6 @@ Check out the [documentation](doc/readme.md) for more info.
 
 ### optimization algorithms
 * stochastic gradient descent (with/without L2 normalization and momentum)
-* stochastic gradient levenberg marquardt
 * adagrad
 * rmsprop
 * adam

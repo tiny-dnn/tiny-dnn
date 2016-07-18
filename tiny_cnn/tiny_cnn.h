@@ -46,6 +46,7 @@
 #include "tiny_cnn/layers/average_unpooling_layer.h"
 #include "tiny_cnn/layers/batch_normalization_layer.h"
 #include "tiny_cnn/layers/slice_layer.h"
+#include "tiny_cnn/layers/power_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -111,6 +112,8 @@ using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
 using batch_norm = tiny_cnn::batch_normalization_layer;
 
 using slice = tiny_cnn::slice_layer;
+
+using power = tiny_cnn::power_layer;
 
 }
 }
