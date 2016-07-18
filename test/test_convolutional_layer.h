@@ -149,6 +149,26 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
 }
 
+TEST(convolutional, gradient_check6) { // sigmoid - absolute
+    network<sequential> nn;
+
+    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
+    network<sequential> nn;
+
+    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
+}
+
 TEST(convolutional, read_write)
 {
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
