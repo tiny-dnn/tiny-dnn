@@ -255,8 +255,8 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) {
-        Base::backend_->deconv2d(worker_index, in_data, out_data,
-                                out_grad, in_grad);
+        Base::backend_->deconv2d_q(worker_index, in_data, out_data,
+                                   out_grad, in_grad);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {

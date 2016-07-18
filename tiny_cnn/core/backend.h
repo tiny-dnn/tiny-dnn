@@ -69,6 +69,12 @@ class backend {
                         std::vector<vec_t*>&       out_grad,
                         std::vector<vec_t*>&       in_grad) = 0;
 
+    virtual void conv2d_q(cnn_size_t                 index,
+                          const std::vector<vec_t*>& in_data,
+                          const std::vector<vec_t*>& out_data,
+                          std::vector<vec_t*>&       out_grad,
+                          std::vector<vec_t*>&       in_grad) = 0;
+
     virtual void deconv2d(cnn_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           std::vector<vec_t*>&       out_data) = 0;
@@ -86,6 +92,12 @@ class backend {
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) = 0;
+
+    virtual void deconv2d_q(cnn_size_t                 index,
+                            const std::vector<vec_t*>& in_data,
+                            const std::vector<vec_t*>& out_data,
+                            std::vector<vec_t*>&       out_grad,
+                            std::vector<vec_t*>&       in_grad) = 0;
 
     virtual void matmul() = 0;
 
@@ -116,6 +128,12 @@ class backend {
                        const std::vector<vec_t*>& out_data,
                        std::vector<vec_t*>&       out_grad,
                        std::vector<vec_t*>&       in_grad) = 0;
+
+    virtual void fully_q(cnn_size_t                 index,
+                         const std::vector<vec_t*>& in_data,
+                         const std::vector<vec_t*>& out_data,
+                         std::vector<vec_t*>&       out_grad,
+                         std::vector<vec_t*>&       in_grad) = 0;
 
     context* get_context() const { return ctx_; }
 

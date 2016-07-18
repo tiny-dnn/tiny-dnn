@@ -106,6 +106,14 @@ class nnp_backend : public backend {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
     void deconv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
@@ -128,6 +136,14 @@ class nnp_backend : public backend {
                   const std::vector<vec_t*>& out_data,
                   std::vector<vec_t*>&       out_grad,
                   std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void deconv2d_q(cnn_size_t                 index,
+                    const std::vector<vec_t*>& in_data,
+                    const std::vector<vec_t*>& out_data,
+                    std::vector<vec_t*>&       out_grad,
+                    std::vector<vec_t*>&       in_grad) {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -192,6 +208,14 @@ class nnp_backend : public backend {
                const std::vector<vec_t*>& out_data,
                std::vector<vec_t*>&       out_grad,
                std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void fully_q(cnn_size_t                 index,
+                 const std::vector<vec_t*>& in_data,
+                 const std::vector<vec_t*>& out_data,
+                 std::vector<vec_t*>&       out_grad,
+                 std::vector<vec_t*>&       in_grad) {
         throw nn_error("NNPACK does not support back propagation.");
     }
 

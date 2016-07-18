@@ -109,8 +109,8 @@ public:
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
-        Base::backend_->fully(index, in_data,
-                              out_data, out_grad, in_grad);
+        Base::backend_->fully_q(index, in_data,
+                                out_data, out_grad, in_grad);
     }
 
     std::string layer_type() const override { return "q_fully-connected"; }

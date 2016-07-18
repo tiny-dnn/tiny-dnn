@@ -171,6 +171,38 @@ class tiny_backend : public backend {
         }
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
+        conv_layer_worker_specific_storage& cws =
+            (*conv_layer_worker_storage_)[index];
+
+        const vec_t& prev_out = *(cws.prev_out_padded_);
+        const vec_t& W  = *in_data[1];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       db = *in_grad[2];
+        vec_t&       curr_delta = *out_grad[1];
+        vec_t*       prev_delta = (params_c_->pad_type == padding::same) ?
+                                   &cws.prev_delta_padded_ : in_grad[0];
+
+        assert(W.size() == params_c_->weight.size());
+        assert(dW.size() == params_c_->weight.size());
+        assert(curr_delta.size() ==  layer_->out_shape()[0].size());
+
+        backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
+
+        kernels::tiny_quantized_conv2d_back_kernel(*params_c_,
+            prev_out, W, dW, db, curr_delta, prev_delta);
+
+        if (params_c_->pad_type == padding::same) {
+            copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
+        }
+    }
+
     void deconv2d(cnn_size_t                  index,
                   const std::vector<vec_t*>&  in_data,
                   std::vector<vec_t*>&        out_data) {
@@ -255,6 +287,36 @@ class tiny_backend : public backend {
         std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
 
         kernels::tiny_deconv2d_back_kernel(*params_d_,
+            prev_out, W, dW, db, curr_delta, prev_delta);
+    }
+
+    void deconv2d_q(cnn_size_t                 index,
+                    const std::vector<vec_t*>& in_data,
+                    const std::vector<vec_t*>& out_data,
+                    std::vector<vec_t*>&       out_grad,
+                    std::vector<vec_t*>&       in_grad) {
+
+        deconv_layer_worker_specific_storage& cws =
+            (*deconv_layer_worker_storage_)[index];
+        if (params_d_->pad_type == padding::same)
+            copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
+
+        const vec_t& prev_out = *(cws.prev_out_);
+        const vec_t& W = *in_data[1];
+        vec_t&       dW = *in_grad[1];
+        vec_t&       db = *in_grad[2];
+        vec_t&       curr_delta = (params_d_->pad_type == padding::same) ? cws.curr_delta_padded : *out_grad[1];
+        vec_t*       prev_delta = in_grad[0];
+
+        assert(W.size() == params_d_->weight.size());
+        assert(dW.size() == params_d_->weight.size());
+        assert(curr_delta.size() ==  layer_->out_shape()[0].size());
+
+        backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        std::fill(prev_delta->begin(), prev_delta->end(), float_t(0));
+
+        kernels::tiny_quantized_deconv2d_back_kernel(*params_d_,
             prev_out, W, dW, db, curr_delta, prev_delta);
     }
 
@@ -355,6 +417,26 @@ class tiny_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
+            W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
+    }
+
+    void fully_q(cnn_size_t                 index,
+                 const std::vector<vec_t*>& in_data,
+                 const std::vector<vec_t*>& out_data,
+                 std::vector<vec_t*>&       out_grad,
+                 std::vector<vec_t*>&       in_grad) {
+        const vec_t& prev_out   = *in_data[0];
+        const vec_t& W          = *in_data[1];
+        vec_t&       dW         = *in_grad[1];
+        vec_t&       db         = *in_grad[2];
+        vec_t&       prev_delta = *in_grad[0];
+        vec_t&       curr_delta = *out_grad[1];
+
+        CNN_UNREFERENCED_PARAMETER(index);
+
+        backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        kernels::tiny_quantized_fully_connected_back_kernel(*params_f_, prev_out,
             W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
     }
 

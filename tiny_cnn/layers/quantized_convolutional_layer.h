@@ -258,7 +258,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) {
-        Base::backend_->conv2d(worker_index, in_data,
+        Base::backend_->conv2d_q(worker_index, in_data,
                                out_data, out_grad, in_grad);
       }
 
