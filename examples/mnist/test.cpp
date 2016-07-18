@@ -41,7 +41,7 @@ double rescale(double x) {
     Activation a;
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
-
+#ifdef CNN_USE_OPENCV
 // convert tiny_cnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
     cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));

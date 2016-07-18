@@ -2,8 +2,8 @@ SET(NNPACK_INCLUDE_SEARCH_PATHS
     /usr/include
     /usr/local/include
     /opt/NNPACK/include
-    $ENV{NNPACK_ROOT}
-    $ENV{NNPACK_ROOT}/include
+    ${NNPACK_ROOT}
+    ${NNPACK_ROOT}/include
 )
 
 SET(NNPACK_LIB_SEARCH_PATHS
@@ -14,8 +14,8 @@ SET(NNPACK_LIB_SEARCH_PATHS
     /usr/local/lib
     /usr/local/lib64
     /opt/NNPACK/lib
-    $ENV{NNPACK_ROOT}
-    $ENV{NNPACK_ROOT}/lib
+    ${NNPACK_ROOT}
+    ${NNPACK_ROOT}/lib
  )
 
 FIND_PATH(NNPACK_INCLUDE_DIR NAMES nnpack.h PATHS ${NNPACK_INCLUDE_SEARCH_PATHS})
