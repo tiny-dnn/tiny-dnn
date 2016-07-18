@@ -55,15 +55,17 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_
     } else {
         if (layer.input_shape_size() > 0) {
             // input_shape is deprecated in Caffe
-            int depth = static_cast<int>(layer.input_shape(0).dim(1));
-            int width = static_cast<int>(layer.input_shape(0).dim(2));
-            int height = static_cast<int>(layer.input_shape(0).dim(3));
+            // blob dimensions are ordered by number N x channel K x height H x width W
+            int depth  = static_cast<int>(layer.input_shape(0).dim(1));
+            int height = static_cast<int>(layer.input_shape(0).dim(2));
+            int width  = static_cast<int>(layer.input_shape(0).dim(3));
             shape = shape3d(width, height, depth);
         }
         else if (src_net[0].has_input_param()) {
-            int depth = static_cast<int>(src_net[0].input_param().shape(0).dim(1));
-            int width = static_cast<int>(src_net[0].input_param().shape(0).dim(2));
-            int height = static_cast<int>(src_net[0].input_param().shape(0).dim(3));
+            // blob dimensions are ordered by number N x channel K x height H x width W
+            int depth  = static_cast<int>(src_net[0].input_param().shape(0).dim(1));
+            int height = static_cast<int>(src_net[0].input_param().shape(0).dim(2));
+            int width  = static_cast<int>(src_net[0].input_param().shape(0).dim(3));
             shape = shape3d(width, height, depth);
         }
         else {
@@ -119,12 +121,12 @@ create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const sha
  * @param layer [in] netparameter of caffe prototxt
  */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_prototxt(const std::string& caffeprototxt)
+create_net_from_caffe_prototxt(const std::string& caffeprototxt, const shape3d& shape =shape3d())
 {
     caffe::NetParameter np;
 
     detail::read_proto_from_text(caffeprototxt, &np);
-    return create_net_from_caffe_net(np, shape3d());
+    return create_net_from_caffe_net(np, shape);
 }
 
 /**

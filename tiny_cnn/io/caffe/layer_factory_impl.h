@@ -767,11 +767,14 @@ class caffe_layer_vector {
 
         for (int i = 0; i < net.layer_size(); i++) {
             auto& l = net.layer(i);
+
+            if (layer_table.find(l.name()) != layer_table.end()) continue;
+
             nodes.emplace_back(&l);
             layer_table[l.name()] = &nodes.back();
         }
 
-        for (int i = 0; i < net.layer_size(); i++) {
+        for (int i = 0; i < nodes.size(); i++) {
             auto& l = nodes[i];
 
             if (l.layer->bottom_size() > 0 && blob_table[l.layer->bottom(0)]) {

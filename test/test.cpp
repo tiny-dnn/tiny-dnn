@@ -41,6 +41,9 @@ using namespace tiny_cnn::activation;
 #include "test_batch_norm_layer.h"
 #include "test_nodes.h"
 #include "test_slice_layer.h"
+#ifdef CNN_USE_CAFFE_CONVERTER
+#include "test_caffe_converter.h"
+#endif
 
 int main(void) {
     return RUN_ALL_TESTS();
