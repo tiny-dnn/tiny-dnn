@@ -35,8 +35,8 @@ namespace core {
 namespace kernels {
 
 inline void nnp_maxpool_kernel(const maxpool_params& params,
-                               const vec_t&          in,
-                               vec_t&                a) {
+                               const tensor_t&          in,
+                               tensor_t&                a) {
 #ifdef CNN_USE_NNPACK
 
     const cnn_size_t input_channels  = params.in_.depth_;

@@ -33,55 +33,64 @@ namespace core {
 namespace kernels {
 
 inline void tiny_fully_connected_kernel(const fully_params& params,
-                                        const vec_t&        in,
+                                        const tensor_t&     in_data,
                                         const vec_t&        W,
-                                        vec_t&              b,
-                                        vec_t&              a,
+                                        const vec_t&        b,
+                                        tensor_t&           out_data,
                                         const bool          layer_parallelize) {
-    for_i(layer_parallelize, params.out_size_, [&](int i) {
-        a[i] = float_t(0);
-        for (cnn_size_t c = 0; c < params.in_size_; c++) {
-            a[i] += W[c * params.out_size_ + i] * in[c];
-        }
 
-        if (params.has_bias_) {
-            a[i] += b[i];
+    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+        const vec_t& in = in_data[sample];
+        vec_t& out = out_data[sample];
+
+        for (cnn_size_t i = 0; i < params.out_size_; i++) {
+            out[i] = float_t(0);
+            for (cnn_size_t c = 0; c < params.in_size_; c++) {
+                out[i] += W[c * params.out_size_ + i] * in[c];
+            }
+
+            if (params.has_bias_) {
+                out[i] += b[i];
+            }
         }
     });
 }
 
 inline void tiny_fully_connected_back_kernel(const fully_params& params,
-                                             const vec_t& prev_out,
-                                             const vec_t& W,
-                                             vec_t&       dW,
-                                             vec_t&       prev_delta,
-                                             vec_t&       curr_delta,
-                                             vec_t&       db,
-                                             const bool   layer_parallelize) {
-    for (cnn_size_t c = 0; c < params.in_size_; c++) {
-        // propagate delta to previous layer
-        // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta[c] += vectorize::dot(&curr_delta[0],
-                                        &W[c * params.out_size_],
-                                        params.out_size_);
-    }
+                                             const tensor_t& prev_out,
+                                             const vec_t&    W,
+                                             tensor_t&       dW,
+                                             tensor_t&       prev_delta,
+                                             tensor_t&       curr_delta,
+                                             tensor_t&       db,
+                                             const bool      layer_parallelize) {
 
-    for_(layer_parallelize, 0, size_t(params.out_size_), [&](const blocked_range& r) {
-        // accumulate weight-step using delta
-        // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+    for (cnn_size_t sample = 0; sample < prev_out.size(); sample++) {
         for (cnn_size_t c = 0; c < params.in_size_; c++) {
-            vectorize::muladd(&curr_delta[r.begin()],
-                              prev_out[c], r.end() - r.begin(),
-                              &dW[c * params.out_size_ + r.begin()]);
+            // propagate delta to previous layer
+            // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
+            prev_delta[sample][c] += vectorize::dot(&curr_delta[sample][0],
+                &W[c * params.out_size_],
+                params.out_size_);
         }
 
-        if (params.has_bias_) {
-            // vec_t& db = *in_grad[2];
-            for (int i = r.begin(); i < r.end(); i++) {
-                db[i] += curr_delta[i];
+        for_(layer_parallelize, 0, size_t(params.out_size_), [&](const blocked_range& r) {
+            // accumulate weight-step using delta
+            // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+            for (cnn_size_t c = 0; c < params.in_size_; c++) {
+                vectorize::muladd(&curr_delta[sample][r.begin()],
+                    prev_out[sample][c], r.end() - r.begin(),
+                    &dW[sample][c * params.out_size_ + r.begin()]);
             }
-        }
-    });
+
+            if (params.has_bias_) {
+                // vec_t& db = *in_grad[2];
+                for (int i = r.begin(); i < r.end(); i++) {
+                    db[sample][i] += curr_delta[sample][i];
+                }
+            }
+        });
+    }
 }
 
 }  // namespace kernels

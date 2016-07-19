@@ -50,25 +50,25 @@ void convert_image(const std::string& imagefilename,
     int w,
     int h,
     vec_t& data) {
-    // load
-    int input_w, input_h, comp;
-    stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
-    if (!input_pixels) {
-        // cannot open, or it's not an image
-        cout << "stbi_load failed";
-        return;
-    }
+	// load
+	int input_w, input_h, comp;
+	stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
+	if (!input_pixels) {
+		// cannot open, or it's not an image
+		cout << "stbi_load failed";
+		return;
+	}
 
-    // resize
-    std::vector<uint8_t> resized(w * h);
-    uint8_t* resized_pixels = &(resized[0]);
-    int input_stride_in_bytes = input_w;
-    if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
-        cout << "stbir_resize_uint8 failed";
-        stbi_image_free(input_pixels);
-        return;
-    }
-    stbi_image_free(input_pixels);
+	// resize
+	std::vector<uint8_t> resized(w * h);
+	uint8_t* resized_pixels = &(resized[0]);
+	int input_stride_in_bytes = input_w;
+	if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
+		cout << "stbir_resize_uint8 failed";
+		stbi_image_free(input_pixels);
+		return;
+	}
+	stbi_image_free(input_pixels);
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
@@ -76,19 +76,19 @@ void convert_image(const std::string& imagefilename,
 }
 
 bool save_image(const std::string& imagefilename,
-    const image<>& img
-    )
+	const image<>& img
+	)
 {
-    // no scaling, save at original size
-    int stride_bytes = (int)img.width();
-    int ret = stbi_write_png(
-        imagefilename.c_str(),
-        (int)img.width(),
-        (int)img.height(),
-        1,
-        &(img.at(0, 0)),
-        stride_bytes);
-    return (ret != 0);
+	// no scaling, save at original size
+	int stride_bytes = img.width();
+	int ret = stbi_write_png(
+		imagefilename.c_str(),
+		img.width(),
+		img.height(),
+		1,
+		&(img.at(0, 0)),
+		stride_bytes);
+	return (ret != 0);
 }
 
 void construct_net(network<sequential>& nn) {

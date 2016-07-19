@@ -519,6 +519,11 @@ inline std::vector<vector_type> std_output_order(bool has_activation) {
     }
 }
 
+inline void fill_tensor(tensor_t& tensor, float_t value) {
+    for (auto& t : tensor) {
+        std::fill(t.begin(), t.end(), value);
+    }
+}
 
 } // namespace tiny_cnn
 

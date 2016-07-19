@@ -33,10 +33,10 @@ namespace core {
 namespace kernels {
 
 inline void nnp_fully_connected_kernel(const fully_params& params,
-                                       const vec_t&        in,
+                                       const tensor_t&     in,
                                        const vec_t&        W,
                                        vec_t&              b,
-                                       vec_t&              a,
+                                       tensor_t&           a,
                                        const bool          layer_parallelize) {
 #ifdef CNN_USE_NNPACK
     const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);

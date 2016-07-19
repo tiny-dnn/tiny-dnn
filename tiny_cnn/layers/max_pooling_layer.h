@@ -124,43 +124,29 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         return 1;
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>&       out_data) {
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>&       out_data) {
         // launch maxpool kernel
-        Base::backend_->maxpool(index, in_data, out_data);
+        Base::backend_->maxpool(in_data, out_data);
 
         // activations
-        vec_t& out     = *out_data[0];
-        const vec_t& a = *out_data[1];
+        for_i(in_data[0]->size(), [&](int sample) {
+            vec_t& out     = (*out_data[0])[sample];
+            const vec_t& a = (*out_data[1])[sample];
 
-        for_i(parallelize_, out.size(), [&](int i) {  // NOLINT
-            out[i] = h_.f(a, i);
+            for (cnn_size_t i = 0; i < params_.out_.size(); i++) {
+                out[i] = this->h_.f(a, i);
+            };
         });
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) {
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) {
         // launch maxpool kernel
-        Base::backend_->maxpool(index, in_data, out_data,
-                                out_grad, in_grad);
+        Base::backend_->maxpool(in_data, out_data, out_grad, in_grad);
     }
-
-    /*void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {
-        const vec_t& current_delta2 = delta_in[0];
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        max_pooling_layer_worker_specific_storage& mws = max_pooling_layer_worker_storage_[0];
-
-        for (cnn_size_t i = 0; i < in_size_; i++) {
-            cnn_size_t outi = in2out_[i];
-            prev_delta2_[i] = (mws.out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
-        }
-    }*/
 
     std::vector<index3d<cnn_size_t>>
     in_shape() const override { return { params_.in_ }; }
@@ -171,16 +157,11 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const { return params_.pool_size_; }
 
-    void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        max_pooling_layer_worker_storage_.resize(worker_count);
-        for (max_pooling_layer_worker_specific_storage& mws :
-             max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(params_.out_.size());
-        }
+    void set_sample_count(cnn_size_t sample_count) override {
+        max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out_.size()));
     }
 
- private:
+private:
     maxpool_params params_;
 
     /* mapping out => in (1:N) */
@@ -188,7 +169,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     /* mapping in => out (N:1) */
     std::vector<cnn_size_t> in2out_;
 
-    std::vector<max_pooling_layer_worker_specific_storage>
+    max_pooling_layer_worker_specific_storage
     max_pooling_layer_worker_storage_;
 
     static cnn_size_t pool_out_dim(cnn_size_t in_size,
@@ -232,11 +213,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void init_connection() {
         in2out_.resize(params_.in_.size());
         out2in_.resize(params_.out_.size());
-
-        for (max_pooling_layer_worker_specific_storage& mws :
-             max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(params_.out_.size());
-        }
+        //max_pooling_layer_worker_storage_.out2inmax_.resize(params_.out_.size());
 
         for (cnn_size_t c = 0; c < params_.in_.depth_; ++c) {
             for (cnn_size_t y = 0; y < params_.out_.height_; ++y) {
@@ -256,8 +233,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             backend = std::make_shared<core::tiny_backend>(
                 &out2in_,
                 &in2out_,
-                [this](const vec_t& p_delta,
-                       const vec_t& out, vec_t& c_delta) {
+                [this](const tensor_t& p_delta,
+                       const tensor_t& out, tensor_t& c_delta) {
                     return Base::backward_activation(p_delta, out, c_delta);
                 },
                 &max_pooling_layer_worker_storage_);
@@ -270,8 +247,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             backend = std::make_shared<core::avx_backend>(
                 &out2in_,
                 &in2out_,
-                [this](const vec_t& p_delta,
-                       const vec_t& out, vec_t& c_delta) {
+                [this](const tensor_t& p_delta,
+                       const tensor_t& out, tensor_t& c_delta) {
                     return Base::backward_activation(p_delta, out, c_delta);
                 },
                 &max_pooling_layer_worker_storage_);

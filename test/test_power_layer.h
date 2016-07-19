@@ -25,42 +25,44 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_cnn/layers/layer.h"
+#include "picotest/picotest.h"
+#include "testhelper.h"
+#include "tiny_cnn/tiny_cnn.h"
 
 namespace tiny_cnn {
 
-class input_layer : public layer {
-public:
-    explicit input_layer(const shape3d& shape)
-    : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
+TEST(power, forward) {
+    power_layer pw(shape3d(3,2,1), 2.0);
 
-    explicit input_layer(cnn_size_t in_dim)
-    : layer({ vector_type::data }, { vector_type::data }), shape_(shape3d(in_dim,1,1)) {}
+    tensor_t in = {
+        { 0,1,2,3,4,5 },
+        { -5,-4,-3,-2,-1,0 },
+    };
 
-    std::vector<shape3d> in_shape() const override { return { shape_ }; }
-    std::vector<shape3d> out_shape() const override { return { shape_ }; }
-    std::string layer_type() const override { return "input"; }
+    tensor_t out_expected = {
+        { 0*0,1*1,2*2,3*3,4*4,5*5 },
+        { 5*5,4*4,3*3,2*2,1*1,0*0 }
+    };
 
+    auto out = pw.forward({in});
 
-
-    void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>& out_data) override {
-        *out_data[0] = *in_data[0];
+    for (cnn_size_t i = 0; i < 6; i++) {
+        EXPECT_FLOAT_EQ(out_expected[0][i], out[0][0][i]);
+        EXPECT_FLOAT_EQ(out_expected[1][i], out[0][1][i]);
     }
+}
 
-    void back_propagation(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) override {
-        // do nothing
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        CNN_UNREFERENCED_PARAMETER(out_grad);
-        CNN_UNREFERENCED_PARAMETER(in_grad);
-    }
 
-private:
-    shape3d shape_;
-};
+TEST(power, gradient_check) {
+    network<sequential> nn;
 
-} // namespace tiny_cnn
+    nn << fully_connected_layer<tan_h>(10, 20)
+       << power_layer(shape3d(20, 1, 1), 3.0)
+       << fully_connected_layer<tan_h>(20, 10);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+} // namespace tiny-cnn

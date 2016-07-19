@@ -30,10 +30,10 @@ namespace tiny_cnn {
 namespace core {
 
 struct deconv_layer_worker_specific_storage {
-    const vec_t* prev_out_;
-    const vec_t* curr_out_unpadded_;
-    vec_t curr_out_buf_;
-    vec_t curr_delta_padded;
+    const tensor_t* prev_out_;
+    const tensor_t* curr_out_unpadded_;
+    tensor_t curr_out_buf_;
+    tensor_t curr_delta_padded;
 };
 
 struct deconv_params {

@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without
@@ -25,42 +25,85 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "tiny_cnn/util/util.h"
 #include "tiny_cnn/layers/layer.h"
+#include <cmath>
 
 namespace tiny_cnn {
 
-class input_layer : public layer {
+
+/**
+ * y = x^factor
+ **/
+class power_layer : public layer {
 public:
-    explicit input_layer(const shape3d& shape)
-    : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
+    typedef layer Base;
 
-    explicit input_layer(cnn_size_t in_dim)
-    : layer({ vector_type::data }, { vector_type::data }), shape_(shape3d(in_dim,1,1)) {}
+    power_layer(const shape3d& in_shape, float_t factor)
+        : layer({ vector_type::data }, { vector_type::data }),
+        in_shape_(in_shape), factor_(factor) {
+    }
 
-    std::vector<shape3d> in_shape() const override { return { shape_ }; }
-    std::vector<shape3d> out_shape() const override { return { shape_ }; }
-    std::string layer_type() const override { return "input"; }
+    power_layer(const layer& prev_layer, float_t factor)
+        : layer({ vector_type::data }, { vector_type::data }),
+        in_shape_(prev_layer.out_shape()[0]), factor_(factor) {
+    }
 
+    std::string layer_type() const override {
+        return "power";
+    }
 
+    std::vector<shape3d> in_shape() const override {
+        return {in_shape_};
+    }
+
+    std::vector<shape3d> out_shape() const override {
+        return {in_shape_};
+    }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
-        *out_data[0] = *in_data[0];
+        const tensor_t& x = *in_data[0];
+        tensor_t&       y = *out_data[0];
+
+        for (cnn_size_t i = 0; i < x.size(); i++) {
+            std::transform(x[i].begin(), x[i].end(), y[i].begin(), [=](float_t x) {
+                return std::pow(x, factor_); 
+            });
+        }
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        // do nothing
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        CNN_UNREFERENCED_PARAMETER(out_grad);
-        CNN_UNREFERENCED_PARAMETER(in_grad);
+        tensor_t&       dx = *in_grad[0];
+        const tensor_t& dy = *out_grad[0];
+        const tensor_t& x  = *in_data[0];
+        const tensor_t& y = *out_data[0];
+
+        for (cnn_size_t i = 0; i < x.size(); i++) {
+            for (cnn_size_t j = 0; j < x[i].size(); j++) {
+                // f(x) = x^factor
+                // ->
+                //   dx = dy * df(x)
+                //      = dy * factor * x^(factor-1)
+                //      = dy * factor * f(x) / x
+                //      = dy * factor * y / x
+                if (std::abs(x[i][j]) > 1e-10) {
+                    dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
+                }
+                else {
+                    dx[i][j] = dy[i][j] * factor_ * std::pow(x[i][j], factor_ - 1.0f);
+                }
+            }
+        }
     }
 
 private:
-    shape3d shape_;
+
+    shape3d in_shape_;
+    float_t factor_;
 };
 
 } // namespace tiny_cnn

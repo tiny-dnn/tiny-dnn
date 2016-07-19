@@ -40,14 +40,10 @@ TEST(ave_pool, gradient_check) { // sigmoid - cross-entropy
     nn << fully_connected_layer<activation>(3, 8)
         << average_pooling_layer<activation>(4, 2, 1, 2); // 4x2 => 2x1
 
-    vec_t a(3, 0.0);
-    for (int i = 0; i < 3; i++) a[i] = i;
-    label_t t = 0;
-
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    //for (int i = 0; i < 24; i++) nn[0]->weight()[i] = i;
 
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(ave_pool, forward) {
@@ -69,7 +65,7 @@ TEST(ave_pool, forward) {
     l.bias_init(weight_init::constant(0.0));
     l.init_weight();
 
-    vec_t res = l.forward({ in })[0];
+    vec_t res = l.forward({ { in } })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -95,7 +91,7 @@ TEST(ave_pool, forward_stride) {
     l.bias_init(weight_init::constant(0.0));
     l.init_weight();
 
-    vec_t res = l.forward({ in })[0];
+    vec_t res = l.forward({ { in } })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -106,8 +102,8 @@ TEST(ave_pool, read_write) {
     average_pooling_layer<tan_h> l1(100, 100, 5, 2);
     average_pooling_layer<tan_h> l2(100, 100, 5, 2);
 
-    l1.setup(true, 1);
-    l2.setup(true, 1);
+    l1.setup(true);
+    l2.setup(true);
 
     serialization_test(l1, l2);
 }

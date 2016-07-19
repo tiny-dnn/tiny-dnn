@@ -37,21 +37,36 @@ TEST(deconvolutional, fprop) {
 
     deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2);
 
-    vec_t in(4), out(32), a(32), weight(18), bias(2);
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
+
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(4)
+           , out_tensor    = create_simple_tensor(32)
+           , a_tensor      = create_simple_tensor(32)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<vec_t*> in_data, out_data;
-    in_data.push_back(&in);
-    in_data.push_back(&weight);
-    in_data.push_back(&bias);
-    out_data.push_back(&out);
-    out_data.push_back(&a);
-    l.setup(false, 1);
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -69,7 +84,7 @@ TEST(deconvolutional, fprop) {
     in[2] = 3;  in[3] = 0;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.7109495, out[0], 1E-5);
         EXPECT_NEAR(0.7109495, out[1], 1E-5);
@@ -97,21 +112,18 @@ TEST(deconvolutional, gradient_check) { // tanh - mse
     vec_t a(4, 0.0);
     label_t t = 3;
 
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
     nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
 
-    vec_t a(4, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, gradient_check3) { // rectified - mse
@@ -122,9 +134,9 @@ TEST(deconvolutional, gradient_check3) { // rectified - mse
     vec_t a(4, 0.0);
     label_t t = 3;
 
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, gradient_check4) { // identity - mse
@@ -135,9 +147,9 @@ TEST(deconvolutional, gradient_check4) { // identity - mse
     vec_t a(4, 0.0);
     label_t t = 3;
 
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
@@ -145,12 +157,9 @@ TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
 
     nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
 
-    vec_t a(4, 0.0);
-    label_t t = 3;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<cross_entropy>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, read_write)

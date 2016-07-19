@@ -35,9 +35,9 @@ enum class padding {
 };
 
 struct conv_layer_worker_specific_storage {
-    const vec_t* prev_out_padded_;
-    vec_t prev_out_buf_;
-    vec_t prev_delta_padded_;
+    std::vector<const vec_t*> prev_out_padded_;
+    std::vector<vec_t> prev_out_buf_;
+    std::vector<vec_t> prev_delta_padded_;
 };
 
 struct connection_table {

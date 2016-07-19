@@ -32,48 +32,68 @@ namespace tiny_cnn {
 // mean-squared-error loss function for regression
 class mse {
 public:
-    static float_t f(float_t y, float_t t) {
-        return (y - t) * (y - t) / 2;
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += (y[i] - t[i]) * (y[i] - t[i]);
+        return d/y.size();
     }
 
-    static float_t df(float_t y, float_t t) {
-        return y - t;
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        float_t factor = 2.f/static_cast<float_t>(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = factor*(y[i] - t[i]);
+        return d;
     }
 };
 
 // cross-entropy loss function for (multiple independent) binary classifications
 class cross_entropy {
 public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y) - (float_t(1) - t) * std::log(float_t(1) - y);
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += -t[i] * std::log(y[i]) - (float_t(1) - t[i]) * std::log(float_t(1) - y[i]);
+        return d;
     }
 
-    static float_t df(float_t y, float_t t) {
-        return (y - t) / (y * (float_t(1) - y));
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+        return d;
     }
 };
 
 // cross-entropy loss function for multi-class classification
 class cross_entropy_multiclass {
 public:
-    static float_t f(float_t y, float_t t) {
-        return -t * std::log(y);
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += -t[i] * std::log(y[i]);
+        return d;
     }
 
-    static float_t df(float_t y, float_t t) {
-        return - t / y;
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d[i] = - t[i] / y[i];
+        return d;
     }
 };
 
 template <typename E>
 vec_t gradient(const vec_t& y, const vec_t& t) {
-    vec_t grad(y.size());
     assert(y.size() == t.size());
-
-    for (cnn_size_t i = 0; i < y.size(); i++)
-        grad[i] = E::df(y[i], t[i]);
-
-    return grad;
+    return E::df(y, t);
 }
 
 template <typename E>
@@ -86,6 +106,51 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
         grads.push_back(gradient<E>(y[i], t[i]));
 
     return grads;
+}
+
+namespace {
+    void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
+    {
+        if (sample_gradient.size() == sample_cost.size()) {
+            // @todo consider adding parallelism
+            for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+                if (sample_gradient[channel].size() == sample_cost[channel].size()) {
+                    // @todo optimize? (use AVX or so)
+                    for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
+                        sample_gradient[channel][element] *= sample_cost[channel][element];
+                    }
+                }
+            }
+        }
+    }
+}
+
+// gradient for a minibatch
+template <typename E>
+std::vector<tensor_t> gradient(const std::vector<tensor_t>& y, const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
+
+    const cnn_size_t sample_count = y.size();
+    const cnn_size_t channel_count = y[0].size();
+
+    std::vector<tensor_t> gradients(sample_count);
+ 
+    assert(y.size() == t.size());
+    assert(t_cost.empty() || t_cost.size() == t.size());
+
+    // @todo add parallelism
+    for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+        assert(y[sample].size() == channel_count);
+        assert(t[sample].size() == channel_count);
+        assert(t_cost.empty() || t_cost[sample].empty() || t_cost[sample].size() == channel_count);
+
+        gradients[sample] = gradient<E>(y[sample], t[sample]);
+
+        if (sample < t_cost.size()) {
+            apply_cost_if_defined(gradients[sample], t_cost[sample]);
+        }
+    }
+
+    return gradients;
 }
 
 } // namespace tiny_cnn

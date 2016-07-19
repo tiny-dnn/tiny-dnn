@@ -25,44 +25,26 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "tiny_cnn/core/kernels/tiny_maxpool_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-inline void avx_maxpool_kernel(const vec_t& in,
-                               vec_t&       a,
-                               std::vector<cnn_size_t>& max_idx,
+inline void avx_maxpool_kernel(const tensor_t& in_data,
+                               tensor_t&       out_data,
+                               std::vector<std::vector<cnn_size_t>>& max_idx,
                                const std::vector<std::vector<cnn_size_t>>& out2in,
                                const bool layer_parallelize) {
-    for_(layer_parallelize, 0, out2in.size(), [&](const blocked_range& r) {
-        for (int i = r.begin(); i < r.end(); i++) {
-            const auto& in_index = out2in[i];
-            float_t max_value = std::numeric_limits<float_t>::lowest();
-
-            for (auto j : in_index) {
-                if (in[j] > max_value) {
-                    max_value = in[j];
-                    max_idx[i] = j;
-                }
-            }
-            a[i] = max_value;
-        }
-    });
+    tiny_maxpool_kernel(in_data, out_data, max_idx, out2in, layer_parallelize);
 }
 
-inline void avx_maxpool_back_kernel(vec_t& prev_delta,
-                                    const vec_t& curr_delta,
-                                    std::vector<cnn_size_t>& max_idx,
+inline void avx_maxpool_back_kernel(tensor_t& prev_delta,
+                                    const tensor_t&  curr_delta,
+                                    std::vector<std::vector<cnn_size_t>>& max_idx,
                                     const std::vector<cnn_size_t>& in2out,
                                     const bool layer_parallelize) {
-    for_(layer_parallelize, 0, in2out.size(), [&](const blocked_range& r) {
-        for (int i = r.begin(); i != r.end(); i++) {
-            cnn_size_t outi = in2out[i];
-            prev_delta[i] = (max_idx[outi] == static_cast<cnn_size_t>(i)) ?
-                             curr_delta[outi] : float_t(0);
-        }
-    });
+    tiny_maxpool_back_kernel(prev_delta, curr_delta, max_idx, in2out, layer_parallelize);
 }
 
 }  // namespace kernels

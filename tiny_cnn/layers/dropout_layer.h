@@ -51,14 +51,18 @@ public:
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           in_size_(in_dim)
     {
+		mask_.resize(1, std::vector<uint8_t>(in_dim));
         clear_mask();
     }
 
     dropout_layer(const dropout_layer& obj) = default;
-    dropout_layer(dropout_layer&& obj) = default;
     virtual ~dropout_layer(){}
+
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    dropout_layer(dropout_layer&& obj) = default;
     dropout_layer& operator=(const dropout_layer& obj) = default;
     dropout_layer& operator=(dropout_layer&& obj) = default;
+#endif
 
     void set_dropout_rate(float_t rate)
     {
@@ -86,41 +90,52 @@ public:
         return{ index3d<cnn_size_t>(in_size_, 1, 1) };
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        vec_t&       prev_delta = *in_grad[0];
-        const vec_t& curr_delta = *out_grad[0];
-        const std::vector<uint8_t>& mask = dropout_layer_worker_storage_[index].mask_;
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        tensor_t&       prev_delta = *in_grad[0];
+        const tensor_t& curr_delta = *out_grad[0];
 
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
 
-        for (size_t i = 0; i < curr_delta.size(); i++) {
-            prev_delta[i] = mask[i] * curr_delta[i];
+        for (cnn_size_t sample = 0, sample_count = prev_delta.size(); sample < sample_count; ++sample) {
+            for (size_t i = 0; i < curr_delta.size(); i++) {
+                prev_delta[sample][i] = mask_[sample][i] * curr_delta[sample][i];
+            }
         }
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        const vec_t& in  = *in_data[0];
-        vec_t&       out = *out_data[0];
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        const tensor_t& in  = *in_data[0];
+        tensor_t&       out = *out_data[0];
 
-        std::vector<uint8_t>& mask = dropout_layer_worker_storage_[index].mask_;
+        const cnn_size_t sample_count = in.size();
 
-        if (phase_ == net_phase::train) {
-            for (size_t i = 0; i < in.size(); i++)
-                mask[i] = bernoulli(dropout_rate_);
-
-            for (size_t i = 0; i < in.size(); i++)
-                out[i] = mask[i] * scale_ * in[i];
+        if (mask_.size() < sample_count) {
+            mask_.resize(sample_count, mask_[0]);
         }
-        else {
-            for (size_t i = 0; i < in.size(); i++)
-                out[i] = in[i];
+
+        for (size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
+
+            std::vector<uint8_t>& mask = mask_[sample];
+
+            const vec_t& in_vec = in[sample];
+            vec_t& out_vec = out[sample];
+
+            if (phase_ == net_phase::train) {
+                for (size_t i = 0; i < in_vec.size(); i++)
+                    mask[i] = bernoulli(dropout_rate_);
+
+                for (size_t i = 0; i < in_vec.size(); i++)
+                    out_vec[i] = mask[i] * scale_ * in_vec[i];
+            }
+            else {
+                for (size_t i = 0, end = in_vec.size(); i < end; i++)
+                    out_vec[i] = in_vec[i];
+            }
         }
     }
 
@@ -134,23 +149,15 @@ public:
 
     std::string layer_type() const override { return "dropout"; }
 
-    const std::vector<uint8_t>& get_mask(cnn_size_t worker_index) const {
-        return dropout_layer_worker_storage_[worker_index].mask_;
-    }
-
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        dropout_layer_worker_storage_.resize(worker_count);
-
-        for (dropout_layer_worker_specific_storage& dws : dropout_layer_worker_storage_) {
-            dws.mask_.resize(in_size_);
-        }
+    // currently used by tests only
+    const std::vector<uint8_t>& get_mask(cnn_size_t sample_index) const {
+        return mask_[sample_index];
     }
 
     void clear_mask() {
-        for (dropout_layer_worker_specific_storage& dws : dropout_layer_worker_storage_) {
-            std::fill(dws.mask_.begin(), dws.mask_.end(), 0);
-        }
+		for (cnn_size_t sample = 0, sample_count = mask_.size(); sample < sample_count; ++sample) {
+			std::fill(mask_[sample].begin(), mask_[sample].end(), 0);
+		}
     }
 
 private:
@@ -158,14 +165,7 @@ private:
     float_t dropout_rate_;
     float_t scale_;
     cnn_size_t in_size_;
-
-    struct dropout_layer_worker_specific_storage {
-        // binary mask, but use uint8 instead of bool to avoid the std::vector specialization for bools
-        // (though it would be a good idea to profile which is actually better)
-        std::vector<uint8_t> mask_;
-    };
-
-    std::vector<dropout_layer_worker_specific_storage> dropout_layer_worker_storage_;
+	std::vector<std::vector<uint8_t>> mask_;
 };
 
 } // namespace tiny_cnn
