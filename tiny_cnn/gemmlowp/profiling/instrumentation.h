@@ -24,7 +24,7 @@
 #ifndef GEMMLOWP_PROFILING_INSTRUMENTATION_H_
 #define GEMMLOWP_PROFILING_INSTRUMENTATION_H_
 
-#include <pthread.h>
+#include <thread>
 #include <cstdio>
 
 #ifndef GEMMLOWP_USE_STLPORT
