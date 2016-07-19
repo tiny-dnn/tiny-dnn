@@ -25,50 +25,56 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
-#include "testhelper.h"
-
-#include "tiny_cnn/tiny_cnn.h"
-
-using namespace tiny_cnn;
 
 namespace tiny_cnn {
 
-TEST(core, session) {
-    core::session my_session(std::string("my_session"));
+/* Supported devices type
+ *
+ * */
+enum device_t { CPU, GPU, FPGA };
 
-    ASSERT_EQ(my_session.num_devices(), 0);
-    EXPECT_STREQ(my_session.name().c_str(), "my_session");
-
-#ifdef CNN_HAVE_OPENCL
-    my_session.init_session();
-
-    EXPECT_TRUE(my_session.num_devices() != 0);
-
-    for (cnn_size_t i = 0; i < my_session.num_devices(); i++) {
-        my_session.print_device_info(i);
-    }
-#endif
-}
-
-TEST(core, device_initialization) {
-    cpu_device my_cpu_device(0);
+/* Base class modeling a device 
+ *
+ * @param type The type of the device
+ * @param id The identification number
+ *
+ * */
+class device_base {
+ public:
+    explicit device_base(const device_t type, const int id)
+        : id_(id), type_(type) {}
     
-    ASSERT_EQ(my_cpu_device.id(), 0);
-    ASSERT_EQ(my_cpu_device.type(), device_t::CPU);
-    
-    gpu_device my_gpu_device(1);
-    
-    ASSERT_EQ(my_gpu_device.id(), 1);
-    ASSERT_EQ(my_gpu_device.type(), device_t::GPU);
-}
+    // Returns the device type
+    device_t type() const { return type_; }
 
-TEST(core, backends) {
-    core::nnp_backend my_nnp_backend();
-    core::dnn_backend my_dnn_backend();
+    // Returns the device id
+    int id() const { return id_; }
 
-    // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
-    // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
-}
+ private:
+    int id_;
+    device_t type_;
+};
 
-} // namespace tiny-cnn
+/* Public interface for a CPU device
+ *
+ * @param id The identification number
+ *
+ * */
+class cpu_device : public device_base {
+ public:
+    explicit cpu_device(const int id)
+        : device_base(device_t::CPU, id) {}
+};
+
+/* Public interface for a GPU device
+ *
+ * @param id The identification number
+ *
+ * */
+class gpu_device : public device_base {
+ public:
+    explicit gpu_device(const int id)
+        : device_base(device_t::GPU, id) {}
+};
+
+}  // namespace tiny_cnn

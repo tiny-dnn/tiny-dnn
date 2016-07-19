@@ -38,7 +38,8 @@
 #endif
 #endif
 
-#include "tiny_cnn/core/device.h"
+//#include "tiny_cnn/core/device.h"
+#include "tiny_cnn/core/framework/device_base.h"
 
 namespace tiny_cnn {
 namespace core {
@@ -126,7 +127,7 @@ class session {
 #else
     // TODO: Just for quick test
     std::vector<int> platforms_;
-    std::vector<std::shared_ptr<tiny_cnn::core::device>> devices_;
+    std::vector<std::shared_ptr<tiny_cnn::device_base> > devices_;
 #endif
 };
 

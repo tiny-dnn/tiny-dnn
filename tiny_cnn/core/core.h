@@ -1,7 +1,6 @@
 /*
     Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
-
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -12,7 +11,6 @@
     * Neither the name of the <organization> nor the
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
-
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
     EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,50 +23,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
-#include "testhelper.h"
 
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_cnn/core/session.h"
 
-using namespace tiny_cnn;
-
-namespace tiny_cnn {
-
-TEST(core, session) {
-    core::session my_session(std::string("my_session"));
-
-    ASSERT_EQ(my_session.num_devices(), 0);
-    EXPECT_STREQ(my_session.name().c_str(), "my_session");
-
-#ifdef CNN_HAVE_OPENCL
-    my_session.init_session();
-
-    EXPECT_TRUE(my_session.num_devices() != 0);
-
-    for (cnn_size_t i = 0; i < my_session.num_devices(); i++) {
-        my_session.print_device_info(i);
-    }
-#endif
-}
-
-TEST(core, device_initialization) {
-    cpu_device my_cpu_device(0);
-    
-    ASSERT_EQ(my_cpu_device.id(), 0);
-    ASSERT_EQ(my_cpu_device.type(), device_t::CPU);
-    
-    gpu_device my_gpu_device(1);
-    
-    ASSERT_EQ(my_gpu_device.id(), 1);
-    ASSERT_EQ(my_gpu_device.type(), device_t::GPU);
-}
-
-TEST(core, backends) {
-    core::nnp_backend my_nnp_backend();
-    core::dnn_backend my_dnn_backend();
-
-    // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
-    // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
-}
-
-} // namespace tiny-cnn
+#include "tiny_cnn/core/framework/device_base.h"

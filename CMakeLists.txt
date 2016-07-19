@@ -47,6 +47,7 @@ option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
 option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF)
+option(USE_LIBDNN "Build tiny-cnn with OpenCL library support" OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
