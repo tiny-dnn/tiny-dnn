@@ -31,6 +31,7 @@
 using namespace tiny_cnn::activation;
 #include "test_network.h"
 #include "test_average_pooling_layer.h"
+#include "test_average_unpooling_layer.h"
 #include "test_dropout_layer.h"
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
