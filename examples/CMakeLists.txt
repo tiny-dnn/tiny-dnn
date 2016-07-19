@@ -18,6 +18,10 @@ add_executable(example_mnist_train mnist/train.cpp ${tiny_cnn_hdrs})
 target_link_libraries(example_mnist_train
     ${project_library_target_name}${REQUIRED_LIBRARIES})
 
+add_executable(example_quantized_train mnist/quantized.cpp ${tiny_cnn_hdrs})
+target_link_libraries(example_quantized_train
+    ${project_library_target_name}${REQUIRED_LIBRARIES})
+
 add_executable(example_deconv_train deconv/train.cpp ${tiny_cnn_hdrs})
 target_link_libraries(example_deconv_train
     ${project_library_target_name}${REQUIRED_LIBRARIES})
@@ -56,7 +60,7 @@ if(PROTOBUF_FOUND)
     elseif(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
         message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
         if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
-            PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS 
+            PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
                 ${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe/caffe.proto)
             if(EXISTS ${PROTO_HDRS})
                 file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_cnn/io/caffe")
