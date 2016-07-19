@@ -26,6 +26,8 @@
 */
 #pragma once
 
+#include "tiny_cnn/layers/layer.h"
+
 namespace tiny_cnn {
 
 /* Supported devices type
@@ -43,6 +45,14 @@ class device_base {
  public:
     explicit device_base(const device_t type, const int id)
         : id_(id), type_(type) {}
+
+    // Register an ops to the current device
+    void register_ops(const std::vector<layer*>& ops) {
+        for (auto o: ops) {
+            ops_.push_back(o);
+            // TODO: o.set_device(this);
+        }
+    }
     
     // Returns the device type
     device_t type() const { return type_; }
@@ -51,8 +61,16 @@ class device_base {
     int id() const { return id_; }
 
  private:
+    /* The id of the current device */
     int id_;
+
+    /* The type of the device */
     device_t type_;
+    
+    /* A vector of pointers to registered ops.
+     * The data is not owned by the current class.
+     * */
+    std::vector<layer*> ops_;
 };
 
 /* Public interface for a CPU device

@@ -34,21 +34,12 @@ using namespace tiny_cnn;
 
 namespace tiny_cnn {
 
-TEST(core, session) {
-    core::session my_session(std::string("my_session"));
+TEST(core, session_initialization) {
+    session my_session("my_session");
 
     ASSERT_EQ(my_session.num_devices(), 0);
     EXPECT_STREQ(my_session.name().c_str(), "my_session");
 
-#ifdef CNN_HAVE_OPENCL
-    my_session.init_session();
-
-    EXPECT_TRUE(my_session.num_devices() != 0);
-
-    for (cnn_size_t i = 0; i < my_session.num_devices(); i++) {
-        my_session.print_device_info(i);
-    }
-#endif
 }
 
 TEST(core, device_initialization) {
