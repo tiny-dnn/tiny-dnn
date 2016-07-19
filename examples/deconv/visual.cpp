@@ -68,8 +68,10 @@ void convert_image(const std::string& imagefilename,
 void construct_net(network<sequential>& nn) {
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << convolutional_layer<tan_h>(28, 28, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(26, 26, 3, 16, 6)
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)
+       << convolutional_layer<tan_h>(14, 14, 3, 6, 16)
+       << deconvolutional_layer<tan_h>(12, 12, 3, 16, 6)
+       << average_unpooling_layer<tan_h>(14, 14, 6, 2)
        << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 }
 

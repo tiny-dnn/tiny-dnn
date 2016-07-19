@@ -33,7 +33,7 @@ using namespace tiny_cnn::activation;
 ///////////////////////////////////////////////////////////////////////////////
 // recongnition on MNIST similar to LaNet-5 adding deconvolution
 
-void deLaNet(network<sequential>& nn,
+void deconv_lanet(network<sequential>& nn,
     std::vector<label_t> train_labels,
     std::vector<label_t> test_labels,
     std::vector<vec_t> train_images,
@@ -96,23 +96,25 @@ void deLaNet(network<sequential>& nn,
     nn.test(test_images, test_labels).print_detail(std::cout);
 
     // save networks
-    std::ofstream ofs("deLeNet-weights");
+    std::ofstream ofs("deconv_lanet_weights");
     ofs << nn;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Deconcolutional Auto-encoder
-void DeAE(network<sequential>& nn, 
+void deconv_ae(network<sequential>& nn,
     std::vector<label_t> train_labels,
     std::vector<label_t> test_labels,
     std::vector<vec_t> train_images,
     std::vector<vec_t> test_images) {
 
     // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 18)  // C1, 1@32x32-in, 6@32x32-out
-       << average_pooling_layer<tan_h>(28, 28, 18, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << average_unpooling_layer<tan_h>(14, 14, 18, 2) // U3, 6@14x14-in, 6@28x28-out
-       << deconvolutional_layer<tan_h>(28, 28, 5, 18, 3); // D4, 6@28x28-in, 16@32x32-out
+    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)
+       << convolutional_layer<tan_h>(14, 14, 3, 6, 16)
+       << deconvolutional_layer<tan_h>(12, 12, 3, 16, 6)
+       << average_unpooling_layer<tan_h>(14, 14, 6, 2)
+       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 
     // load train-data and make corruption
 
@@ -130,7 +132,7 @@ void DeAE(network<sequential>& nn,
     std::cout << "end training." << std::endl;
 
     // save networks
-    std::ofstream ofs("DeAE-weights");
+    std::ofstream ofs("deconv_ae_weights");
     ofs << nn;
 }
 
@@ -153,16 +155,16 @@ void train(std::string data_dir_path, std::string experiment) {
     // specify loss-function and learning strategy
     network<sequential> nn;
 
-    if (experiment == "deLaNet")
-        deLaNet(nn, train_labels, test_labels, train_images, test_images); // recongnition on MNIST similar to LaNet-5 adding deconvolution
-    else if (experiment == "DeAE")
-        DeAE(nn, train_labels, test_labels, train_images, test_images); // Deconcolution Auto-encoder on MNIST
+    if (experiment == "deconv_lanet")
+        deconv_lanet(nn, train_labels, test_labels, train_images, test_images); // recongnition on MNIST similar to LaNet-5 adding deconvolution
+    else if (experiment == "deconv_ae")
+        deconv_ae(nn, train_labels, test_labels, train_images, test_images); // Deconcolution Auto-encoder on MNIST
 }
 
 int main(int argc, char **argv) {
     if (argc != 3) {
         std::cerr << "Usage : " << argv[0]
-                  << " path_to_data (example:../data) (example:deLaNet or DeAE)" << std::endl;
+                  << " path_to_data (example:../data) (example:deconv_lanet or deconv_ae)" << std::endl;
         return -1;
     }
     train(argv[1], argv[2]);
