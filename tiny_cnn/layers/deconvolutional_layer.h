@@ -397,11 +397,6 @@ private:
 
     }
 
-    void set_sample_count(cnn_size_t sample_count) override {
-        init(sample_count);
-        Base::set_sample_count(sample_count);
-    }
-
     cnn_size_t in_length(cnn_size_t in_length,
                         cnn_size_t window_size, padding pad_type) const {
         return in_length;
