@@ -84,4 +84,17 @@ typedef float float_t;
  **/
 typedef std::size_t cnn_size_t;
 
+
+/*
+ * Returns true if tiny-dnn has been built
+ * with LibDNN support. Otherwise returns false.
+ */
+bool libdnn_support() {
+#ifdef CNN_USE_LIBDNN
+    return true;
+#else
+    return false;
+#endif
+}
+
 }

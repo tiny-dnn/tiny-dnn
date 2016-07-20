@@ -30,6 +30,11 @@
 
 #ifdef CNN_USE_LIBDNN
 #include "libdnn.hpp"
+//#include "viennacl/backend/opencl.hpp"
+//#include "viennacl/ocl/backend.hpp"
+//#include "viennacl/ocl/context.hpp"
+//#include "viennacl/ocl/device.hpp"
+//#include "viennacl/ocl/platform.hpp"
 
 namespace tiny_cnn {
 namespace core {
@@ -48,7 +53,9 @@ void libdnn_conv2d_kernel(const conv_params& params,
         std::make_shared<greentea::device>(
             id, list_id, greentea::Backend::BACKEND_OpenCL);
 
-    cl_platform_id platform;
+    //viennacl::ocl::context &ctx = viennacl::ocl::get_context(id);
+
+    /*cl_platform_id platform;
     cl_device_id device;
  
     // get first available platform
@@ -62,10 +69,12 @@ void libdnn_conv2d_kernel(const conv_params& params,
 
     cl_command_queue queue;
     queue = clCreateCommandQueue(context, device,
-        CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, NULL);
+        CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, NULL);*/
    
     // error: ‘class greentea::device’ has no member named ‘setupViennaCLContext’
     // dev_ptr->setupViennaCLContext(id, context, device, queue);
+
+    std::cout << "before Init()" << std::endl;
     dev_ptr->Init();
  
     // setup libdnn params
