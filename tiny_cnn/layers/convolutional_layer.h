@@ -258,17 +258,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
         Base::backend_->conv2d(in_data, out_data, out_grad, in_grad);
     }
 
-    float_t& weight_at(cnn_size_t in_channel, cnn_size_t out_channel, cnn_size_t kernel_x, cnn_size_t kernel_y) {
-        vec_t* W = this->get_weights()[0];
-        return W[weight_.get_index(kernel_x, kernel_y, in_.depth_ * out_channel + in_channel)];
-    }
-
     std::vector<index3d<cnn_size_t>> in_shape() const override {
         if (params_.has_bias) {
-            return { params_.in, params_.weight,
-                     index3d<cnn_size_t>(1, 1, params_.out.depth_) };
-        } else {
-            return { params_.in, params_.weight };
+            return{ params_.in, params_.weight,
+                index3d<cnn_size_t>(1, 1, params_.out.depth_) };
+        }
+        else {
+            return{ params_.in, params_.weight };
         }
     }
 
@@ -344,7 +340,7 @@ private:
     }
 
     void init() {
-        if (pad_type_ == padding::same) {
+        if (params_.pad_type == padding::same) {
             cws_.prev_out_buf_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
             cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
         }
