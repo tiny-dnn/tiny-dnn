@@ -33,12 +33,12 @@ using namespace tiny_cnn::activation;
 ///////////////////////////////////////////////////////////////////////////////
 // recongnition on MNIST similar to LaNet-5 adding deconvolution
 
-void deconv_lanet(network<sequential>& nn,
+void deconv_lanet(network<graph>& nn,
     std::vector<label_t> train_labels,
     std::vector<label_t> test_labels,
     std::vector<vec_t> train_images,
-    std::vector<vec_t> test_images) {
-
+    std::vector<vec_t> test_images)
+{
     // connection table [Y.Lecun, 1998 Table.1]
     #define O true
     #define X false
@@ -53,14 +53,18 @@ void deconv_lanet(network<sequential>& nn,
     #undef O
     #undef X
 
-    // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // 32x32 in, 5x5 kernel, 1-6 fmaps conv
-       << average_pooling_layer<tan_h>(28, 28, 6, 2) // 28x28 in, 6 fmaps, 2x2 subsampling
-       << deconvolutional_layer<tan_h>(14, 14, 5, 6, 16,
-                                     connection_table(tbl, 6, 16)) // with connection-table
-       << average_pooling_layer<tan_h>(18, 18, 16, 2)
-       << convolutional_layer<tan_h>(9, 9, 9, 16, 120)
-       << fully_connected_layer<tan_h>(120, 10);
+    // declare nodes
+    input_layer i1(shape3d(32,32,1));
+    convolutional_layer<tan_h> c1(32, 32, 5, 1, 6);
+    average_pooling_layer<tan_h> p1(28, 28, 6, 2);
+    deconvolutional_layer<tan_h> d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
+    average_pooling_layer<tan_h> p2(18, 18, 16, 2);
+    convolutional_layer<tan_h> c2(9, 9, 9, 16, 120);
+    fully_connected_layer<tan_h> f1(120, 10);
+
+    // connect them to graph
+    i1 << c1 << p1 << d1 << p2 << c2 << f1;
+    construct_graph(nn, { &i1 }, { &f1 });
 
     std::cout << "start training" << std::endl;
 
@@ -153,12 +157,13 @@ void train(std::string data_dir_path, std::string experiment) {
     parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte",
                        &test_images, -1.0, 1.0, 2, 2);
     // specify loss-function and learning strategy
-    network<sequential> nn;
+    network<sequential> nn1;
+    network<graph> nn2;
 
     if (experiment == "deconv_lanet")
-        deconv_lanet(nn, train_labels, test_labels, train_images, test_images); // recongnition on MNIST similar to LaNet-5 adding deconvolution
+        deconv_lanet(nn2, train_labels, test_labels, train_images, test_images); // recongnition on MNIST similar to LaNet-5 adding deconvolution
     else if (experiment == "deconv_ae")
-        deconv_ae(nn, train_labels, test_labels, train_images, test_images); // Deconcolution Auto-encoder on MNIST
+        deconv_ae(nn1, train_labels, test_labels, train_images, test_images); // Deconcolution Auto-encoder on MNIST
 }
 
 int main(int argc, char **argv) {

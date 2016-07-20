@@ -114,7 +114,7 @@ TEST(quantized_fully_connected, gradient_check) {
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
-}*/
+}
 
 TEST(quantized_fully_connected, read_write)
 {
@@ -125,7 +125,7 @@ TEST(quantized_fully_connected, read_write)
     l2.setup(true);
 
     quantized_serialization_test(l1, l2);
-}
+}*/
 
 TEST(quantized_fully_connected, forward)
 {
