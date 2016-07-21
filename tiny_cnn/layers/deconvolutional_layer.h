@@ -82,12 +82,12 @@ public:
                           cnn_size_t     h_stride = 1,
                           backend_t      backend_type = backend_t::tiny_cnn,
                           backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type) {
+        : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                              window_size, window_size,
+                              out_channels, pad_type, has_bias,
+                              w_stride, h_stride);
+            init_backend(backend_type);
     }
 
     /**
@@ -118,12 +118,12 @@ public:
                           cnn_size_t     h_stride = 1,
                           backend_t      backend_type = backend_t::tiny_cnn,
                           backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type) {
+        : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                              window_width, window_height,
+                              out_channels, pad_type, has_bias,
+                              w_stride, h_stride);
+            init_backend(backend_type);
     }
 
     /**
@@ -154,13 +154,13 @@ public:
                           cnn_size_t              h_stride = 1,
                           backend_t               backend_type = backend_t::tiny_cnn,
                           backend_params          b_params = backend_params())
-        : Base(std_input_order(has_bias)), backend_type_(backend_type) {
-            params_.tbl = connection_table;
+        : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                              window_size, window_size,
+                              out_channels, pad_type, has_bias,
+                              w_stride, h_stride,
+                              connection_table);
+            init_backend(backend_type);
     }
 
     /**
@@ -193,14 +193,13 @@ public:
                           cnn_size_t              h_stride = 1,
                           backend_t               backend_type = backend_t::tiny_cnn,
                           backend_params          b_params = backend_params())
-        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias))
-        , backend_type_(backend_type) {
-            params_.tbl = connection_table;
+        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type_);
+                              window_width, window_height,
+                              out_channels, pad_type, has_bias,
+                              w_stride, h_stride,
+                              connection_table);
+            init_backend(backend_type);
     }
 
     // move constructor
@@ -210,21 +209,21 @@ public:
         , backend_type_(std::move(other.backend_type_))
         , curr_delta2_padded_(std::move(other.curr_delta2_padded_))
         , deconv_layer_worker_storage_(std::move(other.deconv_layer_worker_storage_)) {
-            init_backend(backend_type_);
+            init_backend(std::move(Base::get_backend_type()));
     }
 
     ///< number of incoming connections for each output unit
     virtual size_t fan_in_size() const override {
         return  params_.weight.width_ *
                 params_.weight.height_ *
-                params_.in_.depth_;
+                params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
     virtual size_t fan_out_size() const override {
         return  (params_.weight.width_ * params_.w_stride) *
                 (params_.weight.height_ * params_.h_stride) *
-                params_.out_.depth_;
+                params_.out.depth_;
     }
 
     void forward_propagation(cnn_size_t                 worker_index,
@@ -237,7 +236,7 @@ public:
         vec_t& out     = *out_data[0];
         const vec_t& a = *out_data[1];
 
-        for_i(this->get_parallelize(), params_.out_.size(), [&](int i) {
+        for_i(this->get_parallelize(), params_.out.size(), [&](int i) {
             out[i] = this->h_.f(a, i);
         });
     }
@@ -261,15 +260,15 @@ public:
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
         if (params_.has_bias) {
-            return { params_.in_, params_.weight,
-                     index3d<cnn_size_t>(1, 1, params_.out_.depth_) };
+            return { params_.in, params_.weight,
+                     index3d<cnn_size_t>(1, 1, params_.out.depth_) };
         } else {
-            return { params_.in_, params_.weight };
+            return { params_.in, params_.weight };
         }
     }
 
     std::vector<index3d<cnn_size_t>> out_shape() const override {
-        return {params_.out_unpadded_, params_.out_unpadded_};
+        return {params_.out_unpadded, params_.out_unpadded};
     }
 
     std::string layer_type() const override { return "deconv"; }
@@ -278,8 +277,8 @@ public:
         image<> img;
         const cnn_size_t border_width = 1;
         const auto pitch = params_.weight.width_ + border_width;
-        const auto width = params_.out_.depth_ * pitch + border_width;
-        const auto height = params_.in_.depth_ * pitch + border_width;
+        const auto width = params_.out.depth_ * pitch + border_width;
+        const auto height = params_.in.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
         const vec_t& W = *this->get_weights()[0];
 
@@ -288,8 +287,8 @@ public:
 
         auto minmax = std::minmax_element(W.begin(), W.end());
 
-        for (cnn_size_t r = 0; r < params_.in_.depth_; ++r) {
-            for (cnn_size_t c = 0; c < params_.out_.depth_; ++c) {
+        for (cnn_size_t r = 0; r < params_.in.depth_; ++r) {
+            for (cnn_size_t c = 0; c < params_.out.depth_; ++c) {
                 if (!params_.tbl.is_connected(c, r)) continue;
 
                 const auto top = r * pitch + border_width;
@@ -299,7 +298,7 @@ public:
 
                 for (cnn_size_t y = 0; y < params_.weight.height_; ++y) {
                     for (cnn_size_t x = 0; x < params_.weight.width_; ++x) {
-                        idx = params_.weight.get_index(x, y, c * params_.in_.depth_ + r);
+                        idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
                         const float_t w = W[idx];
 
                         img.at(left + x, top + y)
@@ -316,54 +315,56 @@ public:
     virtual void set_worker_count(cnn_size_t worker_count) override {
         Base::set_worker_count(worker_count);
         deconv_layer_worker_storage_.resize(worker_count);
-        init();
+        init_workers();
     }
 
 private:
-    void init_backend(backend_t backend_type) {
-        switch (backend_type) {
-            case backend_t::tiny_cnn:
-                Base::backend_ = std::make_shared<core::tiny_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_unpad_output(in, worker_index);
-                    },
-                    [this](const vec_t& delta, vec_t& dst) {
-                        return copy_and_pad_delta(delta, dst);
-                    },
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &deconv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::nnpack:
-                Base::backend_ = std::make_shared<core::nnp_backend>(&params_);
-                Base::backend_->set_layer(this);
-                break;
-            case backend_t::libdnn:
-                Base::backend_ = std::make_shared<core::dnn_backend>();
-                Base::backend_->set_layer(this);
-                break;
+    void init_backend(const backend_t backend_type) {
+        std::shared_ptr<core::backend> backend = nullptr;
+
+        // allocate new backend
+        if (backend_type == backend_t::tiny_cnn) {
+            backend = std::make_shared<core::tiny_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_unpad_output(in, worker_index);
+                },
+                [this](const vec_t& delta, vec_t& dst) {
+                    return copy_and_pad_delta(delta, dst);
+                },
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &deconv_layer_worker_storage_);
+        } else if (backend_type == backend_t::nnpack) {
+            backend = std::make_shared<core::nnp_backend>();
+        } else if (backend_type == backend_t::libdnn) {
+            backend = std::make_shared<core::dnn_backend>();
 #ifdef CNN_USE_AVX
-            case backend_t::avx:
-                Base::backend_ = std::make_shared<core::avx_backend>(&params_,
-                    [this](const vec_t& in, int worker_index) {
-                        return copy_and_unpad_output(in, worker_index);
-                    },
-                    [this](const vec_t& delta, vec_t& dst) {
-                        return copy_and_pad_delta(delta, dst);
-                    },
-                    [this](const vec_t& p_delta,
-                           const vec_t& out, vec_t& c_delta) {
-                        return Base::backward_activation(p_delta, out, c_delta);
-                    },
-                    &deconv_layer_worker_storage_);
-                Base::backend_->set_layer(this);
-                break;
+        } else if (backend_type == backend_t::avx) {
+            backend = std::make_shared<core::avx_backend>(&params_,
+                [this](const vec_t& in, int worker_index) {
+                    return copy_and_unpad_output(in, worker_index);
+                },
+                [this](const vec_t& delta, vec_t& dst) {
+                    return copy_and_pad_delta(delta, dst);
+                },
+                [this](const vec_t& p_delta,
+                       const vec_t& out, vec_t& c_delta) {
+                    return Base::backward_activation(p_delta, out, c_delta);
+                },
+                &deconv_layer_worker_storage_);
 #endif
-            default:
-                throw nn_error("not supported backend type");
+        } else {
+            throw nn_error("Not supported backend type.");
+        }
+
+        if (backend) {
+            Base::set_backend(backend);
+            Base::backend_->set_layer(this);
+            Base::backend_->set_type(backend_type);
+        } else {
+            throw nn_error("Could not allocate the backend.");
         }
     }
 
@@ -374,13 +375,14 @@ private:
                          padding        ptype,
                          bool           has_bias,
                          cnn_size_t     w_stride,
-                         cnn_size_t     h_stride) {
-        params_.in_ = in;
-        params_.out_ =
+                         cnn_size_t     h_stride,
+                         const connection_table& tbl = connection_table()) {
+        params_.in = in;
+        params_.out =
               shape3d(deconv_out_length(in.width_, w_width, w_stride),
                       deconv_out_length(in.height_, w_height, h_stride),
                       outc);
-        params_.out_unpadded_ =
+        params_.out_unpadded =
               shape3d(deconv_out_unpadded_length(in.width_, w_width, w_stride, ptype),
                       deconv_out_unpadded_length(in.height_, w_height, h_stride, ptype),
                       outc);
@@ -389,20 +391,21 @@ private:
         params_.pad_type = ptype;
         params_.w_stride = w_stride;
         params_.h_stride = h_stride;
+        params_.tbl      = tbl;
     }
 
-    void init() {
+    void init_workers() {
         for (deconv_layer_worker_specific_storage& cws :
                 deconv_layer_worker_storage_) {
             if (params_.pad_type == padding::same) {
-                cws.curr_out_buf_.resize(params_.in_.size(), float_t(0));
-                cws.curr_delta_padded.resize(params_.out_.size(), float_t(0));
+                cws.curr_out_buf_.resize(params_.in.size(), float_t(0));
+                cws.curr_delta_padded.resize(params_.out.size(), float_t(0));
             } else {
                 cws.curr_out_buf_.clear();
             }
         }
         if (params_.pad_type == padding::same) {
-            curr_delta2_padded_.resize(params_.out_.size(), float_t(0));
+            curr_delta2_padded_.resize(params_.out.size(), float_t(0));
         }
     }
 
@@ -449,13 +452,13 @@ private:
             dst = delta;
         }
         else {
-            for (cnn_size_t c = 0; c < params_.in_.depth_; c++) {
-                float_t *pdst = &dst[params_.in_.get_index(0, 0, c)];
-                const float_t *pin = &delta[params_.in_.get_index(0, 0, c)];
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
+                const float_t *pin = &delta[params_.in.get_index(0, 0, c)];
 
-                for (cnn_size_t y = 0; y < params_.in_.height_; y++, pdst +=
-                    params_.in_.width_, pin += params_.in_.width_) {
-                    std::copy(pin, pin + params_.in_.width_, pdst);
+                for (cnn_size_t y = 0; y < params_.in.height_; y++, pdst +=
+                    params_.in.width_, pin += params_.in.width_) {
+                    std::copy(pin, pin + params_.in.width_, pdst);
                 }
             }
         }
@@ -472,19 +475,19 @@ private:
         } else {
             // make unpadded version in order to restore scale in fprop/bprop
             cnn_size_t idx = 0;
-            for (cnn_size_t c = 0; c < params_.out_.depth_; c++) {
-                float_t *pimg = &(*dst)[params_.out_unpadded_.get_index(0, 0, c)];
-                idx = params_.out_.get_index(params_.weight.width_ / 2,
+            for (cnn_size_t c = 0; c < params_.out.depth_; c++) {
+                float_t *pimg = &(*dst)[params_.out_unpadded.get_index(0, 0, c)];
+                idx = params_.out.get_index(params_.weight.width_ / 2,
                                              params_.weight.height_ / 2, c);
                 const float_t *pout = &out[idx];
 
                 for (cnn_size_t y = params_.weight.height_ / 2;
-                    y < params_.in_.height_ - params_.weight.height_ / 2;
+                    y < params_.in.height_ - params_.weight.height_ / 2;
                     y++,
-                    pout += params_.out_.width_,
-                    pimg += (params_.out_.width_ - params_.weight.width_ + 1)) {
+                    pout += params_.out.width_,
+                    pimg += (params_.out.width_ - params_.weight.width_ + 1)) {
                     std::copy(pout,
-                              pout + params_.out_.width_ - params_.weight.width_ + 1,
+                              pout + params_.out.width_ - params_.weight.width_ + 1,
                               pimg);
                 }
             }

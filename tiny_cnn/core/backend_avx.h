@@ -100,6 +100,18 @@ class avx_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                const std::vector<vec_t*>& in_data,
+                std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void conv2d_eq(cnn_size_t                 index,
+                const std::vector<vec_t*>& in_data,
+                std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
     void conv2d(cnn_size_t                 index,
                 const std::vector<vec_t*>& in_data,
                 const std::vector<vec_t*>& out_data,
@@ -132,6 +144,14 @@ class avx_backend : public backend {
         }
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                const std::vector<vec_t*>& in_data,
+                const std::vector<vec_t*>& out_data,
+                std::vector<vec_t*>&       out_grad,
+                std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
+    }
+
     void deconv2d(cnn_size_t                  index,
                   const std::vector<vec_t*>&  in_data,
                   std::vector<vec_t*>&        out_data) {
@@ -147,6 +167,18 @@ class avx_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
+    }
+
+    void deconv2d_q(cnn_size_t                  index,
+                  const std::vector<vec_t*>&  in_data,
+                  std::vector<vec_t*>&        out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void deconv2d_eq(cnn_size_t                  index,
+                  const std::vector<vec_t*>&  in_data,
+                  std::vector<vec_t*>&        out_data) {
+        throw nn_error("not implemented yet.");
     }
 
     void deconv2d(cnn_size_t                 index,
@@ -177,6 +209,14 @@ class avx_backend : public backend {
 
         kernels::avx_deconv2d_back_kernel(*params_d_,
             prev_out, W, dW, db, curr_delta, prev_delta);
+    }
+
+    void deconv2d_q(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
     }
 
     void matmul() {
@@ -227,6 +267,18 @@ class avx_backend : public backend {
             in, W, b, a, layer_->get_parallelize());
     }
 
+    void fully_q(cnn_size_t                 index,
+               const std::vector<vec_t*>& in_data,
+               std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void fully_eq(cnn_size_t                 index,
+               const std::vector<vec_t*>& in_data,
+               std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
     void fully(cnn_size_t                 index,
                const std::vector<vec_t*>& in_data,
                const std::vector<vec_t*>& out_data,
@@ -245,6 +297,14 @@ class avx_backend : public backend {
 
         kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
             W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
+    }
+
+    void fully_q(cnn_size_t                 index,
+               const std::vector<vec_t*>& in_data,
+               const std::vector<vec_t*>& out_data,
+               std::vector<vec_t*>&       out_grad,
+               std::vector<vec_t*>&       in_grad) {
+        throw nn_error("not implemented yet.");
     }
 
     backend_t get_type() const { return backend_t::avx; }

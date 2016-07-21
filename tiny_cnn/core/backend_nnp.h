@@ -55,7 +55,7 @@ class nnp_backend : public backend {
     // maxpool
     explicit nnp_backend(maxpool_params* params)
         : params_m_(params) { init_nnp_engine(); }
-    
+
     // fully_connected
     explicit nnp_backend(fully_params* params)
         : params_f_(params) { init_nnp_engine(); }
@@ -86,6 +86,18 @@ class nnp_backend : public backend {
         kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void conv2d_eq(cnn_size_t                 index,
+                   const std::vector<vec_t*>& in_data,
+                   std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
     void conv2d(cnn_size_t                 index,
                 const std::vector<vec_t*>& in_data,
                 const std::vector<vec_t*>& out_data,
@@ -94,28 +106,29 @@ class nnp_backend : public backend {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
+    void conv2d_q(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  const std::vector<vec_t*>& out_data,
+                  std::vector<vec_t*>&       out_grad,
+                  std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
     void deconv2d(cnn_size_t                 index,
                   const std::vector<vec_t*>& in_data,
                   std::vector<vec_t*>&       out_data) {
-        /*if (!params_d_->has_bias) {
-            throw nn_error("NNPACK Convolution requires a bias term.");
-        }
+    }
 
-        if (params_d_->w_stride != 1 || params_d_->h_stride != 1) {
-            throw nn_error("NNPACK Convolution requires stride 1.");
-        }
+    void deconv2d_q(cnn_size_t                 index,
+                    const std::vector<vec_t*>& in_data,
+                    std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
 
-        deconv_layer_worker_specific_storage& cws =
-            (*deconv_layer_worker_storage_)[index];
-        copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]); //  *in_grad[0] does not exist here!
-        const vec_t& W    = *in_data[1];
-        const vec_t& bias = *in_data[2];
-        vec_t&       a    = *out_data[1];
-        const vec_t &in   = *((*deconv_layer_worker_storage_)[index].prev_out_); // input // NOLINT
-
-        std::fill(a.begin(), a.end(), float_t(0));
-
-        kernels::nnp_deconv2d_kernel(*params_d_, in, W, bias, a);*/
+    void deconv2d_eq(cnn_size_t                 index,
+                     const std::vector<vec_t*>& in_data,
+                     std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
     }
 
     void deconv2d(cnn_size_t                 index,
@@ -123,6 +136,14 @@ class nnp_backend : public backend {
                   const std::vector<vec_t*>& out_data,
                   std::vector<vec_t*>&       out_grad,
                   std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void deconv2d_q(cnn_size_t                 index,
+                    const std::vector<vec_t*>& in_data,
+                    const std::vector<vec_t*>& out_data,
+                    std::vector<vec_t*>&       out_grad,
+                    std::vector<vec_t*>&       in_grad) {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -170,11 +191,31 @@ class nnp_backend : public backend {
             in, W, b, a, layer_->get_parallelize());
     }
 
+    void fully_q(cnn_size_t                 index,
+                 const std::vector<vec_t*>& in_data,
+                 std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
+    void fully_eq(cnn_size_t                 index,
+                  const std::vector<vec_t*>& in_data,
+                  std::vector<vec_t*>&       out_data) {
+        throw nn_error("not implemented yet.");
+    }
+
     void fully(cnn_size_t                 index,
                const std::vector<vec_t*>& in_data,
                const std::vector<vec_t*>& out_data,
                std::vector<vec_t*>&       out_grad,
                std::vector<vec_t*>&       in_grad) {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void fully_q(cnn_size_t                 index,
+                 const std::vector<vec_t*>& in_data,
+                 const std::vector<vec_t*>& out_data,
+                 std::vector<vec_t*>&       out_grad,
+                 std::vector<vec_t*>&       in_grad) {
         throw nn_error("NNPACK does not support back propagation.");
     }
 

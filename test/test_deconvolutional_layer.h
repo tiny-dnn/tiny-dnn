@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -30,6 +30,54 @@
 #include "tiny_cnn/tiny_cnn.h"
 
 namespace tiny_cnn {
+
+TEST(deconvolutional, setup_tiny) {
+    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::tiny_cnn);
+
+    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
+    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
+    EXPECT_EQ(l.in_data_size(), 4);            // size of input tensors
+    EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
+    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
+    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
+    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
+    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
+    EXPECT_TRUE(l.get_backend_type() == backend_t::tiny_cnn);
+}
+
+#ifdef CNN_USE_NNPACK
+TEST(deconvolutional, setup_nnp) {
+    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::nnpack);
+
+    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
+    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
+    EXPECT_EQ(l.in_data_size(), 4);            // size of input tensors
+    EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
+    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
+    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
+    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
+    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
+    EXPECT_TRUE(l.get_backend_type() == backend_t::nnpack);
+}
+#endif
 
 TEST(deconvolutional, fprop) {
     typedef network<sequential> CNN;

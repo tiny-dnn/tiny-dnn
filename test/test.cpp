@@ -31,6 +31,7 @@
 using namespace tiny_cnn::activation;
 #include "test_network.h"
 #include "test_average_pooling_layer.h"
+#include "test_average_unpooling_layer.h"
 #include "test_dropout_layer.h"
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
@@ -42,6 +43,10 @@ using namespace tiny_cnn::activation;
 #include "test_nodes.h"
 #include "test_core.h"
 #include "test_models.h"
+#include "test_quantization.h"
+#include "test_quantized_convolutional_layer.h"
+#include "test_quantized_deconvolutional_layer.h"
+#include "test_quantized_fully_connected_layer.h"
 
 int main(void) {
     return RUN_ALL_TESTS();

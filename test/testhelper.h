@@ -118,6 +118,38 @@ void serialization_test(T& src, T& dst)
 }
 
 template <typename T>
+void quantized_serialization_test(T& src, T& dst)
+{
+    //EXPECT_FALSE(src.has_same_weights(dst, 1E-5));
+
+    std::string tmp_file_path = unique_path();
+
+    // write
+    {
+        std::ofstream ofs(tmp_file_path.c_str());
+        src.save(ofs);
+    }
+
+    // read
+    {
+        std::ifstream ifs(tmp_file_path.c_str());
+        dst.load(ifs);
+    }
+
+    std::remove(tmp_file_path.c_str());
+
+    vec_t v(src.in_data_size());
+    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+
+    EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
+
+    vec_t r1 = forward_pass(src, v);
+    vec_t r2 = forward_pass(dst, v);
+
+    EXPECT_TRUE(is_near_container(r1, r2, 1E-2));
+}
+
+template <typename T>
 inline T epsilon() {
     return 0;
 }
