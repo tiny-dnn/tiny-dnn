@@ -20,7 +20,12 @@
 #define GEMMLOWP_INTERNAL_MULTI_THREAD_GEMM_H_
 
 #include <thread>
+#ifdef _MSC_VER
+#include <io.h>
+#include <process.h>
+#else
 #include <unistd.h>
+#endif
 #include <vector>
 
 #include "single_thread_gemm.h"
