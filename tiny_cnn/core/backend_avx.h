@@ -167,6 +167,7 @@ class avx_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
+        a = *(*deconv_layer_worker_storage_)[index].curr_out_unpadded_;
     }
 
     void deconv2d_q(cnn_size_t                  index,

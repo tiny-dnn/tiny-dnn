@@ -137,7 +137,56 @@ TEST(quantized_deconvolutional, fprop) {
         EXPECT_NEAR(0.5000000, out[15], 1E-2);
     }
 }
+
 /*
+
+TEST(quantized_deconvolutional, fprop2) {
+    typedef network<sequential> CNN;
+    CNN nn;
+
+    quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2, padding::same);
+
+    vec_t in(4), out(32), a(32), weight(18), bias(2);
+
+    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+
+    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+    std::vector<vec_t*> in_data, out_data;
+    in_data.push_back(&in);
+    in_data.push_back(&weight);
+    in_data.push_back(&bias);
+    out_data.push_back(&out);
+    out_data.push_back(&a);
+    l.setup(false, 1);
+    {
+        l.forward_propagation(0, in_data, out_data);
+
+        for (auto o: out)
+            EXPECT_NEAR(0.5, o, 1E-3);
+    }
+
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+
+    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+
+    in[0] = 3;  in[1] = 2;
+    in[2] = 3;  in[3] = 0;
+
+    {
+        l.forward_propagation(0, in_data, out_data);
+
+        EXPECT_NEAR(0.5000000, out[0], 1E-2);
+        EXPECT_NEAR(0.5249792, out[1], 1E-2);
+        EXPECT_NEAR(0.3100255, out[2], 1E-2);
+        EXPECT_NEAR(0.3658644, out[3], 1E-2);
+    }
+}
+
 TEST(quantized_deconvolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
     nn << quantized_deconvolutional_layer<tan_h>(5, 5, 3, 1, 1);

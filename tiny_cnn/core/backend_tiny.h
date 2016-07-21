@@ -218,6 +218,7 @@ class tiny_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
+        a = *(*deconv_layer_worker_storage_)[index].curr_out_unpadded_;
     }
 
     // quantized deconvolution
@@ -236,6 +237,7 @@ class tiny_backend : public backend {
             in, W, bias, a, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
+        a = *(*deconv_layer_worker_storage_)[index].curr_out_unpadded_;
     }
 
     // efficient quantization without abundant quantization/dequantization
@@ -258,6 +260,7 @@ class tiny_backend : public backend {
             in, W, bias, in_r, W_r, b_r, a, a_r, layer_->get_parallelize());
 
         copy_and_unpad_output(a, static_cast<int>(index));
+        a = *(*deconv_layer_worker_storage_)[index].curr_out_unpadded_;
     }
 
     void deconv2d(cnn_size_t                 index,
