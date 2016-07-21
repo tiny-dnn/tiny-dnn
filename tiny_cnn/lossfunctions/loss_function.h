@@ -50,6 +50,72 @@ public:
     }
 };
 
+// absolute loss function for regression
+class absolute {
+public:
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        for(unsigned int i = 0; i < y.size(); ++i)
+            d += std::abs(y[i] - t[i]);
+        return d/y.size();
+    }
+
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        float_t factor = 1/static_cast<float_t>(t.size());
+        for(unsigned int i = 0; i < y.size(); ++i)
+        {
+            float_t sign = y[i] - t[i];
+            if(sign < 0.f)
+                d[i] = -1.f * factor;
+            else if(sign > 0.f)
+                d[i] =  1.f * factor;
+            else
+                d[i] = 0.f;
+        }
+        return d;
+    }
+};
+
+// absolute loss with epsilon range for regression
+// epsilon range [-eps, eps] with eps = 1./fraction
+template<int fraction>
+class absolute_eps {
+public:
+    static float_t f(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        float_t d = 0.0;
+        const float_t eps = 1./fraction;
+        for(unsigned int i = 0; i < y.size(); ++i)
+        {
+            float_t diff = std::abs(y[i] - t[i]);
+            if(diff > eps)
+                d += diff;
+        }
+        return d/y.size();
+    }
+
+    static vec_t df(const vec_t& y, const vec_t& t) {
+        assert(y.size() == t.size());
+        vec_t d; d.resize(t.size());
+        const float_t factor = 1/static_cast<float_t>(t.size());
+        const float_t eps = 1./fraction;
+        for(unsigned int i = 0; i < y.size(); ++i)
+        {
+            float_t sign = y[i] - t[i];
+            if(sign < -eps)
+                d[i] = -1.f * factor;
+            else if(sign > eps)
+                d[i] =  1.f * factor;
+            else
+                d[i] = 0.f;
+        }
+        return d;
+    }
+};
+
 // cross-entropy loss function for (multiple independent) binary classifications
 class cross_entropy {
 public:
