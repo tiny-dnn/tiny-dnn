@@ -108,32 +108,32 @@ public:
 
     std::string layer_type() const override { return "norm"; }
 
-    void forward_propagation(cnn_size_t index,
-                            const std::vector<vec_t*>& in_data,
-                            std::vector<vec_t*>& out_data) override {
-        vec_t& out = *out_data[0];
-        vec_t& a   = *out_data[1];
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
 
-        CNN_UNREFERENCED_PARAMETER(index);
+        // @todo revise the parallelism strategy
+        for (size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
+            vec_t& in  = (*in_data[0])[sample];
+            vec_t& out = (*out_data[0])[sample];
+            vec_t& a   = (*out_data[1])[sample];
 
-        if (region_ == norm_region::across_channels) {
-            forward_across(*in_data[0], a);
+            if (region_ == norm_region::across_channels) {
+                forward_across(in, a);
+            }
+            else {
+                forward_within(in, a);
+            }
+
+            for_i(parallelize_, out.size(), [&](int i) {
+                out[i] = h_.f(a, i);
+            });
         }
-        else {
-            forward_within(*in_data[0], a);
-        }
-
-        for_i(parallelize_, out.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
     }
 
-    void back_propagation(cnn_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(index);
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
         CNN_UNREFERENCED_PARAMETER(out_grad);
@@ -151,7 +151,7 @@ private:
         }
 
         cnn_size_t head = size_ / 2;
-        long tail = ((long) head) - size_;
+        long tail = static_cast<long>(head) - static_cast<long>(size_);
         cnn_size_t channels = in_shape_.depth_;
         const cnn_size_t wxh = in_shape_.area();
         const float_t alpha_div_size = alpha_ / size_;

@@ -29,6 +29,7 @@
 #include <vector>
 #include "tiny_cnn/core/params/conv_params.h"
 #include "tiny_cnn/core/kernels/avx_kernel_common.h"
+#include "tiny_cnn/core/kernels/tiny_conv2d_kernel.h"
 
 namespace tiny_cnn {
 namespace core {
@@ -471,58 +472,21 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
 } // avx_conv2d_5x5_kernel double ver
 
 inline void avx_conv2d_kernel(const conv_params& params,
-                              const vec_t& in,
+                              const std::vector<const vec_t*>& in_data,
                               const vec_t& W,
                               const vec_t& bias,
-                              vec_t&       a,
+                              tensor_t&    out_data,
                               const bool   layer_parallelize) {
     
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
-        avx_conv2d_5x5_kernel(params, in, W, bias, a, layer_parallelize);
+        // @todo consider better parallelization
+        for_i(layer_parallelize, in_data.size(), [&](int i) {
+            avx_conv2d_5x5_kernel(params, *in_data[i], W, bias, out_data[i], layer_parallelize);
+        });
         return;
     }
-    
-    for_i(layer_parallelize, params.out.depth_, [&](int o) {
-        for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
-            if (!params.tbl.is_connected(o, inc)) continue;
 
-            cnn_size_t idx = 0;
-            idx = params.in.depth_ * o + inc;
-            idx = params.weight.get_index(0, 0, idx);
-            const float_t *pw = &W[idx];
-
-            idx = params.in_padded.get_index(0, 0, inc);
-            const float_t *pi = &in[idx];
-
-            idx = params.out.get_index(0, 0, o);
-            float_t *pa = &a[idx];
-
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
-                    const float_t * ppw = pw;
-                    const float_t * ppi = pi + params.in_padded.width_ *
-                                        (y * params.h_stride) +
-                                         x * params.w_stride;
-                    float_t sum = float_t(0);
-
-                    // should be optimized for small kernel(3x3,5x5)
-                    for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {    // NOLINT
-                        for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) { // NOLINT
-                            idx = wy * params.in_padded.width_ + wx;
-                            sum += *ppw++ * ppi[idx];
-                        }
-                    }
-                    pa[y * params.out.width_ + x] += sum;
-                }
-            }
-        }
-
-        if (params.has_bias) {
-            float_t * pa  = &a[params.out.get_index(0, 0, o)];
-            float_t * paa = pa + params.out.width_ * params.out.height_;
-            std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
-        }
-    });
+    tiny_conv2d_kernel(params, in_data, W, bias, out_data, layer_parallelize);
 }
 
 }  // namespace kernels

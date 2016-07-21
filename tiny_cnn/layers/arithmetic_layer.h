@@ -50,31 +50,29 @@ public:
         return{ shape3d(dim_,1,1) };
     }
 
-    void forward_propagation(cnn_size_t worker_index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        const vec_t& in1 = *in_data[0];
-        vec_t& out = *out_data[0];
-
-        CNN_UNREFERENCED_PARAMETER(worker_index);
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        const tensor_t& in1 = *in_data[0];
+        tensor_t& out = *out_data[0];
 
         out = in1;
 
-        for (cnn_size_t i = 1; i < num_args_; i++) {
-            std::transform(in_data[i]->begin(),
-                           in_data[i]->end(),
-                           out.begin(),
-                           out.begin(),
-                           [](float_t x, float_t y){ return x + y; });
+        // @todo parallelize
+        for (cnn_size_t sample = 0, sample_count = in1.size(); sample < sample_count; ++sample) {
+            for (cnn_size_t i = 1; i < num_args_; i++) {
+                std::transform((*in_data[i])[sample].begin(),
+                               (*in_data[i])[sample].end(),
+                               out[sample].begin(),
+                               out[sample].begin(),
+                               [](float_t x, float_t y){ return x + y; });
+            }
         }
     }
 
-    void back_propagation(cnn_size_t                 worker_index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(worker_index);
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
         for (cnn_size_t i = 0; i < num_args_; i++)

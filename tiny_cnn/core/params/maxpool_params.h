@@ -38,7 +38,7 @@ struct maxpool_params {
 
 struct max_pooling_layer_worker_specific_storage {
     /* mapping out => max_index(in) (1:1) */
-    std::vector<cnn_size_t> out2inmax_;
+    std::vector<std::vector<cnn_size_t>> out2inmax_;
 };
 
 }  // namespace core

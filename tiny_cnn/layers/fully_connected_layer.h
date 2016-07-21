@@ -87,27 +87,26 @@ public:
                  index3d<cnn_size_t>(params_.out_size_, 1, 1) };
     }
 
-    void forward_propagation(cnn_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>& out_data) override {
-        Base::backend_->fully(index, in_data, out_data);
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        Base::backend_->fully(in_data, out_data);
 
         // activations
-        vec_t& out     = *out_data[0];
-        const vec_t& a = *out_data[1];
+        for_i(in_data[0]->size(), [&](int sample) {
+            vec_t& out     = (*out_data[0])[sample];
+            const vec_t& a = (*out_data[1])[sample];
 
-        for_i(parallelize_, params_.out_size_, [&](int i) {
-            out[i] = this->h_.f(a, i);
+            for (cnn_size_t i = 0; i < params_.out_size_; i++) {
+                out[i] = this->h_.f(a, i);
+            };
         });
     }
 
-    void back_propagation(cnn_size_t                index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        Base::backend_->fully(index, in_data,
-                              out_data, out_grad, in_grad);
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        Base::backend_->fully(in_data, out_data, out_grad, in_grad);
     }
 
     std::string layer_type() const override { return "fully-connected"; }
@@ -129,8 +128,8 @@ protected:
         // allocate new backend
         if (backend_type == backend_t::tiny_cnn) {
             backend = std::make_shared<core::tiny_backend>(&params_,
-                [this](const vec_t& p_delta,
-                       const vec_t& out, vec_t& c_delta) {
+                [this](const tensor_t& p_delta,
+                       const tensor_t& out, tensor_t& c_delta) {
                      return Base::backward_activation(p_delta, out, c_delta);
                 });
         } else if (backend_type == backend_t::nnpack) {
@@ -140,8 +139,8 @@ protected:
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,
-                [this](const vec_t& p_delta,
-                       const vec_t& out, vec_t& c_delta) {
+                [this](const tensor_t& p_delta,
+                       const tensor_t& out, tensor_t& c_delta) {
                     return Base::backward_activation(p_delta, out, c_delta);
                 });
 #endif

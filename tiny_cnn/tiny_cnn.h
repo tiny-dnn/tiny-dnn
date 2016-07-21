@@ -44,12 +44,14 @@
 #include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/lrn_layer.h"
 #include "tiny_cnn/layers/dropout_layer.h"
-#include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/arithmetic_layer.h"
 #include "tiny_cnn/layers/concat_layer.h"
 #include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/max_unpooling_layer.h"
 #include "tiny_cnn/layers/average_unpooling_layer.h"
+#include "tiny_cnn/layers/batch_normalization_layer.h"
+#include "tiny_cnn/layers/slice_layer.h"
+#include "tiny_cnn/layers/power_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -116,5 +118,11 @@ using ave_unpool = tiny_cnn::average_unpooling_layer<T>;
 }
 
 #include "tiny_cnn/models/alexnet.h"
+
+using batch_norm = tiny_cnn::batch_normalization_layer;
+
+using slice = tiny_cnn::slice_layer;
+
+using power = tiny_cnn::power_layer;
 
 }

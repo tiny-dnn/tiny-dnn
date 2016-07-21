@@ -39,31 +39,27 @@ class dnn_backend : public backend {
 
     // core math functions
 
-    void conv2d(cnn_size_t                 index,
-                const std::vector<vec_t*>& in_data,
-                std::vector<vec_t*>&       out_data) {
+    void conv2d(const std::vector<tensor_t*>& in_data,
+                std::vector<tensor_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
-    void conv2d(cnn_size_t                 index,
-                const std::vector<vec_t*>& in_data,
-                const std::vector<vec_t*>& out_data,
-                std::vector<vec_t*>&       out_grad,
-                std::vector<vec_t*>&       in_grad) {
+    void conv2d(const std::vector<tensor_t*>& in_data,
+                const std::vector<tensor_t*>& out_data,
+                std::vector<tensor_t*>&       out_grad,
+                std::vector<tensor_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
 
-    void deconv2d(cnn_size_t                 index,
-                  const std::vector<vec_t*>& in_data,
-                  std::vector<vec_t*>&       out_data) {
+    void deconv2d(const std::vector<tensor_t*>& in_data,
+                  std::vector<tensor_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
-    void deconv2d(cnn_size_t                 index,
-                  const std::vector<vec_t*>& in_data,
-                  const std::vector<vec_t*>& out_data,
-                  std::vector<vec_t*>&       out_grad,
-                  std::vector<vec_t*>&       in_grad) {
+    void deconv2d(const std::vector<tensor_t*>& in_data,
+                  const std::vector<tensor_t*>& out_data,
+                  std::vector<tensor_t*>&       out_grad,
+                  std::vector<tensor_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
 
@@ -71,31 +67,27 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    void maxpool(cnn_size_t                 index,
-                 const std::vector<vec_t*>& in_data,
-                 std::vector<vec_t*>&       out_data) {
+    void maxpool(const std::vector<tensor_t*>& in_data,
+                 std::vector<tensor_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
-    void maxpool(cnn_size_t                 index,
-                 const std::vector<vec_t*>& in_data,
-                 const std::vector<vec_t*>& out_data,
-                 std::vector<vec_t*>&       out_grad,
-                 std::vector<vec_t*>&       in_grad) {
+    void maxpool(const std::vector<tensor_t*>& in_data,
+                 const std::vector<tensor_t*>& out_data,
+                 std::vector<tensor_t*>&       out_grad,
+                 std::vector<tensor_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
 
-    void fully(cnn_size_t                 index,
-               const std::vector<vec_t*>& in_data,
-               std::vector<vec_t*>&       out_data) {
+    void fully(const std::vector<tensor_t*>& in_data,
+               std::vector<tensor_t*>&       out_data) {
         throw nn_error("not implemented yet.");
     }
 
-    void fully(cnn_size_t                 index,
-               const std::vector<vec_t*>& in_data,
-               const std::vector<vec_t*>& out_data,
-               std::vector<vec_t*>&       out_grad,
-               std::vector<vec_t*>&       in_grad) {
+    void fully(const std::vector<tensor_t*>& in_data,
+               const std::vector<tensor_t*>& out_data,
+               std::vector<tensor_t*>&       out_grad,
+               std::vector<tensor_t*>&       in_grad) {
         throw nn_error("not implemented yet.");
     }
 

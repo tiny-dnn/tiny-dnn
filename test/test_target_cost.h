@@ -80,9 +80,9 @@ TEST(target_cost, create_balanced_target_cost_1) {
     for (size_t sample = 0; sample < t.size(); ++sample) {
         const vec_t& sample_cost = target_cost[sample];
         EXPECT_EQ(sample_cost.size(), 5);
-        EXPECT_GE(label_counts[t[sample]], 1);
+        EXPECT_GE(label_counts[t[sample]], 1U);
 
-        float_t expected_weight = t.size() / static_cast<double>(label_counts.size() * label_counts[t[sample]]);
+        float_t expected_weight = t.size() / static_cast<float_t>(label_counts.size() * label_counts[t[sample]]);
 
         for (size_t label = 0; label < sample_cost.size(); ++label) {
             EXPECT_NEAR(sample_cost[label], expected_weight, 1e-6);
@@ -104,10 +104,10 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
     for (size_t sample = 0; sample < t.size(); ++sample) {
         const vec_t& sample_cost = target_cost[sample];
         EXPECT_EQ(sample_cost.size(), 5);
-        EXPECT_GE(label_counts[t[sample]], 1);
+        EXPECT_GE(label_counts[t[sample]], 1U);
 
         const float_t expected_weight_w_0 = 1;
-        const float_t expected_weight_w_1 = t.size() / static_cast<double>(label_counts.size() * label_counts[t[sample]]);
+        const float_t expected_weight_w_1 = t.size() / static_cast<float_t>(label_counts.size() * label_counts[t[sample]]);
 
         for (size_t label = 0; label < sample_cost.size(); ++label) {
             const float_t label_cost = sample_cost[label];
@@ -166,8 +166,8 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         const cnn_size_t n_label1 = std::accumulate(labels.begin(), labels.end(), static_cast<cnn_size_t>(0));
 
         EXPECT_NEAR(n_label1 / static_cast<float_t>(tnum), p_label1, 0.05);
-        EXPECT_GE(n_label1, 1600);
-        EXPECT_LE(n_label1, 1800);
+        EXPECT_GE(n_label1, 1600U);
+        EXPECT_LE(n_label1, 1800U);
     }
 
     const auto balanced_cost = create_balanced_target_cost(labels); // give higher weight to samples in the minority class

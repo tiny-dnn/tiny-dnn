@@ -98,47 +98,42 @@ class edge {
         : worker_specific_data_(!is_trainable_weight(vtype)),
           shape_(shape),
           vtype_(vtype),
-          data_(1, vec_t(shape.size())),
-          prev_(prev) {
-      grad_.resize(1, vec_t(shape.size()));
+          data_({vec_t(shape.size())}),
+          prev_(prev),
+          grad_({vec_t(shape.size())})
+    {
     }
 
-    void merge_grads(cnn_size_t worker_size, vec_t *dst) {
-        *dst = grad_[0];
+    void merge_grads(vec_t *dst) {
+        dst->resize(grad_[0].size());
+        std::fill(dst->begin(), dst->end(), static_cast<float_t>(0));
 
-        for (cnn_size_t i = 1; i < worker_size; i++) {
-            vectorize::reduce<float_t>(&grad_[i][0], dst->size(), &(*dst)[0]);
-        }
+        // @todo consider adding parallelism
+		for (cnn_size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+			vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
+		}
     }
 
-    void clear_grads(cnn_size_t worker_size) {
-        for (cnn_size_t i = 0; i < worker_size; i++)
-            clear_grad_onwork(i);
+    void clear_grads() {
+		for (cnn_size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+			std::fill(grad_[sample].begin(), grad_[sample].end(), (float_t)0);
+		}
     }
 
-    void clear_grad_onwork(cnn_size_t index) {
-        std::fill(grad_[index].begin(), grad_[index].end(), (float_t)0);
+    tensor_t* get_data() {
+        return &data_;
     }
 
-    void set_worker_size(cnn_size_t size) {
-        if (worker_specific_data_) data_.resize(size, data_[0]);
-        grad_.resize(size, grad_[0]);
+    const tensor_t* get_data() const {
+        return &data_;
     }
 
-    vec_t* get_data(cnn_size_t worker_index = 0) {
-        return worker_specific_data_ ? &data_[worker_index] : &data_[0];
+    tensor_t* get_gradient() {
+        return &grad_;
     }
 
-    const vec_t* get_data(cnn_size_t worker_index = 0) const {
-        return worker_specific_data_ ? &data_[worker_index] : &data_[0];
-    }
-
-    vec_t* get_gradient(cnn_size_t worker_index = 0) {
-        return &grad_[worker_index];
-    }
-
-    const vec_t* get_gradient(cnn_size_t worker_index = 0) const {
-        return &grad_[worker_index];
+    const tensor_t* get_gradient() const {
+        return &grad_;
     }
 
     const std::vector<node*>& next() const { return next_; }
@@ -153,8 +148,8 @@ class edge {
     bool worker_specific_data_;
     shape3d shape_;
     vector_type vtype_;
-    std::vector<vec_t> data_;
-    std::vector<vec_t> grad_;
+    tensor_t data_;
+    tensor_t grad_;
     node* prev_;               // previous node, "producer" of this tensor
     std::vector<node*> next_;  // next nodes, "consumers" of this tensor
 };

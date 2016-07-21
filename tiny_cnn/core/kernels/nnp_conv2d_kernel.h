@@ -45,10 +45,10 @@ namespace core {
 namespace kernels {
 
 inline void nnp_conv2d_kernel(const conv_params& params,
-                              const vec_t&       in,
+                              const std::vector<const vec_t*>& in,
                               const vec_t&       W,
                               const vec_t&       bias,
-                              vec_t&             a) {
+                              tensor_t&          a) {
 #ifdef CNN_USE_NNPACK
     // TOOD: use input config
     const auto algorithm = nnp_algorithm();

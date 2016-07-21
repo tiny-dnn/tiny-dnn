@@ -198,7 +198,6 @@ TEST(network, multi_out) {
     }
 }
 
-
 TEST(network, train_predict) {
     // train xor function
     network<sequential> net;
@@ -237,7 +236,30 @@ TEST(network, set_netphase) {
 }
 
 TEST(network, test) {
-    // TODO: add unit-test for public api
+    network<sequential> net;
+    fully_connected_layer<identity> fc(30, 1);
+    int data_num = 300;
+
+    net << fc;
+    net.weight_init(weight_init::constant(1.0));
+    net.init_weight();
+
+    std::vector<vec_t> in, expected;
+
+    for (int i = 0; i < data_num; i++) {
+        vec_t v(30);
+        uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+        float_t sum = std::accumulate(v.begin(), v.end(), (float_t)0.0);
+
+        in.emplace_back(v);
+        expected.emplace_back(vec_t{sum});
+    }
+
+    auto out = net.test(in);
+    for (int i = 0; i < data_num; i++) { 
+        for (size_t j = 0; j < out[i].size(); j++)
+            EXPECT_FLOAT_EQ(out[i][j], expected[i][0]);
+    }
 }
 
 TEST(network, get_loss) {
@@ -358,12 +380,9 @@ TEST(network, gradient_check) { // sigmoid - cross-entropy
        << average_pooling_layer<activation>(10, 10, 6, 2)
        << fully_connected_layer<activation>(5*5*6, 3);
 
-    vec_t a(10, 0.0);
-    label_t t = 2;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check2) { // tan_h - mse
@@ -377,12 +396,9 @@ TEST(network, gradient_check2) { // tan_h - mse
        << average_pooling_layer<activation>(10, 10, 6, 2)
        << fully_connected_layer<activation>(5 * 5 * 6, 3);
 
-    vec_t a(10, 0.0);
-    label_t t = 2;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check3) { // mixture - mse
@@ -395,12 +411,9 @@ TEST(network, gradient_check3) { // mixture - mse
        << average_pooling_layer<rectified_linear>(10, 10, 6, 2)
        << fully_connected_layer<identity>(5 * 5 * 6, 3);
 
-    vec_t a(10, 0.0);
-    label_t t = 2;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check4) { // sigmoid - cross-entropy
@@ -414,12 +427,9 @@ TEST(network, gradient_check4) { // sigmoid - cross-entropy
        << average_pooling_layer<activation>(10, 10, 6, 2)
        << fully_connected_layer<activation>(5 * 5 * 6, 3);
 
-    vec_t a(10, 0.0);
-    label_t t = 2;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check5) { // softmax - cross-entropy
@@ -433,12 +443,9 @@ TEST(network, gradient_check5) { // softmax - cross-entropy
        << average_pooling_layer<activation>(10, 10, 6, 2)
        << fully_connected_layer<activation>(5 * 5 * 6, 3);
 
-    vec_t a(10, 0.0);
-    label_t t = 2;
-
-    uniform_rand(a.begin(), a.end(), -1, 1);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, 1e-1, GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, 1e-1, GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check6) { // sigmoid - cross-entropy
@@ -450,12 +457,9 @@ TEST(network, gradient_check6) { // sigmoid - cross-entropy
     nn << fully_connected_layer<activation>(3, 201)
        << fully_connected_layer<activation>(201, 2);
 
-    vec_t a(3, 0.0);
-    label_t t = 1;
-
-    uniform_rand(a.begin(), a.end(), 0, 3);
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(network, read_write)
