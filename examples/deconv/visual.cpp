@@ -68,10 +68,10 @@ void convert_image(const std::string& imagefilename,
 void construct_net(network<sequential>& nn) {
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)
-       << convolutional_layer<tan_h>(14, 14, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(12, 12, 3, 16, 6)
-       << average_unpooling_layer<tan_h>(14, 14, 6, 2)
+       << average_pooling_layer<identity>(28, 28, 6, 2)
+       << convolutional_layer<tan_h>(14, 14, 5, 6, 16)
+       << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
+       << average_unpooling_layer<identity>(14, 14, 6, 2)
        << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 }
 
@@ -102,7 +102,7 @@ void train_network(network<sequential> nn, const string& train_dir_path) {
     std::cout << "end training." << std::endl;
 
     // save networks
-    std::ofstream ofs("DeAE-weights");
+    std::ofstream ofs("deconv_ae_weights");
     ofs << nn;
 }
 
@@ -113,6 +113,8 @@ void recognize(const std::string& dictionary, const std::string& filename, const
     // training
     if (train_dir_path != "")
         train_network(nn, train_dir_path);
+    else
+        cout << "make sure you have already got a trained model" << std::endl;
 
     // load nets
     ifstream ifs(dictionary.c_str());
@@ -154,8 +156,9 @@ int main(int argc, char** argv) {
         cout << "please specify training data path and testing image file" << std::endl;
         return 0;
     }
-    else if (argc == 2)
-        recognize("DeAE-weights", argv[1]);
+    else if (argc == 2) {
+        recognize("deconv_ae_weights", argv[1]);
+    }
     else
-        recognize("DeAE-weights", argv[1], argv[2]);
+        recognize("deconv_ae_weights", argv[1], argv[2]);
 }
