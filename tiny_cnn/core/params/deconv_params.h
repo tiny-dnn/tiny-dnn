@@ -38,9 +38,9 @@ struct deconv_layer_worker_specific_storage {
 
 struct deconv_params {
     connection_table tbl;
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
-    index3d<cnn_size_t> out_unpadded_;
+    index3d<cnn_size_t> in;
+    index3d<cnn_size_t> out;
+    index3d<cnn_size_t> out_unpadded;
     index3d<cnn_size_t> weight;
     bool has_bias;
     padding pad_type;

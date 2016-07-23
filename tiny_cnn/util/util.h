@@ -525,6 +525,12 @@ inline void fill_tensor(tensor_t& tensor, float_t value) {
     }
 }
 
+inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
+    for (auto& t : tensor) {
+        t.resize(size, value);
+    }
+}
+
 } // namespace tiny_cnn
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1800)

@@ -40,12 +40,12 @@ namespace tiny_cnn {
 // forward_propagation
 template <typename Activation>
 void tiny_average_pooling_kernel(bool parallelize,
-                                 const std::vector<tensor_t*>&   in_data,
-                                 std::vector<tensor_t*>&         out_data,
-                                 const shape3d&               out_dim,
-                                 float_t                      scale_factor,
+                                 const std::vector<tensor_t*>& in_data,
+                                 std::vector<tensor_t*>&       out_data,
+                                 const shape3d&                out_dim,
+                                 float_t                       scale_factor,
                                  std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
-                                 Activation&                  h) {
+                                 Activation&                   h) {
  
     for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
         const vec_t& in = (*in_data[0])[sample];
@@ -83,17 +83,17 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                       const std::vector<tensor_t*>&   out_data,
                                       std::vector<tensor_t*>&         out_grad,
                                       std::vector<tensor_t*>&         in_grad,
-                                      const shape3d&               in_dim,
-                                      float_t                      scale_factor,
+                                      const shape3d&                  in_dim,
+                                      float_t                         scale_factor,
                                       std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
                                       std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
                                       std::vector<std::vector<cnn_size_t>>& bias2out) {
 
     for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
-        const vec_t& prev_out = (*in_data[0])[sample];
-        const vec_t& W = (*in_data[1])[0];
-        vec_t&       dW = (*in_grad[1])[sample];
-        vec_t&       db = (*in_grad[2])[sample];
+        const vec_t& prev_out   = (*in_data[0])[sample];
+        const vec_t& W          = (*in_data[1])[0];
+        vec_t&       dW         = (*in_grad[1])[sample];
+        vec_t&       db         = (*in_grad[2])[sample];
         vec_t&       prev_delta = (*in_grad[0])[sample];
         vec_t&       curr_delta = (*out_grad[0])[sample];
 
@@ -232,7 +232,6 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             Base::weight2io_,
             Base::in2wo_,
             Base::bias2out_);
-        
     }
 
  private:

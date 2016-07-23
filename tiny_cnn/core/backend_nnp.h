@@ -55,7 +55,7 @@ class nnp_backend : public backend {
     // maxpool
     explicit nnp_backend(maxpool_params* params)
         : params_m_(params) { init_nnp_engine(); }
-    
+
     // fully_connected
     explicit nnp_backend(fully_params* params)
         : params_f_(params) { init_nnp_engine(); }
@@ -65,7 +65,7 @@ class nnp_backend : public backend {
     // core math functions
 
     void conv2d(const std::vector<tensor_t*>& in_data,
-                std::vector<tensor_t*>&       out_data) {
+                std::vector<tensor_t*>&       out_data) override {
         if (!params_c_->has_bias) {
             throw nn_error("NNPACK Convolution requires a bias term.");
         }
@@ -85,49 +85,60 @@ class nnp_backend : public backend {
         kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
     }
 
+    void conv2d_q(const std::vector<tensor_t*>& in_data,
+                  std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
+    }
+
+    void conv2d_eq(const std::vector<tensor_t*>& in_data,
+                   std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
+    }
+
     void conv2d(const std::vector<tensor_t*>& in_data,
                 const std::vector<tensor_t*>& out_data,
                 std::vector<tensor_t*>&       out_grad,
-                std::vector<tensor_t*>&       in_grad) {
+                std::vector<tensor_t*>&       in_grad) override {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+    void conv2d_q(const std::vector<tensor_t*>& in_data,
+                  const std::vector<tensor_t*>& out_data,
+                  std::vector<tensor_t*>&       out_grad,
+                  std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
     void deconv2d(const std::vector<tensor_t*>& in_data,
-                  std::vector<tensor_t*>&       out_data) {
-        /*if (!params_d_->has_bias) {
-            throw nn_error("NNPACK Convolution requires a bias term.");
-        }
+                  std::vector<tensor_t*>&       out_data) override {
+    }
 
-        if (params_d_->w_stride != 1 || params_d_->h_stride != 1) {
-            throw nn_error("NNPACK Convolution requires stride 1.");
-        }
+    void deconv2d_q(const std::vector<tensor_t*>& in_data,
+                    std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
+    }
 
-        deconv_layer_worker_specific_storage& cws =
-            (*deconv_layer_worker_storage_)[index];
-        copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]); //  *in_grad[0] does not exist here!
-        const vec_t& W    = *in_data[1];
-        const vec_t& bias = *in_data[2];
-        vec_t&       a    = *out_data[1];
-        const vec_t &in   = *((*deconv_layer_worker_storage_)[index].prev_out_); // input // NOLINT
-
-        std::fill(a.begin(), a.end(), float_t(0));
-
-        kernels::nnp_deconv2d_kernel(*params_d_, in, W, bias, a);*/
+    void deconv2d_eq(const std::vector<tensor_t*>& in_data,
+                     std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
     }
 
     void deconv2d(const std::vector<tensor_t*>& in_data,
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
-                  std::vector<tensor_t*>&       in_grad) {
+                  std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
-    void matmul() {
-        throw nn_error("not implemented yet.");
+    void deconv2d_q(const std::vector<tensor_t*>& in_data,
+                    const std::vector<tensor_t*>& out_data,
+                    std::vector<tensor_t*>&       out_grad,
+                    std::vector<tensor_t*>&       in_grad) override {
+        throw nn_error("NNPACK does not support back propagation.");
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
-                 std::vector<tensor_t*>&       out_data) {
+                 std::vector<tensor_t*>&       out_data) override {
         if (params_m_->stride_ != 2) {
             throw nn_error("NNPACK Max-Pool requires a stride == 2.");
         }
@@ -145,12 +156,12 @@ class nnp_backend : public backend {
     void maxpool(const std::vector<tensor_t*>& in_data,
                  const std::vector<tensor_t*>& out_data,
                  std::vector<tensor_t*>&       out_grad,
-                 std::vector<tensor_t*>&       in_grad) {
+                 std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
     void fully(const std::vector<tensor_t*>& in_data,
-               std::vector<tensor_t*>&       out_data) {
+               std::vector<tensor_t*>&       out_data) override {
         const tensor_t& in = *in_data[0];
         const vec_t&    W = (*in_data[1])[0];
         vec_t&          b = (*in_data[2])[0];
@@ -160,14 +171,31 @@ class nnp_backend : public backend {
             in, W, b, a, layer_->get_parallelize());
     }
 
+    void fully_q(const std::vector<tensor_t*>& in_data,
+                 std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
+    }
+
+    void fully_eq(const std::vector<tensor_t*>& in_data,
+                  std::vector<tensor_t*>&       out_data) override {
+        throw nn_error("not implemented yet.");
+    }
+
     void fully(const std::vector<tensor_t*>& in_data,
                const std::vector<tensor_t*>& out_data,
                std::vector<tensor_t*>&       out_grad,
-               std::vector<tensor_t*>&       in_grad) {
+               std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
-   backend_t get_type() const { return backend_t::nnpack; }
+    void fully_q(const std::vector<tensor_t*>& in_data,
+                 const std::vector<tensor_t*>& out_data,
+                 std::vector<tensor_t*>&       out_grad,
+                 std::vector<tensor_t*>&       in_grad) override {
+        throw nn_error("NNPACK does not support back propagation.");
+    }
+
+   backend_t get_type() const override { return backend_t::nnpack; }
 
  private:
     /* Pointer to the convolution parameters */

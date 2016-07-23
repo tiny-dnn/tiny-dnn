@@ -54,20 +54,40 @@ class backend {
     virtual void conv2d(const std::vector<tensor_t*>& in_data,
                         std::vector<tensor_t*>&       out_data) = 0;
 
+    virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
+                          std::vector<tensor_t*>&       out_data) = 0;
+
+    virtual void conv2d_eq(const std::vector<tensor_t*>& in_data,
+                           std::vector<tensor_t*>&       out_data) = 0;
+
     virtual void conv2d(const std::vector<tensor_t*>& in_data,
                         const std::vector<tensor_t*>& out_data,
                         std::vector<tensor_t*>&       out_grad,
                         std::vector<tensor_t*>&       in_grad) = 0;
 
+    virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) = 0;
+
     virtual void deconv2d(const std::vector<tensor_t*>& in_data,
                           std::vector<tensor_t*>&       out_data) = 0;
+
+    virtual void deconv2d_q(const std::vector<tensor_t*>& in_data,
+                            std::vector<tensor_t*>&       out_data) = 0;
+
+    virtual void deconv2d_eq(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>&       out_data) = 0;
 
     virtual void deconv2d(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) = 0;
 
-    virtual void matmul() = 0;
+    virtual void deconv2d_q(const std::vector<tensor_t*>& in_data,
+                            const std::vector<tensor_t*>& out_data,
+                            std::vector<tensor_t*>&       out_grad,
+                            std::vector<tensor_t*>&       in_grad) = 0;
 
     virtual void maxpool(const std::vector<tensor_t*>& in_data,
                          std::vector<tensor_t*>&       out_data) = 0;
@@ -80,21 +100,31 @@ class backend {
     virtual void fully(const std::vector<tensor_t*>& in_data,
                        std::vector<tensor_t*>&       out_data) = 0;
 
+    virtual void fully_q(const std::vector<tensor_t*>& in_data,
+                         std::vector<tensor_t*>&       out_data) = 0;
+
+    virtual void fully_eq(const std::vector<tensor_t*>& in_data,
+                          std::vector<tensor_t*>&       out_data) = 0;
+
     virtual void fully(const std::vector<tensor_t*>& in_data,
                        const std::vector<tensor_t*>& out_data,
                        std::vector<tensor_t*>&       out_grad,
                        std::vector<tensor_t*>&       in_grad) = 0;
 
+    virtual void fully_q(const std::vector<tensor_t*>& in_data,
+                         const std::vector<tensor_t*>& out_data,
+                         std::vector<tensor_t*>&       out_grad,
+                         std::vector<tensor_t*>&       in_grad) = 0;
+
     context* get_context() const { return ctx_; }
 
     void set_layer(layerptr_t layer) { layer_ = layer; }
-    void set_type(const backend_t type) { type_ = type; }
-    backend_t get_type() const { return type_; }
+
+    virtual backend_t get_type() const = 0;
 
  protected:
     context* ctx_;
     layerptr_t layer_;
-    backend_t type_;
 };
 
 }  // namespace core

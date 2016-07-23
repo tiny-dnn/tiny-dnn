@@ -66,6 +66,10 @@
 #define CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
 #endif
 
+#if !defined(_MSC_VER)
+#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC
+#endif
+
 namespace tiny_cnn {
 
 /**

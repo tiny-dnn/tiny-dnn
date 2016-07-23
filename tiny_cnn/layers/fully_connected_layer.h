@@ -92,14 +92,7 @@ public:
         Base::backend_->fully(in_data, out_data);
 
         // activations
-        for_i(in_data[0]->size(), [&](int sample) {
-            vec_t& out     = (*out_data[0])[sample];
-            const vec_t& a = (*out_data[1])[sample];
-
-            for (cnn_size_t i = 0; i < params_.out_size_; i++) {
-                out[i] = this->h_.f(a, i);
-            };
-        });
+        forward_activation(*out_data[0], *out_data[1]);
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,
@@ -151,7 +144,6 @@ protected:
         if (backend) {
             Base::set_backend(backend);
             Base::backend_->set_layer(this);
-            Base::backend_->set_type(backend_type);
         } else {
             throw nn_error("Could not allocate the backend.");
         }     

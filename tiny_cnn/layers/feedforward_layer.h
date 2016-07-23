@@ -42,6 +42,20 @@ public:
     std::pair<float_t, float_t> out_value_range() const override { return h_.scale(); }
 
 public:
+    void forward_activation(tensor_t& a_tensor, tensor_t& out_tensor) {
+        cnn_size_t out_dim = out_shape()[0].size();
+
+        for_i(a_tensor.size(), [&](int sample) {
+            vec_t& out = a_tensor[sample];
+            vec_t& a   = out_tensor[sample];
+            out.resize(out_dim);
+            a.resize(out_dim);
+
+            for (cnn_size_t i = 0; i < out_dim; i++) {
+                out[i] = this->h_.f(a, i);
+            }
+        });
+    }
 
     void backward_activation(const tensor_t& prev_delta, const tensor_t& this_out, tensor_t& curr_delta) {
 

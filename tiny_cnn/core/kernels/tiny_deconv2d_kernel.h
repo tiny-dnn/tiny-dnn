@@ -40,31 +40,34 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
                                  const bool layer_parallelize) {
 
     for_i(layer_parallelize, in.size(), [&](int sample) {
-        for (cnn_size_t o = 0; o < params.out_.depth_; o++) {
-            for (cnn_size_t inc = 0; inc < params.in_.depth_; inc++) {
+        for (cnn_size_t o = 0; o < params.out.depth_; o++) {
+            for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
                 if (!params.tbl.is_connected(o, inc)) continue;
 
                 cnn_size_t idx = 0;
-                idx = params.in_.depth_ * o + inc;
+                idx = params.in.depth_ * o + inc;
                 idx = params.weight.get_index(0, 0, idx);
+                assert(idx < W.size());
                 const float_t *pw = &W[idx];
 
-                idx = params.in_.get_index(0, 0, inc);
+                idx = params.in.get_index(0, 0, inc);
+                assert(sample < in.size() && idx < in[sample].size());
                 const float_t *pi = &in[sample][idx];
 
-                idx = params.out_.get_index(0, 0, o);
+                idx = params.out.get_index(0, 0, o);
+                assert(sample < a.size() && idx < a[sample].size());
                 float_t *pa = &a[sample][idx];
 
-                for (cnn_size_t y = 0; y < params.in_.height_; y++) {
-                    for (cnn_size_t x = 0; x < params.in_.width_; x++) {
+                for (cnn_size_t y = 0; y < params.in.height_; y++) {
+                    for (cnn_size_t x = 0; x < params.in.width_; x++) {
                         const float_t * ppw = pw;
-                        const float_t * ppi = pi + y * params.in_.width_ + x;
+                        const float_t * ppi = pi + y * params.in.width_ + x;
                         // should be optimized for small kernel(3x3,5x5)
                         for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
-                                pa[(y + wy) * params.h_stride *
-                                    params.out_.width_ + (x + wx) *
-                                    params.w_stride] += ppw[wy *
+                                pa[(y * params.h_stride + wy) *
+                                    params.out.width_ + (x *
+                                    params.w_stride + wx)] += ppw[wy *
                                     params.weight.width_ + wx] * (*ppi);
                             }
                         }
@@ -73,8 +76,8 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
             }
 
             if (params.has_bias) {
-                float_t * pa = &a[sample][params.out_.get_index(0, 0, o)];
-                float_t * paa = pa + params.out_.width_ * params.out_.height_;
+                float_t * pa = &a[sample][params.out.get_index(0, 0, o)];
+                float_t * paa = pa + params.out.width_ * params.out.height_;
                 std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
             }
         }
