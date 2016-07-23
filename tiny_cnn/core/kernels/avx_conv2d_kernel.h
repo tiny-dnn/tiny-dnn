@@ -340,7 +340,7 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                 __m256d sum = _mm256_add_pd(sum0, sum4);
                 __m128d b = _mm_load_sd(&bias[o]);
                 __m128d hsum = hsum256_pd(sum);
-                b = madd_sd(b, y_bias_scale, sum6);
+                b = madd128_sd(b, y_bias_scale, sum6);
                 _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
             }
         } else {
@@ -374,15 +374,15 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                     __m256d i4a = _mm256_loadu_pd(pi + 4 * in_stride);
                     __m128d i4b = _mm_load_sd(pi + 4 * in_stride + 4);
                     sum_a = madd256_pd(w0a, i0a, sum_a);
-                    sum_b = madd256_pd(w0b, i0b, sum_b);
+                    sum_b = madd128_pd(w0b, i0b, sum_b);
                     sum_a = madd256_pd(w1a, i1a, sum_a);
-                    sum_b = madd256_pd(w1b, i1b, sum_b);
+                    sum_b = madd128_pd(w1b, i1b, sum_b);
                     sum_a = madd256_pd(w2a, i2a, sum_a);
-                    sum_b = madd256_pd(w2b, i2b, sum_b);
+                    sum_b = madd128_pd(w2b, i2b, sum_b);
                     sum_a = madd256_pd(w3a, i3a, sum_a);
-                    sum_b = madd256_pd(w3b, i3b, sum_b);
+                    sum_b = madd128_pd(w3b, i3b, sum_b);
                     sum_a = madd256_pd(w4a, i4a, sum_a);
-                    sum_b = madd256_pd(w4b, i4b, sum_b);
+                    sum_b = madd128_pd(w4b, i4b, sum_b);
                 }
                 __m128d b = _mm_load_sd(&bias[o]);
                 __m128d hsum = hsum256_pd(sum_a);
@@ -448,13 +448,13 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                         __m128d i4b = _mm_load_sd(pi4 + 4);
                         __m256d sum_a = _mm256_mul_pd(w0a, i0a);
                         __m128d sum_b = _mm_mul_sd(w0b, i0b);
-                        sum_a = madd128_pd(w1a, i1a, sum_a);
+                        sum_a = madd256_pd(w1a, i1a, sum_a);
                         sum_b = madd128_pd(w1b, i1b, sum_b);
-                        sum_a = madd128_pd(w2a, i2a, sum_a);
+                        sum_a = madd256_pd(w2a, i2a, sum_a);
                         sum_b = madd128_pd(w2b, i2b, sum_b);
-                        sum_a = madd128_pd(w3a, i3a, sum_a);
+                        sum_a = madd256_pd(w3a, i3a, sum_a);
                         sum_b = madd128_pd(w3b, i3b, sum_b);
-                        sum_a = madd128_pd(w4a, i4a, sum_a);
+                        sum_a = madd256_pd(w4a, i4a, sum_a);
                         sum_b = madd128_pd(w4b, i4b, sum_b);
                         __m128d sum_c = hsum256_pd(sum_a);
                         sum = _mm_add_sd(sum, sum_b);
