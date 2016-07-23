@@ -35,22 +35,22 @@
         _mm256_insertf128_ps(_mm256_castps128_ps256(vb), va, 1)
 #endif
 
-inline __m256 madd(__m256 a, __m256 b, __m256 c) {
+inline __m256 madd256_ps(__m256 a, __m256 b, __m256 c) {
     return _mm256_add_ps(_mm256_mul_ps(a, b), c);
 }
-inline __m128 madd(__m128 a, __m128 b, __m128 c) {
+inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
     return _mm_add_ps(_mm_mul_ps(a, b), c);
 }
-inline __m128 madd_ss(__m128 a, __m128 b, __m128 c) {
+inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
     return _mm_add_ss(_mm_mul_ss(a, b), c);
 }
-inline __m256d madd(__m256d a, __m256d b, __m256d c) {
+inline __m256d madd256_pd(__m256d a, __m256d b, __m256d c) {
     return _mm256_add_pd(_mm256_mul_pd(a, b), c);
 }
-inline __m128d madd(__m128d a, __m128d b, __m128d c) {
+inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
     return _mm_add_pd(_mm_mul_pd(a, b), c);
 }
-inline __m128d madd_sd(__m128d a, __m128d b, __m128d c) {
+inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
     return _mm_add_sd(_mm_mul_sd(a, b), c);
 }
 
