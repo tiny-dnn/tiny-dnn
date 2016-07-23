@@ -91,7 +91,7 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                 __m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
                 __m128 b = _mm_load_ss(&bias[o]);
                 __m128 hsum = hsum256_ps(sum);
-                b = madd_ss(b, y_bias_scale, sum3);
+                b = madd128_ss(b, y_bias_scale, sum3);
                 _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
             }
         } else {
@@ -120,16 +120,16 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                     __m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
                     __m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
                     __m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-                    __m256 sum0 = madd(w0, i0, sum);
+                    __m256 sum0 = madd256_ps(w0, i0, sum);
                     __m256 sum1 = _mm256_mul_ps(w1, i1);
-                    sum0 = madd(w2, i2, sum0);
-                    sum1 = madd(w3, i3, sum1);
-                    sum0 = madd(w4, i4, sum0);
+                    sum0 = madd256_ps(w2, i2, sum0);
+                    sum1 = madd256_ps(w3, i3, sum1);
+                    sum0 = madd256_ps(w4, i4, sum0);
                     sum = _mm256_add_ps(sum0, sum1);
                 }
                 __m128 b = _mm_load_ss(&bias[o]);
                 __m128 hsum = hsum256_ps(sum);
-                hsum = madd(b, y_bias_scale, hsum);
+                hsum = madd128_ps(b, y_bias_scale, hsum);
                 _mm_store_ss(&a[o], hsum);
             }
         }
@@ -207,23 +207,23 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                             dst1 = _mm256_mul_ps(w0b, i0);
                             dst2 = _mm256_mul_ps(w0c, i0);
                             dst3 = _mm256_mul_ps(w0d, i0);
-                            dst0 = madd(w1a, i1, dst0);
-                            dst1 = madd(w1b, i1, dst1);
-                            dst2 = madd(w1c, i1, dst2);
-                            dst3 = madd(w1d, i1, dst3);
-                            dst0 = madd(w2a, i2, dst0);
-                            dst1 = madd(w2b, i2, dst1);
-                            dst2 = madd(w2c, i2, dst2);
-                            dst3 = madd(w2d, i2, dst3);
-                            dst0 = madd(w3a, i3, dst0);
-                            dst1 = madd(w3b, i3, dst1);
-                            dst2 = madd(w3c, i3, dst2);
-                            dst3 = madd(w3d, i3, dst3);
-                            dst0 = madd(w4a, i4, dst0);
-                            dst1 = madd(w4b, i4, dst1);
+                            dst0 = madd256_ps(w1a, i1, dst0);
+                            dst1 = madd256_ps(w1b, i1, dst1);
+                            dst2 = madd256_ps(w1c, i1, dst2);
+                            dst3 = madd256_ps(w1d, i1, dst3);
+                            dst0 = madd256_ps(w2a, i2, dst0);
+                            dst1 = madd256_ps(w2b, i2, dst1);
+                            dst2 = madd256_ps(w2c, i2, dst2);
+                            dst3 = madd256_ps(w2d, i2, dst3);
+                            dst0 = madd256_ps(w3a, i3, dst0);
+                            dst1 = madd256_ps(w3b, i3, dst1);
+                            dst2 = madd256_ps(w3c, i3, dst2);
+                            dst3 = madd256_ps(w3d, i3, dst3);
+                            dst0 = madd256_ps(w4a, i4, dst0);
+                            dst1 = madd256_ps(w4b, i4, dst1);
                             __m128 hsum01 = hsum2x256_ps(dst0, dst1);
-                            dst2 = madd(w4c, i4, dst2);
-                            dst3 = madd(w4d, i4, dst3);
+                            dst2 = madd256_ps(w4c, i4, dst2);
+                            dst3 = madd256_ps(w4d, i4, dst3);
                             __m128 hsum23 = hsum2x256_ps(dst2, dst3);
                             __m128 sum2 = _mm_castpd_ps(_mm_unpacklo_pd(_mm_castps_pd(hsum01), _mm_castps_pd(hsum23)));
                             sum = _mm_add_ps(sum, sum2);
@@ -246,9 +246,9 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                         __m256 i4 = _mm256_loadu_ps(pi4);
                         __m256 sum0 = _mm256_mul_ps(w0a, i0);
                         __m256 sum1 = _mm256_mul_ps(w1a, i1);
-                        sum0 = madd(w2a, i2, sum0);
-                        sum1 = madd(w3a, i3, sum1);
-                        sum0 = madd(w4a, i4, sum0);
+                        sum0 = madd256_ps(w2a, i2, sum0);
+                        sum1 = madd256_ps(w3a, i3, sum1);
+                        sum0 = madd256_ps(w4a, i4, sum0);
                         sum0 = _mm256_add_ps(sum0, sum1);
                         _mm_store_ss(&ppa[x], _mm_add_ss(sum, hsum256_ps(sum0)));
 //                      printf("%d %d %d %f\n", inc, y, x, ppa[x]);
@@ -340,7 +340,7 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                 __m256d sum = _mm256_add_pd(sum0, sum4);
                 __m128d b = _mm_load_sd(&bias[o]);
                 __m128d hsum = hsum256_pd(sum);
-                b = madd_sd(b, y_bias_scale, sum6);
+                b = madd128_sd(b, y_bias_scale, sum6);
                 _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
             }
         } else {
@@ -373,16 +373,16 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                     __m128d i3b = _mm_load_sd(pi + 3 * in_stride + 4);
                     __m256d i4a = _mm256_loadu_pd(pi + 4 * in_stride);
                     __m128d i4b = _mm_load_sd(pi + 4 * in_stride + 4);
-                    sum_a = madd(w0a, i0a, sum_a);
-                    sum_b = madd(w0b, i0b, sum_b);
-                    sum_a = madd(w1a, i1a, sum_a);
-                    sum_b = madd(w1b, i1b, sum_b);
-                    sum_a = madd(w2a, i2a, sum_a);
-                    sum_b = madd(w2b, i2b, sum_b);
-                    sum_a = madd(w3a, i3a, sum_a);
-                    sum_b = madd(w3b, i3b, sum_b);
-                    sum_a = madd(w4a, i4a, sum_a);
-                    sum_b = madd(w4b, i4b, sum_b);
+                    sum_a = madd256_pd(w0a, i0a, sum_a);
+                    sum_b = madd128_pd(w0b, i0b, sum_b);
+                    sum_a = madd256_pd(w1a, i1a, sum_a);
+                    sum_b = madd128_pd(w1b, i1b, sum_b);
+                    sum_a = madd256_pd(w2a, i2a, sum_a);
+                    sum_b = madd128_pd(w2b, i2b, sum_b);
+                    sum_a = madd256_pd(w3a, i3a, sum_a);
+                    sum_b = madd128_pd(w3b, i3b, sum_b);
+                    sum_a = madd256_pd(w4a, i4a, sum_a);
+                    sum_b = madd128_pd(w4b, i4b, sum_b);
                 }
                 __m128d b = _mm_load_sd(&bias[o]);
                 __m128d hsum = hsum256_pd(sum_a);
@@ -448,14 +448,14 @@ void avx_conv2d_5x5_kernel(const conv_params& params,
                         __m128d i4b = _mm_load_sd(pi4 + 4);
                         __m256d sum_a = _mm256_mul_pd(w0a, i0a);
                         __m128d sum_b = _mm_mul_sd(w0b, i0b);
-                        sum_a = madd(w1a, i1a, sum_a);
-                        sum_b = madd(w1b, i1b, sum_b);
-                        sum_a = madd(w2a, i2a, sum_a);
-                        sum_b = madd(w2b, i2b, sum_b);
-                        sum_a = madd(w3a, i3a, sum_a);
-                        sum_b = madd(w3b, i3b, sum_b);
-                        sum_a = madd(w4a, i4a, sum_a);
-                        sum_b = madd(w4b, i4b, sum_b);
+                        sum_a = madd256_pd(w1a, i1a, sum_a);
+                        sum_b = madd128_pd(w1b, i1b, sum_b);
+                        sum_a = madd256_pd(w2a, i2a, sum_a);
+                        sum_b = madd128_pd(w2b, i2b, sum_b);
+                        sum_a = madd256_pd(w3a, i3a, sum_a);
+                        sum_b = madd128_pd(w3b, i3b, sum_b);
+                        sum_a = madd256_pd(w4a, i4a, sum_a);
+                        sum_b = madd128_pd(w4b, i4b, sum_b);
                         __m128d sum_c = hsum256_pd(sum_a);
                         sum = _mm_add_sd(sum, sum_b);
                         _mm_store_sd(&pa2[x], _mm_add_sd(sum, sum_c));

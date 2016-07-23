@@ -100,30 +100,30 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                         __m256 delta_src1 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
                         __m256 delta_src2 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
                         __m256 delta_src3 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
-                        dst0 = madd(w0a, delta_src0, dst0);
-                        dst1 = madd(w1a, delta_src0, dst1);
-                        dst2 = madd(w2a, delta_src0, dst2);
-                        dst3 = madd(w3a, delta_src0, dst3);
-                        dst4 = madd(w4a, delta_src0, dst4);
-                        dst0 = madd(w0b, delta_src1, dst0);
-                        dst1 = madd(w1b, delta_src1, dst1);
-                        dst2 = madd(w2b, delta_src1, dst2);
-                        dst3 = madd(w3b, delta_src1, dst3);
-                        dst4 = madd(w4b, delta_src1, dst4);
-                        dst0 = madd(w0c, delta_src2, dst0);
-                        dst1 = madd(w1c, delta_src2, dst1);
-                        dst2 = madd(w2c, delta_src2, dst2);
-                        dst3 = madd(w3c, delta_src2, dst3);
-                        dst4 = madd(w4c, delta_src2, dst4);
-                        dst0 = madd(w0d, delta_src3, dst0);
+                        dst0 = madd256_ps(w0a, delta_src0, dst0);
+                        dst1 = madd256_ps(w1a, delta_src0, dst1);
+                        dst2 = madd256_ps(w2a, delta_src0, dst2);
+                        dst3 = madd256_ps(w3a, delta_src0, dst3);
+                        dst4 = madd256_ps(w4a, delta_src0, dst4);
+                        dst0 = madd256_ps(w0b, delta_src1, dst0);
+                        dst1 = madd256_ps(w1b, delta_src1, dst1);
+                        dst2 = madd256_ps(w2b, delta_src1, dst2);
+                        dst3 = madd256_ps(w3b, delta_src1, dst3);
+                        dst4 = madd256_ps(w4b, delta_src1, dst4);
+                        dst0 = madd256_ps(w0c, delta_src2, dst0);
+                        dst1 = madd256_ps(w1c, delta_src2, dst1);
+                        dst2 = madd256_ps(w2c, delta_src2, dst2);
+                        dst3 = madd256_ps(w3c, delta_src2, dst3);
+                        dst4 = madd256_ps(w4c, delta_src2, dst4);
+                        dst0 = madd256_ps(w0d, delta_src3, dst0);
                         _mm256_storeu_ps(delta_dst0 + 4 * n, dst0);
-                        dst1 = madd(w1d, delta_src3, dst1);
+                        dst1 = madd256_ps(w1d, delta_src3, dst1);
                         _mm256_storeu_ps(delta_dst1 + 4 * n, dst1);
-                        dst2 = madd(w2d, delta_src3, dst2);
+                        dst2 = madd256_ps(w2d, delta_src3, dst2);
                         _mm256_storeu_ps(delta_dst2 + 4 * n, dst2);
-                        dst3 = madd(w3d, delta_src3, dst3);
+                        dst3 = madd256_ps(w3d, delta_src3, dst3);
                         _mm256_storeu_ps(delta_dst3 + 4 * n, dst3);
-                        dst4 = madd(w4d, delta_src3, dst4);
+                        dst4 = madd256_ps(w4d, delta_src3, dst4);
                         _mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
                         pdelta_src2 += 4;
                     }
@@ -134,11 +134,11 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                         __m256 dst2 = _mm256_loadu_ps(delta_dst2 + x);
                         __m256 dst3 = _mm256_loadu_ps(delta_dst3 + x);
                         __m256 dst4 = _mm256_loadu_ps(delta_dst4 + x);
-                        dst0 = madd(w0a, delta_src, dst0);
-                        dst1 = madd(w1a, delta_src, dst1);
-                        dst2 = madd(w2a, delta_src, dst2);
-                        dst3 = madd(w3a, delta_src, dst3);
-                        dst4 = madd(w4a, delta_src, dst4);
+                        dst0 = madd256_ps(w0a, delta_src, dst0);
+                        dst1 = madd256_ps(w1a, delta_src, dst1);
+                        dst2 = madd256_ps(w2a, delta_src, dst2);
+                        dst3 = madd256_ps(w3a, delta_src, dst3);
+                        dst4 = madd256_ps(w4a, delta_src, dst4);
                         _mm256_storeu_ps(delta_dst0 + x, dst0);
                         _mm256_storeu_ps(delta_dst1 + x, dst1);
                         _mm256_storeu_ps(delta_dst2 + x, dst2);
@@ -200,29 +200,30 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                     __m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
                     const float* pw = (const float*)&W[widx];
                     __m256 w0 = _mm256_loadu_ps(pw+0);
-                    __m256 w1 = _mm256_loadu_ps(pw+8);
-                    __m256 w2 = _mm256_loadu_ps(pw+16);
-                    __m128 w3 = _mm_load_ss(pw+24);
-                    sum0 = madd(w0, delta_src, sum0);
-                    sum1 = madd(w1, delta_src, sum1);
-                    sum2 = madd(w2, delta_src, sum2);
-                    sum3 = madd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+                    __m256 w1 = _mm256_loadu_ps(pw + 8);
+                    __m256 w2 = _mm256_loadu_ps(pw + 16);
+                    __m128 w3 = _mm_load_ss(pw + 24);
+                    sum0 = madd256_ps(w0, delta_src, sum0);
+                    sum1 = madd256_ps(w1, delta_src, sum1);
+                    sum2 = madd256_ps(w2, delta_src, sum2);
+                    sum3 = madd128_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
                 }
-            } else {
+            }
+            else {
                 for (cnn_size_t outc = 0; outc < out.depth_; outc++, widx += wstep) {
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
                     __m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
                     const float* pw = (const float*)&W[widx];
-                    __m256 w0 = _mm256_loadu_ps(pw+0);
-                    __m256 w1 = _mm256_loadu_ps(pw+8);
-                    __m256 w2 = _mm256_loadu_ps(pw+16);
-                    __m128 w3 = _mm_load_ss(pw+24);
-                    sum0 = madd(w0, delta_src, sum0);
-                    sum1 = madd(w1, delta_src, sum1);
-                    sum2 = madd(w2, delta_src, sum2);
-                    sum3 = madd_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+                    __m256 w0 = _mm256_loadu_ps(pw + 0);
+                    __m256 w1 = _mm256_loadu_ps(pw + 8);
+                    __m256 w2 = _mm256_loadu_ps(pw + 16);
+                    __m128 w3 = _mm_load_ss(pw + 24);
+                    sum0 = madd256_ps(w0, delta_src, sum0);
+                    sum1 = madd256_ps(w1, delta_src, sum1);
+                    sum2 = madd256_ps(w2, delta_src, sum2);
+                    sum3 = madd128_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
                 }
             }
 
@@ -305,11 +306,11 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                         __m256 dst2 = _mm256_loadu_ps(delta_dst2);
                         __m256 dst3 = _mm256_loadu_ps(delta_dst3);
                         __m256 dst4 = _mm256_loadu_ps(delta_dst4);
-                        dst0 = madd(w0a, delta_src, dst0);
-                        dst1 = madd(w1a, delta_src, dst1);
-                        dst2 = madd(w2a, delta_src, dst2);
-                        dst3 = madd(w3a, delta_src, dst3);
-                        dst4 = madd(w4a, delta_src, dst4);
+                        dst0 = madd256_ps(w0a, delta_src, dst0);
+                        dst1 = madd256_ps(w1a, delta_src, dst1);
+                        dst2 = madd256_ps(w2a, delta_src, dst2);
+                        dst3 = madd256_ps(w3a, delta_src, dst3);
+                        dst4 = madd256_ps(w4a, delta_src, dst4);
                         _mm256_storeu_ps(delta_dst0, dst0);
                         _mm256_storeu_ps(delta_dst1, dst1);
                         _mm256_storeu_ps(delta_dst2, dst2);
@@ -353,14 +354,14 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                 __m256 delta = _mm256_broadcast_ss(&curr_delta[outc]);
                 __m256 w0 = _mm256_loadu_ps(pdW+0);
                 __m256 w1 = _mm256_loadu_ps(pdW+8);
-                __m256 w2 = _mm256_loadu_ps(pdW+16);
-                __m128 w3 = _mm_load_ss(pdW+24);
-                w0 = madd(prevos0, delta, w0);
-                w1 = madd(prevos1, delta, w1);
-                w2 = madd(prevos2, delta, w2);
-                w3 = madd_ss(prevos3, _mm256_castps256_ps128(delta), w3);
-                _mm256_storeu_ps(pdW+0, w0);
-                _mm256_storeu_ps(pdW+8, w1);
+                __m256 w2 = _mm256_loadu_ps(pdW + 16);
+                __m128 w3 = _mm_load_ss(pdW + 24);
+                w0 = madd256_ps(prevos0, delta, w0);
+                w1 = madd256_ps(prevos1, delta, w1);
+                w2 = madd256_ps(prevos2, delta, w2);
+                w3 = madd128_ss(prevos3, _mm256_castps256_ps128(delta), w3);
+                _mm256_storeu_ps(pdW + 0, w0);
+                _mm256_storeu_ps(pdW + 8, w1);
                 _mm256_storeu_ps(pdW+16, w2);
                 _mm_store_ss(pdW+24, w3);
             }
@@ -394,15 +395,15 @@ void avx_conv2d_5x5_back_kernel(const conv_params& params,
                             // vectorize::dot
                             const float* pa = prevo + y * in_padded.width_;
                             const float* pb = delta + y * out.width_;
-                            for (size_t i=0; i<nblocks; ++i) {
-                                __m256 a = _mm256_loadu_ps(pa+8*i);
-                                __m256 b = _mm256_loadu_ps(pb+8*i);
-                                sum0 = madd(a, b, sum0);
+                            for (size_t i = 0; i < nblocks; ++i) {
+                                __m256 a = _mm256_loadu_ps(pa + 8 * i);
+                                __m256 b = _mm256_loadu_ps(pb + 8 * i);
+                                sum0 = madd256_ps(a, b, sum0);
                             }
                             if (remainder) {
-                                __m256 a = _mm256_loadu_ps(pa+8*nblocks);
-                                __m256 b = _mm256_loadu_ps(pb+8*nblocks);
-                                sum1 = madd(a, b, sum1);
+                                __m256 a = _mm256_loadu_ps(pa + 8 * nblocks);
+                                __m256 b = _mm256_loadu_ps(pb + 8 * nblocks);
+                                sum1 = madd256_ps(a, b, sum1);
                             }
                         }
                         sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));

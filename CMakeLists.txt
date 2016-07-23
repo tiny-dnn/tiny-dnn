@@ -163,12 +163,12 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     # set Advanced Vector Extensions (AVX)
     if(USE_AVX AND COMPILER_HAS_AVX_FLAG)
     	add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx")
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx -mfma")
     endif(USE_AVX AND COMPILER_HAS_AVX_FLAG)
     # set Advanced Vector Extensions 2 (AVX2)
     if(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
     	add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -march=core-avx2")
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -mfma -march=core-avx2")
     endif(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
 
 	# include extra flags to the compiler
