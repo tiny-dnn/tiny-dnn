@@ -130,7 +130,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         Base::backend_->maxpool(in_data, out_data);
 
         // activations
-        forward_activation(*out_data[0], *out_data[1]);
+        this->forward_activation(*out_data[0], *out_data[1]);
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,

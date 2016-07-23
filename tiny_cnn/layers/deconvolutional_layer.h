@@ -231,7 +231,7 @@ public:
         Base::backend_->deconv2d(in_data, out_data);
 
         // activations
-        forward_activation(*out_data[0], *out_data[1]);
+        this->forward_activation(*out_data[0], *out_data[1]);
     }
 
     /**

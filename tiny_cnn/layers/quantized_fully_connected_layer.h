@@ -93,7 +93,7 @@ public:
             Base::backend_->fully_q(in_data, out_data);
 
             // activations
-            forward_activation(*out_data[0], *out_data[1]);
+            this->forward_activation(*out_data[0], *out_data[1]);
         } else if (in_data.size() == 4 || in_data.size() == 6) {
             Base::backend_->fully_eq(in_data, out_data);
         }

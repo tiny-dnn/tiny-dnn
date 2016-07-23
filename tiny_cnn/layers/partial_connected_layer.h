@@ -107,7 +107,7 @@ public:
             });
         }
 
-        forward_activation(*out_data[0], *out_data[1]);
+        this->forward_activation(*out_data[0], *out_data[1]);
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,

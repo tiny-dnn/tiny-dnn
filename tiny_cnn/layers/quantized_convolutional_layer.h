@@ -206,9 +206,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     quantized_convolutional_layer(quantized_convolutional_layer&& other)  // NOLINT
             : Base(std::move(other))
             , params_(std::move(other.params_))
-            , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
-            , conv_layer_worker_storage_(
-                std::move(other.conv_layer_worker_storage_)) {
+            , cws_(std::move(other.cws_)) {
         init_backend(std::move(Base::get_backend_type()));
     }
 
@@ -237,7 +235,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
             Base::backend_->conv2d_q(in_data, out_data);
 
             // activations
-            forward_activation(*out_data[0], *out_data[1]);
+            this->forward_activation(*out_data[0], *out_data[1]);
         } else if (in_data.size() == 6) {
             Base::backend_->conv2d_eq(in_data, out_data);
         }
