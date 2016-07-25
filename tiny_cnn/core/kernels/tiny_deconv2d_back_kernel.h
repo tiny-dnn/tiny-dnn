@@ -65,9 +65,9 @@ inline void tiny_deconv2d_back_kernel(const deconv_params& params,
                         for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                             for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
                                 sum += ppw[wy * params.weight.width_ + wx] *
-                                    pdelta_src[(y + wy) * params.h_stride *
-                                    params.in.width_ + (x + wx) *
-                                    params.w_stride];
+                                    pdelta_src[(y * params.h_stride + wy) *
+                                    params.out.width_ + (x *
+                                    params.w_stride + wx)];
                             }
                         }
                         *ppdelta_dst += sum;
