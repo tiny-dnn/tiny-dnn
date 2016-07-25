@@ -212,6 +212,13 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3")
+
+    # TODO(nyanp): could you check why do we need this even when
+    # USE_TBB is enabled? I got the following errors during linkage:
+    # /usr/bin/ld: CMakeFiles/tiny_cnn_test.dir/test.cpp.o: undefined reference to symbol 'pthread_create@@GLIBC_2.2.5'
+    # //lib/x86_64-linux-gnu/libpthread.so.0: error adding symbols: DSO missing from command line 
+    set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -pthread")
+
 elseif(WIN32) # MSVC
 	if(USE_SSE)
 		add_definitions(-DCNN_USE_SSE)
