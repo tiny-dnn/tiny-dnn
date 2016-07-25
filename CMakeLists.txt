@@ -84,7 +84,7 @@ if(USE_TBB AND TBB_FOUND)
     add_definitions(-DCNN_USE_TBB)
     include_directories(${TBB_INCLUDE_DIRS})
     link_directories(${TBB_LIBRARY_DIRS})
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES})
+    list(APPEND REQUIRED_LIBRARIES ${TBB_LIBRARIES})
 elseif(USE_TBB AND NOT TBB_FOUND)
     # In case the user sets the flag USE_TBB to ON, the CMake build-tree
     # will require to find TBB in your system. Otherwise, the user can
@@ -118,7 +118,7 @@ if(USE_NNPACK AND NNPACK_FOUND)
     add_definitions(-DCNN_USE_NNPACK)
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${NNPACK_LIB})
+    list(APPEND REQUIRED_LIBRARIES ${NNPACK_LIB})
 elseif(USE_NNPACK AND NOT NNPACK_FOUND)
     # In case the user sets the flag USE_NNPACK to ON, the CMake build-tree
     # will require to find NNPACK in your system. Otherwise, the user can
@@ -142,7 +142,7 @@ find_package(OpenCL QUIET)
 if(USE_OPENCL AND OpenCL_FOUND)
     add_definitions(-DCNN_HAVE_OPENCL)
     include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${OpenCL_LIBRARY})
+    list(APPEND REQUIRED_LIBRARIES ${OpenCL_LIBRARY})
 elseif(USE_OPENCL AND NOT OpenCL_FOUND)
     # In case the user sets the flag USE_OPENCL to ON, the CMake build-tree
     # will require to find OPENCL in your system. Otherwise, the user can
@@ -150,11 +150,11 @@ elseif(USE_OPENCL AND NOT OpenCL_FOUND)
     message(FATAL_ERROR "Can't find OpenCL.")
 endif()
 
-find_package(Greentea QUIET)
-if(USE_LIBDNN AND Greentea_FOUND)
+find_package(GreenteaLibDNN QUIET)
+if(USE_LIBDNN AND GreenteaLibDNN_FOUND)
     add_definitions(-DCNN_USE_LIBDNN)
     include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${GREENTEA_LIBRARIES})
+    list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
     
     # By now we require ViennaCL to handle OpenCL
     # TODO: decide how to solve without ViennaCL.

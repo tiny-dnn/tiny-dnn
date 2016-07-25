@@ -156,22 +156,37 @@ TEST(convolutional, fprop_nnp) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::nnpack);
+    
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
 
-    vec_t in(25), out(18), a(18), weight(18), bias(2);
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<vec_t*> in_data, out_data;
-    in_data.push_back(&in);
-    in_data.push_back(&weight);
-    in_data.push_back(&bias);
-    out_data.push_back(&out);
-    out_data.push_back(&a);
-    l.setup(false, 1);
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -192,7 +207,7 @@ TEST(convolutional, fprop_nnp) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);
@@ -208,28 +223,43 @@ TEST(convolutional, fprop_nnp) {
 #endif
 
 #ifdef CNN_USE_LIBDNN
-TEST(convolutional, fprop_nnp) {
+TEST(convolutional, fprop_dnn) {
     typedef network<sequential> CNN;
     CNN nn;
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::libdnn);
+    
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
 
-    vec_t in(25), out(18), a(18), weight(18), bias(2);
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<vec_t*> in_data, out_data;
-    in_data.push_back(&in);
-    in_data.push_back(&weight);
-    in_data.push_back(&bias);
-    out_data.push_back(&out);
-    out_data.push_back(&a);
-    l.setup(false, 1);
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -250,7 +280,7 @@ TEST(convolutional, fprop_nnp) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);

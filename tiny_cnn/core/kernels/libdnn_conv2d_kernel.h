@@ -41,10 +41,10 @@ namespace core {
 namespace kernels {
 
 void libdnn_conv2d_kernel(const conv_params& params,
-                       const vec_t&      in,
-                       const vec_t&      W,
-                       const vec_t&      bias,
-                       vec_t&            a) {
+                          const vec_t&       in,
+                          const vec_t&       W,
+                          const vec_t&       bias,
+                          vec_t&             a) {
     // instantiate pointer to device
     const int id = 0;
     const int list_id = 0;

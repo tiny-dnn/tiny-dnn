@@ -38,38 +38,39 @@ class dnn_backend : public backend {
     // context should be able to hold any types of structures (like boost::any)
     dnn_backend() {}
 
+    // convolution
     dnn_backend(conv_params* params,
-                std::function<void(const vec_t&, int)> f1,
-                std::vector<conv_layer_worker_specific_storage>* ptr)
-        : params_(params),
+                std::function<void(const tensor_t&)> f,
+                conv_layer_worker_specific_storage* ptr)
+        : params_c_(params),
           conv_layer_worker_storage_(ptr),
-          copy_and_pad_input(f1) {}
+          copy_and_pad_input(f) {}
 
     // core math functions
 
-    void conv2d(cnn_size_t                 index,
-                const std::vector<vec_t*>& in_data,
-                std::vector<vec_t*>&       out_data) {
+    void conv2d(const std::vector<tensor_t*>& in_data,
+                std::vector<tensor_t*>&       out_data) override {
 #ifdef CNN_USE_LIBDNN
-        copy_and_pad_input(*in_data[0], static_cast<int>(index));
-        const vec_t& W    = *in_data[1];
-        const vec_t& bias = *in_data[2];
-        vec_t&       a    = *out_data[1];
-        const vec_t &in   = *((*conv_layer_worker_storage_)[index].prev_out_padded_); // input // NOLINT
+        copy_and_pad_input(*in_data[0]);
+        const vec_t& W    = (*in_data[1])[0];
+        const vec_t& bias = (*in_data[2])[0];
+        tensor_t&     a    = *out_data[1];
+        const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
+ 
+        fill_tensor(a, float_t(0));
 
-        std::fill(a.begin(), a.end(), float_t(0));
-
-        kernels::libdnn_conv2d_kernel(*params_, in, W, bias, a);
+        for (cnn_size_t i = 0; i < in.size(); i++) {
+            kernels::libdnn_conv2d_kernel(*params_c_,
+                *in[i], W, bias, a[i]);
+        }
+        // kernels::libdnn_conv2d_kernel(*params_c_, in, W, bias, a);
 #else
-    throw nn_error("Tiny-cnn has not been compiled with LibDNN support.");
+        throw nn_error("Tiny-cnn has not been compiled with LibDNN support.");
 #endif
     }
-    
-    void conv2d(cnn_size_t                 index,
-                const std::vector<vec_t*>& in_data,
-                const std::vector<vec_t*>& out_data,
-                std::vector<vec_t*>&       out_grad,
-                std::vector<vec_t*>&       in_grad) {
+
+    void conv2d_q(const std::vector<tensor_t*>& in_data,
+                  std::vector<tensor_t*>&       out_data) override {
         throw nn_error("not implemented yet.");
     }
 
@@ -84,7 +85,7 @@ class dnn_backend : public backend {
                 std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("not implemented yet.");
     }
-
+ 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
@@ -114,7 +115,6 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-<<<<<<< HEAD
     void deconv2d_q(const std::vector<tensor_t*>& in_data,
                     const std::vector<tensor_t*>& out_data,
                     std::vector<tensor_t*>&       out_grad,
@@ -154,6 +154,7 @@ class dnn_backend : public backend {
                std::vector<tensor_t*>&       out_grad,
                std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("not implemented yet.");
+
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -162,22 +163,19 @@ class dnn_backend : public backend {
                  std::vector<tensor_t*>&       in_grad) override {
         throw nn_error("not implemented yet.");
     }
-
-    backend_t get_type() const override { return backend_t::libdnn; }
-=======
+ 
     backend_t get_type() const { return backend_t::libdnn; }
 
  private:
 
     /* Pointer to the convolution parameters */
-    conv_params* params_;
+    conv_params* params_c_;
 
     /* Pointer to the convolution workers */
-    std::vector<conv_layer_worker_specific_storage>* conv_layer_worker_storage_;
+    conv_layer_worker_specific_storage* conv_layer_worker_storage_;
 
     /* Pointers to parent class functions */
-    std::function<void(const vec_t&, int)> copy_and_pad_input;
->>>>>>> add libdnn kernel
+    std::function<void(const tensor_t&)> copy_and_pad_input;
 };
 
 }  // namespace core

@@ -54,12 +54,4 @@ TEST(core, device_initialization) {
     ASSERT_EQ(my_gpu_device.type(), device_t::GPU);
 }
 
-TEST(core, backends) {
-    core::nnp_backend my_nnp_backend();
-    core::dnn_backend my_dnn_backend();
-
-    // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
-    // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
-}
-
 } // namespace tiny-cnn
