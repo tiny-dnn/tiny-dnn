@@ -382,7 +382,7 @@ private:
         deconv_layer_worker_specific_storage& cws = deconv_layer_worker_storage_;
 
         if (params_.pad_type == padding::same) {
-            cws.curr_out_buf_.resize(sample_count, vec_t(params_.in.size(), float_t(0)));
+            cws.curr_out_buf_.resize(sample_count, vec_t(params_.out_unpadded.size(), float_t(0)));
             cws.curr_delta_padded.resize(sample_count, vec_t(params_.out.size(), float_t(0)));
         }
         else {
@@ -474,8 +474,8 @@ private:
                                                 floor(params_.weight.height_ / 2), c);
                     const float_t *pout = &out[sample][idx];
 
-                    for (cnn_size_t y = params_.weight.height_ / 2;
-                        y < params_.in.height_ - params_.weight.height_ / 2;
+                    for (cnn_size_t y = floor(params_.weight.height_ / 2);
+                        y < params_.out_unpadded.height_ + floor(params_.weight.height_ / 2);
                         y++,
                         pout += params_.out.width_,
                         pimg += params_.out_unpadded.width_) {

@@ -277,9 +277,10 @@ void tiny_quantized_deconv2d_back_kernel(const deconv_params& params,
                     for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
                         for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
                             sum += static_cast<int32_t>(ppw[wy * params.weight.width_ + wx] - offset_filter) *
-                                static_cast<int32_t>(pdelta_src[(y+wy) * params.h_stride *
-                                params.in.width_ + (x+wx) *
-                                params.w_stride] - offset_curr_delta);
+                                static_cast<int32_t>(pdelta_src[(y * params.h_stride + wy) *
+                                                                params.out.width_ + (x *
+                                                                params.w_stride + wx)] -
+                                                                offset_curr_delta);
                         }
                     }
                     *ppdelta_quantized_dst += sum;
