@@ -29,6 +29,10 @@
 #include "tiny_cnn/core/backend.h"
 #include "tiny_cnn/core/kernels/libdnn_conv2d_kernel.h"
 
+#ifdef USE_OPENCL
+#include "third_party/CLCudaAPI/clpp11.h"
+#endif
+
 namespace tiny_cnn {
 namespace core {
 
