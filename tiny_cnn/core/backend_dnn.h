@@ -122,6 +122,28 @@ class dnn_backend : public backend {
  
         fill_tensor(a, float_t(0));
 
+        // run libdnn op 
+        fill_tensor(a, float_t(0));
+
+        for (cnn_size_t i = 0; i < in.size(); i++) {
+
+            printf("## Allocating device memory...\n");
+            auto dev_in   = CLCudaAPI::Buffer<float>(context, queue, in[i]->begin(), in[i]->end());
+            auto dev_W    = CLCudaAPI::Buffer<float>(context, queue, W.begin(), W.end());
+            auto dev_bias = CLCudaAPI::Buffer<float>(context, queue, bias.begin(), bias.end());
+            auto dev_a    = CLCudaAPI::Buffer<float>(context, queue, a[i].begin(), a[i].end());
+
+            printf(" > Size of buffer in is %zu bytes\n",   dev_in.GetSize());
+            printf(" > Size of buffer W is %zu bytes\n",    dev_W.GetSize());
+            printf(" > Size of buffer bias is %zu bytes\n", dev_bias.GetSize());
+            printf(" > Size of buffer a is %zu bytes\n",    dev_a.GetSize());
+
+            kernels::libdnn_conv2d_kernel(*params_c_,
+                dev_in(), dev_W(), dev_bias(), dev_a(), context(), device(), queue());
+        }
+
+
+/*
         // Creates two new device buffers and copies the host data to these device buffers.
         printf("## Allocating device memory...\n");
         auto dev_in   = CLCudaAPI::Buffer<float>(context, queue, in.begin(), in.end());
@@ -133,6 +155,7 @@ class dnn_backend : public backend {
         printf(" > Size of buffer W is %zu bytes\n",    dev_W.GetSize());
         printf(" > Size of buffer bias is %zu bytes\n", dev_bias.GetSize());
         printf(" > Size of buffer a is %zu bytes\n",    dev_a.GetSize());
+
 
         // Creates the 'convolution' kernel from the compiled program and sets the four arguments. Note
         // that this uses the direct form instead of setting each argument separately.
@@ -157,6 +180,7 @@ class dnn_backend : public backend {
 
         // Reads the results back to the host memory
         //dev_a.Read(queue, size, a[0]);
+*/
 
 #else
         throw nn_error("Tiny-DNN has not been compiled with OpenCL support");

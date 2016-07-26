@@ -30,21 +30,25 @@
 
 #ifdef CNN_USE_LIBDNN
 #include "libdnn.hpp"
-//#include "viennacl/backend/opencl.hpp"
-//#include "viennacl/ocl/backend.hpp"
-//#include "viennacl/ocl/context.hpp"
-//#include "viennacl/ocl/device.hpp"
-//#include "viennacl/ocl/platform.hpp"
 
 namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-void libdnn_conv2d_kernel(const conv_params& params,
+/*void libdnn_conv2d_kernel(const conv_params& params,
                           const vec_t&       in,
                           const vec_t&       W,
                           const vec_t&       bias,
-                          vec_t&             a) {
+                          vec_t&             a {*/
+
+void libdnn_conv2d_kernel(const conv_params&      params,
+                          const cl_mem&           in,
+                          const cl_mem&           W,
+                          const cl_mem&           bias,
+                          const cl_mem&           a,
+                          const cl_context&       context,
+                          const cl_device_id&     device,
+                          const cl_command_queue& queue) {
     // instantiate pointer to device
     const int id = 0;
     const int list_id = 0;
@@ -56,28 +60,9 @@ void libdnn_conv2d_kernel(const conv_params& params,
     // initialize device pointer in libdnn
     dev_ptr->Init();
  
-    std::cout << "after Init()" << std::endl;
-
-    /*cl_platform_id platform;
-    cl_device_id device;
- 
-    // get first available platform
-    clGetPlatformIDs(1, &platform, NULL);
- 
-    // get first available gpu device
-    clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &device, NULL);
- 
-    // create context
-    cl_context context = clCreateContext(NULL, 1, &device, NULL, NULL, NULL);
-
-    cl_command_queue queue;
-    queue = clCreateCommandQueue(context, device,
-        CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE, NULL);*/
-   
     // error: ‘class greentea::device’ has no member named ‘setupViennaCLContext’
-    // dev_ptr->setupViennaCLContext(id, context, device, queue);
+    dev_ptr->setupViennaCLContext(id, context, device, queue);
 
-    
     // setup libdnn params
     greentea::LibDNNConfig config;
 
@@ -110,8 +95,13 @@ void libdnn_conv2d_kernel(const conv_params& params,
     config.bias_backward    = false;
 
     // call libdnn forward
+    // greentea::LibDNNConv<cl_mem> kernel(config);
     greentea::LibDNNConv<float_t> kernel(config);
 
+    const int batch_sz = 1;
+    // kernel.Forward(in, W, bias, a, batch_sz);
+
+/*
     const float_t* input_ptr   = reinterpret_cast<const float_t*>(&in[0]);
     const float_t* weights_ptr = reinterpret_cast<const float_t*>(&W[0]);
     const float_t* bias_ptr    = reinterpret_cast<const float_t*>(&bias[0]);
@@ -122,6 +112,7 @@ void libdnn_conv2d_kernel(const conv_params& params,
     
     // call libdnn kernel
     kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
+*/
 }
 
 }  // namespace kernels
