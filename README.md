@@ -84,7 +84,9 @@ Check out the [documentation](doc/readme.md) for more info.
 
 ### loss functions
 * cross-entropy
-* mean-squared-error
+* mean squared error
+* mean absolute error
+* mean absolute error with epsilon range
 
 ### optimization algorithms
 * stochastic gradient descent (with/without L2 normalization and momentum)
