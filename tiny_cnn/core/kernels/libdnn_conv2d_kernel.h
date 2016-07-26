@@ -53,7 +53,10 @@ void libdnn_conv2d_kernel(const conv_params& params,
         std::make_shared<greentea::device>(
             id, list_id, greentea::Backend::BACKEND_OpenCL);
 
-    //viennacl::ocl::context &ctx = viennacl::ocl::get_context(id);
+    // initialize device pointer in libdnn
+    dev_ptr->Init();
+ 
+    std::cout << "after Init()" << std::endl;
 
     /*cl_platform_id platform;
     cl_device_id device;
@@ -74,9 +77,7 @@ void libdnn_conv2d_kernel(const conv_params& params,
     // error: ‘class greentea::device’ has no member named ‘setupViennaCLContext’
     // dev_ptr->setupViennaCLContext(id, context, device, queue);
 
-    std::cout << "before Init()" << std::endl;
-    dev_ptr->Init();
- 
+    
     // setup libdnn params
     greentea::LibDNNConfig config;
 

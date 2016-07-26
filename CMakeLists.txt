@@ -155,15 +155,6 @@ if(USE_LIBDNN AND GreenteaLibDNN_FOUND)
     add_definitions(-DCNN_USE_LIBDNN)
     include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
     list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
-    
-    # By now we require ViennaCL to handle OpenCL
-    # TODO: decide how to solve without ViennaCL.
-    #find_package(ViennaCL)
-    #if (NOT ViennaCL_FOUND)
-    #    message(FATAL_ERROR "ViennaCL required for OpenCL but not found.")
-    #endif()
-    #include_directories(SYSTEM ${VIENNACL_INCLUDE_DIRS})
-    #list(APPEND REQUIRED_LIBRARIES ${VIENNACL_LIBRARIES})
 elseif(USE_LIBDNN AND NOT LIBDNN_FOUND)
     # In case the user sets the flag USE_LIBDNN to ON, the CMake build-tree
     # will require to find LibDNN in your system. Otherwise, the user can
