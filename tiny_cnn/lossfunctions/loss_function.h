@@ -35,17 +35,21 @@ public:
     static float_t f(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
         float_t d = 0.0;
-        for(unsigned int i = 0; i < y.size(); ++i)
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d += (y[i] - t[i]) * (y[i] - t[i]);
+
         return d/y.size();
     }
 
     static vec_t df(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        vec_t d; d.resize(t.size());
-        float_t factor = 2.f/static_cast<float_t>(t.size());
-        for(unsigned int i = 0; i < y.size(); ++i)
-            d[i] = factor*(y[i] - t[i]);
+        vec_t d(t.size());
+        float_t factor = float_t(2) / static_cast<float_t>(t.size());
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
+            d[i] = factor * (y[i] - t[i]);
+
         return d;
     }
 };
@@ -55,26 +59,29 @@ class absolute {
 public:
     static float_t f(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        float_t d = 0.0;
-        for(unsigned int i = 0; i < y.size(); ++i)
+        float_t d = float_t(0);
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d += std::abs(y[i] - t[i]);
+
         return d/y.size();
     }
 
     static vec_t df(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        vec_t d; d.resize(t.size());
-        float_t factor = 1/static_cast<float_t>(t.size());
-        for(unsigned int i = 0; i < y.size(); ++i)
-        {
+        vec_t d(t.size());
+        float_t factor = float_t(1) / static_cast<float_t>(t.size());
+
+        for(cnn_size_t i = 0; i < y.size(); ++i) {
             float_t sign = y[i] - t[i];
             if(sign < 0.f)
-                d[i] = -1.f * factor;
+                d[i] = -float_t(1) * factor;
             else if(sign > 0.f)
-                d[i] =  1.f * factor;
+                d[i] =  float_t(1) * factor;
             else
-                d[i] = 0.f;
+                d[i] =  float_t(0);
         }
+
         return d;
     }
 };
@@ -86,29 +93,29 @@ class absolute_eps {
 public:
     static float_t f(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        float_t d = 0.0;
-        const float_t eps = 1./fraction;
-        for(unsigned int i = 0; i < y.size(); ++i)
-        {
+        float_t d = float_t(0);
+        const float_t eps = float_t(1) / fraction;
+
+        for(cnn_size_t i = 0; i < y.size(); ++i) {
             float_t diff = std::abs(y[i] - t[i]);
             if(diff > eps)
                 d += diff;
         }
-        return d/y.size();
+        return d / y.size();
     }
 
     static vec_t df(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        vec_t d; d.resize(t.size());
-        const float_t factor = 1/static_cast<float_t>(t.size());
-        const float_t eps = 1./fraction;
-        for(unsigned int i = 0; i < y.size(); ++i)
-        {
+        vec_t d(t.size());
+        const float_t factor = float_t(1) / static_cast<float_t>(t.size());
+        const float_t eps    = float_t(1) / fraction;
+
+        for(cnn_size_t i = 0; i < y.size(); ++i) {
             float_t sign = y[i] - t[i];
             if(sign < -eps)
-                d[i] = -1.f * factor;
+                d[i] = -float_t(1) * factor;
             else if(sign > eps)
-                d[i] =  1.f * factor;
+                d[i] =  float_t(1) * factor;
             else
                 d[i] = 0.f;
         }
@@ -121,17 +128,21 @@ class cross_entropy {
 public:
     static float_t f(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        float_t d = 0.0;
-        for(unsigned int i = 0; i < y.size(); ++i)
+        float_t d = float_t(0);
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d += -t[i] * std::log(y[i]) - (float_t(1) - t[i]) * std::log(float_t(1) - y[i]);
+
         return d;
     }
 
     static vec_t df(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        vec_t d; d.resize(t.size());
-        for(unsigned int i = 0; i < y.size(); ++i)
+        vec_t d(t.size());
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d[i] = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+
         return d;
     }
 };
@@ -142,16 +153,20 @@ public:
     static float_t f(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
         float_t d = 0.0;
-        for(unsigned int i = 0; i < y.size(); ++i)
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d += -t[i] * std::log(y[i]);
+
         return d;
     }
 
     static vec_t df(const vec_t& y, const vec_t& t) {
         assert(y.size() == t.size());
-        vec_t d; d.resize(t.size());
-        for(unsigned int i = 0; i < y.size(); ++i)
+        vec_t d(t.size());
+
+        for(cnn_size_t i = 0; i < y.size(); ++i)
             d[i] = - t[i] / y[i];
+
         return d;
     }
 };
@@ -175,31 +190,36 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
 }
 
 namespace {
-    void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
-    {
-        if (sample_gradient.size() == sample_cost.size()) {
-            // @todo consider adding parallelism
-            for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
-                if (sample_gradient[channel].size() == sample_cost[channel].size()) {
-                    // @todo optimize? (use AVX or so)
-                    for (cnn_size_t element = 0, element_count = sample_gradient[channel].size(); element < element_count; ++element) {
-                        sample_gradient[channel][element] *= sample_cost[channel][element];
-                    }
+void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
+{
+    if (sample_gradient.size() == sample_cost.size()) {
+        // @todo consider adding parallelism
+        for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+            if (sample_gradient[channel].size() == sample_cost[channel].size()) {
+                const cnn_size_t element_count = sample_gradient[channel].size();
+
+                // @todo optimize? (use AVX or so)
+                for (cnn_size_t element = 0; element < element_count; ++element) {
+                    sample_gradient[channel][element] *= sample_cost[channel][element];
                 }
             }
         }
     }
 }
+} // namespace
 
 // gradient for a minibatch
 template <typename E>
-std::vector<tensor_t> gradient(const std::vector<tensor_t>& y, const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
+std::vector<tensor_t> gradient(const std::vector<tensor_t>& y,
+                               const std::vector<tensor_t>& t,
+                               const std::vector<tensor_t>& t_cost) {
 
     const cnn_size_t sample_count = y.size();
     const cnn_size_t channel_count = y[0].size();
 
     std::vector<tensor_t> gradients(sample_count);
  
+    CNN_UNREFERENCED_PARAMETER(channel_count);
     assert(y.size() == t.size());
     assert(t_cost.empty() || t_cost.size() == t.size());
 
