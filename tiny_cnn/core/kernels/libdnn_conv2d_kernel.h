@@ -95,11 +95,17 @@ void libdnn_conv2d_kernel(const conv_params&      params,
     config.bias_backward    = false;
 
     // call libdnn forward
-    // greentea::LibDNNConv<cl_mem> kernel(config);
     greentea::LibDNNConv<float_t> kernel(config);
 
     const int batch_sz = 1;
-    // kernel.Forward(in, W, bias, a, batch_sz);
+
+    auto input_ptr   = reinterpret_cast<const void*>(in);
+    auto weights_ptr = reinterpret_cast<const void*>(W);
+    auto bias_ptr    = reinterpret_cast<const void*>(bias);
+
+    auto output_ptr = reinterpret_cast<void*>(a);
+
+    kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
 
 /*
     const float_t* input_ptr   = reinterpret_cast<const float_t*>(&in[0]);
