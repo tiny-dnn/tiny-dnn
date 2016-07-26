@@ -21,7 +21,7 @@ tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep lea
 Check out the [documentation](doc/readme.md) for more info.
 
 ## What's New
-- [tiny-cnn v0.1.0 released!](https://github.com/nyanp/tiny-cnn/releases/tag/v0.1.0)
+- 2016/7/27 [tiny-cnn v0.1.1 released!](https://github.com/nyanp/tiny-cnn/releases/tag/v0.1.1)
 
 ## Features
 - reasonably fast, without GPU
