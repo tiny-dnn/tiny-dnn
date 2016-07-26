@@ -222,7 +222,8 @@ TEST(convolutional, fprop_nnp) {
 }
 #endif
 
-#ifdef CNN_USE_LIBDNN
+//#ifdef CNN_USE_LIBDNN
+#ifdef USE_OPENCL
 TEST(convolutional, fprop_dnn) {
     typedef network<sequential> CNN;
     CNN nn;

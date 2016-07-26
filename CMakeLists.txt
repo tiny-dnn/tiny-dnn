@@ -151,7 +151,7 @@ elseif(USE_OPENCL AND NOT OpenCL_FOUND)
     message(FATAL_ERROR "Can't find OpenCL.")
 endif()
 
-#find_package(GreenteaLibDNN QUIET)
+find_package(GreenteaLibDNN QUIET)
 if(USE_LIBDNN AND GreenteaLibDNN_FOUND)
     add_definitions(-DCNN_USE_LIBDNN)
     include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
