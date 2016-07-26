@@ -95,12 +95,11 @@ public:
 class edge {
  public:
     edge(node* prev, const shape3d& shape, vector_type vtype)
-        : worker_specific_data_(!is_trainable_weight(vtype)),
-          shape_(shape),
+        : shape_(shape),
           vtype_(vtype),
           data_({vec_t(shape.size())}),
-          prev_(prev),
-          grad_({vec_t(shape.size())})
+          grad_({ vec_t(shape.size()) }),
+          prev_(prev)
     {
     }
 
@@ -145,7 +144,6 @@ class edge {
     void add_next_node(node* next) { next_.push_back(next); }
 
  private:
-    bool worker_specific_data_;
     shape3d shape_;
     vector_type vtype_;
     tensor_t data_;
