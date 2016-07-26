@@ -64,7 +64,7 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
         }
     }
 
-    vector_div(*mean, num_examples*spatial_dim);
+    vector_div(*mean, (float_t)num_examples*spatial_dim);
 
     // calculate variance
     if (variance != nullptr) {

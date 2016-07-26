@@ -186,7 +186,10 @@ private:
 
     void set_sample_count(cnn_size_t sample_count) override {
         if (slice_type_ == slice_type::slice_samples) {
-            int sample_per_out = sample_count / num_outputs_;
+            if (num_outputs_ == 0)
+                throw nn_error("num_outputs must be positive integer");
+
+            cnn_size_t sample_per_out = sample_count / num_outputs_;
 
             slice_size_.resize(num_outputs_, sample_per_out);
             slice_size_.back() = sample_count - (sample_per_out*(num_outputs_-1));
@@ -212,13 +215,14 @@ private:
     }
 
     void set_shape_channels() {
-        int channel_per_out = in_shape_.depth_ / num_outputs_;
+        cnn_size_t channel_per_out = in_shape_.depth_ / num_outputs_;
 
         out_shapes_.clear();
         for (cnn_size_t i = 0; i < num_outputs_; i++) {
-            int ch = channel_per_out;
+            cnn_size_t ch = channel_per_out;
 
             if (i == num_outputs_ - 1) {
+                assert(in_shape_.depth_ >= i * channel_per_out);
                 ch = in_shape_.depth_ - i * channel_per_out;
             }
 
@@ -231,7 +235,7 @@ private:
     slice_type slice_type_;
     cnn_size_t num_outputs_;
     std::vector<shape3d> out_shapes_;
-    std::vector<int> slice_size_;
+    std::vector<cnn_size_t> slice_size_;
 };
 
 } // namespace tiny_cnn
