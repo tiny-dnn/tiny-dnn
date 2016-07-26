@@ -41,6 +41,16 @@ namespace kernels {
                           const vec_t&       bias,
                           vec_t&             a {*/
 
+float_t* mutable_double_cast(const cl_mem& cl_mem_gpu) {
+    return static_cast<float_t*>(
+                reinterpret_cast<void*>(cl_mem_gpu));
+}
+
+const float_t* double_cast(const cl_mem& cl_mem_gpu) {
+    return reinterpret_cast<const float_t*>(
+                reinterpret_cast<const void*>(cl_mem_gpu));
+}
+
 void libdnn_conv2d_kernel(const conv_params&      params,
                           const cl_mem&           in,
                           const cl_mem&           W,
@@ -99,11 +109,11 @@ void libdnn_conv2d_kernel(const conv_params&      params,
 
     const int batch_sz = 1;
 
-    auto input_ptr   = reinterpret_cast<const void*>(in);
-    auto weights_ptr = reinterpret_cast<const void*>(W);
-    auto bias_ptr    = reinterpret_cast<const void*>(bias);
+    const float_t* input_ptr   = double_cast(in);
+    const float_t* weights_ptr = double_cast(W);
+    const float_t* bias_ptr    = double_cast(bias);
 
-    auto output_ptr = reinterpret_cast<void*>(a);
+    float_t* output_ptr = mutable_double_cast(a);
 
     kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
 
