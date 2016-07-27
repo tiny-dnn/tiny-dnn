@@ -47,7 +47,7 @@ option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
 option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF)
-option(USE_LIBDNN "Build tiny-cnn with OpenCL library support" OFF)
+option(USE_LIBDNN "Build tiny-cnn with GreenteaLibDNN library support" OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
@@ -101,7 +101,7 @@ if(USE_OMP AND OPENMP_FOUND)
     # tiny-cnn does not support mutiple multithreading backends.
     set(USE_TBB OFF)
     add_definitions(-DCNN_USE_OMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 elseif(USE_OMP AND NOT OPENMP_FOUND)
@@ -115,6 +115,7 @@ endif()
 # Find NNPACK: Acceleration package for neural networks on multi-core CPUs
 find_package(NNPACK QUIET)
 if(USE_NNPACK AND NNPACK_FOUND)
+    message(STATUS "Found NNPACK: ${NNPACK_INCLUDE_DIR}")
     add_definitions(-DCNN_USE_NNPACK)
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
@@ -131,15 +132,16 @@ endif()
 # we enable standard C++11 multithread support.
 if((NOT USE_TBB) AND (NOT USE_OMP))
     #list(APPEND EXTRA_C_FLAGS -pthread)
-    set(USE_THREADS ON)
+    set(USE_PTHREAD ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    message(STATUS "TBB and OMP disabled: Using Threads instead.")
+    message(STATUS "TBB and OMP disabled: Using Pthread instead.")
 else((NOT USE_TBB) AND (NOT USE_OMP))
-    set(USE_THREADS OFF)
+    set(USE_PTHREAD OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
 
 find_package(OpenCL QUIET)
 if(USE_OPENCL AND OpenCL_FOUND)
+    message(STATUS "Found OpenCL: ${OpenCL_INCLUDE_DIRS}")
     #add_definitions(-DCNN_HAVE_OPENCL)
     add_definitions(-DUSE_OPENCL)
     include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
@@ -153,6 +155,7 @@ endif()
 
 find_package(GreenteaLibDNN QUIET)
 if(USE_LIBDNN AND GreenteaLibDNN_FOUND)
+    message(STATUS "Found GreenteaLibDNN: ${GREENTEA_INCLUDE_DIRS}")
     add_definitions(-DCNN_USE_LIBDNN)
     include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
     list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
@@ -209,7 +212,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     # USE_TBB is enabled? I got the following errors during linkage:
     # /usr/bin/ld: CMakeFiles/tiny_cnn_test.dir/test.cpp.o: undefined reference to symbol 'pthread_create@@GLIBC_2.2.5'
     # //lib/x86_64-linux-gnu/libpthread.so.0: error adding symbols: DSO missing from command line 
-    set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -pthread")
+    if(NOT USE_PTHREAD)
+        set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -pthread")
+    endif(NOT USE_PTHREAD)
 
 elseif(WIN32) # MSVC
 	if(USE_SSE)
@@ -334,6 +339,6 @@ endif(BUILD_DOCS)
 ####
 # Configuration summary
 include(cmake/summary.cmake)
-tinycnn_print_configuration_summary()
+tinydnn_print_configuration_summary()
 
 
