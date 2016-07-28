@@ -225,12 +225,25 @@ TEST(convolutional, fprop_nnp) {
 //#ifdef CNN_USE_LIBDNN
 #ifdef USE_OPENCL
 TEST(convolutional, fprop_dnn) {
-    typedef network<sequential> CNN;
-    CNN nn;
+   
+    // for GPU usage is recomended to use start session
+    session my_session("my_session");
 
+    // let's initialize a GPU device with id 0
+    gpu_device my_gpu_device(0);
+
+    // let's initialize a simple convoltional layer
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::libdnn);
+
+    // we need to do a couple of things before (not matters the order)
+
+    // 1. register the device as a list to the session
+    my_session.register_device({ my_gpu_device });
     
+    // 2. register the layer/op to a device
+    my_gpu_device.register_op({ &l });
+
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
     auto create_simple_tensor = [](size_t vector_size) {
         return tensor_t(1, vec_t(vector_size));

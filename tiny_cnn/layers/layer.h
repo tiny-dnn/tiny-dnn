@@ -36,7 +36,9 @@
 #include <queue>
 
 #include "tiny_cnn/node.h"
+
 #include "tiny_cnn/core/backend.h"
+#include "tiny_cnn/core/framework/device_base.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -97,6 +99,10 @@ class layer : public node {
 
     void set_backend(std::shared_ptr<core::backend> backend) {
         backend_ = backend;
+    }
+
+    void set_device(device_base* device) {
+        device_ = device;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -541,6 +547,8 @@ class layer : public node {
     std::vector<vector_type> out_type_;
 
     std::shared_ptr<core::backend> backend_;
+
+    device_base* device_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

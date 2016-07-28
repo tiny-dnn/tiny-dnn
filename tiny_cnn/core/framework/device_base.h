@@ -47,10 +47,10 @@ class device_base {
         : id_(id), type_(type) {}
 
     // Register an ops to the current device
-    void register_ops(const std::vector<layer*>& ops) {
+    void register_op(const std::vector<layer*>& ops) {
         for (auto o: ops) {
             ops_.push_back(o);
-            // TODO: o.set_device(this);
+            o->set_device(this);
         }
     }
     
