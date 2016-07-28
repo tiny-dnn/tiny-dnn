@@ -35,77 +35,86 @@ namespace tiny_cnn {
 namespace core {
 namespace kernels {
 
-/*void libdnn_conv2d_kernel(const conv_params& params,
-                          const vec_t&       in,
-                          const vec_t&       W,
-                          const vec_t&       bias,
-                          vec_t&             a {*/
 
-float_t* mutable_double_cast(const cl_mem& cl_mem_gpu) {
+float_t* mutable_double_cast(const cl_mem cl_mem_gpu) {
     return static_cast<float_t*>(
                 reinterpret_cast<void*>(cl_mem_gpu));
 }
 
-const float_t* double_cast(const cl_mem& cl_mem_gpu) {
+const float_t* double_cast(const cl_mem cl_mem_gpu) {
     return reinterpret_cast<const float_t*>(
                 reinterpret_cast<const void*>(cl_mem_gpu));
 }
 
-void libdnn_conv2d_kernel(const conv_params&      params,
-                          const cl_mem&           in,
-                          const cl_mem&           W,
-                          const cl_mem&           bias,
-                          const cl_mem&           a,
-                          const cl_context&       context,
-                          const cl_device_id&     device,
-                          const cl_command_queue& queue) {
-    // instantiate pointer to device
+      void libdnn_conv2d_kernel(const conv_params      params,
+                          const cl_mem           in,
+                          const cl_mem           W,
+                          const cl_mem           bias,
+                          const cl_mem           a,
+                          const cl_context       context,
+                          const cl_device_id     device,
+                          const cl_command_queue queue) {
+    // Instantiate pointer to device
     const int id = 0;
     const int list_id = 0;
+
+    // Context needs to be initialized with one device and queue
+    greentea::device::setupViennaCLContext(id, context, device, queue);
 
     std::shared_ptr<greentea::device> dev_ptr =
         std::make_shared<greentea::device>(
             id, list_id, greentea::Backend::BACKEND_OpenCL);
 
-    // initialize device pointer in libdnn
+    // Initialize device pointer in libdnn
     dev_ptr->Init();
- 
-    // error: ‘class greentea::device’ has no member named ‘setupViennaCLContext’
-    dev_ptr->setupViennaCLContext(id, context, device, queue);
 
-    // setup libdnn params
+    // Setup libdnn params
     greentea::LibDNNConfig config;
 
     config.dev_ptr = dev_ptr.get();
 
-    config.in_shape[0] = params.in.depth_;
-    config.in_shape[1] = params.in.height_;
-    config.in_shape[2] = params.in.width_;
- 
-    config.out_shape[0] = params.out.depth_;
-    config.out_shape[1] = params.out.height_;
-    config.out_shape[2] = params.out.width_;
+    // NCHW shape setups
 
-    config.kernel[0] = params.weight.width_;
-    // config.kernel[1] = params.weight.height_;
-
-    // const float_t dx = params.in_padded.width_  - params.in.width_;
     const float_t dy = params.in_padded.height_ - params.in.height_;
+    const float_t dx = params.in_padded.width_  - params.in.width_;
 
-    config.pad[0] = static_cast<size_t>(dy/2);
-    // config.pad[1] = static_cast<size_t>(dx/2);
+    std::vector<int32_t> in_shape = {1, params.in.depth_, params.in.height_, params.in.width_};
+    std::vector<int32_t> out_shape = {1, params.out.depth_, params.out.height_, params.out.width_};
+    std::vector<int32_t> kernel = {params.weight.height_, params.weight.width_};
+    std::vector<int32_t> pad = {dy/2, dx/2};
+    std::vector<int32_t> stride = {params.h_stride, params.w_stride};
+    std::vector<int32_t> dilation = {1, 1};
+
+    config.in_shape = in_shape;
+    config.out_shape = out_shape;
+    config.pad = pad;
+    config.kernel = kernel;
+    config.stride = stride;
+    config.dilation = dilation;
+    config.group = 1;
     
-    config.stride[0] = params.w_stride;
-    // config.stride[1] = params.h_stride;
-
     config.bias_term = params.has_bias;
 
+    // Disables some optimizations but may give more stable results
     config.fast_unsafe_math = false;
+    // Disables backward pass of weights during kernel.Backward();
     config.weights_backward = false;
+    // Disables backward pass for bias during kernel.Backward();
     config.bias_backward    = false;
+    // (Disabling bias and weight backward pass only propagates the data gradient (error))
 
-    // call libdnn forward
-    greentea::LibDNNConv<float_t> kernel(config);
+
+    if (std::is_same<float_t, float>::value ||
+        dev_ptr->CheckCapability("cl_khr_int64_base_atomics")) {
+      config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_ATOMIC;
+      config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_COL2IM_ATOMIC;
+    } else {
+      config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_DIRECT;
+      config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_IM2COL;
+    }
+
+    // Generate the libdnn kernels
+    greentea::LibDNNConv<float_t> compute_kernel(config);
 
     const int batch_sz = 1;
 
@@ -115,20 +124,8 @@ void libdnn_conv2d_kernel(const conv_params&      params,
 
     float_t* output_ptr = mutable_double_cast(a);
 
-    kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
-
-/*
-    const float_t* input_ptr   = reinterpret_cast<const float_t*>(&in[0]);
-    const float_t* weights_ptr = reinterpret_cast<const float_t*>(&W[0]);
-    const float_t* bias_ptr    = reinterpret_cast<const float_t*>(&bias[0]);
-
-    float_t* output_ptr = reinterpret_cast<float_t*>(&a[0]);
-    
-    const int batch_sz = 1;
-    
-    // call libdnn kernel
-    kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
-*/
+    // Call libdnn forward
+    compute_kernel.Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
 }
 
 }  // namespace kernels
