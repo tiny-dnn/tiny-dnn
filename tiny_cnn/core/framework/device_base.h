@@ -37,7 +37,7 @@ namespace tiny_cnn {
 /* Supported devices type
  *
  * */
-enum device_t { CPU, GPU, FPGA };
+enum device_t { CPU, GPU /*, FPGA*/ };
 
 /* Base class modeling a device 
  *
@@ -48,12 +48,7 @@ enum device_t { CPU, GPU, FPGA };
 class device_base {
  public:
     explicit device_base(const device_t type, const int id)
-        : id_(id)
-        , type_(type)
-        , platform_(CLCudaAPI::Platform(size_t{0}))
-        , device_(CLCudaAPI::Device(platform_, id_))
-        , context_(CLCudaAPI::Context(device_))
-        , queue_(CLCudaAPI::Queue(context_, device_)) {}
+        : id_(id), type_(type) {}
 
     // Register an ops to the current device
     void register_op(const std::vector<layer*>& ops) {
@@ -74,20 +69,12 @@ class device_base {
     // Returns the device id
     int id() const { return id_; }
 
- private:
+ protected:
     /* The id of the current device */
     int id_;
 
     /* The type of the device */
     device_t type_;
-
-#ifdef USE_OPENCL
-    CLCudaAPI::Platform platform_;
-    CLCudaAPI::Device device_;
-    CLCudaAPI::Context context_;
-    CLCudaAPI::Queue queue_;
-
-#endif  // USE_OPENCL
 
     /* A vector of pointers to registered ops.
      * The data is not owned by the current class.
@@ -113,8 +100,35 @@ class cpu_device : public device_base {
  * */
 class gpu_device : public device_base {
  public:
+#ifndef USE_OPENCL
+    explicit gpu_device(const in id)
+            : device_base(device_t::GPU, id) {
+        nn_error("Not compiled with OpenCL");
+    }
+#else
+    // Initializes the CLCudaAPI platform and device.
+    // This initializes the OpenCL/CUDA back-end and
+    // selects a specific device on the platform.
+    // The device class has methods to retrieve properties
+    // such as the device name and vendor.
     explicit gpu_device(const int id)
-        : device_base(device_t::GPU, id) {}
+        : device_base(device_t::GPU, id)
+        , platform_(CLCudaAPI::Platform(size_t{0}))
+        , device_(CLCudaAPI::Device(platform_, id_))
+        , context_(CLCudaAPI::Context(device_))
+        , queue_(CLCudaAPI::Queue(context_, device_)) {
+
+        printf("\n## Initializing...\n");
+        printf(" > Running on device '%s' of '%s'\n",
+                device_.Name().c_str(), device_.Vendor().c_str());
+    }
+
+ private:
+    CLCudaAPI::Platform platform_;
+    CLCudaAPI::Device device_;
+    CLCudaAPI::Context context_;
+    CLCudaAPI::Queue queue_;
+#endif  // USE_OPENCL
 };
 
 }  // namespace tiny_cnn
