@@ -89,7 +89,7 @@ typedef std::size_t cnn_size_t;
  * Returns true if tiny-dnn has been built
  * with LibDNN support. Otherwise returns false.
  */
-bool libdnn_support() {
+bool have_libdnnt() {
 #ifdef CNN_USE_LIBDNN
     return true;
 #else
@@ -97,4 +97,27 @@ bool libdnn_support() {
 #endif
 }
 
+/*
+ * Returns true if tiny-dnn has been built
+ * with OpenCL support. Otherwise returns false.
+ */
+bool have_opencl() {
+#ifdef USE_OPENCL
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*
+ * Returns true if tiny-dnn has been built
+ * with NNPACK support. Otherwise returns false.
+ */
+bool have_nnpack() {
+#ifdef USE_NNPACK
+    return true;
+#else
+    return false;
+#endif
+}
 }
