@@ -106,11 +106,14 @@ class gpu_device : public device_base {
         nn_error("Not compiled with OpenCL");
     }
 #else
-    // Initializes the CLCudaAPI platform and device.
-    // This initializes the OpenCL/CUDA back-end and
-    // selects a specific device on the platform.
-    // The device class has methods to retrieve properties
+    // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
+    // selects a specific device on the platform. The device class has methods to retrieve properties
     // such as the device name and vendor.
+    //
+    // Creates a new CLCudaAPI context and queue for this device. The queue can be used to schedule
+        // commands such as launching a kernel or performing a device-host memory copy.
+        //auto context = CLCudaAPI::Context(device);
+
     explicit gpu_device(const int id)
         : device_base(device_t::GPU, id)
         , platform_(CLCudaAPI::Platform(size_t{0}))

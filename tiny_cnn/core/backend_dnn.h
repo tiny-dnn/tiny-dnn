@@ -83,10 +83,10 @@ class dnn_backend : public backend {
         // selects a specific device on the platform. The device class has methods to retrieve properties
         // such as the device name and vendor. More examples of device properties are given in the
         // `device_info.cc` sample program. 
-        printf("\n## Initializing...\n");
+        //printf("\n## Initializing...\n");
         auto platform = CLCudaAPI::Platform(platform_id);
         auto device = CLCudaAPI::Device(platform, device_id);
-        printf(" > Running on device '%s' of '%s'\n", device.Name().c_str(), device.Vendor().c_str());
+        //printf(" > Running on device '%s' of '%s'\n", device.Name().c_str(), device.Vendor().c_str());
 
         // Creates a new CLCudaAPI context and queue for this device. The queue can be used to schedule
         // commands such as launching a kernel or performing a device-host memory copy.
@@ -94,7 +94,7 @@ class dnn_backend : public backend {
         auto queue = CLCudaAPI::Queue(context, device);
 
         // Creates a new CLCudaAPI event to be able to time kernels
-        auto event = CLCudaAPI::Event();
+        // auto event = CLCudaAPI::Event();
 
 		// Creates a new program based on the kernel string. Note that the kernel string is moved-out when
 		// constructing the program to save copying: it should no longer be used in the remainder of this

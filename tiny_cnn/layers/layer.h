@@ -105,6 +105,28 @@ class layer : public node {
         device_ = device;
     }
 
+    // Creates a new program based on the kernel string. Note that the kernel string is moved-out when
+	// constructing the program to save copying: it should no longer be used in the remainder of this
+	// function.
+    void init_kernel(const std::string& program_string,
+                     const std::vector<std::string>& compiler_options) {
+#ifdef USE_OPENCL
+        // TODO(edgar): we need to retrieve device context for per device
+        // so that there must be a link between layer and device.
+        /* auto program = CLCudaAPI::Program(context, std::move(program_string));
+
+		// Builds this program and checks for any compilation errors. If there are any, they are printed
+  		// and execution is halted.
+  		printf("## Compiling the kernel...\n");
+  		auto build_status = program.Build(device, compiler_options);
+  		if (build_status != CLCudaAPI::BuildStatus::kSuccess) {
+    		auto message = program.GetBuildInfo(device);
+    		printf(" > Compiler error(s)/warning(s) found:\n%s\n", message.c_str());
+    		return;
+		}*/
+#endif  // USE_OPENCL
+    }
+
     /////////////////////////////////////////////////////////////////////////
     // getter
 
