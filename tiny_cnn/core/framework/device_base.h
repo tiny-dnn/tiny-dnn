@@ -114,20 +114,31 @@ class gpu_device : public device_base {
     // such as the device name and vendor.
     //
     // Creates a new CLCudaAPI context and queue for this device. The queue can be used to schedule
-        // commands such as launching a kernel or performing a device-host memory copy.
-        //auto context = CLCudaAPI::Context(device);
+    // commands such as launching a kernel or performing a device-host memory copy.
 
     explicit gpu_device(const int id)
-        : device_base(device_t::GPU, id)
-        , platform_(CLCudaAPI::Platform(size_t{0}))
-        , device_(CLCudaAPI::Device(platform_, id_))
-        , context_(CLCudaAPI::Context(device_))
-        , queue_(CLCudaAPI::Queue(context_, device_)) {
+            : device_base(device_t::GPU, id)
+            , platform_(CLCudaAPI::Platform(size_t{0}))
+            , device_(CLCudaAPI::Device(platform_, id_))
+            , context_(CLCudaAPI::Context(device_))
+            , queue_(CLCudaAPI::Queue(context_, device_)) {
 
         printf("\n## Initializing...\n");
         printf(" > Running on device '%s' of '%s'\n",
                 device_.Name().c_str(), device_.Vendor().c_str());
     }
+
+    // Returns C++11 device platform
+    CLCudaAPI::Platform platform() const { return platform_; }
+
+    // Returns C++11 device
+    CLCudaAPI::Device device() const { return device_; }
+
+    // Returns C++11 context
+    CLCudaAPI::Context context() const { return context_; }
+
+    // Returns C++11 queue
+    CLCudaAPI::Queue queue() const { return queue_; }
 
  private:
     CLCudaAPI::Platform platform_;
