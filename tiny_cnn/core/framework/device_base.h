@@ -69,6 +69,9 @@ class device_base {
     // Returns the device id
     int id() const { return id_; }
 
+    // Returns the device linked ops
+    std::vector<layer*> ops() const { return ops_; }
+
  protected:
     /* The id of the current device */
     int id_;

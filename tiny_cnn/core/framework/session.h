@@ -115,7 +115,25 @@ class session {
 
  private:
     void tune_kernels() {
-
+        for (auto d: devices_) {
+            for (auto o: d->ops()) {
+               // TODO(edgar): decide what to do here
+               // if (o->layer_type() == "convolution" &&
+               //     tiny_dnn::have_libdnn()) {
+               //     o->tune_kernel(d->comtext(),
+               //                    d->device(),
+               //                    d->queue(),
+               //                    d->id(),
+               //                    d->id_list(),
+               //                    o->params());
+               // } else {
+               //     o->tune_kernel(o->program_string(),
+               //                    o->compiler_options(),
+               //                    d->context(),
+               //                    d->device());
+               // }
+            }
+        }
     }
 
     /* The session name */

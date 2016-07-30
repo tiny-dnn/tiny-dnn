@@ -39,6 +39,7 @@
 
 #include "tiny_cnn/core/backend.h"
 #include "tiny_cnn/core/framework/device_base.h"
+#include "tiny_cnn/core/params/conv_params.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -47,6 +48,10 @@
 
 #include "tiny_cnn/optimizers/optimizer.h"
 #include "tiny_cnn/activations/activation_function.h"
+
+#ifdef CNN_USE_LIBDNN
+#include "libdnn.hpp"
+#endif
 
 namespace tiny_cnn {
 
@@ -74,13 +79,14 @@ class layer : public node {
      **/
     layer(const std::vector<vector_type>& in_type,
           const std::vector<vector_type>& out_type)
-            : node(in_type.size(), out_type.size()),
-              initialized_(false),
-              parallelize_(true),
-              in_channels_(in_type.size()),
-              out_channels_(out_type.size()),
-              in_type_(in_type),
-              out_type_(out_type) {
+            : node(in_type.size(), out_type.size())
+            , initialized_(false)
+            , parallelize_(true)
+            , in_channels_(in_type.size())
+            , out_channels_(out_type.size())
+            , in_type_(in_type)
+            , out_type_(out_type)
+            , kernel_(nullptr) {
         weight_init_ = std::make_shared<weight_init::xavier>();
         bias_init_ = std::make_shared<weight_init::constant>();
     }
@@ -101,19 +107,16 @@ class layer : public node {
         backend_ = backend;
     }
 
-    void set_device(device_base* device) {
-        device_ = device;
-    }
-
     // Creates a new program based on the kernel string. Note that the kernel string is moved-out when
 	// constructing the program to save copying: it should no longer be used in the remainder of this
 	// function.
-    void init_kernel(const std::string& program_string,
-                     const std::vector<std::string>& compiler_options) {
-#ifdef USE_OPENCL
-        // TODO(edgar): we need to retrieve device context for per device
-        // so that there must be a link between layer and device.
-        /* auto program = CLCudaAPI::Program(context, std::move(program_string));
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+    void tune_kernel(const std::string& program_string,
+                     std::vector<std::string>& compiler_options,
+                     const CLCudaAPI::Context& context,
+                     const CLCudaAPI::Device& device) {
+        auto program = CLCudaAPI::Program(
+            context, std::move(program_string));
 
 		// Builds this program and checks for any compilation errors. If there are any, they are printed
   		// and execution is halted.
@@ -121,11 +124,104 @@ class layer : public node {
   		auto build_status = program.Build(device, compiler_options);
   		if (build_status != CLCudaAPI::BuildStatus::kSuccess) {
     		auto message = program.GetBuildInfo(device);
-    		printf(" > Compiler error(s)/warning(s) found:\n%s\n", message.c_str());
+    		printf(" > Compiler error(s)/warning(s) found:\n%s\n",
+                    message.c_str());
     		return;
-		}*/
-#endif  // USE_OPENCL
+		}
+        
+        // setup op kernel
+        kernel_ = CLCudaAPI::Kernel(program, layer_type());
     }
+#endif  // USE_OPENCL
+
+#ifdef CNN_USE_LIBDNN
+    void tune_kernel(const CLCudaAPI::Context& context,
+                     const CLCudaAPI::Device& device,
+                     const CLCudaAPI::Queue& queue,
+                     const int id,
+                     const int id_list,
+                     const core::conv_params& params) {
+        greentea::device::setupViennaCLContext(
+                id, context(), device(), queue());
+
+        std::shared_ptr<greentea::device> dev_ptr =
+            std::make_shared<greentea::device>(
+                id, id_list, greentea::Backend::BACKEND_OpenCL);
+
+        // Initialize device pointer in libdnn
+        dev_ptr->Init();
+
+        // Setup libdnn params
+        greentea::LibDNNConfig config;
+
+        config.dev_ptr = dev_ptr.get();
+
+        // NCHW shape setups
+
+        const float_t dy = params.in_padded.height_ - params.in.height_;
+        const float_t dx = params.in_padded.width_  - params.in.width_;
+
+        std::vector<int32_t> in_shape = {
+            1,
+            params.in.depth_,
+            params.in.height_,
+            params.in.width_
+        };
+
+        std::vector<int32_t> out_shape = {
+            1,
+            params.out.depth_,
+            params.out.height_,
+            params.out.width_
+        };
+
+        std::vector<int32_t> kernel = {
+            params.weight.height_,
+            params.weight.width_
+        };
+
+        std::vector<int32_t> pad = { dy/2, dx/2 };
+    
+        std::vector<int32_t> stride = {
+            params.h_stride,
+            params.w_stride
+        };
+
+        std::vector<int32_t> dilation = { 1, 1 };
+
+        config.in_shape = in_shape;
+        config.out_shape = out_shape;
+        config.pad = pad;
+        config.kernel = kernel;
+        config.stride = stride;
+        config.dilation = dilation;
+        config.group = 1;
+    
+        config.bias_term = params.has_bias;
+
+        // Disables some optimizations but may give more stable results
+        config.fast_unsafe_math = false;
+        // Disables backward pass of weights during kernel.Backward();
+        config.weights_backward = false;
+        // Disables backward pass for bias during kernel.Backward();
+        config.bias_backward    = false;
+        // (Disabling bias and weight backward pass only propagates the data gradient (error))
+
+        if (std::is_same<float_t, float>::value ||
+            dev_ptr->CheckCapability("cl_khr_int64_base_atomics")) {
+            config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_ATOMIC;
+            config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_COL2IM_ATOMIC;
+        } else {
+            config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_DIRECT;
+            config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_IM2COL;
+        }
+
+        // Generate the libdnn kernels
+        // TODO(edgar): it should somehow be a parsistent attribute
+        // kernel_ = greentea::LibDNNConv<float_t>(config);
+    }
+
+#endif
 
     /////////////////////////////////////////////////////////////////////////
     // getter
@@ -570,7 +666,12 @@ class layer : public node {
 
     std::shared_ptr<core::backend> backend_;
 
-    device_base* device_;
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+    CLCudaAPI::Kernel kernel_;
+    
+    // TODO(edgar): check how to switch this
+    // greentea::LibDNNConv<float_t> kernel_;
+#endif  // USE_OPENCL OR USE_CUDA
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;
