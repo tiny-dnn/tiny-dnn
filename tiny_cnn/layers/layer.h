@@ -132,7 +132,7 @@ class layer : public node {
         // setup op kernel
         kernel_ = CLCudaAPI::Kernel(program, layer_type());
     }
-#endif  // USE_OPENCL
+#endif  // USE_OPENCL OR USE_CUDA
 
 #ifdef CNN_USE_LIBDNN
     void tune_kernel(const CLCudaAPI::Context& context,
@@ -234,6 +234,8 @@ class layer : public node {
     }
 
     std::shared_ptr<core::backend> get_backend() { return backend_; }
+
+    core::params params() const { return params_; }
 
     ///< number of incoming edges in this layer
     cnn_size_t in_channels() const { return in_channels_; }
@@ -672,6 +674,8 @@ class layer : public node {
     // TODO(edgar): check how to switch this
     // greentea::LibDNNConv<float_t> kernel_;
 #endif  // USE_OPENCL OR USE_CUDA
+
+    core::params params_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

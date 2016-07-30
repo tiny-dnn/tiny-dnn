@@ -116,21 +116,21 @@ class session {
  private:
     void tune_kernels() {
         for (auto d: devices_) {
-            for (auto o: d->ops()) {
+            for (auto op: d->ops()) {
                 // TODO(edgar): decide what to do here
-                if (o->layer_type() == "convolution" &&
+                if (op->layer_type() == "conv" &&
                     tiny_cnn::have_libdnn()) {
-               //     o->tune_kernel(d->comtext(),
-               //                    d->device(),
-               //                    d->queue(),
-               //                    d->id(),
-               //                    d->id_list(),
-               //                    o->params());
+                        /*op->tune_kernel(d->context(),
+                                        d->device(),
+                                        d->queue(),
+                                        d->id(),
+                                        d->id_list(),
+                                        op->params());*/
                 } else {
-               //     o->tune_kernel(o->program_string(),
-               //                    o->compiler_options(),
-               //                    d->context(),
-               //                    d->device());
+                    /*op->tune_kernel(o->program_string(),
+                                    o->compiler_options(),
+                                    d->context(),
+                                    d->device());*/
                 }
             }
         }
