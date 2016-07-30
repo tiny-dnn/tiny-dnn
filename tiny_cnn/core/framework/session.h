@@ -51,10 +51,9 @@ class session {
     void schedule_session(/* network<sequential>& net */);
 
     // will call forward or backward methods
-    void run_session(/* data */);
-    
-    // will init device context
-    void init_session() {}
+    void run() {
+        tune_kernels();
+    }
 
     // Returns the session name
     std::string name() const { return name_; }
@@ -115,9 +114,13 @@ class session {
 #endif
 
  private:
+    void tune_kernels() {
+
+    }
+
     /* The session name */
     std::string name_;
-    
+
     /* A vector of pointers to registered devices.
      * The data is not owned by the current class.
      * */

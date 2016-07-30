@@ -28,6 +28,10 @@
 
 #include "tiny_cnn/layers/layer.h"
 
+#ifdef USE_OPENCL
+#include "third_party/CLCudaAPI/clpp11.h"
+#endif
+
 namespace tiny_cnn {
 
 /* Supported devices type
@@ -44,16 +48,26 @@ enum device_t { CPU, GPU, FPGA };
 class device_base {
  public:
     explicit device_base(const device_t type, const int id)
-        : id_(id), type_(type) {}
+        : id_(id)
+        , type_(type)
+        , platform_(CLCudaAPI::Platform(size_t{0}))
+        , device_(CLCudaAPI::Device(platform_, id_))
+        , context_(CLCudaAPI::Context(device_))
+        , queue_(CLCudaAPI::Queue(context_, device_)) {}
 
     // Register an ops to the current device
     void register_op(const std::vector<layer*>& ops) {
         for (auto o: ops) {
             ops_.push_back(o);
-            o->set_device(this);
+            // o->set_device(this);
         }
     }
-    
+
+    // Inits the device context
+    void init() {
+
+    }
+
     // Returns the device type
     device_t type() const { return type_; }
 
@@ -66,7 +80,15 @@ class device_base {
 
     /* The type of the device */
     device_t type_;
-    
+
+#ifdef USE_OPENCL
+    CLCudaAPI::Platform platform_;
+    CLCudaAPI::Device device_;
+    CLCudaAPI::Context context_;
+    CLCudaAPI::Queue queue_;
+
+#endif  // USE_OPENCL
+
     /* A vector of pointers to registered ops.
      * The data is not owned by the current class.
      * */
