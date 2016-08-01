@@ -239,7 +239,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         /*
         // we need to retrieve device type specified
         // by the user during session setup time
-        device_t device_type = ctx->device_type();
+        device_t device_type = Base::get_device()->type();
 
         // we need to retireve layer backend type
         // specified by the user during layer setup time

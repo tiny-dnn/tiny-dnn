@@ -58,7 +58,7 @@
 #include "tiny_cnn/core/backend.h"
 #include "tiny_cnn/core/params/conv_params.h"
 
-//#include "tiny_cnn/core/framework/device.h"
+#include "tiny_cnn/core/framework/device.fwd.h"
 
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
@@ -142,6 +142,11 @@ class layer : public node {
     core::backend_t backend_type() const;
 
     std::shared_ptr<core::backend> backend();
+
+    device* get_device() const { return device_; }
+    void set_device(device* device) {
+        device_ = device;
+    }
 
     core::params params() const; 
 
@@ -311,6 +316,8 @@ class layer : public node {
     std::vector<vector_type> out_type_;
 
     std::shared_ptr<core::backend> backend_;
+
+    device* device_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     CLCudaAPI::Kernel kernel_;

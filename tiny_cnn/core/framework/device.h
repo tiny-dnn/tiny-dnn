@@ -26,7 +26,7 @@
 */
 #pragma once
 
-#include "tiny_cnn/layers/layer.fwd.h"
+#include "tiny_cnn/core/framework/device.fwd.h"
 
 #ifdef USE_OPENCL
 #include "third_party/CLCudaAPI/clpp11.h"
@@ -34,82 +34,40 @@
 
 namespace tiny_cnn {
 
-/* Supported devices type
- *
- * */
-enum device_t { CPU, GPU /*, FPGA*/ };
+device::device(const device_t type, const int id)
+    : type_(type), id_(id) {}
 
-/* Base class modeling a device 
- *
- * @param type The type of the device
- * @param id The identification number
- *
- * */
-class device {
- public:
-    explicit device(const device_t type, const int id)
-        : type_(type), id_(id) {}
-
-    // Register an ops to the current device
-    void register_op(const std::vector<layer*>& ops) {
-        for (auto op: ops) {
-            if (!check_availability(op)) {
-                throw nn_error("Missmatched device/backend combination.");
-            }
-            
-            ops_.push_back(op);
+// Register an ops to the current device
+void device::register_op(const std::vector<layer*>& ops) {
+    for (auto op: ops) {
+        if (!check_availability(op)) {
+            throw nn_error("Missmatched device/backend combination.");
         }
+        
+        ops_.push_back(op);
+        op->set_device(this);
     }
+}
 
-    // Inits the device context
-    void init() {
-
+bool device::check_availability(layer* layer) {
+    core::backend_t backend = layer->backend_type();
+    switch (this->type()) {
+        case device_t::CPU:
+            if (backend == core::backend_t::tiny_cnn) return true;
+            if (backend == core::backend_t::nnpack)   return true;
+            if (backend == core::backend_t::avx)      return true;
+            if (backend == core::backend_t::opencl)   return true;
+            break;
+        case device_t::GPU:
+            if (backend == core::backend_t::libdnn)   return true;
+            if (backend == core::backend_t::opencl)   return true;
+            break;
+        default:
+            throw nn_error("Not supported device type. Options: CPU and GPU");
+            break;    
     }
-
-    // Returns the device type
-    device_t type() const { return type_; }
-
-    // Returns the device id
-    int id() const { return id_; }
-
-    // Returns the ids list
-    // TODO(edgar/naibaf7): What does it really mean
-    //  this values?
-    int id_list() const { return id_; }
-
-    // Returns the device linked ops
-    std::vector<layer*> ops() const { return ops_; }
-
- private:
-    bool check_availability(layer* layer) {
-        core::backend_t backend = layer->backend_type();
-        switch (this->type()) {
-            case device_t::CPU:
-                if (backend == core::backend_t::tiny_cnn) return true;
-                if (backend == core::backend_t::nnpack)   return true;
-                if (backend == core::backend_t::avx)      return true;
-                break;
-            case device_t::GPU:
-                if (backend == core::backend_t::libdnn)   return true;
-                break;
-            default:
-                throw nn_error("Not supported device type. Options: CPU and GPU");
-                break;    
-        }
-        return false;
-    }
-
-    /* The type of the device */
-    device_t type_;
-    
-    /* The id of the current device */
-    int id_;
-
-    /* A vector of pointers to registered ops.
-     * The data is not owned by the current class.
-     * */
-    std::vector<layer*> ops_;
-};
+    return false;
+}
 
 
 /* Public interface for a CPU device
@@ -133,7 +91,7 @@ class ocl_device : public device {
 #ifndef USE_OPENCL
     explicit ocl_device(const device_t type, const int id)
             : device(type, id) {
-        nn_error("Not compiled with OpenCL");
+        throw nn_error("Not compiled with OpenCL");
     }
 #else
     // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
@@ -159,7 +117,7 @@ class ocl_device : public device {
     CLCudaAPI::Platform platform() const { return platform_; }
 
     // Returns C++11 device
-    CLCudaAPI::Device device() const { return device_; }
+    CLCudaAPI::Device device_ptr() const { return device_; }
 
     // Returns C++11 context
     CLCudaAPI::Context context() const { return context_; }
