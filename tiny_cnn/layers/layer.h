@@ -55,6 +55,8 @@
 
 namespace tiny_cnn {
 
+class device;
+
 /**
  * base class of all kind of NN layers
  *
@@ -229,11 +231,11 @@ class layer : public node {
     bool get_parallelize() const { return parallelize_; }
     bool get_initialize() const { return initialized_; }
 
-    core::backend_t get_backend_type() const {
+    core::backend_t backend_type() const {
         return backend_->get_type();
     }
 
-    std::shared_ptr<core::backend> get_backend() { return backend_; }
+    std::shared_ptr<core::backend> backend() { return backend_; }
 
     core::params params() const { return params_; }
 

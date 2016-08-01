@@ -51,7 +51,7 @@ TEST(quantized_convolutional, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_conv");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::tiny_cnn);
+    EXPECT_TRUE(l.backend_type() == backend_t::tiny_cnn);
 }
 
 #ifdef CNN_USE_NNPACK

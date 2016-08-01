@@ -58,7 +58,7 @@ public:
     fully_connected_layer(fully_connected_layer&& other)
             : Base(std::move(other))
             , params_(std::move(other.params_)) {
-        init_backend(std::move(Base::get_backend_type()));
+        init_backend(std::move(Base::backend_type()));
     }
 
     size_t fan_in_size() const override {

@@ -34,6 +34,8 @@
 
 namespace tiny_cnn {
 
+class layer;
+
 /* Supported devices type
  *
  * */
@@ -83,7 +85,7 @@ class device {
 
  private:
     bool check_availability(layer* layer) {
-        core::backend_t backend = layer->get_backend_type();
+        /*core::backend_t backend = layer->get_backend_type();
         switch (this->type()) {
             case device_t::CPU:
                 if (backend == core::backend_t::tiny_cnn) return true;
@@ -96,7 +98,7 @@ class device {
             default:
                     nn_error("Not supported device type. Options; CPU and GPU");
                 break;    
-        }
+        }*/
         return false;
     }
 
@@ -118,11 +120,11 @@ class device {
  * @param id The identification number
  *
  * */
-/*class cpu_device : public device {
+class cpu_device : public device {
  public:
     explicit cpu_device(const int id)
         : device(device_t::CPU, id) {}
-};*/
+};
 
 /* Public interface for a GPU device
  *

@@ -208,7 +208,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             , params_(std::move(other.params_))
             , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
             , cws_(std::move(other.cws_)) {
-        init_backend(std::move(Base::get_backend_type()));
+        init_backend(std::move(Base::backend_type()));
     }
 
     ///< number of incoming connections for each output unit
