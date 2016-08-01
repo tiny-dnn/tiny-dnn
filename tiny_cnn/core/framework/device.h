@@ -26,15 +26,13 @@
 */
 #pragma once
 
-#include "tiny_cnn/layers/layer.h"
+#include "tiny_cnn/layers/layer.fwd.h"
 
 #ifdef USE_OPENCL
 #include "third_party/CLCudaAPI/clpp11.h"
 #endif
 
 namespace tiny_cnn {
-
-class layer;
 
 /* Supported devices type
  *
@@ -85,7 +83,7 @@ class device {
 
  private:
     bool check_availability(layer* layer) {
-        /*core::backend_t backend = layer->get_backend_type();
+        core::backend_t backend = layer->backend_type();
         switch (this->type()) {
             case device_t::CPU:
                 if (backend == core::backend_t::tiny_cnn) return true;
@@ -98,7 +96,7 @@ class device {
             default:
                     nn_error("Not supported device type. Options; CPU and GPU");
                 break;    
-        }*/
+        }
         return false;
     }
 
