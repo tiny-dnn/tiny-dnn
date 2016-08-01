@@ -68,6 +68,11 @@ class session {
         }
     }
 
+    void register_op(const device& dev, const layer& op) {
+
+
+    }
+
     // Print the all available devices info
     void print_all_available_devices() {
 #ifdef CNN_HAVE_OPENCL

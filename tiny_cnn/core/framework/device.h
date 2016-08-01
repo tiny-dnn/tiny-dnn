@@ -54,11 +54,10 @@ class device {
     void register_op(const std::vector<layer*>& ops) {
         for (auto op: ops) {
             if (!check_availability(op)) {
-                nn_error("Missmatch device/backend combination");
+                throw nn_error("Missmatched device/backend combination.");
             }
             
             ops_.push_back(op);
-            // o->set_device(this);
         }
     }
 
@@ -94,7 +93,7 @@ class device {
                 if (backend == core::backend_t::libdnn)   return true;
                 break;
             default:
-                    nn_error("Not supported device type. Options; CPU and GPU");
+                throw nn_error("Not supported device type. Options: CPU and GPU");
                 break;    
         }
         return false;
@@ -118,9 +117,9 @@ class device {
  * @param id The identification number
  *
  * */
-class cpu_device : public device {
+class serial_device : public device {
  public:
-    explicit cpu_device(const int id)
+    explicit serial_device(const int id)
         : device(device_t::CPU, id) {}
 };
 
@@ -129,11 +128,11 @@ class cpu_device : public device {
  * @param id The identification number
  *
  * */
-/*class gpu_device : public device {
+class ocl_device : public device {
  public:
 #ifndef USE_OPENCL
-    explicit gpu_device(const in id)
-            : device(device_t::GPU, id) {
+    explicit ocl_device(const device_t type, const int id)
+            : device(type, id) {
         nn_error("Not compiled with OpenCL");
     }
 #else
@@ -144,8 +143,8 @@ class cpu_device : public device {
     // Creates a new CLCudaAPI context and queue for this device. The queue can be used to schedule
     // commands such as launching a kernel or performing a device-host memory copy.
 
-    explicit gpu_device(const int id)
-            : device(device_t::GPU, id)
+    explicit ocl_device(const device_t type, const int id)
+            : device(type, id)
             , platform_(CLCudaAPI::Platform(size_t{0}))
             , device_(CLCudaAPI::Device(platform_, id_))
             , context_(CLCudaAPI::Context(device_))
@@ -174,6 +173,6 @@ class cpu_device : public device {
     CLCudaAPI::Context context_;
     CLCudaAPI::Queue queue_;
 #endif  // USE_OPENCL
-};*/
+};
 
 }  // namespace tiny_cnn

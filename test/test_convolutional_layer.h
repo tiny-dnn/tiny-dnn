@@ -244,6 +244,8 @@ TEST(convolutional, fprop_dnn) {
     // 2. register the layer/op to a device
     my_gpu_device.register_op({ &l });
 
+    my_session.register_op(my_gpu_device, l);
+
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
     auto create_simple_tensor = [](size_t vector_size) {
         return tensor_t(1, vec_t(vector_size));

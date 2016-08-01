@@ -58,6 +58,8 @@
 #include "tiny_cnn/core/backend.h"
 #include "tiny_cnn/core/params/conv_params.h"
 
+//#include "tiny_cnn/core/framework/device.h"
+
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
