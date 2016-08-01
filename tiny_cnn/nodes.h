@@ -245,7 +245,7 @@ class sequential : public nodes {
         nodes_.front()->set_in_data({ reordered_data[0] });
 
         for (auto l : nodes_) {
-            if (l->get_initialize()) {
+            if (l->initialized()) {
                 l->forward();
             } else {
                 throw nn_error("Layer " + l->layer_type() + " not initialized.");
