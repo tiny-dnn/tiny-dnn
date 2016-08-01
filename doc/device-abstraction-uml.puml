@@ -1,5 +1,4 @@
 @startuml
-
 class Session {
  - String name
  - void tuneKernels()
@@ -79,5 +78,4 @@ MaxPoolingLayer *-- Backend : backend
 Backend <|-- TinyCNNBackend
 Backend <|-- NNPackBackend
 Backend <|-- LibDNNBackend
-
 @enduml
