@@ -42,8 +42,8 @@ TEST(quantized_deconvolutional, setup_tiny) {
     EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.weights().size(), 2);       // the weights vector size
+    EXPECT_EQ(l.weight_grads().size(), 2);  // the weights vector size
     EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
     EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
@@ -66,8 +66,8 @@ TEST(quantized_deconvolutional, setup_nnp) {
     EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.weights().size(), 2);       // the weights vector size
+    EXPECT_EQ(l.weight_grads().size(), 2);  // the weights vector size
     EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
     EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 3);          // num of input data types

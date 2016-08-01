@@ -299,8 +299,8 @@ TEST(network, weight_init) {
     net.weight_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->get_weights()[0];
-    vec_t& w2 = *net[1]->get_weights()[0];
+    vec_t& w1 = *net[0]->weights()[0];
+    vec_t& w2 = *net[1]->weights()[0];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -320,8 +320,8 @@ TEST(network, weight_init_per_layer) {
     net[1]->weight_init(weight_init::constant(1.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->get_weights()[0];
-    vec_t& w2 = *net[1]->get_weights()[0];
+    vec_t& w1 = *net[0]->weights()[0];
+    vec_t& w2 = *net[1]->weights()[0];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -339,8 +339,8 @@ TEST(network, bias_init) {
     net.bias_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->get_weights()[1];
-    vec_t& w2 = *net[1]->get_weights()[1];
+    vec_t& w1 = *net[0]->weights()[1];
+    vec_t& w2 = *net[1]->weights()[1];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -359,8 +359,8 @@ TEST(network, bias_init_per_layer) {
     net[1]->bias_init(weight_init::constant(1.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->get_weights()[1];
-    vec_t& w2 = *net[1]->get_weights()[1];
+    vec_t& w1 = *net[0]->weights()[1];
+    vec_t& w2 = *net[1]->weights()[1];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
