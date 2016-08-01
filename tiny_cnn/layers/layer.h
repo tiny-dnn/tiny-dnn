@@ -228,7 +228,7 @@ class layer : public node {
     /////////////////////////////////////////////////////////////////////////
     // getter
 
-    bool get_parallelize() const { return parallelize_; }
+    bool parallelize() const { return parallelize_; }
     bool get_initialize() const { return initialized_; }
 
     core::backend_t backend_type() const {

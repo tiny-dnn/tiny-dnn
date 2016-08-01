@@ -68,7 +68,7 @@ TEST(max_pool, forward) {
 TEST(max_pool, setup_tiny) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_cnn);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 1);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 16);            // size of input tensors
@@ -91,7 +91,7 @@ TEST(max_pool, setup_tiny) {
 TEST(max_pool, setup_nnp) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::nnpack);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 1);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 16);            // size of input tensors

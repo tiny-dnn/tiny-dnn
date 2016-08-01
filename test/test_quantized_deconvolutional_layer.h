@@ -35,7 +35,7 @@ TEST(quantized_deconvolutional, setup_tiny) {
     quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::tiny_cnn);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 4);            // size of input tensors
