@@ -382,14 +382,14 @@ private:
     }
 
     void init() {
-        deconv_layer_worker_specific_storage& cws =  deconv_layer_worker_storage_;
+        deconv_layer_worker_specific_storage& dws =  deconv_layer_worker_storage_;
 
         if (params_.pad_type == padding::same) {
-            cws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t(0)));
-            cws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t(0)));
+            dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t(0)));
+            dws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t(0)));
         }
         else {
-            cws.curr_out_buf_.clear();
+            dws.curr_out_buf_.clear();
         }
     }
 
@@ -454,16 +454,16 @@ private:
     }
 
     void copy_and_unpad_output(const tensor_t& out) {
-        deconv_layer_worker_specific_storage& cws =
+        deconv_layer_worker_specific_storage& dws =
             deconv_layer_worker_storage_;
 
-        cws.curr_out_buf_ = tensor_t(out.size(), vec_t(params_.out_unpadded.width_*
+        dws.curr_out_buf_ = tensor_t(out.size(), vec_t(params_.out_unpadded.width_*
                                   params_.out_unpadded.height_*
                                   params_.out_unpadded.depth_,0));
-        tensor_t* dst_tensor = &cws.curr_out_buf_;
+        tensor_t* dst_tensor = &dws.curr_out_buf_;
 
         if (params_.pad_type == padding::valid) {
-            cws.curr_out_unpadded_ = &out;
+            dws.curr_out_unpadded_ = &out;
         } else {
             // make unpadded version in order to restore scale in fprop/bprop
             for (cnn_size_t sample = 0; sample < out.size(); sample++) {
@@ -486,7 +486,7 @@ private:
                                   pimg);
                     }
                 }
-                cws.curr_out_unpadded_ = &cws.curr_out_buf_;
+                dws.curr_out_unpadded_ = &dws.curr_out_buf_;
             }
         }
     }
