@@ -265,16 +265,16 @@ class sequential : public nodes {
             auto head = nodes_[nodes_.size()-2];
             auto tail = nodes_[nodes_.size()-1];
             connect(head, tail, 0, 0);
-            auto out = head->get_outputs();
-            auto in = tail->get_inputs();
+            auto out = head->outputs();
+            auto in = tail->inputs();
         }
         check_connectivity();
     }
 
     void check_connectivity() {
         for (cnn_size_t i = 0; i < nodes_.size() - 1; i++) {
-            auto out = nodes_[i]->get_outputs();
-            auto in = nodes_[i+1]->get_inputs();
+            auto out = nodes_[i]->outputs();
+            auto in = nodes_[i+1]->inputs();
 
             if (out[0] != in[0]) {
                 throw nn_error("");

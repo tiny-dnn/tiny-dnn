@@ -77,8 +77,8 @@ TEST(max_pool, setup_tiny) {
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
     EXPECT_EQ(l.weights().size(), 0);       // the weights vector size
     EXPECT_EQ(l.weight_grads().size(), 0);  // the weights vector size
-    EXPECT_EQ(l.get_inputs().size(), 1);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.inputs().size(), 1);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 1);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
@@ -100,8 +100,8 @@ TEST(max_pool, setup_nnp) {
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
     EXPECT_EQ(l.weights().size(), 0);       // the weights vector size
     EXPECT_EQ(l.weight_grads().size(), 0);  // the weights vector size
-    EXPECT_EQ(l.get_inputs().size(), 1);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.inputs().size(), 1);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 1);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections

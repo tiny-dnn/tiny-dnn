@@ -44,8 +44,8 @@ TEST(quantized_convolutional, setup_tiny) {
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
     EXPECT_EQ(l.weights().size(), 2);       // the weights vector size
     EXPECT_EQ(l.weight_grads().size(), 2);  // the weights vector size
-    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections

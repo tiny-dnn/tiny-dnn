@@ -309,7 +309,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<edgeptr_t> get_inputs() {
+    std::vector<edgeptr_t> inputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             nodes.push_back(ith_in_node(i));
@@ -317,7 +317,7 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() {
+    std::vector<edgeptr_t> outputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
@@ -325,7 +325,7 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() const {
+    std::vector<edgeptr_t> outputs() const {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(const_cast<layerptr_t>(this)->ith_out_node(i));
@@ -466,7 +466,7 @@ class layer : public node {
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t channel = 0) const {
-        const vec_t* output = &(*(get_outputs()[channel]->get_data()))[0];
+        const vec_t* output = &(*(outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
 
@@ -519,7 +519,7 @@ class layer : public node {
         setup(false);
         set_out_grads(out_grads);
         backward();
-        return map_<tensor_t>(get_inputs(), [](edgeptr_t e) {
+        return map_<tensor_t>(inputs(), [](edgeptr_t e) {
             return *e->get_gradient();
         });
     }
