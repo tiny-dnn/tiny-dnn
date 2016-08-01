@@ -38,7 +38,7 @@
 #include "tiny_cnn/node.h"
 
 #include "tiny_cnn/core/backend.h"
-#include "tiny_cnn/core/framework/device_base.h"
+#include "tiny_cnn/core/framework/device.h"
 #include "tiny_cnn/core/params/conv_params.h"
 
 #include "tiny_cnn/util/util.h"

@@ -230,7 +230,7 @@ TEST(convolutional, fprop_dnn) {
     session my_session("my_session");
 
     // let's initialize a GPU device with id 0
-    gpu_device my_gpu_device(0);
+    device my_gpu_device(device_t::GPU, 0);
 
     // let's initialize a simple convoltional layer
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,

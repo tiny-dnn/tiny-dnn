@@ -24,5 +24,5 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/framework/device_base.h"
+#include "tiny_cnn/core/framework/device.h"
 #include "tiny_cnn/core/framework/session.h"

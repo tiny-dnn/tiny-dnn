@@ -62,7 +62,7 @@ class session {
     cnn_size_t num_devices() const { return devices_.size(); }
 
     // Registers a device or a set of devices to the current session
-    void register_device(const std::vector<device_base>& devices) {
+    void register_device(const std::vector<device>& devices) {
         for (auto d: devices) {
             devices_.push_back(&d);
         }
@@ -142,7 +142,7 @@ class session {
     /* A vector of pointers to registered devices.
      * The data is not owned by the current class.
      * */
-    std::vector<device_base*> devices_;
+    std::vector<device*> devices_;
 };
 
 }  // namespace tiny_cnn

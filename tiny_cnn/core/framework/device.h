@@ -45,15 +45,19 @@ enum device_t { CPU, GPU /*, FPGA*/ };
  * @param id The identification number
  *
  * */
-class device_base {
+class device {
  public:
-    explicit device_base(const device_t type, const int id)
-        : id_(id), type_(type) {}
+    explicit device(const device_t type, const int id)
+        : type_(type), id_(id) {}
 
     // Register an ops to the current device
     void register_op(const std::vector<layer*>& ops) {
-        for (auto o: ops) {
-            ops_.push_back(o);
+        for (auto op: ops) {
+            if (!check_availability(op)) {
+                nn_error("Missmatch device/backend combination");
+            }
+            
+            ops_.push_back(op);
             // o->set_device(this);
         }
     }
@@ -77,12 +81,30 @@ class device_base {
     // Returns the device linked ops
     std::vector<layer*> ops() const { return ops_; }
 
- protected:
-    /* The id of the current device */
-    int id_;
+ private:
+    bool check_availability(layer* layer) {
+        core::backend_t backend = layer->get_backend_type();
+        switch (this->type()) {
+            case device_t::CPU:
+                if (backend == core::backend_t::tiny_cnn) return true;
+                if (backend == core::backend_t::nnpack)   return true;
+                if (backend == core::backend_t::avx)      return true;
+                break;
+            case device_t::GPU:
+                if (backend == core::backend_t::libdnn)   return true;
+                break;
+            default:
+                    nn_error("Not supported device type. Options; CPU and GPU");
+                break;    
+        }
+        return false;
+    }
 
     /* The type of the device */
     device_t type_;
+    
+    /* The id of the current device */
+    int id_;
 
     /* A vector of pointers to registered ops.
      * The data is not owned by the current class.
@@ -90,27 +112,28 @@ class device_base {
     std::vector<layer*> ops_;
 };
 
+
 /* Public interface for a CPU device
  *
  * @param id The identification number
  *
  * */
-class cpu_device : public device_base {
+/*class cpu_device : public device {
  public:
     explicit cpu_device(const int id)
-        : device_base(device_t::CPU, id) {}
-};
+        : device(device_t::CPU, id) {}
+};*/
 
 /* Public interface for a GPU device
  *
  * @param id The identification number
  *
  * */
-class gpu_device : public device_base {
+/*class gpu_device : public device {
  public:
 #ifndef USE_OPENCL
     explicit gpu_device(const in id)
-            : device_base(device_t::GPU, id) {
+            : device(device_t::GPU, id) {
         nn_error("Not compiled with OpenCL");
     }
 #else
@@ -122,7 +145,7 @@ class gpu_device : public device_base {
     // commands such as launching a kernel or performing a device-host memory copy.
 
     explicit gpu_device(const int id)
-            : device_base(device_t::GPU, id)
+            : device(device_t::GPU, id)
             , platform_(CLCudaAPI::Platform(size_t{0}))
             , device_(CLCudaAPI::Device(platform_, id_))
             , context_(CLCudaAPI::Context(device_))
@@ -151,6 +174,6 @@ class gpu_device : public device_base {
     CLCudaAPI::Context context_;
     CLCudaAPI::Queue queue_;
 #endif  // USE_OPENCL
-};
+};*/
 
 }  // namespace tiny_cnn
