@@ -101,14 +101,6 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
     const int32_t zero_in_total_space =
         float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
 
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
-
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
-
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
             if (!params.tbl.is_connected(o, inc)) continue;
@@ -138,18 +130,6 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
                                     static_cast<int32_t>(*ppi - offset_input);
                         }
                     }
-                }
-            }
-
-            // here we can consider whether to choose the clamped_output or not;
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
-                    const int32_t output =
-                        ((((pa_quantized[y * params.out.width_ + x] + offset_output) * mult_output) + rounding) >>
-                         shift_output);
-                    const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
-                    const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
-                    // pa_quantized[y * params.out.width_ + x] += output;
                 }
             }
         }
@@ -410,14 +390,6 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
     const int32_t zero_in_total_space =
         float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
 
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
-
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
-
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
             if (!params.tbl.is_connected(o, inc)) continue;
@@ -447,18 +419,6 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
                                     static_cast<int32_t>(*ppi - offset_input);
                         }
                     }
-                }
-            }
-
-            // here we can consider whether to choose the clamped_output or not;
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
-                    const int32_t output =
-                        ((((pa_quantized[y * params.out.width_ + x] + offset_output) * mult_output) + rounding) >>
-                         shift_output);
-                    const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
-                    const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
-                    // pa_quantized[y * params.out.width_ + x] += output;
                 }
             }
         }

@@ -224,7 +224,6 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     }
 
     /**
-     * @param worker_index id of current worker-task
      * @param in_data      input vectors of this layer (data, weight, bias)
      * @param out_data     output vectors
      **/
@@ -243,7 +242,6 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
-     * @param worker_index id of current worker-task
      * @param in_data      input vectors (same vectors as forward_propagation)
      * @param out_data     output vectors (same vectors as forward_propagation)
      * @param out_grad     gradient of output vectors (i-th vector correspond with out_data[i])
@@ -387,7 +385,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
     void copy_and_pad_input(const tensor_t& in) {
         conv_layer_worker_specific_storage& cws = cws_;
-        
+
         cnn_size_t sample_count = in.size();
 
         cws.prev_out_padded_.resize(sample_count);

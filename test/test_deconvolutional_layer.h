@@ -217,9 +217,6 @@ TEST(deconvolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
     nn << deconvolutional_layer<tan_h>(2, 2, 3, 1, 1);
 
-    vec_t a(4, 0.0);
-    label_t t = 3;
-
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -239,9 +236,6 @@ TEST(deconvolutional, gradient_check3) { // rectified - mse
 
     nn << deconvolutional_layer<rectified_linear>(2, 2, 3, 1, 1);
 
-    vec_t a(4, 0.0);
-    label_t t = 3;
-
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -251,9 +245,6 @@ TEST(deconvolutional, gradient_check4) { // identity - mse
     network<sequential> nn;
 
     nn << deconvolutional_layer<identity>(2, 2, 3, 1, 1);
-
-    vec_t a(4, 0.0);
-    label_t t = 3;
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();

@@ -101,10 +101,6 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
     const int32_t mult_output = 1;
     const int32_t shift_output = 0;
 
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
-
     bool use_gemm = false;
     if (use_gemm) {
         std::vector<size_t> shape{params.in_size_, 1, params.out_size_, params.in_size_};
@@ -325,10 +321,6 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
     const int32_t offset_output = 0;
     const int32_t mult_output = 1;
     const int32_t shift_output = 0;
-
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
 
     bool use_gemm = false;
     if (use_gemm) {

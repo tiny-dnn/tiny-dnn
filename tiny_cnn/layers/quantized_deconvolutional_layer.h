@@ -240,7 +240,6 @@ public:
 
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
-     * @param worker_index id of current worker-task
      * @param in_data      input vectors (same vectors as forward_propagation)
      * @param out_data     output vectors (same vectors as forward_propagation)
      * @param out_grad     gradient of output vectors (i-th vector correspond with out_data[i])
