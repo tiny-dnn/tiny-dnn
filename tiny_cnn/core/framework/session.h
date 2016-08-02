@@ -147,7 +147,7 @@ class session {
     /* A vector of pointers to registered devices.
      * The data is not owned by the current class.
      * */
-    std::vector<device*> devices_;
+    std::vector<device_ptr> devices_;
 };
 
 }  // namespace tiny_cnn

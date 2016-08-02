@@ -44,60 +44,39 @@
 */
 #pragma once
 
-#include "tiny_cnn/layers/layer.fwd.h"
+#ifdef USE_OPENCL
+#include "third_party/CLCudaAPI/clpp11.h"
+#endif
+
+#ifdef CNN_USE_LIBDNN 
+#include "libdnn.hpp"
+#endif
 
 namespace tiny_cnn {
 
-/* Supported devices type
- *
- * */
-enum device_t { CPU, GPU /*, FPGA*/ };
-
-class device;
-
-typedef device* device_ptr;
-
-/* Base class modeling a device 
- *
- * @param type The type of the device
- * @param id The identification number
- *
- * */
-class device {
+class KernelLauncher {
  public:
-    explicit device(const device_t type, const int id);
+    KernelLauncher() {}
+};
 
-    // Register an ops to the current device
-    void register_op(const std::vector<layer*>& ops);
+class CLCudaAPIKernelLauncher : public KernelLauncher {
+ public:
+    CLCudaAPIKernelLauncher()
+        : KernelLauncher()
+        , kernel_(nullptr) {}
 
-    // Returns the device type
-    device_t type() const { return type_; }
+ private:
+    std::unique_ptr<CLCudaAPI::Kernel> kernel_;
+};
 
-    // Returns the device id
-    int id() const { return id_; }
-
-    // Returns the ids list
-    // TODO(edgar/naibaf7): What does it really mean
-    //  this values?
-    int id_list() const { return id_; }
-
-    // Returns the device linked ops
-    std::vector<layer*> ops() const { return ops_; }
- 
- protected:
-    /* The type of the device */
-    device_t type_;
-    
-    /* The id of the current device */
-    int id_;
-
-    /* A vector of pointers to registered ops.
-     * The data is not owned by the current class.
-     * */
-    std::vector<layer*> ops_;
+class LibDNNKernelLauncher : public KernelLauncher {
+ public:
+    LibDNNKernelLauncher()
+        : KernelLauncher()
+        , kernel_(nullptr) {}
  
  private:
-    bool check_availability(layer* layer);
+    std::unique_ptr<greentea::LibDNNConv<float_t> > kernel_;
 };
 
 }  // namespace tiny_cnn

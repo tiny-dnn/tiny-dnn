@@ -44,60 +44,49 @@
 */
 #pragma once
 
-#include "tiny_cnn/layers/layer.fwd.h"
+#ifdef USE_OPENCL
+#include "third_party/CLCudaAPI/clpp11.h"
+#endif
 
 namespace tiny_cnn {
 
-/* Supported devices type
- *
- * */
-enum device_t { CPU, GPU /*, FPGA*/ };
-
-class device;
-
-typedef device* device_ptr;
-
-/* Base class modeling a device 
- *
- * @param type The type of the device
- * @param id The identification number
- *
- * */
-class device {
+class DeviceContext {
  public:
-    explicit device(const device_t type, const int id);
+    // Initializes the CLCudaAPI platform and device.
+    // This initializes the OpenCL/CUDA back-end and selects a specific device
+    // on the platform. The device class has methods to retrieve properties such
+    // as the device name and vendor.
+    // Creates a new CLCudaAPI context and queue for this device. The queue can
+    // be used to schedule commands such as launching a kernel or performing a
+    // device-host memory copy.
+    explicit DeviceContext(const int platform_id, const int device_id)
+            : platform_(CLCudaAPI::Platform(platform_id))
+            , device_(CLCudaAPI::Device(platform_, device_id))
+            , context_(CLCudaAPI::Context(device_))
+            , queue_(CLCudaAPI::Queue(context_, device_)) {
+        printf("\n## Initializing...\n");
+        printf(" > Running on device '%s' of '%s'\n",
+                device_.Name().c_str(), device_.Vendor().c_str());
+    }
 
-    // Register an ops to the current device
-    void register_op(const std::vector<layer*>& ops);
+    // Returns C++11 device platform
+    CLCudaAPI::Platform platform() const { return platform_; }
 
-    // Returns the device type
-    device_t type() const { return type_; }
+    // Returns C++11 device
+    CLCudaAPI::Device device_ptr() const { return device_; }
 
-    // Returns the device id
-    int id() const { return id_; }
+    // Returns C++11 context
+    CLCudaAPI::Context context() const { return context_; }
 
-    // Returns the ids list
-    // TODO(edgar/naibaf7): What does it really mean
-    //  this values?
-    int id_list() const { return id_; }
+    // Returns C++11 queue
+    CLCudaAPI::Queue queue() const { return queue_; }
 
-    // Returns the device linked ops
-    std::vector<layer*> ops() const { return ops_; }
- 
- protected:
-    /* The type of the device */
-    device_t type_;
-    
-    /* The id of the current device */
-    int id_;
-
-    /* A vector of pointers to registered ops.
-     * The data is not owned by the current class.
-     * */
-    std::vector<layer*> ops_;
- 
  private:
-    bool check_availability(layer* layer);
+    CLCudaAPI::Platform platform_;
+    CLCudaAPI::Device device_;
+    CLCudaAPI::Context context_;
+    CLCudaAPI::Queue queue_;
 };
 
 }  // namespace tiny_cnn
+

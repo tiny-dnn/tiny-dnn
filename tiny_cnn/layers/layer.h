@@ -38,11 +38,7 @@ layer::layer(const std::vector<vector_type>& in_type,
         , in_channels_(in_type.size())
         , out_channels_(out_type.size())
         , in_type_(in_type)
-        , out_type_(out_type)
-#ifdef USE_OPENCL
-        , kernel_(nullptr)
-#endif
-        {
+        , out_type_(out_type) {
     weight_init_ = std::make_shared<weight_init::xavier>();
     bias_init_ = std::make_shared<weight_init::constant>();
 }
@@ -78,7 +74,7 @@ void layer::tune_kernel(const std::string& program_string,
     }
     
     // setup op kernel
-    kernel_ = CLCudaAPI::Kernel(program, layer_type());
+    // kernel_ = CLCudaAPI::Kernel(program, layer_type());
 }
 #endif  // USE_OPENCL OR USE_CUDA
 

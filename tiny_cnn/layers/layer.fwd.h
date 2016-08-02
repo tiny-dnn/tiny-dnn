@@ -143,8 +143,9 @@ class layer : public node {
 
     std::shared_ptr<core::backend> backend();
 
-    device* get_device() const { return device_; }
-    void set_device(device* device) {
+    device_ptr get_device() { return device_; }
+
+    void set_device(device_ptr device) {
         device_ = device;
     }
 
@@ -317,15 +318,8 @@ class layer : public node {
 
     std::shared_ptr<core::backend> backend_;
 
-    device* device_;
-
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-    CLCudaAPI::Kernel kernel_;
-    
-    // TODO(edgar): check how to switch this
-    // greentea::LibDNNConv<float_t> kernel_;
-#endif  // USE_OPENCL OR USE_CUDA
-
+    // TODO(edgar): check if remove or not
+    device_ptr device_;
     core::params params_;
 
  private:
