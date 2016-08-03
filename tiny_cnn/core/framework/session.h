@@ -61,16 +61,21 @@ class session {
     // Returns the number of registered devices
     cnn_size_t num_devices() const { return devices_.size(); }
 
-    // Registers a device or a set of devices to the current session
-    void register_device(const std::vector<device>& devices) {
-        for (auto d: devices) {
-            devices_.push_back(&d);
-        }
-    }
-
+    // Registers a device and an operation to the current session
     void register_op(const device& dev, const layer& op) {
+        // Given a device and an operation/layer we create
+        // a device pointer in order to be registered.
+        device* device_ptr = device::create(
+                dev.type(), op.backend_type(), dev.id());
 
+        if (!device_ptr) {
+            throw nn_error("Could not allocate device with op");
+        }
 
+        // TODO(edgar): check if device was already registered
+        // if device/op is suitable we register them
+        device_ptr->register_op(op);
+        devices_.push_back(device_ptr);
     }
 
     // Print the all available devices info
@@ -120,25 +125,25 @@ class session {
 
  private:
     void tune_kernels() {
-        for (auto d: devices_) {
+        /*for (auto d: devices_) {
             for (auto op: d->ops()) {
                 // TODO(edgar): decide what to do here
                 if (op->layer_type() == "conv" &&
                     tiny_cnn::have_libdnn()) {
-                        /*op->tune_kernel(d->context(),
+                        op->tune_kernel(d->context(),
                                         d->device(),
                                         d->queue(),
                                         d->id(),
                                         d->id_list(),
-                                        op->params());*/
+                                        op->params());
                 } else {
-                    /*op->tune_kernel(o->program_string(),
+                    op->tune_kernel(o->program_string(),
                                     o->compiler_options(),
                                     d->context(),
-                                    d->device());*/
+                                    d->device());
                 }
             }
-        }
+        }*/
     }
 
     /* The session name */
@@ -147,7 +152,11 @@ class session {
     /* A vector of pointers to registered devices.
      * The data is not owned by the current class.
      * */
-    std::vector<device_ptr> devices_;
+    std::vector<device*> devices_;
+
+    // TODO(edgar): add a map to avoid multiple instances of
+    // a certain type of device.
+    // std::unordered_map<int, device*> devices_;
 };
 
 }  // namespace tiny_cnn

@@ -143,9 +143,9 @@ class layer : public node {
 
     std::shared_ptr<core::backend> backend();
 
-    device_ptr get_device() { return device_; }
+    device* get_device() { return device_; }
 
-    void set_device(device_ptr device) {
+    void set_device(device* device) {
         device_ = device;
     }
 
@@ -319,7 +319,7 @@ class layer : public node {
     std::shared_ptr<core::backend> backend_;
 
     // TODO(edgar): check if remove or not
-    device_ptr device_;
+    device* device_;
     core::params params_;
 
  private:

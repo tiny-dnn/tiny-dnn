@@ -32,41 +32,14 @@
 
 namespace tiny_cnn {
 
+// Default base device constructor
 device::device(const device_t type, const int id)
     : type_(type), id_(id) {}
 
-// Register an ops to the current device
-void device::register_op(const std::vector<layer*>& ops) {
-    for (auto op: ops) {
-        if (!check_availability(op)) {
-            throw nn_error("Missmatched device/backend combination.");
-        }
-        
-        ops_.push_back(op);
-        op->set_device(this);
-    }
+// Regsiter an op to the current device
+void device::register_op(const layer& op) {
+    ops_.push_back(const_cast<layer*>(&op));
 }
-
-bool device::check_availability(layer* layer) {
-    core::backend_t backend = layer->backend_type();
-    switch (this->type()) {
-        case device_t::CPU:
-            if (backend == core::backend_t::tiny_cnn) return true;
-            if (backend == core::backend_t::nnpack)   return true;
-            if (backend == core::backend_t::avx)      return true;
-            if (backend == core::backend_t::opencl)   return true;
-            break;
-        case device_t::GPU:
-            if (backend == core::backend_t::libdnn)   return true;
-            if (backend == core::backend_t::opencl)   return true;
-            break;
-        default:
-            throw nn_error("Not supported device type. Options: CPU and GPU");
-            break;    
-    }
-    return false;
-}
-
 
 /* Public interface for a CPU device
  *
@@ -104,5 +77,43 @@ class ocl_device : public device {
      */
     std::unordered_map<std::string, std::shared_ptr<KernelLauncher>> launchers_;
 };
+
+device* device::create(device_t device_type,
+                       core::backend_t backend,
+                       const int device_id) {
+    switch (device_type) {
+        case device_t::CPU:
+            if (backend == core::backend_t::tiny_cnn) {
+                return new serial_device(device_id);
+            }
+            else if (backend == core::backend_t::nnpack) {
+                throw nn_error("Device with NNPACK not implemented yet");
+            }
+            else if (backend == core::backend_t::avx) {
+                throw nn_error("Device with AVX not implemented yet");
+            }
+            else if (backend == core::backend_t::opencl) {
+                // TODO(egdar): wehere we define this?
+                const int platform_id = 0;
+                return new ocl_device(device_type, platform_id, device_id);
+            }
+            else {
+                throw nn_error("Not supported backend with CPU.");
+            }
+            break;
+        case device_t::GPU:
+            // TODO(edgar): check what to do here
+            if (backend == core::backend_t::libdnn ||
+                backend == core::backend_t::opencl) {
+                // TODO(egdar): wehere we define this?
+                const int platform_id = 0;
+                return new ocl_device(device_type, platform_id, device_id);
+            }
+            break;
+        default:
+            throw nn_error("Not supported device type. Options: CPU and GPU");
+            break;
+    }
+}
 
 }  // namespace tiny_cnn

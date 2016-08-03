@@ -53,10 +53,6 @@ namespace tiny_cnn {
  * */
 enum device_t { CPU, GPU /*, FPGA*/ };
 
-class device;
-
-typedef device* device_ptr;
-
 /* Base class modeling a device 
  *
  * @param type The type of the device
@@ -67,19 +63,18 @@ class device {
  public:
     explicit device(const device_t type, const int id);
 
-    // Register an ops to the current device
-    void register_op(const std::vector<layer*>& ops);
+    static device* create(device_t device_type,
+                          core::backend_t backend_type,
+                          const int device_id);
+
+    // Register an op to the current device
+    void register_op(const layer& op);
 
     // Returns the device type
     device_t type() const { return type_; }
 
     // Returns the device id
     int id() const { return id_; }
-
-    // Returns the ids list
-    // TODO(edgar/naibaf7): What does it really mean
-    //  this values?
-    int id_list() const { return id_; }
 
     // Returns the device linked ops
     std::vector<layer*> ops() const { return ops_; }
@@ -95,9 +90,6 @@ class device {
      * The data is not owned by the current class.
      * */
     std::vector<layer*> ops_;
- 
- private:
-    bool check_availability(layer* layer);
 };
 
 }  // namespace tiny_cnn
