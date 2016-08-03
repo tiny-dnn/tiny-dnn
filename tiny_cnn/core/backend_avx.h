@@ -96,7 +96,7 @@ class avx_backend : public backend {
         fill_tensor(a, float_t(0));
 
         kernels::avx_conv2d_kernel(*params_c_,
-            in, W, bias, a, layer_->get_parallelize());
+            in, W, bias, a, layer_->parallelize());
     }
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
@@ -157,7 +157,7 @@ class avx_backend : public backend {
         fill_tensor(a, float_t(0));
 
         kernels::avx_deconv2d_kernel(*params_d_,
-            in, W, bias, a, layer_->get_parallelize());
+            in, W, bias, a, layer_->parallelize());
 
         copy_and_unpad_output(a);
         a = *(*deconv_layer_worker_storage_).curr_out_unpadded_;
@@ -216,7 +216,7 @@ class avx_backend : public backend {
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         kernels::avx_maxpool_kernel(in, a,
-            max_idx, *out2in_, layer_->get_parallelize());
+            max_idx, *out2in_, layer_->parallelize());
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
@@ -233,7 +233,7 @@ class avx_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::avx_maxpool_back_kernel(prev_delta, curr_delta,
-            max_idx, *in2out_,  layer_->get_parallelize());
+            max_idx, *in2out_,  layer_->parallelize());
     }
 
     void fully(const std::vector<tensor_t*>& in_data,
@@ -244,7 +244,7 @@ class avx_backend : public backend {
 
         kernels::avx_fully_connected_kernel(*params_f_,
             in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-            a, layer_->get_parallelize());
+            a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -271,7 +271,7 @@ class avx_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
-            W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
+            W, dW, prev_delta, curr_delta, db, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -281,7 +281,7 @@ class avx_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    backend_t get_type() const override { return backend_t::avx; }
+    backend_t type() const override { return backend_t::avx; }
 
  private:
     /* Pointer to the convolution parameters */

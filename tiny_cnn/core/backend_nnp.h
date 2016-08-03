@@ -168,7 +168,7 @@ class nnp_backend : public backend {
         tensor_t&       a = *out_data[1];
 
         kernels::nnp_fully_connected_kernel(*params_f_,
-            in, W, b, a, layer_->get_parallelize());
+            in, W, b, a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -195,7 +195,7 @@ class nnp_backend : public backend {
         throw nn_error("NNPACK does not support back propagation.");
     }
 
-   backend_t get_type() const override { return backend_t::nnpack; }
+   backend_t type() const override { return backend_t::nnpack; }
 
  private:
     /* Pointer to the convolution parameters */

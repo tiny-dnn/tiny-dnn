@@ -120,7 +120,7 @@ class backend {
 
     void set_layer(layerptr_t layer) { layer_ = layer; }
 
-    virtual backend_t get_type() const = 0;
+    virtual backend_t type() const = 0;
 
  protected:
     context* ctx_;
