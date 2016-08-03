@@ -125,7 +125,7 @@ class session {
 
  private:
     void tune_kernels() {
-        /*for (auto d: devices_) {
+        for (auto d: devices_) {
             for (auto op: d->ops()) {
                 // TODO(edgar): decide what to do here
                 if (op->layer_type() == "conv" &&
@@ -136,14 +136,14 @@ class session {
                                         d->id(),
                                         d->id_list(),
                                         op->params());
-                } else {
+                }/* else {
                     op->tune_kernel(o->program_string(),
                                     o->compiler_options(),
                                     d->context(),
                                     d->device());
-                }
+                }*/
             }
-        }*/
+        }
     }
 
     /* The session name */
