@@ -68,46 +68,46 @@ TEST(max_pool, forward) {
 TEST(max_pool, setup_tiny) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_cnn);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 1);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 16);            // size of input tensors
     EXPECT_EQ(l.out_data_size(), 4);            // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // num of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 0);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 0);  // the wieghts vector size
-    EXPECT_EQ(l.get_inputs().size(), 1);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.weights().size(), 0);       // the weights vector size
+    EXPECT_EQ(l.weight_grads().size(), 0);  // the weights vector size
+    EXPECT_EQ(l.inputs().size(), 1);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 1);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 1);             // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::tiny_cnn);
+    EXPECT_TRUE(l.backend_type() == backend_t::tiny_cnn);
 }
 
 #ifdef CNN_USE_NNPACK
 TEST(max_pool, setup_nnp) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::nnpack);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 1);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 16);            // size of input tensors
     EXPECT_EQ(l.out_data_size(), 4);            // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // num of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 0);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 0);  // the wieghts vector size
-    EXPECT_EQ(l.get_inputs().size(), 1);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.weights().size(), 0);       // the weights vector size
+    EXPECT_EQ(l.weight_grads().size(), 0);  // the weights vector size
+    EXPECT_EQ(l.inputs().size(), 1);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 1);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 1);             // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::nnpack);
+    EXPECT_TRUE(l.backend_type() == backend_t::nnpack);
 }
 #endif
 

@@ -37,7 +37,7 @@ namespace core {
 
 class context;
 
-enum class backend_t { tiny_cnn, nnpack, libdnn, avx, };
+enum class backend_t { tiny_cnn, nnpack, libdnn, avx, opencl };
 
 struct backend_params {
     backend_params() {}

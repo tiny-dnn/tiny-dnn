@@ -46,6 +46,8 @@ option(USE_TBB    "Build tiny-cnn with TBB library support"    OFF)
 option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
+option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF)
+option(USE_LIBDNN "Build tiny-cnn with GreenteaLibDNN library support" OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
@@ -82,7 +84,7 @@ if(USE_TBB AND TBB_FOUND)
     add_definitions(-DCNN_USE_TBB)
     include_directories(${TBB_INCLUDE_DIRS})
     link_directories(${TBB_LIBRARY_DIRS})
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES})
+    list(APPEND REQUIRED_LIBRARIES ${TBB_LIBRARIES})
 elseif(USE_TBB AND NOT TBB_FOUND)
     # In case the user sets the flag USE_TBB to ON, the CMake build-tree
     # will require to find TBB in your system. Otherwise, the user can
@@ -99,7 +101,7 @@ if(USE_OMP AND OPENMP_FOUND)
     # tiny-cnn does not support mutiple multithreading backends.
     set(USE_TBB OFF)
     add_definitions(-DCNN_USE_OMP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 elseif(USE_OMP AND NOT OPENMP_FOUND)
@@ -113,10 +115,11 @@ endif()
 # Find NNPACK: Acceleration package for neural networks on multi-core CPUs
 find_package(NNPACK QUIET)
 if(USE_NNPACK AND NNPACK_FOUND)
+    message(STATUS "Found NNPACK: ${NNPACK_INCLUDE_DIR}")
     add_definitions(-DCNN_USE_NNPACK)
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${NNPACK_LIB})
+    list(APPEND REQUIRED_LIBRARIES ${NNPACK_LIB})
 elseif(USE_NNPACK AND NOT NNPACK_FOUND)
     # In case the user sets the flag USE_NNPACK to ON, the CMake build-tree
     # will require to find NNPACK in your system. Otherwise, the user can
@@ -129,12 +132,39 @@ endif()
 # we enable standard C++11 multithread support.
 if((NOT USE_TBB) AND (NOT USE_OMP))
     #list(APPEND EXTRA_C_FLAGS -pthread)
-    set(USE_THREADS ON)
+    set(USE_PTHREAD ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    message(STATUS "TBB and OMP disabled: Using Threads instead.")
+    message(STATUS "TBB and OMP disabled: Using Pthread instead.")
 else((NOT USE_TBB) AND (NOT USE_OMP))
-    set(USE_THREADS OFF)
+    set(USE_PTHREAD OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
+
+find_package(OpenCL QUIET)
+if(USE_OPENCL AND OpenCL_FOUND)
+    message(STATUS "Found OpenCL: ${OpenCL_INCLUDE_DIRS}")
+    #add_definitions(-DCNN_HAVE_OPENCL)
+    add_definitions(-DUSE_OPENCL)
+    include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
+    list(APPEND REQUIRED_LIBRARIES ${OpenCL_LIBRARY})
+elseif(USE_OPENCL AND NOT OpenCL_FOUND)
+    # In case the user sets the flag USE_OPENCL to ON, the CMake build-tree
+    # will require to find OPENCL in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find OpenCL.")
+endif()
+
+find_package(GreenteaLibDNN QUIET)
+if(USE_LIBDNN AND GreenteaLibDNN_FOUND)
+    message(STATUS "Found GreenteaLibDNN: ${GREENTEA_INCLUDE_DIRS}")
+    add_definitions(-DCNN_USE_LIBDNN)
+    include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
+    list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
+elseif(USE_LIBDNN AND NOT LIBDNN_FOUND)
+    # In case the user sets the flag USE_LIBDNN to ON, the CMake build-tree
+    # will require to find LibDNN in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find LibDNN.")
+endif()
 
 ####
 # Setup the compiler options
@@ -177,6 +207,15 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3")
+
+    # TODO(nyanp): could you check why do we need this even when
+    # USE_TBB is enabled? I got the following errors during linkage:
+    # /usr/bin/ld: CMakeFiles/tiny_cnn_test.dir/test.cpp.o: undefined reference to symbol 'pthread_create@@GLIBC_2.2.5'
+    # //lib/x86_64-linux-gnu/libpthread.so.0: error adding symbols: DSO missing from command line 
+    if(NOT USE_PTHREAD)
+        set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} -pthread")
+    endif(NOT USE_PTHREAD)
+
 elseif(WIN32) # MSVC
 	if(USE_SSE)
 		add_definitions(-DCNN_USE_SSE)
@@ -300,6 +339,6 @@ endif(BUILD_DOCS)
 ####
 # Configuration summary
 include(cmake/summary.cmake)
-tinycnn_print_configuration_summary()
+tinydnn_print_configuration_summary()
 
 

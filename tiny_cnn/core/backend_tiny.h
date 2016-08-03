@@ -102,7 +102,7 @@ class tiny_backend : public backend {
         fill_tensor(a, float_t(0));
 
         kernels::tiny_conv2d_kernel(*params_c_,
-            in, W, bias, a, layer_->get_parallelize());
+            in, W, bias, a, layer_->parallelize());
     }
 
     // quantized convolution
@@ -118,7 +118,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_conv2d_kernel(*params_c_,
-                *in[i], W, bias, a[i], layer_->get_parallelize());
+                *in[i], W, bias, a[i], layer_->parallelize());
         }
     }
 
@@ -139,7 +139,7 @@ class tiny_backend : public backend {
         fill_tensor(a, float_t(0));
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_conv2d_kernel(*params_c_,
-                *in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->get_parallelize());
+                *in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
     }
 
@@ -216,7 +216,7 @@ class tiny_backend : public backend {
         fill_tensor(a, float_t(0), params_d_->out.size()); // deconv2d-kernel requires padded size buffer
 
         kernels::tiny_deconv2d_kernel(*params_d_,
-            in, W, bias, a, layer_->get_parallelize());
+            in, W, bias, a, layer_->parallelize());
 
         copy_and_unpad_output(a);
         a = *(*deconv_layer_worker_storage_).curr_out_unpadded_;
@@ -235,7 +235,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_deconv2d_kernel(*params_d_,
-                in[i], W, bias, a[i], layer_->get_parallelize());
+                in[i], W, bias, a[i], layer_->parallelize());
         }
 
         copy_and_unpad_output(a);
@@ -259,7 +259,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_deconv2d_kernel(*params_d_,
-                in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->get_parallelize());
+                in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
 
         copy_and_unpad_output(a);
@@ -332,7 +332,7 @@ class tiny_backend : public backend {
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         kernels::tiny_maxpool_kernel(in, a,
-            max_idx, *out2in_, layer_->get_parallelize());
+            max_idx, *out2in_, layer_->parallelize());
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
@@ -347,7 +347,7 @@ class tiny_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::tiny_maxpool_back_kernel(prev_delta, curr_delta,
-            max_idx, *in2out_,  layer_->get_parallelize());
+            max_idx, *in2out_,  layer_->parallelize());
     }
 
     void fully(const std::vector<tensor_t*>& in_data,
@@ -358,7 +358,7 @@ class tiny_backend : public backend {
 
         kernels::tiny_fully_connected_kernel(*params_f_,
             in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-            a, layer_->get_parallelize());
+            a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -371,7 +371,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_fully_connected_kernel(*params_f_,
-                in[i], W, b, a[i], layer_->get_parallelize());
+                in[i], W, b, a[i], layer_->parallelize());
         }
 #else
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
@@ -392,7 +392,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_fully_connected_kernel(*params_f_,
-                in[i], W, b, in_r[i], W_r, b_r, a[i], a_r[i], layer_->get_parallelize());
+                in[i], W, b, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
 #else
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
@@ -413,7 +413,7 @@ class tiny_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
-            W, dW, prev_delta, curr_delta, db, layer_->get_parallelize());
+            W, dW, prev_delta, curr_delta, db, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -432,7 +432,7 @@ class tiny_backend : public backend {
 
         for (cnn_size_t i = 0; i < prev_out.size(); i++) {
             kernels::tiny_quantized_fully_connected_back_kernel(*params_f_, prev_out[i],
-                W, dW[i], prev_delta[i], curr_delta[i], db[i], layer_->get_parallelize());
+                W, dW[i], prev_delta[i], curr_delta[i], db[i], layer_->parallelize());
         }
 #else
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");

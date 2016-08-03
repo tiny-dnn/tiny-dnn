@@ -35,23 +35,23 @@ TEST(convolutional, setup_tiny) {
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::tiny_cnn);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
     EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
-    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.weights().size(), 2);       // the wieghts vector size
+    EXPECT_EQ(l.weight_grads().size(), 2);  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::tiny_cnn);
+    EXPECT_TRUE(l.backend_type() == backend_t::tiny_cnn);
 }
 
 #ifdef CNN_USE_NNPACK
@@ -59,23 +59,23 @@ TEST(convolutional, setup_nnp) {
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::nnpack);
 
-    EXPECT_EQ(l.get_parallelize(), true);       // if layer can be parallelized
+    EXPECT_EQ(l.parallelize(), true);       // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
     EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
     EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
     EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
     EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
     EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.get_weights().size(), 2);       // the wieghts vector size
-    EXPECT_EQ(l.get_weight_grads().size(), 2);  // the wieghts vector size
-    EXPECT_EQ(l.get_inputs().size(), 3);        // num of input edges
-    EXPECT_EQ(l.get_outputs().size(), 2);       // num of outpus edges
+    EXPECT_EQ(l.weights().size(), 2);       // the weights vector size
+    EXPECT_EQ(l.weight_grads().size(), 2);  // the weights vector size
+    EXPECT_EQ(l.inputs().size(), 3);        // num of input edges
+    EXPECT_EQ(l.outputs().size(), 2);       // num of outpus edges
     EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
     EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::nnpack);
+    EXPECT_TRUE(l.backend_type() == backend_t::nnpack);
 }
 #endif
 
@@ -156,22 +156,37 @@ TEST(convolutional, fprop_nnp) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::nnpack);
+    
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
 
-    vec_t in(25), out(18), a(18), weight(18), bias(2);
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<vec_t*> in_data, out_data;
-    in_data.push_back(&in);
-    in_data.push_back(&weight);
-    in_data.push_back(&bias);
-    out_data.push_back(&out);
-    out_data.push_back(&a);
-    l.setup(false, 1);
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
@@ -192,7 +207,92 @@ TEST(convolutional, fprop_nnp) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
+
+        EXPECT_NEAR(0.4875026, out[0], 1E-5);
+        EXPECT_NEAR(0.8388910, out[1], 1E-5);
+        EXPECT_NEAR(0.8099984, out[2], 1E-5);
+        EXPECT_NEAR(0.7407749, out[3], 1E-5);
+        EXPECT_NEAR(0.5000000, out[4], 1E-5);
+        EXPECT_NEAR(0.1192029, out[5], 1E-5);
+        EXPECT_NEAR(0.5986877, out[6], 1E-5);
+        EXPECT_NEAR(0.7595109, out[7], 1E-5);
+        EXPECT_NEAR(0.6899745, out[8], 1E-5);
+    }
+}
+#endif
+
+//#ifdef CNN_USE_LIBDNN
+#ifdef USE_OPENCL
+TEST(convolutional, fprop_dnn) {
+   
+    // for GPU usage is recomended to use start session
+    session my_session("my_session");
+
+    // let's initialize a GPU device with id 0
+    device my_gpu_device(device_t::GPU, 0);
+
+    // let's initialize a simple convoltional layer
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, core::backend_t::libdnn);
+
+    // we need to do a couple of things before
+    // 1. register the device as a list to the session
+    // 2. register the layer/op to a device
+    my_session.register_op(my_gpu_device, l);
+
+    // layer::forward_propagation expects tensors, even if we feed only
+    // one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
+
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
+
+    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+
+    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
+    {
+        l.forward_propagation(in_data, out_data);
+
+        for (auto o: out)
+            EXPECT_DOUBLE_EQ(o, (tiny_cnn::float_t)0.5);
+    }
+
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+
+    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+
+    in[0] = 3;  in[1] = 2;  in[2] = 1;  in[3] = 5; in[4] = 2;
+    in[5] = 3;  in[6] = 0;  in[7] = 2;  in[8] = 0; in[9] = 1;
+    in[10] = 0; in[11] = 6; in[12] = 1; in[13] = 1; in[14] = 10;
+    in[15] = 3; in[16] =-1; in[17] = 2; in[18] = 9; in[19] = 0;
+    in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
+
+    {
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);

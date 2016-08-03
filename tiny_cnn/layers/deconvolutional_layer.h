@@ -208,7 +208,7 @@ public:
         , params_(std::move(other.params_))
         , backend_type_(std::move(other.backend_type_))
         , deconv_layer_worker_storage_(std::move(other.deconv_layer_worker_storage_)) {
-            init_backend(std::move(Base::get_backend_type()));
+            init_backend(std::move(Base::backend_type()));
     }
 
     ///< number of incoming connections for each output unit

@@ -208,7 +208,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             , params_(std::move(other.params_))
             , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
             , cws_(std::move(other.cws_)) {
-        init_backend(std::move(Base::get_backend_type()));
+        init_backend(std::move(Base::backend_type()));
     }
 
     ///< number of incoming connections for each output unit
@@ -219,7 +219,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
     ///< number of outgoing connections for each input unit
     size_t fan_out_size() const override  {
-        return (params_.weight.width_  / params_.w_stride)  *
+        return (params_.weight.width_  / params_.w_stride) *
                (params_.weight.height_ / params_.h_stride) *
                 params_.out.depth_;
     }
@@ -235,6 +235,49 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
         // activations
         this->forward_activation(*out_data[0], *out_data[1]);
+
+        /*
+        // we need to retrieve device type specified
+        // by the user during session setup time
+        device_t device_type = Base::get_device()->type();
+
+        // we need to retireve layer backend type
+        // specified by the user during layer setup time
+        core::backend_t backend_type = this->backend_type();
+
+        if (device_type == device_t::CPU &&
+            backend_type == core::backend_t::tiny_cnn) {
+            // launch default functor
+            return;
+        }
+        
+        if (device_type == device_t::CPU &&
+            backend_type == core::backend_t::avx) {
+            // launch default functor
+            return;
+        }
+       
+        if (backend_type == core::backend_t::opencl) {
+            // TODO: retrieve device context
+            if (device_type == device_t::CPU) {
+                // here we need to retrieve OpenCL context
+                // from a CPU device associated to this op.
+                return;
+            }
+
+            if (device_type == device_t::GPU) {
+                // here we need to retrieve OpenCL context
+                // from a GPU device associated to this op.
+                return;
+            }
+        }
+
+        if (backend_type = core::backend_t::libdnn) {
+            // here we need to retrieve OpenCL context
+            // from a GPU device associated to this op.
+            return;
+        }
+        */
     }
 
     /**
@@ -464,7 +507,11 @@ private:
                 },
                 &cws_);
         } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
+            backend = std::make_shared<core::dnn_backend>(&params_,
+                [this](const tensor_t& in) {
+                    return copy_and_pad_input(in);
+                },
+                &cws_);
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,

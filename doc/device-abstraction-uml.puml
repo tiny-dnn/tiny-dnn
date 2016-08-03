@@ -1,12 +1,14 @@
 @startuml
 class Session {
- -String name
-  void schedule_session()
-  void run_session()
+ - String name
+ - void tuneKernels()
+ + void register_device()
+ + void run()
 }
 
-abstract class Device {
- -int id
+abstract class BaseDevice {
+ - int id
+ + void register_op()
 }
 
 class Node {
@@ -18,8 +20,9 @@ class Edge {
 
 abstract class Layer {
  - String layer_type
- virtual void forward_propagation()
- virtual void backward_propagation()
+ - void tuneKernel()
+ + virtual void forward_propagation()
+ + virtual void backward_propagation()
 }
 
 class ConvolutionalLayer {
@@ -29,10 +32,15 @@ class MaxPoolingLayer {
 }
 
 abstract class Backend {
- virtual void matmul()
- virtual pool2d()
- virtual conv2d()
- virtual conv2d_back()
+ + virtual conv2d()
+ + virtual conv2d_q()
+ + virtual conv2d_eq()
+ + virtual deconv2d()
+ + virtual deconv2d_q()
+ + virtual deconv2d_eq()
+ + virtual maxpool()
+ + virtual fully()
+ + virtual fully_q()
 }
 
 class TinyCNNBackend {
@@ -44,10 +52,12 @@ class NNPackBackend {
 class LibDNNBackend {
 }
 
-Session *-- Device
+Layer --> Kernel
 
-Device <|-- CPUDevice
-Device <|-- OCLDevice
+Session *-- BaseDevice
+
+BaseDevice <|-- CPUDevice
+BaseDevice <|-- GPUDevice
 
 Node <|-- Layer
 Node *-- Edge : prev
@@ -61,12 +71,11 @@ Edge *-- Data : grad
 Layer <|-- ConvolutionalLayer
 Layer <|-- MaxPoolingLayer
 
-Device *-- Backend : own_list
+BaseDevice *-- Layer : own_list
 ConvolutionalLayer *-- Backend : backend
 MaxPoolingLayer *-- Backend : backend
 
 Backend <|-- TinyCNNBackend
 Backend <|-- NNPackBackend
 Backend <|-- LibDNNBackend
-
 @enduml

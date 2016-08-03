@@ -59,7 +59,7 @@
 #ifdef CNN_USE_OMP
 #define CNN_TASK_SIZE 100
 #else
-#define CNN_TASK_SIZE 8
+#define CNN_TASK_SIZE 1 
 #endif
 
 #if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
@@ -84,4 +84,40 @@ typedef float float_t;
  **/
 typedef std::size_t cnn_size_t;
 
+
+/*
+ * Returns true if tiny-dnn has been built
+ * with LibDNN support. Otherwise returns false.
+ */
+bool have_libdnn() {
+#ifdef CNN_USE_LIBDNN
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*
+ * Returns true if tiny-dnn has been built
+ * with OpenCL support. Otherwise returns false.
+ */
+bool have_opencl() {
+#ifdef USE_OPENCL
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*
+ * Returns true if tiny-dnn has been built
+ * with NNPACK support. Otherwise returns false.
+ */
+bool have_nnpack() {
+#ifdef USE_NNPACK
+    return true;
+#else
+    return false;
+#endif
+}
 }

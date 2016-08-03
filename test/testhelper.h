@@ -75,7 +75,7 @@ inline std::string unique_path() {
 
 vec_t forward_pass(layer& src, const vec_t& vec) {
     src.setup(false);
-    (*src.get_inputs()[0]->get_data())[0] = vec;
+    (*src.inputs()[0]->get_data())[0] = vec;
     src.forward();
     return src.output()[0][0];
 }

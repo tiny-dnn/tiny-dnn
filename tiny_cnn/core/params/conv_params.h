@@ -26,6 +26,8 @@
 */
 #pragma once
 
+#include "tiny_cnn/core/params/params.h"
+
 namespace tiny_cnn {
 namespace core {
 
@@ -80,7 +82,7 @@ struct connection_table {
     cnn_size_t cols_;
 };
 
-struct conv_params {
+struct conv_params : public params {
     connection_table tbl;
     index3d<cnn_size_t> in;
     index3d<cnn_size_t> in_padded;

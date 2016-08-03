@@ -27,32 +27,31 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
+
 #include "tiny_cnn/tiny_cnn.h"
 
 using namespace tiny_cnn;
 
 namespace tiny_cnn {
 
-TEST(core, session) {
-    core::session my_session(std::string("my_session"));
+TEST(core, session_initialization) {
+    session my_session("my_session");
 
-    ASSERT_EQ(my_session.get_num_devices(), 0);
+    ASSERT_EQ(my_session.num_devices(), 0);
+    EXPECT_STREQ(my_session.name().c_str(), "my_session");
+
 }
 
-TEST(core, devices) {
-    core::cpu_device my_cpu_device(1);
-    core::ocl_device my_ocl_device(2);
-
-    ASSERT_EQ(my_cpu_device.get_id(), 1);
-    ASSERT_EQ(my_ocl_device.get_id(), 2);
-}
-
-TEST(core, backends) {
-    core::nnp_backend my_nnp_backend();
-    core::dnn_backend my_dnn_backend();
-
-    // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
-    // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
+TEST(core, device_initialization) {
+  /*  cpu_device my_cpu_device(0);
+    
+    ASSERT_EQ(my_cpu_device.id(), 0);
+    ASSERT_EQ(my_cpu_device.type(), device_t::CPU);
+    
+    gpu_device my_gpu_device(1);
+    
+    ASSERT_EQ(my_gpu_device.id(), 1);
+    ASSERT_EQ(my_gpu_device.type(), device_t::GPU);*/
 }
 
 } // namespace tiny-cnn

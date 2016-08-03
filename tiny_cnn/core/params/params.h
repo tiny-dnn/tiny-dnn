@@ -26,23 +26,17 @@
 */
 #pragma once
 
-#include <vector>
-
-#include "tiny_cnn/core/backend.h"
-
 namespace tiny_cnn {
 namespace core {
 
-class device {
- public:
-    explicit device(const int id) : id_(id) {}
-
-    int get_id() const { return id_; }
-
- private:
-    int id_;
-    std::vector<std::shared_ptr<backend>> backends_;
+struct params {
+    // Number of inputs/outputs
+    cnn_size_t in_size;
+    cnn_size_t out_size;
+    // Input/Output sizes
+    index3d<cnn_size_t> in;
+    index3d<cnn_size_t> out;
 };
 
 }  // namespace core
-}  // namespace tiny_cnn
+}  // tiny_cnn
