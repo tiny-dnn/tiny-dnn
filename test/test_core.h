@@ -33,26 +33,60 @@ using namespace tiny_cnn;
 
 namespace tiny_cnn {
 
-TEST(core, session) {
-    core::session my_session(std::string("my_session"));
+TEST(core, device) {
+    // CPU and GPU devices are instantiated
 
-    ASSERT_EQ(my_session.get_num_devices(), 0);
+    Device my_cpu_device(device_t::CPU);
+    Device my_gpu_device(device_t::GPU, 0, 0);
 }
 
-TEST(core, devices) {
-    core::cpu_device my_cpu_device(1);
-    core::ocl_device my_ocl_device(2);
+TEST(core, add_bad_device) {
+    // A simple CPU device cannot register an op.
+    // A warning is expected telling the user to use
+    // more parameters when device is created.
 
-    ASSERT_EQ(my_cpu_device.get_id(), 1);
-    ASSERT_EQ(my_ocl_device.get_id(), 2);
+    Device my_gpu_device(device_t::CPU);
+
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::OpenCL);
+
+    my_gpu_device.registerOp(l);
 }
 
-TEST(core, backends) {
-    core::nnp_backend my_nnp_backend();
-    core::dnn_backend my_dnn_backend();
+TEST(core, add_bad_layer) {
+    // A GPU device cannot register an op with non-OpenCL engine.
+    // A warning is expected telling the user to redefine the op engine.
+ 
+    Device my_gpu_device(device_t::GPU, 0, 0);
 
-    // ASSERT_EQ(my_nnp_backend.get_context(), nullptr);
-    // ASSERT_EQ(my_dnn_backend.get_context(), nullptr);
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::tiny_cnn);
+
+    my_gpu_device.registerOp(l);
+}
+
+TEST(core, device_add_op) {
+    // An Op with OpenCL engine is registeres to
+    // a GPU device which will compile its program, and
+    // will place it to the general register.
+
+    Device my_gpu_device(device_t::GPU, 0, 0);
+
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::OpenCL);
+
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
+
+    // first time op registration: OK
+    my_gpu_device.registerOp(l);
+
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+
+    // second time op registraion: we expect that Op it's not
+    // registrated since it's already there.
+    my_gpu_device.registerOp(l);
+
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
 }
 
 } // namespace tiny-cnn

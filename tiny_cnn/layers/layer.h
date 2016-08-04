@@ -99,6 +99,10 @@ class layer : public node {
         backend_ = backend;
     }
 
+    void set_backend_type(core::backend_t backend_type) {
+        backend_type_ = backend_type;
+    }
+
     /////////////////////////////////////////////////////////////////////////
     // getter
 
@@ -545,7 +549,8 @@ class layer : public node {
     cnn_size_t out_channels_;  // number of output vectors
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
-
+    
+    core::backend_t backend_type_;
     std::shared_ptr<core::backend> backend_;
 
  private:

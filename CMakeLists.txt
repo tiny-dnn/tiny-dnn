@@ -46,6 +46,7 @@ option(USE_TBB    "Build tiny-cnn with TBB library support"    OFF)
 option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
+option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF) 
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
@@ -136,6 +137,20 @@ if((NOT USE_TBB) AND (NOT USE_OMP))
 else((NOT USE_TBB) AND (NOT USE_OMP))
     set(USE_PTHREAD OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
+
+find_package(OpenCL QUIET)
+if(USE_OPENCL AND OpenCL_FOUND)
+    message(STATUS "Found OpenCL: ${OpenCL_INCLUDE_DIRS}")
+    #add_definitions(-DCNN_HAVE_OPENCL)
+    add_definitions(-DUSE_OPENCL)
+    include_directories(SYSTEM ${OpenCL_INCLUDE_DIRS})
+    list(APPEND REQUIRED_LIBRARIES ${OpenCL_LIBRARY})
+elseif(USE_OPENCL AND NOT OpenCL_FOUND)
+    # In case the user sets the flag USE_OPENCL to ON, the CMake build-tree
+    # will require to find OPENCL in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find OpenCL.")
+endif()
 
 ####
 # Setup the compiler options
