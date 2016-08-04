@@ -82,7 +82,7 @@ if(USE_TBB AND TBB_FOUND)
     add_definitions(-DCNN_USE_TBB)
     include_directories(${TBB_INCLUDE_DIRS})
     link_directories(${TBB_LIBRARY_DIRS})
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${TBB_LIBRARIES})
+    list(APPEND REQUIRED_LIBRARIES ${TBB_LIBRARIES})
 elseif(USE_TBB AND NOT TBB_FOUND)
     # In case the user sets the flag USE_TBB to ON, the CMake build-tree
     # will require to find TBB in your system. Otherwise, the user can
@@ -113,10 +113,11 @@ endif()
 # Find NNPACK: Acceleration package for neural networks on multi-core CPUs
 find_package(NNPACK QUIET)
 if(USE_NNPACK AND NNPACK_FOUND)
+    message(STATUS "Found NNPACK: ${NNPACK_INCLUDE_DIR}")
     add_definitions(-DCNN_USE_NNPACK)
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
-    set(REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} ${NNPACK_LIB})
+    list(REQUIRED_LIBRARIES ${NNPACK_LIB})
 elseif(USE_NNPACK AND NOT NNPACK_FOUND)
     # In case the user sets the flag USE_NNPACK to ON, the CMake build-tree
     # will require to find NNPACK in your system. Otherwise, the user can
@@ -129,11 +130,11 @@ endif()
 # we enable standard C++11 multithread support.
 if((NOT USE_TBB) AND (NOT USE_OMP))
     #list(APPEND EXTRA_C_FLAGS -pthread)
-    set(USE_THREADS ON)
+    set(USE_PTHREAD ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
-    message(STATUS "TBB and OMP disabled: Using Threads instead.")
+    message(STATUS "TBB and OMP disabled: Using Pthread instead.")
 else((NOT USE_TBB) AND (NOT USE_OMP))
-    set(USE_THREADS OFF)
+    set(USE_PTHREAD OFF)
 endif((NOT USE_TBB) AND (NOT USE_OMP))
 
 ####
@@ -300,6 +301,6 @@ endif(BUILD_DOCS)
 ####
 # Configuration summary
 include(cmake/summary.cmake)
-tinycnn_print_configuration_summary()
+tinydnn_print_configuration_summary()
 
 
