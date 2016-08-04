@@ -4,13 +4,25 @@
 #include "graph.pb.h"
 using namespace std;
 
-// Iterates though all people in the GraphDef and prints info about them.
+// Iterates though all nodes in the GraphDef and prints info about them.
 void ListNodes(const tensorflow::GraphDef& graph_def) {
   for (int i = 0; i < graph_def.node_size(); i++) {
     const tensorflow::NodeDef& node_def = graph_def.node(i);
+    // print nodes information
+    cout << "  Node Name: " << node_def.name()
+         << "  Node Operation: " << node_def.op()
+         << "  Node Device: " << node_def.device() << endl;
 
-    cout << "  Node_Def Name: " << node_def.name() << endl;
-    cout << "  Node_Def Operation: " << node_def.op() << endl;
+    // print attributes information
+    google::protobuf::Map<string, tensorflow::AttrValue>::const_iterator iMapPairLocator;
+
+    for ( iMapPairLocator = node_def.attr().begin()
+        ; iMapPairLocator != node_def.attr().end()
+        ; ++ iMapPairLocator )
+    {
+        cout << "     Key: " << static_cast<string>(iMapPairLocator->first.c_str()) << endl;
+        // cout << "     Value: " << static_cast<float>(iMapPairLocator->second);
+    }
   }
 }
 
