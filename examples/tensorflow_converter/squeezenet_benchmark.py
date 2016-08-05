@@ -17,7 +17,7 @@
 
 To run, use:
   bazel run -c opt --config=cuda \
-      third_party_tensorflow_models_image_squeezenet:squeezenet_benchmark
+      third_party/tensorflow/models/image/alexnet:alexnet_benchmark
 
 Across 100 steps on batch size = 128.
 
@@ -38,6 +38,10 @@ import math
 import time
 
 from six.moves import xrange  # pylint: disable=redefined-builtin
+
+# Import data
+from tensorflow.examples.tutorials.mnist import input_data
+
 import tensorflow as tf
 
 
@@ -47,6 +51,9 @@ tf.app.flags.DEFINE_integer('batch_size', 32,
                             """Batch size.""")
 tf.app.flags.DEFINE_integer('num_batches', 400,
                             """Number of batches to run.""")
+tf.app.flags.DEFINE_string('data_dir', '/tmp/data/', 'Directory for storing data')
+
+mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
 
 
 def print_activations(t):
@@ -67,7 +74,7 @@ def inference(images):
   parameters = []
   # conv1
   with tf.name_scope('conv1') as scope:
-    kernel = tf.Variable(tf.truncated_normal([7, 7, 3, 96], dtype=tf.float32,
+    kernel = tf.Variable(tf.truncated_normal([7, 7, 1, 96], dtype=tf.float32,
                                              stddev=1e-1), name='weights')
     conv = tf.nn.conv2d(images, kernel, [1, 4, 4, 1], padding='SAME')
     biases = tf.Variable(tf.constant(0.0, shape=[96], dtype=tf.float32),
@@ -429,11 +436,11 @@ def inference(images):
 
   # conv10
   with tf.name_scope('conv10') as scope:
-    kernel = tf.Variable(tf.truncated_normal([1, 1, 512, 1000],
+    kernel = tf.Variable(tf.truncated_normal([1, 1, 512, 10],
                                              dtype=tf.float32,
                                              stddev=1e-1), name='weights')
     conv = tf.nn.conv2d(drop9, kernel, [1, 1, 1, 1], padding='SAME')
-    biases = tf.Variable(tf.constant(0.0, shape=[1000], dtype=tf.float32),
+    biases = tf.Variable(tf.constant(0.0, shape=[10], dtype=tf.float32),
                          trainable=True, name='biases')
     bias = tf.nn.bias_add(conv, biases)
     conv10 = tf.nn.relu(bias, name=scope)
@@ -446,9 +453,12 @@ def inference(images):
                          strides=[1, 1, 1, 1],
                          padding='VALID',
                          name='pool10')
-  print_activations(pool10)
 
-  return pool10, parameters
+  pool10_flat = tf.reshape(pool10, [-1, 10])
+
+  print_activations(pool10_flat)
+
+  return pool10_flat, parameters
 
 
 def time_tensorflow_run(session, target, info_string):
@@ -527,9 +537,40 @@ def run_benchmark():
     save_path = saver.save(sess, "/tmp/model.ckpt")
     print("Model saved in file: %s" % save_path)
 
+def mnist_softmax():
+  sess = tf.InteractiveSession()
+
+  # Create the model
+  x = tf.placeholder(tf.float32, [None, 227, 227, 1])
+
+  # Build a Graph that computes the logits predictions from the
+  # inference model.
+  pool10_flat, parameters = inference(x)
+  y = tf.nn.softmax(pool10_flat)
+
+  # Define loss and optimizer
+  y_ = tf.placeholder(tf.float32, [None, 10])
+  cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
+  train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
+
+  # Train
+  sess.run(tf.initialize_all_variables())
+  for i in range(1000):
+    batch_xs, batch_ys = mnist.train.next_batch(32)
+    batch_xs_reshape = tf.reshape(batch_xs, [32, 28, 28, 1])
+    batch_xs_reshape = tf.image.resize_images(batch_xs_reshape, 227, 227, method=0).eval()
+    train_step.run({x: batch_xs_reshape, y_: batch_ys})
+
+    # Test trained model
+    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
+    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    test_images = tf.reshape(mnist.test.images, [-1, 28, 28, 1])
+    test_images = tf.image.resize_images(test_images, 227, 227, method=0).eval()
+    print(accuracy.eval({x: test_images, y_: mnist.test.labels}))
 
 def main(_):
-  run_benchmark()
+  mnist_softmax()
+  #run_benchmark()
 
 
 if __name__ == '__main__':
