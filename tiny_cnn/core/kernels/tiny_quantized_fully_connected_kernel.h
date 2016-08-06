@@ -296,13 +296,13 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
         &max_output_value);
     // data type restore
     std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
-    for (uint i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
        in_quantized.push_back(static_cast<uint8_t>(in[i]));
     }
-    for (uint i = 0; i < W.size(); i++) {
+    for (size_t i = 0; i < W.size(); i++) {
         W_quantized.push_back(static_cast<uint8_t>(W[i]));
     }
-    for (uint i = 0; i < b.size(); i++) {
+    for (size_t i = 0; i < b.size(); i++) {
         bias_quantized.push_back(static_cast<uint8_t>(b[i]));
     }
     min_output_value += min_bias;
@@ -359,7 +359,7 @@ void tiny_quantized_fully_connected_kernel(const fully_params& params,
     quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
         &min_output_requantized, &max_output_requantized, &a_requantized);
     // store directly in float datatype
-    for (uint i = 0; i < a_requantized.size(); i++) {
+    for (size_t i = 0; i < a_requantized.size(); i++) {
         a[i] = static_cast<float>(a_requantized[i]);
     }
     a_r[0] = min_output_requantized;
