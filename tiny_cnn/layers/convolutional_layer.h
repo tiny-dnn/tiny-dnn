@@ -88,6 +88,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
             init_backend(backend_type);
+            Base::set_backend_type(backend_type);
     }
 
     /**
@@ -124,6 +125,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
             init_backend(backend_type);
+            Base::set_backend_type(backend_type);
     }
 
     /**
@@ -161,6 +163,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             w_stride, h_stride,
                             connection_table);
             init_backend(backend_type);
+            Base::set_backend_type(backend_type);
     }
 
     /**
@@ -200,6 +203,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             w_stride, h_stride,
                             connection_table);
             init_backend(backend_type);
+            Base::set_backend_type(backend_type);
     }
 
     // move constructor
@@ -444,7 +448,9 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::tiny_cnn) {
+        if (backend_type == backend_t::tiny_cnn ||
+            // TODO(edgar): remove this after OpenCL refactor 
+            backend_type == backend_t::OpenCL) {
             backend = std::make_shared<core::tiny_backend>(&params_,
                 [this](const tensor_t& in) {
                     return copy_and_pad_input(in);

@@ -36,6 +36,8 @@
 #include "tiny_cnn/core/device_ocl.h"
 
 #include "tiny_cnn/core/kernels/conv2d_tiny_op.h"
+#include "tiny_cnn/core/framework/device.h"
+#include "tiny_cnn/core/framework/program_manager.h"
 
 #include "tiny_cnn/layers/input_layer.h"
 #include "tiny_cnn/layers/feedforward_layer.h"

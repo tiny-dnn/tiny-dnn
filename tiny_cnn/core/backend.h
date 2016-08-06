@@ -37,7 +37,22 @@ namespace core {
 
 class context;
 
-enum class backend_t { tiny_cnn, nnpack, libdnn, avx, };
+enum class backend_t { tiny_cnn, nnpack, libdnn, avx, OpenCL };
+
+inline std::ostream& operator << (std::ostream& os, backend_t type) {
+    switch (type) {
+        case backend_t::tiny_cnn: os << "TinyDNN"; break;
+        case backend_t::nnpack:   os << "NNPACK";  break;
+        case backend_t::libdnn:   os << "LibDNN";  break;
+        case backend_t::avx:      os << "AVX";     break;
+        case backend_t::OpenCL:   os << "OpenCL";  break;
+        default:
+            nn_error("Not supported ostream enum.");
+            break;
+    }
+}
+
+/*enum class Engine { OpenCL };*/
 
 struct backend_params {
     backend_params() {}
