@@ -82,6 +82,7 @@ class ProgramManager {
      * remainder of this function.
      */
     void registerOp(const Device& device, const layer& layer) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
         // retrieve incoming device an layer 
         CLCudaAPI::Device  device_  = device.device();
         CLCudaAPI::Context context_ = device.context();
@@ -119,18 +120,27 @@ class ProgramManager {
 
         // Kernel compilation succeed: Register program.
         programs_.insert({ key_program, program });
+#endif  // USE_OPENCL OR USE_CUDA
     }
 
     // Returns the number of registered programs
-    size_t num_programs() const { return programs_.size(); }
+    cnn_size_t num_programs() const {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+        return programs_.size();
+#else
+        return cnn_size_t(0);
+#endif
+    }
 
  protected:
     ProgramManager() = default;
     ProgramManager(const ProgramManager&) = delete;
     ProgramManager& operator=(const ProgramManager&) = delete;
     
+#if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Container holding compiled kernels */
     std::unordered_map<Program, CLCudaAPI::Program, ProgramHash> programs_;
+#endif
 };
 
 }  // namespace tiny_cnn

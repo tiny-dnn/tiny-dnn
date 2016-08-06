@@ -77,6 +77,7 @@ TEST(core, device_add_op) {
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
     // first time op registration: OK
     my_gpu_device.registerOp(l);
 
@@ -87,6 +88,7 @@ TEST(core, device_add_op) {
     my_gpu_device.registerOp(l);
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+#endif
 }
 
 } // namespace tiny-cnn

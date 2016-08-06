@@ -88,12 +88,14 @@ class Device {
     // Returns the device id
     int deviceId() const { return device_id_; }
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
     // Returns the CLCudaAPI Device object
     CLCudaAPI::Device device() const { return *device_;  }
 
     // Returns the CLCudaAPI Context object
     CLCudaAPI::Context context() const { return *context_; }
-    
+#endif
+
     bool operator==(const Device& d) const {
         if (d.type() == this->type() &&
             d.hasCLCudaAPI() == this->hasCLCudaAPI() &&
