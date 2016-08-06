@@ -138,7 +138,7 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    backend_t get_type() const override { return backend_t::libdnn; }
+    backend_t type() const override { return backend_t::libdnn; }
 };
 
 }  // namespace core

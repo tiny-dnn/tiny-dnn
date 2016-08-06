@@ -454,15 +454,15 @@ public:
         }
 
         for (auto current : net_) { // ignore first input layer
-            if (current->get_weights().size() < 2) {
+            if (current->weights().size() < 2) {
                 continue;
             }
 
 
-            vec_t& w = *current->get_weights()[0];
-            vec_t& b = *current->get_weights()[1];
-            tensor_t& dw = (*current->get_weight_grads()[0]);
-            tensor_t& db = (*current->get_weight_grads()[1]);
+            vec_t& w = *current->weights()[0];
+            vec_t& b = *current->weights()[1];
+            tensor_t& dw = (*current->weights_grads()[0]);
+            tensor_t& db = (*current->weights_grads()[1]);
 
             if (w.empty()) continue;
 

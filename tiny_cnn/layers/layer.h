@@ -102,14 +102,14 @@ class layer : public node {
     /////////////////////////////////////////////////////////////////////////
     // getter
 
-    bool get_parallelize() const { return parallelize_; }
-    bool get_initialize() const { return initialized_; }
+    bool parallelize() const { return parallelize_; }
+    bool initialized() const { return initialized_; }
 
-    core::backend_t get_backend_type() const {
-        return backend_->get_type();
+    core::backend_t backend_type() const {
+        return backend_->type();
     }
 
-    std::shared_ptr<core::backend> get_backend() { return backend_; }
+    std::shared_ptr<core::backend> backend() { return backend_; }
 
     ///< number of incoming edges in this layer
     cnn_size_t in_channels() const { return in_channels_; }
@@ -151,7 +151,7 @@ class layer : public node {
         return out_data_size();
     }
 
-    std::vector<const vec_t*> get_weights() const {
+    std::vector<const vec_t*> weights() const {
         std::vector<const vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -161,7 +161,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<vec_t*> get_weights() {
+    std::vector<vec_t*> weights() {
         std::vector<vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -171,7 +171,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<tensor_t*> get_weight_grads() {
+    std::vector<tensor_t*> weights_grads() {
         std::vector<tensor_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -181,7 +181,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<edgeptr_t> get_inputs() {
+    std::vector<edgeptr_t> inputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             nodes.push_back(ith_in_node(i));
@@ -189,7 +189,7 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() {
+    std::vector<edgeptr_t> outputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
@@ -197,10 +197,11 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() const {
+    std::vector<edgeptr_t> outputs() const {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            nodes.push_back(const_cast<layerptr_t>(this)->ith_out_node(i));
+            nodes.push_back(const_cast<layerptr_t>(this)
+                    ->ith_out_node(i));
         }
         return nodes;
     }
@@ -244,8 +245,9 @@ class layer : public node {
      * used only for calculating target value from label-id in final(output) layer
      * override properly if the layer is intended to be used as output layer
      **/
-    virtual std::pair<float_t, float_t>
-    out_value_range() const { return {float_t(0.0), float_t(1.0)}; }  // NOLINT
+    virtual std::pair<float_t, float_t> out_value_range() const {
+        return { float_t(0.0), float_t(1.0) };
+    }
 
     /**
      * array of input shapes (width x height x depth)
@@ -267,14 +269,18 @@ class layer : public node {
      * used only for weight/bias initialization methods which require fan-in size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_in_size() const { return in_shape()[0].width_; }
+    virtual size_t fan_in_size() const {
+        return in_shape()[0].width_;
+    }
 
     /**
      * number of outgoing connections for each input unit
      * used only for weight/bias initialization methods which require fan-out size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_out_size() const { return out_shape()[0].width_; }
+    virtual size_t fan_out_size() const {
+        return out_shape()[0].width_;
+    }
 
     /////////////////////////////////////////////////////////////////////////
     // setter
@@ -309,14 +315,14 @@ class layer : public node {
         /*if (is_exploded()) {
             throw nn_error("failed to save weights because of infinite weight");
         }*/
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto w : *weight) os << w <<  " ";
         }
     }
 
     virtual void load(std::istream& is) { // NOLINT
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) is >> w;
         }
@@ -324,7 +330,7 @@ class layer : public node {
     }
 
     virtual void load(const std::vector<float_t>& src, int& idx) { // NOLINT
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
         }
@@ -338,7 +344,7 @@ class layer : public node {
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t channel = 0) const {
-        const vec_t* output = &(*(get_outputs()[channel]->get_data()))[0];
+        const vec_t* output = &(*(outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
 
@@ -391,7 +397,7 @@ class layer : public node {
         setup(false);
         set_out_grads(out_grads);
         backward();
-        return map_<tensor_t>(get_inputs(), [](edgeptr_t e) {
+        return map_<tensor_t>(inputs(), [](edgeptr_t e) {
             return *e->get_gradient();
         });
     }
@@ -496,8 +502,8 @@ class layer : public node {
     }
 
     bool has_same_weights(const layer& rhs, float_t eps) const {
-        auto w1 = get_weights();
-        auto w2 = rhs.get_weights();
+        auto w1 = weights();
+        auto w2 = rhs.weights();
         if (w1.size() != w2.size()) return false;
 
         for (size_t i = 0; i < w1.size(); i++) {
