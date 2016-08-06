@@ -1,17 +1,19 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <map>
 #include "graph.pb.h"
 using namespace std;
 
 // Iterates though all nodes in the GraphDef and prints info about them.
 void ListNodes(const tensorflow::GraphDef& graph_def) {
+  cout << "  Node Size: " << graph_def.node_size() << endl;
   for (int i = 0; i < graph_def.node_size(); i++) {
     const tensorflow::NodeDef& node_def = graph_def.node(i);
     // print nodes information
     cout << "  Node Name: " << node_def.name()
          << "  Node Operation: " << node_def.op()
-         << "  Node Device: " << node_def.device() << endl;
+         << endl;
 
     // print attributes information
     google::protobuf::Map<string, tensorflow::AttrValue>::const_iterator iMapPairLocator;
@@ -20,9 +22,12 @@ void ListNodes(const tensorflow::GraphDef& graph_def) {
         ; iMapPairLocator != node_def.attr().end()
         ; ++ iMapPairLocator )
     {
-        cout << "     Key: " << static_cast<string>(iMapPairLocator->first.c_str()) << endl;
-        // cout << "     Value: " << static_cast<float>(iMapPairLocator->second);
+        cout << "  Key: " << static_cast<string>(iMapPairLocator->first.c_str())
+             << endl;
     }
+    cout << "  TensorShapeSize: " << node_def.attr().at("dtype").tensor().tensor_shape().dim_size()
+         << "  TensorContent: " << node_def.attr().at("value").tensor().tensor_shape().dim_size()
+         << endl;
   }
 }
 

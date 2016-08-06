@@ -51,6 +51,8 @@ tf.app.flags.DEFINE_integer('batch_size', 32,
                             """Batch size.""")
 tf.app.flags.DEFINE_integer('num_batches', 400,
                             """Number of batches to run.""")
+tf.app.flags.DEFINE_integer('img_size', 128,
+                            """Size of resized images.""")
 tf.app.flags.DEFINE_string('data_dir', '/tmp/data/', 'Directory for storing data')
 
 mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
@@ -533,15 +535,12 @@ def run_benchmark():
     # Run the backward benchmark.
     time_tensorflow_run(sess, grad, "Forward-backward")
 
-    # Save the variables to disk.
-    save_path = saver.save(sess, "/tmp/model.ckpt")
-    print("Model saved in file: %s" % save_path)
 
 def mnist_softmax():
   sess = tf.InteractiveSession()
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 227, 227, 1])
+  x = tf.placeholder(tf.float32, [None, FLAGS.img_size, FLAGS.img_size, 1])
 
   # Build a Graph that computes the logits predictions from the
   # inference model.
@@ -555,18 +554,22 @@ def mnist_softmax():
 
   # Train
   sess.run(tf.initialize_all_variables())
-  for i in range(1000):
-    batch_xs, batch_ys = mnist.train.next_batch(32)
-    batch_xs_reshape = tf.reshape(batch_xs, [32, 28, 28, 1])
-    batch_xs_reshape = tf.image.resize_images(batch_xs_reshape, 227, 227, method=0).eval()
+  for i in range(FLAGS.num_batches):
+    batch_xs, batch_ys = mnist.train.next_batch(FLAGS.batch_size)
+    batch_xs_reshape = tf.reshape(batch_xs, [FLAGS.batch_size, 28, 28, 1])
+    batch_xs_reshape = tf.image.resize_images(batch_xs_reshape, FLAGS.img_size, FLAGS.img_size, method=0).eval()
     train_step.run({x: batch_xs_reshape, y_: batch_ys})
 
     # Test trained model
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
     test_images = tf.reshape(mnist.test.images, [-1, 28, 28, 1])
-    test_images = tf.image.resize_images(test_images, 227, 227, method=0).eval()
+    test_images = tf.image.resize_images(test_images, FLAGS.img_size, FLAGS.img_size, method=0).eval()
     print(accuracy.eval({x: test_images, y_: mnist.test.labels}))
+
+  # Save the variables to disk.
+  save_path = saver.save(sess, "/tmp/model.ckpt")
+  print("Model saved in file: %s" % save_path)
 
 def main(_):
   mnist_softmax()
