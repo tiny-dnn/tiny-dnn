@@ -374,13 +374,13 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         &max_output_value);
     // data type restore
     std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
-    for (int i = 0; i < in.size(); i++) {
+    for (uint i = 0; i < in.size(); i++) {
        in_quantized.push_back(static_cast<uint8_t>(in[i]));
     }
-    for (int i = 0; i < W.size(); i++) {
+    for (uint i = 0; i < W.size(); i++) {
         W_quantized.push_back(static_cast<uint8_t>(W[i]));
     }
-    for (int i = 0; i < bias.size(); i++) {
+    for (uint i = 0; i < bias.size(); i++) {
         bias_quantized.push_back(static_cast<uint8_t>(bias[i]));
     }
 
@@ -446,7 +446,7 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
         &min_output_requantized, &max_output_requantized, &a_requantized);
     // store directly in float datatype
-    for (int i = 0; i < a_requantized.size(); i++) {
+    for (uint i = 0; i < a_requantized.size(); i++) {
         a[i] = static_cast<float>(a_requantized[i]);
     }
     a_r[0] = min_output_requantized;

@@ -371,7 +371,7 @@ class tiny_backend : public backend {
         for (cnn_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_fully_connected_kernel(*params_f_,
                 in[i], W,  params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-                a[i], layer_->get_parallelize());
+                a[i], layer_->parallelize());
         }
 #else
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
