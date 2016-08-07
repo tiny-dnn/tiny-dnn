@@ -1,11 +1,11 @@
-tiny-cnn: A header-only, dependency-free deep learning framework for C++11
+tiny-dnn: A header-only, dependency-free deep learning framework for C++11
 ========
 
 | **Linux/Mac OS** | **Windows** |
 |------------------|-------------|
 |[![Build Status](https://travis-ci.org/nyanp/tiny-cnn.svg?branch=master)](https://travis-ci.org/nyanp/tiny-cnn)|[![Build status](https://ci.appveyor.com/api/projects/status/s4mow1544tvoqeeu?svg=true)](https://ci.appveyor.com/project/nyanp/tiny-cnn)|
 
-tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
+tiny-dnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
 * [Features](#features)
 * [Comparison with other libraries](#comparison-with-other-libraries)
@@ -21,7 +21,8 @@ tiny-cnn is a C++11 implementation of deep learning. It is suitable for deep lea
 Check out the [documentation](doc/readme.md) for more info.
 
 ## What's New
-- 2016/7/27 [tiny-cnn v0.1.1 released!](https://github.com/nyanp/tiny-cnn/releases/tag/v0.1.1)
+- 2016/8/7  tiny-cnn is now moved to organization account, and rename into tiny-dnn :)
+- 2016/7/27 [tiny-cnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
 
 ## Features
 - reasonably fast, without GPU
@@ -34,13 +35,13 @@ Check out the [documentation](doc/readme.md) for more info.
     - no output to stdout/stderr
     - a constant throughput (simple parallelization model, no garbage collection)
     - work without throwing an exception
-    - [can import caffe's model](https://github.com/nyanp/tiny-cnn/tree/master/examples/caffe_converter)
+    - [can import caffe's model](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/caffe_converter)
 - simply implemented
     - be a good library for learning neural networks
 
 ## Comparison with other libraries
 
-||tiny-cnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
+||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
 |---|---|---|---|---|
 |Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|
 |Modeling By|C++ code|Config File|Python Code|Python Code|
@@ -102,7 +103,7 @@ Nothing. All you need is a C++11 compiler.
 [OpenCV](http://opencv.org/)
 
 ## Build
-tiny-cnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
+tiny-dnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
 
 ```
 cmake .
@@ -123,7 +124,7 @@ Some cmake options are available:
 |BUILD_EXAMPLES|Build example projects|ON|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
-*tiny-cnn use c++11 standard library for parallelization by default
+*tiny-dnn use c++11 standard library for parallelization by default
 **to build tests, type `git submodule update --init` before build
 
 For example, type the following commands if you want to use intel TBB and build tests:
@@ -213,10 +214,10 @@ void construct_mlp() {
 }
 ```
 
-more sample, read examples/main.cpp or [MNIST example](https://github.com/nyanp/tiny-cnn/tree/master/examples/mnist) page.
+more sample, read examples/main.cpp or [MNIST example](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist) page.
 
 ## Contributing
-Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-cnn development!
+Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-dnn development!
 For a quick guide to contributing, take a look at the [Contribution Documents](doc/CONTRIBUTING.md).
 
 ## References

@@ -1,6 +1,6 @@
-# tiny-cnn documentations
+# tiny-dnn documentations
 
-tiny-cnn is a header only, dependency free deep learning library written in C++. It is designed to be used in the real applications, including IoT devices and embedded systems.
+tiny-dnn is a header only, dependency free deep learning library written in C++. It is designed to be used in the real applications, including IoT devices and embedded systems.
 
 ## User guides
 - [How-to](How-Tos.md)
@@ -13,16 +13,16 @@ tiny-cnn is a header only, dependency free deep learning library written in C++.
     - [Importing caffe's model](../examples/caffe_converter/readme.md)
 
 ## Application Links
-I'm willing to update this list if your software use tiny-cnn. Please contact me at Email(see my github profile).
+I'm willing to update this list if your software use tiny-dnn. Please contact me at Email(see my github profile).
 
 - [zhangqianhui/CnnForAndroid](https://github.com/zhangqianhui/CnnForAndroid) - A Vehicle Recognition Project using Convolutional Neural Network(CNN) in Android platform
-- [edgarriba/opencv_contrib](https://github.com/edgarriba/opencv_contrib) (in progress) - A new opencv's dnn module which use tiny-cnn as its backend
+- [edgarriba/opencv_contrib](https://github.com/edgarriba/opencv_contrib) (in progress) - A new opencv's dnn module which use tiny-dnn as its backend
 
 ## Developer guides
 - [How to contribute](CONTRIBUTING.md)
 - [Adding a new layer](Adding-a-new-layer.md)
 
-## A quick introduction to tiny-cnn
+## A quick introduction to tiny-dnn
 Include tiny_cnn.h:
 
 ```cpp
@@ -94,6 +94,6 @@ Save the trained parameter:
     ofs << net;
 ```
 
-For a more in-depth about tiny-cnn, check out [MNIST classification](../examples/mnist/readme.md) where you can see the end-to-end example.
-You will find tiny-cnn's API in [How-to](How-Tos.md).
+For a more in-depth about tiny-dnn, check out [MNIST classification](../examples/mnist/readme.md) where you can see the end-to-end example.
+You will find tiny-dnn's API in [How-to](How-Tos.md).
 

@@ -46,7 +46,7 @@ void convert_images(const std::string& directory,
 }
 ```
 
-Another example can be found in [issue#16](https://github.com/nyanp/tiny-cnn/issues/16), which can treat color channels.
+Another example can be found in [issue#16](https://github.com/tiny-dnn/tiny-dnn/issues/16), which can treat color channels.
 
 ### 2. using [mnisten](https://github.com/nyanp/mnisten) (image file => idx format)
 mnisten is a library to convert image files to idx format.

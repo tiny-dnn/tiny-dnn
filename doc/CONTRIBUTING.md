@@ -1,14 +1,14 @@
 How to contribute
 ========
 
-Thanks for taking the time to contribute to tiny-cnn! The following is a few guidelines for contributors.
+Thanks for taking the time to contribute to tiny-dnn! The following is a few guidelines for contributors.
 These are just guidelines, not rules, and feel free to propose changes to this document in a pull request. 
 
 ## Getting Started
 - Make sure you have a C++11 compiler.
 - Make sure you have a GitHub account.
 - Register a report about your issue.
-    - Check [the issue list](https://github.com/nyanp/tiny-cnn/issues) to see if the problem has already been reported.
+    - Check [the issue list](https://github.com/tiny-dnn/tiny-dnn/issues) to see if the problem has already been reported.
     - This can be skipped if the issue is trivial (fixing a typo, etc).
 
 ## Making Changes
@@ -22,7 +22,7 @@ These are just guidelines, not rules, and feel free to propose changes to this d
 ## Coding guides
 - Keep header-only
 - Keep dependency-free
-    - If your change requires 3rd party libraries, this should be __optional__ in tiny-cnn.
+    - If your change requires 3rd party libraries, this should be __optional__ in tiny-dnn.
     Please guard your 3rd party dependent code by ```#ifdef - #endif``` block, and white CMakelist option to enable the block - 
     but lesser these switches, the better.
 - Keep platform-independent

@@ -1,8 +1,8 @@
 # Adding a new layer
-This section describes how to create a new layer incorporated with tiny-cnn. Let's create simple fully-connected layer for example.
+This section describes how to create a new layer incorporated with tiny-dnn. Let's create simple fully-connected layer for example.
 
 ### Declare class
-Let's define your layer. All of layer operations in tiny-cnn are derived from ```layer``` class.
+Let's define your layer. All of layer operations in tiny-dnn are derived from ```layer``` class.
 
 ```cpp
 // calculate y = Wx + b 
@@ -102,7 +102,7 @@ void forward_propagation(cnn_size_t worker_index,
 
 the ```in_data/out_data``` is array of input/output data, which is ordered as you told ```layer```'s constructor. The implementation is simple and straightforward, isn't it?
 
-```worker_index``` is task-id. It is always zero if you run tiny-cnn in single thread. If some class member variables are updated while forward/backward pass, these members must be treated carefully to avoid data race. If their variables are task-independent, your class can hold just N variables and access them by worker_index (you can see this example in [max_pooling_layer.h](../tiny_cnn/layers/max_pooling_layer.h)).
+```worker_index``` is task-id. It is always zero if you run tiny-dnn in single thread. If some class member variables are updated while forward/backward pass, these members must be treated carefully to avoid data race. If their variables are task-independent, your class can hold just N variables and access them by worker_index (you can see this example in [max_pooling_layer.h](../tiny_cnn/layers/max_pooling_layer.h)).
 input/output data managed by ```layer``` base class is *task-local*, so ```in_data/out_data``` is treated as if it is running on single thread.
 
 #### back propagation
@@ -156,4 +156,4 @@ TEST(network, gradient_check_fully_connected) {
 }
 ```
 
-Congratulations! Now you can use this new class as a tiny-cnn layer.
+Congratulations! Now you can use this new class as a tiny-dnn layer.

@@ -1,5 +1,5 @@
 # How-Tos
-Details about tiny-cnn's API and short examples.
+Details about tiny-dnn's API and short examples.
 
 - [construct the network model](#construct-the-network-model)
     - [sequential model](#sequential-model)
@@ -32,7 +32,7 @@ Details about tiny-cnn's API and short examples.
     - [change the number of threads while training](#change-the-number-of-threads)
 - [handle errors](#handle-errors)
     - [catch application exceptions](#catch-application-exceptions)
-    - [run tiny-cnn without exceptions](#run-tinycnn-without-exceptions)
+    - [run tiny-dnn without exceptions](#run-tinydnn-without-exceptions)
 
 Note: following example codes omits ```using namespace tiny_cnn;```.
     
@@ -345,7 +345,7 @@ input >> nn;
 *tiny_cnn saves only weights/biases array, not network structure itself*. So you must construct network(same as training time) before loading.
 
 ### <a name="import-caffe-model"></a>import caffe's model
-[Import Caffe Model to tiny-cnn](../examples/caffe_converter/readme.md)
+[Import Caffe Model to tiny-dnn](../examples/caffe_converter/readme.md)
 
 ### <a name="reading data"></a>reading data
 from MNIST idx format
@@ -449,7 +449,7 @@ Number of elements differs by layer types and settings. For example, in fully-co
 
 
 ### <a name="change-the-weight-initialization"></a>change the weight initialization
-In neural network training, initial value of weight/bias can affect training speed and accuracy. In tiny-cnn, the weight is appropriately scaled by xavier algorithm[1](http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf) and the bias is filled with 0.
+In neural network training, initial value of weight/bias can affect training speed and accuracy. In tiny-dnn, the weight is appropriately scaled by xavier algorithm[1](http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf) and the bias is filled with 0.
 
 To change initialization method (or weight-filler) and scaling factor, use ```weight_init()``` and ```bias_init()``` function of network and layer class.
 
@@ -502,10 +502,11 @@ This change affects execution time of training the network, but no affects on pr
 ```
 
 ## <a name="handle-errors"></a>handle errors
-When some error occurs, tiny-cnn doesn't print any message on stdout. Instead of ```printf```, tiny-cnn throws exception. This behaviour is suitable when you integrate tiny-cnn into your application (especially embedded systems).
+When some error occurs, tiny-dnn doesn't print any message on stdout. Instead of ```printf```, tiny-dnn throws exception.
+This behaviour is suitable when you integrate tiny-dnn into your application (especially embedded systems).
 
 ### <a name="catch-application-exceptions"></a>catch application exceptions
-tiny_cnn may throw one of the following types:
+tiny-dnn may throw one of the following types:
 
 - ```tiny_cnn::nn_error```
 - ```tiny_cnn::not_implemented_error```
@@ -522,4 +523,4 @@ try {
 }
 ```
 
-### <a name="run-tinycnn-without-exceptions"></a>run tiny-cnn without exceptions
+### <a name="run-tinydnn-without-exceptions"></a>run tiny-dnn without exceptions
