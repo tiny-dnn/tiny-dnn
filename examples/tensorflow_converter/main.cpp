@@ -11,23 +11,19 @@ void ListNodes(const tensorflow::GraphDef& graph_def) {
   for (int i = 0; i < graph_def.node_size(); i++) {
     const tensorflow::NodeDef& node_def = graph_def.node(i);
     // print nodes information
-    cout << "  Node Name: " << node_def.name()
-         << "  Node Operation: " << node_def.op()
+    cout << "  Node name: " << node_def.name()
+         << "  Node operation: " << node_def.op()
          << endl;
+    if (node_def.op() != "Placeholder" && node_def.op() != "Identity") {
+      cout << "  Tensor type: " << node_def.attr().at("dtype").tensor().dtype()
+           << "  Size of tensor values: " << node_def.attr().at("value").tensor().float_val().size()
+           << endl;
 
-    // print attributes information
-    google::protobuf::Map<string, tensorflow::AttrValue>::const_iterator iMapPairLocator;
-
-    for ( iMapPairLocator = node_def.attr().begin()
-        ; iMapPairLocator != node_def.attr().end()
-        ; ++ iMapPairLocator )
-    {
-        cout << "  Key: " << static_cast<string>(iMapPairLocator->first.c_str())
-             << endl;
+      std::vector<float> parameters;
+      for (int i = 0; i < node_def.attr().at("value").tensor().float_val().size(); i++) {
+        parameters.push_back(node_def.attr().at("value").tensor().float_val().Get(i));
+      }
     }
-    cout << "  TensorShapeSize: " << node_def.attr().at("dtype").tensor().tensor_shape().dim_size()
-         << "  TensorContent: " << node_def.attr().at("value").tensor().tensor_shape().dim_size()
-         << endl;
   }
 }
 
