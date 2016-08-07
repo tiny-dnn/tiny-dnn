@@ -277,7 +277,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         const auto width = params_.out.depth_ * pitch + border_width;
         const auto height = params_.in.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
-        const vec_t& W = *this->get_weights()[0];
+        const vec_t& W = *this->weights()[0];
 
         img.resize(width, height);
         img.fill(bg_color);
