@@ -68,9 +68,12 @@ class Conv2dCustomForwardOp : private Conv2d, public core::OpKernel {
         Conv2d::setParams(context.params());
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
+<<<<<<< HEAD:tiny_dnn/core/kernels/conv2d_op_custom.h
         // initialize outputs
         fill_tensor(out_data, float_t(0));
 
+=======
+>>>>>>> refactor tiny forward with functor:tiny_cnn/core/kernels/conv2d_op_custom.h
         // convolution algorithm
         conv2d_op_custom_impl(in_data_padded,
                               W,
