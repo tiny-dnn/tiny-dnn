@@ -109,8 +109,17 @@ class layer : public node {
     bool parallelize() const { return parallelize_; }
     bool initialized() const { return initialized_; }
 
+    // TODO(edgar): Deprecated: use the below method 
     core::backend_t backend_type() const {
         return backend_->type();
+    }
+
+    core::backend_t backend_type2() const {
+        return backend_type_;
+    }
+
+    virtual std::string kernel_file() const {
+        return std::string("empty_kernel_str");
     }
 
     std::shared_ptr<core::backend> backend() { return backend_; }

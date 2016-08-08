@@ -51,10 +51,12 @@ namespace tiny_dnn {
  
 Device::Device(device_t type)
         : type_(type), has_clcuda_api_(false) {
+    nn_info("Initializing Non-OpenCL device ...");
     if (type == device_t::GPU) {
         nn_error("Bad GPU device initialization. "
-                     "Please provide platform_id and device_id");
+                 "Please provide platform_id and device_id");
     }
+    nn_info("Initializing Non-OpenCL device ... OK");
 }
 
 Device::Device(device_t type,
@@ -66,18 +68,42 @@ Device::Device(device_t type,
         , device_id_(device_id) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     // Instantiate Platform and Device
+    nn_info("Initializing OpenCL platform ...");
     auto platform = CLCudaAPI::Platform(platform_id);
 
+    // Print short pltform info
+    nn_info("Initializing OpenCL platform ... OK");
+    nn_info("-- Running on platform " 
+                       + to_string(platform_id) +
+            ". Found " + to_string(platform.NumDevices()) + " devices.");
+
     // Create and retain device object
+    nn_info("Initializing OpenCL device ...");
     device_ = std::make_shared<CLCudaAPI::Device>(platform, device_id);
 
-    // Create and retain device context
-    context_ = std::make_shared<CLCudaAPI::Context>(*device_);
-
     // Print short device info
-    nn_info("Initializing ...");
-    nn_info("Running on device " + to_string(device_->Name().c_str()) +
-            " of " + to_string(device_->Vendor().c_str()));
+    nn_info("Initializing OpenCL device ... OK");
+    nn_info("-- Running on device " + to_string(device_->Name()) +
+                             " of " + to_string(device_->Vendor()));
+    nn_info("-- Device type: "  + to_string(device_->Type()));
+	nn_info("-- Capabilities: " + to_string(device_->Capabilities()));
+
+    // check device type
+    if (type == device_t::CPU && !device_->IsCPU()) {
+        throw nn_error("Not found a CPU device. You are on: "
+                + to_string(device_->Type()));
+    }
+    else if (type == device_t::GPU && !device_->IsGPU()) {
+        throw nn_error("Not found a GPU device. You are on: "
+                + to_string(device_->Type()));
+    }
+
+    // Create and retain device context
+    nn_info("Initializing OpenCL device context ...");
+
+    context_ = std::make_shared<CLCudaAPI::Context>(*device_);
+    
+    nn_info("Initializing OpenCL device context ... OK");
 #else 
     nn_error("TinyDNN has not been compiled with OpenCL or CUDA support.");
 #endif
@@ -91,9 +117,10 @@ void Device::registerOp(const layer& l) {
         return;
     }
 
-    if (l.backend_type() != core::backend_t::OpenCL) {
+    // TODO(edgr): switch l.backend_type2() after refactoring
+    if (l.backend_type2() != core::backend_t::OpenCL) {
         nn_warn("Cannot register layer: " + l.layer_type() +
-                ". Enabled engine: " + to_string(l.backend_type()));
+                ". Enabled engine: " + to_string(l.backend_type2()));
         return;
     }
 

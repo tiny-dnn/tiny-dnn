@@ -37,7 +37,7 @@ TEST(core, device) {
     // CPU and GPU devices are instantiated
 
     Device my_cpu_device(device_t::CPU);
-    Device my_gpu_device(device_t::GPU, 0, 0);
+    Device my_gpu_device(device_t::CPU, 0, 0);
 }
 
 TEST(core, add_bad_device) {
@@ -53,7 +53,7 @@ TEST(core, add_bad_device) {
     my_gpu_device.registerOp(l);
 }
 
-/*TEST(core, add_bad_layer) {
+TEST(core, add_bad_layer) {
     // A GPU device cannot register an op with non-OpenCL engine.
     // A warning is expected telling the user to redefine the op engine.
  
@@ -63,7 +63,7 @@ TEST(core, add_bad_device) {
         padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
     my_gpu_device.registerOp(l);
-}*/
+}
 
 TEST(core, device_add_op) {
     // An Op with OpenCL engine is registeres to

@@ -99,8 +99,13 @@ class ProgramManager {
 
         // Define op kernel string and instantiate program
         // TODO(edgar): load from `cl_kernels` dir.
-        std::string program_string;
-        auto program = CLCudaAPI::Program(context_, std::move(program_string));
+		// std::ifstream cl_file("opencl_hello_world.cl");
+		std::ifstream cl_file(layer.kernel_file());
+        std::string   cl_string(std::istreambuf_iterator<char>(cl_file),
+                               (std::istreambuf_iterator<char>()));
+        
+        std::cout << cl_string << std::endl;
+        auto program = CLCudaAPI::Program(context_, std::move(cl_string));
 
         /*
          * Builds this program and checks for any compilation errors.
