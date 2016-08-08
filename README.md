@@ -3,7 +3,7 @@ tiny-dnn: A header-only, dependency-free deep learning framework for C++11
 
 | **Linux/Mac OS** | **Windows** |
 |------------------|-------------|
-|[![Build Status](https://travis-ci.org/nyanp/tiny-cnn.svg?branch=master)](https://travis-ci.org/nyanp/tiny-cnn)|[![Build status](https://ci.appveyor.com/api/projects/status/s4mow1544tvoqeeu?svg=true)](https://ci.appveyor.com/project/nyanp/tiny-cnn)|
+|[![Build Status](https://travis-ci.org/tiny-dnn/tiny-dnn.svg?branch=master)](https://travis-ci.org/tiny-dnn/tiny-dnn)|[![Build status](https://ci.appveyor.com/api/projects/status/a5syoifm8ct7b4l2?svg=true)](https://ci.appveyor.com/project/tinydnn/tiny-dnn)|
 
 tiny-dnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
