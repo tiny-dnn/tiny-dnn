@@ -474,6 +474,7 @@ private:
         if (backend_type == backend_t::tiny_dnn) {
             kernel_fwd_  = std::make_shared<Conv2dCustomForwardOp>(ctx);
             kernel_back_ = std::make_shared<Conv2dCustomBackwardOp>(ctx);
+            return;
         }
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
