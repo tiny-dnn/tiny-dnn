@@ -479,7 +479,6 @@ private:
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
 
-
         /*std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
