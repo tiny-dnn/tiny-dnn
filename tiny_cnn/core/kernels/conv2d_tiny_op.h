@@ -45,6 +45,8 @@
 #pragma once
 
 #include "tiny_cnn/core/kernels/conv2d.h"
+#include "tiny_cnn/core/kernels/conv2d_tiny_op_functor.h"
+
 #include "tiny_cnn/core/framework/op_kernel.h"
 
 namespace tiny_cnn {
@@ -55,69 +57,20 @@ class Conv2dCustomForwardOp : public core::OpKernel, Conv2d {
         : core::OpKernel(context) {}
 
     void compute(core::OpKernelContext* context) override {
+        // incomimg/outcoming data 
         const tensor_t& in_data = context->input(0);
         const vec_t&          W = context->input(1)[0];
         const vec_t&       bias = context->input(2)[0];
         tensor_t&      out_data = context->output(1);
 
-        // retrieve the convolutional parameters and pad input
-        Conv2d::setParams(context->params());
-
         // pad input data
         tensor_t in_data_padded;
+        Conv2d::setParams(context->params());
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        core::conv_params params = Conv2d::params();
-        bool layer_parallelize = context->parallelize();
-
         // convolution algorithm
-
-        for_i(layer_parallelize, in_data_padded.size(), [&](int sample) {
-            const vec_t& in = in_data_padded[sample];
-            vec_t& a = out_data[sample];
-
-            for (cnn_size_t o = 0; o < params.out.depth_; o++) {
-                for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
-                    if (!params.tbl.is_connected(o, inc)) continue;
-
-                    cnn_size_t idx = 0;
-                    idx = params.in.depth_ * o + inc;
-                    idx = params.weight.get_index(0, 0, idx);
-                    const float_t *pw = &W[idx];
-
-                    idx = params.in_padded.get_index(0, 0, inc);
-                    const float_t *pi = &in[idx];
-
-                    idx = params.out.get_index(0, 0, o);
-                    float_t *pa = &a[idx];
-
-                    for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                        for (cnn_size_t x = 0; x < params.out.width_; x++) {
-                            const float_t * ppw = pw;
-                            const float_t * ppi = pi + params.in_padded.width_ *
-                                (y * params.h_stride) +
-                                x * params.w_stride;
-                            float_t sum = float_t(0);
-
-                            // should be optimized for small kernel(3x3,5x5)
-                            for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {    // NOLINT
-                                for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) { // NOLINT
-                                    idx = wy * params.in_padded.width_ + wx;
-                                    sum += *ppw++ * ppi[idx];
-                                }
-                            }
-                            pa[y * params.out.width_ + x] += sum;
-                        }
-                    }
-                }
-
-                if (params.has_bias) {
-                    float_t * pa = &a[params.out.get_index(0, 0, o)];
-                    float_t * paa = pa + params.out.width_ * params.out.height_;
-                    std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
-                }
-            }
-        });
+        Conv2dCustomForwardFunctor()(in_data_padded, W, bias, out_data,
+                                     Conv2d::params(), context->parallelize());
     }
 };
 
