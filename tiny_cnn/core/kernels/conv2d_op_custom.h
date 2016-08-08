@@ -46,34 +46,69 @@
 
 #include "tiny_cnn/core/framework/op_kernel.h"
 
+#include "tiny_cnn/core/kernels/conv2d.h"
+#include "tiny_cnn/core/kernels/conv2d_op_custom_impl.h"
+
 namespace tiny_cnn {
 
-class Conv2dCustomForwardOp : public core::OpKernel {
+class Conv2dCustomForwardOp : private Conv2d, public core::OpKernel {
  public:
-    explicit Conv2dCustomForwardOp(core::OpKernelConstruction* context)
+    explicit Conv2dCustomForwardOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
-    void compute(core::OpKernelContext* context) override {
+    void compute(const core::OpKernelContext& context) override {
+        // incomimg/outcoming data 
+        const tensor_t& in_data = context.input(0);
+        const vec_t&          W = context.input(1)[0];
+        const vec_t&       bias = context.input(2)[0];
+        tensor_t&      out_data = context.output(1);
 
-        nn_info("Running Conv2dCustomForwardOp");
+        // pad input data
+        tensor_t in_data_padded;
+        Conv2d::setParams(context.params());
+        Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        // TODO(edgar/nyanp): we should be able to do something like this
-        //
-        // const tensor_t& in_data = context->input(0);
-        // const vec_t&          W = context->input(1);
-        // const vec_t&          b = context->input(2);
-        // tensor_t&      out_data = context->output(0);
+        // initalize outputs
+        fill_tensor(out_data, float_t(0));
 
+        // convolution algorithm
+        conv2d_op_custom_impl(in_data_padded,
+                              W,
+                              bias,
+                              out_data,
+                              Conv2d::params(),
+                              context.parallelize());
     }
 };
 
-class Conv2dCustomBackwardOp : public core::OpKernel {
+class Conv2dCustomBackwardOp : private Conv2d, public core::OpKernel {
  public:
-    explicit Conv2dCustomBackwardOp(core::OpKernelConstruction* context)
+    explicit Conv2dCustomBackwardOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
-    void compute(core::OpKernelContext* context) override {
-        nn_info("Running Conv2dCustomBackwardOp");
+    void compute(const core::OpKernelContext& context) override {
+        // incoming/outcoming data
+        const tensor_t& prev_out = context.input(0);
+        const vec_t& W  = context.input(1)[0];
+        tensor_t&    dW = context.input_grad(1);
+        tensor_t&    db = context.input_grad(2);
+        tensor_t&    prev_delta = context.input_grad(0);
+        tensor_t&    curr_delta = context.output_grad(1);
+
+        // set an cast the convolutional parameters
+        Conv2d::setParams(context.params());
+
+        // initalize outputs
+        fill_tensor(prev_delta, float_t(0));
+
+        // convolution algorithm
+        conv2d_op_custom_impl(prev_out, W, dW, db, curr_delta,
+            prev_delta, Conv2d::params(), context.parallelize());
+
+        // apply unpadding
+        if (Conv2d::params().pad_type == core::padding::same) {
+            Conv2d::copy_and_unpad_delta(prev_out, prev_delta);
+        }
     }
 };
 

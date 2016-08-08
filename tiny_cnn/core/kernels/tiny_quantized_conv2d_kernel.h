@@ -231,8 +231,8 @@ void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
     const int32_t offset_curr_delta =
         float_to_quantized_unclamped<uint8_t>(0.0f, min_curr_delta, max_curr_delta);
-    const int32_t zero_in_prev_delta =
-        float_to_quantized<int32_t>(0.0f, min_prev_delta_value, max_prev_delta_value);
+    // const int32_t zero_in_prev_delta =
+    //    float_to_quantized<int32_t>(0.0f, min_prev_delta_value, max_prev_delta_value);
 
     // propagate delta to previous layer
     for_i(params.in.depth_, [&](int inc) {

@@ -35,7 +35,8 @@
 #include "tiny_cnn/core/device_cpu.h"
 #include "tiny_cnn/core/device_ocl.h"
 
-#include "tiny_cnn/core/kernels/conv2d_tiny_op.h"
+#include "tiny_cnn/core/kernels/conv2d_op_custom.h"
+
 #include "tiny_cnn/core/framework/device.h"
 #include "tiny_cnn/core/framework/program_manager.h"
 

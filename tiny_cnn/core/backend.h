@@ -50,6 +50,7 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
             nn_error("Not supported ostream enum.");
             break;
     }
+    return os;
 }
 
 /*enum class Engine { OpenCL };*/

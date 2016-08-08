@@ -53,7 +53,7 @@ TEST(core, add_bad_device) {
     my_gpu_device.registerOp(l);
 }
 
-TEST(core, add_bad_layer) {
+/*TEST(core, add_bad_layer) {
     // A GPU device cannot register an op with non-OpenCL engine.
     // A warning is expected telling the user to redefine the op engine.
  
@@ -63,7 +63,7 @@ TEST(core, add_bad_layer) {
         padding::valid, true, 1, 1, backend_t::tiny_cnn);
 
     my_gpu_device.registerOp(l);
-}
+}*/
 
 TEST(core, device_add_op) {
     // An Op with OpenCL engine is registeres to
