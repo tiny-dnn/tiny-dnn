@@ -206,7 +206,7 @@ TEST(convolutional, fprop_nnp) {
     }
 }
 #endif
-/*
+
 TEST(convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
     nn << convolutional_layer<tan_h>(5, 5, 3, 1, 1);
@@ -283,5 +283,5 @@ TEST(convolutional, read_write2) {
 
     serialization_test(layer1, layer2);
 }
-*/
+
 } // namespace tiny-cnn

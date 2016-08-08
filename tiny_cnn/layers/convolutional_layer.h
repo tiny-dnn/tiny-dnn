@@ -271,9 +271,17 @@ class convolutional_layer : public feedforward_layer<Activation> {
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) {
-        //auto ctx = new OpKernelContext(in_data, out_data);
+        // activations
+        // TODO(edgar/nyanp): refactor and move activations out
+        this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        //kernel_back_->compute(ctx);
+        // forward convolutional op context
+        auto ctx = new OpKernelContext(in_data, out_data, out_grad, in_grad);
+             ctx->setParams(&params_);
+             ctx->setParallelize(layer::parallelize());
+
+        // launch convolutional kernel
+        kernel_back_->compute(ctx);
 
         // Base::backend_->conv2d(in_data, out_data, out_grad, in_grad);
     }

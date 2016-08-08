@@ -86,21 +86,32 @@ class OpKernelContext {
         op_params_ = std::unique_ptr<OpParams>(new OpParams());
     }
 
+    explicit OpKernelContext(const std::vector<tensor_t*>& in_data,
+                             const std::vector<tensor_t*>& out_data,
+                             std::vector<tensor_t*>&       out_grad,
+                             std::vector<tensor_t*>&       in_grad)
+            : in_data_(in_data)
+            , out_data_(out_data)
+            , out_grad_(out_grad)
+            , in_grad_(in_grad) {
+        op_params_ = std::unique_ptr<OpParams>(new OpParams());
+    }
+
     tensor_t& input(const int idx) const {
         return *in_data_[idx];
     }
-
-    /*vec_t& input(const int idx) const {
-        return (*in_data_[idx])[0];
-    }*/
 
     tensor_t& output(const int idx) const {
         return *out_data_[idx];
     }
 
-    /*vec_t& output(const int idx) const {
-        return (*out_data_[idx])[0];
-    }*/
+    tensor_t& input_grad(const int idx) const {
+        return *in_grad_[idx];
+    }
+
+    tensor_t& output_grad(const int idx) const {
+        return *out_grad_[idx];
+    }
 
     void setParams(Params* params) {
         op_params_->params_ptr_ = params;
@@ -119,8 +130,11 @@ class OpKernelContext {
     }
 
  private:
-    const std::vector<tensor_t*> in_data_;
+    std::vector<tensor_t*> in_data_;
     std::vector<tensor_t*> out_data_;
+    std::vector<tensor_t*> out_grad_;
+    std::vector<tensor_t*> in_grad_;
+
     std::unique_ptr<OpParams> op_params_;
 };
 

@@ -52,7 +52,7 @@ namespace tiny_cnn {
  */
 class Conv2d {
  public:
-    /* Applies padding to inout tensor given the convolution parameters
+    /* Applies padding to an input tensor given the convolution parameters
      *
      * @param in The input tensor
      * @param out The output tensor with padding applied
@@ -92,6 +92,36 @@ class Conv2d {
                     }
                 }
                 out[sample] = buf[sample];
+            }
+        }
+    }
+
+    /* Applies unpadding to an input tensor given the convolution parameters
+     *
+     * @param in The input tensor
+     * @param out The output tensor with padding applied
+     */
+    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
+        if (params_.pad_type == core::padding::valid) {
+            delta_unpadded = delta;
+        } else {
+            for (cnn_size_t sample = 0; sample < delta.size(); sample++) {
+                cnn_size_t idx = 0;
+                const vec_t& src = delta[sample];
+                vec_t& dst = delta_unpadded[sample];
+
+                for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                    float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
+                    idx = params_.in_padded.get_index(params_.weight.width_ / 2,
+                        params_.weight.height_ / 2, c);
+                    const float_t *pin = &src[idx];
+
+                    for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                        std::copy(pin, pin + params_.in.width_, pdst);
+                        pdst += params_.in.width_;
+                        pin += params_.in_padded.width_;
+                    }
+                }
             }
         }
     }
