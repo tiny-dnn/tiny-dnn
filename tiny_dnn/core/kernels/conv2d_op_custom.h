@@ -68,9 +68,6 @@ class Conv2dCustomForwardOp : private Conv2d, public core::OpKernel {
         Conv2d::setParams(context.params());
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        // initalize outputs
-        fill_tensor(out_data, float_t(0));
-
         // convolution algorithm
         conv2d_op_custom_impl(in_data_padded,
                               W,
