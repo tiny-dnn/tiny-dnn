@@ -30,6 +30,9 @@
 #include <string>
 #include <algorithm>
 
+#include "tiny_cnn/core/framework/op_kernel.h"
+#include "tiny_cnn/core/kernels/conv2d_tiny_op.h"
+
 #include "tiny_cnn/core/backend_tiny.h"
 #include "tiny_cnn/core/backend_nnp.h"
 #include "tiny_cnn/core/backend_dnn.h"
@@ -211,8 +214,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
             : Base(std::move(other))
             , params_(std::move(other.params_))
             , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
-            , cws_(std::move(other.cws_)) {
-        init_backend(std::move(Base::backend_type()));
+            , cws_(std::move(other.cws_))
+            , kernel_fwd_(std::move(other.kernel_fwd_))
+            , kernel_back_(std::move(other.kernel_back_)) {
+        // init_backend(std::move(Base::backend_type()));
     }
 
     ///< number of incoming connections for each output unit
@@ -233,12 +238,26 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) {
+                             std::vector<tensor_t*>&       out_data) { 
+        // forward convolutional op context
+        auto ctx = new OpKernelContext(in_data, out_data);
+             ctx->setParams(&params_);
+             ctx->setParallelize(layer::parallelize());
+
+        // launch convolutional kernel
+        kernel_fwd_->compute(ctx);
+
+        // activations
+        // TODO(edgar/nyanp): refactor and move activations out
+        this->forward_activation(*out_data[0], *out_data[1]);
+
+        /*
         // launch convolutional kernel
         Base::backend_->conv2d(in_data, out_data);
 
         // activations
         this->forward_activation(*out_data[0], *out_data[1]);
+        */
     }
 
     /**
@@ -252,16 +271,20 @@ class convolutional_layer : public feedforward_layer<Activation> {
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) {
-        Base::backend_->conv2d(in_data, out_data, out_grad, in_grad);
+        //auto ctx = new OpKernelContext(in_data, out_data);
+
+        //kernel_back_->compute(ctx);
+
+        // Base::backend_->conv2d(in_data, out_data, out_grad, in_grad);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
         if (params_.has_bias) {
-            return{ params_.in, params_.weight,
+            return { params_.in, params_.weight,
                 index3d<cnn_size_t>(1, 1, params_.out.depth_) };
         }
         else {
-            return{ params_.in, params_.weight };
+            return { params_.in, params_.weight };
         }
     }
 
@@ -445,7 +468,16 @@ private:
     }
 
     void init_backend(const backend_t backend_type) {
-        std::shared_ptr<core::backend> backend = nullptr;
+        // TODO(edgar): add device?
+        auto ctx = new core::OpKernelConstruction(nullptr);
+
+        if (backend_type == backend_t::tiny_cnn) {
+            kernel_fwd_  = std::make_shared<Conv2dCustomForwardOp>(ctx);
+            kernel_back_ = std::make_shared<Conv2dCustomBackwardOp>(ctx);
+        }
+
+
+        /*std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
         if (backend_type == backend_t::tiny_cnn ||
@@ -495,7 +527,7 @@ private:
             Base::backend_->set_layer(this);
         } else {
             throw nn_error("Could not allocate the backend.");
-        }
+        }*/
     }
 
     /* The convolution parameters */
@@ -507,6 +539,9 @@ private:
     /* Workers buffers */
     vec_t prev_delta2_padded_;
     conv_layer_worker_specific_storage cws_;
+
+    std::shared_ptr<core::OpKernel> kernel_fwd_;
+    std::shared_ptr<core::OpKernel> kernel_back_;
 };
 
 }  // namespace tiny_cnn
