@@ -15,6 +15,24 @@ void all2str(string & result, const in_value& t)
     result=oss.str();
 }
 
+static int32_t BigEndInt(const char* b, int start) {
+  return (((b[start + 1] & 0xff)) | ((b[ start+ 0] & 0xff)));
+}
+
+static float BigEndFloat(const char* b, int start) {
+
+  float val=0;
+
+  unsigned long result=0;
+  result |= ((unsigned long)(b[start]) << 0x18);
+  result |= ((unsigned long)(b[start+1]) << 0x10);
+  result |= ((unsigned long)(b[start+2]) << 0x08);
+  result |= ((unsigned long)(b[start+3]));
+  memcpy(&val,&result,4);
+
+  return val;
+}
+
 void summarize_attr_value(const string& attr_string, const AttrValue& attr_value) {
   switch (attr_value.value_case()) {
     case AttrValue::kS: {
@@ -73,15 +91,29 @@ void summarize_attr_value(const string& attr_string, const AttrValue& attr_value
       break;
     case AttrValue::kTensor: {
       string tmp_tostr;
-      // cout << "  (kTensor) " << attr_string << ": " << attr_value.tensor().ShortDebugString();
-      // cout << "  (kTensor) " << attr_string << ": " << attr_value.tensor().DebugString();
-      // cout << "  (kTensor) " << attr_string << ": " << atoi(attr_value.tensor().tensor_content().c_str());
+      // cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().ShortDebugString();
+      // cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().DebugString();
+      // cout << "   (kTensor) " << attr_string << ": " << BigEndInt(attr_value.tensor().tensor_content().c_str(), 0);
+      if (attr_value.tensor().dtype() == DT_FLOAT) {
+        cout << "   (kTensor) " << attr_string << ": [";
+        for (int i = 0; i < attr_value.tensor().tensor_content().size()/4; i++)
+          cout << BigEndFloat(attr_value.tensor().tensor_content().c_str(), 4*i) << ' ';
+        cout << ']' << endl;
+      } else if (attr_value.tensor().dtype() == DT_INT32){
+        cout << "   (kTensor) " << attr_string << ": [";
+        for (int i = 0; i < attr_value.tensor().tensor_content().size()/4; i++)
+          cout << BigEndInt(attr_value.tensor().tensor_content().c_str(), 4*i) << ' ';
+        cout << ']' << endl;
+
+      }
       cout << "   kTensor Size: " << attr_string << ": ";
       for (const auto& d : attr_value.tensor().tensor_shape().dim()) {
         if (d.size() == -1)
           cout << "What? Size is undefined here";
-        else
-          cout << ' ' << d.size();
+        else {
+          all2str(tmp_tostr, d.size());
+          cout << ' ' << tmp_tostr;
+        }
       }
       cout << endl;
       break;
