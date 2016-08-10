@@ -577,4 +577,4 @@ void printAllAvailableDevice() {
 #define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
 #endif
 
-} // namespace tiny_cnn
+} // namespace tiny_dnn
