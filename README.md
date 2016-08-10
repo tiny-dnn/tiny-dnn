@@ -120,7 +120,7 @@ Some cmake options are available:
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
 |USE_OPENCV|Use OpenCV for sample/test programs|ON|[Open Source Computer Vision Library](http://opencv.org/)|
-|BUILD_TESTS|Build unist tests|OFF|-**|
+|BUILD_TESTS|Build unit tests|OFF|-**|
 |BUILD_EXAMPLES|Build example projects|ON|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
