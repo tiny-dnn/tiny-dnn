@@ -105,7 +105,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel, Conv2d {
         kernel.SetArgument(7, 0);
 
         // TODO(edgar): how do we compute this value?
-        cnn_size_t size = 1000;
+        cnn_size_t size = 100000;
 
         // Creates a 1-dimensional thread configuration with thread-blocks/work-groups of 256 threads
         // and a total number of threads equal to the number of elements in the input/output vectors.

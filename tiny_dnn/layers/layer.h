@@ -123,7 +123,6 @@ class layer : public node {
         return std::string("empty_kernel_str");
     }
 
-<<<<<<< HEAD:tiny_dnn/layers/layer.h
     virtual std::string kernel_header() const {
         return std::string();
     }
@@ -131,8 +130,6 @@ class layer : public node {
     virtual void createOp() {
     }
 
-=======
->>>>>>> add base OpenCL pipeline:tiny_cnn/layers/layer.h
     void setDevice(const Device& device) {
         device_ptr_ = const_cast<Device*>(&device);
     }
@@ -581,11 +578,7 @@ class layer : public node {
     core::backend_t backend_type_;
     std::shared_ptr<core::backend> backend_;
 
-<<<<<<< HEAD:tiny_dnn/layers/layer.h
     Device* device_ptr_ = nullptr;
-=======
-    Device* device_ptr_;
->>>>>>> add base OpenCL pipeline:tiny_cnn/layers/layer.h
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;
