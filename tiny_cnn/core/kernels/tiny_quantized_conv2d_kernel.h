@@ -100,14 +100,6 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     const int32_t zero_in_total_space =
         float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
 
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
-
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
-
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
             if (!params.tbl.is_connected(o, inc)) continue;
@@ -139,13 +131,7 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                                     * (static_cast<int32_t>(ppi[idx]) - offset_input);
                         }
                     }
-                    // here we can consider whether to choose the clamped_output or not;
-                    const int32_t output =
-                        ((((sum + offset_output) * mult_output) + rounding) >>
-                         shift_output);
-                    const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
-                    const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
-                    pa_quantized[y * params.out.width_ + x] += output;
+                    pa_quantized[y * params.out.width_ + x] += sum;
                 }
             }
         }
@@ -388,13 +374,13 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         &max_output_value);
     // data type restore
     std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
-    for (int i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
        in_quantized.push_back(static_cast<uint8_t>(in[i]));
     }
-    for (int i = 0; i < W.size(); i++) {
+    for (size_t i = 0; i < W.size(); i++) {
         W_quantized.push_back(static_cast<uint8_t>(W[i]));
     }
-    for (int i = 0; i < bias.size(); i++) {
+    for (size_t i = 0; i < bias.size(); i++) {
         bias_quantized.push_back(static_cast<uint8_t>(bias[i]));
     }
 
@@ -407,14 +393,6 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
         float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
     const int32_t zero_in_total_space =
         float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
-
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
-
-    const int32_t rounding = (shift_output < 1) ? 0 : (1 << (shift_output - 1));
-    const int32_t highest_ = static_cast<int32_t>(highest<uint8_t>());
-    const int32_t lowest_ = static_cast<int32_t>(lowest<uint8_t>());
 
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
@@ -447,13 +425,7 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
                                     * (static_cast<int32_t>(ppi[idx]) - offset_input);
                         }
                     }
-                    // here we can consider whether to choose the clamped_output or not;
-                    const int32_t output =
-                        ((((sum + offset_output) * mult_output) + rounding) >>
-                         shift_output);
-                    const int32_t top_clamped_output = std::min<int32_t>(output, highest_);
-                    const int32_t clamped_output = std::max<int32_t>(top_clamped_output, lowest_);
-                    pa_quantized[y * params.out.width_ + x] += output;
+                    pa_quantized[y * params.out.width_ + x] += sum;
                 }
             }
         }
@@ -474,7 +446,7 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
         &min_output_requantized, &max_output_requantized, &a_requantized);
     // store directly in float datatype
-    for (int i = 0; i < a_requantized.size(); i++) {
+    for (size_t i = 0; i < a_requantized.size(); i++) {
         a[i] = static_cast<float>(a_requantized[i]);
     }
     a_r[0] = min_output_requantized;
