@@ -15,10 +15,11 @@ void all2str(string & result, const in_value& t)
     result=oss.str();
 }
 
+/* This method is used as reference for bit operation for char* parsering
+
 static int32_t BigEndInt(const char* b, int start) {
   return (((b[start + 1] & 0xff)) | ((b[ start+ 0] & 0xff)));
 }
-
 static float BigEndFloat(const char* b, int start) {
 
   float val=0;
@@ -31,6 +32,19 @@ static float BigEndFloat(const char* b, int start) {
   memcpy(&val,&result,4);
 
   return val;
+}
+*/
+
+static float char_to_float(const char* b) {
+  float f;
+  memcpy(&f, b, sizeof(float));
+  return f;
+}
+
+static float char_to_int32(const char* b) {
+  int32_t i;
+  memcpy(&i, b, sizeof(int32_t));
+  return i;
 }
 
 void summarize_attr_value(const string& attr_string, const AttrValue& attr_value) {
@@ -91,18 +105,19 @@ void summarize_attr_value(const string& attr_string, const AttrValue& attr_value
       break;
     case AttrValue::kTensor: {
       string tmp_tostr;
-      // cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().ShortDebugString();
-      // cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().DebugString();
-      // cout << "   (kTensor) " << attr_string << ": " << BigEndInt(attr_value.tensor().tensor_content().c_str(), 0);
+      /* Both way is a TensorFlow representatio of all Tensor information
+      cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().ShortDebugString();
+      cout << "   (kTensor) " << attr_string << ": " << attr_value.tensor().DebugString();
+      */
       if (attr_value.tensor().dtype() == DT_FLOAT) {
         cout << "   (kTensor) " << attr_string << ": [";
         for (int i = 0; i < attr_value.tensor().tensor_content().size()/4; i++)
-          cout << BigEndFloat(attr_value.tensor().tensor_content().c_str(), 4*i) << ' ';
+          cout << char_to_float(attr_value.tensor().tensor_content().c_str() + 4*i) << ' ';
         cout << ']' << endl;
       } else if (attr_value.tensor().dtype() == DT_INT32){
         cout << "   (kTensor) " << attr_string << ": [";
         for (int i = 0; i < attr_value.tensor().tensor_content().size()/4; i++)
-          cout << BigEndInt(attr_value.tensor().tensor_content().c_str(), 4*i) << ' ';
+          cout << char_to_int32(attr_value.tensor().tensor_content().c_str() + 4*i) << ' ';
         cout << ']' << endl;
 
       }
@@ -257,17 +272,6 @@ void ListNodes(const tensorflow::GraphDef& graph_def) {
       auto iter = node_def.attr().find(attr.first);
       summarize_attr_value(attr.first, iter->second);
     }
-         /*
-    if (node_def.op() != "Placeholder" && node_def.op() != "Identity" && node_def.op() == "Conv2D") {
-      cout  << "  Tensor type: " << node_def.attr().at("dtype").tensor().dtype()
-            << "  Size of tensor values: " << node_def.attr().at("value").tensor().float_val().size()
-            << endl;
-
-      std::vector<float> parameters;
-      for (int i = 0; i < node_def.attr().at("value").tensor().float_val().size(); i++) {
-        parameters.push_back(node_def.attr().at("value").tensor().float_val().Get(i));
-      }
-    }*/
   }
 }
 
