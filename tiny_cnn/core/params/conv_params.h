@@ -29,6 +29,10 @@
 namespace tiny_cnn {
 namespace core {
 
+// base class to handle multiple params
+class Params {
+};
+
 enum class padding {
     valid,  ///< use valid pixels of input
     same    ///< add zero-padding around input so as to keep image size
@@ -80,7 +84,8 @@ struct connection_table {
     cnn_size_t cols_;
 };
 
-struct conv_params {
+class conv_params : public Params {
+ public:
     connection_table tbl;
     index3d<cnn_size_t> in;
     index3d<cnn_size_t> in_padded;
@@ -90,6 +95,18 @@ struct conv_params {
     padding pad_type;
     size_t w_stride;
     size_t h_stride;
+
+    friend std::ostream& operator<<(std::ostream &o,
+                                    const core::conv_params& param) {
+        o << "in:        " << param.in        << "\n";
+        o << "out:       " << param.out       << "\n";
+        o << "in_padded: " << param.in_padded << "\n";
+        o << "weight:    " << param.weight    << "\n";
+        o << "has_bias:  " << param.has_bias  << "\n";
+        o << "w_stride:  " << param.w_stride  << "\n";
+        o << "h_stride:  " << param.h_stride  << "\n";
+        return o;
+    }
 };
 
 }  // namespace core
