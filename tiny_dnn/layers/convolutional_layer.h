@@ -292,8 +292,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     }
 
     std::string kernel_file() const override {
-        // return std::string("conv_kernel_str");
-        return std::string("/home/eriba/software/tiny-cnn/tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
+        return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
     }
 
     image<> weight_to_image() const {

@@ -74,6 +74,9 @@ class OpKernelContext {
         // the device on which the kernel is running.
         Device* device_ptr = nullptr;
 
+        // the layer on which kernel is runnning
+        layer* layer_ptr_ = nullptr;
+
         // the operation params
         core::Params* params_ptr_ = nullptr;
 
@@ -128,6 +131,22 @@ class OpKernelContext {
 
     bool parallelize() const {
         return op_params_->parallelize;
+    }
+
+    void setDevice(Device* device) {
+        op_params_->device_ptr = device;
+    }
+
+    Device* device() const {
+        return op_params_->device_ptr;
+    }
+
+    void setLayer(layer* layer) {
+        op_params_->layer_ptr_ = layer;
+    }
+
+    layer* Layer() const {
+        return op_params_->layer_ptr_;
     }
 
  private:

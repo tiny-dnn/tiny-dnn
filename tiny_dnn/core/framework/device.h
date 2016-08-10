@@ -86,30 +86,37 @@ Device::Device(device_t type,
     nn_info("-- Running on device " + to_string(device_->Name()) +
                              " of " + to_string(device_->Vendor()));
     nn_info("-- Device type: "  + to_string(device_->Type()));
-	nn_info("-- Capabilities: " + to_string(device_->Capabilities()));
+    nn_info("-- Capabilities: " + to_string(device_->Capabilities()));
 
     // check device type
     if (type == device_t::CPU && !device_->IsCPU()) {
-        throw nn_error("Not found a CPU device. You are on: "
+        //throw nn_error("Not found a CPU device. You are on: "
+        //        + to_string(device_->Type()));
+        nn_warn("Not found a CPU device. You are on: "
                 + to_string(device_->Type()));
+        return;
     }
     else if (type == device_t::GPU && !device_->IsGPU()) {
-        throw nn_error("Not found a GPU device. You are on: "
+        //throw nn_error("Not found a GPU device. You are on: "
+        //        + to_string(device_->Type()));
+        nn_warn("Not found a GPU device. You are on: "
                 + to_string(device_->Type()));
+        return;
     }
 
     // Create and retain device context
     nn_info("Initializing OpenCL device context ...");
 
     context_ = std::make_shared<CLCudaAPI::Context>(*device_);
-    
+    queue_   = std::make_shared<CLCudaAPI::Queue>(*context_, *device_);
+
     nn_info("Initializing OpenCL device context ... OK");
 #else 
     nn_error("TinyDNN has not been compiled with OpenCL or CUDA support.");
 #endif
 }
 
-void Device::registerOp(const layer& l) {
+void Device::registerOp(layer& l) {
     // TODO(egdar/nyanp): Should we raise an error here?
     if (!hasCLCudaAPI()) {
         nn_warn("Cannot register layer: " + l.layer_type() + "."

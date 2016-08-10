@@ -76,6 +76,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
         init_connection();
         init_backend(backend_type);
+        Base::set_backend_type(backend_type);
     }
 
     /**
@@ -102,6 +103,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
         init_connection();
         init_backend(backend_type);
+        Base::set_backend_type(backend_type);
     }
 
     // move constructor
@@ -147,7 +149,14 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     std::vector<index3d<cnn_size_t>>
     out_shape() const override { return { params_.out_, params_.out_ }; }
 
-    std::string layer_type() const override { return "max-pool"; }
+    std::string layer_type() const override {
+        return std::string("max-pool");
+    }
+
+    std::string kernel_file() const override {
+        return std::string("../tiny_cnn/core/kernels/cl_kernels/pooling.cl");
+    }
+
     size_t pool_size() const { return params_.pool_size_; }
 
     void set_sample_count(cnn_size_t sample_count) override {
@@ -222,7 +231,8 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
+        if (backend_type == backend_t::tiny_cnn ||
+            backend_type == backend_t::OpenCL) {
             backend = std::make_shared<core::tiny_backend>(
                 &out2in_,
                 &in2out_,

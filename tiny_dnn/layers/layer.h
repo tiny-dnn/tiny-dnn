@@ -37,6 +37,7 @@
 
 #include "tiny_dnn/node.h"
 #include "tiny_dnn/core/backend.h"
+#include "tiny_dnn/core/framework/device.fwd.h"
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/product.h"
@@ -120,6 +121,14 @@ class layer : public node {
 
     virtual std::string kernel_file() const {
         return std::string("empty_kernel_str");
+    }
+
+    void setDevice(const Device& device) {
+        device_ptr_ = const_cast<Device*>(&device);
+    }
+
+    Device* device() const {
+        return device_ptr_;
     }
 
     std::shared_ptr<core::backend> backend() { return backend_; }
@@ -561,6 +570,8 @@ class layer : public node {
     
     core::backend_t backend_type_;
     std::shared_ptr<core::backend> backend_;
+
+    Device* device_ptr_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

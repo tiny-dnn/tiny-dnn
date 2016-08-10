@@ -52,6 +52,14 @@
 #include <future>
 #endif
 
+#ifdef USE_OPENCL
+#ifdef __APPLE__
+    #include <OpenCL/cl.hpp>
+#else
+    #include <CL/cl2.hpp>
+#endif
+#endif
+
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
 
 namespace tiny_dnn {
@@ -531,9 +539,42 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
     }
 }
 
-} // namespace tiny_dnn
+// get all platforms (drivers), e.g. NVIDIA
+#ifdef USE_OPENCL
+void printAllAvailableDevice() {
+    std::vector<cl::Platform> all_platforms;
+    cl::Platform::get(&all_platforms);
+
+    if (all_platforms.size() == 0) {
+        std::cout << " No platforms found. Check OpenCL installation!\n";
+        exit(1);
+    }
+
+    for (size_t i = 0; i < all_platforms.size(); ++i) {
+        cl::Platform default_platform = all_platforms[i];
+        std::cout << "-- Using platform (" << i << "): "
+                  << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
+
+        // get default device (CPUs, GPUs) of the default patform
+        std::vector<cl::Device> all_devices;
+        default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
+
+        if (all_devices.size() == 0) {
+            std::cout << " No devices found. Check OpenCL installation!\n";
+        }
+
+        for (size_t j = 0; j < all_devices.size(); ++j) {
+            cl::Device default_device = all_devices[j];
+            std::cout << "---- Using device (" << j << "): "
+                      << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
+        }
+    }
+}
+#endif
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1800)
 #define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
 #define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
 #endif
+
+} // namespace tiny_cnn

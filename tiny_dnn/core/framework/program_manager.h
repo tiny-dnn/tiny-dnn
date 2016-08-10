@@ -81,7 +81,7 @@ class ProgramManager {
      * program to save copying: it should no longer be used in the
      * remainder of this function.
      */
-    void registerOp(const Device& device, const layer& layer) {
+    void registerOp(const Device& device, layer& layer) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         // retrieve incoming device an layer 
         CLCudaAPI::Device  device_  = device.device();
@@ -101,11 +101,18 @@ class ProgramManager {
         // TODO(edgar): load from `cl_kernels` dir.
 		// std::ifstream cl_file("opencl_hello_world.cl");
 		std::ifstream cl_file(layer.kernel_file());
-        std::string   cl_string(std::istreambuf_iterator<char>(cl_file),
-                               (std::istreambuf_iterator<char>()));
-        
-        std::cout << cl_string << std::endl;
-        auto program = CLCudaAPI::Program(context_, std::move(cl_string));
+        std::string program_tail{std::istreambuf_iterator<char>(cl_file),
+                                 std::istreambuf_iterator<char>()};
+        auto program_head = R"(
+        #define Dtype float
+        #define int_tp int
+        #define CONCAT(A,B) A##_##B
+        #define TEMPLATE(name,type) CONCAT(name,type)
+        )";
+
+        std::string program_string = std::string{program_head} + std::string{program_tail};
+        //std::cout << program_string << std::endl;
+        auto program = CLCudaAPI::Program(context_, std::move(program_string));
 
         /*
          * Builds this program and checks for any compilation errors.
@@ -117,14 +124,20 @@ class ProgramManager {
 
         if (build_status != CLCudaAPI::BuildStatus::kSuccess) {
             auto message = program.GetBuildInfo(device_);
-            throw nn_error("Compiler error(s)/warning(s) found: " +
-                            to_string(message.c_str()));
+            //throw nn_error("Compiler error(s)/warning(s) found: " +
+            //                to_string(message.c_str()));
+            nn_warn("Compiler error(s)/warning(s) found: " +
+                    to_string(message.c_str()));
             return;
         }
         nn_info("Compiling the kernel ... OK");
 
         // Kernel compilation succeed: Register program.
         programs_.insert({ key_program, program });
+
+        // Register device to layer
+        layer.setDevice(device);
+
 #endif  // USE_OPENCL OR USE_CUDA
     }
 
@@ -135,6 +148,14 @@ class ProgramManager {
 #else
         return cnn_size_t(0);
 #endif
+    }
+
+    CLCudaAPI::Program program(const Program& program) {
+        auto p = programs_.find(program);
+        if (p == programs_.end()) {
+            nn_error("Cannot retrieve program.");
+        }
+        return p->second;
     }
 
  protected:

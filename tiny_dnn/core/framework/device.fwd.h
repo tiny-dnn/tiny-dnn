@@ -94,6 +94,9 @@ class Device {
 
     // Returns the CLCudaAPI Context object
     CLCudaAPI::Context context() const { return *context_; }
+
+    // Returns the CLCudaAPI Queue object
+    CLCudaAPI::Queue queue() const { return *queue_; }
 #endif
 
     bool operator==(const Device& d) const {
@@ -110,7 +113,7 @@ class Device {
      *
      * @param l The layer to be registered
      */
-    void registerOp(const layer& l);
+    void registerOp(layer& l);
 
  private:
     /* The device type */
@@ -126,6 +129,8 @@ class Device {
     std::shared_ptr<CLCudaAPI::Device> device_;
     /* The CLCudaAPI device context */
     std::shared_ptr<CLCudaAPI::Context> context_;
+    /* The CLCudaAPI device queue */
+    std::shared_ptr<CLCudaAPI::Queue> queue_;
 #endif
 };
 
