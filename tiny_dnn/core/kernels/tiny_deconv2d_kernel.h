@@ -56,7 +56,7 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
                 const float_t *pi = &in[sample][idx];
 
                 idx = params.out.get_index(0, 0, o);
-                assert(static_cast<cnn_size_t>(sample) < a.size()&&
+                assert(static_cast<cnn_size_t>(sample) < a.size() &&
                        idx < a[sample].size());
                 float_t *pa = &a[sample][idx];
 
