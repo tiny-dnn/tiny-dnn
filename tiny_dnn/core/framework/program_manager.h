@@ -103,15 +103,20 @@ class ProgramManager {
 		std::ifstream cl_file(layer.kernel_file());
         std::string program_tail{std::istreambuf_iterator<char>(cl_file),
                                  std::istreambuf_iterator<char>()};
-        auto program_head = R"(
-        #define Dtype float
-        #define int_tp int
-        #define CONCAT(A,B) A##_##B
-        #define TEMPLATE(name,type) CONCAT(name,type)
-        )";
+        // fixed kernel params
+        std::string program_head =
+            std::string("#define Dtype float\n") +
+            std::string("#define Dtype4 float4\n") +
+            std::string("#define int_tp int\n") +
+            std::string("#define CONCAT(A,B) A##_##B\n") +
+            std::string("#define TEMPLATE(name,type) CONCAT(name,type)\n");
+
+        // per layer params
+        program_head += layer.kernel_header();
+
+        std::cout << layer.kernel_header() << std::endl;
 
         std::string program_string = std::string{program_head} + std::string{program_tail};
-        //std::cout << program_string << std::endl;
         auto program = CLCudaAPI::Program(context_, std::move(program_string));
 
         /*

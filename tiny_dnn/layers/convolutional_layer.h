@@ -295,6 +295,21 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
     }
 
+    std::string kernel_header() const override {
+        std::stringstream ss;
+        ss << "#define MULTI\n";
+        ss << "#define KERNEL_H " << params_.weight.height_ << "\n";
+        ss << "#define KERNEL_W " << params_.weight.width_  << "\n";
+        ss << "#define CHANNELS " << params_.weight.depth_  << "\n";
+        ss << "#define STRIDE_H " << params_.h_stride << "\n";
+        ss << "#define STRIDE_W " << params_.w_stride << "\n";
+        ss << "#define APPLY_BIAS " << params_.has_bias   << "\n";
+        ss << "#define OUTPUT_Z "   << params_.out.depth_ << "\n";
+        // TODO(edgar): REVISE THIS
+        ss << "#define ZPAR " << params_.out.depth_  << "\n";
+        return ss.str();
+    }
+
     image<> weight_to_image() const {
         image<> img;
         const cnn_size_t border_width = 1;

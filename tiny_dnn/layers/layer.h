@@ -123,6 +123,10 @@ class layer : public node {
         return std::string("empty_kernel_str");
     }
 
+    virtual std::string kernel_header() const {
+        return std::string();
+    }
+
     void setDevice(const Device& device) {
         device_ptr_ = const_cast<Device*>(&device);
     }
