@@ -34,12 +34,15 @@ using namespace tiny_dnn;
 namespace tiny_dnn {
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 /*TEST(core, device) {
 =======
 TEST(core, print_devices) {
     printAllAvailableDevice();
 }
 
+=======
+>>>>>>> fix non-OpenCL compatibility
 TEST(core, device) {
 >>>>>>> add base OpenCL pipeline
     // CPU and GPU devices are instantiated

@@ -517,7 +517,6 @@ private:
             kernel_back_ = std::make_shared<Conv2dLibDNNBackwardOp>(ctx);
             return;
         }
-
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }

@@ -49,18 +49,19 @@
 
 namespace tiny_cnn {
 
-class Conv2dOpenCLForwardOp : public core::OpKernel, Conv2d {
+class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
  public:
-    explicit Conv2dOpenCLForwardOp(core::OpKernelConstruction* context)
+    explicit Conv2dOpenCLForwardOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
-    void compute(core::OpKernelContext* context) override {
-        const tensor_t& in_data = context->input(0);
-        const vec_t&          W = context->input(1)[0];
-        const vec_t&       bias = context->input(2)[0];
-        tensor_t&      out_data = context->output(1);
+    void compute(const core::OpKernelContext& context) override {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+        const tensor_t& in_data = context.input(0);
+        const vec_t&          W = context.input(1)[0];
+        const vec_t&       bias = context.input(2)[0];
+        tensor_t&      out_data = context.output(1);
 
-        Device* device = context->device();
+        Device* device = context.device();
         if (device == nullptr) {
             nn_warn("No device pointer");
         } else {
@@ -68,7 +69,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel, Conv2d {
         }
 
         CLCudaAPI::Program program = ProgramManager::getInstance()
-            .program(Program(*context->device(), context->Layer()));
+            .program(Program(*context.device(), context.Layer()));
         nn_warn("Got Program");
 
         // TODO(edgar): it breaks here!!!
@@ -79,7 +80,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel, Conv2d {
         nn_warn("Got Kernel");
 
         // retrieve the convolutional parameters and pad input
-        Conv2d::setParams(context->params());
+        Conv2d::setParams(context.params());
 
         // pad input data
         tensor_t in_data_padded;
@@ -122,15 +123,18 @@ class Conv2dOpenCLForwardOp : public core::OpKernel, Conv2d {
         kernel.Launch(device->queue(), global, local, event.pointer());
         device->queue().Finish(event);
         printf(" > Took %.3lf ms\n", event.GetElapsedTime());
+#else
+        nn_error("Not compiled with OpenCL");
+#endif
     }
 };
 
-class Conv2dOpenCLBackwardOp : public core::OpKernel, Conv2d {
+class Conv2dOpenCLBackwardOp : private Conv2d, public core::OpKernel {
  public:
-    explicit Conv2dOpenCLBackwardOp(core::OpKernelConstruction* context)
+    explicit Conv2dOpenCLBackwardOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
-    void compute(core::OpKernelContext* context) override {
+    void compute(const core::OpKernelContext& context) override {
         nn_error("Not implemented yet.");
     }
 };
