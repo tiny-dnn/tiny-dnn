@@ -89,7 +89,7 @@ class ProgramManager {
 
         // check if previous program was build with this
         // Devce and Layer.
-        Program key_program(device, &layer);
+        Program key_program(&device, &layer);
 
         auto iter = programs_.find(key_program);
         if (iter != programs_.end()) {
@@ -155,15 +155,22 @@ class ProgramManager {
 #endif
     }
 
+    // Returns a CLCudaProgram given a key Program
+    // based on internal device and op.
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     CLCudaAPI::Program program(const Program& program) {
         auto p = programs_.find(program);
         if (p == programs_.end()) {
-            nn_error("Cannot retrieve program.");
+            throw nn_error("Cannot retrieve program.");
         }
         return p->second;
     }
 #endif
+
+    // Removes the current programs from the general state
+    void reset() {
+        programs_.clear();
+    }
 
  protected:
     ProgramManager() = default;

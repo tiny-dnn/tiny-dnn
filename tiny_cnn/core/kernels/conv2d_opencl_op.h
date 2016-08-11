@@ -56,28 +56,11 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
 
     void compute(const core::OpKernelContext& context) override {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
+        // incoming/outcoming data
         const tensor_t& in_data = context.input(0);
         const vec_t&          W = context.input(1)[0];
         const vec_t&       bias = context.input(2)[0];
         tensor_t&      out_data = context.output(1);
-
-        Device* device = context.device();
-        if (device == nullptr) {
-            nn_warn("No device pointer");
-        } else {
-            nn_warn("Got device pointer");
-        }
-
-        CLCudaAPI::Program program = ProgramManager::getInstance()
-            .program(Program(*context.device(), context.Layer()));
-        nn_warn("Got Program");
-
-        // TODO(edgar): it breaks here!!!
-
-        // Creates the 'multiply' kernel from the compiled program and sets the three arguments. Note that
-        // the indices of the arguments have to be set according to their order in the kernel.
-        auto kernel = CLCudaAPI::Kernel(program, "CFMulti");
-        nn_warn("Got Kernel");
 
         // retrieve the convolutional parameters and pad input
         Conv2d::setParams(context.params());
@@ -86,16 +69,35 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         tensor_t in_data_padded;
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        // Creates two new device buffers and copies the host data to these device buffers.
-        auto dev_in= CLCudaAPI::Buffer<float_t>(
-                device->context(), device->queue(), in_data_padded.begin(), in_data_padded.end());
-        auto dev_W = CLCudaAPI::Buffer<float_t>(
-                device->context(), device->queue(), W.begin(), W.end());
-        auto dev_bias = CLCudaAPI::Buffer<float_t>(
-                device->context(), device->queue(), bias.begin(), bias.end());
-        auto dev_out = CLCudaAPI::Buffer<float_t>(
-                device->context(), device->queue(), out_data.begin(), out_data.end());
+        // retrieve program from register
+        CLCudaAPI::Program program = ProgramManager::getInstance()
+            .program(Program(context.device(), context.Layer()));
+        nn_warn("Got Program");
 
+        // Creates the kernel from the compiled program and sets the three arguments.
+        // Note that the indices of the arguments have to be set according to their
+        // order in the kernel.
+        auto kernel = CLCudaAPI::Kernel(program, "CFMulti");
+        nn_warn("Got Kernel");
+
+        // Creates device buffers and copies the host data to these device buffers.
+        tiny_cnn::Device* device = context.device();
+        CLCudaAPI::Context   ctx = context.device()->context();
+        CLCudaAPI::Queue   queue = context.device()->queue();
+
+        auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue,
+            in_data_padded.begin(), in_data_padded.end());
+
+        auto dev_W = CLCudaAPI::Buffer<float_t>(ctx, queue,
+            W.begin(), W.end());
+
+        auto dev_bias = CLCudaAPI::Buffer<float_t>(ctx, queue,
+            bias.begin(), bias.end());
+
+        auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue,
+            out_data.begin(), out_data.end());
+
+        // TODO(edgar); I guess offset arguments hould change
         kernel.SetArgument(0, dev_in);
         kernel.SetArgument(1, 0);
         kernel.SetArgument(2, dev_W);
@@ -108,23 +110,30 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         // TODO(edgar): how do we compute this value?
         cnn_size_t size = 100000;
 
-        // Creates a 1-dimensional thread configuration with thread-blocks/work-groups of 256 threads
-        // and a total number of threads equal to the number of elements in the input/output vectors.
-        constexpr auto kWorkGroupSize = size_t{256};
+        // Creates a 1-dimensional thread configuration with
+        // thread-blocks/work-groups of 256 threads
+        // and a total number of threads equal to the number
+        // of elements in the input/output vectors.
+        // constexpr auto kWorkGroupSize = size_t{256};
         auto global = std::vector<size_t>{size};
-        auto local = std::vector<size_t>{kWorkGroupSize};
+        auto local = std::vector<size_t>{
+            device->device().MaxWorkGroupSize()
+        };
 
         // Creates a new CLCudaAPI event to be able to time kernels
         auto event = CLCudaAPI::Event();
 
-        // Enqueues the kernel and waits for the result. Note that launching the kernel is always
-        // a-synchronous and thus requires finishing the queue in order to complete the operation.
-        printf("## Running the kernel...\n");
-        kernel.Launch(device->queue(), global, local, event.pointer());
-        device->queue().Finish(event);
-        printf(" > Took %.3lf ms\n", event.GetElapsedTime());
+        // Enqueues the kernel and waits for the result.
+        // Note that launching the kernel is always a-synchronous and thus
+        // requires finishing the queue in order to complete the operation.
+        nn_info("## Running the kernel ...");
+
+        kernel.Launch(queue, global, local, event.pointer());
+        queue.Finish(event);
+
+        nn_info(" > Took " + to_string(event.GetElapsedTime()) + " ms");
 #else
-        nn_error("Not compiled with OpenCL");
+        throw nn_error("Not compiled with OpenCL");
 #endif
     }
 };

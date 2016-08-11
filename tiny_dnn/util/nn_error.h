@@ -55,13 +55,11 @@ class nn_error : public std::exception {
 public:
     explicit nn_error(const std::string& msg) : msg_(msg) {}
     const char* what() const throw() override {
-        // return std::string(RED + msg_h_ + msg_ + RESET).c_str();
-        return std::string(msg_).c_str();
+        return msg_.c_str();
     }
 
 private:
     std::string msg_;
-    std::string msg_h_ = std::string("[ERROR] ");
 };
 
 

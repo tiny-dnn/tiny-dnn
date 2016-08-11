@@ -45,6 +45,10 @@ TEST(core, add_bad_device) {
     // A warning is expected telling the user to use
     // more parameters when device is created.
 
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
     Device my_gpu_device(device_t::CPU);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
@@ -56,7 +60,11 @@ TEST(core, add_bad_device) {
 TEST(core, add_bad_layer) {
     // A GPU device cannot register an op with non-OpenCL engine.
     // A warning is expected telling the user to redefine the op engine.
- 
+
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
     Device my_gpu_device(device_t::CPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
@@ -69,6 +77,10 @@ TEST(core, device_add_op) {
     // An Op with OpenCL engine is registeres to
     // a GPU device which will compile its program, and
     // will place it to the general register.
+
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
 
     Device my_gpu_device(device_t::GPU, 2, 0);
 
@@ -94,6 +106,9 @@ TEST(core, device_add_op) {
 }
 
 TEST(core, ocl_conv) {
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
 
     Device my_gpu_device(device_t::GPU, 2, 0);
 
@@ -165,7 +180,6 @@ TEST(core, ocl_conv) {
         EXPECT_NEAR(0.7595109, out[7], 1E-5);
         EXPECT_NEAR(0.6899745, out[8], 1E-5);
     }
-
 }
 
 } // namespace tiny-dnn

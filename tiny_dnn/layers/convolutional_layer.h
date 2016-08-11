@@ -241,6 +241,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
+             ctx.setDevice(layer::device());
+             ctx.setLayer(this);
 
         // launch convolutional kernel
         kernel_fwd_->compute(ctx);

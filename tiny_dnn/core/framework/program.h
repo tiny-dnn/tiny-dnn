@@ -65,15 +65,14 @@ namespace tiny_dnn {
  */
 class Program {
  public:
-    explicit Program(const Device& device, const layer* op)
+    explicit Program(const Device* device, const layer* op)
         : device_(device), op_(op) {}
 
     // Returns the device associated to the program
-    Device device() const { return device_; }
+    const Device* device() const { return device_; }
 
     // Return the layer pointer
     const layer* op() const { return op_; }
-    layer* op() { return const_cast<layer*>(op_); }
 
     bool operator==(const Program& p) const {
         if (p.device() == this->device() &&
@@ -84,7 +83,7 @@ class Program {
     }
 
  private:
-    Device device_;
+    const Device* device_;
     const layer* op_;
 };
 
@@ -93,12 +92,18 @@ class Program {
 class ProgramHash {
  public:
     size_t operator()(const Program& p) const {
-        // Compute individual hash values for two data members and combine
+        // check there is a device and an op assigned
+        // to the input program.
+        if (p.device() == nullptr || p.op() == nullptr) {
+            throw nn_error("No Op or Device in Program.");
+        }
+
+        // Compute individual hash values for data members and combine
         // them using XOR and bit shifting.
-        return (std::hash<int>()(static_cast<int>(p.device().type())) ^ 
-                std::hash<bool>()(p.device().hasCLCudaAPI()) ^
-                std::hash<int>()(p.device().platformId()) ^
-                std::hash<int>()(p.device().deviceId()) ^
+        return (std::hash<int>()(static_cast<int>(p.device()->type())) ^
+                std::hash<bool>()(p.device()->hasCLCudaAPI()) ^
+                std::hash<int>()(p.device()->platformId()) ^
+                std::hash<int>()(p.device()->deviceId()) ^
                 std::hash<std::string>()(p.op()->layer_type()));
     }
 };
