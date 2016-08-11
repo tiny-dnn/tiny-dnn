@@ -211,6 +211,19 @@ def run_benchmark():
     # Build an initialization operation.
     init = tf.initialize_all_variables()
 
+    # Add ops to save and restore all the variables.
+    saver = tf.train.Saver()
+
+    # Restore a model from saved file
+    with tf.Session() as sess:
+      ckpt = tf.train.get_checkpoint_state("/tmp/model.ckpt")
+      if ckpt and ckpt.model_checkpoint_path:
+        # Restores from checkpoint
+        saver.restore(sess, "/tmp/model.ckpt")
+        print("Model loaded")
+      else:
+        print("No checkpoint file found")
+
     # Start running operations on the Graph.
     config = tf.ConfigProto()
     config.gpu_options.allocator_type = 'BFC'
@@ -226,6 +239,9 @@ def run_benchmark():
     grad = tf.gradients(objective, parameters)
     # Run the backward benchmark.
     time_tensorflow_run(sess, grad, "Forward-backward")
+  # Save the variables to disk.
+  save_path = saver.save(sess, "/tmp/model.ckpt")
+  print("Model saved in file: %s" % save_path)
 
 
 def main(_):
