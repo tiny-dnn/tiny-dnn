@@ -155,6 +155,7 @@ class ProgramManager {
 #endif
     }
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
     CLCudaAPI::Program program(const Program& program) {
         auto p = programs_.find(program);
         if (p == programs_.end()) {
@@ -162,6 +163,7 @@ class ProgramManager {
         }
         return p->second;
     }
+#endif
 
  protected:
     ProgramManager() = default;

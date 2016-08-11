@@ -495,6 +495,11 @@ private:
             kernel_back_ = std::make_shared<Conv2dCustomBackwardOp>(ctx);
             return;
         }
+        else if (backend_type == backend_t::OpenCL) {
+            kernel_fwd_  = std::make_shared<Conv2dOpenCLForwardOp>(ctx);
+            kernel_back_ = std::make_shared<Conv2dOpenCLBackwardOp>(ctx);
+            return;
+        }
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
