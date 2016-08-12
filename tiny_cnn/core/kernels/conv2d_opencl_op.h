@@ -98,17 +98,24 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
             out_data.begin(), out_data.end());
 
         // TODO(edgar); I guess offset arguments hould change
-        kernel.SetArgument(0, dev_in);
-        kernel.SetArgument(1, 0);
-        kernel.SetArgument(2, dev_W);
-        kernel.SetArgument(3, 0);
-        kernel.SetArgument(4, dev_bias);
-        kernel.SetArgument(5, 0);
-        kernel.SetArgument(6, dev_out);
-        kernel.SetArgument(7, 0);
+        core::conv_params params = Conv2d::params();
+
+        kernel.SetArgument(0,  dev_in);   // image_data
+        kernel.SetArgument(1,  0);        // image_offset
+        kernel.SetArgument(2,  dev_W);    // kernel_data
+        kernel.SetArgument(3,  0);        // kernel_offset
+        kernel.SetArgument(4,  dev_bias); // bias
+        kernel.SetArgument(5,  0);        // bias_offset
+        kernel.SetArgument(6,  dev_out);  // convolved_image
+        kernel.SetArgument(7,  0);        // convolved_image_offset
+        kernel.SetArgument(8,  params.in.width_);   // WIDTH
+        kernel.SetArgument(9,  params.in.height_);  // HEIGHT
+        kernel.SetArgument(10, params.out.width_);  // OUTPUT_W
+        kernel.SetArgument(11, params.out.height_); // OUTPUT_H
 
         // TODO(edgar): how do we compute this value?
-        cnn_size_t size = 100000;
+        cnn_size_t size = 20;
+        std::cout << device->device().MaxWorkGroupSize() << std::endl;
 
         // Creates a 1-dimensional thread configuration with
         // thread-blocks/work-groups of 256 threads
@@ -116,9 +123,11 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         // of elements in the input/output vectors.
         // constexpr auto kWorkGroupSize = size_t{256};
         auto global = std::vector<size_t>{size};
-        auto local = std::vector<size_t>{
+        /*auto local = std::vector<size_t>{
             device->device().MaxWorkGroupSize()
-        };
+        };*/
+        auto local = std::vector<size_t>{size/5};
+
 
         // Creates a new CLCudaAPI event to be able to time kernels
         auto event = CLCudaAPI::Event();
