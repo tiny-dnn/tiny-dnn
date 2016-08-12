@@ -108,25 +108,18 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         kernel.SetArgument(5,  0);        // bias_offset
         kernel.SetArgument(6,  dev_out);  // convolved_image
         kernel.SetArgument(7,  0);        // convolved_image_offset
-        kernel.SetArgument(8,  params.in.width_);   // WIDTH
-        kernel.SetArgument(9,  params.in.height_);  // HEIGHT
-        kernel.SetArgument(10, params.out.width_);  // OUTPUT_W
-        kernel.SetArgument(11, params.out.height_); // OUTPUT_H
 
-        // TODO(edgar): how do we compute this value?
-        cnn_size_t size = 20;
-        std::cout << device->device().MaxWorkGroupSize() << std::endl;
+        kernel.SetArgument(8,  static_cast<ushort>(params.in.width_));   // WIDTH
+        kernel.SetArgument(9,  static_cast<ushort>(params.in.height_));  // HEIGHT
+        kernel.SetArgument(10, static_cast<ushort>(params.out.width_));  // OUTPUT_W
+        kernel.SetArgument(11, static_cast<ushort>(params.out.height_)); // OUTPUT_H
 
-        // Creates a 1-dimensional thread configuration with
-        // thread-blocks/work-groups of 256 threads
-        // and a total number of threads equal to the number
-        // of elements in the input/output vectors.
-        // constexpr auto kWorkGroupSize = size_t{256};
+        // We make sure that work group size is multiple of 16
+        cnn_size_t res  = device->device().MaxWorkGroupSize() % 16;
+        cnn_size_t size = device->device().MaxWorkGroupSize() - res;
+
         auto global = std::vector<size_t>{size};
-        /*auto local = std::vector<size_t>{
-            device->device().MaxWorkGroupSize()
-        };*/
-        auto local = std::vector<size_t>{size/5};
+        auto local = std::vector<size_t>{16};
 
 
         // Creates a new CLCudaAPI event to be able to time kernels
