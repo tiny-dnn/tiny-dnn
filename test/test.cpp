@@ -38,21 +38,15 @@ using namespace tiny_dnn::activation;
 #include "test_dropout_layer.h"
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
-#include "test_deconvolutional_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
+#include "test_deconvolutional_layer.h"*/
+// #include "test_convolutional_layer.h"
+/*#include "test_target_cost.h"
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
 #include "test_batch_norm_layer.h"
-<<<<<<< 24f8aba3557602e038d42417c05ad426a797e3c3
-#include "test_nodes.h"
-//#include "test_core.h"
-#include "test_models.h"
-=======
 #include "test_nodes.h"*/
 #include "test_core.h"
 /*#include "test_models.h"
->>>>>>> add base OpenCL pipeline
 #include "test_slice_layer.h"
 #include "test_power_layer.h"
 #include "test_quantization.h"
