@@ -80,13 +80,18 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         auto kernel = CLCudaAPI::Kernel(program, "CFMulti");
         nn_warn("Got Kernel");
 
-        // Creates device buffers and copies the host data to these device buffers.
         tiny_cnn::Device* device = context.device();
         CLCudaAPI::Context   ctx = context.device()->context();
         CLCudaAPI::Queue   queue = context.device()->queue();
 
+        // TODO(edgar): check if we really need that
+        for (cnn_size_t i = 0; i < in_data_padded.size(); ++i) {
+
+        // Creates device buffers and copies the host data to these
+        // device buffers.
+
         auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue,
-            in_data_padded.begin(), in_data_padded.end());
+            in_data_padded[i].begin(), in_data_padded[i].end());
 
         auto dev_W = CLCudaAPI::Buffer<float_t>(ctx, queue,
             W.begin(), W.end());
@@ -95,7 +100,7 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
             bias.begin(), bias.end());
 
         auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue,
-            out_data.begin(), out_data.end());
+            out_data[i].begin(), out_data[i].end());
 
         // TODO(edgar); I guess offset arguments hould change
         core::conv_params params = Conv2d::params();
@@ -121,7 +126,6 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         auto global = std::vector<size_t>{size};
         auto local = std::vector<size_t>{16};
 
-
         // Creates a new CLCudaAPI event to be able to time kernels
         auto event = CLCudaAPI::Event();
 
@@ -134,6 +138,21 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         queue.Finish(event);
 
         nn_info(" > Took " + to_string(event.GetElapsedTime()) + " ms");
+
+        // Upload data GPU -> CPU
+        std::vector<float_t> out(out_data[i].size(), 0);
+        dev_out.Read(queue, out_data[i].size(), out);
+
+        // FOR DEBUG ONLY
+        nn_warn("output kernel");
+        for (cnn_size_t j = 0; j < out.size(); ++j) {
+            std::cout << out[j] << " ";
+        }
+        std::cout << std::endl;
+
+        // copy back
+        std::copy(std::begin(out), std::end(out), std::back_inserter(out_data[i]));
+        }
 #else
         throw nn_error("Not compiled with OpenCL");
 #endif
