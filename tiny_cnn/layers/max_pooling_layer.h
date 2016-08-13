@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2015, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,57 +13,76 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/image.h"
-#include "tiny_cnn/layers/partial_connected_layer.h"
 #include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
-    
+
+/**
+ * applies max-pooing operaton to the spatial data
+ **/
 template <typename Activation = activation::identity>
-class max_pooling_layer : public layer<Activation> {
+class max_pooling_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
-    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size)
-        : Base(in_width * in_height * in_channels,
-        in_width * in_height * in_channels / sqr(pooling_size),
-        0, 0),
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size)
+        : Base({vector_type::data}),
         pool_size_(pooling_size),
         stride_(pooling_size),
         in_(in_width, in_height, in_channels),
         out_(in_width / pooling_size, in_height / pooling_size, in_channels)
     {
-        if ((in_width % pooling_size) || (in_height % pooling_size))
+        if ((in_width % pooling_size) || (in_height % pooling_size)) {
             pooling_size_mismatch(in_width, in_height, pooling_size);
+        }
 
-        set_worker_count(CNN_TASK_SIZE);
-
+        //set_worker_count(CNN_TASK_SIZE);
         init_connection();
     }
 
-    max_pooling_layer(cnn_size_t in_width, cnn_size_t in_height, cnn_size_t in_channels, cnn_size_t pooling_size, cnn_size_t stride)
-        : Base(in_width * in_height * in_channels,
-        pool_out_dim(in_width, pooling_size, stride) * pool_out_dim(in_height, pooling_size, stride) * in_channels,
-        0, 0),
+    /**
+     * @param in_width     [in] width of input image
+     * @param in_height    [in] height of input image
+     * @param in_channels  [in] the number of input image channels(depth)
+     * @param pooling_size [in] factor by which to downscale
+     * @param stride       [in] interval at which to apply the filters to the input
+    **/
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size,
+                      cnn_size_t stride)
+        : Base({vector_type::data}),
         pool_size_(pooling_size),
         stride_(stride),
         in_(in_width, in_height, in_channels),
         out_(pool_out_dim(in_width, pooling_size, stride), pool_out_dim(in_height, pooling_size, stride), in_channels)
     {
+        //set_worker_count(CNN_TASK_SIZE);
         init_connection();
     }
 
@@ -75,94 +94,73 @@ public:
         return 1;
     }
 
-    size_t connection_size() const override {
-        return out2in_[0].size() * out2in_.size();
-    }
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>&       out_data)  override {
 
-    virtual const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
-        vec_t& out = ws.output_;
-        vec_t& a = ws.a_;
-        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
+        // @todo revise the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = in_data.size(); sample < sample_count; ++sample) {
 
-        for_(parallelize_, 0, size_t(out_size_), [&](const blocked_range& r) {
-            for (int i = r.begin(); i < r.end(); i++) {
-                const auto& in_index = out2in_[i];
-                float_t max_value = std::numeric_limits<float_t>::lowest();
-                
-                for (auto j : in_index) {
-                    if (in[j] > max_value) {
-                        max_value = in[j];
-                        max_idx[i] = j;
+            const vec_t& in  = (*in_data[0])[sample];
+            vec_t&       out = (*out_data[0])[sample];
+            vec_t&       a   = (*out_data[1])[sample];
+
+            std::vector<cnn_size_t>& max_idx = out2inmax_;
+
+            for_(parallelize_, 0, out2in_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i < r.end(); i++) {
+                    const auto& in_index = out2in_[i];
+                    float_t max_value = std::numeric_limits<float_t>::lowest();
+
+                    for (auto j : in_index) {
+                        if (in[j] > max_value) {
+                            max_value = in[j];
+                            max_idx[i] = j;
+                        }
                     }
+                    a[i] = max_value;
                 }
-                a[i] = max_value;
-            }
-        });
+            });
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
-        });
-        return next_ ? next_->forward_propagation(out, index) : out;
-    }
-
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
-        const vec_t& prev_out = prev_->output(static_cast<int>(index));
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = ws.prev_delta_;
-        std::vector<cnn_size_t>& max_idx = max_pooling_layer_worker_storage_[index].out2inmax_;
-
-        for_(parallelize_, 0, size_t(in_size_), [&](const blocked_range& r) {
-            for (int i = r.begin(); i != r.end(); i++) {
-                cnn_size_t outi = in2out_[i];
-                prev_delta[i] = (max_idx[outi] == i) ? current_delta[outi] * prev_h.df(prev_out[i]) : float_t(0);
-            }
-        });
-        return prev_->back_propagation(ws.prev_delta_, index);
-    }
-
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        max_pooling_layer_worker_specific_storage& mws = max_pooling_layer_worker_storage_[0];
-
-        for (cnn_size_t i = 0; i < in_size_; i++) {
-            cnn_size_t outi = in2out_[i];
-            prev_delta2_[i] = (mws.out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
+            for_i(parallelize_, out.size(), [&](int i) {
+                out[i] = h_.f(a, i);
+            });
         }
-        return prev_->back_propagation_2nd(prev_delta2_);
     }
 
-    image<> output_to_image(size_t worker_index = 0) const {
-        return vec2image<unsigned char>(Base::get_worker_storage(worker_index).output_, out_);
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        tensor_t& prev_delta = *in_grad[0];
+        tensor_t& curr_delta = *out_grad[1];
+        std::vector<cnn_size_t>& max_idx = out2inmax_;
+
+        CNN_UNREFERENCED_PARAMETER(in_data);
+
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+
+        // @todo consider revising the parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = in_grad[0]->size(); sample < sample_count; ++sample) {
+            for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
+                for (int i = r.begin(); i != r.end(); i++) {
+                    cnn_size_t outi = in2out_[i];
+                    prev_delta[sample][i] = (max_idx[outi] == i) ? curr_delta[sample][outi] : float_t(0);
+                }
+            });
+        }
     }
 
-    index3d<cnn_size_t> in_shape() const override { return in_; }
-    index3d<cnn_size_t> out_shape() const override { return out_; }
+    std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
+    std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-pool"; }
     size_t pool_size() const {return pool_size_;}
-
-    virtual void set_worker_count(cnn_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
-        max_pooling_layer_worker_storage_.resize(worker_count);
-        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
-        }
-    }
 
 private:
     size_t pool_size_;
     size_t stride_;
     std::vector<std::vector<cnn_size_t> > out2in_; // mapping out => in (1:N)
     std::vector<cnn_size_t> in2out_; // mapping in => out (N:1)
-
-    struct max_pooling_layer_worker_specific_storage {
-        std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
-    };
-
-    std::vector<max_pooling_layer_worker_specific_storage> max_pooling_layer_worker_storage_;
+    std::vector<cnn_size_t> out2inmax_; // mapping out => max_index(in) (1:1)
 
     index3d<cnn_size_t> in_;
     index3d<cnn_size_t> out_;
@@ -196,10 +194,7 @@ private:
     {
         in2out_.resize(in_.size());
         out2in_.resize(out_.size());
-
-        for (max_pooling_layer_worker_specific_storage& mws : max_pooling_layer_worker_storage_) {
-            mws.out2inmax_.resize(out_.size());
-        }
+		out2inmax_.resize(out_.size());
 
         for (cnn_size_t c = 0; c < in_.depth_; ++c)
             for (cnn_size_t y = 0; y < out_.height_; ++y)

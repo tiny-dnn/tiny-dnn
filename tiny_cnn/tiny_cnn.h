@@ -28,8 +28,10 @@
 
 #include "tiny_cnn/config.h"
 #include "tiny_cnn/network.h"
+#include "tiny_cnn/nodes.h"
 
-
+#include "tiny_cnn/layers/input_layer.h"
+#include "tiny_cnn/layers/feedforward_layer.h"
 #include "tiny_cnn/layers/convolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
@@ -37,7 +39,14 @@
 #include "tiny_cnn/layers/linear_layer.h"
 #include "tiny_cnn/layers/lrn_layer.h"
 #include "tiny_cnn/layers/dropout_layer.h"
-#include "tiny_cnn/layers/linear_layer.h"
+#include "tiny_cnn/layers/arithmetic_layer.h"
+#include "tiny_cnn/layers/concat_layer.h"
+#include "tiny_cnn/layers/deconvolutional_layer.h"
+#include "tiny_cnn/layers/max_unpooling_layer.h"
+#include "tiny_cnn/layers/average_unpooling_layer.h"
+#include "tiny_cnn/layers/batch_normalization_layer.h"
+#include "tiny_cnn/layers/slice_layer.h"
+#include "tiny_cnn/layers/power_layer.h"
 
 #include "tiny_cnn/activations/activation_function.h"
 #include "tiny_cnn/lossfunctions/loss_function.h"
@@ -47,6 +56,7 @@
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/util/deform.h"
 #include "tiny_cnn/util/product.h"
+#include "tiny_cnn/util/graph_visualizer.h"
 
 #include "tiny_cnn/io/mnist_parser.h"
 #include "tiny_cnn/io/cifar10_parser.h"
@@ -57,3 +67,53 @@
 // experimental / require google protobuf
 #include "tiny_cnn/io/caffe/layer_factory.h"
 #endif
+
+// shortcut version of layer names
+namespace tiny_cnn {
+namespace layers {
+
+template <class T>
+using conv = tiny_cnn::convolutional_layer<T>;
+
+template <class T>
+using max_pool = tiny_cnn::max_pooling_layer<T>;
+
+template <class T>
+using ave_pool = tiny_cnn::average_pooling_layer<T>;
+
+template <class T>
+using fc = tiny_cnn::fully_connected_layer<T>;
+
+template <class T>
+using dense = tiny_cnn::fully_connected_layer<T>;
+
+using add = tiny_cnn::elementwise_add_layer;
+
+using dropout = tiny_cnn::dropout_layer;
+
+using input = tiny_cnn::input_layer;
+
+template <class T>
+using lrn = tiny_cnn::lrn_layer<T>;
+
+using input = tiny_cnn::input_layer;
+
+using concat = tiny_cnn::concat_layer;
+
+template <class T>
+using deconv = tiny_cnn::deconvolutional_layer<T>;
+
+template <class T>
+using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
+
+template <class T>
+using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
+
+using batch_norm = tiny_cnn::batch_normalization_layer;
+
+using slice = tiny_cnn::slice_layer;
+
+using power = tiny_cnn::power_layer;
+
+}
+}

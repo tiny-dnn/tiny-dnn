@@ -37,65 +37,63 @@ namespace tiny_cnn {
  * f(x) = h(scale*x+bias)
  */
 template<typename Activation>
-class linear_layer : public layer<Activation> {
+class linear_layer : public feedforward_layer<Activation> {
 public:
     CNN_USE_LAYER_MEMBERS;
 
-    typedef layer<Activation> Base;
+    typedef feedforward_layer<Activation> Base;
 
     explicit linear_layer(cnn_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
-        : Base(dim, dim, 0, 0),
-        scale_(scale), bias_(bias) {}
+        : Base({vector_type::data}),
+        dim_(dim), scale_(scale), bias_(bias) {}
 
-    size_t param_size() const override {
-        return 0;
+    std::vector<shape3d> in_shape() const override {
+        return {shape3d(dim_, 1, 1) };
     }
 
-    size_t connection_size() const override {
-        return this->in_size();
-    }
-
-    size_t fan_in_size() const override {
-        return 1;
-    }
-
-    size_t fan_out_size() const override {
-        return 1;
+    std::vector<shape3d> out_shape() const override {
+        return{ shape3d(dim_, 1, 1), shape3d(dim_, 1, 1) };
     }
 
     std::string layer_type() const override { return "linear"; }
 
-    const vec_t& forward_propagation(const vec_t& in, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void forward_propagation(const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>& out_data) override {
+        const tensor_t& in  = *in_data[0];
+        tensor_t&       out = *out_data[0];
+        tensor_t&       a   = *out_data[1];
 
-        vec_t& a = ws.a_;
-        vec_t& out = ws.output_;
-
-        for_i(parallelize_, out_size_, [&](int i) {
-            a[i] = scale_ * in[i] + bias_;
+        // @todo revise the parallelism strategy
+        for_i(parallelize_, dim_, [&](int i) {
+            for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample)
+                a[sample][i] = scale_ * in[sample][i] + bias_;
         });
-        for_i(parallelize_, out_size_, [&](int i) {
-            out[i] = h_.f(a, i);
+        for_i(parallelize_, dim_, [&](int i) {
+            for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample)
+                out[sample][i] = h_.f(a[sample], i);
         });
-
-        return next_ ? next_->forward_propagation(out, index) : out;
     }
 
-    virtual const vec_t& back_propagation(const vec_t& current_delta, size_t index) override {
-        auto& ws = this->get_worker_storage(index);
+    void back_propagation(const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) override {
+        tensor_t& prev_delta = *in_grad[0];
+        tensor_t& curr_delta = *out_grad[1];
 
-        const vec_t& prev_out = prev_->output(index);
-        const activation::function& prev_h = prev_->activation_function();
-        vec_t& prev_delta = ws.prev_delta_;
+        CNN_UNREFERENCED_PARAMETER(in_data);
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta[i] = current_delta[i] * scale_ * prev_h.df(prev_out[i]);
-        });
+        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        return prev_->back_propagation(prev_delta, index);
+        // @todo revise parallelism strategy
+        for (cnn_size_t sample = 0, sample_count = prev_delta.size(); sample < sample_count; ++sample) {
+            for_i(parallelize_, dim_, [&](int i) {
+                prev_delta[sample][i] = curr_delta[sample][i] * scale_;
+            });
+        }
     }
 
-    const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
+   /* const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
         const vec_t& prev_out = prev_->output(0);
         const activation::function& prev_h = prev_->activation_function();
 
@@ -104,9 +102,10 @@ public:
         });
 
         return prev_->back_propagation_2nd(prev_delta2_);
-    }
+    }*/
 
 protected:
+    cnn_size_t dim_;
     float_t scale_, bias_;
 };
 

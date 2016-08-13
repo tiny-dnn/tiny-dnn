@@ -52,6 +52,9 @@ public:
     // dfi/dyk (k=0,1,..n)
     virtual vec_t df(const vec_t& y, cnn_size_t i) const { vec_t v(y.size(), 0); v[i] = df(y[i]); return v; }
 
+    // return if dfi/dyk is one-hot vector
+    virtual bool one_hot() const { return true; }
+
     // target value range for learning
     virtual std::pair<float_t, float_t> scale() const = 0;
 };
@@ -120,6 +123,8 @@ public:
 
         return v;
     }
+
+    virtual bool one_hot() const override { return false; }
 
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0), float_t(1)); }
 };
