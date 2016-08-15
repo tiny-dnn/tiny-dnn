@@ -140,7 +140,7 @@ TEST(network, add) {
     network<sequential> net;
     net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same);
 
-    EXPECT_EQ(net.out_data_size(), 32*32*6);
+    EXPECT_EQ(net.out_data_size(), cnn_size_t(32*32*6));
     //EXPECT_EQ(net.depth(), 1);
 }
 

@@ -63,6 +63,8 @@ public:
         tensor_t&       out = *out_data[0];
         tensor_t&       a   = *out_data[1];
 
+        CNN_UNREFERENCED_PARAMETER(out);
+
         // @todo revise the parallelism strategy
         for_i(parallelize_, dim_, [&](int i) {
             for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample)

@@ -127,6 +127,6 @@ void tiny_quantized_matmul(const std::vector<T1>&  a,
         min_a, max_a, min_b, max_b, &min_c_value, &max_c_value);*/
   }
 
-};
+}
 }
 }  // namespace tiny_cnn

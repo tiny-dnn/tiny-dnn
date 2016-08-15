@@ -24,7 +24,7 @@ configuration: Release
 before_build:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-cnn'
+  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
   - cmd: 'cd C:\projects\build\test\Release'
