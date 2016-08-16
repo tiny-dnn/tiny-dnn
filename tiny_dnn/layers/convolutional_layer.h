@@ -33,6 +33,7 @@
 #include "tiny_dnn/core/framework/op_kernel.h"
 #include "tiny_dnn/core/kernels/conv2d_op_custom.h"
 #include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
+#include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
 #include "tiny_dnn/core/backend_tiny.h"
 #include "tiny_dnn/core/backend_nnp.h"
@@ -503,6 +504,12 @@ private:
             kernel_back_ = std::make_shared<Conv2dOpenCLBackwardOp>(ctx);
             return;
         }
+        else if (backend_type == backend_t::LibDNN) {
+            kernel_fwd_  = std::make_shared<Conv2dLibDNNForwardOp>(ctx);
+            kernel_back_ = std::make_shared<Conv2dLibDNNBackwardOp>(ctx);
+            return;
+        }
+
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
