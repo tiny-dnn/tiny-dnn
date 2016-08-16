@@ -24,6 +24,7 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -34,7 +35,7 @@
 #include "tiny_cnn/lossfunctions/loss_function.h"
 #include "tiny_cnn/optimizers/optimizer.h"
 #include "tiny_cnn/util/util.h"
-#include "examples/tensorflow_convertor/node_factory_impl.h"
+#include "examples/tensorflow_converter/node_factory_impl.h"
 
 using namespace std;
 using namespace tensorflow;
@@ -313,24 +314,24 @@ void ListNodes(const tensorflow::GraphDef& graph_def) {
 /**
 * create whole network and load weights from caffe's netparameter
 *
-* @param layer [in] netparameter of caffemodel
+* @param nodes [in] netparameter of pb file
 * @param data_shape [in] size of input data (width x height x channels)
 */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_net(const tensorflow::GraphDef& layer, const shape3d& data_shape)
+create_net_from_caffe_net(const tensorflow::GraphDef& nodes, const shape3d& data_shape)
 {
-    detail::tensorflow_node_vector src_net(layer);
+    detail::tensorflow_node_vector src_net(nodes);
     shape_t shape;
 
     if (data_shape.size() > 0) {
         shape = data_shape;
     } else {
-        if (layer.input_shape_size() > 0) {
+        if (nodes.input_shape_size() > 0) {
             // input_shape is deprecated in Caffe
             // blob dimensions are ordered by number N x channel K x height H x width W
-            int depth  = static_cast<int>(layer.input_shape(0).dim(1));
-            int height = static_cast<int>(layer.input_shape(0).dim(2));
-            int width  = static_cast<int>(layer.input_shape(0).dim(3));
+            int depth  = static_cast<int>(nodes.input_shape(0).dim(1));
+            int height = static_cast<int>(nodes.input_shape(0).dim(2));
+            int width  = static_cast<int>(nodes.input_shape(0).dim(3));
             shape = shape3d(width, height, depth);
         }
         else if (src_net[0].has_input_param()) {
@@ -345,26 +346,26 @@ create_net_from_caffe_net(const tensorflow::GraphDef& layer, const shape3d& data
         }
     }
 
-    auto dst_net = std::make_shared<network<sequential>>(layer.name());
+    auto dst_net = std::make_shared<network<graph>>(nodes.name());
 
     for (size_t i = 0; i < src_net.size(); i++) {
-        auto type = src_net[i].type();
+        auto op = src_net[i].op();
 
-        if (detail::layer_skipped(type)) {
+        if (detail::layer_skipped(op)) {
             continue;
         }
 
-        if (!detail::layer_supported(type)) {
-            throw nn_error("error: tiny-cnn does not support this layer type:" + type);
+        if (!detail::layer_supported(op)) {
+            throw nn_error("error: tiny-cnn does not support this node type:" + type);
         }
 
         shape_t shape_next = shape;
-        auto layer = detail::create(src_net[i], shape, &shape_next);
+        auto node = detail::create(src_net[i], shape, &shape_next);
 
-        nn_info("convert " + type + " => " + typeid(*layer).name());
+        nn_info("convert " + op + " => " + typeid(*node).name());
         nn_info("shape:" + to_string(shape_next));
 
-        *dst_net << layer;
+        *dst_net << node;
         shape = shape_next;
     }
 
@@ -375,16 +376,16 @@ create_net_from_caffe_net(const tensorflow::GraphDef& layer, const shape3d& data
 /**
  * create whole network and load weights from tensorflow's netparameter
  *
- * @param layer [in] netparameter of caffemodel
+ * @param node [in] netparameter of caffemodel
  * @param data_shape [in] size of input data (width x height x channels)
  */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_protobinary(const std::string& tensorflowbinarymodel, const shape3d& data_shape)
+create_net_from_tensorflow_protobinary(const std::string& tensorflowbinarymodel, const shape3d& data_shape)
 {
     tensorflow::GraphDef np;
 
     detail::read_proto_from_binary(tensorflowbinarymodel, &np);
-    return create_net_from_caffe_net(np, data_shape);
+    return create_net_from_tensorflow_net(np, data_shape);
 }
 
 }

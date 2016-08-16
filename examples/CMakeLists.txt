@@ -84,8 +84,8 @@ if(PROTOBUF_FOUND)
     if(EXISTS ${proto_file})
         file(GLOB proto_src "${CMAKE_CURRENT_SOURCE_DIR}/../tensorflow/core/framework/*.pb.cc")
         add_executable(example_tensorflow_converter
-                       ${CMAKE_CURRENT_SOURCE_DIR}/../examples/tensorflow_converter/main.cpp ${proto_src})
-        #              ${CMAKE_CURRENT_SOURCE_DIR}/../examples/tensorflow_converter/main.cpp ${proto_file} ${proto_src})
+                       ${CMAKE_CURRENT_SOURCE_DIR}/../examples/tensorflow_converter/example_tensorflow_parser.cpp ${proto_src})
+        #              ${CMAKE_CURRENT_SOURCE_DIR}/../examples/tensorflow_converter/example_tensorflow_parser.cpp ${proto_file} ${proto_src})
         target_link_libraries(example_tensorflow_converter
             ${project_library_target_name}
             ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
@@ -99,7 +99,7 @@ if(PROTOBUF_FOUND)
                 file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/../examples/tensorflow_converter")
             endif()
             add_executable(example_tensorflow_converter
-                           ${CMAKE_CURRENT_SOURCE_DIR}/examples/tensorflow_converter/main.cpp
+                           ${CMAKE_CURRENT_SOURCE_DIR}/examples/tensorflow_converter/example_tensorflow_parser.cpp
                            ${PROTO_SRCS} ${PROTO_HDRS})
             target_link_libraries(example_tensorflow_converter
                 ${project_library_target_name}
