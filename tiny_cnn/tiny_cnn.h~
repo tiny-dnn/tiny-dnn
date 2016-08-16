@@ -65,7 +65,7 @@
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
-//#include "tiny_cnn/io/caffe/layer_factory.h"
+#include "tiny_cnn/io/caffe/layer_factory.h"
 #endif
 
 // shortcut version of layer names
