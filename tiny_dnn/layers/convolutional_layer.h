@@ -518,6 +518,10 @@ private:
             kernel_back_ = std::make_shared<Conv2dLibDNNBackwardOp>(ctx);
             return;
         }
+<<<<<<< HEAD:tiny_dnn/layers/convolutional_layer.h
+=======
+
+>>>>>>> add Conv2dLibDNNOp basics:tiny_cnn/layers/convolutional_layer.h
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
