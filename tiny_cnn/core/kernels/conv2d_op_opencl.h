@@ -65,6 +65,9 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         // retrieve the convolutional parameters and pad input
         Conv2d::setParams(context.params());
 
+        // initialize outputs
+        fill_tensor(out_data, float_t(0));
+
         // pad input data
         tensor_t in_data_padded;
         Conv2d::copy_and_pad_input(in_data, in_data_padded);

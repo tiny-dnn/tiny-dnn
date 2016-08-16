@@ -169,7 +169,9 @@ class ProgramManager {
 
     // Removes the current programs from the general state
     void reset() {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
         programs_.clear();
+#endif
     }
 
  protected:

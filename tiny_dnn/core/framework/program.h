@@ -55,9 +55,6 @@
 #endif
 #endif
 
-#include "tiny_cnn/core/kernels/conv2d.h"
-#include "tiny_cnn/core/kernels/conv2d_tiny_op_functor.h"
-
 namespace tiny_dnn {
 
 /* The class models a program to be stored in the register.
