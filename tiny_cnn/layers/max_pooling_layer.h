@@ -144,7 +144,7 @@ public:
             for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
                 for (int i = r.begin(); i != r.end(); i++) {
                     cnn_size_t outi = in2out_[i];
-                    prev_delta[sample][i] = ((int) max_idx[outi] == i) ? curr_delta[sample][outi] : float_t(0);
+                    prev_delta[sample][i] = (static_cast<int>(max_idx[outi]) == i) ? curr_delta[sample][outi] : float_t(0);
                 }
             });
         }
