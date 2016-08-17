@@ -81,12 +81,58 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         tensor_t in_data_padded;
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
+        // TODO(edgar): use CLCudaAPI
+
+        CLCudaAPI::Context ctx = context.device()->context();
+        CLCudaAPI::Queue queue = context.device()->queue();
+
+        for (cnn_size_t i = 0; i < in_data_padded.size(); ++i) {
+
+            // allocate data to GPU
+
+            auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue,
+                in_data_padded[i].begin(), in_data_padded[i].end());
+
+            auto dev_W = CLCudaAPI::Buffer<float_t>(ctx, queue,
+                W.begin(), W.end());
+
+            auto dev_bias = CLCudaAPI::Buffer<float_t>(ctx, queue,
+                bias.begin(), bias.end());
+
+            auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue,
+                out_data[i].begin(), out_data[i].end());
+
+            // cast data types and call libdnn
+
+            const int batch_sz = 1;
+
+            const float_t* input_ptr   = double_cast(dev_in());
+            const float_t* weights_ptr = double_cast(dev_W());
+            const float_t* bias_ptr    = double_cast(dev_bias());
+
+            float_t* output_ptr = mutable_double_cast(dev_out());
+
+            // call libdnn forward
+
+            kernel_->Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
+        }
+
 #else
         throw nn_error("TinyDNN was not compiled with LibDNN support.");
 #endif
     }
 
  private:
+    float_t* mutable_double_cast(const cl_mem cl_mem_gpu) {
+        return static_cast<float_t*>(
+            reinterpret_cast<void*>(cl_mem_gpu));
+    }
+
+    const float_t* double_cast(const cl_mem cl_mem_gpu) {
+        return reinterpret_cast<const float_t*>(
+            reinterpret_cast<const void*>(cl_mem_gpu));
+    }
+
     void init_libdnn(const Device* device, const core::conv_params& params) {
         if (device == nullptr) {
             throw nn_error("no device ptr");
@@ -181,8 +227,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_IM2COL;
         }
 
-        // kernel_.reset(new greentea::LibDNNConv<float_t>(config));
-        greentea::LibDNNConv<float_t> compute_kernel(config);
+        kernel_.reset(new greentea::LibDNNConv<float_t>(config));
 
         std::cout << "End init_libdnn" << std::endl;
     }
