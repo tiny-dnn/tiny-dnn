@@ -206,7 +206,7 @@ void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vecto
         }
     }
 }
-constexpr void *supress_unused_warning_apply_cost_if_defined = static_cast<void*>(apply_cost_if_defined);
+constexpr void *supress_unused_warning_apply_cost_if_defined = (void*) (apply_cost_if_defined);
 } // namespace
 
 // gradient for a minibatch
