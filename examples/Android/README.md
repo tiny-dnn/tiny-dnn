@@ -9,5 +9,6 @@ Then change the path of your opencv.mk in jni/Android.mk
 
 #Compile in linux 
 
-Setup NDK and enter the jni directory and running NDK-build.
+1.Setup NDK and configure the environment variables 
+2.enter the jni directory and running NDK-build.
 
