@@ -71,6 +71,34 @@ TEST(ave_pool, forward) {
     }
 }
 
+TEST(ave_pool, forward_asymmetric) {
+    average_pooling_layer<identity> l(4, 4, 1, {2,1}, {2,1});
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        0.5, 2.5,
+        7.5, 5.5,
+        3.5, 1.5,
+        -0.5, -2.5
+    };
+
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.0));
+    l.init_weight();
+
+    vec_t res = l.forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
 TEST(ave_pool, forward_stride) {
     average_pooling_layer<identity> l(4, 4, 1, 2, 1);
     vec_t in = {
