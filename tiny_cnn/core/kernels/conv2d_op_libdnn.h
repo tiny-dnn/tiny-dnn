@@ -132,7 +132,6 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              output_ptr,
                              batch_size);
 
-
             // Upload data GPU -> CPU
             std::vector<float_t> out(out_data[i].size(), 0);
             dev_out.Read(queue, out_data[i].size(), out);
