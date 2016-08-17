@@ -56,7 +56,8 @@ namespace tiny_cnn {
 class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
  public:
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
-            : core::OpKernel(context) {
+            : core::OpKernel(context)
+            , initialized_(false) {
         if (context.device() != nullptr) {
             Conv2d::setParams(context.params());
             init_libdnn(context.device(), Conv2d::params());
@@ -81,7 +82,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         tensor_t in_data_padded;
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        // TODO(edgar): use CLCudaAPI
+        // retrive device context and queue
 
         CLCudaAPI::Context ctx = context.device()->context();
         CLCudaAPI::Queue queue = context.device()->queue();
@@ -104,7 +105,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
             // cast data types and call libdnn
 
-            const int batch_sz = 1;
+            const int batch_size = 1;
 
             const float_t* input_ptr   = double_cast(dev_in());
             const float_t* weights_ptr = double_cast(dev_W());
@@ -112,9 +113,24 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
             float_t* output_ptr = mutable_double_cast(dev_out());
 
+            // first time, tune the kernel
+
+            if (!initialized_) {
+                kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
+                              const_cast<float_t*>(weights_ptr), nullptr,
+                              const_cast<float_t*>(bias_ptr), nullptr,
+                              const_cast<float_t*>(input_ptr), nullptr,
+                              batch_size);
+                initialized_ = true;
+            }
+
             // call libdnn forward
 
-            kernel_->Forward(input_ptr, weights_ptr, bias_ptr, output_ptr, batch_sz);
+            kernel_->Forward(input_ptr,
+                             weights_ptr,
+                             bias_ptr,
+                             output_ptr,
+                             batch_size);
         }
 
 #else
@@ -149,6 +165,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             std::make_shared<greentea::device>(
                 device->deviceId(),
                 device->deviceId(), /* list_id, */
+                // TODO(edgar): refactor this since it's possible
+                // to have OpenCL and CUDA.
 #if defined(USE_OPENCL)
                 greentea::Backend::BACKEND_OpenCL
 #elif defined(USE_CUDA)
@@ -233,6 +251,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
     }
 
  private:
+    bool initialized_;
 #ifdef CNN_USE_LIBDNN
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
 #endif
