@@ -83,6 +83,11 @@ class ProgramManager {
      */
     void registerOp(const Device& device, layer& layer) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
+        // Register device to layer
+        layer.setDevice(device);
+        layer.createOp();
+
+/*
         // retrieve incoming device an layer 
         CLCudaAPI::Device  device_  = device.device();
         CLCudaAPI::Context context_ = device.context();
@@ -118,12 +123,12 @@ class ProgramManager {
 
         std::string program_string = std::string{program_head} + std::string{program_tail};
         auto program = CLCudaAPI::Program(context_, std::move(program_string));
-
+*/
         /*
          * Builds this program and checks for any compilation errors.
          * If there are any, they are printed and execution is halted.
          */
-        nn_info("Compiling the kernel ...");
+/*        nn_info("Compiling the kernel ...");
         auto compiler_options = std::vector<std::string>{};
         auto build_status = program.Build(device_, compiler_options);
 
@@ -139,10 +144,7 @@ class ProgramManager {
 
         // Kernel compilation succeed: Register program.
         programs_.insert({ key_program, program });
-
-        // Register device to layer
-        layer.setDevice(device);
-
+*/
 #endif  // USE_OPENCL OR USE_CUDA
     }
 

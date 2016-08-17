@@ -33,7 +33,7 @@ using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
-TEST(core, device) {
+/*TEST(core, device) {
     // CPU and GPU devices are instantiated
 
     Device my_cpu_device(device_t::CPU);
@@ -103,7 +103,7 @@ TEST(core, device_add_op) {
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
 #endif
-}
+}*/
 
 TEST(core, ocl_conv) {
     // Since Singleton has a general state,
@@ -113,11 +113,10 @@ TEST(core, ocl_conv) {
     Device my_gpu_device(device_t::GPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::OpenCL);
+        padding::valid, true, 1, 1, backend_t::LibDNN);
 
     // first time op registration: OK
     my_gpu_device.registerOp(l);
-
 
     auto create_simple_tensor = [](size_t vector_size) {
         return tensor_t(1, vec_t(vector_size));

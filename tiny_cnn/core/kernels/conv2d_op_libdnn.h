@@ -56,10 +56,14 @@ namespace tiny_cnn {
 class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
  public:
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
-        : core::OpKernel(context) {}
+            : core::OpKernel(context) {
+        if (context.device() != nullptr) {
+            init_libdnn(context.device());
+        }
+    }
 
     void compute(const core::OpKernelContext& context) override {
-#if defined(USE_OPENCL) || defined(USE_CUDA)
+#ifdef CNN_USE_LIBDNN
         // incoming/outcoming datm
         const tensor_t& in_data = context.input(0);
         const vec_t&          W = context.input(1)[0];
@@ -77,8 +81,23 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
 #else
-        throw nn_error("Not compiled with OpenCL");
+        throw nn_error("TinyDNN was not compiled with LibDNN support.");
 #endif
+    }
+
+ private:
+    void init_libdnn(const Device* device) {
+        if (device == nullptr) {
+            throw nn_error("no device ptr");
+        } 
+
+        nn_info("Device type: " + to_string(device->type()));
+        nn_info("Device id: " + to_string(device->deviceId()));
+
+        // Context needs to be initialized with one device and queue
+        greentea::device::setupViennaCLContext(device->deviceId(),
+                device->context()(), device->device()(), device->queue()());
+
     }
 
  private:

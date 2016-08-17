@@ -53,8 +53,8 @@ Device::Device(device_t type)
         : type_(type), has_clcuda_api_(false) {
     nn_info("Initializing Non-OpenCL device ...");
     if (type == device_t::GPU) {
-        nn_error("Bad GPU device initialization. "
-                 "Please provide platform_id and device_id");
+        throw nn_error("Bad GPU device initialization. "
+                       "Please provide platform_id and device_id");
     }
     nn_info("Initializing Non-OpenCL device ... OK");
 }
@@ -90,18 +90,12 @@ Device::Device(device_t type,
 
     // check device type
     if (type == device_t::CPU && !device_->IsCPU()) {
-        //throw nn_error("Not found a CPU device. You are on: "
-        //        + to_string(device_->Type()));
-        nn_warn("Not found a CPU device. You are on: "
-                + to_string(device_->Type()));
-        return;
+        throw nn_error("Not found a CPU device. You are on: " +
+                       to_string(device_->Type()));
     }
     else if (type == device_t::GPU && !device_->IsGPU()) {
-        //throw nn_error("Not found a GPU device. You are on: "
-        //        + to_string(device_->Type()));
-        nn_warn("Not found a GPU device. You are on: "
-                + to_string(device_->Type()));
-        return;
+        throw nn_error("Not found a GPU device. You are on: " +
+                       to_string(device_->Type()));
     }
 
     // Create and retain device context
@@ -119,16 +113,15 @@ Device::Device(device_t type,
 void Device::registerOp(layer& l) {
     // TODO(egdar/nyanp): Should we raise an error here?
     if (!hasCLCudaAPI()) {
-        nn_warn("Cannot register layer: " + l.layer_type() + "."
-                "Device has disabled OpenCL support.");
-        return;
+        throw nn_error("Cannot register layer: " + l.layer_type() +
+            ". Device has disabled OpenCL support.");
     }
 
     // TODO(edgr): switch l.backend_type2() after refactoring
-    if (l.backend_type2() != core::backend_t::OpenCL) {
-        nn_warn("Cannot register layer: " + l.layer_type() +
-                ". Enabled engine: " + to_string(l.backend_type2()));
-        return;
+    if (l.backend_type2() != core::backend_t::OpenCL &&
+        l.backend_type2() != core::backend_t::LibDNN) {
+        throw nn_error("Cannot register layer: " + l.layer_type() +
+            ". Enabled engine: " + to_string(l.backend_type2()));
     }
 
     // Register the op to this device

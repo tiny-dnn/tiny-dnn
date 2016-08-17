@@ -490,9 +490,17 @@ private:
         }
     }
 
+    void createOp() {
+        init_backend(layer::backend_type2());
+    }
+
     void init_backend(const backend_t backend_type) {
+        core::OpKernelConstruction ctx;
+
         // TODO(edgar): add device?
-        auto ctx = core::OpKernelConstruction();
+        if (layer::device() != nullptr) {
+            ctx = core::OpKernelConstruction(layer::device());
+        }
 
         if (backend_type == backend_t::tiny_dnn) {
             kernel_fwd_  = std::make_shared<Conv2dCustomForwardOp>(ctx);

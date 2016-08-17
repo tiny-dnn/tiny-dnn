@@ -127,6 +127,9 @@ class layer : public node {
         return std::string();
     }
 
+    virtual void createOp() {
+    }
+
     void setDevice(const Device& device) {
         device_ptr_ = const_cast<Device*>(&device);
     }
@@ -575,7 +578,7 @@ class layer : public node {
     core::backend_t backend_type_;
     std::shared_ptr<core::backend> backend_;
 
-    Device* device_ptr_;
+    Device* device_ptr_ = nullptr;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

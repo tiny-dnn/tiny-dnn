@@ -62,7 +62,7 @@ class OpKernelConstruction {
     Device* device() const { return device_ptr_; }
 
  private:
-    Device* device_ptr_;
+    Device* device_ptr_ = nullptr;
 };
 
 class OpKernelContext {
