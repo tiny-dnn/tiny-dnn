@@ -7,7 +7,7 @@ OPENCV_LIB_TYPE:= SHARE
 LOCAL_CPP_EXTENSION := .cc
 
 #change to your path
-#include /home/jaychou/Downloads/OpenCV-android-sdk/sdk/native/jni/OpenCV.mk
+#include $ROOT/OpenCV-android-sdk/sdk/native/jni/OpenCV.mk
 
 
 LOCAL_MODULE  := caffe_p
@@ -18,7 +18,7 @@ LOCAL_LDLIBS += -lm -llog
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/../../../
 
 #change to your path
-#LOCAL_C_INCLUDES += /home/jaychou/Downloads/OpenCV-android-sdk/sdk/native/jni/include
+#LOCAL_C_INCLUDES += $ROOT/OpenCV-android-sdk/sdk/native/jni/include
 
 include $(BUILD_SHARED_LIBRARY)
 
