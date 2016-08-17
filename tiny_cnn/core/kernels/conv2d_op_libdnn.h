@@ -58,7 +58,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
             : core::OpKernel(context) {
         if (context.device() != nullptr) {
-            init_libdnn(context.device());
+            Conv2d::setParams(context.params());
+            init_libdnn(context.device(), Conv2d::params());
         }
     }
 
@@ -86,7 +87,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
     }
 
  private:
-    void init_libdnn(const Device* device) {
+    void init_libdnn(const Device* device, const core::conv_params& params) {
         if (device == nullptr) {
             throw nn_error("no device ptr");
         } 
@@ -96,8 +97,94 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         // Context needs to be initialized with one device and queue
         greentea::device::setupViennaCLContext(device->deviceId(),
-                device->context()(), device->device()(), device->queue()());
+            device->context()(), device->device()(), device->queue()());
 
+        std::shared_ptr<greentea::device> dev_ptr =
+            std::make_shared<greentea::device>(
+                device->deviceId(),
+                device->deviceId(), /* list_id, */
+#if defined(USE_OPENCL)
+                greentea::Backend::BACKEND_OpenCL
+#elif defined(USE_CUDA)
+                greentea::Backend::BACKEND_CUDA
+#else
+                greentea::Backend::BACKEND_CPU
+#endif
+            );
+
+        // Initialize device pointer in libdnn
+        dev_ptr->Init();
+
+        // Setup libdnn params
+        greentea::LibDNNConfig config;
+
+        config.dev_ptr = dev_ptr.get();
+
+        // NCHW shape setups
+
+        const float_t dy = params.in_padded.height_ - params.in.height_;
+        const float_t dx = params.in_padded.width_  - params.in.width_;
+
+        std::vector<int32_t> in_shape = {
+            1,
+            params.in.depth_,
+            params.in.height_,
+            params.in.width_
+        };
+
+        std::vector<int32_t> out_shape = {
+            1,
+            params.out.depth_,
+            params.out.height_,
+            params.out.width_
+        };
+
+        std::vector<int32_t> kernel = {
+            params.weight.height_,
+            params.weight.width_
+        };
+
+        std::vector<int32_t> pad = { dy/2, dx/2 };
+
+        std::vector<int32_t> stride = {
+            params.h_stride,
+            params.w_stride
+        };
+
+        std::vector<int32_t> dilation = { 1, 1 };
+
+        config.in_shape  = in_shape;
+        config.out_shape = out_shape;
+        config.pad       = pad;
+        config.kernel    = kernel;
+        config.stride    = stride;
+        config.dilation  = dilation;
+        config.group     = 1;
+
+        config.bias_term = params.has_bias;
+
+        // Disables some optimizations but may give more stable results
+        config.fast_unsafe_math = false;
+        // Disables backward pass of weights during kernel.Backward();
+        config.weights_backward = false;
+        // Disables backward pass for bias during kernel.Backward();
+        config.bias_backward    = false;
+
+        // (Disabling bias and weight backward pass only propagates the data gradient (error))
+
+        if (std::is_same<float_t, float>::value ||
+            dev_ptr->CheckCapability("cl_khr_int64_base_atomics")) {
+            config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_ATOMIC;
+            config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_COL2IM_ATOMIC;
+        } else {
+            config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_DIRECT;
+            config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_IM2COL;
+        }
+
+        // kernel_.reset(new greentea::LibDNNConv<float_t>(config));
+        greentea::LibDNNConv<float_t> compute_kernel(config);
+
+        std::cout << "End init_libdnn" << std::endl;
     }
 
  private:

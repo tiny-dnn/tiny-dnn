@@ -499,7 +499,7 @@ private:
 
         // TODO(edgar): add device?
         if (layer::device() != nullptr) {
-            ctx = core::OpKernelConstruction(layer::device());
+            ctx = core::OpKernelConstruction(layer::device(), &params_);
         }
 
         if (backend_type == backend_t::tiny_dnn) {

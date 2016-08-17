@@ -55,14 +55,18 @@ class OpKernel;  // delared below
 class OpKernelConstruction {
  public:
     explicit OpKernelConstruction() {}
-    explicit OpKernelConstruction(Device* device)
-        : device_ptr_(device) {}
+    explicit OpKernelConstruction(Device* device, core::Params* params)
+        : device_ptr_(device), params_(params) {}
     
     // Returns the device raw pointer
     Device* device() const { return device_ptr_; }
 
+    // Returns the device raw pointer
+    core::Params* params() const { return params_; }
+
  private:
-    Device* device_ptr_ = nullptr;
+    Device* device_ptr_   = nullptr;
+    core::Params* params_ = nullptr;
 };
 
 class OpKernelContext {
