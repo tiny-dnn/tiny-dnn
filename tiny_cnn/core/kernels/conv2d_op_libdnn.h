@@ -131,6 +131,18 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              bias_ptr,
                              output_ptr,
                              batch_size);
+
+
+            // Upload data GPU -> CPU
+            std::vector<float_t> out(out_data[i].size(), 0);
+            dev_out.Read(queue, out_data[i].size(), out);
+
+            // FOR DEBUG ONLY
+            nn_warn("output kernel");
+            for (cnn_size_t j = 0; j < out.size(); ++j) {
+                std::cout << out[j] << " ";
+            }
+            std::cout << std::endl;
         }
 
 #else
@@ -245,9 +257,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_IM2COL;
         }
 
+        // generate sources and compile kernel
         kernel_.reset(new greentea::LibDNNConv<float_t>(config));
-
-        std::cout << "End init_libdnn" << std::endl;
     }
 
  private:
