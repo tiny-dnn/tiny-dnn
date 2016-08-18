@@ -23,13 +23,13 @@ I'm willing to update this list if your software use tiny-dnn. Please contact me
 - [Adding a new layer](Adding-a-new-layer.md)
 
 ## A quick introduction to tiny-dnn
-Include tiny_cnn.h:
+Include tiny_dnn.h:
 
 ```cpp
-    #include "tiny_cnn/tiny_cnn.h"
-    using namespace tiny_cnn;
-    using namespace tiny_cnn::layers;
-    using namespace tiny_cnn::activation;
+    #include "tiny_dnn/tiny_dnn.h"
+    using namespace tiny_dnn;
+    using namespace tiny_dnn::layers;
+    using namespace tiny_dnn::activation;
 ```
 
 Declare the model as ```network```. There are 2 types of network: ```network<sequential>``` and ```network<graph>```. The sequential model is easier to construct.

@@ -1,6 +1,8 @@
 # Adding a new layer
 This section describes how to create a new layer incorporated with tiny-dnn. Let's create simple fully-connected layer for example.
 
+> Note: This document is old, and doesn't fit to current tiny-dnn. We need to update.
+
 ### Declare class
 Let's define your layer. All of layer operations in tiny-dnn are derived from ```layer``` class.
 

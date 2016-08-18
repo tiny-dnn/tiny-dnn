@@ -1,10 +1,10 @@
 # Integrate with your application
 Because tiny-dnn is header-only, integrating it with your application is extremely easy. We explain how to do it step-by-step.
 
-## Step1/3: Include tiny_cnn.h in your application
+## Step1/3: Include tiny_dnn.h in your application
 Just add the following line:
 ```cpp
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 ```
 
 ## Step2/3: Enable C++11 options

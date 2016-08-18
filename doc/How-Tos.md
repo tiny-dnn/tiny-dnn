@@ -34,7 +34,7 @@ Details about tiny-dnn's API and short examples.
     - [catch application exceptions](#catch-application-exceptions)
     - [run tiny-dnn without exceptions](#run-tinydnn-without-exceptions)
 
-Note: following example codes omits ```using namespace tiny_cnn;```.
+Note: following example codes omits ```using namespace tiny_dnn;```.
     
 ## <a name="construct-the-network-model"></a>construct the network model
 There are two types of network model available: sequential and graph. A graph representation describe network as computational graph - each node of graph is layer, and each directed edge holds tensor and its gradients. Sequential representation describe network as linked list - each layer has at most one predecessor and one successor layer.
@@ -60,9 +60,9 @@ net << convolutional_layer<relu>(32, 32, 5, 3, 9)
     << fully_connected_layer<softmax>(120, 40);
 ```
 
-If you feel these syntax a bit redundant, you can also use "shortcut" names defined in tiny_cnn.h.
+If you feel these syntax a bit redundant, you can also use "shortcut" names defined in tiny_dnn.h.
 ```cpp
-using namespace tiny_cnn::layers;
+using namespace tiny_dnn::layers;
 net << conv<relu>(32, 32, 5, 3, 9)
     << ave_pool<relu>(28, 28, 9, 2)
     << fc<tan_h>(14 * 14 * 9, 120)
@@ -342,7 +342,7 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 3, 6)
 std::ifstream input("nets.txt");
 input >> nn;
 ```
-*tiny_cnn saves only weights/biases array, not network structure itself*. So you must construct network(same as training time) before loading.
+*tiny_dnn saves only weights/biases array, not network structure itself*. So you must construct network(same as training time) before loading.
 
 ### <a name="import-caffe-model"></a>import caffe's model
 [Import Caffe Model to tiny-dnn](../examples/caffe_converter/readme.md)
@@ -508,8 +508,8 @@ This behaviour is suitable when you integrate tiny-dnn into your application (es
 ### <a name="catch-application-exceptions"></a>catch application exceptions
 tiny-dnn may throw one of the following types:
 
-- ```tiny_cnn::nn_error```
-- ```tiny_cnn::not_implemented_error```
+- ```tiny_dnn::nn_error```
+- ```tiny_dnn::not_implemented_error```
 - ```std::bad_alloc```
 
 ```not_implemented_error``` is derived from ```nn_error```, and they have ```what()``` method to provide detail message about the error.
