@@ -69,7 +69,7 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_
             shape = shape3d(width, height, depth);
         }
         else {
-            throw std::runtime_error("input_shape not found in caffemodel. must specify input shape explicitly");
+            throw nn_error("input_shape not found in caffemodel. must specify input shape explicitly");
         }
     }
 
@@ -83,14 +83,14 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_
         }
 
         if (!detail::layer_supported(type)) {
-            throw std::runtime_error("error: tiny-cnn does not support this layer type:" + type);
+            throw nn_error("error: tiny-cnn does not support this layer type:" + type);
         }
 
         shape_t shape_next = shape;
         auto layer = detail::create(src_net[i], shape, &shape_next);
 
-        std::cout << "convert " << type << " => " << typeid(*layer).name() << std::endl;
-        std::cout << " shape:" << shape_next << std::endl;
+        nn_info("convert " + type + " => " + typeid(*layer).name());
+        nn_info("shape:" + to_string(shape_next));
 
         *dst_net << layer;
         shape = shape_next;
@@ -151,7 +151,7 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, netwo
         }
 
         if (!detail::layer_supported(type))
-            throw std::runtime_error("error: tiny-cnn does not support this layer type:" + type);
+            throw nn_error("error: tiny-cnn does not support this layer type:" + type);
 
         while (tinycnn_layer_idx < net->depth() && !detail::layer_match(type, (*net)[tinycnn_layer_idx]->layer_type())) {
             tinycnn_layer_idx++;

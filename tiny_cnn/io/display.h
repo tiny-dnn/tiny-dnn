@@ -14,11 +14,11 @@ class timer
 {
  public:
     timer():  t1(std::chrono::high_resolution_clock::now()){};
-    double elapsed(){return std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - t1).count();}
+    float_t elapsed(){return std::chrono::duration_cast<std::chrono::duration<float_t>>(std::chrono::high_resolution_clock::now() - t1).count();}
     void restart(){t1 = std::chrono::high_resolution_clock::now();}
     void start(){t1 = std::chrono::high_resolution_clock::now();}
     void stop(){t2 = std::chrono::high_resolution_clock::now();}
-    double total(){stop();return std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1).count();}
+    float_t total(){stop();return std::chrono::duration_cast<std::chrono::duration<float_t>>(t2 - t1).count();}
     ~timer(){}
  private:
     std::chrono::high_resolution_clock::time_point t1, t2;
@@ -27,7 +27,7 @@ class timer
 
 //  progress_display  --------------------------------------------------------//
 
-//  progress_display displays an appropriate indication of 
+//  progress_display displays an appropriate indication of
 //  progress at an appropriate place in an appropriate form.
 
 class progress_display
@@ -98,4 +98,4 @@ class progress_display
 
 } // namespace
 
-#endif 
+#endif

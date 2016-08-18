@@ -47,9 +47,9 @@ public:
      * @param unpooling_size [in] factor by which to upscale
      **/
     max_unpooling_layer(cnn_size_t in_width,
-                      cnn_size_t in_height,
-                      cnn_size_t in_channels,
-                      cnn_size_t unpooling_size)
+                        cnn_size_t in_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t unpooling_size)
         : Base({vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(unpooling_size),
@@ -68,10 +68,10 @@ public:
      * @param stride       [in] interval at which to apply the filters to the input
     **/
     max_unpooling_layer(cnn_size_t in_width,
-                      cnn_size_t in_height,
-                      cnn_size_t in_channels,
-                      cnn_size_t unpooling_size,
-                      cnn_size_t stride)
+                        cnn_size_t in_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t unpooling_size,
+                        cnn_size_t stride)
         : Base({vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(stride),
@@ -105,9 +105,7 @@ public:
             }
         });
 
-        for_i(parallelize_, out.size(), [&](int i) {
-            out[i] = h_.f(a, i);
-        });
+        this->forward_activation(*out_data[0], *out_data[1]);
     }
 
     void back_propagation(cnn_size_t                 index,
@@ -173,7 +171,7 @@ private:
     index3d<cnn_size_t> out_;
 
     static cnn_size_t unpool_out_dim(cnn_size_t in_size, cnn_size_t unpooling_size, cnn_size_t stride) {
-        return (int) (double)in_size * stride + unpooling_size - 1;
+        return (int) (float_t)in_size * stride + unpooling_size - 1;
     }
 
     void connect_kernel(cnn_size_t unpooling_size, cnn_size_t inx, cnn_size_t iny, cnn_size_t  c)

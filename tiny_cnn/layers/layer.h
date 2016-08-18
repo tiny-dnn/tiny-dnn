@@ -32,14 +32,18 @@
 #include <algorithm>
 #include <vector>
 #include <string>
+#include <utility>
+#include <queue>
 
 #include "tiny_cnn/node.h"
+#include "tiny_cnn/core/backend.h"
+
 #include "tiny_cnn/util/util.h"
 #include "tiny_cnn/util/product.h"
 #include "tiny_cnn/util/image.h"
 #include "tiny_cnn/util/weight_init.h"
-#include "tiny_cnn/optimizers/optimizer.h"
 
+#include "tiny_cnn/optimizers/optimizer.h"
 #include "tiny_cnn/activations/activation_function.h"
 
 namespace tiny_cnn {
@@ -67,7 +71,7 @@ class layer : public node {
      * @param out_type[M] type of output vector
      **/
     layer(const std::vector<vector_type>& in_type,
-               const std::vector<vector_type>& out_type)
+          const std::vector<vector_type>& out_type)
             : node(in_type.size(), out_type.size()),
               initialized_(false),
               parallelize_(true),
@@ -91,8 +95,25 @@ class layer : public node {
         parallelize_ = parallelize;
     }
 
+    void set_backend(std::shared_ptr<core::backend> backend) {
+        backend_ = backend;
+    }
+
+    void set_backend_type(core::backend_t backend_type) {
+        backend_type_ = backend_type;
+    }
+
     /////////////////////////////////////////////////////////////////////////
     // getter
+
+    bool parallelize() const { return parallelize_; }
+    bool initialized() const { return initialized_; }
+
+    core::backend_t backend_type() const {
+        return backend_->type();
+    }
+
+    std::shared_ptr<core::backend> backend() { return backend_; }
 
     ///< number of incoming edges in this layer
     cnn_size_t in_channels() const { return in_channels_; }
@@ -113,11 +134,15 @@ class layer : public node {
     }
 
     std::vector<shape3d> in_data_shape() {
-        return filter(in_shape(), [&](cnn_size_t i) { return in_type_[i] == vector_type::data; });
+        return filter(in_shape(), [&](size_t i) { // NOLINT
+            return in_type_[i] == vector_type::data;
+        });
     }
 
     std::vector<shape3d> out_data_shape() {
-        return filter(out_shape(), [&](cnn_size_t i) { return out_type_[i] == vector_type::data; });
+        return filter(out_shape(), [&](size_t i) { // NOLINT
+            return out_type_[i] == vector_type::data;
+        });
     }
 
     ///! @deprecated use in_data_size() instead
@@ -130,7 +155,7 @@ class layer : public node {
         return out_data_size();
     }
 
-    std::vector<const vec_t*> get_weights() const {
+    std::vector<const vec_t*> weights() const {
         std::vector<const vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -140,7 +165,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<vec_t*> get_weights() {
+    std::vector<vec_t*> weights() {
         std::vector<vec_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -150,7 +175,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<tensor_t*> get_weight_grads() {
+    std::vector<tensor_t*> weights_grads() {
         std::vector<tensor_t*> v;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             if (is_trainable_weight(in_type_[i])) {
@@ -160,7 +185,7 @@ class layer : public node {
         return v;
     }
 
-    std::vector<edgeptr_t> get_inputs() {
+    std::vector<edgeptr_t> inputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             nodes.push_back(ith_in_node(i));
@@ -168,7 +193,7 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() {
+    std::vector<edgeptr_t> outputs() {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             nodes.push_back(ith_out_node(i));
@@ -176,10 +201,11 @@ class layer : public node {
         return nodes;
     }
 
-    std::vector<edgeptr_t> get_outputs() const {
+    std::vector<edgeptr_t> outputs() const {
         std::vector<edgeptr_t> nodes;
         for (cnn_size_t i = 0; i < out_channels_; i++) {
-            nodes.push_back(const_cast<layerptr_t>(this)->ith_out_node(i));
+            nodes.push_back(const_cast<layerptr_t>(this)
+                    ->ith_out_node(i));
         }
         return nodes;
     }
@@ -223,7 +249,9 @@ class layer : public node {
      * used only for calculating target value from label-id in final(output) layer
      * override properly if the layer is intended to be used as output layer
      **/
-    virtual std::pair<float_t, float_t> out_value_range() const { return {float_t(0), float_t(1)}; }  // NOLINT
+    virtual std::pair<float_t, float_t> out_value_range() const {
+        return { float_t(0.0), float_t(1.0) };
+    }
 
     /**
      * array of input shapes (width x height x depth)
@@ -245,14 +273,18 @@ class layer : public node {
      * used only for weight/bias initialization methods which require fan-in size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_in_size() const { return in_shape()[0].width_; }
+    virtual size_t fan_in_size() const {
+        return in_shape()[0].width_;
+    }
 
     /**
      * number of outgoing connections for each input unit
      * used only for weight/bias initialization methods which require fan-out size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_out_size() const { return out_shape()[0].width_; }
+    virtual size_t fan_out_size() const {
+        return out_shape()[0].width_;
+    }
 
     /////////////////////////////////////////////////////////////////////////
     // setter
@@ -287,14 +319,14 @@ class layer : public node {
         /*if (is_exploded()) {
             throw nn_error("failed to save weights because of infinite weight");
         }*/
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto w : *weight) os << w <<  " ";
         }
     }
 
     virtual void load(std::istream& is) { // NOLINT
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) is >> w;
         }
@@ -302,7 +334,7 @@ class layer : public node {
     }
 
     virtual void load(const std::vector<float_t>& src, int& idx) { // NOLINT
-        auto all_weights = get_weights();
+        auto all_weights = weights();
         for (auto& weight : all_weights) {
             for (auto& w : *weight) w = src[idx++];
         }
@@ -316,7 +348,7 @@ class layer : public node {
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
     virtual image<> output_to_image(size_t channel = 0) const {
-        const vec_t* output = &(*(get_outputs()[channel]->get_data()))[0];
+        const vec_t* output = &(*(outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
 
@@ -369,7 +401,9 @@ class layer : public node {
         setup(false);
         set_out_grads(out_grads);
         backward();
-        return map_<tensor_t>(get_inputs(), [](edgeptr_t e) { return *e->get_gradient(); });
+        return map_<tensor_t>(inputs(), [](edgeptr_t e) {
+            return *e->get_gradient();
+        });
     }
 
     void forward() {
@@ -454,6 +488,7 @@ class layer : public node {
     }
 
     void update_weight(optimizer *o, cnn_size_t batch_size) {
+        float_t rcp_batch_size = float_t(1) / float_t(batch_size);
         for (size_t i = 0; i < in_type_.size(); i++) {
             if (is_trainable_weight(in_type_[i])) {
                 vec_t diff;
@@ -462,7 +497,7 @@ class layer : public node {
                 ith_in_node(i)->merge_grads(&diff);
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
-                                  return x / batch_size; });
+                                  return x * rcp_batch_size; });
                 o->update(diff, target);
             }
         }
@@ -471,8 +506,8 @@ class layer : public node {
     }
 
     bool has_same_weights(const layer& rhs, float_t eps) const {
-        auto w1 = get_weights();
-        auto w2 = rhs.get_weights();
+        auto w1 = weights();
+        auto w2 = rhs.weights();
         if (w1.size() != w2.size()) return false;
 
         for (size_t i = 0; i < w1.size(); i++) {
@@ -510,23 +545,29 @@ class layer : public node {
  protected:
     bool initialized_;
     bool parallelize_;
-    cnn_size_t in_channels_;  // number of input vectors
+    cnn_size_t in_channels_;   // number of input vectors
     cnn_size_t out_channels_;  // number of output vectors
     std::vector<vector_type> in_type_;
     std::vector<vector_type> out_type_;
+    
+    core::backend_t backend_type_;
+    std::shared_ptr<core::backend> backend_;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;
     std::shared_ptr<weight_init::function> bias_init_;
 
     void alloc_input(cnn_size_t i) const {
-        //@todo refactoring
+        // TODO(nyanp): refactoring
+        // which type of refactoring do you have in mind for that?
         prev_[i] = std::make_shared<edge>(nullptr, in_shape()[i], in_type_[i]);
     }
 
     void alloc_output(cnn_size_t i) const {
-        //@todo refactoring
-        next_[i] = std::make_shared<edge>((layer*)this, out_shape()[i], out_type_[i]);
+        // TODO(nyanp): refactoring
+        // which type of refactoring do you have in mind for that?
+        next_[i] = std::make_shared<edge>((layer*)this,
+            out_shape()[i], out_type_[i]);
     }
 
     edgeptr_t ith_in_node(cnn_size_t i) {
@@ -667,7 +708,9 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
 
         auto prev = curr->prev_nodes();
         for (auto p : prev) {
-            layer* l = dynamic_cast<layer*>(p); // @todo refactoring
+            // TODO(nyanp): refactoring
+            // which type of refactoring do you have in mind for that?
+            layer* l = dynamic_cast<layer*>(p);
             if (visited.find(l) == visited.end()) {
                 S.push(l);
             }
@@ -675,7 +718,9 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
 
         auto next = curr->next_nodes();
         for (auto n : next) {
-            layer* l = dynamic_cast<layer*>(n); // @todo refactoring
+            // TODO(nyanp): refactoring
+            // which type of refactoring do you have in mind for that?
+            layer* l = dynamic_cast<layer*>(n);
             if (visited.find(l) == visited.end()) {
                 S.push(l);
             }
@@ -685,4 +730,4 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
 
 
 
-} // namespace tiny_cnn
+}  // namespace tiny_cnn

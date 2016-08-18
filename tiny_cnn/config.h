@@ -66,13 +66,17 @@
 #define CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
 #endif
 
+#if !defined(_MSC_VER)
+#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC
+#endif
+
 namespace tiny_cnn {
 
 /**
  * calculation data type
  * you can change it to float, or user defined class (fixed point,etc)
  **/
-typedef double float_t;
+typedef float float_t;
 
 /**
  * size of layer, model, data etc.

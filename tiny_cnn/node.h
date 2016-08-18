@@ -98,10 +98,8 @@ class edge {
         : shape_(shape),
           vtype_(vtype),
           data_({vec_t(shape.size())}),
-          grad_({ vec_t(shape.size()) }),
-          prev_(prev)
-    {
-    }
+          grad_({vec_t(shape.size())}),
+          prev_(prev) {}
 
     void merge_grads(vec_t *dst) {
         dst->resize(grad_[0].size());

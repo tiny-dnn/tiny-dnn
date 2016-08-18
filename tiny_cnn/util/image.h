@@ -174,7 +174,7 @@ private:
  *   -11-55-33-
  *   ----------
  **/
- template<typename T>
+template<typename T>
 inline image<T> vec2image(const vec_t& vec, cnn_size_t block_size = 2, cnn_size_t max_cols = 20)
 {
     if (vec.empty())

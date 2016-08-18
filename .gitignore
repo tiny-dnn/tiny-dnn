@@ -203,5 +203,3 @@ latex*
 *.pb.h
 CMakeFiles*
 build*
-*.cmake
-

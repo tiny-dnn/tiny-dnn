@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -30,10 +30,24 @@
 #include "tiny_cnn/network.h"
 #include "tiny_cnn/nodes.h"
 
+#include "tiny_cnn/core/session.h"
+#include "tiny_cnn/core/device.h"
+#include "tiny_cnn/core/device_cpu.h"
+#include "tiny_cnn/core/device_ocl.h"
+
+#include "tiny_cnn/core/kernels/conv2d_op_custom.h"
+
+#include "tiny_cnn/core/framework/device.h"
+#include "tiny_cnn/core/framework/program_manager.h"
+
 #include "tiny_cnn/layers/input_layer.h"
 #include "tiny_cnn/layers/feedforward_layer.h"
 #include "tiny_cnn/layers/convolutional_layer.h"
+#include "tiny_cnn/layers/quantized_convolutional_layer.h"
+#include "tiny_cnn/layers/deconvolutional_layer.h"
+#include "tiny_cnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
+#include "tiny_cnn/layers/quantized_fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
 #include "tiny_cnn/layers/max_pooling_layer.h"
 #include "tiny_cnn/layers/linear_layer.h"
@@ -41,7 +55,6 @@
 #include "tiny_cnn/layers/dropout_layer.h"
 #include "tiny_cnn/layers/arithmetic_layer.h"
 #include "tiny_cnn/layers/concat_layer.h"
-#include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/max_unpooling_layer.h"
 #include "tiny_cnn/layers/average_unpooling_layer.h"
 #include "tiny_cnn/layers/batch_normalization_layer.h"
@@ -68,12 +81,16 @@
 #include "tiny_cnn/io/caffe/layer_factory.h"
 #endif
 
+
 // shortcut version of layer names
 namespace tiny_cnn {
 namespace layers {
 
 template <class T>
 using conv = tiny_cnn::convolutional_layer<T>;
+
+template <class T>
+using q_conv = tiny_cnn::quantized_convolutional_layer<T>;
 
 template <class T>
 using max_pool = tiny_cnn::max_pooling_layer<T>;
@@ -104,10 +121,14 @@ template <class T>
 using deconv = tiny_cnn::deconvolutional_layer<T>;
 
 template <class T>
-using max_unpooling = tiny_cnn::max_unpooling_layer<T>;
+using max_unpool = tiny_cnn::max_unpooling_layer<T>;
 
 template <class T>
-using average_unpooling = tiny_cnn::average_unpooling_layer<T>;
+using ave_unpool = tiny_cnn::average_unpooling_layer<T>;
+
+}
+
+#include "tiny_cnn/models/alexnet.h"
 
 using batch_norm = tiny_cnn::batch_normalization_layer;
 
@@ -115,5 +136,10 @@ using slice = tiny_cnn::slice_layer;
 
 using power = tiny_cnn::power_layer;
 
-}
+using batch_norm = tiny_cnn::batch_normalization_layer;
+
+using slice = tiny_cnn::slice_layer;
+
+using power = tiny_cnn::power_layer;
+
 }

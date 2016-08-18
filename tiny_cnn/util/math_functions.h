@@ -75,7 +75,7 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
                 float_t        EX = (*mean)[j];
 
                 for (cnn_size_t k = 0; k < spatial_dim; k++) {
-                    *pvar += pow(*X++ - EX, 2.0);
+                    *pvar += pow(*X++ - EX, (float_t)2.0);
                 }
             }
         }

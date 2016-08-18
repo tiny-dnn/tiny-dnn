@@ -19,18 +19,41 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     tar -czvf "${HOME}/homebrew-cache/homebrew-cache.tar.gz" --directory /usr/local/Cellar tbb boost cmake opencv3 jpeg libpng libtiff
   fi
 elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
+
+  # install OpenCV 3.1.0
   version_major=3
   version_minor=1
-  version_patch=0  
+  version_patch=0
   OPENCV_DIR="${HOME}/opencv_${version_major}_${version_minor}_${version_patch}"
   if [ ! -d  "${OPENCV_DIR}/lib" ]; then
-    git clone https://github.com/Itseez/opencv.git
-    cd opencv
-    git checkout ${version_major}.${version_minor}.${version_patch}
-    mkdir build
-    cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$OPENCV_DIR" ..
-    make -j2 && make -j2 install
+    git clone https://github.com/opencv/opencv.git;
+    cd opencv;
+    git checkout ${version_major}.${version_minor}.${version_patch};
+    mkdir build && cd build;
+    cmake -DBUILD_opencv_core=ON \
+          -DBUILD_opencv_calib3d=OFF \
+          -DBUILD_opencv_features2d=OFF \
+          -DBUILD_opencv_flann=OFF \
+          -DBUILD_opencv_highgui=OFF \
+          -DBUILD_opencv_imgcodecs=OFF \
+          -DBUILD_opencv_imgproc=OFF \
+          -DBUILD_opencv_java=OFF \
+          -DBUILD_opencv_ml=OFF \
+          -DBUILD_opencv_objdetect=OF \
+          -DBUILD_opencv_photo=OFF \
+          -DBUILD_opencv_python=OFF \
+          -DBUILD_opencv_shape=OFF \
+          -DBUILD_opencv_stitching=OFF \
+          -DBUILD_opencv_superres=OFF \
+          -DBUILD_opencv_ts=OFF \
+          -DBUILD_opencv_video=OFF \
+          -DBUILD_opencv_videoio=OFF \
+          -DBUILD_opencv_videostab=OFF \
+          -DBUILD_opencv_viz=OFF \
+          -DBUILD_TESTS=OFF \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_INSTALL_PREFIX="$OPENCV_DIR" ..;
+    make -j2 && make -j2 install;
   else
     echo "Cached OpenCV ${1}.${2}.${3} found";
   fi

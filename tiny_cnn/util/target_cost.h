@@ -7,7 +7,7 @@ namespace tiny_cnn {
 // calculate the number of samples for each class label
 //  - for example, if there are 10 samples having label 0, and
 //    20 samples having label 1, returns a vector [10, 20]
-std::vector<cnn_size_t> calculate_label_counts(const std::vector<label_t>& t) {
+inline std::vector<cnn_size_t> calculate_label_counts(const std::vector<label_t>& t) {
     std::vector<cnn_size_t> label_counts;
     for (label_t label : t) {
         if (label >= label_counts.size()) {
@@ -23,7 +23,7 @@ std::vector<cnn_size_t> calculate_label_counts(const std::vector<label_t>& t) {
 // NB: we call a target cost matrix "balanced", if the cost of each *class* is equal
 //     (this happens when the product weight * sample count is equal between the different
 //      classes, and the sum of these products equals the total number of samples)
-float_t get_sample_weight_for_balanced_target_cost(cnn_size_t classes, cnn_size_t total_samples, cnn_size_t this_class_samples)
+inline float_t get_sample_weight_for_balanced_target_cost(cnn_size_t classes, cnn_size_t total_samples, cnn_size_t this_class_samples)
 {
     assert(this_class_samples <= total_samples);
     return total_samples / static_cast<float_t>(classes * this_class_samples);
@@ -37,7 +37,7 @@ float_t get_sample_weight_for_balanced_target_cost(cnn_size_t classes, cnn_size_
 //    * use 0 to have an equal cost for each *sample* (equal to not supplying any target costs at all)
 //    * use 1 to have an equal cost for each *class* (default behaviour of this function)
 //    * use a value between 0 and 1 to have something between the two extremes
-std::vector<vec_t> create_balanced_target_cost(const std::vector<label_t>& t, float_t w = 1.0)
+inline std::vector<vec_t> create_balanced_target_cost(const std::vector<label_t>& t, float_t w = 1.0)
 {
     const auto label_counts = calculate_label_counts(t);
     const cnn_size_t total_sample_count = t.size();

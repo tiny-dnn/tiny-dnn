@@ -36,6 +36,7 @@
 #include "caffe.pb.h"
 
 #include "tiny_cnn/layers/convolutional_layer.h"
+#include "tiny_cnn/layers/deconvolutional_layer.h"
 #include "tiny_cnn/layers/fully_connected_layer.h"
 #include "tiny_cnn/layers/average_pooling_layer.h"
 #include "tiny_cnn/layers/max_pooling_layer.h"
@@ -67,14 +68,14 @@ inline void read_proto_from_text(const std::string& prototxt,
                                  google::protobuf::Message *message) {
     int fd = CNN_OPEN_TXT(prototxt.c_str());
     if (fd == -1) {
-        throw std::runtime_error("file not fonud: " + prototxt);
+        throw nn_error("file not fonud: " + prototxt);
     }
 
     google::protobuf::io::FileInputStream input(fd);
     input.SetCloseOnDelete(true);
 
     if (!google::protobuf::TextFormat::Parse(&input, message)) {
-        throw std::runtime_error("failed to parse");
+        throw nn_error("failed to parse");
     }
 }
 
@@ -89,7 +90,7 @@ inline void read_proto_from_binary(const std::string& protobinary,
                                 std::numeric_limits<int>::max() / 2);
 
     if (!message->ParseFromCodedStream(&codedstr)) {
-        throw std::runtime_error("failed to parse");
+        throw nn_error("failed to parse");
     }
 }
 
@@ -102,7 +103,7 @@ create_filler(const std::string& filler) {
     } else if (filler == "gaussian") {
         return std::make_shared<weight_init::gaussian>();
     } else {
-        throw std::runtime_error("unsupported filler type");
+        throw nn_error("unsupported filler type");
     }
 }
 
@@ -110,7 +111,7 @@ template <typename param>
 inline bool get_kernel_size_2d(const param& p, layer_size_t *kernel) {
     if (p.has_kernel_w() && p.has_kernel_w()) {
         if (p.kernel_w() != p.kernel_h()) {
-            throw std::runtime_error("unsupported kernel shape");
+            throw nn_error("unsupported kernel shape");
         }
         *kernel = p.kernel_w();
         return true;
@@ -122,13 +123,12 @@ inline layer_size_t get_kernel_size_2d(const caffe::ConvolutionParameter& p) {
     layer_size_t window_size;
     if (!get_kernel_size_2d(p, &window_size)) {
         if (p.kernel_size_size() > 1) {
-            throw std::runtime_error("unsupported kernel shape");
+            throw nn_error("unsupported kernel shape");
         }
         window_size = p.kernel_size(0);
     }
     return window_size;
 }
-
 
 inline std::shared_ptr<layer> create_max_pool(int pool_size,
                                               int stride,
@@ -205,7 +205,7 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape,
                                       shape_t *top_shape) {
     if (!layer.has_pooling_param()) {
-        throw std::runtime_error("pool param missing");
+        throw nn_error("pool param missing");
     }
 
     auto pool_param = layer.pooling_param();
@@ -229,7 +229,7 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
     }
 
     if (h_stride != w_stride) {  // || h_stride != pool_size)
-        throw std::runtime_error("unsupported pool shape");
+        throw nn_error("unsupported pool shape");
     }
 
     if (pool_param.has_pool()) {
@@ -243,7 +243,7 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
                 return create_ave_pool(pool_size, h_stride,
                                        bottom_shape, top_shape);
             default:
-                throw std::runtime_error("unsupported layer type");
+                throw nn_error("unsupported layer type");
         }
     }
 
@@ -311,7 +311,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
 
     if (dst->out_size() * dst->in_size() !=
         static_cast<cnn_size_t>(weights.data_size())) {
-        throw std::runtime_error(
+        throw nn_error(
             std::string("layer size mismatch!") +
             "caffe(" + src.name() + "):" + to_string(weights.data_size()) + "\n" +
             "tiny-cnn(" + dst->layer_type() + "):" + to_string(dst->get_weights().size()));
@@ -346,7 +346,7 @@ inline std::shared_ptr<layer> create_fullyconnected(
     using fc_layer = fully_connected_layer<activation::identity>;
 
     if (!layer.has_inner_product_param()) {
-        throw std::runtime_error("inner-product param missing");
+        throw nn_error("inner-product param missing");
     }
 
     layer_size_t dim_input = 0, dim_output = 0;
@@ -428,6 +428,55 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
     }
 }
 
+inline void load_weights_deconv(const caffe::LayerParameter& src, layer *dst) {
+    // fill weight
+    auto weights = src.blobs(0);
+
+    //TODO: check if it works
+    //int out_channels = dst->out_shape().depth_;
+    //int in_channels = dst->in_shape().depth_;
+    int out_channels = dst->out_data_shape()[0].depth_;
+    int in_channels = dst->in_data_shape()[0].depth_;
+
+    connection_table table;
+    auto deconv_param = src.convolution_param();
+    int dst_idx = 0;
+    int src_idx = 0;
+    int window_size = get_kernel_size_2d(deconv_param);
+
+    if (deconv_param.has_group()) {
+        table = connection_table(deconv_param.group(), in_channels, out_channels);
+    }
+
+    vec_t& w = *dst->get_weights()[0];
+    vec_t& b = *dst->get_weights()[1];
+
+    // fill weights
+    for (int o = 0; o < out_channels; o++) {
+        for (int i = 0; i < in_channels; i++) {
+            if (!table.is_connected(o, i)) {
+                dst_idx += window_size * window_size;
+                continue;
+            }
+            for (int x = 0; x < window_size * window_size; x++) {
+                //TODO
+                //dst->weight()[dst_idx++] = weights.data(src_idx++);
+                w[dst_idx++] =  weights.data(src_idx++);
+            }
+        }
+    }
+
+    // fill bias
+    if (deconv_param.bias_term()) {
+        auto biases = src.blobs(1);
+        for (int o = 0; o < out_channels; o++) {
+            //TODO
+            //dst->bias()[o] = biases.data(o);
+            b[o] = biases.data(o);
+        }
+    }
+}
+
 inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
     auto pool_param = src.pooling_param();
 
@@ -472,7 +521,7 @@ std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
     using lrn_layer = lrn_layer<activation::identity>;
 
     if (!layer.has_lrn_param()) {
-        throw std::runtime_error("lrn param missing");
+        throw nn_error("lrn param missing");
     }
 
     auto lrn_param = layer.lrn_param();
@@ -502,7 +551,7 @@ std::shared_ptr<layer> create_dropout(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape,
                                       shape_t *top_shape) {
     if (!layer.has_dropout_param()) {
-        throw std::runtime_error("dropout param missing");
+        throw nn_error("dropout param missing");
     }
 
     float_t dropout_rate = float_t(0.5);
@@ -524,7 +573,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
     using conv_layer = convolutional_layer<activation::identity>;
 
     if (!layer.has_convolution_param()) {
-        throw std::runtime_error("convolution param missing");
+        throw nn_error("convolution param missing");
     }
 
     // layer parameters
@@ -555,7 +604,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
                          conv_param.pad(0) : conv_param.pad_h();
 
         if (pad_w != pad_h) {
-            throw std::runtime_error("conv:not supported padding size");
+            throw nn_error("conv:not supported padding size");
         }
 
         // 0 ... valid, (window_size-1)/2 ... same
@@ -564,7 +613,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
         } else if (pad_w == 0) {
             pad_type = padding::valid;
         } else {
-            throw std::runtime_error("conv:not supported padding size");
+            throw nn_error("conv:not supported padding size");
         }
     }
 
@@ -610,6 +659,99 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
     return conv;
 }
 
+inline
+std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
+                                        const shape_t& bottom_shape,
+                                        shape_t *top_shape) {
+    using deconv_layer = deconvolutional_layer<activation::identity>;
+
+    if (!layer.has_convolution_param()) {
+        throw nn_error("deconvolution param missing");
+    }
+
+    // layer parameters
+    layer_size_t in_width = 0, in_height = 0, window_size = 0;
+    layer_size_t in_channels = 0, out_channels = 0;
+    layer_size_t w_stride = 1, h_stride = 1;
+    bool has_bias = true;
+    padding pad_type = padding::valid;
+    connection_table table;
+
+    auto deconv_param = layer.convolution_param();
+
+    // shape
+    out_channels = deconv_param.num_output();
+    in_channels = bottom_shape.depth_;
+    in_width = bottom_shape.width_;
+    in_height = bottom_shape.height_;
+    has_bias = deconv_param.bias_term();
+    window_size = get_kernel_size_2d(deconv_param);
+
+    // unpadding
+    if (deconv_param.pad_size() == 1 ||
+       (deconv_param.has_pad_w() && deconv_param.has_pad_h())) {
+        uint32_t unpad_w = deconv_param.pad_size() == 1 ?
+                         deconv_param.pad(0) : deconv_param.pad_w();
+
+        uint32_t unpad_h = deconv_param.pad_size() == 1 ?
+                         deconv_param.pad(0) : deconv_param.pad_h();
+
+        if (unpad_w != unpad_h) {
+            throw nn_error("deconv:not supported unpadding size");
+        }
+
+        // 0 ... valid, (window_size-1)/2 ... same
+        if (unpad_w == (window_size - 1) / 2) {
+            pad_type = padding::same;
+        } else if (unpad_w == 0) {
+            pad_type = padding::valid;
+        } else {
+            throw nn_error("deconv:not supported unpadding size");
+        }
+    }
+
+    // stride
+    if (deconv_param.stride_size() == 1 || deconv_param.has_stride_h()) {
+        h_stride = deconv_param.stride_size() == 1 ?
+                   deconv_param.stride(0) : deconv_param.stride_h();
+    }
+
+    if (deconv_param.stride_size() == 1 || deconv_param.has_stride_w()) {
+        w_stride = deconv_param.stride_size() == 1 ?
+                   deconv_param.stride(0) : deconv_param.stride_w();
+    }
+
+    // group
+    if (deconv_param.has_group()) {
+        table = connection_table(deconv_param.group(), in_channels, out_channels);
+    }
+
+    auto deconv = std::make_shared<deconv_layer>(in_width, in_height,
+                                             window_size,
+                                             in_channels, out_channels,
+                                             table,
+                                             pad_type,
+                                             has_bias,
+                                             w_stride, h_stride);
+    // filler
+    if (deconv_param.has_weight_filler()) {
+        deconv->weight_init(create_filler(deconv_param.weight_filler().type()));
+    }
+
+    if (deconv_param.has_bias_filler()) {
+        deconv->bias_init(create_filler(deconv_param.bias_filler().type()));
+    }
+
+    // set weight (optional)
+    if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
+        load_weights_deconv(layer, deconv.get());
+    }
+    //TODO
+    //*top_shape = deconv->out_shape();
+    *top_shape = deconv->out_shape()[0];
+    return deconv;
+}
+
 inline bool layer_skipped(const std::string& type) {
     if (type == "Data" || type == "EuclideanLoss" || type == "Input") return true;
     return false;
@@ -628,7 +770,8 @@ inline bool layer_has_weights(const std::string& type) {
 
 inline bool layer_supported(const std::string& type) {
     static const char* supported[] = {
-        "InnerProduct", "Convolution", "Pooling", "LRN", "Dropout",
+        "InnerProduct", "Convolution", "Deconvolution", "Pooling",
+        "LRN", "Dropout",
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss",
         "ReLU", "Sigmoid", "TanH", "Softmax", "BatchNorm"
     };
@@ -644,6 +787,7 @@ inline bool layer_match(const std::string& caffetype,
     const char* conversions[][2] = {
         { "InnerProduct", "fully-connected" },
         { "Convolution", "conv" },
+        { "Deconvolution", "deconv" },
         { "Pooling", "ave-pool" },
         { "Pooling", "max-pool" }
     };
@@ -662,6 +806,10 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
 
     if (layer_type == "Convolution") {
         return detail::create_convlayer(layer, in_shape, out_shape);
+    }
+
+    if (layer_type == "Deconvolution") {
+        return detail::create_deconvlayer(layer, in_shape, out_shape);
     }
 
     if (layer_type == "InnerProduct") {
@@ -702,7 +850,7 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
         return detail::create_tanh(layer, in_shape, out_shape);
     }
 
-    throw std::runtime_error("layer parser not found");
+    throw nn_error("layer parser not found");
 
     /*typedef std::function<std::shared_ptr<layer>(
         const caffe::LayerParameter&, const shape_t&, shape_t*)> factoryimpl;
@@ -710,6 +858,7 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::create_convlayer;
+    factory_registry["Deconvolution"] = detail::create_deconvlayer;
     factory_registry["InnerProduct"] = detail::create_fullyconnected;
     factory_registry["Pooling"] = detail::create_pooling;
     factory_registry["LRN"] = detail::create_lrn;
@@ -722,7 +871,7 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
     factory_registry["Softmax"] = detail::create_softmax;
 
     if (factory_registry.find(layer.type()) == factory_registry.end()) {
-        throw std::runtime_error("layer parser not found");
+        throw nn_error("layer parser not found");
     }
 
     return factory_registry[layer.type()](layer, in_shape, out_shape);*/
@@ -733,11 +882,12 @@ inline void load(const caffe::LayerParameter& src, layer *dst) {
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::load_weights_conv;
+    factory_registry["Deconvolution"] = detail::load_weights_deconv;
     factory_registry["InnerProduct"] = detail::load_weights_fullyconnected;
     factory_registry["Pooling"] = detail::load_weights_pool;
 
     if (factory_registry.find(src.type()) == factory_registry.end()) {
-        throw std::runtime_error("layer parser not found");
+        throw nn_error("layer parser not found");
     }
 
     return factory_registry[src.type()](src, dst);
@@ -794,7 +944,7 @@ class caffe_layer_vector {
         });
 
         if (root == nodes.end()) {
-            throw std::runtime_error("root layer not found");
+            throw nn_error("root layer not found");
         }
 
         root_node = &*root;
@@ -909,7 +1059,7 @@ class caffe_layer_vector {
         case caffe::V1LayerParameter_LayerType_THRESHOLD:
             return "Threshold";
         default:
-            throw std::runtime_error("unknown v1 layer-type");
+            throw nn_error("unknown v1 layer-type");
         }
     }
 

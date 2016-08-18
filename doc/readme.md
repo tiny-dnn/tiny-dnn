@@ -43,7 +43,7 @@ Stack layers:
 ```cpp
     net << conv<tan_h>(32, 32, 5, 1, 6, padding::same)  // in:32x32x1, 5x5conv, 6fmaps
         << max_pool<tan_h>(32, 32, 6, 2)                // in:32x32x6, 2x2pooling
-        << conv<tan_h>(16, 16, 5, 6, 16, padding::same) // in:16x16x6, 5x5conv, 16fmaps 
+        << conv<tan_h>(16, 16, 5, 6, 16, padding::same) // in:16x16x6, 5x5conv, 16fmaps
         << max_pool<tan_h>(16, 16, 16, 2)               // in:16x16x16, 2x2pooling
         << fc<tan_h>(8*8*16, 100)                       // in:8x8x16, out:100
         << fc<softmax>(100, 10);                        // in:100 out:10
@@ -97,3 +97,6 @@ Save the trained parameter:
 For a more in-depth about tiny-dnn, check out [MNIST classification](../examples/mnist/readme.md) where you can see the end-to-end example.
 You will find tiny-dnn's API in [How-to](How-Tos.md).
 
+## Design
+
+![url](http://uml.mvnsearch.org/github/edgarriba/tiny-cnn/blob/feat/generic-computational-graph-device-abstraction/doc/device-abstraction-uml.puml)

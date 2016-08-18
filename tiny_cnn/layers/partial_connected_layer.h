@@ -86,12 +86,10 @@ public:
         const tensor_t& in  = *in_data[0];
         const vec_t&    W   = (*in_data[1])[0];
         const vec_t&    b   = (*in_data[2])[0];
-        tensor_t&       out = *out_data[0];
         tensor_t&       a   = *out_data[1];
 
         // @todo revise the parallelism strategy
         for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
-
             vec_t& a_sample = a[sample];
 
             for_i(parallelize_, out2wi_.size(), [&](int i) {
@@ -107,11 +105,9 @@ public:
                 a_element *= scale_factor_;
                 a_element += b[out2bias_[i]];
             });
-
-            for_i(parallelize_, out2wi_.size(), [&](int i) {
-                out[sample][i] = h_.f(a_sample, i);
-            });
         }
+
+        this->forward_activation(*out_data[0], *out_data[1]);
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,

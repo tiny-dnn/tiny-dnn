@@ -20,7 +20,7 @@ TEST(test_large_thread_count, test_large_thread_count) {
         bool in = bernoulli(0.5);
         bool label = bernoulli(0.5);
 
-        data.push_back({ in * 1.0 });
+        data.push_back({ static_cast<float_t>(in) });
         labels.push_back(label ? 1 : 0);
     }
 
