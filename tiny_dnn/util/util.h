@@ -53,11 +53,9 @@
 #endif
 
 #ifdef USE_OPENCL
-#ifdef __APPLE__
-    #include <OpenCL/cl.hpp>
+#include "third_party/CLCudaAPI/clpp11.h"
 #else
-    #include <CL/cl2.hpp>
-#endif
+#include "third_party/CLCudaAPI/cupp11.h"
 #endif
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
@@ -540,37 +538,48 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
 }
 
 // get all platforms (drivers), e.g. NVIDIA
-#ifdef USE_OPENCL
-void printAllAvailableDevice() {
-    std::vector<cl::Platform> all_platforms;
-    cl::Platform::get(&all_platforms);
+// https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 
-    if (all_platforms.size() == 0) {
-        std::cout << " No platforms found. Check OpenCL installation!\n";
-        exit(1);
+void printAvailableDevice(const int _platform_id, const int _device_id) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+
+    // Platform/device settings
+    auto platform_id = size_t{_platform_id};
+    auto device_id   = size_t{_device_id};
+
+    // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
+    // selects a specific device on the platform.
+    auto platform = CLCudaAPI::Platform(platform_id);
+    auto device = CLCudaAPI::Device(platform, device_id);
+
+    // Prints information about the chosen device. Most of these results should stay the same when
+    // switching between the CUDA and OpenCL back-ends.
+    printf("\n## Printing device information...\n");
+    printf(" > Platform ID                  %zu\n", platform_id);
+    printf(" > Device ID                    %zu\n", device_id);
+    printf(" > Framework version            %s\n", device.Version().c_str());
+    printf(" > Vendor                       %s\n", device.Vendor().c_str());
+    printf(" > Device name                  %s\n", device.Name().c_str());
+    printf(" > Device type                  %s\n", device.Type().c_str());
+    printf(" > Max work-group size          %zu\n", device.MaxWorkGroupSize());
+    printf(" > Max thread dimensions        %zu\n", device.MaxWorkItemDimensions());
+    printf(" > Max work-group sizes:\n");
+    for (auto i=size_t{0}; i<device.MaxWorkItemDimensions(); ++i) {
+        printf("   - in the %zu-dimension         %zu\n", i, device.MaxWorkItemSizes()[i]);
     }
+    printf(" > Local memory per work-group  %zu bytes\n", device.LocalMemSize());
+    printf(" > Device capabilities          %s\n", device.Capabilities().c_str());
+    printf(" > Core clock rate              %zu MHz\n", device.CoreClock());
+    printf(" > Number of compute units      %zu\n", device.ComputeUnits());
+    printf(" > Total memory size            %zu bytes\n", device.MemorySize());
+    printf(" > Maximum allocatable memory   %zu bytes\n", device.MaxAllocSize());
+    printf(" > Memory clock rate            %zu MHz\n", device.MemoryClock());
+    printf(" > Memory bus width             %zu bits\n", device.MemoryBusWidth());
 
-    for (size_t i = 0; i < all_platforms.size(); ++i) {
-        cl::Platform default_platform = all_platforms[i];
-        std::cout << "-- Using platform (" << i << "): "
-                  << default_platform.getInfo<CL_PLATFORM_NAME>() << "\n";
-
-        // get default device (CPUs, GPUs) of the default patform
-        std::vector<cl::Device> all_devices;
-        default_platform.getDevices(CL_DEVICE_TYPE_ALL, &all_devices);
-
-        if (all_devices.size() == 0) {
-            std::cout << " No devices found. Check OpenCL installation!\n";
-        }
-
-        for (size_t j = 0; j < all_devices.size(); ++j) {
-            cl::Device default_device = all_devices[j];
-            std::cout << "---- Using device (" << j << "): "
-                      << default_device.getInfo<CL_DEVICE_NAME>() << "\n";
-        }
-    }
-}
+#else
+    nn_warn("TinyDNN was not build with OpenCL or CUDA support.");
 #endif
+}
 
 #if defined(_MSC_VER) && (_MSC_VER <= 1800)
 #define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
