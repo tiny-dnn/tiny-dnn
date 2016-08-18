@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(power, forward) {
     power_layer pw(shape3d(3,2,1), 2.0);
@@ -65,4 +65,4 @@ TEST(power, gradient_check) {
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

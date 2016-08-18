@@ -26,10 +26,10 @@
 */
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
@@ -39,7 +39,7 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert tiny_cnn::image to cv::Mat and resize
+// convert tiny_dnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
     cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
     cv::Mat resized;

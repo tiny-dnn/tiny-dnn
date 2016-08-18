@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(quantization_utils, float_to_quantized) {
   EXPECT_EQ(uint8_t(0), core::kernels::float_to_quantized<uint8_t>(0.0f, 0.0f, 1.0f));
@@ -261,4 +261,4 @@ TEST(quantization_utils, quantize_down_and_shrink_range) {
   EXPECT_NEAR(1.0f, output_max, 1E-5);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

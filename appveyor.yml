@@ -28,7 +28,7 @@ before_build:
 
 after_build:
   - cmd: 'cd C:\projects\build\test\Release'
-  - cmd: tiny_cnn_test.exe
+  - cmd: tiny_dnn_test.exe
 
 build:
-  project: C:\projects\build\tiny_cnn.sln
+  project: C:\projects\build\tiny_dnn.sln

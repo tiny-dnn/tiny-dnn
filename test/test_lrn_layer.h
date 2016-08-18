@@ -27,15 +27,15 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(lrn, cross) {
     lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
 
-    tiny_cnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
-    tiny_cnn::float_t expected[4] =
+    tiny_dnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
+    tiny_dnn::float_t expected[4] =
     {
         -1.0/36.0,    // -1.0 / (1+0.5*(1*1+3*3))^2
         3.0/64.0,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
@@ -61,4 +61,4 @@ TEST(lrn, read_write) {
     serialization_test(l1, l2);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

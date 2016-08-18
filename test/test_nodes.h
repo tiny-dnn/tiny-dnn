@@ -27,11 +27,11 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn::layers;
+using namespace tiny_dnn::layers;
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(nodes, sequential) {
     network<sequential> nn;
@@ -103,4 +103,4 @@ TEST(nodes, graph_branch2) {
     EXPECT_FLOAT_EQ(static_cast<float_t>(res[2]), static_cast<float_t>(0.0));
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

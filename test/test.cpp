@@ -28,9 +28,9 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include "picotest/picotest.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn::activation;
 
 #include "test_network.h"
 #include "test_average_pooling_layer.h"

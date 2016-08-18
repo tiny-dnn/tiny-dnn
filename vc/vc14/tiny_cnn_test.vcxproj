@@ -14,7 +14,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{680A21F8-5877-48EA-B313-CE23B12167ED}</ProjectGuid>
     <RootNamespace>test</RootNamespace>
-    <ProjectName>tiny_cnn_test</ProjectName>
+    <ProjectName>tiny_dnn_test</ProjectName>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -89,7 +89,11 @@
   <ItemGroup>
     <ClInclude Include="..\..\test\testhelper.h" />
     <ClInclude Include="..\..\test\test_average_pooling_layer.h" />
+    <ClInclude Include="..\..\test\test_average_unpooling_layer.h" />
+    <ClInclude Include="..\..\test\test_batch_norm_layer.h" />
+    <ClInclude Include="..\..\test\test_caffe_converter.h" />
     <ClInclude Include="..\..\test\test_convolutional_layer.h" />
+    <ClInclude Include="..\..\test\test_deconvolutional_layer.h" />
     <ClInclude Include="..\..\test\test_dropout_layer.h" />
     <ClInclude Include="..\..\test\test_fully_connected_layer.h" />
     <ClInclude Include="..\..\test\test_large_thread_count.h" />
@@ -97,42 +101,14 @@
     <ClInclude Include="..\..\test\test_max_pooling_layer.h" />
     <ClInclude Include="..\..\test\test_network.h" />
     <ClInclude Include="..\..\test\test_nodes.h" />
+    <ClInclude Include="..\..\test\test_power_layer.h" />
+    <ClInclude Include="..\..\test\test_quantization.h" />
+    <ClInclude Include="..\..\test\test_quantized_convolutional_layer.h" />
+    <ClInclude Include="..\..\test\test_quantized_deconvolutional_layer.h" />
+    <ClInclude Include="..\..\test\test_quantized_fully_connected_layer.h" />
+    <ClInclude Include="..\..\test\test_slice_layer.h" />
     <ClInclude Include="..\..\test\test_target_cost.h" />
-    <ClInclude Include="..\..\tiny_cnn\activations\activation_function.h" />
-    <ClInclude Include="..\..\tiny_cnn\lossfunctions\loss_function.h" />
-    <ClInclude Include="..\..\tiny_cnn\optimizers\optimizer.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\conv_kernel.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\deform.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\graph_visualizer.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\weight_init.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\image.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\product.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\nn_error.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\util.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\aligned_allocator.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\target_cost.h" />
-    <ClInclude Include="..\..\tiny_cnn\io\mnist_parser.h" />
-    <ClInclude Include="..\..\tiny_cnn\io\cifar10_parser.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\arithmetic_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\average_pooling_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\concat_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\convolutional_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\dropout_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\feedforward_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\fully_connected_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\input_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\layers.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\linear_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\lrn_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\max_pooling_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\partial_connected_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\tiny_cnn.h" />
-    <ClInclude Include="..\..\tiny_cnn\config.h" />
-    <ClInclude Include="..\..\tiny_cnn\network.h" />
-    <ClInclude Include="..\..\tiny_cnn\node.h" />
-    <ClInclude Include="..\..\tiny_cnn\nodes.h" />
-    <ClInclude Include="..\..\test\picotest.h" />
+    <ClInclude Include="..\..\tiny_dnn\tiny_dnn.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

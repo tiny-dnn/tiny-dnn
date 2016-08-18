@@ -27,13 +27,13 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(quantized_deconvolutional, setup_tiny) {
     quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::tiny_cnn);
+        padding::valid, true, 1, 1, backend_t::tiny_dnn);
   
     EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
@@ -51,7 +51,7 @@ TEST(quantized_deconvolutional, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_deconv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_cnn);
+    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
 }
 
 #ifdef CNN_USE_NNPACK
@@ -294,4 +294,4 @@ TEST(quantized_deconvolutional, read_write2) {
     serialization_test(layer1, layer2);
 }*/
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

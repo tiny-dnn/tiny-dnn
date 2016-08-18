@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(ave_unpool, gradient_check) { // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
@@ -109,4 +109,4 @@ TEST(ave_unpool, read_write) {
     serialization_test(l1, l2);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

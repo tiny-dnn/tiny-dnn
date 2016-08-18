@@ -30,10 +30,10 @@
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_resize.h"
 #include "stb_image/stb_image_write.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100

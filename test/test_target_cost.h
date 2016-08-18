@@ -1,10 +1,10 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
-#include "tiny_cnn/util/target_cost.h"
+#include "tiny_dnn/tiny_dnn.h"
+#include "tiny_dnn/util/target_cost.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(target_cost, calculate_label_counts) {
     const std::vector<label_t> t = { 0, 1, 4, 0, 1, 2 }; // note that there's no class "3"
@@ -278,4 +278,4 @@ TEST(target_cost, train_unbalanced_data) {
     EXPECT_EQ(errors_equal_class_cost,  0); // should have learned the desired function
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

@@ -27,10 +27,10 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 #include <deque>
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(dropout, randomized) {
     int num_units = 10000;
@@ -68,4 +68,4 @@ TEST(dropout, read_write) {
     serialization_test(l1, l2);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

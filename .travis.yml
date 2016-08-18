@@ -89,4 +89,4 @@ before_script:
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
   
-script: make -j2 && ./test/tiny_cnn_test
+script: make -j2 && ./test/tiny_dnn_test

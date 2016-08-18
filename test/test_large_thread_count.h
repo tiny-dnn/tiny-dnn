@@ -1,9 +1,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(test_large_thread_count, test_large_thread_count) {
 
@@ -33,4 +33,4 @@ TEST(test_large_thread_count, test_large_thread_count) {
     net.train<mse>(optimizer, data, labels, 300, 1, nop, nop, true, n_threads);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

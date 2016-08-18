@@ -30,9 +30,9 @@
 
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(max_pool, read_write) {
     max_pooling_layer<tan_h> l1(100, 100, 5, 2);
@@ -66,7 +66,7 @@ TEST(max_pool, forward) {
 }
 
 TEST(max_pool, setup_tiny) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_cnn);
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
 
     EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(), 1);              // num of input tensors
@@ -84,7 +84,7 @@ TEST(max_pool, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 1);             // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_cnn);
+    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
 }
 
 #ifdef CNN_USE_NNPACK
@@ -112,7 +112,7 @@ TEST(max_pool, setup_nnp) {
 #endif
 
 TEST(max_pool, forward_stride_tiny) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_cnn);
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -206,4 +206,4 @@ TEST(max_pool, backward) {
     }
 }
 
-}  // namespace tiny_cnn
+}  // namespace tiny_dnn

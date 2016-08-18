@@ -37,8 +37,8 @@ RUN apt-get install ninja-build && \
     python ./configure.py && \
     ninja
 
-# Download tiny-cnn
+# Download tiny-dnn
 RUN cd /software && \
-    git clone https://github.com/nyanp/tiny-cnn.git && \
-    cd /software/tiny-cnn && \
+    git clone https://github.com/tiny-dnn/tiny-dnn.git && \
+    cd /software/tiny-dnn && \
     git submodule update --init

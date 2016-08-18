@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 /*
 TEST(quantized_fully_connected, train) {
@@ -180,4 +180,4 @@ TEST(quantized_fully_connected, forward_nobias)
     }
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

@@ -25,10 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 
 ///////////////////////////////////////////////////////////////////////////////
 // recongnition on MNIST similar to LaNet-5 adding deconvolution
@@ -74,12 +74,12 @@ void deconv_lanet(network<graph>& nn,
     int num_epochs = 30;
 
     adagrad optimizer;
-    optimizer.alpha *= static_cast<tiny_cnn::float_t>(std::sqrt(minibatch_size));
+    optimizer.alpha *= static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
         disp.restart((unsigned long)train_images.size());
@@ -125,7 +125,7 @@ void deconv_ae(network<sequential>& nn,
     std::vector<vec_t> training_images_corrupted(train_images);
 
     for (auto& d : training_images_corrupted) {
-        d = corrupt(move(d), tiny_cnn::float_t(0.1), tiny_cnn::float_t(0.0)); // corrupt 10% data
+        d = corrupt(move(d), tiny_dnn::float_t(0.1), tiny_dnn::float_t(0.0)); // corrupt 10% data
     }
 
     gradient_descent optimizer;
@@ -190,12 +190,12 @@ void enet(network<graph>& nn,
     int num_epochs = 30;
 
     adagrad optimizer;
-    optimizer.alpha *= tiny_cnn::float_t(std::sqrt(minibatch_size));
+    optimizer.alpha *= tiny_dnn::float_t(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
         disp.restart((unsigned long)train_images.size());

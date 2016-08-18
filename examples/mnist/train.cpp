@@ -25,10 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 
 static void construct_net(network<sequential>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
@@ -45,7 +45,7 @@ static void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
-    core::backend_t backend_type = core::backend_t::tiny_cnn;
+    core::backend_t backend_type = core::backend_t::tiny_dnn;
 
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
@@ -91,12 +91,12 @@ static void train_lenet(const std::string& data_dir_path) {
     int minibatch_size = 10;
     int num_epochs = 30;
 
-    optimizer.alpha *= static_cast<tiny_cnn::float_t>(std::sqrt(minibatch_size));
+    optimizer.alpha *= static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
         disp.restart((unsigned long)train_images.size());

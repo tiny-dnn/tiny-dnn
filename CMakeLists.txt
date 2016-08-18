@@ -8,7 +8,7 @@ cmake_minimum_required(VERSION 3.2 FATAL_ERROR)
 # Set variables:
 #   * PROJECT_NAME
 #   * PROJECT_VERSION
-project(tiny_cnn VERSION 0.1.0 LANGUAGES C CXX)
+project(tiny_dnn VERSION 0.1.0 LANGUAGES C CXX)
 
 #####
 # Enables link_directories() treat paths relative
@@ -39,14 +39,14 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 ####
 # Define user options
-option(USE_SSE    "Build tiny-cnn with SSE library support"     ON)
-option(USE_AVX    "Build tiny-cnn with AVX library support"     ON)
-option(USE_AVX2   "Build tiny-cnn with AVX2 library support"   OFF)
-option(USE_TBB    "Build tiny-cnn with TBB library support"    OFF)
-option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
-option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
-option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
-option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF) 
+option(USE_SSE    "Build tiny-dnn with SSE library support"     ON)
+option(USE_AVX    "Build tiny-dnn with AVX library support"     ON)
+option(USE_AVX2   "Build tiny-dnn with AVX2 library support"   OFF)
+option(USE_TBB    "Build tiny-dnn with TBB library support"    OFF)
+option(USE_OMP    "Build tiny-dnn with OMP library support"    OFF)
+option(USE_NNPACK "Build tiny-dnn with NNPACK library support" OFF)
+option(USE_OPENCV "Build tiny-dnn with OpenCV library support" OFF)
+option(USE_OPENCL "Build tiny-dnn with OpenCL library support" OFF) 
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
@@ -56,7 +56,7 @@ option(BUILD_DOCS     "Set to ON to build documentation" OFF)
 # Create the library target
 
 set(project_library_target_name ${PROJECT_NAME})
-set(PACKAGE_NAME TinyCNN)
+set(PACKAGE_NAME TinyDNN)
 
 add_library(${project_library_target_name} INTERFACE)
 
@@ -66,10 +66,10 @@ add_library(${project_library_target_name} INTERFACE)
 # Using cmake scripts and modules
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/Modules)
 
-# Tiny-cnn provides a couple of multithreading solutions.
+# Tiny-dnn provides a couple of multithreading solutions.
 # The user can specify to use Intel Threading Building Blocks (TBB)
 # or Open Multi-Processing (OpenMP) as a backend for multi threading
-# processing. In case that none of this libraries are required, tiny-cnn
+# processing. In case that none of this libraries are required, tiny-dnn
 # will use the standard C++11 Thread support library.
 
 # Find Intel Threading Building Blocks (TBB)
@@ -77,7 +77,7 @@ find_package(TBB QUIET)
 if(USE_TBB AND TBB_FOUND)
     message(STATUS "Found Intel TBB: ${TBB_INCLUDE_DIR}")
     # In case that TBB is found we force to disable OpenMP since
-    # tiny-cnn does not support mutiple multithreading backends.
+    # tiny-dnn does not support mutiple multithreading backends.
     set(USE_OMP OFF)
     #TODO: add definitions in configure
     add_definitions(-DCNN_USE_TBB)
@@ -97,7 +97,7 @@ find_package(OpenMP QUIET)
 if(USE_OMP AND OPENMP_FOUND)
     message(STATUS "Found OpenMP")
     # In case that OMP is found we force to disable Intel TBB since
-    # tiny-cnn does not support mutiple multithreading backends.
+    # tiny-dnn does not support mutiple multithreading backends.
     set(USE_TBB OFF)
     add_definitions(-DCNN_USE_OMP)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -216,9 +216,9 @@ set(CMAKE_CXX_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG}")
 
 ####
 # Write the config.h
-# TODO: replace for tiny_cnn/config.h
-# configure_file(cmake/Templates/tinycnn_config.h.in
-#               "${PROJECT_BINARY_DIR}/tinycnn_config.h")
+# TODO: replace for tiny_dnn/config.h
+# configure_file(cmake/Templates/tinydnn_config.h.in
+#               "${PROJECT_BINARY_DIR}/tinydnn_config.h")
 
 ####
 # Setup the cmake config files

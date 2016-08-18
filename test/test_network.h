@@ -27,12 +27,12 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
-using namespace tiny_cnn::activation;
-using namespace tiny_cnn::layers;
+using namespace tiny_dnn::activation;
+using namespace tiny_dnn::layers;
 
 class test_fc_layer : public fully_connected_layer<tan_h> {
 public:
@@ -503,9 +503,9 @@ TEST(network, read_write)
     ASSERT_TRUE(n1.has_same_weights(n2, epsilon<float_t>()));
 
     for (int i = 0; i < 10; i++) {
-        tiny_cnn::float_t eps = std::abs(res1[i]) * 1e-5;
+        tiny_dnn::float_t eps = std::abs(res1[i]) * 1e-5;
         ASSERT_TRUE(std::abs(res1[i] - res2[i]) < eps);
     }
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

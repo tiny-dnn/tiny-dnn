@@ -21,8 +21,8 @@ tiny-dnn is a C++11 implementation of deep learning. It is suitable for deep lea
 Check out the [documentation](doc/readme.md) for more info.
 
 ## What's New
-- 2016/8/7  tiny-cnn is now moved to organization account, and rename into tiny-dnn :)
-- 2016/7/27 [tiny-cnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
+- 2016/8/7  tiny-dnn is now moved to organization account, and rename into tiny-dnn :)
+- 2016/7/27 [tiny-dnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
 
 ## Features
 - reasonably fast, without GPU
@@ -30,7 +30,7 @@ Check out the [documentation](doc/readme.md) for more info.
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
 - portable & header-only
     - Run anywhere as long as you have a compiler which supports C++11
-    - Just include tiny_cnn.h and write your model in C++. There is nothing to install.
+    - Just include tiny_dnn.h and write your model in C++. There is nothing to install.
 - easy to integrate with real applications
     - no output to stdout/stderr
     - a constant throughput (simple parallelization model, no garbage collection)
@@ -139,13 +139,13 @@ You can edit include/config.h to customize default behavior.
 construct convolutional neural networks
 
 ```cpp
-#include "tiny_cnn/tiny_cnn.h"
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
-using namespace tiny_cnn::layers;
+#include "tiny_dnn/tiny_dnn.h"
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
+using namespace tiny_dnn::layers;
 
 void construct_cnn() {
-    using namespace tiny_cnn;
+    using namespace tiny_dnn;
 
     network<sequential> net;
 
@@ -183,10 +183,10 @@ void construct_cnn() {
 construct multi-layer perceptron(mlp)
 
 ```cpp
-#include "tiny_cnn/tiny_cnn.h"
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
-using namespace tiny_cnn::layers;
+#include "tiny_dnn/tiny_dnn.h"
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
+using namespace tiny_dnn::layers;
 
 void construct_mlp() {
     network<sequential> net;
@@ -202,9 +202,9 @@ void construct_mlp() {
 another way to construct mlp
 
 ```cpp
-#include "tiny_cnn/tiny_cnn.h"
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+#include "tiny_dnn/tiny_dnn.h"
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 
 void construct_mlp() {
     auto mynet = make_mlp<tan_h>({ 32 * 32, 300, 10 });
@@ -237,4 +237,4 @@ The BSD 3-Clause License
 ## Mailing list
 google group for questions and discussions:
 
-https://groups.google.com/forum/#!forum/tiny-cnn-users
+https://groups.google.com/forum/#!forum/tiny-dnn-users

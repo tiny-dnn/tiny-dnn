@@ -27,11 +27,11 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
+using namespace tiny_dnn;
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(models, alexnet) {
     models::alexnet nn("alexnet");
@@ -53,4 +53,4 @@ TEST(models, alexnet) {
     auto res = nn.predict(in);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

@@ -27,11 +27,11 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
+using namespace tiny_dnn;
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(core, device) {
     // CPU and GPU devices are instantiated
@@ -60,7 +60,7 @@ TEST(core, add_bad_device) {
     Device my_gpu_device(device_t::GPU, 0, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::tiny_cnn);
+        padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
     my_gpu_device.registerOp(l);
 }*/
@@ -91,4 +91,4 @@ TEST(core, device_add_op) {
 #endif
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn
