@@ -51,6 +51,8 @@
 #include "libdnn.hpp"
 #endif
 
+#define CNN_USE_LIBDNN
+
 namespace tiny_cnn {
 
 class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
@@ -115,14 +117,14 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
             // first time, tune the kernel
 
-            if (!initialized_) {
+            /*if (!initialized_) {
                 kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
                               const_cast<float_t*>(weights_ptr), nullptr,
                               const_cast<float_t*>(bias_ptr), nullptr,
                               const_cast<float_t*>(input_ptr), nullptr,
                               batch_size);
                 initialized_ = true;
-            }
+            }*/
 
             // call libdnn forward
 
@@ -131,6 +133,28 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              bias_ptr,
                              output_ptr,
                              batch_size);
+
+            // Upload data GPU -> CPU
+            std::vector<float_t> dev_W_shadow(W.size(), 0);
+            dev_W.Read(queue, W.size(), dev_W_shadow);
+
+            // FOR DEBUG ONLY
+            nn_warn("W kernel");
+            for (cnn_size_t j = 0; j < W.size(); ++j) {
+                std::cout << dev_W_shadow[j] << " ";
+            }
+            std::cout << std::endl;
+
+            // Upload data GPU -> CPU
+            std::vector<float_t> dev_in_shadow(in_data_padded[i].size(), 0);
+            dev_in.Read(queue, in_data_padded[i].size(), dev_in_shadow);
+
+            // FOR DEBUG ONLY
+            nn_warn("input kernel");
+            for (cnn_size_t j = 0; j < in_data_padded[i].size(); ++j) {
+                std::cout << dev_in_shadow[j] << " ";
+            }
+            std::cout << std::endl;
 
             // Upload data GPU -> CPU
             std::vector<float_t> out(out_data[i].size(), 0);
@@ -172,7 +196,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         greentea::device::setupViennaCLContext(device->deviceId(),
             device->context()(), device->device()(), device->queue()());
 
-        std::shared_ptr<greentea::device> dev_ptr =
+        dev_ptr_ =
             std::make_shared<greentea::device>(
                 device->deviceId(),
                 device->deviceId(), /* list_id, */
@@ -188,12 +212,12 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             );
 
         // Initialize device pointer in libdnn
-        dev_ptr->Init();
+        dev_ptr_->Init();
 
         // Setup libdnn params
         greentea::LibDNNConfig config;
 
-        config.dev_ptr = dev_ptr.get();
+        config.dev_ptr = dev_ptr_.get();
 
         // NCHW shape setups
 
@@ -248,7 +272,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         // (Disabling bias and weight backward pass only propagates the data gradient (error))
 
         if (std::is_same<float_t, float>::value ||
-            dev_ptr->CheckCapability("cl_khr_int64_base_atomics")) {
+            dev_ptr_->CheckCapability("cl_khr_int64_base_atomics")) {
             config.wgalgo = greentea::LIBDNN_CONVOLUTION_WG_ALGO_ATOMIC;
             config.bwalgo = greentea::LIBDNN_CONVOLUTION_BW_ALGO_COL2IM_ATOMIC;
         } else {
@@ -262,6 +286,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
  private:
     bool initialized_;
+    std::shared_ptr<greentea::device> dev_ptr_;
 #ifdef CNN_USE_LIBDNN
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
 #endif

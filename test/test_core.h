@@ -110,7 +110,7 @@ TEST(core, ocl_conv) {
     // in each test we reset program register
     ProgramManager::getInstance().reset();
 
-    Device my_gpu_device(device_t::GPU, 0, 0);
+    Device my_gpu_device(device_t::GPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::LibDNN);
