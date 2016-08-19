@@ -185,6 +185,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
     }
 
  private:
+#ifdef CNN_USE_LIBDNN
     float_t* mutable_double_cast(const cl_mem cl_mem_gpu) {
         return static_cast<float_t*>(
             reinterpret_cast<void*>(cl_mem_gpu));
@@ -194,8 +195,10 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         return reinterpret_cast<const float_t*>(
             reinterpret_cast<const void*>(cl_mem_gpu));
     }
+#endif
 
     void init_libdnn(const Device* device, const core::conv_params& params) {
+#ifdef CNN_USE_LIBDNN
         if (device == nullptr) {
             throw nn_error("no device ptr");
         } 
@@ -293,14 +296,15 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         // generate sources and compile kernel
         kernel_.reset(new greentea::LibDNNConv<float_t>(config));
+#endif
     }
 
  private:
-    bool initialized_;
 #ifdef CNN_USE_LIBDNN
     std::shared_ptr<greentea::device> dev_ptr_;
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
 #endif
+    bool initialized_;
 };
 
 class Conv2dLibDNNBackwardOp : private Conv2d, public core::OpKernel {

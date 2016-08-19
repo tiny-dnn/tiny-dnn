@@ -52,10 +52,12 @@
 #include <future>
 #endif
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
 #include "third_party/CLCudaAPI/clpp11.h"
 #else
 #include "third_party/CLCudaAPI/cupp11.h"
+#endif
 #endif
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
@@ -542,7 +544,6 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
 
 void printAvailableDevice(const int _platform_id, const int _device_id) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-
     // Platform/device settings
     auto platform_id = size_t{_platform_id};
     auto device_id   = size_t{_device_id};
@@ -575,7 +576,6 @@ void printAvailableDevice(const int _platform_id, const int _device_id) {
     printf(" > Maximum allocatable memory   %zu bytes\n", device.MaxAllocSize());
     printf(" > Memory clock rate            %zu MHz\n", device.MemoryClock());
     printf(" > Memory bus width             %zu bits\n", device.MemoryBusWidth());
-
 #else
     nn_warn("TinyDNN was not build with OpenCL or CUDA support.");
 #endif
