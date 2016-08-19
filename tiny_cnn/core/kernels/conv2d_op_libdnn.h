@@ -51,8 +51,6 @@
 #include "libdnn.hpp"
 #endif
 
-#define CNN_USE_LIBDNN
-
 namespace tiny_cnn {
 
 class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
@@ -107,6 +105,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
             // cast data types and call libdnn
 
+            // TODO(edgar): set a global variable with batch size or
+            // embedd this inside the next gen Tensor class.
             const int batch_size = 1;
 
             const float_t* input_ptr   = double_cast(dev_in());
@@ -116,6 +116,9 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             float_t* output_ptr = mutable_double_cast(dev_out());
 
             // first time, tune the kernel
+
+            // TODO(edgar/naibaf): enable when second generation
+            // kernel are available
 
             /*if (!initialized_) {
                 kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
@@ -134,6 +137,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              output_ptr,
                              batch_size);
 
+            /*
             // Upload data GPU -> CPU
             std::vector<float_t> dev_W_shadow(W.size(), 0);
             dev_W.Read(queue, W.size(), dev_W_shadow);
@@ -155,17 +159,24 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                 std::cout << dev_in_shadow[j] << " ";
             }
             std::cout << std::endl;
+            */
 
             // Upload data GPU -> CPU
+            // TODO(edgar): trigger this only when is needed
             std::vector<float_t> out(out_data[i].size(), 0);
             dev_out.Read(queue, out_data[i].size(), out);
 
+            /*
             // FOR DEBUG ONLY
             nn_warn("output kernel");
             for (cnn_size_t j = 0; j < out.size(); ++j) {
                 std::cout << out[j] << " ";
             }
             std::cout << std::endl;
+            */
+
+            // copy data to be activated
+            std::copy(std::begin(out), std::end(out), std::begin(out_data[i]));
         }
 
 #else
@@ -286,8 +297,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
  private:
     bool initialized_;
-    std::shared_ptr<greentea::device> dev_ptr_;
 #ifdef CNN_USE_LIBDNN
+    std::shared_ptr<greentea::device> dev_ptr_;
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
 #endif
 };
