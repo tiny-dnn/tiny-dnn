@@ -53,6 +53,11 @@
 #define CNN_USE_EXCEPTIONS
 
 /**
+ * comment out if you want tiny-dnn to be quiet 
+ */
+#define CNN_USE_STDOUT
+
+/**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
@@ -68,6 +73,10 @@
 
 #if !defined(_MSC_VER)
 #define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC
+#endif
+
+#if defined _WIN32
+#define CNN_WINDOWS
 #endif
 
 namespace tiny_dnn {
