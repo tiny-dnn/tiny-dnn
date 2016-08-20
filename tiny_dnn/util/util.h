@@ -35,22 +35,11 @@
 #include <cstdarg>
 #include <string>
 #include <sstream>
-#include "aligned_allocator.h"
-#include "nn_error.h"
 #include "tiny_dnn/config.h"
-
-#ifdef CNN_USE_TBB
-#ifndef NOMINMAX
-#define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
-#endif
-#include <tbb/tbb.h>
-#include <tbb/task_group.h>
-#endif
-
-#ifndef CNN_USE_OMP
-#include <thread>
-#include <future>
-#endif
+#include "tiny_dnn/util/aligned_allocator.h"
+#include "tiny_dnn/util/nn_error.h"
+#include "tiny_dnn/util/parallel_for.h"
+#include "tiny_dnn/util/random.h"
 
 #define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
 
@@ -63,79 +52,13 @@ typedef cnn_size_t label_t;
 typedef cnn_size_t layer_size_t; // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
+
 typedef std::vector<vec_t> tensor_t;
 
 enum class net_phase {
     train,
     test
 };
-
-class random_generator {
-public:
-    static random_generator& get_instance() {
-        static random_generator instance;
-        return instance;
-    }
-
-    std::mt19937& operator()() {
-        return gen_;
-    }
-
-    void set_seed(unsigned int seed) {
-        gen_.seed(seed);
-    }
-private:
-    // avoid gen_(0) for MSVC known issue
-    // https://connect.microsoft.com/VisualStudio/feedback/details/776456
-    random_generator() : gen_(1) {}
-    std::mt19937 gen_;
-};
-
-template<typename T> inline
-typename std::enable_if<std::is_integral<T>::value, T>::type
-uniform_rand(T min, T max) {
-    std::uniform_int_distribution<T> dst(min, max);
-    return dst(random_generator::get_instance()());
-}
-
-template<typename T> inline
-typename std::enable_if<std::is_floating_point<T>::value, T>::type
-uniform_rand(T min, T max) {
-    std::uniform_real_distribution<T> dst(min, max);
-    return dst(random_generator::get_instance()());
-}
-
-template<typename T> inline
-typename std::enable_if<std::is_floating_point<T>::value, T>::type
-gaussian_rand(T mean, T sigma) {
-    std::normal_distribution<T> dst(mean, sigma);
-    return dst(random_generator::get_instance()());
-}
-
-inline void set_random_seed(unsigned int seed) {
-    random_generator::get_instance().set_seed(seed);
-}
-
-template<typename Container>
-inline int uniform_idx(const Container& t) {
-    return uniform_rand(0, int(t.size() - 1));
-}
-
-inline bool bernoulli(float_t p) {
-    return uniform_rand(float_t(0), float_t(1)) <= p;
-}
-
-template<typename Iter>
-void uniform_rand(Iter begin, Iter end, float_t min, float_t max) {
-    for (Iter it = begin; it != end; ++it)
-        *it = uniform_rand(min, max);
-}
-
-template<typename Iter>
-void gaussian_rand(Iter begin, Iter end, float_t mean, float_t sigma) {
-    for (Iter it = begin; it != end; ++it)
-        *it = gaussian_rand(mean, sigma);
-}
 
 template<typename T>
 T* reverse_endian(T* p) {
@@ -164,136 +87,6 @@ U rescale(T x, T src_min, T src_max, U dst_min, U dst_max) {
 inline void nop()
 {
     // do nothing
-}
-
-
-#ifdef CNN_USE_TBB
-
-static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
-
-typedef tbb::blocked_range<int> blocked_range;
-
-template<typename Func>
-void parallel_for(int begin, int end, const Func& f, int grainsize) {
-    tbb::parallel_for(blocked_range(begin, end, end - begin > grainsize ? grainsize : 1), f);
-}
-template<typename Func>
-void xparallel_for(int begin, int end, const Func& f) {
-    f(blocked_range(begin, end, 100));
-}
-
-#else
-
-struct blocked_range {
-    typedef int const_iterator;
-
-    blocked_range(int begin, int end) : begin_(begin), end_(end) {}
-    blocked_range(size_t begin, size_t end) : begin_(static_cast<int>(begin)), end_(static_cast<int>(end)) {}
-
-    const_iterator begin() const { return begin_; }
-    const_iterator end() const { return end_; }
-private:
-    int begin_;
-    int end_;
-};
-
-template<typename Func>
-void xparallel_for(size_t begin, size_t end, const Func& f) {
-    blocked_range r(begin, end);
-    f(r);
-}
-
-#if defined(CNN_USE_OMP)
-
-template<typename Func>
-void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-    #pragma omp parallel for
-    for (int i=begin; i<end; ++i)
-        f(blocked_range(i,i+1));
-}
-
-#elif defined(CNN_SINGLE_THREAD)
-
-template<typename Func>
-void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-    xparallel_for(static_cast<size_t>(begin), static_cast<size_t>(end), f);
-}
-
-#else
-
-template<typename Func>
-void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
-    int nthreads = std::thread::hardware_concurrency();
-    int blockSize = (end - start) / nthreads;
-    if (blockSize*nthreads < end - start)
-        blockSize++;
-
-    std::vector<std::future<void>> futures;
-
-    int blockStart = start;
-    int blockEnd = blockStart + blockSize;
-    if (blockEnd > end) blockEnd = end;
-
-    for (int i = 0; i < nthreads; i++) {
-        futures.push_back(std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-            f(blocked_range(blockStart, blockEnd));
-        })));
-
-        blockStart += blockSize;
-        blockEnd = blockStart + blockSize;
-        if (blockStart >= end) break;
-        if (blockEnd > end) blockEnd = end;
-    }
-
-    for (auto &future : futures)
-        future.wait();
-}
-
-#endif
-
-#endif // CNN_USE_TBB
-
-template<typename T, typename U>
-bool value_representation(U const &value) {
-    return static_cast<U>(static_cast<T>(value)) == value;
-}
-
-template<typename T, typename Func>
-inline
-void for_(std::true_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
-    parallelize = parallelize && value_representation<int>(end);
-    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) :
-                  xparallel_for(begin, static_cast<int>(end), f);
-}
-
-template<typename T, typename Func>
-inline
-void for_(std::false_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
-    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) : xparallel_for(begin, end, f);
-}
-
-template<typename T, typename Func>
-inline
-void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
-    static_assert(std::is_integral<T>::value, "end must be integral type");
-    for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f, grainsize);
-}
-
-template <typename T, typename Func>
-void for_i(bool parallelize, T size, Func f, int grainsize = 100)
-{
-    for_(parallelize, 0, size, [&](const blocked_range& r) {
-#ifdef CNN_USE_OMP
-#pragma omp parallel for
-#endif
-        for (int i = r.begin(); i < r.end(); i++)
-            f(i);
-    }, grainsize);
-}
-
-template <typename T, typename Func>
-void for_i(T size, Func f, int grainsize = 100) {
-    for_i(true, size, f, grainsize);
 }
 
 template <typename T> inline T sqr(T value) { return value*value; }
