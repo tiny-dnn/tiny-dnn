@@ -1,46 +1,11 @@
 # How-Tos
 Details about tiny-dnn's API and short examples.
-
-- [construct the network model](#construct-the-network-model)
-    - [sequential model](#sequential-model)
-    - [graph model](#graph-model)
-- [train the model](#train-the-model)
-    - [regression](#regression)
-    - [classification](#classification)
-    - [train graph model](#train-graph-model)
-    - [train unbalanced data](#train-unbalanced-data)
-- [use/evaluate the model](#use-or-evaluate-trained-model)
-    - [predict a value](#predict-a-value)
-    - [evaluate accuracy](#evaluate-accuracy)
-    - [caluculate the loss](#calculate-the-loss)
-- [visualize the model](#visualize-the-model)
-    - [visualize graph networks](#visualize-graph-networks)
-    - [visualize each layer activations](#visualize-each-layer-activations)
-    - [visualize convolution kernels](#visualize-convolution-kernels)
-- [io](#io)
-    - [save and load the model](#save-and-load-the-model)
-    - [import caffe's model](#import-caffe-model)
-    - [reading data](#reading-data)
-- [get/set the properties](#get-or-set-the-properties)
-    - [traverse layers](#traverse-layers)
-    - [get layer types](#get-layer-types)
-    - [get weight vector](#get-weight-vector)
-    - [change the weight initialization](#change-the-weight-initialization)
-    - [change the seed value](#change-the-seed-value)
-- [tune the performance](#control-performance)
-    - [profile](#profile)
-    - [change the number of threads while training](#change-the-number-of-threads)
-- [handle errors](#handle-errors)
-    - [catch application exceptions](#catch-application-exceptions)
-    - [run tiny-dnn without exceptions](#run-tinydnn-without-exceptions)
-
-Note: following example codes omits ```using namespace tiny_dnn;```.
-    
-## <a name="construct-the-network-model"></a>construct the network model
+ 
+## construct the network model
 There are two types of network model available: sequential and graph. A graph representation describe network as computational graph - each node of graph is layer, and each directed edge holds tensor and its gradients. Sequential representation describe network as linked list - each layer has at most one predecessor and one successor layer.
 Two types of network is represented as network<sequential> and network<graph> class. These two classes have same API, except for its construction.
 
-### <a name="sequential-model"></a>sequential model
+### sequential model
 You can construct networks by chaining ```operator <<``` from top(input) to bottom(output).
 ```cpp
 // input: 32x32x1 (1024 dimensions)  output: 10
@@ -80,7 +45,7 @@ mynet << fully_conneceted_layer<tan_h>(32*32, 300)
       << fully_connectted_layer<tan_h>(300, 10);
 ```
 
-### <a name="graph-model"></a>graph model
+### graph model
 To construct network which has branch/merge in their model, you can use ```network<graph>``` class. In graph model, you should declare each "node" (layer) at first, and then connect them by ```operator <<```. If two or more nodes are fed into 1 node, ```operator,``` can be used for this purpose.
 After connecting all layers, call ```construct_graph``` function to register node connections to graph-network.
 
@@ -100,8 +65,8 @@ network<graph> net;
 construct_graph(net, { &in1, &in2 }, { &out });
 ```
 
-## <a name="train-the-model"></a>train the model
-### <a name="regression"></a>regression
+## train the model
+### regression
 Use ```network::fit``` function to train. Specify loss function by template parameter (```mse```, ```cross_entropy```, ```cross_entropy_multiclass``` are available), and fed optimizing algorithm into first argument.
 ```cpp
 network<sequential> net;
@@ -138,7 +103,7 @@ nn.fit<mse>(opt, train_images, train_labels, 50, 20,
          });
 ```
 
-### <a name="classification"></a>classification
+### classification
 As with regression task, you can use ```network::fit``` function in classification. Besides, if you have labels(class-id) for each training data, ```network::train``` can be used. Difference between ```network::fit``` and ```network::train``` is how to specify the desired outputs - ```network::train``` takes ```label_t``` type, instead of ```vec_t```.
 
 ```cpp
@@ -156,7 +121,7 @@ size_t epochs = 30;
 net.train<mse>(opt, input_data, desired_out, batch_size, epochs);
 ```
 
-#### <a name="train-graph-model"></a>train graph model
+#### train graph model
 If you train graph network, be sure to fed input/output data which has same shape to network's input/output layers.
 ```cpp
 network<graph>    net;
@@ -207,10 +172,10 @@ nn.train<cross_entropy>(optimizer, train_images, train_labels, 50, 20, [](){},
          });
 ```
 
-### <a name="train unbalanced data"></a>train unbalanced data
+### train unbalanced data
 
-## <a name="use-or-evaluate-trained-model"></a>use/evaluate trained model
-### <a name="predict-a-value"></a>predict a value
+## use/evaluate trained model
+### predict a value
 
 ```cpp
 network<sequential> net;
@@ -237,8 +202,8 @@ void predict_mnist(network<sequential>& net, const vec_t& in) {
 }
 ```
 
-### <a name="evaluate-accuracy"></a>evaluate accuracy
-### <a name="caluculate-the-loss"></a>caluculate the loss
+### evaluate accuracy
+### caluculate the loss
 
 ```cpp
 std::vector<vec_t> test_data;
@@ -258,8 +223,8 @@ net.get_loss<mse>(...); // not recommended
 net.get_loss<cross_entropy>(...); // ok :)
 ```
 
-## <a name="visualize-the-model"></a>visualize the model
-### <a name="visualize-graph-networks"></a>visualize graph networks
+## visualize the model
+### visualize graph networks
 
 We can get graph structure in dot language format.
 
@@ -291,7 +256,7 @@ Then you can get:
 ![graph structure generated by graphviz](../resource/graph.gif)
 
 
-### <a name="visualize-each-layer-activations"></a>visualize each layer activations
+### visualize each layer activations
 ```cpp
 network<sequential> nn;
 
@@ -303,7 +268,7 @@ image img = nn[0]->output_to_image(); // visualize activations of recent input
 img.write("layer0.bmp");
 ```
 
-### <a name="visualize-convolution-kernels"></a>visualize convolution kernels
+### visualize convolution kernels
 ```cpp
 network<sequential> nn;
 
@@ -315,8 +280,8 @@ image img = nn.at<conv<tan_h>>(0).weight_to_image();
 img.write("kernel0.bmp");
 ```
 
-## <a name="io"></a>io
-### <a name="save and load the model"></a>save and load the model
+## io
+### save and load the model
 Simply use operator << and >> to save/load network weights.
 
 save
@@ -344,10 +309,10 @@ input >> nn;
 ```
 *tiny_dnn saves only weights/biases array, not network structure itself*. So you must construct network(same as training time) before loading.
 
-### <a name="import-caffe-model"></a>import caffe's model
+### import caffe's model
 [Import Caffe Model to tiny-dnn](../examples/caffe_converter/readme.md)
 
-### <a name="reading data"></a>reading data
+### reading data
 from MNIST idx format
 ```cpp
 vector<vec_t> images;
@@ -363,8 +328,8 @@ vector<label_t> labels;
 parse_cifar10("data_batch1.bin", &images, &labels, -1.0, 1.0, 0, 0); 
 ```
 
-## <a name="get-or-set-the-properties"></a>get/set the properties
-### <a name="traverse-layers"></a>traverse layers
+## get/set the properties
+### traverse layers
 
 ```cpp
 // (1) get layers by operator[]
@@ -403,7 +368,7 @@ graph_traverse(net[0],
     });
 ```
 
-### <a name="get-layer-types"></a>get layer types
+### get layer types
 You can access each layer by operator[] after construction.
 
 ```cpp
@@ -441,14 +406,14 @@ output:10([[10x1x1]])
 num of parameters:11770
 ```
 
-### <a name="get-weight-vector"></a>get weight vector
+### get weight vector
 ```cpp
 std::vector<vec_t*> weights = nn[i]->get_weights();
 ```
 Number of elements differs by layer types and settings. For example, in fully-connected layer with bias term, weights[0] represents weight matrix and weights[1] represents bias vector.
 
 
-### <a name="change-the-weight-initialization"></a>change the weight initialization
+### change the weight initialization
 In neural network training, initial value of weight/bias can affect training speed and accuracy. In tiny-dnn, the weight is appropriately scaled by xavier algorithm[1](http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf) and the bias is filled with 0.
 
 To change initialization method (or weight-filler) and scaling factor, use ```weight_init()``` and ```bias_init()``` function of network and layer class.
@@ -470,7 +435,7 @@ nn[0]->weight_init(weight_init::xavier(4.0));
 nn[0]->bias_init(weight_init::constant(1.0));
 ```
 
-### <a name="change-the-seed-value"></a>change the seed value
+### change the seed value
 
 You can change the seed value for the random value generator.
 
@@ -480,9 +445,9 @@ set_random_seed(3);
 
 Note: Random value generator is shared among thread.
 
-## <a name="tune the performance"></a>tune the performance
+## tune the performance
 
-### <a name="profile"></a>profile
+### profile
 
 ```cpp
 timer t; // start the timer
@@ -491,7 +456,7 @@ double elapsed_ms = t.elapsed();
 t.reset();
 ```
 
-### <a name="change-the-number-of-threads"></a>change the number of threads while training
+### change the number of threads while training
 
 ```CNN_TASK_SIZE``` macro defines the number of threads for parallel training. Change it to smaller value will reduce memory footprint.
 This change affects execution time of training the network, but no affects on prediction.
@@ -501,11 +466,11 @@ This change affects execution time of training the network, but no affects on pr
 #define CNN_TASK_SIZE 8
 ```
 
-## <a name="handle-errors"></a>handle errors
+## handle errors
 When some error occurs, tiny-dnn doesn't print any message on stdout. Instead of ```printf```, tiny-dnn throws exception.
 This behaviour is suitable when you integrate tiny-dnn into your application (especially embedded systems).
 
-### <a name="catch-application-exceptions"></a>catch application exceptions
+### catch application exceptions
 tiny-dnn may throw one of the following types:
 
 - ```tiny_dnn::nn_error```
@@ -523,4 +488,4 @@ try {
 }
 ```
 
-### <a name="run-tinydnn-without-exceptions"></a>run tiny-dnn without exceptions
+### run tiny-dnn without exceptions

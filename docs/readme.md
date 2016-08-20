@@ -15,11 +15,11 @@ $ pip install recommonmark
 #### build on Windows
 ```bach
 cd docs
-make.bat
+make.bat html
 ```
 
 #### build on Linux
 ```bash
 cd docs
-make
+make html
 ```
