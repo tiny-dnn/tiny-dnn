@@ -39,7 +39,6 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 ####
 # Define user options
-<<<<<<< HEAD
 option(USE_SSE    "Build tiny-dnn with SSE library support"     ON)
 option(USE_AVX    "Build tiny-dnn with AVX library support"     ON)
 option(USE_AVX2   "Build tiny-dnn with AVX2 library support"   OFF)
@@ -49,17 +48,6 @@ option(USE_NNPACK "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-dnn with OpenCV library support" OFF)
 option(USE_OPENCL "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN "Build tiny-dnn with GreenteaLibDNN library support" OFF)
-=======
-option(USE_SSE    "Build tiny-cnn with SSE library support"     ON)
-option(USE_AVX    "Build tiny-cnn with AVX library support"     ON)
-option(USE_AVX2   "Build tiny-cnn with AVX2 library support"   OFF)
-option(USE_TBB    "Build tiny-cnn with TBB library support"    OFF)
-option(USE_OMP    "Build tiny-cnn with OMP library support"    OFF)
-option(USE_NNPACK "Build tiny-cnn with NNPACK library support" OFF)
-option(USE_OPENCV "Build tiny-cnn with OpenCV library support" OFF)
-option(USE_OPENCL "Build tiny-cnn with OpenCL library support" OFF) 
-option(USE_LIBDNN "Build tiny-cnn with GreenteaLibDNN library support" OFF)
->>>>>>> add Conv2dLibDNNOp basics
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)

@@ -93,7 +93,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             window_size, window_size,
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
-            init_backend(backend_type);
+            //init_backend(backend_type);
             Base::set_backend_type(backend_type);
     }
 
@@ -130,7 +130,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             window_width, window_height,
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride);
-            init_backend(backend_type);
+            //init_backend(backend_type);
             Base::set_backend_type(backend_type);
     }
 
@@ -168,7 +168,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride,
                             connection_table);
-            init_backend(backend_type);
+            //init_backend(backend_type);
             Base::set_backend_type(backend_type);
     }
 
@@ -208,7 +208,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                             out_channels, pad_type, has_bias,
                             w_stride, h_stride,
                             connection_table);
-            init_backend(backend_type);
+            //init_backend(backend_type);
             Base::set_backend_type(backend_type);
     }
 
@@ -242,11 +242,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
                              std::vector<tensor_t*>&       out_data) { 
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
-             ctx.setParams(&params_);
+             //ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
-             ctx.setDevice(layer::device());
-             ctx.setLayer(this);
+             // ctx.setDevice(layer::device());
+             // ctx.setLayer(this);
 
+        std::cout << "forward_propagation Device: " << layer::device() << std::endl;
         // launch convolutional kernel
         kernel_fwd_->compute(ctx);
 
@@ -498,24 +499,21 @@ private:
     void init_backend(const backend_t backend_type) {
         core::OpKernelConstruction ctx;
 
-        // TODO(edgar): add device?
-        if (layer::device() != nullptr) {
-            ctx = core::OpKernelConstruction(layer::device(), &params_);
-        }
-
         if (backend_type == backend_t::tiny_dnn) {
-            kernel_fwd_  = std::make_shared<Conv2dCustomForwardOp>(ctx);
-            kernel_back_ = std::make_shared<Conv2dCustomBackwardOp>(ctx);
+            kernel_fwd_.reset(new Conv2dCustomForwardOp(ctx));
+            kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
             return;
         }
         else if (backend_type == backend_t::OpenCL) {
-            kernel_fwd_  = std::make_shared<Conv2dOpenCLForwardOp>(ctx);
-            kernel_back_ = std::make_shared<Conv2dOpenCLBackwardOp>(ctx);
+            kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
+            kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
             return;
         }
         else if (backend_type == backend_t::LibDNN) {
-            kernel_fwd_  = std::make_shared<Conv2dLibDNNForwardOp>(ctx);
-            kernel_back_ = std::make_shared<Conv2dLibDNNBackwardOp>(ctx);
+            ctx = core::OpKernelConstruction(layer::device(), &params_);
+
+            kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
+            kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
             return;
         }
         else {

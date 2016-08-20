@@ -44,10 +44,10 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/kernels/conv2d.h"
-#include "tiny_cnn/core/framework/op_kernel.h"
+#include "tiny_dnn/core/kernels/conv2d.h"
+#include "tiny_dnn/core/framework/op_kernel.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
  public:
@@ -83,7 +83,7 @@ class Conv2dOpenCLForwardOp : private Conv2d, public core::OpKernel {
         auto kernel = CLCudaAPI::Kernel(program, "CFMulti");
         nn_warn("Got Kernel");
 
-        tiny_cnn::Device* device = context.device();
+        tiny_dnn::Device* device = context.device();
         CLCudaAPI::Context   ctx = context.device()->context();
         CLCudaAPI::Queue   queue = context.device()->queue();
 
@@ -172,4 +172,4 @@ class Conv2dOpenCLBackwardOp : private Conv2d, public core::OpKernel {
     }
 };
 
-}  // namespace tiny_cnn
+}  // namespace tiny_dnn

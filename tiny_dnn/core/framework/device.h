@@ -104,7 +104,9 @@ Device::Device(device_t type,
     context_ = std::make_shared<CLCudaAPI::Context>(*device_);
     queue_   = std::make_shared<CLCudaAPI::Queue>(*context_, *device_);
     context_ = std::make_shared<CLCudaAPI::Context>(*device_);
-    
+
+    std::cout << "Context ptr: " << (*context_)() << std::endl;
+
     nn_info("Initializing OpenCL device context ... OK");
 #else 
     nn_error("TinyDNN has not been compiled with OpenCL or CUDA support.");

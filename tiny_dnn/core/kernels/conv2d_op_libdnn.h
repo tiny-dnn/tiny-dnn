@@ -44,23 +44,25 @@
 */
 #pragma once
 
-#include "tiny_cnn/core/kernels/conv2d.h"
-#include "tiny_cnn/core/framework/op_kernel.h"
+#include "tiny_dnn/core/kernels/conv2d.h"
+#include "tiny_dnn/core/framework/op_kernel.h"
 
 #ifdef CNN_USE_LIBDNN
 #include "libdnn.hpp"
 #endif
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
  public:
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
             : core::OpKernel(context)
             , initialized_(false) {
-        if (context.device() != nullptr) {
-            Conv2d::setParams(context.params());
-            init_libdnn(context.device(), Conv2d::params());
+        if (OpKernel::device_ != nullptr) {
+            Conv2d::setParams(OpKernel::params_);
+            init_libdnn(OpKernel::device_, Conv2d::params());
+        } else {
+            throw nn_error("NO DEVICE PTR");
         }
     }
 
@@ -73,7 +75,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         tensor_t&      out_data = context.output(1);
 
         // retrieve the convolutional parameters and pad input
-        Conv2d::setParams(context.params());
+        // Conv2d::setParams(context.params());
 
         // initialize outputs
         fill_tensor(out_data, float_t(0));
@@ -84,8 +86,11 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         // retrive device context and queue
 
-        CLCudaAPI::Context ctx = context.device()->context();
-        CLCudaAPI::Queue queue = context.device()->queue();
+        CLCudaAPI::Context ctx = OpKernel::device_->context();
+        CLCudaAPI::Queue queue = OpKernel::device_->queue();
+
+        std::cout << "Context ptr: " << ctx() << std::endl;
+        std::cout << "compute Device: " << OpKernel::device_ << std::endl;
 
         for (cnn_size_t i = 0; i < in_data_padded.size(); ++i) {
 
@@ -130,6 +135,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             }*/
 
             // call libdnn forward
+            std::cout << "HOLI!" << std::endl;
 
             kernel_->Forward(input_ptr,
                              weights_ptr,
@@ -137,9 +143,9 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              output_ptr,
                              batch_size);
 
-            /*
+            
             // Upload data GPU -> CPU
-            std::vector<float_t> dev_W_shadow(W.size(), 0);
+            /*std::vector<float_t> dev_W_shadow(W.size(), 0);
             dev_W.Read(queue, W.size(), dev_W_shadow);
 
             // FOR DEBUG ONLY
@@ -158,8 +164,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             for (cnn_size_t j = 0; j < in_data_padded[i].size(); ++j) {
                 std::cout << dev_in_shadow[j] << " ";
             }
-            std::cout << std::endl;
-            */
+            std::cout << std::endl;*/
+
 
             // Upload data GPU -> CPU
             // TODO(edgar): trigger this only when is needed
@@ -203,8 +209,12 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             throw nn_error("no device ptr");
         } 
 
+        std::cout << "init_libdnn Device: " << device << std::endl;
+
         nn_info("Device type: " + to_string(device->type()));
         nn_info("Device id: " + to_string(device->deviceId()));
+
+    std::cout << "Context ptr: " << device->context()() << std::endl;
 
         // Context needs to be initialized with one device and queue
         greentea::device::setupViennaCLContext(device->deviceId(),
@@ -296,6 +306,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         // generate sources and compile kernel
         kernel_.reset(new greentea::LibDNNConv<float_t>(config));
+        std::cout << "OK until here" << std::endl;
 #endif
     }
 
@@ -317,4 +328,4 @@ class Conv2dLibDNNBackwardOp : private Conv2d, public core::OpKernel {
     }
 };
 
-}  // namespace tiny_cnn
+}  // namespace tiny_dnn

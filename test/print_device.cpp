@@ -43,9 +43,9 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
+using namespace tiny_dnn;
 
 int main(int argc, char *argv[]) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)

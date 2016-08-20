@@ -231,7 +231,7 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::tiny_cnn ||
+        if (backend_type == backend_t::tiny_dnn ||
             backend_type == backend_t::OpenCL) {
             backend = std::make_shared<core::tiny_backend>(
                 &out2in_,

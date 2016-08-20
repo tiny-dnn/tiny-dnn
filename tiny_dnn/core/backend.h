@@ -37,7 +37,7 @@ namespace core {
 
 class context;
 
-enum class backend_t { tiny_cnn, nnpack, libdnn, avx, OpenCL, LibDNN };
+enum class backend_t { tiny_dnn, nnpack, libdnn, avx, OpenCL, LibDNN };
 
 inline std::ostream& operator << (std::ostream& os, backend_t type) {
     switch (type) {

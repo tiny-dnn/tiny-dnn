@@ -55,18 +55,18 @@ class OpKernel;  // delared below
 class OpKernelConstruction {
  public:
     explicit OpKernelConstruction() {}
-    explicit OpKernelConstruction(Device* device, core::Params* params)
-        : device_ptr_(device), params_(params) {}
+    explicit OpKernelConstruction(Device* device, Params* params)
+        : device_(device), params_(params) {}
     
     // Returns the device raw pointer
-    Device* device() const { return device_ptr_; }
+    Device* device() const { return device_; }
 
     // Returns the device raw pointer
-    core::Params* params() const { return params_; }
+    Params* params() const { return params_; }
 
  private:
-    Device* device_ptr_   = nullptr;
-    core::Params* params_ = nullptr;
+    Device* device_ = nullptr;
+    Params* params_ = nullptr;
 };
 
 class OpKernelContext {
@@ -82,7 +82,7 @@ class OpKernelContext {
         layer* layer_ptr_ = nullptr;
 
         // the operation params
-        core::Params* params_ptr_ = nullptr;
+        Params* params_ptr_ = nullptr;
 
         // parallelize operation
         bool parallelize = false;
@@ -165,10 +165,17 @@ class OpKernelContext {
 class OpKernel {
  public:
     explicit OpKernel() {}
-    explicit OpKernel(const OpKernelConstruction& context) {}
+    explicit OpKernel(const OpKernelConstruction& context)
+        : device_(context.device())
+        , params_(context.params()) {}
+
     virtual ~OpKernel() {}
 
     virtual void compute(const OpKernelContext& context) = 0;
+
+ protected:
+    Device* device_ = nullptr;
+    Params* params_ = nullptr;
 };
 
 }  // namespace core
