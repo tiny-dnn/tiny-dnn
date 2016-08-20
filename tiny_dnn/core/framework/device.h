@@ -79,7 +79,7 @@ Device::Device(device_t type,
 
     // Create and retain device object
     nn_info("Initializing OpenCL device ...");
-    device_ = std::make_shared<CLCudaAPI::Device>(platform, device_id);
+    device_.reset(new CLCudaAPI::Device(platform, device_id));
 
     // Print short device info
     nn_info("Initializing OpenCL device ... OK");
@@ -101,11 +101,8 @@ Device::Device(device_t type,
     // Create and retain device context
     nn_info("Initializing OpenCL device context ...");
 
-    context_ = std::make_shared<CLCudaAPI::Context>(*device_);
-    queue_   = std::make_shared<CLCudaAPI::Queue>(*context_, *device_);
-    context_ = std::make_shared<CLCudaAPI::Context>(*device_);
-
-    std::cout << "Context ptr: " << (*context_)() << std::endl;
+    context_.reset(new CLCudaAPI::Context(*device_));
+    queue_.reset(new CLCudaAPI::Queue(*context_, *device_));
 
     nn_info("Initializing OpenCL device context ... OK");
 #else 

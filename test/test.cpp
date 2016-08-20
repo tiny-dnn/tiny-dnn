@@ -32,7 +32,7 @@
 
 using namespace tiny_dnn::activation;
 
-/*#include "test_network.h"
+#include "test_network.h"
 #include "test_average_pooling_layer.h"
 //#include "test_average_unpooling_layer.h"
 #include "test_dropout_layer.h"
@@ -44,11 +44,11 @@ using namespace tiny_dnn::activation;
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
 #include "test_batch_norm_layer.h"
-#include "test_nodes.h"*/
-#include "test_core.h"
-/*#include "test_models.h"
+#include "test_nodes.h"
+// #include "test_core.h"
+#include "test_models.h"
 #include "test_slice_layer.h"
-#include "test_power_layer.h"*/
+#include "test_power_layer.h"
 /*#include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
 #include "test_quantized_deconvolutional_layer.h"

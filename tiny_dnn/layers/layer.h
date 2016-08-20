@@ -132,7 +132,6 @@ class layer : public node {
 
     void setDevice(const Device& device) {
         device_ptr_ = const_cast<Device*>(&device);
-        std::cout << "setDevice: " << device_ptr_ << std::endl;
     }
 
     Device* device() const {

@@ -58,11 +58,11 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
             : core::OpKernel(context)
             , initialized_(false) {
+        Conv2d::setParams(OpKernel::params_);
+        // TODO(edgar): remove this if statement when refactor
+        // the init_backend() routine at layer level.
         if (OpKernel::device_ != nullptr) {
-            Conv2d::setParams(OpKernel::params_);
             init_libdnn(OpKernel::device_, Conv2d::params());
-        } else {
-            throw nn_error("NO DEVICE PTR");
         }
     }
 
@@ -88,9 +88,6 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         CLCudaAPI::Context ctx = OpKernel::device_->context();
         CLCudaAPI::Queue queue = OpKernel::device_->queue();
-
-        std::cout << "Context ptr: " << ctx() << std::endl;
-        std::cout << "compute Device: " << OpKernel::device_ << std::endl;
 
         for (cnn_size_t i = 0; i < in_data_padded.size(); ++i) {
 
@@ -135,7 +132,6 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             }*/
 
             // call libdnn forward
-            std::cout << "HOLI!" << std::endl;
 
             kernel_->Forward(input_ptr,
                              weights_ptr,
@@ -205,16 +201,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
     void init_libdnn(const Device* device, const core::conv_params& params) {
 #ifdef CNN_USE_LIBDNN
-        if (device == nullptr) {
-            throw nn_error("no device ptr");
-        } 
-
-        std::cout << "init_libdnn Device: " << device << std::endl;
-
-        nn_info("Device type: " + to_string(device->type()));
-        nn_info("Device id: " + to_string(device->deviceId()));
-
-    std::cout << "Context ptr: " << device->context()() << std::endl;
+        assert(device != nullptr);
 
         // Context needs to be initialized with one device and queue
         greentea::device::setupViennaCLContext(device->deviceId(),
@@ -306,7 +293,6 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
         // generate sources and compile kernel
         kernel_.reset(new greentea::LibDNNConv<float_t>(config));
-        std::cout << "OK until here" << std::endl;
 #endif
     }
 
