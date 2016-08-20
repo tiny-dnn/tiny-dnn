@@ -159,7 +159,7 @@ if(OpenCL_FOUND AND USE_LIBDNN AND GreenteaLibDNN_FOUND)
     add_definitions(-DCNN_USE_LIBDNN)
     include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
     list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
-elseif(NOT OpenCL_FOUND)
+elseif(USE_LIBDNN AND NOT OpenCL_FOUND)
     message(FATAL_ERROR "OpenCL is needed for GreenteaLibDNN.")
 elseif(USE_LIBDNN AND NOT LIBDNN_FOUND)
     # In case the user sets the flag USE_LIBDNN to ON, the CMake build-tree

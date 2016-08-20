@@ -219,7 +219,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
             , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
             , cws_(std::move(other.cws_))
             , kernel_fwd_(std::move(other.kernel_fwd_))
-            , kernel_back_(std::move(other.kernel_back_)) {}
+            , kernel_back_(std::move(other.kernel_back_)) {
+        init_backend(std::move(other.backend_type2()));
+    }
 
     ///< number of incoming connections for each output unit
     size_t fan_in_size() const override {
@@ -501,10 +503,20 @@ private:
             kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
             return;
         }
-        else if (backend_type == backend_t::OpenCL) {
-            kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
-            kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
+        else if (backend_type == backend_t::nnpack) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
             return;
+        }
+        else if (backend_type == backend_t::avx) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
+            return;
+        }
+
+        else if (backend_type == backend_t::OpenCL) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
+            /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
+            kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
+            return;*/
         }
         else if (backend_type == backend_t::LibDNN) {
             kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
