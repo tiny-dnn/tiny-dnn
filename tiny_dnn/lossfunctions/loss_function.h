@@ -190,8 +190,11 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
 }
 
 namespace {
+void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost);
+const void *supress_unused_warning_apply_cost_if_defined = reinterpret_cast<void*>(&apply_cost_if_defined);
 void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
 {
+    (void) supress_unused_warning_apply_cost_if_defined;
     if (sample_gradient.size() == sample_cost.size()) {
         // @todo consider adding parallelism
         for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
@@ -206,7 +209,6 @@ void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vecto
         }
     }
 }
-const void *supress_unused_warning_apply_cost_if_defined = reinterpret_cast<void*>(&apply_cost_if_defined);
 } // namespace
 
 // gradient for a minibatch
