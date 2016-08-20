@@ -236,7 +236,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) { 
+                             std::vector<tensor_t*>&       out_data) override { 
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParams(&params_);
@@ -260,7 +260,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) {
+                          std::vector<tensor_t*>&       in_grad) override {
         // activations
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
