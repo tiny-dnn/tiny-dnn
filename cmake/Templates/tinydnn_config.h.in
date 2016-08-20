@@ -1,0 +1,19 @@
+#ifndef TINYDNN_CONFIG_HPP_
+#define TINYDNN_CONFIG_HPP_
+
+/* Define if you want to use intel TBB library */
+#cmakedefine CNN_USE_TBB
+
+/* define to enable OMP parallelization */
+#cmakedefine CNN_USE_OMP
+
+/* Define to use NNPACK */
+#cmakedefine CNN_USE_NNPACK
+
+/* Define to enable sse2 vectorization */
+#cmakedefine CNN_USE_SSE
+
+/* Define to enable avx vectorization */
+#cmakedefine CNN_USE_AVX
+
+#endif  // TINYDNN_CONFIG_HPP_

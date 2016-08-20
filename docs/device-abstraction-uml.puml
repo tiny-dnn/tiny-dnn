@@ -1,0 +1,72 @@
+@startuml
+class Session {
+ -String name
+  void schedule_session()
+  void run_session()
+}
+
+abstract class Device {
+ -int id
+}
+
+class Node {
+}
+
+class Edge {
+ - shape3d shape
+}
+
+abstract class Layer {
+ - String layer_type
+ virtual void forward_propagation()
+ virtual void backward_propagation()
+}
+
+class ConvolutionalLayer {
+}
+
+class MaxPoolingLayer {
+}
+
+abstract class Backend {
+ virtual void matmul()
+ virtual pool2d()
+ virtual conv2d()
+ virtual conv2d_back()
+}
+
+class TinyCNNBackend {
+}
+
+class NNPackBackend {
+}
+
+class LibDNNBackend {
+}
+
+Session *-- Device
+
+Device <|-- CPUDevice
+Device <|-- OCLDevice
+
+Node <|-- Layer
+Node *-- Edge : prev
+Node *-- Edge : next
+
+Edge --> Node : prev
+Edge *-- Node : next
+Edge *-- Data : data
+Edge *-- Data : grad
+
+Layer <|-- ConvolutionalLayer
+Layer <|-- MaxPoolingLayer
+
+Device *-- Backend : own_list
+ConvolutionalLayer *-- Backend : backend
+MaxPoolingLayer *-- Backend : backend
+
+Backend <|-- TinyCNNBackend
+Backend <|-- NNPackBackend
+Backend <|-- LibDNNBackend
+
+@enduml

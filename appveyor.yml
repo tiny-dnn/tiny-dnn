@@ -12,7 +12,7 @@ os: Visual Studio 2015
 install:
   # Clone submodule
   - git submodule update --init --recursive
-  # Get a recent CMake and our dependencies (Eigen, OpenCV, Boost):
+  # Get a recent CMake:
   - cmd: cd %home%
   - ps: wget https://cmake.org/files/v3.4/cmake-3.4.1-win32-x86.zip -OutFile cmake.zip
   - cmd: 7z x cmake.zip -o"C:\projects" -y > nul # will extract to cmake-3.4.1-win32-x86\
@@ -24,13 +24,11 @@ configuration: Release
 before_build:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DBOOST_ROOT=C:\Libraries\boost_1_59_0 -DBOOST_LIBRARYDIR=C:\Libraries\boost_1_59_0\lib64-msvc-14.0 -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-cnn'
+  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
-  - cmd: 'cd C:\projects\build\bin\Release'
-  - cmd: 'copy "C:\Libraries\boost_1_59_0\lib64-msvc-14.0\boost_system-vc140-mt-1_59.dll" .'
-  - cmd: 'copy "C:\Libraries\boost_1_59_0\lib64-msvc-14.0\boost_filesystem-vc140-mt-1_59.dll" .'
-  - cmd: tiny_cnn_test.exe
+  - cmd: 'cd C:\projects\build\test\Release'
+  - cmd: tiny_dnn_test.exe
 
 build:
-  project: C:\projects\build\tiny_cnn.sln
+  project: C:\projects\build\tiny_dnn.sln
