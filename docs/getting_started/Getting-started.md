@@ -1,28 +1,4 @@
-# tiny-dnn documentations
-
-tiny-dnn is a header only, dependency free deep learning library written in C++. It is designed to be used in the real applications, including IoT devices and embedded systems.
-
-## User guides
-- [How-to](How-Tos.md)
-- [Train network with your dataset](Train-network-with-your-dataset.md)
-- [Integrate with your application](Integrate-with-your-application.md)
-- [Changing from v0.0.1](Changing-from-v0_0_1.md)
-- examples
-    - [MNIST classification](../examples/mnist/readme.md)
-    - [Cifar-10 classification](../examples/cifar10/readme.md)
-    - [Importing caffe's model](../examples/caffe_converter/readme.md)
-
-## Application Links
-I'm willing to update this list if your software use tiny-dnn. Please contact me at Email(see my github profile).
-
-- [zhangqianhui/CnnForAndroid](https://github.com/zhangqianhui/CnnForAndroid) - A Vehicle Recognition Project using Convolutional Neural Network(CNN) in Android platform
-- [edgarriba/opencv_contrib](https://github.com/edgarriba/opencv_contrib) (in progress) - A new opencv's dnn module which use tiny-dnn as its backend
-
-## Developer guides
-- [How to contribute](CONTRIBUTING.md)
-- [Adding a new layer](Adding-a-new-layer.md)
-
-## A quick introduction to tiny-dnn
+# A quick introduction to tiny-dnn
 Include tiny_dnn.h:
 
 ```cpp
@@ -94,9 +70,5 @@ Save the trained parameter:
     ofs << net;
 ```
 
-For a more in-depth about tiny-dnn, check out [MNIST classification](../examples/mnist/readme.md) where you can see the end-to-end example.
-You will find tiny-dnn's API in [How-to](How-Tos.md).
-
-## Design
-
-![url](http://uml.mvnsearch.org/github/edgarriba/tiny-cnn/blob/feat/generic-computational-graph-device-abstraction/doc/device-abstraction-uml.puml)
+For a more in-depth about tiny-dnn, check out [MNIST classification](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist) where you can see the end-to-end example.
+You will find tiny-dnn's API in [How-to](../how_tos/How-Tos.md).

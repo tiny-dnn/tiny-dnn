@@ -70,8 +70,7 @@ waf-*
 *.idb
 *.lastbuildstate
 *.unsuccessfulbuild
-## TODO: If you have NuGet Package Restore enabled, uncomment this
-#packages/
+*.db
 
 # Visual C++ cache files
 ipch/
@@ -79,6 +78,7 @@ ipch/
 *.ncb
 *.opensdf
 *.sdf
+
 
 # Visual Studio profiler
 *.psess
@@ -187,10 +187,11 @@ ALL_BUILD*
 ZERO_CHECK*
 
 #################
-## Doxygen
+## Docs
 #################
 html*
 latex*
+docs/_build
 
 #################
 ## Other
