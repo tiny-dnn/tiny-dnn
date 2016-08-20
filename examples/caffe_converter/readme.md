@@ -1,5 +1,5 @@
-# Import Caffe Model to tiny-cnn
-tiny-cnn can import Caffe's trained models.
+# Import Caffe Model to tiny-dnn
+tiny-dnn can import Caffe's trained models.
 
 ## Prerequisites for this example
 - Google protobuf
@@ -9,11 +9,11 @@ tiny-cnn can import Caffe's trained models.
 
 1 Use ```protoc``` to generte caffe.pb.cc and caffe.pb.h.
 ```bash
-cd tiny_cnn/io/caffe
+cd tiny_dnn/io/caffe
 protoc caffe.proto --cpp_out=./
 ```
 
-2 Compile ```tiny_cnn/io/caffe/caffe.pb.cc``` and ```examples/caffe_converter/caffe_converter.cpp``` and link them.
+2 Compile ```tiny_dnn/io/caffe/caffe.pb.cc``` and ```examples/caffe_converter/caffe_converter.cpp``` and link them.
 
 ## Usage
 ```bash
@@ -31,4 +31,4 @@ In the [pre-trained CaffeNet](https://github.com/BVLC/caffe/tree/master/examples
 ```
 
 ## Restrictions
-- tiny-cnn's converter only supports single input/single output network without branch.
+- tiny-dnn's converter only supports single input/single output network without branch.

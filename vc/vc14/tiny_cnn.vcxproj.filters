@@ -1,0 +1,309 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\examples\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\tiny_dnn\tiny_dnn.h" />
+    <ClInclude Include="..\..\tiny_dnn\config.h" />
+    <ClInclude Include="..\..\tiny_dnn\network.h" />
+    <ClInclude Include="..\..\tiny_dnn\node.h" />
+    <ClInclude Include="..\..\tiny_dnn\nodes.h" />
+    <ClInclude Include="..\..\tiny_dnn\activations\activation_function.h">
+      <Filter>activations</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\framework\device.fwd.h">
+      <Filter>core\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\framework\device.h">
+      <Filter>core\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\framework\op_kernel.h">
+      <Filter>core\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\framework\program.h">
+      <Filter>core\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\framework\program_manager.h">
+      <Filter>core\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_fully_connected_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_kernel_common.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_maxpool_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\conv2d.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\conv2d_op_custom.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\conv2d_op_custom_impl.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\nnp_conv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\nnp_deconv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\nnp_fully_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\nnp_maxpool_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_conv2d_back_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_conv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_deconv2d_back_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_deconv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_fully_connected_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_maxpool_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_quantization_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_quantized_conv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_quantized_deconv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_quantized_fully_connected_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\tiny_quantized_matmul_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_conv2d_back_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_conv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_deconv2d_back_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\kernels\avx_deconv2d_kernel.h">
+      <Filter>core\kernels</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\params\deconv_params.h">
+      <Filter>core\params</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\params\fully_params.h">
+      <Filter>core\params</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\params\maxpool_params.h">
+      <Filter>core\params</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\params\conv_params.h">
+      <Filter>core\params</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\backend.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\backend_avx.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\backend_dnn.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\backend_nnp.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\backend_tiny.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\device.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\device_cpu.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\device_ocl.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\core\session.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\cifar10_parser.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\display.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\mnist_parser.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\layer_factory.h">
+      <Filter>io</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\caffe\layer_factory_impl.h">
+      <Filter>io\caffe</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\io\caffe\layer_factory.h">
+      <Filter>io\caffe</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\arithmetic_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\average_pooling_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\concat_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\convolutional_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\feedforward_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\dropout_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\fully_connected_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\max_pooling_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\partial_connected_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\lossfunctions\loss_function.h">
+      <Filter>lossfunctions</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\models\alexnet.h">
+      <Filter>models</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\optimizers\optimizer.h">
+      <Filter>optimizers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\aligned_allocator.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\deform.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\graph_visualizer.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\image.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\weight_init.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\target_cost.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\product.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\nn_error.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\linear_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\lrn_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\input_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\util.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\layers.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\util\conv_kernel.h">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\batch_normalization_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\deconvolutional_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\average_unpooling_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\max_unpooling_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\power_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\quantized_convolutional_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\quantized_deconvolutional_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\quantized_fully_connected_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\tiny_dnn\layers\slice_layer.h">
+      <Filter>layers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="activations">
+      <UniqueIdentifier>{7876f999-cdc0-440e-9822-7d11b59cfa4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core">
+      <UniqueIdentifier>{aa7a2d89-9d68-44f1-a493-7fd094376ede}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\framework">
+      <UniqueIdentifier>{2b7760a4-2497-4f5e-a003-013f36af80bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\kernels">
+      <UniqueIdentifier>{60889b46-3b0e-4045-8ac9-d1a44cc05dd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="core\params">
+      <UniqueIdentifier>{d26eeb83-7991-419c-9b71-2dac6b1c9b62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="io">
+      <UniqueIdentifier>{42e85423-08da-447b-bfed-764a972de1cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="io\caffe">
+      <UniqueIdentifier>{ac99fe3b-92b1-42a9-ad98-99a8faec2008}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="layers">
+      <UniqueIdentifier>{85d29416-03ab-4c6f-ac2a-1fe23a15bd79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lossfunctions">
+      <UniqueIdentifier>{6b08df51-0b12-4794-a41a-4c886883c99e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="models">
+      <UniqueIdentifier>{8791f318-3f50-4f5c-af9f-9b61ad2c628c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="optimizers">
+      <UniqueIdentifier>{e6741073-06a4-44f3-87fe-2efda16068a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{83b90046-4fb6-456d-836e-0fc5b446909a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
