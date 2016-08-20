@@ -15,26 +15,6 @@ void all2str(string & result, const in_value& t)
     result=oss.str();
 }
 
-/* This method is used as reference for bit operation for char* parsering
-
-static int32_t BigEndInt(const char* b, int start) {
-  return (((b[start + 1] & 0xff)) | ((b[ start+ 0] & 0xff)));
-}
-static float BigEndFloat(const char* b, int start) {
-
-  float val=0;
-
-  unsigned long result=0;
-  result |= ((unsigned long)(b[start]) << 0x18);
-  result |= ((unsigned long)(b[start+1]) << 0x10);
-  result |= ((unsigned long)(b[start+2]) << 0x08);
-  result |= ((unsigned long)(b[start+3]));
-  memcpy(&val,&result,4);
-
-  return val;
-}
-*/
-
 static float char_to_float(const char* b) {
   float f;
   memcpy(&f, b, sizeof(float));
