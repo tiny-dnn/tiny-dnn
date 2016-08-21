@@ -115,7 +115,7 @@ class layer : public node {
         return backend_->type();
     }
 
-    core::backend_t backend_type2() const {
+    core::backend_t engine() const {
         return backend_type_;
     }
 

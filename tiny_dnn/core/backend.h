@@ -37,7 +37,7 @@ namespace core {
 
 class context;
 
-enum class backend_t { tiny_dnn, nnpack, libdnn, avx, OpenCL, LibDNN };
+enum class backend_t { tiny_dnn, nnpack, libdnn, avx, opencl };
 
 inline std::ostream& operator << (std::ostream& os, backend_t type) {
     switch (type) {
@@ -45,8 +45,7 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
         case backend_t::nnpack:   os << "NNPACK";  break;
         case backend_t::libdnn:   os << "LibDNN";  break;
         case backend_t::avx:      os << "AVX";     break;
-        case backend_t::OpenCL:   os << "OpenCL";  break;
-        case backend_t::LibDNN:   os << "LibDNN";  break;
+        case backend_t::opencl:   os << "OpenCL";  break;
         default:
             throw nn_error("Not supported ostream enum.");
             break;

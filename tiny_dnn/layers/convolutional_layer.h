@@ -220,7 +220,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             , cws_(std::move(other.cws_))
             , kernel_fwd_(std::move(other.kernel_fwd_))
             , kernel_back_(std::move(other.kernel_back_)) {
-        init_backend(std::move(other.backend_type2()));
+        init_backend(std::move(other.engine()));
     }
 
     ///< number of incoming connections for each output unit
@@ -491,7 +491,7 @@ private:
     }
 
     void createOp() {
-        init_backend(layer::backend_type2());
+        init_backend(layer::engine());
     }
 
     void init_backend(const backend_t backend_type) {
@@ -512,13 +512,13 @@ private:
             return;
         }
 
-        else if (backend_type == backend_t::OpenCL) {
+        else if (backend_type == backend_t::opencl) {
             throw nn_error("Not implemented engine: " + to_string(backend_type));
             /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
             kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
             return;*/
         }
-        else if (backend_type == backend_t::LibDNN) {
+        else if (backend_type == backend_t::libdnn) {
             kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
             kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
             return;

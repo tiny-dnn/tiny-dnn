@@ -542,12 +542,9 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
 // get all platforms (drivers), e.g. NVIDIA
 // https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 
-void printAvailableDevice(const int _platform_id, const int _device_id) {
+inline void printAvailableDevice(const cnn_size_t platform_id,
+                                 const cnn_size_t device_id) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    // Platform/device settings
-    auto platform_id = size_t{_platform_id};
-    auto device_id   = size_t{_device_id};
-
     // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
     // selects a specific device on the platform.
     auto platform = CLCudaAPI::Platform(platform_id);

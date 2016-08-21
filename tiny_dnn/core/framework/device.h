@@ -117,11 +117,10 @@ void Device::registerOp(layer& l) {
             ". Device has disabled OpenCL support.");
     }
 
-    // TODO(edgr): switch l.backend_type2() after refactoring
-    if (l.backend_type2() != core::backend_t::OpenCL &&
-        l.backend_type2() != core::backend_t::LibDNN) {
+    if (l.engine() != core::backend_t::opencl &&
+        l.engine() != core::backend_t::libdnn) {
         throw nn_error("Cannot register layer: " + l.layer_type() +
-            ". Enabled engine: " + to_string(l.backend_type2()));
+            ". Enabled engine: " + to_string(l.engine()));
     }
 
     // Register the op to this device
