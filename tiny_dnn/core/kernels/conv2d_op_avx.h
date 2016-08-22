@@ -28,11 +28,16 @@
 
 #include <vector>
 #include "tiny_dnn/core/params/conv_params.h"
-#include "tiny_dnn/core/kernels/avx_kernel_common.h"
 #include "tiny_dnn/core/kernels/conv2d_op_custom.h"
 
-namespace tiny_dnn {
 #ifdef CNN_USE_AVX
+#include "tiny_dnn/core/kernels/avx_kernel_common.h"
+#endif
+
+namespace tiny_dnn {
+
+#ifdef CNN_USE_AVX
+
 // float ver
 template <typename Allocator>
 void avx_conv2d_5x5_kernel(const core::conv_params& params,
@@ -468,6 +473,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
         } // out depth loop
     } // else
 } // avx_conv2d_5x5_kernel double ver
+
 #endif // CNN_USE_AVX
 
 inline void conv2d_op_avx_impl(const tensor_t&         in_data,

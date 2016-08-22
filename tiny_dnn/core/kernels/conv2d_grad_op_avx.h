@@ -28,10 +28,15 @@
 
 #include <vector>
 #include "tiny_dnn/core/params/conv_params.h"
-#include "tiny_dnn/core/kernels/avx_kernel_common.h"
 #include "tiny_dnn/core/kernels/conv2d_op_custom.h"
 
+#ifdef CNN_USE_AVX
+#include "tiny_dnn/core/kernels/avx_kernel_common.h"
+#endif
+
 namespace tiny_dnn {
+
+#ifdef CNN_USE_AVX
 
 // float ver
 template <typename Allocator>
@@ -522,6 +527,8 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
     }
 } // avx_conv2d_5x5_back_kernel double ver
 
+#endif // CNN_USE_AVX
+
 inline void conv2d_grad_op_avx_impl(const tensor_t&        prev_out,
                                     const vec_t&                  W,
                                     tensor_t&                    dW,
@@ -530,7 +537,7 @@ inline void conv2d_grad_op_avx_impl(const tensor_t&        prev_out,
                                     tensor_t&            prev_delta,
                                     const core::conv_params& params,
                                     const bool    layer_parallelize) { 
-                             
+#ifdef CNN_USE_AVX
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
         for_i(prev_out.size(), [&](int sample) {
             avx_conv2d_5x5_back_kernel(params, prev_out[sample], W, dW[sample], db[sample],
@@ -538,6 +545,7 @@ inline void conv2d_grad_op_avx_impl(const tensor_t&        prev_out,
         });
         return;
     }
+#endif
 
     conv2d_op_custom_impl(prev_out, W, dW, db, curr_delta,
                           prev_delta, params, layer_parallelize);
