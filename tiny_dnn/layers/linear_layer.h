@@ -63,6 +63,7 @@ public:
         tensor_t&       out = *out_data[0];
         tensor_t&       a   = *out_data[1];
 
+        // do nothing
         CNN_UNREFERENCED_PARAMETER(out);
 
         // @todo revise the parallelism strategy

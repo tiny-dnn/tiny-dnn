@@ -47,6 +47,7 @@ option(USE_OMP    "Build tiny-dnn with OMP library support"    OFF)
 option(USE_NNPACK "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCV "Build tiny-dnn with OpenCV library support" OFF)
 option(USE_OPENCL "Build tiny-dnn with OpenCL library support" OFF) 
+option(USE_LIBDNN "Build tiny-dnn with GreenteaLibDNN library support" OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"         OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
@@ -152,6 +153,21 @@ elseif(USE_OPENCL AND NOT OpenCL_FOUND)
     message(FATAL_ERROR "Can't find OpenCL.")
 endif()
 
+find_package(GreenteaLibDNN QUIET)
+if(OpenCL_FOUND AND USE_LIBDNN AND GreenteaLibDNN_FOUND)
+    message(STATUS "Found GreenteaLibDNN: ${GREENTEA_INCLUDE_DIRS}")
+    add_definitions(-DCNN_USE_LIBDNN)
+    include_directories(SYSTEM ${GREENTEA_INCLUDE_DIRS})
+    list(APPEND REQUIRED_LIBRARIES greentea_libdnn ${GREENTEA_LIBRARIES})
+elseif(USE_LIBDNN AND NOT OpenCL_FOUND)
+    message(FATAL_ERROR "OpenCL is needed for GreenteaLibDNN.")
+elseif(USE_LIBDNN AND NOT LIBDNN_FOUND)
+    # In case the user sets the flag USE_LIBDNN to ON, the CMake build-tree
+    # will require to find LibDNN in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find LibDNN.")
+endif()
+
 ####
 # Setup the compiler options
 
@@ -190,7 +206,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
 	# include extra flags to the compiler
 	# TODO: add info about those flags.
 
-    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
 elseif(WIN32) # MSVC

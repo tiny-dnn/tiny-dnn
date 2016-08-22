@@ -56,6 +56,18 @@ namespace tiny_dnn {
 
 enum class device_t { CPU, GPU /*, FPGA */ };
 
+inline std::ostream& operator << (std::ostream& os, device_t type) {
+    switch (type) {
+        case device_t::CPU: os << "CPU"; break;
+        case device_t::GPU: os << "GPU"; break;
+        default:
+            throw nn_error("Not supported ostream enum: " +
+                    to_string(static_cast<int>(type)));
+            break;
+    }
+    return os;
+}
+
 /* The class models a physical device */
 class Device {
  public:
@@ -94,6 +106,9 @@ class Device {
 
     // Returns the CLCudaAPI Context object
     CLCudaAPI::Context context() const { return *context_; }
+
+    // Returns the CLCudaAPI Queue object
+    CLCudaAPI::Queue queue() const { return *queue_; }
 #endif
 
     bool operator==(const Device& d) const {
@@ -110,7 +125,7 @@ class Device {
      *
      * @param l The layer to be registered
      */
-    void registerOp(const layer& l);
+    void registerOp(layer& l);
 
  private:
     /* The device type */
@@ -126,6 +141,8 @@ class Device {
     std::shared_ptr<CLCudaAPI::Device> device_;
     /* The CLCudaAPI device context */
     std::shared_ptr<CLCudaAPI::Context> context_;
+    /* The CLCudaAPI device queue */
+    std::shared_ptr<CLCudaAPI::Queue> queue_;
 #endif
 };
 

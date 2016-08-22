@@ -32,10 +32,13 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 #include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
+#include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
 #include "tiny_dnn/core/backend_tiny.h"
 #include "tiny_dnn/core/backend_nnp.h"
 #include "tiny_dnn/core/backend_dnn.h"
+
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/backend_avx.h"
 #endif
@@ -216,7 +219,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
             , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
             , cws_(std::move(other.cws_))
             , kernel_fwd_(std::move(other.kernel_fwd_))
-            , kernel_back_(std::move(other.kernel_back_)) {}
+            , kernel_back_(std::move(other.kernel_back_)) {
+        init_backend(std::move(other.engine()));
+    }
 
     ///< number of incoming connections for each output unit
     size_t fan_in_size() const override {
@@ -239,7 +244,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
                              std::vector<tensor_t*>&       out_data) { 
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
-             ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
 
         // launch convolutional kernel
@@ -289,6 +293,25 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
     std::string layer_type() const override {
         return std::string("conv");
+    }
+
+    std::string kernel_file() const override {
+        return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
+    }
+
+    std::string kernel_header() const override {
+        std::stringstream ss;
+        ss << "#define MULTI\n";
+        ss << "#define KERNEL_H " << params_.weight.height_ << "\n";
+        ss << "#define KERNEL_W " << params_.weight.width_  << "\n";
+        ss << "#define CHANNELS " << params_.weight.depth_  << "\n";
+        ss << "#define STRIDE_H " << params_.h_stride << "\n";
+        ss << "#define STRIDE_W " << params_.w_stride << "\n";
+        ss << "#define APPLY_BIAS " << params_.has_bias   << "\n";
+        ss << "#define OUTPUT_Z "   << params_.out.depth_ << "\n";
+        // TODO(edgar): REVISE THIS
+        ss << "#define ZPAR " << params_.out.depth_  << "\n";
+        return ss.str();
     }
 
     image<> weight_to_image() const {
@@ -467,18 +490,42 @@ private:
         }
     }
 
+    void createOp() {
+        init_backend(layer::engine());
+    }
+
     void init_backend(const backend_t backend_type) {
-        // TODO(edgar): add device?
-        auto ctx = core::OpKernelConstruction();
+        core::OpKernelConstruction ctx =
+        core::OpKernelConstruction(layer::device(), &params_);
 
         if (backend_type == backend_t::tiny_dnn) {
-            kernel_fwd_  = std::make_shared<Conv2dCustomForwardOp>(ctx);
-            kernel_back_ = std::make_shared<Conv2dCustomBackwardOp>(ctx);
+            kernel_fwd_.reset(new Conv2dCustomForwardOp(ctx));
+            kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
+            return;
+        }
+        else if (backend_type == backend_t::nnpack) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
+            return;
+        }
+        else if (backend_type == backend_t::avx) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
+            return;
+        }
+
+        else if (backend_type == backend_t::opencl) {
+            throw nn_error("Not implemented engine: " + to_string(backend_type));
+            /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
+            kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
+            return;*/
+        }
+        else if (backend_type == backend_t::libdnn) {
+            kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
+            kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
+            return;
         }
         else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
-
 
         /*std::shared_ptr<core::backend> backend = nullptr;
 

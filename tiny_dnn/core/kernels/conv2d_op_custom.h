@@ -65,10 +65,10 @@ class Conv2dCustomForwardOp : private Conv2d, public core::OpKernel {
 
         // pad input data
         tensor_t in_data_padded;
-        Conv2d::setParams(context.params());
+        Conv2d::setParams(OpKernel::params_);
         Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
-        // initalize outputs
+        // initialize outputs
         fill_tensor(out_data, float_t(0));
 
         // convolution algorithm
@@ -96,7 +96,7 @@ class Conv2dCustomBackwardOp : private Conv2d, public core::OpKernel {
         tensor_t&    curr_delta = context.output_grad(1);
 
         // set an cast the convolutional parameters
-        Conv2d::setParams(context.params());
+        Conv2d::setParams(OpKernel::params_);
 
         // initalize outputs
         fill_tensor(prev_delta, float_t(0));

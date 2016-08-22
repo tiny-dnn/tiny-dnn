@@ -55,14 +55,18 @@ class OpKernel;  // delared below
 class OpKernelConstruction {
  public:
     explicit OpKernelConstruction() {}
-    explicit OpKernelConstruction(Device* device)
-        : device_ptr_(device) {}
+    explicit OpKernelConstruction(Device* device, Params* params)
+        : device_(device), params_(params) {}
     
     // Returns the device raw pointer
-    Device* device() const { return device_ptr_; }
+    Device* device() const { return device_; }
+
+    // Returns the device raw pointer
+    Params* params() const { return params_; }
 
  private:
-    Device* device_ptr_;
+    Device* device_ = nullptr;
+    Params* params_ = nullptr;
 };
 
 class OpKernelContext {
@@ -74,8 +78,11 @@ class OpKernelContext {
         // the device on which the kernel is running.
         Device* device_ptr = nullptr;
 
+        // the layer on which kernel is runnning
+        layer* layer_ptr_ = nullptr;
+
         // the operation params
-        core::Params* params_ptr_ = nullptr;
+        Params* params_ptr_ = nullptr;
 
         // parallelize operation
         bool parallelize = false;
@@ -130,6 +137,22 @@ class OpKernelContext {
         return op_params_->parallelize;
     }
 
+    void setDevice(Device* device) {
+        op_params_->device_ptr = device;
+    }
+
+    Device* device() const {
+        return op_params_->device_ptr;
+    }
+
+    void setLayer(layer* layer) {
+        op_params_->layer_ptr_ = layer;
+    }
+
+    layer* Layer() const {
+        return op_params_->layer_ptr_;
+    }
+
  private:
     std::vector<tensor_t*> in_data_;
     std::vector<tensor_t*> out_data_;
@@ -142,10 +165,17 @@ class OpKernelContext {
 class OpKernel {
  public:
     explicit OpKernel() {}
-    explicit OpKernel(const OpKernelConstruction& context) {}
+    explicit OpKernel(const OpKernelConstruction& context)
+        : device_(context.device())
+        , params_(context.params()) {}
+
     virtual ~OpKernel() {}
 
     virtual void compute(const OpKernelContext& context) = 0;
+
+ protected:
+    Device* device_ = nullptr;
+    Params* params_ = nullptr;
 };
 
 }  // namespace core

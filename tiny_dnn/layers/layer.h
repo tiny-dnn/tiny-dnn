@@ -37,6 +37,7 @@
 
 #include "tiny_dnn/node.h"
 #include "tiny_dnn/core/backend.h"
+#include "tiny_dnn/core/framework/device.fwd.h"
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/product.h"
@@ -109,8 +110,32 @@ class layer : public node {
     bool parallelize() const { return parallelize_; }
     bool initialized() const { return initialized_; }
 
+    // TODO(edgar): Deprecated: use the below method 
     core::backend_t backend_type() const {
         return backend_->type();
+    }
+
+    core::backend_t engine() const {
+        return backend_type_;
+    }
+
+    virtual std::string kernel_file() const {
+        return std::string("empty_kernel_str");
+    }
+
+    virtual std::string kernel_header() const {
+        return std::string();
+    }
+
+    virtual void createOp() {
+    }
+
+    void setDevice(const Device& device) {
+        device_ptr_ = const_cast<Device*>(&device);
+    }
+
+    Device* device() const {
+        return device_ptr_;
     }
 
     std::shared_ptr<core::backend> backend() { return backend_; }
@@ -552,6 +577,8 @@ class layer : public node {
     
     core::backend_t backend_type_;
     std::shared_ptr<core::backend> backend_;
+
+    Device* device_ptr_ = nullptr;
 
  private:
     std::shared_ptr<weight_init::function> weight_init_;

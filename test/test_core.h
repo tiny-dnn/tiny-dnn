@@ -33,17 +33,21 @@ using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
-TEST(core, device) {
+/*TEST(core, device) {
     // CPU and GPU devices are instantiated
 
     Device my_cpu_device(device_t::CPU);
-    Device my_gpu_device(device_t::GPU, 0, 0);
+    Device my_gpu_device(device_t::CPU, 0, 0);
 }
 
 TEST(core, add_bad_device) {
     // A simple CPU device cannot register an op.
     // A warning is expected telling the user to use
     // more parameters when device is created.
+
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
 
     Device my_gpu_device(device_t::CPU);
 
@@ -53,27 +57,37 @@ TEST(core, add_bad_device) {
     my_gpu_device.registerOp(l);
 }
 
-/*TEST(core, add_bad_layer) {
+TEST(core, add_bad_layer) {
     // A GPU device cannot register an op with non-OpenCL engine.
     // A warning is expected telling the user to redefine the op engine.
- 
-    Device my_gpu_device(device_t::GPU, 0, 0);
+
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
+    Device my_gpu_device(device_t::CPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
     my_gpu_device.registerOp(l);
-}*/
+}
 
 TEST(core, device_add_op) {
     // An Op with OpenCL engine is registeres to
     // a GPU device which will compile its program, and
     // will place it to the general register.
 
-    Device my_gpu_device(device_t::GPU, 0, 0);
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
+    Device my_gpu_device(device_t::GPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::OpenCL);
+
+    //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::OpenCL);
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
 
@@ -89,6 +103,82 @@ TEST(core, device_add_op) {
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
 #endif
+}*/
+
+TEST(core, ocl_conv) {
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
+    Device my_gpu_device(device_t::GPU, 0, 0);
+
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+        padding::valid, true, 1, 1, backend_t::LibDNN);
+
+    // first time op registration: OK
+    my_gpu_device.registerOp(l);
+
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
+
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
+
+    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+
+    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
+    {
+        l.forward_propagation(in_data, out_data);
+
+        for (auto o: out)
+            EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
+    }
+
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+
+    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+
+    in[0] = 3;  in[1] = 2;  in[2] = 1;  in[3] = 5; in[4] = 2;
+    in[5] = 3;  in[6] = 0;  in[7] = 2;  in[8] = 0; in[9] = 1;
+    in[10] = 0; in[11] = 6; in[12] = 1; in[13] = 1; in[14] = 10;
+    in[15] = 3; in[16] =-1; in[17] = 2; in[18] = 9; in[19] = 0;
+    in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
+
+    {
+        l.forward_propagation(in_data, out_data);
+
+        EXPECT_NEAR(0.4875026, out[0], 1E-5);
+        EXPECT_NEAR(0.8388910, out[1], 1E-5);
+        EXPECT_NEAR(0.8099984, out[2], 1E-5);
+        EXPECT_NEAR(0.7407749, out[3], 1E-5);
+        EXPECT_NEAR(0.5000000, out[4], 1E-5);
+        EXPECT_NEAR(0.1192029, out[5], 1E-5);
+        EXPECT_NEAR(0.5986877, out[6], 1E-5);
+        EXPECT_NEAR(0.7595109, out[7], 1E-5);
+        EXPECT_NEAR(0.6899745, out[8], 1E-5);
+    }
 }
 
 } // namespace tiny-dnn
