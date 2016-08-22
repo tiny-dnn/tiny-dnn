@@ -157,7 +157,22 @@ TEST(convolutional, fprop_nnp) {
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::nnpack);
 
-    vec_t in(25), out(18), a(18), weight(18), bias(2);
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
+
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor     = create_simple_tensor(25)
+           , out_tensor    = create_simple_tensor(18)
+           , a_tensor      = create_simple_tensor(18)
+           , weight_tensor = create_simple_tensor(18)
+           , bias_tensor   = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in     = in_tensor[0]
+        , &out    = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
@@ -204,6 +219,7 @@ TEST(convolutional, fprop_nnp) {
         EXPECT_NEAR(0.7595109, out[7], 1E-5);
         EXPECT_NEAR(0.6899745, out[8], 1E-5);
     }
+
 }
 #endif
 

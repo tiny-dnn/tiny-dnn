@@ -30,8 +30,7 @@
 #include <string>
 #include <algorithm>
 
-#include "tiny_dnn/core/framework/op_kernel.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op.h"
 #include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
@@ -245,6 +244,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
 
         // launch convolutional kernel
         kernel_fwd_->compute(ctx);
@@ -498,17 +498,13 @@ private:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn) {
-            kernel_fwd_.reset(new Conv2dCustomForwardOp(ctx));
+        if (backend_type == backend_t::tiny_dnn ||
+            backend_type == backend_t::nnpack ||
+            backend_type == backend_t::avx) {
+            
+            kernel_fwd_.reset(new Conv2dOp(ctx));
             kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
-            return;
-        }
-        else if (backend_type == backend_t::nnpack) {
-            throw nn_error("Not implemented engine: " + to_string(backend_type));
-            return;
-        }
-        else if (backend_type == backend_t::avx) {
-            throw nn_error("Not implemented engine: " + to_string(backend_type));
+
             return;
         }
 
@@ -519,6 +515,7 @@ private:
             return;*/
         }
         else if (backend_type == backend_t::libdnn) {
+            if (layer::device() == nullptr) return;
             kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
             kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
             return;

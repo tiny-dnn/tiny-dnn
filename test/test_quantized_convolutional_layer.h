@@ -51,7 +51,7 @@ TEST(quantized_convolutional, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_conv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
+    EXPECT_TRUE(l.engine() == backend_t::tiny_dnn);
 }
 
 #ifdef CNN_USE_NNPACK
@@ -130,28 +130,43 @@ TEST(quantized_convolutional, fprop) {
 }
 
 #ifdef CNN_USE_NNPACK
-TEST(quantized_convolutional, fprop_nnp) {
+TEST(quantized_convolutional, fprop_npp) {
     typedef network<sequential> CNN;
     CNN nn;
 
     quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, core::backend_t::nnpack);
+        padding::valid, true, 1, 1, backend_t::nnpack);
 
-    vec_t in(25), out(18), a(18), weight(18), bias(2);
+    // layer::forward_propagation expects tensors, even if we feed only one input at a time
+    auto create_simple_tensor = [](size_t vector_size) {
+        return tensor_t(1, vec_t(vector_size));
+    };
+
+    // create simple tensors that wrap the payload vectors of the correct size
+    tensor_t in_tensor = create_simple_tensor(25)
+        , out_tensor = create_simple_tensor(18)
+        , a_tensor = create_simple_tensor(18)
+        , weight_tensor = create_simple_tensor(18)
+        , bias_tensor = create_simple_tensor(2);
+
+    // short-hand references to the payload vectors
+    vec_t &in = in_tensor[0]
+        , &out = out_tensor[0]
+        , &weight = weight_tensor[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<vec_t*> in_data, out_data;
-    in_data.push_back(&in);
-    in_data.push_back(&weight);
-    in_data.push_back(&bias);
-    out_data.push_back(&out);
-    out_data.push_back(&a);
-    l.setup(false, 1);
+    std::vector<tensor_t*> in_data, out_data;
+    in_data.push_back(&in_tensor);
+    in_data.push_back(&weight_tensor);
+    in_data.push_back(&bias_tensor);
+    out_data.push_back(&out_tensor);
+    out_data.push_back(&a_tensor);
+    l.setup(false);
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         for (auto o: out)
             EXPECT_NEAR(0.5, o, 1E-3);
@@ -172,7 +187,7 @@ TEST(quantized_convolutional, fprop_nnp) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(0, in_data, out_data);
+        l.forward_propagation(in_data, out_data);
 
         EXPECT_NEAR(0.4875026, out[0], 2E-2);
         EXPECT_NEAR(0.8388910, out[1], 2E-2);
@@ -186,6 +201,7 @@ TEST(quantized_convolutional, fprop_nnp) {
     }
 }
 #endif
+
 /*
 TEST(quantized_convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
