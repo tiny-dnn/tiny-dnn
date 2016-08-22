@@ -31,6 +31,7 @@
 #include <algorithm>
 
 #include "tiny_dnn/core/kernels/conv2d_op.h"
+#include "tiny_dnn/core/kernels/conv2d_grad_op.h"
 #include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
@@ -503,7 +504,7 @@ private:
             backend_type == backend_t::avx) {
             
             kernel_fwd_.reset(new Conv2dOp(ctx));
-            kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
+            kernel_back_.reset(new Conv2dGradOp(ctx));
 
             return;
         }

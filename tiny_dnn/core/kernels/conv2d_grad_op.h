@@ -47,72 +47,14 @@
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #include "tiny_dnn/core/kernels/conv2d.h"
-#include "tiny_dnn/core/kernels/conv2d_op_avx.h"
+#include "tiny_dnn/core/kernels/conv2d_grad_op_avx.h"
 #include "tiny_dnn/core/kernels/conv2d_op_custom.h"
-#include "tiny_dnn/core/kernels/conv2d_op_nnpack.h"
 
 namespace tiny_dnn {
 
-class Conv2dOp : private Conv2d, public core::OpKernel {
+class Conv2dGradOp : private Conv2d, public core::OpKernel {
  public:
-    explicit Conv2dOp(const core::OpKernelConstruction& context)
-        : core::OpKernel(context) {}
-
-    void compute(const core::OpKernelContext& context) override {
-        // incomimg/outcoming data 
-        const tensor_t& in_data = context.input(0);
-        const vec_t&          W = context.input(1)[0];
-        const vec_t&       bias = context.input(2)[0];
-        tensor_t&      out_data = context.output(1);
-
-        // pad input data
-        tensor_t in_data_padded;
-        Conv2d::setParams(OpKernel::params_);
-        Conv2d::copy_and_pad_input(in_data, in_data_padded);
-
-        // initialize outputs
-        fill_tensor(out_data, float_t(0));
-
-        // call convolution algorithm depending
-        // on the selected engine type
-
-        const core::backend_t engine = context.engine();
-
-        if (engine == core::backend_t::tiny_dnn) {
-
-            conv2d_op_custom_impl(in_data_padded,
-                                  W,
-                                  bias,
-                                  out_data,
-                                  Conv2d::params(),
-                                  context.parallelize());
-        }
-        else if (engine == core::backend_t::nnpack) {
-
-            conv2d_op_nnpack_impl(in_data_padded,
-                                  W,
-                                  bias,
-                                  out_data,
-                                  Conv2d::params());
-        }
-        else if (engine == core::backend_t::avx) {
-
-            conv2d_op_avx_impl(in_data_padded,
-                               W,
-                               bias,
-                               out_data,
-                               Conv2d::params(),
-                               context.parallelize());
-        }
-        else {
-            throw nn_error("Not supported engine: " + to_string(engine));
-        }
-    }
-};
-
-/*class Conv2dCustomBackwardOp : private Conv2d, public core::OpKernel {
- public:
-    explicit Conv2dCustomBackwardOp(const core::OpKernelConstruction& context)
+    explicit Conv2dGradOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
@@ -129,16 +71,44 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
 
         // initalize outputs
         fill_tensor(prev_delta, float_t(0));
+        
+        // call convolution algorithm depending
+        // on the selected engine type
 
-        // convolution algorithm
-        conv2d_op_custom_impl(prev_out, W, dW, db, curr_delta,
-            prev_delta, Conv2d::params(), context.parallelize());
+        const core::backend_t engine = context.engine();
+        
+        if (engine == core::backend_t::tiny_dnn) {
+            
+            conv2d_op_custom_impl(prev_out,
+                                  W,
+                                  dW,
+                                  db,
+                                  curr_delta,
+                                  prev_delta,
+                                  Conv2d::params(),
+                                  context.parallelize());
+
+        }
+        else if (engine == core::backend_t::avx) {
+
+            conv2d_grad_op_avx_impl(prev_out,
+                                    W,
+                                    dW,
+                                    db,
+                                    curr_delta,
+                                    prev_delta,
+                                    Conv2d::params(),
+                                    context.parallelize());
+        }
+        else {
+            throw nn_error("Not supported engine: " + to_string(engine));
+        }
 
         // apply unpadding
         if (Conv2d::params().pad_type == core::padding::same) {
             Conv2d::copy_and_unpad_delta(prev_out, prev_delta);
         }
     }
-};*/
+};
 
 }  // namespace tiny_dnn
