@@ -110,35 +110,4 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
     }
 };
 
-/*class Conv2dCustomBackwardOp : private Conv2d, public core::OpKernel {
- public:
-    explicit Conv2dCustomBackwardOp(const core::OpKernelConstruction& context)
-        : core::OpKernel(context) {}
-
-    void compute(const core::OpKernelContext& context) override {
-        // incoming/outcoming data
-        const tensor_t& prev_out = context.input(0);
-        const vec_t& W  = context.input(1)[0];
-        tensor_t&    dW = context.input_grad(1);
-        tensor_t&    db = context.input_grad(2);
-        tensor_t&    prev_delta = context.input_grad(0);
-        tensor_t&    curr_delta = context.output_grad(1);
-
-        // set an cast the convolutional parameters
-        Conv2d::setParams(OpKernel::params_);
-
-        // initalize outputs
-        fill_tensor(prev_delta, float_t(0));
-
-        // convolution algorithm
-        conv2d_op_custom_impl(prev_out, W, dW, db, curr_delta,
-            prev_delta, Conv2d::params(), context.parallelize());
-
-        // apply unpadding
-        if (Conv2d::params().pad_type == core::padding::same) {
-            Conv2d::copy_and_unpad_delta(prev_out, prev_delta);
-        }
-    }
-};*/
-
 }  // namespace tiny_dnn
