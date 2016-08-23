@@ -66,7 +66,8 @@ inline void nnp_fully_connected_kernel(const fully_params& params,
     // TODO: find a proper way to do this
     if (params.has_bias_) {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
-            a[i] += b[i];
+            // TODO(edgar): revise this
+            // a[i] += b[i];
         });
     }
 #endif

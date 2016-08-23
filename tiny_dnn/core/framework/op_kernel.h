@@ -86,6 +86,8 @@ class OpKernelContext {
 
         // parallelize operation
         bool parallelize = false;
+
+        backend_t engine = backend_t::tiny_dnn;
     };
 
     explicit OpKernelContext(const std::vector<tensor_t*>& in_data,
@@ -151,6 +153,14 @@ class OpKernelContext {
 
     layer* Layer() const {
         return op_params_->layer_ptr_;
+    }
+
+    backend_t engine() const {
+        return op_params_->engine;
+    }
+
+    void setEngine(const backend_t engine) {
+        op_params_->engine = engine;
     }
 
  private:

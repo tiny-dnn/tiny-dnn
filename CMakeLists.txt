@@ -119,7 +119,7 @@ if(USE_NNPACK AND NNPACK_FOUND)
     add_definitions(-DCNN_USE_NNPACK)
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR})
     include_directories(SYSTEM ${NNPACK_INCLUDE_DIR}/../third-party/pthreadpool/include)
-    list(REQUIRED_LIBRARIES ${NNPACK_LIB})
+    list(APPEND REQUIRED_LIBRARIES ${NNPACK_LIB})
 elseif(USE_NNPACK AND NOT NNPACK_FOUND)
     # In case the user sets the flag USE_NNPACK to ON, the CMake build-tree
     # will require to find NNPACK in your system. Otherwise, the user can

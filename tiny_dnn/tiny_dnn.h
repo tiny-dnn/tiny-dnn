@@ -30,13 +30,6 @@
 #include "tiny_dnn/network.h"
 #include "tiny_dnn/nodes.h"
 
-#include "tiny_dnn/core/session.h"
-#include "tiny_dnn/core/device.h"
-#include "tiny_dnn/core/device_cpu.h"
-#include "tiny_dnn/core/device_ocl.h"
-
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
-
 #include "tiny_dnn/core/framework/device.h"
 #include "tiny_dnn/core/framework/program_manager.h"
 

@@ -151,7 +151,7 @@ TEST(fully_connected, forward_nnp)
     l.bias_init(weight_init::constant(0.5));
 
     vec_t in = {0,1,2,3};
-    vec_t out = l.forward({in})[0];
+    vec_t out = l.forward({ {in} })[0][0];
     vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
 
     for (size_t i = 0; i < out_expected.size(); i++) {

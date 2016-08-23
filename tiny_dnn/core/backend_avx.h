@@ -28,8 +28,8 @@
 
 #include "tiny_dnn/core/backend.h"
 
-#include "tiny_dnn/core/kernels/avx_conv2d_kernel.h"
-#include "tiny_dnn/core/kernels/avx_conv2d_back_kernel.h"
+// #include "tiny_dnn/core/kernels/avx_conv2d_kernel.h"
+// #include "tiny_dnn/core/kernels/avx_conv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/avx_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/avx_deconv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/avx_maxpool_kernel.h"
@@ -95,8 +95,8 @@ class avx_backend : public backend {
 
         fill_tensor(a, float_t(0));
 
-        kernels::avx_conv2d_kernel(*params_c_,
-            in, W, bias, a, layer_->parallelize());
+        //kernels::avx_conv2d_kernel(*params_c_,
+        //    in, W, bias, a, layer_->parallelize());
     }
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
@@ -131,8 +131,8 @@ class avx_backend : public backend {
 
         fill_tensor(*prev_delta, float_t(0));
 
-        kernels::avx_conv2d_back_kernel(*params_c_,
-            prev_out, W, dW, db, curr_delta, prev_delta);
+        //kernels::avx_conv2d_back_kernel(*params_c_,
+        //    prev_out, W, dW, db, curr_delta, prev_delta);
 
         if (params_c_->pad_type == padding::same) {
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
