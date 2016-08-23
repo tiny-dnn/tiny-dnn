@@ -93,16 +93,20 @@ public:
         }
     }
 
-   /* const vec_t& back_propagation_2nd(const vec_t& current_delta2) override {
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<linear_layer> & construct) {
+        cnn_size_t dim;
+        float_t scale, bias;
 
-        for_i(parallelize_, out_size_, [&](int i) {
-            prev_delta2_[i] = current_delta2[i] * sqr(scale_ * prev_h.df(prev_out[i]));
-        });
+        ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale), cereal::make_nvp("bias", bias));
 
-        return prev_->back_propagation_2nd(prev_delta2_);
-    }*/
+        construct(dim, scale, bias);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
+    }
 
 protected:
     cnn_size_t dim_;

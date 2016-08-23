@@ -35,6 +35,12 @@
 #include <cstdarg>
 #include <string>
 #include <sstream>
+
+#include <cereal/cereal.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/vector.hpp>
+
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/nn_error.h"
@@ -164,6 +170,13 @@ struct index3d {
 
     T size() const {
         return width_ * height_ * depth_;
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::make_nvp("width", width_));
+        ar(cereal::make_nvp("height", height_));
+        ar(cereal::make_nvp("depth", depth_));
     }
 
     T width_;
@@ -377,3 +390,9 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
 #endif
 
 } // namespace tiny_dnn
+
+#define CNN_REGISTER_LAYER(type)
+// \
+//CEREAL_REGISTER_TYPE(tiny_dnn::type);      \
+//CEREAL_REGISTER_POLYMORPHIC_RELATION(tiny_dnn::layer, tiny_dnn::type)
+

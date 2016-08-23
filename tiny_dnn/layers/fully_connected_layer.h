@@ -104,6 +104,24 @@ public:
 
     std::string layer_type() const override { return "fully-connected"; }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
+        size_t in_dim, out_dim;
+        bool has_bias;
+
+        ar(cereal::make_nvp("in_size", in_size),
+           cereal::make_nvp("out_size", out_size),
+           cereal::make_nvp("has_bias", has_bias));
+        construct(in_size, out_size, has_bias);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::make_nvp("in_size", params_.in_size_),
+           cereal::make_nvp("out_size", params_.out_size_),
+           cereal::make_nvp("has_bias", params_.has_bias_));
+    }
+
 protected:
     fully_params params_;
 
