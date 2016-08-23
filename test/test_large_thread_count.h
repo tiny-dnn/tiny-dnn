@@ -1,9 +1,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(test_large_thread_count, test_large_thread_count) {
 
@@ -20,7 +20,7 @@ TEST(test_large_thread_count, test_large_thread_count) {
         bool in = bernoulli(0.5);
         bool label = bernoulli(0.5);
 
-        data.push_back({ in * 1.0 });
+        data.push_back({ static_cast<float_t>(in) });
         labels.push_back(label ? 1 : 0);
     }
 
@@ -33,4 +33,4 @@ TEST(test_large_thread_count, test_large_thread_count) {
     net.train<mse>(optimizer, data, labels, 300, 1, nop, nop, true, n_threads);
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

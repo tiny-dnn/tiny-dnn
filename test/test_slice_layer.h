@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(slice, forward_data) {
     slice_layer sl(shape3d(3,2,1), slice_type::slice_samples, 3);
@@ -122,4 +122,4 @@ TEST(slice, forward_channels) {
     }
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

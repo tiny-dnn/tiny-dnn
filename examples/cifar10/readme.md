@@ -57,10 +57,10 @@ for learning rate. The entire code for training cifar-10 is following:
 
 ```cpp
 #include <iostream>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 
 template <typename N>
 void construct_net(N& nn) {
@@ -115,7 +115,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
     // create callback
     auto on_enumerate_epoch = [&]() {
         cout << t.elapsed() << "s elapsed." << endl;
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         log << res.num_success << "/" << res.num_total << endl;
 
         disp.restart(train_images.size());

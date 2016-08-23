@@ -1,0 +1,81 @@
+METAPROGRAMMED GEMM
+===================
+
+The two main goals of this library are:
+- providing a new matrix multiplication kernel.
+- providing the optimized codepaths for as many possible user scenarios without
+  enforcing additional input data constraints (padding, sizes, strides, layout)
+
+To enable this code add -DGEMMLOWP_USE_META_FASTPATH to your build setup.
+
+The new kernel
+--------------
+
+The multiplication kernel - the most inner loop of the matrix multiplication,
+which is responsible for the row/column products was rewritten. The new code
+produces a 3x3 result patch and processes the row/column arrays in 8 element
+packs (the kernel 'shape' is 3x3x8 compared to the previous 12x4x2). By using
+specialized 8bit multiplication, aggregating to vector aggregators and then
+reduction with parallel horizontal addition we devised code that achieved
+higher arithmetical density (arithmetical operation per assembly instruction).
+The arithmetical performance of the new kernel exceeds 18 GOps/s on a vanilla
+Nexus 5 phone (which is practically peak for this device).
+
+In order to feed the kernel with input data and minimize the number of
+instructions other than the arithmetical operations a different packing
+scheme was used. Three rows (columns) are interweaved every 8 elements so that
+they can be read from continuous memory in one op inside the kernel. Additional
+memory preload hint operations are inserted into the kernel to hide memory
+latency behind arithmetical operations.
+
+Generated code
+--------------
+
+The basic kernel used in this approach is of shape 3x3x8. Obviously this
+kernel can be easily applied to multipications where matrix sizes are:
+M x K, K x N where M and N are multiplies of 3 and K is a multiply of 8.
+
+We rejected two obvious solutions of: padding the matrix sizes to appropriate
+sizes, or using the reference implementation for the leftovers. Neither did
+we consider enforcing extra constraints on the caller.
+
+In order to allow all matrix sizes the kernels processing all combinations of
+1, 2 or 3 rows and 1, 2 or 3 columns are required. Similarily to allow all
+possible depths the leftover values (up to 7 elements) needed to be handled.
+
+Instead of writing those kernels by hand we decided to generate them with
+some python scripts. 9 Versions of the multiplication kernel were prepared.
+Additionally packing and unpacking code for different row/column counts and
+depth leftovers was generated. Finally different code was generated for
+aligned memory reads/writes and unaligned memory reads/writes.
+
+Using those multiplication and packing/unpacking primitives 144 gemm function
+versions were prepared. On top of them one high level gemm function that would
+switch to one of those preoptimized versions.
+
+This approach allowed moving all unnecessary branching and conditional execution
+outside of the inner loops. It also allowed removing of all short loops required
+for leftover handling. Finally aligned memory reads/writes are used everywhere
+where the provided input data allows.
+
+Results
+-------
+
+The library shows up to 35% faster gemm execution in some cases (e.g. ImageNet
+benchmark).
+
+Files
+-----
+
+single_thread_gemm.h
+-- generated ARM/NEON 8bit x 8bit gemm implementation. Contains all the
+   optimized, unrolled and curried pack/unpack, and multiply procedures and
+   a single gemm function that switches between the optimized versions based
+   on the runtime parameters.
+
+multi_thread_gemm.h
+-- a simple parallelization scheme for the gemm function.
+
+generators/gemm_NxMxK_neon.py
+-- script that generates the single_thread_gemm.h header library.
+   Usage: python gemm_NxMxK_neon > single_thread_gemm.h
