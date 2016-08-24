@@ -26,22 +26,57 @@
 */
 #pragma once
 
-#include "params.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
 
 namespace tiny_dnn {
-namespace core {
+namespace kernels {
 
-class fully_params : public Params {
- public:
-    cnn_size_t in_size_;
-    cnn_size_t out_size_;
-    bool has_bias_;
-};
-
-// TODO(nyanp): can we do better here?
-const fully_params* Params::fully() {
-    return static_cast<const fully_params*>(this);
+inline void
+fully_connected_op_avx(const tensor_t& in_data,
+                       const vec_t&    W,
+                       const vec_t&    bias,
+                       tensor_t&       out_data,
+                       const fully_params& params,
+                       const bool      layer_parallelize) {
+#ifdef CNN_USE_AVX
+    // TODO(nyanp/beru): is this really AVX ??
+    fully_connected_op_custom(
+        in_data,
+        W,
+        bias,
+        out_data,
+        params,
+        layer_parallelize);
+#else
+    throw nn_error("TinyDNN has not been compiled with AVX support.");
+#endif
 }
 
-}  // namespace core
+inline void
+fully_connected_op_avx(const tensor_t& prev_out,
+                       const vec_t&    W,
+                       tensor_t&       dW,
+                       tensor_t&       prev_delta,
+                       tensor_t&       curr_delta,
+                       tensor_t&       db,
+                       const fully_params& params,
+                       const bool      layer_parallelize) {
+#ifdef CNN_USE_AVX
+    // TODO(nyanp/beru): is this really AVX ??
+    fully_connected_op_custom(
+        prev_out,
+        W,
+        dW,
+        prev_delta,
+        curr_delta,
+        db,
+        params,
+        layer_parallelize);
+#else
+    throw nn_error("TinyDNN has not been compiled with AVX support.");
+#endif
+
+}
+
+}  // namespace kernels
 }  // namespace tiny_dnn
