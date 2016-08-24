@@ -5,6 +5,7 @@
 #include <map>
 #include "tiny_cnn/io/tensorflow/proto_parser.h"
 using namespace std;
+using namespace tiny_cnn;
 using namespace tensorflow;
 
 // Main function:  Reads the graph definition from a file and prints all
@@ -30,7 +31,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  ListNodes(graph_def);
+  list_nodes(graph_def);
 
   // Optional:  Delete all global objects allocated by libprotobuf.
   google::protobuf::ShutdownProtobufLibrary();

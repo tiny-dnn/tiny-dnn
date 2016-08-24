@@ -80,7 +80,7 @@ endif()
 
 find_package(Protobuf QUIET)
 if(PROTOBUF_FOUND)
-    set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/../tiny_cnn/io/tensorflow/graph.pb.cc")
+    set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/../tensorflow/core/framework/graph.pb.cc")
     if(EXISTS ${proto_file})
         file(GLOB proto_src "${CMAKE_CURRENT_SOURCE_DIR}/../tensorflow/core/framework/*.pb.cc")
         add_executable(example_tensorflow_converter
