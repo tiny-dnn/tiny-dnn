@@ -56,9 +56,9 @@ inline void
 fully_connected_op_avx(const tensor_t& prev_out,
                        const vec_t&    W,
                        tensor_t&       dW,
+                       tensor_t&       db,
                        tensor_t&       curr_delta,
                        tensor_t&       prev_delta,
-                       tensor_t&       db,
                        const fully_params& params,
                        const bool      layer_parallelize) {
 #ifdef CNN_USE_AVX
@@ -67,9 +67,9 @@ fully_connected_op_avx(const tensor_t& prev_out,
         prev_out,
         W,
         dW,
+        db,
         curr_delta,
         prev_delta,
-        db,
         params,
         layer_parallelize);
 #else
