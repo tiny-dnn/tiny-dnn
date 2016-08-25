@@ -79,30 +79,30 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
         const core::backend_t engine = context.engine();
 
         if (engine == core::backend_t::tiny_dnn) {
-
-            conv2d_op_custom_impl(in_data_padded,
-                                  W,
-                                  bias,
-                                  out_data,
-                                  Conv2d::params(),
-                                  context.parallelize());
+            kernels::conv2d_op_custom(
+                in_data_padded,
+                W,
+                bias,
+                out_data,
+                Conv2d::params(),
+                context.parallelize());
         }
         else if (engine == core::backend_t::nnpack) {
-
-            conv2d_op_nnpack_impl(in_data_padded,
-                                  W,
-                                  bias,
-                                  out_data,
-                                  Conv2d::params());
+            kernels::conv2d_op_nnpack(
+                in_data_padded,
+                W,
+                bias,
+                out_data,
+                Conv2d::params());
         }
         else if (engine == core::backend_t::avx) {
-
-            conv2d_op_avx_impl(in_data_padded,
-                               W,
-                               bias,
-                               out_data,
-                               Conv2d::params(),
-                               context.parallelize());
+            kernels::conv2d_op_avx(
+                in_data_padded,
+                W,
+                bias,
+                out_data,
+                Conv2d::params(),
+                context.parallelize());
         }
         else {
             throw nn_error("Not supported engine: " + to_string(engine));

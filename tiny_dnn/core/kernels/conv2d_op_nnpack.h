@@ -41,13 +41,14 @@ inline nnp_convolution_kernel_transform_strategy nnp_kts() {
 #endif
 
 namespace tiny_dnn {
+namespace kernels {
 
 inline void
-conv2d_op_nnpack_impl(const tensor_t&         in_data,
-                      const vec_t&                  W,
-                      const vec_t&               bias,
-                      tensor_t&              out_data,
-                      const core::conv_params& params) {
+conv2d_op_nnpack(const tensor_t&         in_data,
+                 const vec_t&                  W,
+                 const vec_t&               bias,
+                 tensor_t&              out_data,
+                 const core::conv_params& params) {
 #ifdef CNN_USE_NNPACK
     nnp_status init_status = nnp_initialize();
     if (init_status != nnp_status_success) {
@@ -120,4 +121,5 @@ conv2d_op_nnpack_impl(const tensor_t&         in_data,
 #endif
 }
 
+}  // namespace kernels
 }  // namespace tiny_dnn

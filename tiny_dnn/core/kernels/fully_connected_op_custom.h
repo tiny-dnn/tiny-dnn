@@ -59,8 +59,8 @@ inline void
 fully_connected_op_custom(const tensor_t& prev_out,
                           const vec_t&    W,
                           tensor_t&       dW,
-                          tensor_t&       prev_delta,
                           tensor_t&       curr_delta,
+                          tensor_t&       prev_delta,
                           tensor_t&       db,
                           const fully_params& params,
                           const bool      layer_parallelize) {

@@ -77,31 +77,28 @@ class FullyConnectedOp : public core::OpKernel {
                 W,
                 bias,
                 out_data,
-                *OpKernel::params_->fully(),
+                OpKernel::params_->fully(),
                 context.parallelize());
         }
         else if (engine == core::backend_t::nnpack) {
-
             kernels::fully_connected_op_nnpack(
                 in_data,
                 W,
                 bias,
                 out_data,
-                *OpKernel::params_->fully(),
+                OpKernel::params_->fully(),
                 context.parallelize());
         }
         else if (engine == core::backend_t::avx) {
-
             kernels::fully_connected_op_avx(
                 in_data,
                 W,
                 bias,
                 out_data,
-                *OpKernel::params_->fully(),
+                OpKernel::params_->fully(),
                 context.parallelize());
         }
         else {
-            std::cout << "HOLI!" << std::endl;
             throw nn_error("Not supported engine: " + to_string(engine));
         }
     }

@@ -36,7 +36,7 @@ class Params {
  public:
     Params() {}
 
-    const fully_params* fully();
+    fully_params fully() const;
 };
 
 }  // namespace core

@@ -45,14 +45,15 @@
 #pragma once
 
 namespace tiny_dnn {
+namespace kernels {
 
 inline void
-conv2d_op_custom_impl(const tensor_t&         in_data,
-                      const vec_t&                  W,
-                      const vec_t&               bias,
-                      tensor_t&              out_data,
-                      const core::conv_params& params,
-                      const bool          parallelize) {
+conv2d_op_custom(const tensor_t&         in_data,
+                 const vec_t&                  W,
+                 const vec_t&               bias,
+                 tensor_t&              out_data,
+                 const core::conv_params& params,
+                 const bool          parallelize) {
     for_i(parallelize, in_data.size(), [&](int sample) {
         const vec_t& in = in_data[sample];
         vec_t& a = out_data[sample];
@@ -106,14 +107,14 @@ conv2d_op_custom_impl(const tensor_t&         in_data,
 
 
 inline void
-conv2d_op_custom_impl(const tensor_t&        prev_out,
-                      const vec_t&                  W,
-                      tensor_t&                    dW,
-                      tensor_t&                    db,
-                      tensor_t&            curr_delta,
-                      tensor_t&            prev_delta,
-                      const core::conv_params& params,
-                      const bool          parallelize) {
+conv2d_op_custom(const tensor_t&        prev_out,
+                 const vec_t&                  W,
+                 tensor_t&                    dW,
+                 tensor_t&                    db,
+                 tensor_t&            curr_delta,
+                 tensor_t&            prev_delta,
+                 const core::conv_params& params,
+                 const bool          parallelize) {
     for_i(parallelize, prev_out.size(), [&](int sample) {
         // propagate delta to previous layer
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
@@ -198,4 +199,5 @@ conv2d_op_custom_impl(const tensor_t&        prev_out,
     });
 }
 
+}  // namespace kernels
 }  // namespace tiny_dnn

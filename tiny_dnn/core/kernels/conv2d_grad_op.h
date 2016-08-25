@@ -70,7 +70,10 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         Conv2d::setParams(OpKernel::params_);
 
         // initalize outputs
+        fill_tensor(dW, float_t(0));
+        fill_tensor(db, float_t(0));
         fill_tensor(prev_delta, float_t(0));
+        fill_tensor(curr_delta, float_t(0));
         
         // call convolution algorithm depending
         // on the selected engine type
@@ -78,27 +81,27 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         const core::backend_t engine = context.engine();
         
         if (engine == core::backend_t::tiny_dnn) {
-            
-            conv2d_op_custom_impl(prev_out,
-                                  W,
-                                  dW,
-                                  db,
-                                  curr_delta,
-                                  prev_delta,
-                                  Conv2d::params(),
-                                  context.parallelize());
+            kernels::conv2d_op_custom(
+                prev_out,
+                W,
+                dW,
+                db,
+                curr_delta,
+                prev_delta,
+                Conv2d::params(),
+                context.parallelize());
 
         }
         else if (engine == core::backend_t::avx) {
-
-            conv2d_grad_op_avx_impl(prev_out,
-                                    W,
-                                    dW,
-                                    db,
-                                    curr_delta,
-                                    prev_delta,
-                                    Conv2d::params(),
-                                    context.parallelize());
+            kernels::conv2d_grad_op_avx(
+                prev_out,
+                W,
+                dW,
+                db,
+                curr_delta,
+                prev_delta,
+                Conv2d::params(),
+                context.parallelize());
         }
         else {
             throw nn_error("Not supported engine: " + to_string(engine));

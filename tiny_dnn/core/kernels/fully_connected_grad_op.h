@@ -71,12 +71,11 @@ class FullyConnectedGradOp : public core::OpKernel {
         fill_tensor(prev_delta, float_t(0));
         fill_tensor(curr_delta, float_t(0));
 
-        // call the algorithm depending  on the selected engine type
+        // call the algorithm depending on the selected engine type
 
         const core::backend_t engine = context.engine();
 
         if (engine == core::backend_t::tiny_dnn) {
-
             kernels::fully_connected_op_custom(
                 prev_out,
                 W,
@@ -84,11 +83,10 @@ class FullyConnectedGradOp : public core::OpKernel {
                 db,
                 curr_delta,
                 prev_delta,
-                *OpKernel::params_->fully(),
+                OpKernel::params_->fully(),
                 context.parallelize());
         }
         else if (engine == core::backend_t::avx) {
-            
             kernels::fully_connected_op_avx(
                 prev_out,
                 W,
@@ -96,7 +94,7 @@ class FullyConnectedGradOp : public core::OpKernel {
                 db,
                 curr_delta,
                 prev_delta,
-                *OpKernel::params_->fully(),
+                OpKernel::params_->fully(),
                 context.parallelize());
         }
         else {
