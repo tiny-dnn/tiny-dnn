@@ -325,7 +325,7 @@ class graph : public nodes {
         }
     }
 
-    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data) {
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data) override {
 
         cnn_size_t input_data_channel_count = in_data[0].size();
 

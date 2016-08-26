@@ -127,7 +127,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) {
+                             std::vector<tensor_t*>&       out_data) override {
         // launch maxpool kernel
         Base::backend_->maxpool(in_data, out_data);
 
@@ -138,7 +138,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) {
+                          std::vector<tensor_t*>&       in_grad) override {
         // launch maxpool kernel
         Base::backend_->maxpool(in_data, out_data, out_grad, in_grad);
     }
