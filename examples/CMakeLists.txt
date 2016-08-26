@@ -44,7 +44,7 @@ target_link_libraries(example_cifar_train
 
 find_package(Protobuf QUIET)
 if(PROTOBUF_FOUND)
-    set(proto_file "${CMAKE_CURRENT_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.pb.cc")
+    set(proto_file "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.pb.cc")
     if(EXISTS ${proto_file})
         add_executable(example_caffe_converter
                        caffe_converter/caffe_converter.cpp ${proto_file})
@@ -55,12 +55,12 @@ if(PROTOBUF_FOUND)
 # and should be installed separately as in: sudo apt-get install protobuf-compiler
     elseif(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
         message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
-        if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
+        if(EXISTS ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
             PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
-                ${CMAKE_CURRENT_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
+                ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
             if(EXISTS ${PROTO_HDRS})
-                file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_dnn/io/caffe")
-                file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_CURRENT_SOURCE_DIR}/tiny_dnn/io/caffe")
+                file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
+                file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
             endif()
             add_executable(example_caffe_converter
                            caffe_converter/caffe_converter.cpp
