@@ -59,11 +59,11 @@ class FullyConnectedGradOp : public core::OpKernel {
     void compute(const core::OpKernelContext& context) override {
         // incoming/outcoming data
         const tensor_t& prev_out = context.input(0);
-        const vec_t& W  = context.input(1)[0];
-        tensor_t&    dW = context.input_grad(1);
-        tensor_t&    db = context.input_grad(2);
-        tensor_t&    prev_delta = context.input_grad(0);
-        tensor_t&    curr_delta = context.output_grad(1);
+        const tensor_t& W        = context.input(1);
+        tensor_t& dW = context.input_grad(1);
+        tensor_t& db = context.input_grad(2);
+        tensor_t& prev_delta = context.input_grad(0);
+        tensor_t& curr_delta = context.output_grad(1);
 
         // initialize outputs
         fill_tensor(dW, float_t(0));
@@ -78,7 +78,7 @@ class FullyConnectedGradOp : public core::OpKernel {
         if (engine == core::backend_t::tiny_dnn) {
             kernels::fully_connected_op_custom(
                 prev_out,
-                W,
+                W[0],
                 dW,
                 db,
                 curr_delta,
@@ -89,7 +89,7 @@ class FullyConnectedGradOp : public core::OpKernel {
         else if (engine == core::backend_t::avx) {
             kernels::fully_connected_op_avx(
                 prev_out,
-                W,
+                W[0],
                 dW,
                 db,
                 curr_delta,
