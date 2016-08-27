@@ -69,11 +69,13 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         // set an cast the convolutional parameters
         Conv2d::setParams(OpKernel::params_);
 
+        // TODO(nyanp): Why we only need to initialize prev_delta ?
+
         // initalize outputs
-        fill_tensor(dW, float_t(0));
-        fill_tensor(db, float_t(0));
+        //fill_tensor(dW, float_t(0));
+        //fill_tensor(db, float_t(0));
         fill_tensor(prev_delta, float_t(0));
-        fill_tensor(curr_delta, float_t(0));
+        //fill_tensor(curr_delta, float_t(0));
         
         // call convolution algorithm depending
         // on the selected engine type

@@ -65,11 +65,13 @@ class FullyConnectedGradOp : public core::OpKernel {
         tensor_t& prev_delta = context.input_grad(0);
         tensor_t& curr_delta = context.output_grad(1);
 
+        // TODO(nyanp): Why we only need to initialize prev_delta ?
+
         // initialize outputs
-        fill_tensor(dW, float_t(0));
-        fill_tensor(db, float_t(0));
+        //fill_tensor(dW, float_t(0));
+        //fill_tensor(db, float_t(0));
         fill_tensor(prev_delta, float_t(0));
-        fill_tensor(curr_delta, float_t(0));
+        //fill_tensor(curr_delta, float_t(0));
 
         // call the algorithm depending on the selected engine type
 

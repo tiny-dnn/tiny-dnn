@@ -115,7 +115,6 @@ public:
 
         // backward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
-             ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
              ctx.setEngine(layer::engine());
 
