@@ -204,3 +204,14 @@ docs/_build
 *.pb.h
 CMakeFiles*
 build*
+*.cmake
+Makefile
+tags
+
+example_cifar_test
+example_cifar_train
+example_deconv_train
+example_mnist_test
+example_mnist_train
+
+examples/benchmarks_all

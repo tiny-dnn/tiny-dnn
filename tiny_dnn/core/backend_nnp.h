@@ -50,7 +50,7 @@ class nnp_backend : public backend {
 
     // deconvolution
     explicit nnp_backend(deconv_params* params)
-        : params_d_(params) { init_nnp_engine(); }
+        /*: params_d_(params) */ { init_nnp_engine(); }
 
     // maxpool
     explicit nnp_backend(maxpool_params* params)
@@ -200,13 +200,13 @@ class nnp_backend : public backend {
  private:
     /* Pointer to the convolution parameters */
     conv_params* params_c_;
-    deconv_params* params_d_;
+    // deconv_params* params_d_;
     maxpool_params* params_m_;
     fully_params* params_f_;
 
     /* Pointer to the convolution workers */
     conv_layer_worker_specific_storage* conv_layer_worker_storage_;
-    deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
+    // deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
 
     /* Pointers to parent class functions */
     std::function<void(const tensor_t&)> copy_and_pad_input;
