@@ -35,6 +35,7 @@
 #endif
 
 namespace tiny_dnn {
+namespace kernels {
 
 #ifdef CNN_USE_AVX
 
@@ -529,14 +530,15 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
 
 #endif // CNN_USE_AVX
 
-inline void conv2d_grad_op_avx_impl(const tensor_t&        prev_out,
-                                    const vec_t&                  W,
-                                    tensor_t&                    dW,
-                                    tensor_t&                    db,
-                                    tensor_t&            curr_delta,
-                                    tensor_t&            prev_delta,
-                                    const core::conv_params& params,
-                                    const bool    layer_parallelize) { 
+inline void
+conv2d_grad_op_avx(const tensor_t&        prev_out,
+                   const vec_t&                  W,
+                   tensor_t&                    dW,
+                   tensor_t&                    db,
+                   tensor_t&            curr_delta,
+                   tensor_t&            prev_delta,
+                   const core::conv_params& params,
+                   const bool    layer_parallelize) {
 #ifdef CNN_USE_AVX
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
         for_i(prev_out.size(), [&](int sample) {
@@ -547,8 +549,9 @@ inline void conv2d_grad_op_avx_impl(const tensor_t&        prev_out,
     }
 #endif
 
-    conv2d_op_custom_impl(prev_out, W, dW, db, curr_delta,
-                          prev_delta, params, layer_parallelize);
+    conv2d_op_custom(prev_out, W, dW, db, curr_delta,
+                     prev_delta, params, layer_parallelize);
 }
 
+}  // namespace kernels
 }  // namespace tiny_dnn

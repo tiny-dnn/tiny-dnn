@@ -26,7 +26,9 @@
 */
 #pragma once
 #include "tiny_dnn/layers/layer.h"
-#include "tiny_dnn/util/product.h"
+
+#include "tiny_dnn/core/kernels/fully_connected_op.h"
+#include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
 
 namespace tiny_dnn {
 
@@ -47,18 +49,20 @@ public:
     fully_connected_layer(cnn_size_t     in_dim,
                           cnn_size_t     out_dim,
                           bool           has_bias = true,
-                          backend_t      backend_type = backend_t::tiny_dnn,
-                          backend_params b_params = backend_params())
+                          backend_t      backend_type = backend_t::tiny_dnn)
             : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
+        Base::set_backend_type(backend_type);
     }
 
     // move constructor
     fully_connected_layer(fully_connected_layer&& other)
             : Base(std::move(other))
-            , params_(std::move(other.params_)) {
-        init_backend(std::move(Base::backend_type()));
+            , params_(std::move(other.params_))
+            , kernel_fwd_(std::move(other.kernel_fwd_))
+            , kernel_back_(std::move(other.kernel_back_)) {
+        init_backend(std::move(other.engine()));
     }
 
     size_t fan_in_size() const override {
@@ -88,8 +92,14 @@ public:
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>& out_data) override {
-        Base::backend_->fully(in_data, out_data);
+                             std::vector<tensor_t*>&       out_data) override {
+        // forward convolutional op context
+        auto ctx = OpKernelContext(in_data, out_data);
+             ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
+
+        // launch convolutional kernel
+        kernel_fwd_->compute(ctx);
 
         // activations
         this->forward_activation(*out_data[0], *out_data[1]);
@@ -99,14 +109,22 @@ public:
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        Base::backend_->fully(in_data, out_data, out_grad, in_grad);
+        // activations
+        // TODO(edgar/nyanp): refactor and move activations outside
+        this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
+
+        // backward convolutional op context
+        auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
+             ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
+
+        // launch convolutional kernel
+        kernel_back_->compute(ctx);
     }
 
     std::string layer_type() const override { return "fully-connected"; }
 
-protected:
-    fully_params params_;
-
+ private:
     void set_params(const cnn_size_t in_size,
                     const cnn_size_t out_size,
                     bool             has_bias) {
@@ -116,38 +134,29 @@ protected:
     }
 
     void init_backend(backend_t backend_type) {
-        std::shared_ptr<core::backend> backend = nullptr;
+        core::OpKernelConstruction ctx =
+        core::OpKernelConstruction(layer::device(), &params_);
 
-        // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
-            backend = std::make_shared<core::tiny_backend>(&params_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                     return Base::backward_activation(p_delta, out, c_delta);
-                });
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
-#ifdef CNN_USE_AVX
-        } else if (backend_type == backend_t::avx) {
-            backend = std::make_shared<core::avx_backend>(&params_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                });
-#endif
-        } else {
-            throw nn_error("Not supported backend type.");
+        if (backend_type == backend_t::tiny_dnn ||
+            backend_type == backend_t::avx) {
+
+            kernel_fwd_.reset(new FullyConnectedOp(ctx));
+            kernel_back_.reset(new FullyConnectedGradOp(ctx));
+
+            return;
         }
-
-        if (backend) {
-            Base::set_backend(backend);
-            Base::backend_->set_layer(this);
-        } else {
-            throw nn_error("Could not allocate the backend.");
-        }     
+        else {
+            throw nn_error("Not supported engine: " + to_string(backend_type));
+        }
     }
+
+ private:
+    /* The layer parameters */
+    fully_params params_;
+
+    /* Forward and backward ops */
+    std::shared_ptr<core::OpKernel> kernel_fwd_;
+    std::shared_ptr<core::OpKernel> kernel_back_;
 };
 
 } // namespace tiny_dnn

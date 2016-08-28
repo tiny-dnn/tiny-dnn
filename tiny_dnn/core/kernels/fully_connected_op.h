@@ -46,62 +46,57 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/conv2d.h"
-#include "tiny_dnn/core/kernels/conv2d_op_avx.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
-#include "tiny_dnn/core/kernels/conv2d_op_nnpack.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_nnpack.h"
 
 namespace tiny_dnn {
 
-class Conv2dOp : private Conv2d, public core::OpKernel {
+class FullyConnectedOp : public core::OpKernel {
  public:
-    explicit Conv2dOp(const core::OpKernelConstruction& context)
+    explicit FullyConnectedOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
         // incomimg/outcoming data 
         const tensor_t& in_data = context.input(0);
-        const vec_t&          W = context.input(1)[0];
-        const vec_t&       bias = context.input(2)[0];
+        const tensor_t&       W = context.input(1);
+        const tensor_t&    bias = context.input(2);
         tensor_t&      out_data = context.output(1);
-
-        // pad input data
-        tensor_t in_data_padded;
-        Conv2d::setParams(OpKernel::params_);
-        Conv2d::copy_and_pad_input(in_data, in_data_padded);
 
         // initialize outputs
         fill_tensor(out_data, float_t(0));
 
-        // call convolution algorithm depending
-        // on the selected engine type
+        // call the algorithm depending  on the selected engine type
 
         const core::backend_t engine = context.engine();
+        auto params = OpKernel::params_->fully();
 
         if (engine == core::backend_t::tiny_dnn) {
-            kernels::conv2d_op_custom(
-                in_data_padded,
-                W,
-                bias,
+            kernels::fully_connected_op_custom(
+                in_data,
+                W[0],
+                params.has_bias_ ? bias[0] : vec_t(),
                 out_data,
-                Conv2d::params(),
+                params,
                 context.parallelize());
         }
         else if (engine == core::backend_t::nnpack) {
-            kernels::conv2d_op_nnpack(
-                in_data_padded,
-                W,
-                bias,
+            kernels::fully_connected_op_nnpack(
+                in_data,
+                W[0],
+                params.has_bias_ ? bias[0] : vec_t(),
                 out_data,
-                Conv2d::params());
+                params,
+                context.parallelize());
         }
         else if (engine == core::backend_t::avx) {
-            kernels::conv2d_op_avx(
-                in_data_padded,
-                W,
-                bias,
+            kernels::fully_connected_op_avx(
+                in_data,
+                W[0],
+                params.has_bias_ ? bias[0] : vec_t(),
                 out_data,
-                Conv2d::params(),
+                params,
                 context.parallelize());
         }
         else {

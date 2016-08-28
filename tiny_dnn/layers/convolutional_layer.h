@@ -231,7 +231,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) override { 
+                             std::vector<tensor_t*>&       out_data) override {
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
