@@ -109,10 +109,10 @@ public:
         size_t in_dim, out_dim;
         bool has_bias;
 
-        ar(cereal::make_nvp("in_size", in_size),
-           cereal::make_nvp("out_size", out_size),
+        ar(cereal::make_nvp("in_size", in_dim),
+           cereal::make_nvp("out_size", out_dim),
            cereal::make_nvp("has_bias", has_bias));
-        construct(in_size, out_size, has_bias);
+        construct(in_dim, out_dim, has_bias);
     }
 
     template <class Archive>
