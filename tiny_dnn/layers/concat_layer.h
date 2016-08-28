@@ -116,4 +116,4 @@ private:
 
 } // namespace tiny_dnn
 
-CNN_REGISTER_LAYER(concat_layer);
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::concat_layer, concat);

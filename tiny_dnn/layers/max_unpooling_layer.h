@@ -214,3 +214,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+//CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::max_unpooling_layer, maxunpool);

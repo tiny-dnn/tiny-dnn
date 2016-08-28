@@ -584,6 +584,15 @@ public:
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
+    template <typename OutputArchive>
+    void save_model(OutputArchive& oa) {
+        net_.save_model(oa);
+    }
+
+    template <typename InputArchive>
+    void load_model(InputArchive& oa) {
+        net_.load_model(oa);
+    }
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);

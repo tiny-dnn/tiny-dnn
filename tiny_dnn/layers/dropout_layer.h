@@ -189,4 +189,4 @@ private:
 
 } // namespace tiny_dnn
 
-CNN_REGISTER_LAYER(dropout_layer);
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::dropout_layer, dropout);

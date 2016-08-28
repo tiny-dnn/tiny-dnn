@@ -297,3 +297,5 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 };
 
 }  // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::average_pooling_layer, avepool);

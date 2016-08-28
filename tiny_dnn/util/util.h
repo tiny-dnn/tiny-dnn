@@ -46,6 +46,7 @@
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/random.h"
+#include "tiny_dnn/util/serialization_helper.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -390,9 +391,3 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
 #endif
 
 } // namespace tiny_dnn
-
-#define CNN_REGISTER_LAYER(type)
-// \
-//CEREAL_REGISTER_TYPE(tiny_dnn::type);      \
-//CEREAL_REGISTER_POLYMORPHIC_RELATION(tiny_dnn::layer, tiny_dnn::type)
-

@@ -221,12 +221,5 @@ private:
 
 } // namespace tiny_dnn
 
-//@todo we should find better way to register template class
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::identity>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::sigmoid>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::relu>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::leaky_relu>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::elu>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::softmax>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::tan_h>);
-CNN_REGISTER_LAYER(lrn_layer<tiny_dnn::activation::tan_hp1m2>);
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::lrn_layer, lrn);
+

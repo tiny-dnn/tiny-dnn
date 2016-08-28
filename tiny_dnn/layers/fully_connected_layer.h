@@ -169,3 +169,5 @@ protected:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::fully_connected_layer, fully_connected);

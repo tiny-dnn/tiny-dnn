@@ -253,3 +253,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::slice_layer, slice);

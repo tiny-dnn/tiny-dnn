@@ -98,4 +98,4 @@ private:
 
 } // namespace tiny_dnn
 
-CNN_REGISTER_LAYER(elementwise_add_layer);
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::elementwise_add_layer, elementwise_add);

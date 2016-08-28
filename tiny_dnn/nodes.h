@@ -168,6 +168,23 @@ class nodes {
         }
     }
 
+    template <typename OutputArchive>
+    void save_model(OutputArchive & oa) {
+        for (auto n : nodes_) {
+            save_layer(oa, *n);
+        }
+    }
+
+    template <typename InputArchive>
+    void load_model(InputArchive & ia) {
+        own_nodes_.clear();
+        nodes_.clear();
+
+        while (ia.getNodeName()) {
+            push_back(load_layer(ia));
+        }
+    }
+
  protected:
     template <typename T>
     void push_back(T&& node) {
