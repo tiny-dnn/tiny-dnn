@@ -31,7 +31,7 @@
 
 namespace tiny_dnn {
 
-/*TEST(convolutional, setup_tiny) {
+TEST(convolutional, setup_tiny) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
@@ -327,21 +327,21 @@ TEST(convolutional, copy_and_pad_input_valid) {
 
     tensor_t in_tensor = create_tensor(1, 1 * 3 * 3), out_tensor;
 
-    fill_tensor(in_tensor,  float_t(1));
+    fill_tensor(in_tensor, float_t(1));
 
     conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
 
     for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
     }
-}*/
+}
 
 TEST(convolutional, copy_and_pad_input_same) {
 
     conv_params params;
     params.in        = shape3d(5,5,1);
     params.weight    = shape3d(3,3,2);
-    params.in_padded = shape3d(5,5,1);
+    params.in_padded = shape3d(7,7,1);
     params.out       = shape3d(3,3,1);
     params.pad_type  = padding::same; // test target
     params.w_stride  = 1;
@@ -357,14 +357,17 @@ TEST(convolutional, copy_and_pad_input_same) {
 
     tensor_t in_tensor = create_tensor(1, 1 * 3 * 3), out_tensor;
 
-    fill_tensor(in_tensor,  float_t(1));
+    fill_tensor(in_tensor, float_t(1));
 
     conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
 
-    for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
-        std::cout << i << " " << out_tensor[0][i] << "; ";
-        // EXPECT_EQ(out_tensor[0][i], float_t(1));
-    }
+    EXPECT_EQ(out_tensor[0][7],  float_t(0));
+    EXPECT_EQ(out_tensor[0][8],  float_t(1));
+    EXPECT_EQ(out_tensor[0][9],  float_t(1));
+    EXPECT_EQ(out_tensor[0][10], float_t(1));
+    EXPECT_EQ(out_tensor[0][11], float_t(1));
+    EXPECT_EQ(out_tensor[0][12], float_t(1));
+    EXPECT_EQ(out_tensor[0][13], float_t(0));
 }
 
 } // namespace tiny-dnn

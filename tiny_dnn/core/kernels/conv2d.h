@@ -67,7 +67,7 @@ class Conv2d {
         out.reserve(sample_count);
         out.resize(sample_count);
 
-        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+        for_i(true, sample_count, [&](int sample) {
             // alloc temporary buffer.
             out[sample].resize(params_.in.depth_ *
                                params_.in_padded.height_ *
@@ -86,7 +86,7 @@ class Conv2d {
                     pimg += params_.in_padded.width_;
                 }
             }
-        }
+        });
     }
 
     /* Applies unpadding to an input tensor given the convolution parameters
