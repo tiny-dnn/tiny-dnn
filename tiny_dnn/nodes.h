@@ -27,7 +27,10 @@
 #pragma once
 
 #include <vector>
+#include <tuple>
 #include <unordered_map>
+#include <cereal/types/utility.hpp>
+#include <cereal/types/tuple.hpp>
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
@@ -168,21 +171,21 @@ class nodes {
         }
     }
 
-    template <typename OutputArchive>
-    void save_model(OutputArchive & oa) {
+    void to_json(cereal::JSONOutputArchive & oa) const {
         for (auto n : nodes_) {
             save_layer(oa, *n);
         }
+        save_connections(oa);
     }
 
-    template <typename InputArchive>
-    void load_model(InputArchive & ia) {
+    void from_json(cereal::JSONInputArchive & ia) {
         own_nodes_.clear();
         nodes_.clear();
 
         while (ia.getNodeName()) {
             push_back(load_layer(ia));
         }
+        load_connections(ia);
     }
 
  protected:
@@ -218,7 +221,6 @@ class nodes {
         return output;
     }
 
- protected:
     template <typename T>
     void push_back_impl(T&& node, std::true_type) {  // is_rvalue_reference
         own_nodes_.push_back(std::make_shared<
@@ -230,6 +232,9 @@ class nodes {
     void push_back_impl(T&& node, std::false_type) {
         nodes_.push_back(&node);
     }
+
+    virtual void save_connections(cereal::JSONOutputArchive& oa) const { }
+    virtual void load_connections(cereal::JSONInputArchive& ia) { }
 
     /* Nodes which this class has ownership */
     std::vector<std::shared_ptr<layer>> own_nodes_;
@@ -296,6 +301,14 @@ class sequential : public nodes {
             if (out[0] != in[0]) {
                 throw nn_error("");
             }
+        }
+    }
+
+    void load_connections(cereal::JSONInputArchive& ia) override {
+        for (cnn_size_t i = 0; i < nodes_.size() - 1; i++) {
+            auto head = nodes_[i];
+            auto tail = nodes_[i + 1];
+            connect(head, tail, 0, 0);
         }
     }
 
@@ -405,7 +418,76 @@ class graph : public nodes {
         setup(false);
     }
 
- private:
+private:
+    struct _graph_connection {
+        void add_connection(size_t head, size_t tail, size_t head_index, size_t tail_index) {
+            if (!is_connected(head, tail, head_index, tail_index)) {
+                connections.emplace_back(head, tail, head_index, tail_index);
+            }
+        }
+
+        bool is_connected(size_t head, size_t tail, size_t head_index, size_t tail_index) const {
+            return std::find(connections.begin(),
+                             connections.end(),
+                             std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
+        }
+
+        template <typename Archive>
+        void serialize(Archive & ar) {
+            ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
+        }
+
+        std::vector<std::tuple<size_t, size_t, size_t, size_t>> connections;
+        std::vector<size_t> in_nodes, out_nodes;
+    };
+
+
+    void save_connections(cereal::JSONOutputArchive& oa) const override {
+        _graph_connection gc;
+        std::unordered_map<node*, size_t> node2id;
+        size_t idx = 0;
+
+        for (auto n : nodes_) {
+            node2id[n] = idx++;
+        }
+        for (auto l : input_layers_) {
+            gc.in_nodes.push_back(node2id[l]);
+        }
+        for (auto l : output_layers_) {
+            gc.out_nodes.push_back(node2id[l]);
+        }
+
+        for (auto l : input_layers_) {
+            graph_traverse(l, [=](layer& l) {}, [&](edge& e) {
+                auto next = e.next();
+                cnn_size_t head_index = e.prev()->next_port(e);
+
+                for (auto n : next) {
+                    cnn_size_t tail_index = n->prev_port(e);
+                    gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                }
+            });
+        }
+
+        oa(gc);
+    }
+
+    void load_connections(cereal::JSONInputArchive& ia) override {
+        _graph_connection gc;
+        ia(gc);
+
+        for (auto c : gc.connections) {
+            size_t head, tail, head_index, tail_index;
+            std::tie(head, tail, head_index, tail_index) = c;
+            connect(nodes_[head], nodes_[tail], head_index, tail_index);
+        }
+        for (auto in : gc.in_nodes) {
+            input_layers_.push_back(nodes_[in]);
+        }
+        for (auto out : gc.out_nodes) {
+            output_layers_.push_back(nodes_[out]);
+        }
+    }
 
      // normalize indexing back to [sample][layer][feature]
      std::vector<tensor_t> merge_outs() {

@@ -584,15 +584,30 @@ public:
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
-    template <typename OutputArchive>
-    void save_model(OutputArchive& oa) {
-        net_.save_model(oa);
+    void to_json(cereal::JSONOutputArchive& oa) const {
+        net_.to_json(oa);
     }
 
-    template <typename InputArchive>
-    void load_model(InputArchive& oa) {
-        net_.load_model(oa);
+    std::string to_json() const {
+        std::stringstream ss;
+        {
+            cereal::JSONOutputArchive oa(ss);
+            to_json(oa);
+        }
+        return ss.str();
     }
+
+    void from_json(cereal::JSONInputArchive& ia) {
+        net_.from_json(ia);
+    }
+
+    void from_json(const std::string& json_string) {
+        std::stringstream ss;
+        ss << json_string;
+        cereal::JSONInputArchive ia(ss);
+        from_json(ia);
+    }
+
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
