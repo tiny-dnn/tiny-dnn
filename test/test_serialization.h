@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,45 +24,36 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#pragma once
 #include "picotest/picotest.h"
+#include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+namespace tiny_dnn {
 
-#include "test_serialization.h"
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-// TODO(yida): fix broken test
-//#include "test_average_unpooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_deconvolutional_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_batch_norm_layer.h"
-#include "test_nodes.h"
-// TODO(edgar): build apart GPU tests
-//#include "test_core.h"
-#include "test_models.h"
-#include "test_slice_layer.h"
-#include "test_power_layer.h"
-#include "test_quantization.h"
-#include "test_quantized_convolutional_layer.h"
-#include "test_quantized_deconvolutional_layer.h"
-#ifdef CNN_USE_GEMMLOWP
-#include "test_quantized_fully_connected_layer.h"
-#endif
+TEST(serialization, sequential) {
+    network<sequential> net1, net2;
 
-#ifdef CNN_USE_CAFFE_CONVERTER
-#include "test_caffe_converter.h"
-#endif
+    net1 << fully_connected_layer<tan_h>(10, 100)
+         << dropout_layer(100, 0.3, net_phase::test)
+         << fully_connected_layer<softmax>(100, 5);
 
-int main(void) {
-    return RUN_ALL_TESTS();
+    auto json = net1.to_json();
+
+    net2.from_json(json);
+
+    EXPECT_EQ(net1.in_data_size(), net2.in_data_size());
+    EXPECT_EQ(net1.layer_size(), net2.layer_size());
+
+    EXPECT_EQ(net1[0]->in_shape(), net2[0]->in_shape());
+    EXPECT_EQ(net1[1]->in_shape(), net2[1]->in_shape());
+    EXPECT_EQ(net1[2]->in_shape(), net2[2]->in_shape());
+
+    EXPECT_EQ(net1[0]->layer_type(), net2[0]->layer_type());
+    EXPECT_EQ(net1[1]->layer_type(), net2[1]->layer_type());
+    EXPECT_EQ(net1[2]->layer_type(), net2[2]->layer_type());
+
+    EXPECT_FLOAT_EQ(net1.at<dropout_layer>(1).dropout_rate(), net2.at<dropout_layer>(1).dropout_rate());
 }
+
+} // namespace tiny-dnn
