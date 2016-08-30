@@ -97,23 +97,33 @@ class Conv2d {
     void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
         if (params_.pad_type == core::padding::valid) {
             delta_unpadded = delta;
-        } else {
-            for (cnn_size_t sample = 0; sample < delta.size(); sample++) {
-                cnn_size_t idx = 0;
-                const vec_t& src = delta[sample];
-                vec_t& dst = delta_unpadded[sample];
+            return;
+        }
+        
+        const cnn_size_t sample_count = delta.size();
+        delta_unpadded.reserve(sample_count);
+        delta_unpadded.resize(sample_count);
 
-                for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                    float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
-                    idx = params_.in_padded.get_index(params_.weight.width_ / 2,
-                        params_.weight.height_ / 2, c);
-                    const float_t *pin = &src[idx];
+        for (cnn_size_t sample = 0; sample < sample_count; sample++) {
+            // alloc temporary buffer.
+            delta_unpadded[sample].resize(params_.in.depth_ *
+                                          params_.in.height_ *
+                                          params_.in.width_);
+            cnn_size_t idx = 0;
+            const vec_t& src = delta[sample];
+            vec_t& dst = delta_unpadded[sample];
 
-                    for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                        std::copy(pin, pin + params_.in.width_, pdst);
-                        pdst += params_.in.width_;
-                        pin += params_.in_padded.width_;
-                    }
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
+                idx = params_.in_padded.get_index(
+                      params_.weight.width_  / 2,
+                      params_.weight.height_ / 2, c);
+                const float_t *pin = &src[idx];
+
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pdst);
+                    pdst += params_.in.width_;
+                    pin  += params_.in_padded.width_;
                 }
             }
         }
