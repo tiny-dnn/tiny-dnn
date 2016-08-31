@@ -80,9 +80,8 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         // in case we want zero-pading we need to
         // reshape the data container
 
-        if (Conv2d::params().pad_type == core::padding::same) {
-            Conv2d::copy_and_pad_input(prev_delta, prev_delta);
-        }
+        tensor_t prev_delta_padded;
+        Conv2d::copy_and_pad_input(prev_delta, prev_delta_padded);
 
         // call convolution algorithm depending
         // on the selected engine type// apply unpadding
@@ -117,9 +116,7 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         }
 
         // apply unpadding
-        if (Conv2d::params().pad_type == core::padding::same) {
-            Conv2d::copy_and_unpad_delta(prev_delta, prev_delta);
-        }
+        Conv2d::copy_and_unpad_delta(prev_delta_padded, prev_delta);
     }
 };
 
