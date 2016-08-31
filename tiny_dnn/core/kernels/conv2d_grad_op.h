@@ -77,8 +77,15 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         fill_tensor(prev_delta, float_t(0));
         //fill_tensor(curr_delta, float_t(0));
         
+        // in case we want zero-pading we need to
+        // reshape the data container
+
+        if (Conv2d::params().pad_type == core::padding::same) {
+            Conv2d::copy_and_pad_input(prev_delta, prev_delta);
+        }
+
         // call convolution algorithm depending
-        // on the selected engine type
+        // on the selected engine type// apply unpadding
 
         const core::backend_t engine = context.engine();
         
@@ -111,7 +118,7 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
 
         // apply unpadding
         if (Conv2d::params().pad_type == core::padding::same) {
-            Conv2d::copy_and_unpad_delta(prev_out, prev_delta);
+            Conv2d::copy_and_unpad_delta(prev_delta, prev_delta);
         }
     }
 };

@@ -31,7 +31,7 @@
 
 namespace tiny_dnn {
 
-TEST(convolutional, setup_tiny) {
+/*TEST(convolutional, setup_tiny) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
@@ -274,22 +274,22 @@ TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
     EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(test_data.first,
                                                      test_data.second,
                                                      epsilon<float_t>(), GRAD_CHECK_ALL));
-}
+}*/
 
-/*TEST(convolutional, gradient_check8_pad_same) { // sigmoid - absolute eps - padding same
+TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid> (5, 5, 3, 1, 2, padding::same,
+    nn << convolutional_layer<sigmoid> (5, 5, 3, 1, 1, padding::same,
                                         true, 1, 1, core::backend_t::tiny_dnn);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(test_data.first,
-                                                     test_data.second,
-                                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}*/
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
+}
 
-TEST(convolutional, read_write)
+/*TEST(convolutional, read_write)
 {
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
     convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
@@ -371,7 +371,7 @@ TEST(convolutional, copy_and_pad_input_same) {
     tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
 
     fill_tensor(in_tensor, float_t(1));
-
+*/
     /* @in_tensor   --->   @out_tensor
      *
      *    1 1 1             0 0 0 0 0
@@ -382,7 +382,7 @@ TEST(convolutional, copy_and_pad_input_same) {
      *
      */
 
-    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
+/*    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
 
     EXPECT_EQ(out_tensor[0][7],  float_t(0));
     EXPECT_EQ(out_tensor[0][8],  float_t(1));
@@ -445,7 +445,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
     tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
 
     fill_tensor(in_tensor, float_t(0));
-
+*/
     /*
      * @in_tensor   --->   @out_tensor
      *
@@ -457,7 +457,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
      *
      */
 
-    for (int i = 0; i < 3; ++i) {
+/*    for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 3; ++j) {
             in_tensor[0][6 + 5*i + j] = float_t(1);
         }
@@ -468,6 +468,6 @@ TEST(convolutional, copy_and_unpad_delta_same) {
     for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
     }
-}
+}*/
 
 } // namespace tiny-dnn

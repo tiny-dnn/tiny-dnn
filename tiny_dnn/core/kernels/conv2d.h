@@ -63,19 +63,17 @@ class Conv2d {
             return;
         }
 
-        const cnn_size_t sample_count = in.size();
-        out.reserve(sample_count);
-        out.resize(sample_count);
+        tensor_t buf(in.size());
 
-        for_i(true, sample_count, [&](int sample) {
+        for_i(true, buf.size(), [&](int sample) {
             // alloc temporary buffer.
-            out[sample].resize(params_.in.depth_ *
+            buf[sample].resize(params_.in.depth_ *
                                params_.in_padded.height_ *
                                params_.in_padded.width_);
 
             // make padded version in order to avoid corner-case in fprop/bprop
             for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                float_t* pimg = &out[sample][params_.in_padded.get_index(
+                float_t* pimg = &buf[sample][params_.in_padded.get_index(
                                              params_.weight.width_  / 2,
                                              params_.weight.height_ / 2, c)];
                 const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
@@ -87,6 +85,9 @@ class Conv2d {
                 }
             }
         });
+
+        // shrink buffer to output
+        out = buf;
     }
 
     /* Applies unpadding to an input tensor given the convolution parameters
@@ -100,25 +101,20 @@ class Conv2d {
             return;
         }
         
-        const cnn_size_t sample_count = delta.size();
-        delta_unpadded.reserve(sample_count);
-        delta_unpadded.resize(sample_count);
+        tensor_t buf(delta.size());
 
-        for (cnn_size_t sample = 0; sample < sample_count; sample++) {
+        for_i(true, buf.size(), [&](int sample) {
             // alloc temporary buffer.
-            delta_unpadded[sample].resize(params_.in.depth_ *
-                                          params_.in.height_ *
-                                          params_.in.width_);
-            cnn_size_t idx = 0;
-            const vec_t& src = delta[sample];
-            vec_t& dst = delta_unpadded[sample];
+            buf[sample].resize(params_.in.depth_ *
+                               params_.in.height_ *
+                               params_.in.width_);
 
             for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
-                idx = params_.in_padded.get_index(
-                      params_.weight.width_  / 2,
-                      params_.weight.height_ / 2, c);
-                const float_t *pin = &src[idx];
+                const float_t *pin =
+                    &delta[sample][params_.in_padded.get_index(
+                                   params_.weight.width_  / 2,
+                                   params_.weight.height_ / 2, c)];
+                float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
 
                 for (cnn_size_t y = 0; y < params_.in.height_; y++) {
                     std::copy(pin, pin + params_.in.width_, pdst);
@@ -126,7 +122,10 @@ class Conv2d {
                     pin  += params_.in_padded.width_;
                 }
             }
-        }
+        });
+
+        // shrink buffer to output
+        delta_unpadded = buf;
     }
 
     // Set and cast a params raw pointer to a specific convolution
