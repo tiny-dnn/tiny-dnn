@@ -50,6 +50,7 @@ using namespace tiny_dnn::activation;
 //#include "test_core.h"
 #include "test_models.h"
 #include "test_slice_layer.h"
+#include "test_concat_layer.h"
 #include "test_power_layer.h"
 #include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
