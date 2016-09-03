@@ -142,15 +142,22 @@ struct automatic_layer_generator_register {
 
 } // namespace detail
 
+template <typename OutputArchive, typename T>
+void serialize_prolog(OutputArchive& oa, const T*) {
+    oa(cereal::make_nvp("type", serialization_helper::get_instance().serialization_name(typeid(T))));
+}
+
 /**
  * generate layer from cereal's Archive
  **/
 template <typename InputArchive>
 std::shared_ptr<layer> load_layer(InputArchive & ia) {
-    std::string p = ia.getNodeName();
+    //std::string p = ia.getNodeName();
 
     ia.startNode();
 
+    std::string p;
+    ia(cereal::make_nvp("type", p));
     auto l = serialization_helper::get_instance().load(p, ia);
 
     ia.finishNode();

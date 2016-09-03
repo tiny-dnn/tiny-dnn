@@ -40,6 +40,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
+#include <cereal/types/deque.hpp>
 
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/aligned_allocator.h"

@@ -262,6 +262,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_spatial_size", in_spatial_size_),
            cereal::make_nvp("in_channels", in_channels_),
            cereal::make_nvp("epsilon", eps_),

@@ -241,6 +241,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("pool_size", pool_size_), cereal::make_nvp("stride", stride_));
     }
 

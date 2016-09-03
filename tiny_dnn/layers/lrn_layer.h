@@ -158,6 +158,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_shape", in_shape_),
            cereal::make_nvp("size", size_),
            cereal::make_nvp("alpha", alpha_),

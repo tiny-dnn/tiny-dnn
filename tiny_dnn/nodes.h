@@ -36,6 +36,29 @@
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
+namespace cereal {
+
+template <typename Archive>
+void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
+    ar(cereal::make_size_tag(v.size()));
+    for (auto n : v) {
+        tiny_dnn::save_layer(ar, *n);
+    }
+}
+
+
+template <typename Archive>
+void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
+    cereal::size_type size;
+    ar(cereal::make_size_tag(size));
+
+    for (size_t i = 0; i < size; i++) {
+        v.emplace_back(tiny_dnn::load_layer(ar));
+    }
+}
+
+}
+
 namespace tiny_dnn {
 
 /** basic class of various network types (sequential, multi-in/multi-out).
@@ -172,9 +195,7 @@ class nodes {
     }
 
     void to_json(cereal::JSONOutputArchive & oa) const {
-        for (auto n : nodes_) {
-            save_layer(oa, *n);
-        }
+        oa(cereal::make_nvp("nodes", nodes_));
         save_connections(oa);
     }
 
@@ -182,9 +203,12 @@ class nodes {
         own_nodes_.clear();
         nodes_.clear();
 
-        while (ia.getNodeName()) {
-            push_back(load_layer(ia));
+        ia(cereal::make_nvp("nodes", own_nodes_));
+
+        for (auto& n : own_nodes_) {
+            nodes_.push_back(&*n);
         }
+
         load_connections(ia);
     }
 
@@ -469,12 +493,12 @@ private:
             });
         }
 
-        oa(gc);
+        oa(cereal::make_nvp("graph", gc));
     }
 
     void load_connections(cereal::JSONInputArchive& ia) override {
         _graph_connection gc;
-        ia(gc);
+        ia(cereal::make_nvp("graph", gc));
 
         for (auto c : gc.connections) {
             size_t head, tail, head_index, tail_index;

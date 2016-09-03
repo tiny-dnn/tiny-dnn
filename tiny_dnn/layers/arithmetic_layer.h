@@ -89,6 +89,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
     }
 private:

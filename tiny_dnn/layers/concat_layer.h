@@ -106,6 +106,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(in_shapes_);
     }
 

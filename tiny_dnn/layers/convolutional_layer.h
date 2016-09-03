@@ -341,13 +341,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return img;
     }
 
-/*
+
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<convolutional_layer> & construct) {
         size_t w_width, w_height, out_ch, w_stride, h_stride;
         bool has_bias;
         shape3d in;
-        pad_type pad_type;
+        padding pad_type;
         connection_table tbl;
 
         ar(cereal::make_nvp("in_size", in),
@@ -361,11 +361,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", h_stride)
         );
 
-        construct(in, w_width, w_height, out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
+        construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_size", params_.in),
             cereal::make_nvp("window_width", params_.weight.width_),
             cereal::make_nvp("window_height", params_.weight.height_),
@@ -377,7 +378,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", params_.h_stride)
             );
     }
-*/
 
 private:
     void conv_set_params(const shape3d& in,
@@ -618,3 +618,5 @@ private:
 };
 
 }  // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::convolutional_layer, conv);

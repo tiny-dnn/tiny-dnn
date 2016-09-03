@@ -36,9 +36,12 @@ TEST(serialization, sequential) {
 
     net1 << fully_connected_layer<tan_h>(10, 100)
          << dropout_layer(100, 0.3, net_phase::test)
-         << fully_connected_layer<softmax>(100, 5);
+         << fully_connected_layer<softmax>(100, 9)
+         << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
 
     auto json = net1.to_json();
+
+    //std::cout << json;
 
     net2.from_json(json);
 
@@ -48,12 +51,36 @@ TEST(serialization, sequential) {
     EXPECT_EQ(net1[0]->in_shape(), net2[0]->in_shape());
     EXPECT_EQ(net1[1]->in_shape(), net2[1]->in_shape());
     EXPECT_EQ(net1[2]->in_shape(), net2[2]->in_shape());
+    EXPECT_EQ(net1[3]->in_shape(), net2[3]->in_shape());
 
     EXPECT_EQ(net1[0]->layer_type(), net2[0]->layer_type());
     EXPECT_EQ(net1[1]->layer_type(), net2[1]->layer_type());
     EXPECT_EQ(net1[2]->layer_type(), net2[2]->layer_type());
+    EXPECT_EQ(net1[3]->layer_type(), net2[3]->layer_type());
 
     EXPECT_FLOAT_EQ(net1.at<dropout_layer>(1).dropout_rate(), net2.at<dropout_layer>(1).dropout_rate());
+}
+
+TEST(serialization, graph) {
+    network<graph> net1, net2;
+
+    fully_connected_layer<tan_h> f1(3, 2);
+    slice_layer s1(f1, slice_type::slice_samples, 2);
+    fully_connected_layer<softmax> f2(2, 2);
+    fully_connected_layer<elu> f3(2, 2);
+    concat_layer c4(2, 2);
+
+    f1 << s1;
+    s1 << (f2, f3) << c4;
+
+    construct_graph(net1, {&f1}, {&c4});
+
+    auto json = net1.to_json();
+
+    //std::cout << json;
+
+    net2.from_json(json);
+
 }
 
 } // namespace tiny-dnn

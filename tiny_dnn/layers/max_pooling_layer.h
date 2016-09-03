@@ -171,6 +171,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_size", params_.in_), cereal::make_nvp("pool_size", params_.pool_size_), cereal::make_nvp("stride", params_.stride_));
     }
 

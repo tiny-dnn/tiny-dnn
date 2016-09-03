@@ -105,6 +105,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
         ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
     }
 
