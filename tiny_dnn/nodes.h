@@ -40,7 +40,7 @@ namespace cereal {
 
 template <typename Archive>
 void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
-    ar(cereal::make_size_tag(v.size()));
+    ar(cereal::make_size_tag((cereal::size_type)v.size()));
     for (auto n : v) {
         tiny_dnn::save_layer(ar, *n);
     }
@@ -194,23 +194,11 @@ class nodes {
         }
     }
 
-    void to_json(cereal::JSONOutputArchive & oa) const {
-        oa(cereal::make_nvp("nodes", nodes_));
-        save_connections(oa);
-    }
+    template <typename OutputArchive>
+    void save_model(OutputArchive & oa) const;
 
-    void from_json(cereal::JSONInputArchive & ia) {
-        own_nodes_.clear();
-        nodes_.clear();
-
-        ia(cereal::make_nvp("nodes", own_nodes_));
-
-        for (auto& n : own_nodes_) {
-            nodes_.push_back(&*n);
-        }
-
-        load_connections(ia);
-    }
+    template <typename InputArchive>
+    void load_model(InputArchive & ia);
 
  protected:
     template <typename T>
@@ -256,9 +244,6 @@ class nodes {
     void push_back_impl(T&& node, std::false_type) {
         nodes_.push_back(&node);
     }
-
-    virtual void save_connections(cereal::JSONOutputArchive& oa) const { }
-    virtual void load_connections(cereal::JSONInputArchive& ia) { }
 
     /* Nodes which this class has ownership */
     std::vector<std::shared_ptr<layer>> own_nodes_;
@@ -328,7 +313,8 @@ class sequential : public nodes {
         }
     }
 
-    void load_connections(cereal::JSONInputArchive& ia) override {
+    template <typename InputArchive>
+    void load_connections(InputArchive& ia) {
         for (cnn_size_t i = 0; i < nodes_.size() - 1; i++) {
             auto head = nodes_[i];
             auto tail = nodes_[i + 1];
@@ -336,7 +322,12 @@ class sequential : public nodes {
         }
     }
 
+    template <typename OutputArchive>
+    void save_connections(OutputArchive& ) const { }
+
 private:
+    friend class nodes;
+
     std::vector<tensor_t> normalize_out(const std::vector<tensor_t>& out)
     {
         // normalize indexing back to [sample][layer][feature]
@@ -443,6 +434,8 @@ class graph : public nodes {
     }
 
 private:
+    friend class nodes;
+
     struct _graph_connection {
         void add_connection(size_t head, size_t tail, size_t head_index, size_t tail_index) {
             if (!is_connected(head, tail, head_index, tail_index)) {
@@ -465,8 +458,8 @@ private:
         std::vector<size_t> in_nodes, out_nodes;
     };
 
-
-    void save_connections(cereal::JSONOutputArchive& oa) const override {
+    template <typename OutputArchive>
+    void save_connections(OutputArchive& oa) const {
         _graph_connection gc;
         std::unordered_map<node*, size_t> node2id;
         size_t idx = 0;
@@ -496,7 +489,8 @@ private:
         oa(cereal::make_nvp("graph", gc));
     }
 
-    void load_connections(cereal::JSONInputArchive& ia) override {
+    template <typename InputArchive>
+    void load_connections(InputArchive& ia) {
         _graph_connection gc;
         ia(cereal::make_nvp("graph", gc));
 
@@ -545,5 +539,39 @@ private:
     std::vector<layerptr_t> input_layers_;
     std::vector<layerptr_t> output_layers_;
 };
+
+
+
+template <typename OutputArchive>
+void nodes::save_model(OutputArchive & oa) const {
+    oa(cereal::make_nvp("nodes", nodes_));
+
+    if (typeid(*this) == typeid(sequential)) {
+        dynamic_cast<const sequential*>(this)->save_connections(oa);
+    }
+    else {
+        dynamic_cast<const graph*>(this)->save_connections(oa);
+    }
+}
+
+template <typename InputArchive>
+void nodes::load_model(InputArchive & ia) {
+    own_nodes_.clear();
+    nodes_.clear();
+
+    ia(cereal::make_nvp("nodes", own_nodes_));
+
+    for (auto& n : own_nodes_) {
+        nodes_.push_back(&*n);
+    }
+
+    if (typeid(*this) == typeid(sequential)) {
+        dynamic_cast<sequential*>(this)->load_connections(ia);
+    }
+    else {
+        dynamic_cast<graph*>(this)->load_connections(ia);
+    }
+}
+
 
 }  // namespace tiny_dnn

@@ -405,20 +405,30 @@ public:
         return sum_loss;
     }
 
-    /**
-     * save network weights into stream
-     * @attention this saves only network *weights*, not network configuration
-     **/
+    ///< @deprecated use save_weights instead.
     void save(std::ostream& os) const {
+        save_weights(os);
+    }
+
+    ///< @deprecated use load_weights instead.
+    void load(std::istream& is) {
+        load_weights(is);
+    }
+
+    /**
+    * save network weights into stream
+    * @attention this saves only network *weights*, not network configuration
+    **/
+    void save_weights(std::ostream& os) const {
         os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
         net_.save(os);
     }
 
     /**
-     * load network weights from stream
-     * @attention this loads only network *weights*, not network configuration
-     **/
-    void load(std::istream& is) {
+    * load network weights from stream
+    * @attention this loads only network *weights*, not network configuration
+    **/
+    void load_weights(std::istream& is) {
         is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
         net_.load(is);
     }
@@ -584,28 +594,62 @@ public:
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
-    void to_json(cereal::JSONOutputArchive& oa) const {
-        net_.to_json(oa);
+    /**
+     * save the network architecture and the weights of the model in binary format
+     **/
+    void save_model_and_weights(const std::string& filename) const {
+        std::ofstream ofs(filename.c_str(), std::ios::binary|std::ios::out);
+        cereal::BinaryOutputArchive a(ofs);
+        save_model(a);
+        save(ofs);
     }
 
+    /**
+     * load the network architecture and the weights of the model
+    **/
+    void load_model_and_weights(const std::string& filename) {
+        std::ifstream ifs(filename.c_str(), std::ios::binary|std::ios::in);
+        cereal::BinaryInputArchive a(ifs);
+        load_model(a);
+        load(ifs);
+    }
+
+    /**
+     * save the network architecture as given format
+     **/
+    template <typename OutputArchive>
+    void save_model(OutputArchive& oa) const {
+        net_.save_model(oa);
+    }
+
+    /**
+    * load the network architecture
+    **/
+    template <typename InputArchive>
+    void load_model(InputArchive& ia) {
+        net_.load_model(ia);
+    }
+
+    /**
+     * save the network architecture as json string
+     **/
     std::string to_json() const {
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
-            to_json(oa);
+            save_model(oa);
         }
         return ss.str();
     }
 
-    void from_json(cereal::JSONInputArchive& ia) {
-        net_.from_json(ia);
-    }
-
+    /**
+     * load the network architecture from json string
+     **/
     void from_json(const std::string& json_string) {
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
-        from_json(ia);
+        load_model(ia);
     }
 
 protected:

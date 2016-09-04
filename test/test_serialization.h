@@ -29,6 +29,7 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+
 namespace tiny_dnn {
 
 TEST(serialization, sequential) {
@@ -41,7 +42,7 @@ TEST(serialization, sequential) {
 
     auto json = net1.to_json();
 
-    //std::cout << json;
+    std::cout << json;
 
     net2.from_json(json);
 
@@ -63,24 +64,59 @@ TEST(serialization, sequential) {
 
 TEST(serialization, graph) {
     network<graph> net1, net2;
+    vec_t in = {1, 2, 3};
 
-    fully_connected_layer<tan_h> f1(3, 2);
-    slice_layer s1(f1, slice_type::slice_samples, 2);
+    fully_connected_layer<tan_h> f1(3, 4);
+    slice_layer s1(shape3d(2,1,2), slice_type::slice_channels, 2);
     fully_connected_layer<softmax> f2(2, 2);
     fully_connected_layer<elu> f3(2, 2);
-    concat_layer c4(2, 2);
+    elementwise_add_layer c4(2, 2);
+
+    std::vector<layer*> n;
+    n.push_back(&f1);
+    n.push_back(&s1);
+    n.push_back(&f2);
+    n.push_back(&f3);
+
+    {
+        auto path = unique_path();
+        std::vector<int> v = {1,2,3};
+
+        {
+            std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
+            cereal::BinaryOutputArchive ba(ofs);
+            ba(n);
+        }
+
+        std::vector<std::shared_ptr<layer>> l;
+        std::vector<int> v2;
+        {
+            std::ifstream ifs(path.c_str(), std::ios::binary | std::ios::in);
+            cereal::BinaryInputArchive bi(ifs);
+            bi(l);
+        }
+
+    }
+
 
     f1 << s1;
     s1 << (f2, f3) << c4;
 
     construct_graph(net1, {&f1}, {&c4});
 
-    auto json = net1.to_json();
+    net1.init_weight();
+    auto res1 = net1.predict(in);
 
-    //std::cout << json;
+    auto path = unique_path();
 
-    net2.from_json(json);
+    net1.save_model_and_weights(path);
 
+    net2.load_model_and_weights(path);
+
+    auto res2 = net2.predict(in);
+
+    EXPECT_FLOAT_EQ(res1[0], res2[0]);
+    EXPECT_FLOAT_EQ(res1[1], res2[1]);
 }
 
 } // namespace tiny-dnn
