@@ -231,7 +231,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) override {
+                             std::vector<tensor_t*>&       out_data) override { 
+        std::cout << "BEFORE PADDED" << std::endl;
+        copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
+        *in_data[0] = cws_.prev_out_padded_;
+        std::cout << "AFTER PADDED" << std::endl;
+
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
@@ -260,13 +265,23 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        // forward convolutional op context
+        *in_data[0] = cws_.prev_out_padded_;
+
+        if (params_.pad_type == padding::same) {
+            *in_grad[0] = cws_.prev_delta_padded_;
+        }
+
         auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
              ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
 
         // launch convolutional kernel
         kernel_back_->compute(ctx);
+
+        // unpad deltas
+        std::cout << "BEFORE UNPADDED" << std::endl;
+        copy_and_unpad_delta(cws_.prev_delta_padded_, *in_grad[0]);
+        std::cout << "AFTER UNPADDED" << std::endl;
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -369,6 +384,11 @@ private:
         params_.w_stride = w_stride;
         params_.h_stride = h_stride;
         params_.tbl      = tbl;
+
+        // init padding buffer
+        if (params_.pad_type == padding::same) {
+			cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
+		}
     }
 
     cnn_size_t in_length(cnn_size_t in_length,
@@ -447,12 +467,97 @@ private:
     }
 
  private:
+    /* Applies padding to an input tensor given the convolution parameters
+     *
+     * @param in The input tensor
+     * @param out The output tensor with padding applied
+     */
+    void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
+        if (params_.pad_type == core::padding::valid) {
+            out = in;
+            return;
+        }
+
+        tensor_t buf(in.size());
+
+        for_i(true, buf.size(), [&](int sample) {
+            // alloc temporary buffer.
+            //buf[sample].resize(params_.in.depth_ *
+              //                 params_.in_padded.height_ *
+                //               params_.in_padded.width_);
+            buf[sample].resize(params_.in_padded.size());
+
+            // make padded version in order to avoid corner-case in fprop/bprop
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                float_t* pimg = &buf[sample][params_.in_padded.get_index(
+                                             params_.weight.width_  / 2,
+                                             params_.weight.height_ / 2, c)];
+                const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
+
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pimg);
+                    pin  += params_.in.width_;
+                    pimg += params_.in_padded.width_;
+                }
+            }
+        });
+
+        // shrink buffer to output
+        out = buf;
+    }
+
+    /* Applies unpadding to an input tensor given the convolution parameters
+     *
+     * @param in The input tensor
+     * @param out The output tensor with unpadding applied
+     */
+    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
+        if (params_.pad_type == core::padding::valid) {
+            delta_unpadded = delta;
+            return;
+        }
+
+        tensor_t buf(delta.size());
+
+        for_i(true, buf.size(), [&](int sample) {
+            // alloc temporary buffer.
+            //buf[sample].resize(params_.in.depth_ *
+              //                 params_.in.height_ *
+                //               params_.in.width_);
+            buf[sample].resize(params_.in.size());
+
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                const float_t *pin =
+                    &delta[sample][params_.in_padded.get_index(
+                                   params_.weight.width_  / 2,
+                                   params_.weight.height_ / 2, c)];
+                float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
+
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pdst);
+                    pdst += params_.in.width_;
+                    pin  += params_.in_padded.width_;
+                }
+            }
+        });
+
+        // shrink buffer to output
+        delta_unpadded = buf;
+    }
+
+ private:
     /* The convolution parameters */
     conv_params params_;
 
     /* Forward and backward ops */
     std::shared_ptr<core::OpKernel> kernel_fwd_;
     std::shared_ptr<core::OpKernel> kernel_back_;
+
+    /* Buffer to store padded data */
+    struct conv_layer_worker_specific_storage {
+        tensor_t prev_out_padded_;
+        tensor_t prev_delta_padded_;
+    } cws_;
 };
 
 }  // namespace tiny_dnn

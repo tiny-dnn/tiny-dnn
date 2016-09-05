@@ -93,7 +93,7 @@ class Conv2d {
     /* Applies unpadding to an input tensor given the convolution parameters
      *
      * @param in The input tensor
-     * @param out The output tensor with padding applied
+     * @param out The output tensor with unpadding applied
      */
     void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
         if (params_.pad_type == core::padding::valid) {
