@@ -42,7 +42,7 @@ template <typename Archive>
 void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
     ar(cereal::make_size_tag((cereal::size_type)v.size()));
     for (auto n : v) {
-        tiny_dnn::save_layer(ar, *n);
+        tiny_dnn::layer::save_layer(ar, *n);
     }
 }
 
@@ -53,7 +53,7 @@ void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
     ar(cereal::make_size_tag(size));
 
     for (size_t i = 0; i < size; i++) {
-        v.emplace_back(tiny_dnn::load_layer(ar));
+        v.emplace_back(tiny_dnn::layer::load_layer(ar));
     }
 }
 

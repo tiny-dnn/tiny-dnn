@@ -126,7 +126,9 @@ std::shared_ptr<T> load_layer_impl(InputArchive& ia) {
 
 template <typename OutputArchive, typename T>
 void save_layer_impl(OutputArchive& oa, const T *layer) {
-    oa (cereal::make_nvp(serialization_helper<cereal::traits::detail::get_input_from_output<OutputArchive>::type, OutputArchive>::get_instance().serialization_name(typeid(T)), *layer));
+    typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
+
+    oa (cereal::make_nvp(serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(T)), *layer));
 }
 
 template <typename InputArchive, typename OutputArchive, typename T>
@@ -142,44 +144,22 @@ struct automatic_layer_generator_register {
 
 template <typename OutputArchive, typename T>
 void serialize_prolog(OutputArchive& oa, const T*) {
+    typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
+
     oa(cereal::make_nvp("type",
-                        serialization_helper<cereal::traits::detail::get_input_from_output<OutputArchive>::type, OutputArchive>::get_instance()
+                        serialization_helper<InputArchive, OutputArchive>::get_instance()
                         .serialization_name(typeid(T))));
 }
 
-/**
- * generate layer from cereal's Archive
- **/
-template <typename InputArchive>
-std::shared_ptr<layer> load_layer(InputArchive & ia) {
-    std::string p;
-    ia(cereal::make_nvp("type", p));
-    auto l = serialization_helper<InputArchive, cereal::traits::detail::get_output_from_input<InputArchive>::type>::get_instance().load(p, ia);
+template <typename T>
+void start_loading_layer(T & ar) {}
 
-    return l;
-}
+template <typename T>
+void finish_loading_layer(T & ar) {}
 
-std::shared_ptr<layer> load_layer(cereal::JSONInputArchive & ia) {
-    //std::string p = ia.getNodeName();
+void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
-    ia.startNode();
-
-    std::string p;
-    ia(cereal::make_nvp("type", p));
-    auto l = serialization_helper<cereal::JSONInputArchive, cereal::JSONOutputArchive>::get_instance().load(p, ia);
-
-    ia.finishNode();
-
-    return l;
-}
-
-template <typename OutputArchive>
-void save_layer(OutputArchive & oa, const layer& l) {
-    typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
-
-    std::string name = serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(l));
-    serialization_helper<InputArchive, OutputArchive>::get_instance().save(name, oa, &l);
-}
+void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
 
 } // namespace tiny_dnn
 

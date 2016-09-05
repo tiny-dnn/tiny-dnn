@@ -567,6 +567,32 @@ class layer : public node {
         }
     }
 
+    /**
+    * generate layer from cereal's Archive
+    **/
+    template <typename InputArchive>
+    static std::shared_ptr<layer> load_layer(InputArchive & ia) {
+        typedef typename cereal::traits::detail::get_output_from_input<InputArchive>::type OutputArchive;
+
+        start_loading_layer(ia);
+
+        std::string p;
+        ia(cereal::make_nvp("type", p));
+        auto l = serialization_helper<InputArchive, OutputArchive>::get_instance().load(p, ia);
+
+        finish_loading_layer(ia);
+
+        return l;
+    }
+
+    template <typename OutputArchive>
+    static void save_layer(OutputArchive & oa, const layer& l) {
+        typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
+
+        std::string name = serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(l));
+        serialization_helper<InputArchive, OutputArchive>::get_instance().save(name, oa, &l);
+    }
+
  protected:
     bool initialized_;
     bool parallelize_;
