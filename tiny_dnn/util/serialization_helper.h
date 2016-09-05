@@ -165,7 +165,7 @@ void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
 
 #define CNN_REGISTER_LAYER_SERIALIZER_BODY(layer_type, layer_name, unique_name) \
 static tiny_dnn::detail::automatic_layer_generator_register<cereal::JSONInputArchive, cereal::JSONOutputArchive, layer_type> s_register_##unique_name(layer_name);\
-static tiny_dnn::detail::automatic_layer_generator_register<cereal::BinaryInputArchive, cereal::BinaryOutputArchive, layer_type> s_register_binary_##unique_name(layer_name);
+static tiny_dnn::detail::automatic_layer_generator_register<cereal::BinaryInputArchive, cereal::BinaryOutputArchive, layer_type> s_register_binary_##unique_name(layer_name)
 
 #define CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATION(layer_type, activation_type, layer_name) \
 CNN_REGISTER_LAYER_SERIALIZER_BODY(layer_type<tiny_dnn::activation::activation_type>, #layer_name "<" #activation_type ">", layer_name##_##activation_type)
