@@ -27,7 +27,7 @@
 #pragma once
 
 #include "tiny_dnn/core/backend.h"
-#include "tiny_dnn/core/kernels/nnp_conv2d_kernel.h"
+// #include "tiny_dnn/core/kernels/nnp_conv2d_kernel.h"
 #include "tiny_dnn/core/kernels/nnp_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/nnp_maxpool_kernel.h"
 #include "tiny_dnn/core/kernels/nnp_fully_kernel.h"
@@ -82,7 +82,7 @@ class nnp_backend : public backend {
 
         fill_tensor(a, float_t(0));
 
-        kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
+        // kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
     }
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,

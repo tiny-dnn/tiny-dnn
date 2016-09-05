@@ -75,6 +75,8 @@ class Conv2d {
                 out[sample] = in[sample];
             }
             else {
+                // alloc temporary buffer.
+                buf[sample].resize(params_.in.depth_ * params_.in_padded.height_ * params_.in_padded.width_);
                 vec_t* dst = &buf[sample];
                 
                 // make padded version in order to avoid corner-case in fprop/bprop

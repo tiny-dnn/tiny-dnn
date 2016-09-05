@@ -160,8 +160,8 @@ inline std::shared_ptr<layer> create_ave_pool(int pool_size,
     // tiny-dnn has trainable parameter in average-pooling layer
     float_t weight = float_t(1) / sqr(pool_size);
 
-    vec_t& w = *ap->get_weights()[0];
-    vec_t& b = *ap->get_weights()[1];
+    vec_t& w = *ap->weights()[0];
+    vec_t& b = *ap->weights()[1];
 
     //std::fill(ap->weight().begin(), ap->weight().end(), weight);
     //std::fill(ap->bias().begin(), ap->bias().end(), float_t(0));
@@ -181,6 +181,7 @@ std::shared_ptr<layer> create_softmax(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape, shape_t *) {
     auto sm = std::make_shared<linear_layer<activation::softmax>>(
         bottom_shape.size());
+    sm->init_weight();
     return sm;
 }
 
@@ -314,11 +315,11 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
         throw nn_error(
             std::string("layer size mismatch!") +
             "caffe(" + src.name() + "):" + to_string(weights.data_size()) + "\n" +
-            "tiny-dnn(" + dst->layer_type() + "):" + to_string(dst->get_weights().size()));
+            "tiny-dnn(" + dst->layer_type() + "):" + to_string(dst->weights().size()));
     }
 
-    vec_t& w = *dst->get_weights()[0];
-    vec_t& b = *dst->get_weights()[1];
+    vec_t& w = *dst->weights()[0];
+    vec_t& b = *dst->weights()[1];
 
     // fill weights
     for (size_t o = 0; o < dst->out_size(); o++) {
@@ -399,8 +400,8 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
         table = connection_table(conv_param.group(), in_channels, out_channels);
     }
 
-    vec_t& w = *dst->get_weights()[0];
-    vec_t& b = *dst->get_weights()[1];
+    vec_t& w = *dst->weights()[0];
+    vec_t& b = *dst->weights()[1];
 
     // fill weights
     for (int o = 0; o < out_channels; o++) {
@@ -448,8 +449,8 @@ inline void load_weights_deconv(const caffe::LayerParameter& src, layer *dst) {
         table = connection_table(deconv_param.group(), in_channels, out_channels);
     }
 
-    vec_t& w = *dst->get_weights()[0];
-    vec_t& b = *dst->get_weights()[1];
+    vec_t& w = *dst->weights()[0];
+    vec_t& b = *dst->weights()[1];
 
     // fill weights
     for (int o = 0; o < out_channels; o++) {
@@ -482,7 +483,7 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
 
     //TODO
     //if (dst->weight().size()) {
-    if (dst->get_weights().size()) {
+    if (dst->weights().size()) {
         layer_size_t pool_size = 0;
 
         if (!get_kernel_size_2d(pool_param, &pool_size)) {
@@ -501,8 +502,8 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
             dst->init_bias();
         }*/
 
-        vec_t& w = *dst->get_weights()[0];
-        vec_t& b = *dst->get_weights()[1];
+        vec_t& w = *dst->weights()[0];
+        vec_t& b = *dst->weights()[1];
 
         if (!w.empty()) {
             std::fill(w.begin(), w.end(), weight);

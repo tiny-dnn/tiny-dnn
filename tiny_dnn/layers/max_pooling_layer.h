@@ -123,7 +123,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) {
+                             std::vector<tensor_t*>&       out_data) override {
         // launch maxpool kernel
         Base::backend_->maxpool(in_data, out_data);
 
@@ -134,7 +134,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) {
+                          std::vector<tensor_t*>&       in_grad) override {
         // launch maxpool kernel
         Base::backend_->maxpool(in_data, out_data, out_grad, in_grad);
     }
@@ -156,6 +156,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     size_t pool_size() const { return params_.pool_size_; }
 
     void set_sample_count(cnn_size_t sample_count) override {
+        Base::set_sample_count(sample_count);
         max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out_.size()));
     }
 

@@ -70,13 +70,17 @@ public:
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
-        const tensor_t& in1 = *in_data[0];
-        tensor_t& out = *out_data[0];
-
-        auto outiter = out.begin();
-
-        for (cnn_size_t i = 0; i < in_shapes_.size(); i++)
-            outiter = std::copy(in1.begin(), in1.end(), outiter);
+        cnn_size_t num_samples = (*out_data[0]).size();
+        
+        for (cnn_size_t s = 0; s < num_samples; s++) {
+            float_t* outs = &(*out_data[0])[s][0];
+            
+            for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {
+                const float_t* ins = &(*in_data[i])[s][0];
+                cnn_size_t dim = in_shapes_[i].size();
+                outs = std::copy(ins, ins + dim, outs);
+            }
+        }
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,
@@ -86,13 +90,17 @@ public:
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
 
-        tensor_t& curr_delta = *out_grad[0];
-        auto src = curr_delta.begin();
-
-        for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {
-            tensor_t& prev_delta = *in_grad[i];
-            std::copy(src, src + prev_delta.size(), prev_delta.begin());
-            src += prev_delta.size();
+        cnn_size_t num_samples = (*out_grad[0]).size();
+        
+        for (cnn_size_t s = 0; s < num_samples; s++) {
+            const float_t* outs = &(*out_grad[0])[s][0];
+            
+            for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {
+                cnn_size_t dim = in_shapes_[i].size();
+                float_t* ins = &(*in_grad[i])[s][0];
+                std::copy(outs, outs + dim, ins);
+                outs += dim;
+            }
         }
     }
 

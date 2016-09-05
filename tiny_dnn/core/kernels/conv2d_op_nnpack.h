@@ -41,15 +41,20 @@ inline nnp_convolution_kernel_transform_strategy nnp_kts() {
 #endif
 
 namespace tiny_dnn {
-namespace core {
 namespace kernels {
 
-inline void nnp_conv2d_kernel(const conv_params& params,
-                              const std::vector<const vec_t*>& in,
-                              const vec_t&       W,
-                              const vec_t&       bias,
-                              tensor_t&          a) {
+inline void
+conv2d_op_nnpack(const tensor_t&         in_data,
+                 const vec_t&                  W,
+                 const vec_t&               bias,
+                 tensor_t&              out_data,
+                 const core::conv_params& params) {
 #ifdef CNN_USE_NNPACK
+    nnp_status init_status = nnp_initialize();
+    if (init_status != nnp_status_success) {
+        throw nn_error("Cannot initialize NNPACK.");
+    }
+
     // TOOD: use input config
     const auto algorithm = nnp_algorithm();
     const auto kernel_transform_strategy = nnp_kts();
@@ -79,11 +84,11 @@ inline void nnp_conv2d_kernel(const conv_params& params,
         static_cast<size_t>(dx/2)   // left
     };
 
-    const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);
+    const float* input_ptr  = reinterpret_cast<const float*>(&in_data[0]);
     const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
     const float* bias_ptr   = reinterpret_cast<const float*>(&bias[0]);
 
-    float* output_ptr = reinterpret_cast<float*>(&a[0]);
+    float* output_ptr = reinterpret_cast<float*>(&out_data[0]);
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -117,5 +122,4 @@ inline void nnp_conv2d_kernel(const conv_params& params,
 }
 
 }  // namespace kernels
-}  // namespace core
 }  // namespace tiny_dnn

@@ -29,19 +29,19 @@
 #include "tiny_dnn/core/params/fully_params.h"
 
 namespace tiny_dnn {
-namespace core {
 namespace kernels {
 
-inline void nnp_fully_connected_kernel(const fully_params& params,
-                                       const tensor_t&     in,
-                                       const vec_t&        W,
-                                       vec_t&              b,
-                                       tensor_t&           a,
-                                       const bool          layer_parallelize) {
+inline void
+fully_connected_op_nnpack(const tensor_t&     in_data,
+                          const vec_t&        W,
+                          const vec_t&        bias,
+                          tensor_t&           out_data,
+                          const fully_params& params,
+                          const bool          layer_parallelize) {
 #ifdef CNN_USE_NNPACK
     const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
-    const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);
-    float*       output_ptr = reinterpret_cast<float*>(&a[0]);
+    const float* input_ptr  = reinterpret_cast<const float*>(&in_data[0]);
+    float*       output_ptr = reinterpret_cast<float*>(&out_data[0]);
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -70,9 +70,10 @@ inline void nnp_fully_connected_kernel(const fully_params& params,
             // a[i] += b[i];
         });
     }
+#else
+    throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
 
 }  // namespace kernels
-}  // namespace core
 }  // namespace tiny_dnn

@@ -30,18 +30,10 @@
 #include <string>
 #include <algorithm>
 
-#include "tiny_dnn/core/framework/op_kernel.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op.h"
+#include "tiny_dnn/core/kernels/conv2d_grad_op.h"
 #include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
-
-#include "tiny_dnn/core/backend_tiny.h"
-#include "tiny_dnn/core/backend_nnp.h"
-#include "tiny_dnn/core/backend_dnn.h"
-
-#ifdef CNN_USE_AVX
-#include "tiny_dnn/core/backend_avx.h"
-#endif
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/image.h"
@@ -203,8 +195,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
     convolutional_layer(convolutional_layer&& other)  // NOLINT
             : Base(std::move(other))
             , params_(std::move(other.params_))
-            , prev_delta2_padded_(std::move(other.prev_delta2_padded_))
-            , cws_(std::move(other.cws_))
             , kernel_fwd_(std::move(other.kernel_fwd_))
             , kernel_back_(std::move(other.kernel_back_)) {
         init_backend(std::move(other.engine()));
@@ -228,10 +218,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) { 
+                             std::vector<tensor_t*>&       out_data) override {
         // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
 
         // launch convolutional kernel
         kernel_fwd_->compute(ctx);
@@ -251,7 +242,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     void back_propagation(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) {
+                          std::vector<tensor_t*>&       in_grad) override {
         // activations
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
@@ -405,16 +396,6 @@ private:
         params_.tbl      = tbl;
     }
 
-    void init() {
-        if (params_.pad_type == padding::same) {
-            cws_.prev_out_buf_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
-            cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
-        }
-        else {
-            cws_.prev_out_buf_.clear();
-        }
-    }
-
     cnn_size_t in_length(cnn_size_t in_length,
                          cnn_size_t window_size, padding pad_type) const {
         return pad_type == padding::same ?
@@ -454,68 +435,7 @@ private:
                conv_out_length(in_height, window_height, h_stride, pad_type);
     }
 
-    // Deprecated: implemented now in kernels/Convd2d.h
-    void copy_and_pad_input(const tensor_t& in) {
-        conv_layer_worker_specific_storage& cws = cws_;
-        
-        cnn_size_t sample_count = in.size();
-
-        cws.prev_out_padded_.resize(sample_count);
-
-        if (params_.pad_type == padding::same) {
-            cws.prev_out_buf_.resize(sample_count, cws.prev_out_buf_[0]);
-            cws.prev_delta_padded_.resize(sample_count, cws.prev_delta_padded_[0]);
-        }
-
-        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
-            if (params_.pad_type == padding::valid) {
-                cws.prev_out_padded_[sample] = &(in[sample]);
-            }
-            else {
-                vec_t* dst = &cws.prev_out_buf_[sample];
-
-                // make padded version in order to avoid corner-case in fprop/bprop
-                for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                    float_t *pimg = &(*dst)[params_.in_padded.get_index(params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
-                    const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
-
-                    for (cnn_size_t y = 0; y < params_.in.height_; y++, pin += params_.in.width_, pimg += params_.in_padded.width_) {
-                        std::copy(pin, pin + params_.in.width_, pimg);
-                    }
-                }
-
-                cws.prev_out_padded_[sample] = &(cws.prev_out_buf_[sample]);
-            }
-        }
-    }
-
-    // Deprecated: implemented now in kernels/Convd2d.h
-    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
-        if (params_.pad_type == padding::valid) {
-            delta_unpadded = delta;
-        } else {
-            for (cnn_size_t sample = 0; sample < delta.size(); sample++) {
-                cnn_size_t idx = 0;
-                const vec_t& src = delta[sample];
-                vec_t& dst = delta_unpadded[sample];
-
-                for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                    float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
-                    idx = params_.in_padded.get_index(params_.weight.width_ / 2,
-                        params_.weight.height_ / 2, c);
-                    const float_t *pin = &src[idx];
-
-                    for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                        std::copy(pin, pin + params_.in.width_, pdst);
-                        pdst += params_.in.width_;
-                        pin += params_.in_padded.width_;
-                    }
-                }
-            }
-        }
-    }
-
-    void createOp() {
+    void createOp() override {
         init_backend(layer::engine());
     }
 
@@ -523,17 +443,13 @@ private:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn) {
-            kernel_fwd_.reset(new Conv2dCustomForwardOp(ctx));
-            kernel_back_.reset(new Conv2dCustomBackwardOp(ctx));
-            return;
-        }
-        else if (backend_type == backend_t::nnpack) {
-            throw nn_error("Not implemented engine: " + to_string(backend_type));
-            return;
-        }
-        else if (backend_type == backend_t::avx) {
-            throw nn_error("Not implemented engine: " + to_string(backend_type));
+        if (backend_type == backend_t::tiny_dnn ||
+            backend_type == backend_t::nnpack ||
+            backend_type == backend_t::avx) {
+            
+            kernel_fwd_.reset(new Conv2dOp(ctx));
+            kernel_back_.reset(new Conv2dGradOp(ctx));
+
             return;
         }
 
@@ -544,6 +460,7 @@ private:
             return;*/
         }
         else if (backend_type == backend_t::libdnn) {
+            if (layer::device() == nullptr) return;
             kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
             kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
             return;
@@ -552,67 +469,13 @@ private:
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
 
-        /*std::shared_ptr<core::backend> backend = nullptr;
-
-        // allocate new backend
-        if (backend_type == backend_t::tiny_dnn ||
-            // TODO(edgar): remove this after OpenCL refactor 
-            backend_type == backend_t::OpenCL) {
-            backend = std::make_shared<core::tiny_backend>(&params_,
-                [this](const tensor_t& in) {
-                    return copy_and_pad_input(in);
-                },
-                [this](const tensor_t& delta, tensor_t& dst) {
-                    return copy_and_unpad_delta(delta, dst);
-                },
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &cws_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_,
-                [this](const tensor_t& in) {
-                    return copy_and_pad_input(in);
-                },
-                &cws_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
-#ifdef CNN_USE_AVX
-        } else if (backend_type == backend_t::avx) {
-            backend = std::make_shared<core::avx_backend>(&params_,
-                [this](const tensor_t& in) {
-                    return copy_and_pad_input(in);
-                },
-                [this](const tensor_t& delta, tensor_t& dst) {
-                    return copy_and_unpad_delta(delta, dst);
-                },
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &cws_);
-#endif
-        } else {
-            throw nn_error("Not supported backend type.");
-        }
-
-        if (backend) {
-            Base::set_backend(backend);
-            Base::backend_->set_layer(this);
-        } else {
-            throw nn_error("Could not allocate the backend.");
-        }*/
     }
 
  private:
     /* The convolution parameters */
     conv_params params_;
 
-    /* Workers buffers */
-    vec_t prev_delta2_padded_;               // Deprecated
-    conv_layer_worker_specific_storage cws_; // Deprecated
-
+    /* Forward and backward ops */
     std::shared_ptr<core::OpKernel> kernel_fwd_;
     std::shared_ptr<core::OpKernel> kernel_back_;
 };

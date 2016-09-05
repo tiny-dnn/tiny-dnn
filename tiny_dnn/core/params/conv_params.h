@@ -26,12 +26,10 @@
 */
 #pragma once
 
+#include "params.h"
+
 namespace tiny_dnn {
 namespace core {
-
-// base class to handle multiple params
-class Params {
-};
 
 enum class padding {
     valid,  ///< use valid pixels of input

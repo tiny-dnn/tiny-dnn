@@ -84,7 +84,6 @@ TEST(max_pool, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 1);             // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
 }
 
 #ifdef CNN_USE_NNPACK
@@ -107,7 +106,6 @@ TEST(max_pool, setup_nnp) {
     EXPECT_EQ(l.fan_in_size(), 4);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 1);             // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
-    EXPECT_TRUE(l.get_backend_type() == backend_t::nnpack);
 }
 #endif
 
@@ -147,7 +145,7 @@ TEST(max_pool, forward_stride_nnp) {
         4, 2
     };
 
-    vec_t res = l.forward({ in })[0];
+    vec_t res = l.forward({ {in} })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);

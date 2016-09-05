@@ -51,11 +51,10 @@ TEST(quantized_deconvolutional, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_deconv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
 }
 
 #ifdef CNN_USE_NNPACK
-TEST(quantized_deconvolutional, setup_nnp) {
+TEST(quantized_deconvolutional, deconvolutional_setup_nnp) {
     quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::nnpack);
 
@@ -75,7 +74,6 @@ TEST(quantized_deconvolutional, setup_nnp) {
     EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
     EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_deconv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::nnpack);
 }
 #endif
 
