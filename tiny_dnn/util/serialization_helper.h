@@ -135,8 +135,8 @@ template <typename InputArchive, typename OutputArchive, typename T>
 struct automatic_layer_generator_register {
     explicit automatic_layer_generator_register(const std::string& s) {
         serialization_helper<InputArchive, OutputArchive>::get_instance().register_loader(s, load_layer_impl<InputArchive, T>);
-        serialization_helper<InputArchive, OutputArchive>::get_instance().register_type<T>(s);
-        serialization_helper<InputArchive, OutputArchive>::get_instance().register_saver<T>(s, save_layer_impl<OutputArchive, T>);
+        serialization_helper<InputArchive, OutputArchive>::get_instance().template register_type<T>(s);
+        serialization_helper<InputArchive, OutputArchive>::get_instance().template register_saver<T>(s, save_layer_impl<OutputArchive, T>);
     }
 };
 
