@@ -162,13 +162,13 @@ class nodes {
         return nodes_.back()->out_value_range().second;
     }
 
-    virtual void save(std::ostream& os) const { // NOLINT
+    void save(std::ostream& os) const { // NOLINT
         for (auto& l : nodes_) {
             l->save(os);
         }
     }
 
-    virtual void load(std::istream& is) { // NOLINT
+    void load(std::istream& is) { // NOLINT
         setup(false);
         for (auto& l : nodes_) {
             l->load(is);
@@ -199,6 +199,21 @@ class nodes {
 
     template <typename InputArchive>
     void load_model(InputArchive & ia);
+
+
+    template <typename OutputArchive>
+    void save_weights(OutputArchive & oa) const {
+        for (auto n : nodes_) {
+            oa(*n);
+        }
+    }
+
+    template <typename InputArchive>
+    void load_weights(InputArchive & ia) {
+        for (auto n : nodes_) {
+            ia(*n);
+        }
+    }
 
  protected:
     template <typename T>

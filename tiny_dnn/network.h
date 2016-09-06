@@ -405,49 +405,6 @@ public:
         return sum_loss;
     }
 
-    ///< @deprecated use save_weights instead.
-    void save(std::ostream& os) const {
-        save_weights(os);
-    }
-
-    ///< @deprecated use load_weights instead.
-    void load(std::istream& is) {
-        load_weights(is);
-    }
-
-    /**
-    * save network weights into stream
-    * @attention this saves only network *weights*, not network configuration
-    **/
-    void save_weights(std::ostream& os) const {
-        os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
-        net_.save(os);
-    }
-
-    /**
-    * load network weights from stream
-    * @attention this loads only network *weights*, not network configuration
-    **/
-    void load_weights(std::istream& is) {
-        is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
-        net_.load(is);
-    }
-
-    /**
-     * load network weights from filepath, 30 times faster than stream reading
-     * @attention this loads only network *weights*, not network configuration
-     **/
-    void fast_load(const char* filepath) {
-        FILE* stream = fopen(filepath, "r");
-        std::vector<float_t> data;
-        double temp;
-        while (fscanf(stream, "%lf", &temp) > 0)
-            data.push_back(float_t(temp));
-        fclose(stream);
-
-        net_.load(data);
-    }
-
     /**
     * checking gradients calculated by bprop
     * detail information:
@@ -601,7 +558,7 @@ public:
         std::ofstream ofs(filename.c_str(), std::ios::binary|std::ios::out);
         cereal::BinaryOutputArchive a(ofs);
         save_model(a);
-        save(ofs);
+        save_weights(a);
     }
 
     /**
@@ -611,7 +568,7 @@ public:
         std::ifstream ifs(filename.c_str(), std::ios::binary|std::ios::in);
         cereal::BinaryInputArchive a(ifs);
         load_model(a);
-        load(ifs);
+        load_weights(a);
     }
 
     /**
@@ -628,6 +585,24 @@ public:
     template <typename InputArchive>
     void load_model(InputArchive& ia) {
         net_.load_model(ia);
+    }
+
+    /**
+    * save network weights into stream
+    * @attention this saves only network *weights*, not network configuration
+    **/
+    template <typename OutputArchive>
+    void save_weights(OutputArchive& os) const {
+        net_.save_weights(os);
+    }
+
+    /**
+    * load network weights from stream
+    * @attention this loads only network *weights*, not network configuration
+    **/
+    template <typename InputArchive>
+    void load_weights(InputArchive& is) {
+        net_.load_weights(is);
     }
 
     /**
@@ -650,6 +625,33 @@ public:
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
         load_model(ia);
+    }
+
+    ///< @deprecated use save_weights instead.
+    void save(std::ostream& os) const {
+        os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
+        net_.save(os);
+    }
+
+    ///< @deprecated use load_weights instead.
+    void load(std::istream& is) {
+        is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
+        net_.load(is);
+    }
+
+    /**
+    * load network weights from filepath, 30 times faster than stream reading
+    * @deprecated use load_weights instead.
+    **/
+    void fast_load(const char* filepath) {
+        FILE* stream = fopen(filepath, "r");
+        std::vector<float_t> data;
+        double temp;
+        while (fscanf(stream, "%lf", &temp) > 0)
+            data.push_back(float_t(temp));
+        fclose(stream);
+
+        net_.load(data);
     }
 
 protected:

@@ -339,6 +339,14 @@ class layer : public node {
 
     /////////////////////////////////////////////////////////////////////////
     // save/load
+    template <typename Archive>
+    void serialize(Archive & ar) {
+        auto all_weights = weights();
+        for (auto weight : all_weights) {
+            ar(*weight);
+        }
+        initialized_ = true;
+    }
 
     virtual void save(std::ostream& os) const { // NOLINT
         /*if (is_exploded()) {
