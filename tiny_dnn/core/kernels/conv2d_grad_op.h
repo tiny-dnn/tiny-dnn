@@ -92,7 +92,6 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
                 prev_delta,
                 Conv2d::params(),
                 context.parallelize());
-
         }
         else if (engine == core::backend_t::avx) {
             kernels::conv2d_grad_op_avx(
