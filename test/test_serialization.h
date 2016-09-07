@@ -32,7 +32,7 @@
 
 namespace tiny_dnn {
 
-TEST(serialization, sequential) {
+TEST(serialization, sequential_to_json) {
     network<sequential> net1, net2;
 
     net1 << fully_connected_layer<tan_h>(10, 100)
@@ -41,8 +41,6 @@ TEST(serialization, sequential) {
          << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
 
     auto json = net1.to_json();
-
-    std::cout << json;
 
     net2.from_json(json);
 
@@ -62,7 +60,56 @@ TEST(serialization, sequential) {
     EXPECT_FLOAT_EQ(net1.at<dropout_layer>(1).dropout_rate(), net2.at<dropout_layer>(1).dropout_rate());
 }
 
-TEST(serialization, graph) {
+TEST(serialization, sequential_model) {
+    network<sequential> net1, net2;
+
+    net1 << fully_connected_layer<tan_h>(10, 16)
+         << average_pooling_layer<relu>(4, 4, 1, 2)
+         << power_layer(shape3d(2,2,1),  0.5f);
+
+    net1.init_weight();
+
+    auto path = unique_path();
+    net1.save(path, content_type::model);
+
+    net2.load(path, content_type::model);
+
+    for (int i = 0; i < 3; i++) {
+        ASSERT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
+        ASSERT_EQ(net1[i]->out_shape(), net2[i]->out_shape());
+        ASSERT_EQ(net1[i]->layer_type(), net2[i]->layer_type());
+    }
+}
+
+
+TEST(serialization, sequential_weights) {
+    network<sequential> net1, net2;
+    vec_t data = {1,2,3,4,5,0};
+
+    net1 << batch_normalization_layer(3,2,0.01f,0.99f,net_phase::train)
+         << linear_layer<elu>(3*2, 2.0f, 0.5f);
+
+    net1.init_weight();
+    net1.at<batch_normalization_layer>(0).update_immidiately(true);
+    net1.predict(data);
+    net1.set_netphase(net_phase::test);
+
+    auto path = unique_path();
+    net1.save(path, content_type::weights_and_model);
+
+    net2.load(path, content_type::weights_and_model);
+
+    auto res1 = net1.predict(data);
+    auto res2 = net2.predict(data);
+
+    EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+
+    for (int i = 0; i < 6; i++) {
+        EXPECT_FLOAT_EQ(res1[i], res2[i]);
+    }
+}
+
+TEST(serialization, graph_model_and_weights) {
     network<graph> net1, net2;
     vec_t in = {1, 2, 3};
 
@@ -71,33 +118,6 @@ TEST(serialization, graph) {
     fully_connected_layer<softmax> f2(2, 2);
     fully_connected_layer<elu> f3(2, 2);
     elementwise_add_layer c4(2, 2);
-
-    std::vector<layer*> n;
-    n.push_back(&f1);
-    n.push_back(&s1);
-    n.push_back(&f2);
-    n.push_back(&f3);
-
-    {
-        auto path = unique_path();
-        std::vector<int> v = {1,2,3};
-
-        {
-            std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
-            cereal::BinaryOutputArchive ba(ofs);
-            ba(n);
-        }
-
-        std::vector<std::shared_ptr<layer>> l;
-        std::vector<int> v2;
-        {
-            std::ifstream ifs(path.c_str(), std::ios::binary | std::ios::in);
-            cereal::BinaryInputArchive bi(ifs);
-            bi(l);
-        }
-
-    }
-
 
     f1 << s1;
     s1 << (f2, f3) << c4;
@@ -109,9 +129,9 @@ TEST(serialization, graph) {
 
     auto path = unique_path();
 
-    net1.save_model_and_weights(path);
+    net1.save(path, content_type::weights_and_model);
 
-    net2.load_model_and_weights(path);
+    net2.load(path, content_type::weights_and_model);
 
     auto res2 = net2.predict(in);
 

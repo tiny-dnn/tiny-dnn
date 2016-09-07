@@ -41,6 +41,17 @@
 
 namespace tiny_dnn {
 
+enum class content_type {
+    weights, ///< save/load the weights
+    model, ///< save/load the network architecture
+    weights_and_model ///< save/load both the weights and the architecture
+};
+
+enum class file_format {
+    binary,
+    json
+};
+
 struct result {
     result() : num_success(0), num_total(0) {}
 
@@ -551,58 +562,50 @@ public:
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
-    /**
-     * save the network architecture and the weights of the model in binary format
-     **/
-    void save_model_and_weights(const std::string& filename) const {
-        std::ofstream ofs(filename.c_str(), std::ios::binary|std::ios::out);
-        cereal::BinaryOutputArchive a(ofs);
-        save_model(a);
-        save_weights(a);
+    void load(const std::string& filename,
+              content_type       what     = content_type::weights_and_model,
+              file_format        format   = file_format::binary) {
+        std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
+
+        switch (format) {
+            case file_format::binary:
+            {
+                cereal::BinaryInputArchive bi(ifs);
+                from_archive(bi, what);
+            }
+            break;
+            case file_format::json:
+            {
+                cereal::JSONInputArchive ji(ifs);
+                from_archive(ji, what);
+            }
+            break;
+            default:
+                throw nn_error("invalid serialization format");
+        }
     }
 
-    /**
-     * load the network architecture and the weights of the model
-    **/
-    void load_model_and_weights(const std::string& filename) {
-        std::ifstream ifs(filename.c_str(), std::ios::binary|std::ios::in);
-        cereal::BinaryInputArchive a(ifs);
-        load_model(a);
-        load_weights(a);
-    }
+    void save(const std::string& filename,
+              content_type       what     = content_type::weights_and_model,
+              file_format        format   = file_format::binary) const {
+        std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
 
-    /**
-     * save the network architecture as given format
-     **/
-    template <typename OutputArchive>
-    void save_model(OutputArchive& oa) const {
-        net_.save_model(oa);
-    }
-
-    /**
-    * load the network architecture
-    **/
-    template <typename InputArchive>
-    void load_model(InputArchive& ia) {
-        net_.load_model(ia);
-    }
-
-    /**
-    * save network weights into stream
-    * @attention this saves only network *weights*, not network configuration
-    **/
-    template <typename OutputArchive>
-    void save_weights(OutputArchive& os) const {
-        net_.save_weights(os);
-    }
-
-    /**
-    * load network weights from stream
-    * @attention this loads only network *weights*, not network configuration
-    **/
-    template <typename InputArchive>
-    void load_weights(InputArchive& is) {
-        net_.load_weights(is);
+        switch (format) {
+            case file_format::binary:
+            {
+                cereal::BinaryOutputArchive bo(ofs);
+                to_archive(bo, what);
+            }
+            break;
+            case file_format::json:
+            {
+                cereal::JSONOutputArchive jo(ofs);
+                to_archive(jo, what);
+            }
+            break;
+            default:
+                throw nn_error("invalid serialization format");
+        }
     }
 
     /**
@@ -612,7 +615,7 @@ public:
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
-            save_model(oa);
+            to_archive(oa, content_type::model);
         }
         return ss.str();
     }
@@ -624,16 +627,16 @@ public:
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
-        load_model(ia);
+        from_archive(ia, content_type::model);
     }
 
-    ///< @deprecated use save_weights instead.
+    ///< @deprecated use save(filename,target,format) instead.
     void save(std::ostream& os) const {
         os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
         net_.save(os);
     }
 
-    ///< @deprecated use load_weights instead.
+    ///< @deprecated use load(filename,target,format) instead.
     void load(std::istream& is) {
         is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
         net_.load(is);
@@ -654,6 +657,25 @@ public:
         net_.load(data);
     }
 
+    template <typename OutputArchive>
+    void to_archive(OutputArchive& ar, content_type what = content_type::weights_and_model) const {
+        if (what == content_type::model || what == content_type::weights_and_model) {
+            net_.save_model(ar);
+        }
+        if (what == content_type::weights || what == content_type::weights_and_model) {
+            net_.save_weights(ar);
+        }
+    }
+
+    template <typename InputArchive>
+    void from_archive(InputArchive& ar, content_type what = content_type::weights_and_model) {
+        if (what == content_type::model || what == content_type::weights_and_model) {
+            net_.load_model(ar);
+        }
+        if (what == content_type::weights || what == content_type::weights_and_model) {
+            net_.load_weights(ar);
+        }
+    }
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
@@ -664,6 +686,7 @@ protected:
         return label_t(max_index(fprop(in)));
     }
 private:
+
 
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
