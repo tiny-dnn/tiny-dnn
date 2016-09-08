@@ -32,7 +32,7 @@
 
 using namespace tiny_dnn::activation;
 
-/*#include "test_network.h"
+#include "test_network.h"
 #include "test_average_pooling_layer.h"
 // TODO(yida): fix broken test
 //#include "test_average_unpooling_layer.h"
@@ -40,7 +40,7 @@ using namespace tiny_dnn::activation;
 #include "test_max_pooling_layer.h"
 #include "test_fully_connected_layer.h"
 #include "test_deconvolutional_layer.h"
-//#include "test_convolutional_layer.h"
+#include "test_convolutional_layer.h"
 #include "test_target_cost.h"
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
@@ -61,9 +61,8 @@ using namespace tiny_dnn::activation;
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 #include "test_caffe_converter.h"
-#endif*/
+#endif
 
-#include "test_convolutional_layer.h"
 int main(void) {
     return RUN_ALL_TESTS();
 }

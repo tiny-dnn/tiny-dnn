@@ -757,9 +757,6 @@ private:
         }
         net_.clear_grads();
 
-        std::cout << "Diff: " << std::abs(delta_by_bprop - delta_by_numerical) << std::endl;
-        std::cout << "Eps:  " << eps << std::endl;
-
         return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
     }
 

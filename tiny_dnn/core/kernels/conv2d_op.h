@@ -68,6 +68,9 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
         // initialize outputs
         fill_tensor(out_data, float_t(0));
 
+        // set the convolution parameters
+        Conv2d::setParams(OpKernel::params_);
+
         // call convolution algorithm depending
         // on the selected engine type
 
