@@ -40,30 +40,6 @@
 #include <cereal/macros.hpp>
 #include <cereal/details/static_object.hpp>
 
-//! Defines the CEREAL_NOEXCEPT macro to use instead of noexcept
-/*! If a compiler we support does not support noexcept, this macro
-    will detect this and define CEREAL_NOEXCEPT as a no-op */
-#if !defined(CEREAL_HAS_NOEXCEPT)
-  #if defined(__clang__)
-    #if __has_feature(cxx_noexcept)
-      #define CEREAL_HAS_NOEXCEPT
-    #endif
-  #else // NOT clang
-    #if defined(__GXX_EXPERIMENTAL_CXX0X__) && __GNUC__ * 10 + __GNUC_MINOR__ >= 46 || \
-        defined(_MSC_FULL_VER) && _MSC_FULL_VER >= 190023026
-      #define CEREAL_HAS_NOEXCEPT
-    #endif // end GCC/MSVC check
-  #endif // end NOT clang block
-
-  #ifndef CEREAL_NOEXCEPT
-    #ifdef CEREAL_HAS_NOEXCEPT
-      #define CEREAL_NOEXCEPT noexcept
-    #else
-      #define CEREAL_NOEXCEPT
-    #endif // end CEREAL_HAS_NOEXCEPT
-  #endif // end !defined(CEREAL_HAS_NOEXCEPT)
-#endif // ifndef CEREAL_NOEXCEPT
-
 namespace cereal
 {
   // ######################################################################
@@ -215,7 +191,7 @@ namespace cereal
   }
 
   //! Convenience for creating a templated NVP
-  /*! For use in internal generic typing functions which have an
+  /*! For use in inteneral generic typing functions which have an
       Archive type declared
       @internal */
   #define CEREAL_NVP_(name, value) ::cereal::make_nvp<Archive>(name, value)
@@ -249,29 +225,8 @@ namespace cereal
     /* The rtti virtual function only exists to enable an archive to
        be used in a polymorphic fashion, if necessary.  See the
        archive adapters for an example of this */
-    class OutputArchiveBase
-    {
-      public:
-        OutputArchiveBase() = default;
-        OutputArchiveBase( OutputArchiveBase && ) CEREAL_NOEXCEPT {}
-        OutputArchiveBase & operator=( OutputArchiveBase && ) CEREAL_NOEXCEPT { return *this; }
-        virtual ~OutputArchiveBase() CEREAL_NOEXCEPT = default;
-
-      private:
-        virtual void rtti() {}
-    };
-
-    class InputArchiveBase
-    {
-      public:
-        InputArchiveBase() = default;
-        InputArchiveBase( InputArchiveBase && ) CEREAL_NOEXCEPT {}
-        InputArchiveBase & operator=( InputArchiveBase && ) CEREAL_NOEXCEPT { return *this; }
-        virtual ~InputArchiveBase() CEREAL_NOEXCEPT = default;
-
-      private:
-        virtual void rtti() {}
-    };
+    class OutputArchiveBase { private: virtual void rtti(){} };
+    class InputArchiveBase { private: virtual void rtti(){} };
 
     // forward decls for polymorphic support
     template <class Archive, class T> struct polymorphic_serialization_support;

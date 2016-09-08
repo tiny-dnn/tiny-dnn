@@ -1,12 +1,12 @@
-#ifndef CEREAL_RAPIDXML_HPP_INCLUDED
-#define CEREAL_RAPIDXML_HPP_INCLUDED
+#ifndef RAPIDXML_HPP_INCLUDED
+#define RAPIDXML_HPP_INCLUDED
 
 // Copyright (C) 2006, 2009 Marcin Kalicinski
 // Version 1.13
 // Revision $DateTime: 2009/05/13 01:46:17 $
 
 // If standard library is disabled, user must provide implementations of required functions and typedefs
-#if !defined(CEREAL_RAPIDXML_NO_STDLIB)
+#if !defined(RAPIDXML_NO_STDLIB)
     #include <cstdlib>      // For std::size_t
     #include <cassert>      // For assert
     #include <new>          // For placement new
@@ -21,16 +21,15 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDXML_PARSE_ERROR
+// RAPIDXML_PARSE_ERROR
 
-#if defined(CEREAL_RAPIDXML_NO_EXCEPTIONS)
+#if defined(RAPIDXML_NO_EXCEPTIONS)
 
-#define CEREAL_RAPIDXML_PARSE_ERROR(what, where) { parse_error_handler(what, where); assert(0); }
+#define RAPIDXML_PARSE_ERROR(what, where) { parse_error_handler(what, where); assert(0); }
 
-namespace cereal {
 namespace rapidxml
 {
-    //! When exceptions are disabled by defining CEREAL_RAPIDXML_NO_EXCEPTIONS,
+    //! When exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS,
     //! this function is called to notify user about the error.
     //! It must be defined by the user.
     //! <br><br>
@@ -48,15 +47,13 @@ namespace rapidxml
     //! \param where Pointer to character data where error was detected.
     void parse_error_handler(const char *what, void *where);
 }
-} // end namespace cereal
 
 #else
 
 #include <exception>    // For std::exception
 
-#define CEREAL_RAPIDXML_PARSE_ERROR(what, where) throw parse_error(what, where)
+#define RAPIDXML_PARSE_ERROR(what, where) throw parse_error(what, where)
 
-namespace cereal {
 namespace rapidxml
 {
 
@@ -66,7 +63,7 @@ namespace rapidxml
     //! Use where() function to get a pointer to position within source text where error was detected.
     //! <br><br>
     //! If throwing exceptions by the parser is undesirable,
-    //! it can be disabled by defining CEREAL_RAPIDXML_NO_EXCEPTIONS macro before rapidxml.hpp is included.
+    //! it can be disabled by defining RAPIDXML_NO_EXCEPTIONS macro before rapidxml.hpp is included.
     //! This will cause the parser to call rapidxml::parse_error_handler() function instead of throwing an exception.
     //! This function must be defined by the user.
     //! <br><br>
@@ -106,36 +103,34 @@ namespace rapidxml
 
     };
 }
-} // end namespace cereal
 
 #endif
 
 ///////////////////////////////////////////////////////////////////////////
 // Pool sizes
 
-#ifndef CEREAL_RAPIDXML_STATIC_POOL_SIZE
+#ifndef RAPIDXML_STATIC_POOL_SIZE
     // Size of static memory block of memory_pool.
-    // Define CEREAL_RAPIDXML_STATIC_POOL_SIZE before including rapidxml.hpp if you want to override the default value.
+    // Define RAPIDXML_STATIC_POOL_SIZE before including rapidxml.hpp if you want to override the default value.
     // No dynamic memory allocations are performed by memory_pool until static memory is exhausted.
-    #define CEREAL_RAPIDXML_STATIC_POOL_SIZE (64 * 1024)
+    #define RAPIDXML_STATIC_POOL_SIZE (64 * 1024)
 #endif
 
-#ifndef CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE
+#ifndef RAPIDXML_DYNAMIC_POOL_SIZE
     // Size of dynamic memory block of memory_pool.
-    // Define CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE before including rapidxml.hpp if you want to override the default value.
+    // Define RAPIDXML_DYNAMIC_POOL_SIZE before including rapidxml.hpp if you want to override the default value.
     // After the static block is exhausted, dynamic blocks with approximately this size are allocated by memory_pool.
-    #define CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE (64 * 1024)
+    #define RAPIDXML_DYNAMIC_POOL_SIZE (64 * 1024)
 #endif
 
-#ifndef CEREAL_RAPIDXML_ALIGNMENT
+#ifndef RAPIDXML_ALIGNMENT
     // Memory allocation alignment.
-    // Define CEREAL_RAPIDXML_ALIGNMENT before including rapidxml.hpp if you want to override the default value, which is the size of pointer.
+    // Define RAPIDXML_ALIGNMENT before including rapidxml.hpp if you want to override the default value, which is the size of pointer.
     // All memory allocations for nodes, attributes and strings will be aligned to this value.
     // This must be a power of 2 and at least 1, otherwise memory_pool will not work.
-    #define CEREAL_RAPIDXML_ALIGNMENT sizeof(void *)
+    #define RAPIDXML_ALIGNMENT sizeof(void *)
 #endif
 
-namespace cereal {
 namespace rapidxml
 {
     // Forward declarations
@@ -371,20 +366,20 @@ namespace rapidxml
     //! It is also possible to create a standalone memory_pool, and use it
     //! to allocate nodes, whose lifetime will not be tied to any document.
     //! <br><br>
-    //! Pool maintains <code>CEREAL_RAPIDXML_STATIC_POOL_SIZE</code> bytes of statically allocated memory.
+    //! Pool maintains <code>RAPIDXML_STATIC_POOL_SIZE</code> bytes of statically allocated memory.
     //! Until static memory is exhausted, no dynamic memory allocations are done.
-    //! When static memory is exhausted, pool allocates additional blocks of memory of size <code>CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE</code> each,
+    //! When static memory is exhausted, pool allocates additional blocks of memory of size <code>RAPIDXML_DYNAMIC_POOL_SIZE</code> each,
     //! by using global <code>new[]</code> and <code>delete[]</code> operators.
     //! This behaviour can be changed by setting custom allocation routines.
     //! Use set_allocator() function to set them.
     //! <br><br>
-    //! Allocations for nodes, attributes and strings are aligned at <code>CEREAL_RAPIDXML_ALIGNMENT</code> bytes.
+    //! Allocations for nodes, attributes and strings are aligned at <code>RAPIDXML_ALIGNMENT</code> bytes.
     //! This value defaults to the size of pointer on target architecture.
     //! <br><br>
     //! To obtain absolutely top performance from the parser,
     //! it is important that all nodes are allocated from a single, contiguous block of memory.
     //! Otherwise, cache misses when jumping between two (or more) disjoint blocks of memory can slow down parsing quite considerably.
-    //! If required, you can tweak <code>CEREAL_RAPIDXML_STATIC_POOL_SIZE</code>, <code>CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE</code> and <code>CEREAL_RAPIDXML_ALIGNMENT</code>
+    //! If required, you can tweak <code>RAPIDXML_STATIC_POOL_SIZE</code>, <code>RAPIDXML_DYNAMIC_POOL_SIZE</code> and <code>RAPIDXML_ALIGNMENT</code>
     //! to obtain best wasted memory to performance compromise.
     //! To do it, define their values before rapidxml.hpp file is included.
     //! \param Ch Character type of created nodes.
@@ -417,7 +412,7 @@ namespace rapidxml
 
         //! Allocates a new node from the pool, and optionally assigns name and value to it.
         //! If the allocation request cannot be accomodated, this function will throw <code>std::bad_alloc</code>.
-        //! If exceptions are disabled by defining CEREAL_RAPIDXML_NO_EXCEPTIONS, this function
+        //! If exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, this function
         //! will call rapidxml::parse_error_handler() function.
         //! \param type Type of node to create.
         //! \param name Name to assign to the node, or 0 to assign no name.
@@ -450,7 +445,7 @@ namespace rapidxml
 
         //! Allocates a new attribute from the pool, and optionally assigns name and value to it.
         //! If the allocation request cannot be accomodated, this function will throw <code>std::bad_alloc</code>.
-        //! If exceptions are disabled by defining CEREAL_RAPIDXML_NO_EXCEPTIONS, this function
+        //! If exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, this function
         //! will call rapidxml::parse_error_handler() function.
         //! \param name Name to assign to the attribute, or 0 to assign no name.
         //! \param value Value to assign to the attribute, or 0 to assign no value.
@@ -481,7 +476,7 @@ namespace rapidxml
 
         //! Allocates a char array of given size from the pool, and optionally copies a given string to it.
         //! If the allocation request cannot be accomodated, this function will throw <code>std::bad_alloc</code>.
-        //! If exceptions are disabled by defining CEREAL_RAPIDXML_NO_EXCEPTIONS, this function
+        //! If exceptions are disabled by defining RAPIDXML_NO_EXCEPTIONS, this function
         //! will call rapidxml::parse_error_handler() function.
         //! \param source String to initialize the allocated memory with, or 0 to not initialize it.
         //! \param size Number of characters to allocate, or zero to calculate it automatically from source string length; if size is 0, source string must be specified and null terminated.
@@ -585,7 +580,7 @@ namespace rapidxml
 
         char *align(char *ptr)
         {
-            std::size_t alignment = ((CEREAL_RAPIDXML_ALIGNMENT - (std::size_t(ptr) & (CEREAL_RAPIDXML_ALIGNMENT - 1))) & (CEREAL_RAPIDXML_ALIGNMENT - 1));
+            std::size_t alignment = ((RAPIDXML_ALIGNMENT - (std::size_t(ptr) & (RAPIDXML_ALIGNMENT - 1))) & (RAPIDXML_ALIGNMENT - 1));
             return ptr + alignment;
         }
 
@@ -601,9 +596,9 @@ namespace rapidxml
             else
             {
                 memory = new char[size];
-#ifdef CEREAL_RAPIDXML_NO_EXCEPTIONS
+#ifdef RAPIDXML_NO_EXCEPTIONS
                 if (!memory)            // If exceptions are disabled, verify memory allocation, because new will not be able to throw bad_alloc
-                    CEREAL_RAPIDXML_PARSE_ERROR("out of memory", 0);
+                    RAPIDXML_PARSE_ERROR("out of memory", 0);
 #endif
             }
             return static_cast<char *>(memory);
@@ -617,13 +612,13 @@ namespace rapidxml
             // If not enough memory left in current pool, allocate a new pool
             if (result + size > m_end)
             {
-                // Calculate required pool size (may be bigger than CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE)
-                std::size_t pool_size = CEREAL_RAPIDXML_DYNAMIC_POOL_SIZE;
+                // Calculate required pool size (may be bigger than RAPIDXML_DYNAMIC_POOL_SIZE)
+                std::size_t pool_size = RAPIDXML_DYNAMIC_POOL_SIZE;
                 if (pool_size < size)
                     pool_size = size;
 
                 // Allocate
-                std::size_t alloc_size = sizeof(header) + (2 * CEREAL_RAPIDXML_ALIGNMENT - 2) + pool_size;     // 2 alignments required in worst case: one for header, one for actual allocation
+                std::size_t alloc_size = sizeof(header) + (2 * RAPIDXML_ALIGNMENT - 2) + pool_size;     // 2 alignments required in worst case: one for header, one for actual allocation
                 char *raw_memory = allocate_raw(alloc_size);
 
                 // Setup new pool in allocated memory
@@ -646,7 +641,7 @@ namespace rapidxml
         char *m_begin;                                      // Start of raw memory making up current pool
         char *m_ptr;                                        // First free byte in current pool
         char *m_end;                                        // One past last available byte in current pool
-        char m_static_memory[CEREAL_RAPIDXML_STATIC_POOL_SIZE];    // Static raw memory
+        char m_static_memory[RAPIDXML_STATIC_POOL_SIZE];    // Static raw memory
         alloc_func *m_alloc_func;                           // Allocator function, or 0 if default is to be used
         free_func *m_free_func;                             // Free function, or 0 if default is to be used
     };
@@ -1418,7 +1413,7 @@ namespace rapidxml
                         this->append_node(node);
                 }
                 else
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected <", text);
+                    RAPIDXML_PARSE_ERROR("expected <", text);
             }
 
         }
@@ -1561,7 +1556,7 @@ namespace rapidxml
                 }
                 else    // Invalid, only codes up to 0x10FFFF are allowed in Unicode
                 {
-                    CEREAL_RAPIDXML_PARSE_ERROR("invalid numeric character entity", text);
+                    RAPIDXML_PARSE_ERROR("invalid numeric character entity", text);
                 }
             }
         }
@@ -1692,7 +1687,7 @@ namespace rapidxml
                             if (*src == Ch(';'))
                                 ++src;
                             else
-                                CEREAL_RAPIDXML_PARSE_ERROR("expected ;", src);
+                                RAPIDXML_PARSE_ERROR("expected ;", src);
                             continue;
 
                         // Something else
@@ -1757,7 +1752,7 @@ namespace rapidxml
                 while (text[0] != Ch('?') || text[1] != Ch('>'))
                 {
                     if (!text[0])
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
                 text += 2;    // Skip '?>'
@@ -1775,7 +1770,7 @@ namespace rapidxml
 
             // Skip ?>
             if (text[0] != Ch('?') || text[1] != Ch('>'))
-                CEREAL_RAPIDXML_PARSE_ERROR("expected ?>", text);
+                RAPIDXML_PARSE_ERROR("expected ?>", text);
             text += 2;
 
             return declaration;
@@ -1792,7 +1787,7 @@ namespace rapidxml
                 while (text[0] != Ch('-') || text[1] != Ch('-') || text[2] != Ch('>'))
                 {
                     if (!text[0])
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
                 text += 3;     // Skip '-->'
@@ -1806,7 +1801,7 @@ namespace rapidxml
             while (text[0] != Ch('-') || text[1] != Ch('-') || text[2] != Ch('>'))
             {
                 if (!text[0])
-                    CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                    RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                 ++text;
             }
 
@@ -1848,7 +1843,7 @@ namespace rapidxml
                         {
                             case Ch('['): ++depth; break;
                             case Ch(']'): --depth; break;
-                            case 0: CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                            case 0: RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                         }
                         ++text;
                     }
@@ -1857,7 +1852,7 @@ namespace rapidxml
 
                 // Error on end of text
                 case Ch('\0'):
-                    CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                    RAPIDXML_PARSE_ERROR("unexpected end of data", text);
 
                 // Other character, skip it
                 default:
@@ -1902,7 +1897,7 @@ namespace rapidxml
                 Ch *name_ = text;
                 skip<node_name_pred, Flags>(text);
                 if (text == name_)
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected PI target", text);
+                    RAPIDXML_PARSE_ERROR("expected PI target", text);
                 pi->name(name_, text - name_);
 
                 // Skip whitespace between pi target and pi
@@ -1915,7 +1910,7 @@ namespace rapidxml
                 while (text[0] != Ch('?') || text[1] != Ch('>'))
                 {
                     if (*text == Ch('\0'))
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
 
@@ -1938,7 +1933,7 @@ namespace rapidxml
                 while (text[0] != Ch('?') || text[1] != Ch('>'))
                 {
                     if (*text == Ch('\0'))
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
                 text += 2;    // Skip '?>'
@@ -2019,7 +2014,7 @@ namespace rapidxml
                 while (text[0] != Ch(']') || text[1] != Ch(']') || text[2] != Ch('>'))
                 {
                     if (!text[0])
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
                 text += 3;      // Skip ]]>
@@ -2031,7 +2026,7 @@ namespace rapidxml
             while (text[0] != Ch(']') || text[1] != Ch(']') || text[2] != Ch('>'))
             {
                 if (!text[0])
-                    CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                    RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                 ++text;
             }
 
@@ -2058,7 +2053,7 @@ namespace rapidxml
             Ch *name_ = text;
             skip<node_name_pred, Flags>(text);
             if (text == name_)
-                CEREAL_RAPIDXML_PARSE_ERROR("expected element name", text);
+                RAPIDXML_PARSE_ERROR("expected element name", text);
             element->name(name_, text - name_);
 
             // Skip whitespace between element name and attributes or >
@@ -2077,11 +2072,11 @@ namespace rapidxml
             {
                 ++text;
                 if (*text != Ch('>'))
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected >", text);
+                    RAPIDXML_PARSE_ERROR("expected >", text);
                 ++text;
             }
             else
-                CEREAL_RAPIDXML_PARSE_ERROR("expected >", text);
+                RAPIDXML_PARSE_ERROR("expected >", text);
 
             // Place zero terminator after name
             if (!(Flags & parse_no_string_terminators))
@@ -2168,7 +2163,7 @@ namespace rapidxml
                 while (*text != Ch('>'))
                 {
                     if (*text == 0)
-                        CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                        RAPIDXML_PARSE_ERROR("unexpected end of data", text);
                     ++text;
                 }
                 ++text;     // Skip '>'
@@ -2217,7 +2212,7 @@ namespace rapidxml
                             Ch *closing_name = text;
                             skip<node_name_pred, Flags>(text);
                             if (!internal::compare(node->name(), node->name_size(), closing_name, text - closing_name, true))
-                                CEREAL_RAPIDXML_PARSE_ERROR("invalid closing tag name", text);
+                                RAPIDXML_PARSE_ERROR("invalid closing tag name", text);
                         }
                         else
                         {
@@ -2227,7 +2222,7 @@ namespace rapidxml
                         // Skip remaining whitespace after node name
                         skip<whitespace_pred, Flags>(text);
                         if (*text != Ch('>'))
-                            CEREAL_RAPIDXML_PARSE_ERROR("expected >", text);
+                            RAPIDXML_PARSE_ERROR("expected >", text);
                         ++text;     // Skip '>'
 
                         if (contents_end && contents_end != contents_start)
@@ -2248,7 +2243,7 @@ namespace rapidxml
 
                 // End of data - error
                 case Ch('\0'):
-                    CEREAL_RAPIDXML_PARSE_ERROR("unexpected end of data", text);
+                    RAPIDXML_PARSE_ERROR("unexpected end of data", text);
 
                 // Data node
                 default:
@@ -2271,7 +2266,7 @@ namespace rapidxml
                 ++text;     // Skip first character of attribute name
                 skip<attribute_name_pred, Flags>(text);
                 if (text == name_)
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected attribute name", name_);
+                    RAPIDXML_PARSE_ERROR("expected attribute name", name_);
 
                 // Create new attribute
                 xml_attribute<Ch> *attribute = this->allocate_attribute();
@@ -2283,7 +2278,7 @@ namespace rapidxml
 
                 // Skip =
                 if (*text != Ch('='))
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected =", text);
+                    RAPIDXML_PARSE_ERROR("expected =", text);
                 ++text;
 
                 // Add terminating zero after name
@@ -2296,7 +2291,7 @@ namespace rapidxml
                 // Skip quote and remember if it was ' or "
                 Ch quote = *text;
                 if (quote != Ch('\'') && quote != Ch('"'))
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected ' or \"", text);
+                    RAPIDXML_PARSE_ERROR("expected ' or \"", text);
                 ++text;
 
                 // Extract attribute value and expand char refs in it
@@ -2312,7 +2307,7 @@ namespace rapidxml
 
                 // Make sure that end quote is present
                 if (*text != quote)
-                    CEREAL_RAPIDXML_PARSE_ERROR("expected ' or \"", text);
+                    RAPIDXML_PARSE_ERROR("expected ' or \"", text);
                 ++text;     // Skip quote
 
                 // Add terminating zero after value
@@ -2611,10 +2606,9 @@ namespace rapidxml
     //! \endcond
 
 }
-} // end namespace cereal
 
 // Undefine internal macros
-#undef CEREAL_RAPIDXML_PARSE_ERROR
+#undef RAPIDXML_PARSE_ERROR
 
 // On MSVC, restore warnings state
 #ifdef _MSC_VER

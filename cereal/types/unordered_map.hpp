@@ -30,7 +30,71 @@
 #ifndef CEREAL_TYPES_UNORDERED_MAP_HPP_
 #define CEREAL_TYPES_UNORDERED_MAP_HPP_
 
-#include <cereal/types/concepts/pair_associative_container.hpp>
+#include <cereal/cereal.hpp>
 #include <unordered_map>
+
+namespace cereal
+{
+  namespace unordered_map_detail
+  {
+    //! @internal
+    template <class Archive, class MapT> inline
+    void save( Archive & ar, MapT const & map )
+    {
+      ar( make_size_tag( static_cast<size_type>(map.size()) ) );
+
+      for( const auto & i : map )
+        ar( make_map_item(i.first, i.second) );
+    }
+
+    //! @internal
+    template <class Archive, class MapT> inline
+    void load( Archive & ar, MapT & map )
+    {
+      size_type size;
+      ar( make_size_tag( size ) );
+
+      map.clear();
+      map.reserve( static_cast<std::size_t>( size ) );
+
+      for( size_type i = 0; i < size; ++i )
+      {
+        typename MapT::key_type key;
+        typename MapT::mapped_type value;
+
+        ar( make_map_item(key, value) );
+        map.emplace( std::move( key ), std::move( value ) );
+      }
+    }
+  }
+
+  //! Saving for std::unordered_map
+  template <class Archive, class K, class T, class H, class KE, class A> inline
+  void CEREAL_SAVE_FUNCTION_NAME( Archive & ar, std::unordered_map<K, T, H, KE, A> const & unordered_map )
+  {
+    unordered_map_detail::save( ar, unordered_map );
+  }
+
+  //! Loading for std::unordered_map
+  template <class Archive, class K, class T, class H, class KE, class A> inline
+  void CEREAL_LOAD_FUNCTION_NAME( Archive & ar, std::unordered_map<K, T, H, KE, A> & unordered_map )
+  {
+    unordered_map_detail::load( ar, unordered_map );
+  }
+
+  //! Saving for std::unordered_multimap
+  template <class Archive, class K, class T, class H, class KE, class A> inline
+  void CEREAL_SAVE_FUNCTION_NAME( Archive & ar, std::unordered_multimap<K, T, H, KE, A> const & unordered_multimap )
+  {
+    unordered_map_detail::save( ar, unordered_multimap );
+  }
+
+  //! Loading for std::unordered_multimap
+  template <class Archive, class K, class T, class H, class KE, class A> inline
+  void CEREAL_LOAD_FUNCTION_NAME( Archive & ar, std::unordered_multimap<K, T, H, KE, A> & unordered_multimap )
+  {
+    unordered_map_detail::load( ar, unordered_multimap );
+  }
+} // namespace cereal
 
 #endif // CEREAL_TYPES_UNORDERED_MAP_HPP_

@@ -32,7 +32,6 @@
 #include <type_traits>
 #include <iostream>
 #include <cstdint>
-#include <functional>
 
 #include <cereal/macros.hpp>
 #include <cereal/details/helpers.hpp>
@@ -77,9 +76,6 @@ namespace cereal
             ar( x );
             construct( x );
           }
-
-          // if you require versioning, simply add a const std::uint32_t as the final parameter, e.g.:
-          // load_and_construct( Archive & ar, cereal::construct<MyType> & construct, std::uint32_t const version )
         };
       } // end namespace cereal
       @endcode
@@ -89,23 +85,16 @@ namespace cereal
       have the ability to modify the class you wish to serialize, it is recommended that you
       use member serialize functions and a static member load_and_construct function.
 
-      load_and_construct functions, regardless of whether they are static members of your class or
-      whether you create one in the LoadAndConstruct specialization, have the following signature:
-
-      @code{.cpp}
-      // generally Archive will be templated, but it can be specific if desired
-      template <class Archive>
-      static void load_and_construct( Archive & ar, cereal::construct<MyType> & construct );
-      // with an optional last parameter specifying the version: const std::uint32_t version
-      @endcode
-
-      Versioning behaves the same way as it does for standard serialization functions.
-
       @tparam T The type to specialize for
       @ingroup Access */
   template <class T>
   struct LoadAndConstruct
-  { };
+  {
+    //! Called by cereal if no default constructor exists to load and construct data simultaneously
+    /*! Overloads of this should return a pointer to T and expect an archive as a parameter */
+    static std::false_type load_and_construct(...)
+    { return std::false_type(); }
+  };
 
   // forward decl for construct
   //! @cond PRIVATE_NEVERDEFINED
@@ -204,14 +193,11 @@ namespace cereal
     private:
       template <class A, class B> friend struct ::cereal::memory_detail::LoadAndConstructLoadWrapper;
 
-      construct( T * p ) : itsPtr( p ), itsEnableSharedRestoreFunction( [](){} ), itsValid( false ) {}
-      construct( T * p, std::function<void()> enableSharedFunc ) : // g++4.7 ice with default lambda to std func
-        itsPtr( p ), itsEnableSharedRestoreFunction( enableSharedFunc ), itsValid( false ) {}
+      construct( T * p ) : itsPtr( p ), itsValid( false ) {}
       construct( construct const & ) = delete;
       construct & operator=( construct const & ) = delete;
 
       T * itsPtr;
-      std::function<void()> itsEnableSharedRestoreFunction;
       bool itsValid;
   };
 
@@ -322,12 +308,6 @@ namespace cereal
       static auto load_and_construct(Archive & ar, ::cereal::construct<T> & construct) -> decltype(T::load_and_construct(ar, construct))
       {
         T::load_and_construct( ar, construct );
-      }
-
-      template<class T, class Archive> inline
-      static auto load_and_construct(Archive & ar, ::cereal::construct<T> & construct, const std::uint32_t version) -> decltype(T::load_and_construct(ar, construct, version))
-      {
-        T::load_and_construct( ar, construct, version );
       }
   }; // end class access
 
@@ -440,7 +420,6 @@ namespace cereal
       throw Exception("Attempting to construct an already initialized object");
 
     ::cereal::access::construct( itsPtr, std::forward<Args>( args )... );
-    itsEnableSharedRestoreFunction();
     itsValid = true;
   }
 } // namespace cereal

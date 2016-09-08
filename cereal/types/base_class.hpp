@@ -31,39 +31,12 @@
 #define CEREAL_TYPES_BASE_CLASS_HPP_
 
 #include <cereal/details/traits.hpp>
-#include <cereal/details/polymorphic_impl_fwd.hpp>
 
 namespace cereal
 {
-  namespace base_class_detail
-  {
-    //! Used to register polymorphic relations and avoid the need to include
-    //! polymorphic.hpp when no polymorphism is used
-    /*! @internal */
-    template <class Base, class Derived, bool IsPolymorphic = std::is_polymorphic<Base>::value>
-    struct RegisterPolymorphicBaseClass
-    {
-      static void bind()
-      { }
-    };
-
-    //! Polymorphic version
-    /*! @internal */
-    template <class Base, class Derived>
-    struct RegisterPolymorphicBaseClass<Base, Derived, true>
-    {
-      static void bind()
-      { detail::RegisterPolymorphicCaster<Base, Derived>::bind(); }
-    };
-  }
-
   //! Casts a derived class to its non-virtual base class in a way that safely supports abstract classes
   /*! This should be used in cases when a derived type needs to serialize its base type. This is better than directly
       using static_cast, as it allows for serialization of pure virtual (abstract) base classes.
-
-      This also automatically registers polymorphic relation between the base and derived class, assuming they
-      are indeed polymorphic. Note this is not the same as polymorphic type registration. For more information
-      see the documentation on polymorphism.
 
       \sa virtual_base_class
 
@@ -101,10 +74,7 @@ namespace cereal
       template<class Derived>
         base_class(Derived const * derived) :
           base_ptr(const_cast<Base*>(static_cast<Base const *>(derived)))
-      {
-        static_assert( std::is_base_of<Base, Derived>::value, "Can only use base_class on a valid base class" );
-        base_class_detail::RegisterPolymorphicBaseClass<Base, Derived>::bind();
-      }
+      { static_assert( std::is_base_of<Base, Derived>::value, "Can only use base_class on a valid base class" ); }
 
         Base * base_ptr;
     };
@@ -117,10 +87,6 @@ namespace cereal
       It is safe to use virtual_base_class in all circumstances for serializing base classes, even in cases
       where virtual inheritance does not take place, though it may be slightly faster to utilize
       cereal::base_class<> if you do not need to worry about virtual inheritance.
-
-      This also automatically registers polymorphic relation between the base and derived class, assuming they
-      are indeed polymorphic. Note this is not the same as polymorphic type registration. For more information
-      see the documentation on polymorphism.
 
       \sa base_class
 
@@ -188,10 +154,7 @@ namespace cereal
       template<class Derived>
         virtual_base_class(Derived const * derived) :
           base_ptr(const_cast<Base*>(static_cast<Base const *>(derived)))
-      {
-        static_assert( std::is_base_of<Base, Derived>::value, "Can only use virtual_base_class on a valid base class" );
-        base_class_detail::RegisterPolymorphicBaseClass<Base, Derived>::bind();
-      }
+      { static_assert( std::is_base_of<Base, Derived>::value, "Can only use base_class on a valid base class" ); }
 
         Base * base_ptr;
     };

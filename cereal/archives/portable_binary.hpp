@@ -39,7 +39,7 @@ namespace cereal
   {
     //! Returns true if the current machine is little endian
     /*! @ingroup Internal */
-    inline std::uint8_t is_little_endian()
+    inline bool is_little_endian()
     {
       static std::int32_t test = 1;
       return *reinterpret_cast<std::int8_t*>( &test ) == 1;
@@ -62,8 +62,8 @@ namespace cereal
   /*! This archive outputs data to a stream in an extremely compact binary
       representation with as little extra metadata as possible.
 
-      This archive will record the endianness of the data as well as the desired in/out endianness
-      and assuming that the user takes care of ensuring serialized types are the same size
+      This archive will record the endianness of the data and assuming that
+      the user takes care of ensuring serialized types are the same size
       across machines, is portable over different architectures.
 
       When using a binary archive and a file stream, you must use the
@@ -78,67 +78,20 @@ namespace cereal
   class PortableBinaryOutputArchive : public OutputArchive<PortableBinaryOutputArchive, AllowEmptyClassElision>
   {
     public:
-      //! A class containing various advanced options for the PortableBinaryOutput archive
-      class Options
-      {
-        public:
-          //! Represents desired endianness
-          enum class Endianness : std::uint8_t
-          { big, little };
-
-          //! Default options, preserve system endianness
-          static Options Default(){ return Options(); }
-
-          //! Save as little endian
-          static Options LittleEndian(){ return Options( Endianness::little ); }
-
-          //! Save as big endian
-          static Options BigEndian(){ return Options( Endianness::big ); }
-
-          //! Specify specific options for the PortableBinaryOutputArchive
-          /*! @param outputEndian The desired endianness of saved (output) data */
-          explicit Options( Endianness outputEndian = getEndianness() ) :
-            itsOutputEndianness( outputEndian ) { }
-
-        private:
-          //! Gets the endianness of the system
-          inline static Endianness getEndianness()
-          { return portable_binary_detail::is_little_endian() ? Endianness::little : Endianness::big; }
-
-          //! Checks if Options is set for little endian
-          inline std::uint8_t is_little_endian() const
-          { return itsOutputEndianness == Endianness::little; }
-
-          friend class PortableBinaryOutputArchive;
-          Endianness itsOutputEndianness;
-      };
-
       //! Construct, outputting to the provided stream
-      /*! @param stream The stream to output to. Should be opened with std::ios::binary flag.
-          @param options The PortableBinary specific options to use.  See the Options struct
-                         for the values of default parameters */
-      PortableBinaryOutputArchive(std::ostream & stream, Options const & options = Options::Default()) :
+      /*! @param stream The stream to output to.  Can be a stringstream, a file stream, or
+        even cout! */
+      PortableBinaryOutputArchive(std::ostream & stream) :
         OutputArchive<PortableBinaryOutputArchive, AllowEmptyClassElision>(this),
-        itsStream(stream),
-        itsConvertEndianness( portable_binary_detail::is_little_endian() ^ options.is_little_endian() )
+        itsStream(stream)
       {
-        this->operator()( options.is_little_endian() );
+        this->operator()( portable_binary_detail::is_little_endian() );
       }
 
       //! Writes size bytes of data to the output stream
-      template <std::size_t DataSize> inline
       void saveBinary( const void * data, std::size_t size )
       {
-        std::size_t writtenSize = 0;
-
-        if( itsConvertEndianness )
-        {
-          for( std::size_t i = 0; i < size; i += DataSize )
-            for( std::size_t j = 0; j < DataSize; ++j )
-              writtenSize += static_cast<std::size_t>( itsStream.rdbuf()->sputn( reinterpret_cast<const char*>( data ) + DataSize - j - 1 + i, 1 ) );
-        }
-        else
-          writtenSize = static_cast<std::size_t>( itsStream.rdbuf()->sputn( reinterpret_cast<const char*>( data ), size ) );
+        auto const writtenSize = static_cast<std::size_t>( itsStream.rdbuf()->sputn( reinterpret_cast<const char*>( data ), size ) );
 
         if(writtenSize != size)
           throw Exception("Failed to write " + std::to_string(size) + " bytes to output stream! Wrote " + std::to_string(writtenSize));
@@ -146,7 +99,6 @@ namespace cereal
 
     private:
       std::ostream & itsStream;
-      const uint8_t itsConvertEndianness; //!< If set to true, we will need to swap bytes upon saving
   };
 
   // ######################################################################
@@ -178,60 +130,23 @@ namespace cereal
   class PortableBinaryInputArchive : public InputArchive<PortableBinaryInputArchive, AllowEmptyClassElision>
   {
     public:
-      //! A class containing various advanced options for the PortableBinaryInput archive
-      class Options
-      {
-        public:
-          //! Represents desired endianness
-          enum class Endianness : std::uint8_t
-          { big, little };
-
-          //! Default options, preserve system endianness
-          static Options Default(){ return Options(); }
-
-          //! Load into little endian
-          static Options LittleEndian(){ return Options( Endianness::little ); }
-
-          //! Load into big endian
-          static Options BigEndian(){ return Options( Endianness::big ); }
-
-          //! Specify specific options for the PortableBinaryInputArchive
-          /*! @param inputEndian The desired endianness of loaded (input) data */
-          explicit Options( Endianness inputEndian = getEndianness() ) :
-            itsInputEndianness( inputEndian ) { }
-
-        private:
-          //! Gets the endianness of the system
-          inline static Endianness getEndianness()
-          { return portable_binary_detail::is_little_endian() ? Endianness::little : Endianness::big; }
-
-          //! Checks if Options is set for little endian
-          inline std::uint8_t is_little_endian() const
-          { return itsInputEndianness == Endianness::little; }
-
-          friend class PortableBinaryInputArchive;
-          Endianness itsInputEndianness;
-      };
-
       //! Construct, loading from the provided stream
-      /*! @param stream The stream to read from. Should be opened with std::ios::binary flag.
-          @param options The PortableBinary specific options to use.  See the Options struct
-                         for the values of default parameters */
-      PortableBinaryInputArchive(std::istream & stream, Options const & options = Options::Default()) :
+      /*! @param stream The stream to read from. */
+      PortableBinaryInputArchive(std::istream & stream) :
         InputArchive<PortableBinaryInputArchive, AllowEmptyClassElision>(this),
         itsStream(stream),
         itsConvertEndianness( false )
       {
-        uint8_t streamLittleEndian;
+        bool streamLittleEndian;
         this->operator()( streamLittleEndian );
-        itsConvertEndianness = options.is_little_endian() ^ streamLittleEndian;
+        itsConvertEndianness = portable_binary_detail::is_little_endian() ^ streamLittleEndian;
       }
 
       //! Reads size bytes of data from the input stream
       /*! @param data The data to save
           @param size The number of bytes in the data
           @tparam DataSize T The size of the actual type of the data elements being loaded */
-      template <std::size_t DataSize> inline
+      template <std::size_t DataSize>
       void loadBinary( void * const data, std::size_t size )
       {
         // load data
@@ -245,13 +160,13 @@ namespace cereal
         {
           std::uint8_t * ptr = reinterpret_cast<std::uint8_t*>( data );
           for( std::size_t i = 0; i < size; i += DataSize )
-            portable_binary_detail::swap_bytes<DataSize>( ptr + i );
+            portable_binary_detail::swap_bytes<DataSize>( ptr );
         }
       }
 
     private:
       std::istream & itsStream;
-      uint8_t itsConvertEndianness; //!< If set to true, we will need to swap bytes upon loading
+      bool itsConvertEndianness; //!< If set to true, we will need to swap bytes upon loading
   };
 
   // ######################################################################
@@ -265,7 +180,7 @@ namespace cereal
     static_assert( !std::is_floating_point<T>::value ||
                    (std::is_floating_point<T>::value && std::numeric_limits<T>::is_iec559),
                    "Portable binary only supports IEEE 754 standardized floating point" );
-    ar.template saveBinary<sizeof(T)>(std::addressof(t), sizeof(t));
+    ar.saveBinary(std::addressof(t), sizeof(t));
   }
 
   //! Loading for POD types from portable binary
@@ -304,7 +219,7 @@ namespace cereal
                    (std::is_floating_point<TT>::value && std::numeric_limits<TT>::is_iec559),
                    "Portable binary only supports IEEE 754 standardized floating point" );
 
-    ar.template saveBinary<sizeof(TT)>( bd.data, static_cast<std::size_t>( bd.size ) );
+    ar.saveBinary( bd.data, static_cast<std::size_t>( bd.size ) );
   }
 
   //! Loading binary data from portable binary

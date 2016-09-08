@@ -1,611 +1,525 @@
-// Tencent is pleased to support the open source community by making RapidJSON available.
-//
-// Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved.
-//
-// Licensed under the MIT License (the "License"); you may not use this file except
-// in compliance with the License. You may obtain a copy of the License at
-//
-// http://opensource.org/licenses/MIT
-//
-// Unless required by applicable law or agreed to in writing, software distributed
-// under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-// CONDITIONS OF ANY KIND, either express or implied. See the License for the
-// specific language governing permissions and limitations under the License.
+#ifndef RAPIDJSON_RAPIDJSON_H_
+#define RAPIDJSON_RAPIDJSON_H_
 
-#ifndef CEREAL_RAPIDJSON_CEREAL_RAPIDJSON_H_
-#define CEREAL_RAPIDJSON_CEREAL_RAPIDJSON_H_
+// Copyright (c) 2011-2012 Milo Yip (miloyip@gmail.com)
+// Version 0.11
 
-/*!\file rapidjson.h
-    \brief common definitions and configuration
-
-    \see CEREAL_RAPIDJSON_CONFIG
- */
-
-/*! \defgroup CEREAL_RAPIDJSON_CONFIG RapidJSON configuration
-    \brief Configuration macros for library features
-
-    Some RapidJSON features are configurable to adapt the library to a wide
-    variety of platforms, environments and usage scenarios.  Most of the
-    features can be configured in terms of overriden or predefined
-    preprocessor macros at compile-time.
-
-    Some additional customization is available in the \ref CEREAL_RAPIDJSON_ERRORS APIs.
-
-    \note These macros should be given on the compiler command-line
-          (where applicable)  to avoid inconsistent values when compiling
-          different translation units of a single application.
- */
-
-#include <cstdlib>  // malloc(), realloc(), free(), size_t
-#include <cstring>  // memset(), memcpy(), memmove(), memcmp()
+#include <cstdlib>	// malloc(), realloc(), free()
+#include <cstring>	// memcpy()
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_VERSION_STRING
-//
-// ALWAYS synchronize the following 3 macros with corresponding variables in /CMakeLists.txt.
-//
+// RAPIDJSON_NO_INT64DEFINE
 
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-// token stringification
-#define CEREAL_RAPIDJSON_STRINGIFY(x) CEREAL_RAPIDJSON_DO_STRINGIFY(x)
-#define CEREAL_RAPIDJSON_DO_STRINGIFY(x) #x
-//!@endcond
-
-/*! \def CEREAL_RAPIDJSON_MAJOR_VERSION
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Major version of RapidJSON in integer.
-*/
-/*! \def CEREAL_RAPIDJSON_MINOR_VERSION
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Minor version of RapidJSON in integer.
-*/
-/*! \def CEREAL_RAPIDJSON_PATCH_VERSION
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Patch version of RapidJSON in integer.
-*/
-/*! \def CEREAL_RAPIDJSON_VERSION_STRING
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Version of RapidJSON in "<major>.<minor>.<patch>" string format.
-*/
-#define CEREAL_RAPIDJSON_MAJOR_VERSION 1
-#define CEREAL_RAPIDJSON_MINOR_VERSION 0
-#define CEREAL_RAPIDJSON_PATCH_VERSION 2
-#define CEREAL_RAPIDJSON_VERSION_STRING \
-    CEREAL_RAPIDJSON_STRINGIFY(CEREAL_RAPIDJSON_MAJOR_VERSION.CEREAL_RAPIDJSON_MINOR_VERSION.CEREAL_RAPIDJSON_PATCH_VERSION)
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_NAMESPACE_(BEGIN|END)
-/*! \def CEREAL_RAPIDJSON_NAMESPACE
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief   provide custom rapidjson namespace
-
-    In order to avoid symbol clashes and/or "One Definition Rule" errors
-    between multiple inclusions of (different versions of) RapidJSON in
-    a single binary, users can customize the name of the main RapidJSON
-    namespace.
-
-    In case of a single nesting level, defining \c CEREAL_RAPIDJSON_NAMESPACE
-    to a custom name (e.g. \c MyRapidJSON) is sufficient.  If multiple
-    levels are needed, both \ref CEREAL_RAPIDJSON_NAMESPACE_BEGIN and \ref
-    CEREAL_RAPIDJSON_NAMESPACE_END need to be defined as well:
-
-    \code
-    // in some .cpp file
-    #define CEREAL_RAPIDJSON_NAMESPACE my::rapidjson
-    #define CEREAL_RAPIDJSON_NAMESPACE_BEGIN namespace my { namespace rapidjson {
-    #define CEREAL_RAPIDJSON_NAMESPACE_END   } }
-    #include "rapidjson/..."
-    \endcode
-
-    \see rapidjson
- */
-/*! \def CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief   provide custom rapidjson namespace (opening expression)
-    \see CEREAL_RAPIDJSON_NAMESPACE
-*/
-/*! \def CEREAL_RAPIDJSON_NAMESPACE_END
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief   provide custom rapidjson namespace (closing expression)
-    \see CEREAL_RAPIDJSON_NAMESPACE
-*/
-#ifndef CEREAL_RAPIDJSON_NAMESPACE
-#define CEREAL_RAPIDJSON_NAMESPACE cereal::rapidjson
-#endif
-#ifndef CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-#define CEREAL_RAPIDJSON_NAMESPACE_BEGIN namespace cereal { namespace rapidjson {
-#endif
-#ifndef CEREAL_RAPIDJSON_NAMESPACE_END
-#define CEREAL_RAPIDJSON_NAMESPACE_END } }
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_HAS_STDSTRING
-
-#ifndef CEREAL_RAPIDJSON_HAS_STDSTRING
-#ifdef CEREAL_RAPIDJSON_DOXYGEN_RUNNING
-#define CEREAL_RAPIDJSON_HAS_STDSTRING 1 // force generation of documentation
+// Here defines int64_t and uint64_t types in global namespace.
+// If user have their own definition, can define RAPIDJSON_NO_INT64DEFINE to disable this.
+#ifndef RAPIDJSON_NO_INT64DEFINE
+#ifdef _MSC_VER
+typedef __int64 int64_t;
+typedef unsigned __int64 uint64_t;
 #else
-#define CEREAL_RAPIDJSON_HAS_STDSTRING 0 // no std::string support by default
-#endif
-/*! \def CEREAL_RAPIDJSON_HAS_STDSTRING
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Enable RapidJSON support for \c std::string
-
-    By defining this preprocessor symbol to \c 1, several convenience functions for using
-    \ref rapidjson::GenericValue with \c std::string are enabled, especially
-    for construction and comparison.
-
-    \hideinitializer
-*/
-#endif // !defined(CEREAL_RAPIDJSON_HAS_STDSTRING)
-
-#if CEREAL_RAPIDJSON_HAS_STDSTRING
-#include <string>
-#endif // CEREAL_RAPIDJSON_HAS_STDSTRING
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_NO_INT64DEFINE
-
-/*! \def CEREAL_RAPIDJSON_NO_INT64DEFINE
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Use external 64-bit integer types.
-
-    RapidJSON requires the 64-bit integer types \c int64_t and  \c uint64_t types
-    to be available at global scope.
-
-    If users have their own definition, define CEREAL_RAPIDJSON_NO_INT64DEFINE to
-    prevent RapidJSON from defining its own types.
-*/
-#ifndef CEREAL_RAPIDJSON_NO_INT64DEFINE
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-#if defined(_MSC_VER) && (_MSC_VER < 1800)	// Visual Studio 2013
-#include "msinttypes/stdint.h"
-#include "msinttypes/inttypes.h"
-#else
-// Other compilers should have this.
-#include <stdint.h>
 #include <inttypes.h>
 #endif
-//!@endcond
-#ifdef CEREAL_RAPIDJSON_DOXYGEN_RUNNING
-#define CEREAL_RAPIDJSON_NO_INT64DEFINE
-#endif
-#endif // CEREAL_RAPIDJSON_NO_INT64TYPEDEF
+#endif // RAPIDJSON_NO_INT64TYPEDEF
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_FORCEINLINE
-
-#ifndef CEREAL_RAPIDJSON_FORCEINLINE
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-#if defined(_MSC_VER) && defined(NDEBUG)
-#define CEREAL_RAPIDJSON_FORCEINLINE __forceinline
-#elif defined(__GNUC__) && __GNUC__ >= 4 && defined(NDEBUG)
-#define CEREAL_RAPIDJSON_FORCEINLINE __attribute__((always_inline))
-#else
-#define CEREAL_RAPIDJSON_FORCEINLINE
-#endif
-//!@endcond
-#endif // CEREAL_RAPIDJSON_FORCEINLINE
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_ENDIAN
-#define CEREAL_RAPIDJSON_LITTLEENDIAN  0   //!< Little endian machine
-#define CEREAL_RAPIDJSON_BIGENDIAN     1   //!< Big endian machine
+// RAPIDJSON_ENDIAN
+#define RAPIDJSON_LITTLEENDIAN	0	//!< Little endian machine
+#define RAPIDJSON_BIGENDIAN		1	//!< Big endian machine
 
 //! Endianness of the machine.
-/*!
-    \def CEREAL_RAPIDJSON_ENDIAN
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-
-    GCC 4.6 provided macro for detecting endianness of the target machine. But other
-    compilers may not have this. User can define CEREAL_RAPIDJSON_ENDIAN to either
-    \ref CEREAL_RAPIDJSON_LITTLEENDIAN or \ref CEREAL_RAPIDJSON_BIGENDIAN.
-
-    Default detection implemented with reference to
-    \li https://gcc.gnu.org/onlinedocs/gcc-4.6.0/cpp/Common-Predefined-Macros.html
-    \li http://www.boost.org/doc/libs/1_42_0/boost/detail/endian.hpp
+/*!	GCC provided macro for detecting endianness of the target machine. But other
+	compilers may not have this. User can define RAPIDJSON_ENDIAN to either
+	RAPIDJSON_LITTLEENDIAN or RAPIDJSON_BIGENDIAN.
 */
-#ifndef CEREAL_RAPIDJSON_ENDIAN
-// Detect with GCC 4.6's macro
-#  ifdef __BYTE_ORDER__
-#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#      define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_LITTLEENDIAN
-#    elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-#      define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_BIGENDIAN
-#    else
-#      error Unknown machine endianess detected. User needs to define CEREAL_RAPIDJSON_ENDIAN.
-#    endif // __BYTE_ORDER__
-// Detect with GLIBC's endian.h
-#  elif defined(__GLIBC__)
-#    include <endian.h>
-#    if (__BYTE_ORDER == __LITTLE_ENDIAN)
-#      define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_LITTLEENDIAN
-#    elif (__BYTE_ORDER == __BIG_ENDIAN)
-#      define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_BIGENDIAN
-#    else
-#      error Unknown machine endianess detected. User needs to define CEREAL_RAPIDJSON_ENDIAN.
-#   endif // __GLIBC__
-// Detect with _LITTLE_ENDIAN and _BIG_ENDIAN macro
-#  elif defined(_LITTLE_ENDIAN) && !defined(_BIG_ENDIAN)
-#    define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_LITTLEENDIAN
-#  elif defined(_BIG_ENDIAN) && !defined(_LITTLE_ENDIAN)
-#    define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_BIGENDIAN
-// Detect with architecture macros
-#  elif defined(__sparc) || defined(__sparc__) || defined(_POWER) || defined(__powerpc__) || defined(__ppc__) || defined(__hpux) || defined(__hppa) || defined(_MIPSEB) || defined(_POWER) || defined(__s390__)
-#    define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_BIGENDIAN
-#  elif defined(__i386__) || defined(__alpha__) || defined(__ia64) || defined(__ia64__) || defined(_M_IX86) || defined(_M_IA64) || defined(_M_ALPHA) || defined(__amd64) || defined(__amd64__) || defined(_M_AMD64) || defined(__x86_64) || defined(__x86_64__) || defined(_M_X64) || defined(__bfin__)
-#    define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_LITTLEENDIAN
-#  elif defined(_MSC_VER) && defined(_M_ARM)
-#    define CEREAL_RAPIDJSON_ENDIAN CEREAL_RAPIDJSON_LITTLEENDIAN
-#  elif defined(CEREAL_RAPIDJSON_DOXYGEN_RUNNING)
-#    define CEREAL_RAPIDJSON_ENDIAN
-#  else
-#    error Unknown machine endianess detected. User needs to define CEREAL_RAPIDJSON_ENDIAN.
-#  endif
-#endif // CEREAL_RAPIDJSON_ENDIAN
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_64BIT
-
-//! Whether using 64-bit architecture
-#ifndef CEREAL_RAPIDJSON_64BIT
-#if defined(__LP64__) || defined(_WIN64) || defined(__EMSCRIPTEN__)
-#define CEREAL_RAPIDJSON_64BIT 1
+#ifndef RAPIDJSON_ENDIAN
+#ifdef __BYTE_ORDER__
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN
 #else
-#define CEREAL_RAPIDJSON_64BIT 0
-#endif
-#endif // CEREAL_RAPIDJSON_64BIT
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_ALIGN
-
-//! Data alignment of the machine.
-/*! \ingroup CEREAL_RAPIDJSON_CONFIG
-    \param x pointer to align
-
-    Some machines require strict data alignment. Currently the default uses 4 bytes
-    alignment on 32-bit platforms and 8 bytes alignment for 64-bit platforms.
-    User can customize by defining the CEREAL_RAPIDJSON_ALIGN function macro.
-*/
-#ifndef CEREAL_RAPIDJSON_ALIGN
-#if CEREAL_RAPIDJSON_64BIT == 1
-#define CEREAL_RAPIDJSON_ALIGN(x) (((x) + static_cast<uint64_t>(7u)) & ~static_cast<uint64_t>(7u))
+#define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
+#endif // __BYTE_ORDER__
 #else
-#define CEREAL_RAPIDJSON_ALIGN(x) (((x) + 3u) & ~3u)
+#define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN	// Assumes little endian otherwise.
 #endif
+#endif // RAPIDJSON_ENDIAN
+
+///////////////////////////////////////////////////////////////////////////////
+// RAPIDJSON_SSE2/RAPIDJSON_SSE42/RAPIDJSON_SIMD
+
+// Enable SSE2 optimization.
+//#define RAPIDJSON_SSE2
+
+// Enable SSE4.2 optimization.
+//#define RAPIDJSON_SSE42
+
+#if defined(RAPIDJSON_SSE2) || defined(RAPIDJSON_SSE42)
+#define RAPIDJSON_SIMD
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_UINT64_C2
+// RAPIDJSON_NO_SIZETYPEDEFINE
 
-//! Construct a 64-bit literal by a pair of 32-bit integer.
-/*!
-    64-bit literal with or without ULL suffix is prone to compiler warnings.
-    UINT64_C() is C macro which cause compilation problems.
-    Use this macro to define 64-bit constants by a pair of 32-bit integer.
-*/
-#ifndef CEREAL_RAPIDJSON_UINT64_C2
-#define CEREAL_RAPIDJSON_UINT64_C2(high32, low32) ((static_cast<uint64_t>(high32) << 32) | static_cast<uint64_t>(low32))
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION
-
-//! Use only lower 48-bit address for some pointers.
-/*!
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-
-    This optimization uses the fact that current X86-64 architecture only implement lower 48-bit virtual address.
-    The higher 16-bit can be used for storing other data.
-    \c GenericValue uses this optimization to reduce its size form 24 bytes to 16 bytes in 64-bit architecture.
-*/
-#ifndef CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION
-#if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
-#define CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION 1
-#else
-#define CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION 0
-#endif
-#endif // CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION
-
-#if CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION == 1
-#if CEREAL_RAPIDJSON_64BIT != 1
-#error CEREAL_RAPIDJSON_48BITPOINTER_OPTIMIZATION can only be set to 1 when CEREAL_RAPIDJSON_64BIT=1
-#endif
-#define CEREAL_RAPIDJSON_SETPOINTER(type, p, x) (p = reinterpret_cast<type *>((reinterpret_cast<uintptr_t>(p) & static_cast<uintptr_t>(CEREAL_RAPIDJSON_UINT64_C2(0xFFFF0000, 0x00000000))) | reinterpret_cast<uintptr_t>(reinterpret_cast<const void*>(x))))
-#define CEREAL_RAPIDJSON_GETPOINTER(type, p) (reinterpret_cast<type *>(reinterpret_cast<uintptr_t>(p) & static_cast<uintptr_t>(CEREAL_RAPIDJSON_UINT64_C2(0x0000FFFF, 0xFFFFFFFF))))
-#else
-#define CEREAL_RAPIDJSON_SETPOINTER(type, p, x) (p = (x))
-#define CEREAL_RAPIDJSON_GETPOINTER(type, p) (p)
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_SSE2/CEREAL_RAPIDJSON_SSE42/CEREAL_RAPIDJSON_SIMD
-
-/*! \def CEREAL_RAPIDJSON_SIMD
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief Enable SSE2/SSE4.2 optimization.
-
-    RapidJSON supports optimized implementations for some parsing operations
-    based on the SSE2 or SSE4.2 SIMD extensions on modern Intel-compatible
-    processors.
-
-    To enable these optimizations, two different symbols can be defined;
-    \code
-    // Enable SSE2 optimization.
-    #define CEREAL_RAPIDJSON_SSE2
-
-    // Enable SSE4.2 optimization.
-    #define CEREAL_RAPIDJSON_SSE42
-    \endcode
-
-    \c CEREAL_RAPIDJSON_SSE42 takes precedence, if both are defined.
-
-    If any of these symbols is defined, RapidJSON defines the macro
-    \c CEREAL_RAPIDJSON_SIMD to indicate the availability of the optimized code.
-*/
-#if defined(CEREAL_RAPIDJSON_SSE2) || defined(CEREAL_RAPIDJSON_SSE42) \
-    || defined(CEREAL_RAPIDJSON_DOXYGEN_RUNNING)
-#define CEREAL_RAPIDJSON_SIMD
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE
-
-#ifndef CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE
-/*! \def CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \brief User-provided \c SizeType definition.
-
-    In order to avoid using 32-bit size types for indexing strings and arrays,
-    define this preprocessor symbol and provide the type rapidjson::SizeType
-    before including RapidJSON:
-    \code
-    #define CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE
-    namespace rapidjson { typedef ::std::size_t SizeType; }
-    #include "rapidjson/..."
-    \endcode
-
-    \see rapidjson::SizeType
-*/
-#ifdef CEREAL_RAPIDJSON_DOXYGEN_RUNNING
-#define CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE
-#endif
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-//! Size type (for string lengths, array sizes, etc.)
-/*! RapidJSON uses 32-bit array/string indices even on 64-bit platforms,
-    instead of using \c size_t. Users may override the SizeType by defining
-    \ref CEREAL_RAPIDJSON_NO_SIZETYPEDEFINE.
+#ifndef RAPIDJSON_NO_SIZETYPEDEFINE
+namespace rapidjson {
+//! Use 32-bit array/string indices even for 64-bit platform, instead of using size_t.
+/*! User may override the SizeType by defining RAPIDJSON_NO_SIZETYPEDEFINE.
 */
 typedef unsigned SizeType;
-CEREAL_RAPIDJSON_NAMESPACE_END
+} // namespace rapidjson
 #endif
 
-// always import std::size_t to rapidjson namespace
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-using std::size_t;
-CEREAL_RAPIDJSON_NAMESPACE_END
-
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_ASSERT
+// RAPIDJSON_ASSERT
 
 //! Assertion.
-/*! \ingroup CEREAL_RAPIDJSON_CONFIG
-    By default, rapidjson uses C \c assert() for internal assertions.
-    User can override it by defining CEREAL_RAPIDJSON_ASSERT(x) macro.
-
-    \note Parsing errors are handled and can be customized by the
-          \ref CEREAL_RAPIDJSON_ERRORS APIs.
+/*! By default, rapidjson uses C assert() for assertion.
+	User can override it by defining RAPIDJSON_ASSERT(x) macro.
 */
-#ifndef CEREAL_RAPIDJSON_ASSERT
+#ifndef RAPIDJSON_ASSERT
 #include <cassert>
-#define CEREAL_RAPIDJSON_ASSERT(x) assert(x)
-#endif // CEREAL_RAPIDJSON_ASSERT
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_STATIC_ASSERT
-
-// Adopt from boost
-#ifndef CEREAL_RAPIDJSON_STATIC_ASSERT
-#ifndef __clang__
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-#endif
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-template <bool x> struct STATIC_ASSERTION_FAILURE;
-template <> struct STATIC_ASSERTION_FAILURE<true> { enum { value = 1 }; };
-template<int x> struct StaticAssertTest {};
-CEREAL_RAPIDJSON_NAMESPACE_END
-
-#define CEREAL_RAPIDJSON_JOIN(X, Y) CEREAL_RAPIDJSON_DO_JOIN(X, Y)
-#define CEREAL_RAPIDJSON_DO_JOIN(X, Y) CEREAL_RAPIDJSON_DO_JOIN2(X, Y)
-#define CEREAL_RAPIDJSON_DO_JOIN2(X, Y) X##Y
-
-#if defined(__GNUC__)
-#define CEREAL_RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE __attribute__((unused))
-#else
-#define CEREAL_RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#endif
-#ifndef __clang__
-//!@endcond
-#endif
-
-/*! \def CEREAL_RAPIDJSON_STATIC_ASSERT
-    \brief (Internal) macro to check for conditions at compile-time
-    \param x compile-time condition
-    \hideinitializer
- */
-#define CEREAL_RAPIDJSON_STATIC_ASSERT(x) \
-    typedef ::CEREAL_RAPIDJSON_NAMESPACE::StaticAssertTest< \
-      sizeof(::CEREAL_RAPIDJSON_NAMESPACE::STATIC_ASSERTION_FAILURE<bool(x) >)> \
-    CEREAL_RAPIDJSON_JOIN(StaticAssertTypedef, __LINE__) CEREAL_RAPIDJSON_STATIC_ASSERT_UNUSED_ATTRIBUTE
-#endif
-
-///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_LIKELY, CEREAL_RAPIDJSON_UNLIKELY
-
-//! Compiler branching hint for expression with high probability to be true.
-/*!
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \param x Boolean expression likely to be true.
-*/
-#ifndef CEREAL_RAPIDJSON_LIKELY
-#if defined(__GNUC__) || defined(__clang__)
-#define CEREAL_RAPIDJSON_LIKELY(x) __builtin_expect(!!(x), 1)
-#else
-#define CEREAL_RAPIDJSON_LIKELY(x) (x)
-#endif
-#endif
-
-//! Compiler branching hint for expression with low probability to be true.
-/*!
-    \ingroup CEREAL_RAPIDJSON_CONFIG
-    \param x Boolean expression unlikely to be true.
-*/
-#ifndef CEREAL_RAPIDJSON_UNLIKELY
-#if defined(__GNUC__) || defined(__clang__)
-#define CEREAL_RAPIDJSON_UNLIKELY(x) __builtin_expect(!!(x), 0)
-#else
-#define CEREAL_RAPIDJSON_UNLIKELY(x) (x)
-#endif
-#endif
+#define RAPIDJSON_ASSERT(x) assert(x)
+#endif // RAPIDJSON_ASSERT
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
-//!@cond CEREAL_RAPIDJSON_HIDDEN_FROM_DOXYGEN
-
-#define CEREAL_RAPIDJSON_MULTILINEMACRO_BEGIN do {
-#define CEREAL_RAPIDJSON_MULTILINEMACRO_END \
+#define RAPIDJSON_MULTILINEMACRO_BEGIN do {  
+#define RAPIDJSON_MULTILINEMACRO_END \
 } while((void)0, 0)
 
-// adopted from Boost
-#define CEREAL_RAPIDJSON_VERSION_CODE(x,y,z) \
-  (((x)*100000) + ((y)*100) + (z))
+namespace rapidjson {
 
 ///////////////////////////////////////////////////////////////////////////////
-// CEREAL_RAPIDJSON_DIAG_PUSH/POP, CEREAL_RAPIDJSON_DIAG_OFF
+// Allocator
 
-#if defined(__GNUC__)
-#define CEREAL_RAPIDJSON_GNUC \
-    CEREAL_RAPIDJSON_VERSION_CODE(__GNUC__,__GNUC_MINOR__,__GNUC_PATCHLEVEL__)
-#endif
+/*! \class rapidjson::Allocator
+	\brief Concept for allocating, resizing and freeing memory block.
+	
+	Note that Malloc() and Realloc() are non-static but Free() is static.
+	
+	So if an allocator need to support Free(), it needs to put its pointer in 
+	the header of memory block.
 
-#if defined(__clang__) || (defined(CEREAL_RAPIDJSON_GNUC) && CEREAL_RAPIDJSON_GNUC >= CEREAL_RAPIDJSON_VERSION_CODE(4,2,0))
+\code
+concept Allocator {
+	static const bool kNeedFree;	//!< Whether this allocator needs to call Free().
 
-#define CEREAL_RAPIDJSON_PRAGMA(x) _Pragma(CEREAL_RAPIDJSON_STRINGIFY(x))
-#define CEREAL_RAPIDJSON_DIAG_PRAGMA(x) CEREAL_RAPIDJSON_PRAGMA(GCC diagnostic x)
-#define CEREAL_RAPIDJSON_DIAG_OFF(x) \
-    CEREAL_RAPIDJSON_DIAG_PRAGMA(ignored CEREAL_RAPIDJSON_STRINGIFY(CEREAL_RAPIDJSON_JOIN(-W,x)))
+	// Allocate a memory block.
+	// \param size of the memory block in bytes.
+	// \returns pointer to the memory block.
+	void* Malloc(size_t size);
 
-// push/pop support in Clang and GCC>=4.6
-#if defined(__clang__) || (defined(CEREAL_RAPIDJSON_GNUC) && CEREAL_RAPIDJSON_GNUC >= CEREAL_RAPIDJSON_VERSION_CODE(4,6,0))
-#define CEREAL_RAPIDJSON_DIAG_PUSH CEREAL_RAPIDJSON_DIAG_PRAGMA(push)
-#define CEREAL_RAPIDJSON_DIAG_POP  CEREAL_RAPIDJSON_DIAG_PRAGMA(pop)
-#else // GCC >= 4.2, < 4.6
-#define CEREAL_RAPIDJSON_DIAG_PUSH /* ignored */
-#define CEREAL_RAPIDJSON_DIAG_POP /* ignored */
-#endif
+	// Resize a memory block.
+	// \param originalPtr The pointer to current memory block. Null_ pointer is permitted.
+	// \param originalSize The current size in bytes. (Design issue: since some allocator may not book-keep this, explicitly pass to it can save memory.)
+	// \param newSize the new size in bytes.
+	void* Realloc(void* originalPtr, size_t originalSize, size_t newSize);
 
-#elif defined(_MSC_VER)
-
-// pragma (MSVC specific)
-#define CEREAL_RAPIDJSON_PRAGMA(x) __pragma(x)
-#define CEREAL_RAPIDJSON_DIAG_PRAGMA(x) CEREAL_RAPIDJSON_PRAGMA(warning(x))
-
-#define CEREAL_RAPIDJSON_DIAG_OFF(x) CEREAL_RAPIDJSON_DIAG_PRAGMA(disable: x)
-#define CEREAL_RAPIDJSON_DIAG_PUSH CEREAL_RAPIDJSON_DIAG_PRAGMA(push)
-#define CEREAL_RAPIDJSON_DIAG_POP  CEREAL_RAPIDJSON_DIAG_PRAGMA(pop)
-
-#else
-
-#define CEREAL_RAPIDJSON_DIAG_OFF(x) /* ignored */
-#define CEREAL_RAPIDJSON_DIAG_PUSH   /* ignored */
-#define CEREAL_RAPIDJSON_DIAG_POP    /* ignored */
-
-#endif // CEREAL_RAPIDJSON_DIAG_*
+	// Free a memory block.
+	// \param pointer to the memory block. Null_ pointer is permitted.
+	static void Free(void *ptr);
+};
+\endcode
+*/
 
 ///////////////////////////////////////////////////////////////////////////////
-// C++11 features
+// CrtAllocator
 
-#ifndef CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
-#if defined(__clang__)
-#define CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS __has_feature(cxx_rvalue_references) && \
-    (defined(_LIBCPP_VERSION) || defined(__GLIBCXX__) && __GLIBCXX__ >= 20080306)
-#elif (defined(CEREAL_RAPIDJSON_GNUC) && (CEREAL_RAPIDJSON_GNUC >= CEREAL_RAPIDJSON_VERSION_CODE(4,3,0)) && defined(__GXX_EXPERIMENTAL_CXX0X__)) || \
-      (defined(_MSC_VER) && _MSC_VER >= 1600)
-
-#define CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS 1
-#else
-#define CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS 0
-#endif
-#endif // CEREAL_RAPIDJSON_HAS_CXX11_RVALUE_REFS
-
-#ifndef CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT
-#if defined(__clang__)
-#define CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT __has_feature(cxx_noexcept)
-#elif (defined(CEREAL_RAPIDJSON_GNUC) && (CEREAL_RAPIDJSON_GNUC >= CEREAL_RAPIDJSON_VERSION_CODE(4,6,0)) && defined(__GXX_EXPERIMENTAL_CXX0X__))
-//    (defined(_MSC_VER) && _MSC_VER >= ????) // not yet supported
-#define CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT 1
-#else
-#define CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT 0
-#endif
-#endif
-#if CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT
-#define CEREAL_RAPIDJSON_NOEXCEPT noexcept
-#else
-#define CEREAL_RAPIDJSON_NOEXCEPT /* noexcept */
-#endif // CEREAL_RAPIDJSON_HAS_CXX11_NOEXCEPT
-
-// no automatic detection, yet
-#ifndef CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS
-#define CEREAL_RAPIDJSON_HAS_CXX11_TYPETRAITS 0
-#endif
-
-#ifndef CEREAL_RAPIDJSON_HAS_CXX11_RANGE_FOR
-#if defined(__clang__)
-#define CEREAL_RAPIDJSON_HAS_CXX11_RANGE_FOR __has_feature(cxx_range_for)
-#elif (defined(CEREAL_RAPIDJSON_GNUC) && (CEREAL_RAPIDJSON_GNUC >= CEREAL_RAPIDJSON_VERSION_CODE(4,3,0)) && defined(__GXX_EXPERIMENTAL_CXX0X__)) || \
-      (defined(_MSC_VER) && _MSC_VER >= 1700)
-#define CEREAL_RAPIDJSON_HAS_CXX11_RANGE_FOR 1
-#else
-#define CEREAL_RAPIDJSON_HAS_CXX11_RANGE_FOR 0
-#endif
-#endif // CEREAL_RAPIDJSON_HAS_CXX11_RANGE_FOR
-
-//!@endcond
+//! C-runtime library allocator.
+/*! This class is just wrapper for standard C library memory routines.
+	\implements Allocator
+*/
+class CrtAllocator {
+public:
+	static const bool kNeedFree = true;
+	void* Malloc(size_t size) { return malloc(size); }
+	void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) { (void)originalSize; return realloc(originalPtr, newSize); }
+	static void Free(void *ptr) { free(ptr); }
+};
 
 ///////////////////////////////////////////////////////////////////////////////
-// new/delete
+// MemoryPoolAllocator
 
-#ifndef CEREAL_RAPIDJSON_NEW
-///! customization point for global \c new
-#define CEREAL_RAPIDJSON_NEW(x) new x
-#endif
-#ifndef CEREAL_RAPIDJSON_DELETE
-///! customization point for global \c delete
-#define CEREAL_RAPIDJSON_DELETE(x) delete x
-#endif
+//! Default memory allocator used by the parser and DOM.
+/*! This allocator allocate memory blocks from pre-allocated memory chunks. 
+
+    It does not free memory blocks. And Realloc() only allocate new memory.
+
+    The memory chunks are allocated by BaseAllocator, which is CrtAllocator by default.
+
+    User may also supply a buffer as the first chunk.
+
+    If the user-buffer is full then additional chunks are allocated by BaseAllocator.
+
+    The user-buffer is not deallocated by this allocator.
+
+    \tparam BaseAllocator the allocator type for allocating memory chunks. Default is CrtAllocator.
+	\implements Allocator
+*/
+template <typename BaseAllocator = CrtAllocator>
+class MemoryPoolAllocator {
+public:
+	static const bool kNeedFree = false;	//!< Tell users that no need to call Free() with this allocator. (concept Allocator)
+
+	//! Constructor with chunkSize.
+	/*! \param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+		\param baseAllocator The allocator for allocating memory chunks.
+	*/
+	MemoryPoolAllocator(size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) : 
+		chunkHead_(0), chunk_capacity_(chunkSize), userBuffer_(0), baseAllocator_(baseAllocator), ownBaseAllocator_(0)
+	{
+		if (!baseAllocator_)
+			ownBaseAllocator_ = baseAllocator_ = new BaseAllocator();
+		AddChunk(chunk_capacity_);
+	}
+
+	//! Constructor with user-supplied buffer.
+	/*! The user buffer will be used firstly. When it is full, memory pool allocates new chunk with chunk size.
+
+		The user buffer will not be deallocated when this allocator is destructed.
+
+		\param buffer User supplied buffer.
+		\param size Size of the buffer in bytes. It must at least larger than sizeof(ChunkHeader).
+		\param chunkSize The size of memory chunk. The default is kDefaultChunkSize.
+		\param baseAllocator The allocator for allocating memory chunks.
+	*/
+	MemoryPoolAllocator(char *buffer, size_t size, size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) :
+		chunkHead_(0), chunk_capacity_(chunkSize), userBuffer_(buffer), baseAllocator_(baseAllocator), ownBaseAllocator_(0)
+	{
+		RAPIDJSON_ASSERT(buffer != 0);
+		RAPIDJSON_ASSERT(size > sizeof(ChunkHeader));
+		chunkHead_ = (ChunkHeader*)buffer;
+		chunkHead_->capacity = size - sizeof(ChunkHeader);
+		chunkHead_->size = 0;
+		chunkHead_->next = 0;
+	}
+
+	//! Destructor.
+	/*! This deallocates all memory chunks, excluding the user-supplied buffer.
+	*/
+	~MemoryPoolAllocator() {
+		Clear();
+		delete ownBaseAllocator_;
+	}
+
+	//! Deallocates all memory chunks, excluding the user-supplied buffer.
+	void Clear() {
+		while(chunkHead_ != 0 && chunkHead_ != (ChunkHeader *)userBuffer_) {
+			ChunkHeader* next = chunkHead_->next;
+			baseAllocator_->Free(chunkHead_);
+			chunkHead_ = next;
+		}
+	}
+
+	//! Computes the total capacity of allocated memory chunks.
+	/*! \return total capacity in bytes.
+	*/
+	size_t Capacity() {
+		size_t capacity = 0;
+		for (ChunkHeader* c = chunkHead_; c != 0; c = c->next)
+			capacity += c->capacity;
+		return capacity;
+	}
+
+	//! Computes the memory blocks allocated.
+	/*! \return total used bytes.
+	*/
+	size_t Size() {
+		size_t size = 0;
+		for (ChunkHeader* c = chunkHead_; c != 0; c = c->next)
+			size += c->size;
+		return size;
+	}
+
+	//! Allocates a memory block. (concept Allocator)
+	void* Malloc(size_t size) {
+		size = (size + 3) & ~3;	// Force aligning size to 4
+
+		if (chunkHead_->size + size > chunkHead_->capacity)
+			AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size);
+
+		char *buffer = (char *)(chunkHead_ + 1) + chunkHead_->size;
+		RAPIDJSON_ASSERT(((uintptr_t)buffer & 3) == 0);	// returned buffer is aligned to 4
+		chunkHead_->size += size;
+
+		return buffer;
+	}
+
+	//! Resizes a memory block (concept Allocator)
+	void* Realloc(void* originalPtr, size_t originalSize, size_t newSize) {
+		if (originalPtr == 0)
+			return Malloc(newSize);
+
+		// Do not shrink if new size is smaller than original
+		if (originalSize >= newSize)
+			return originalPtr;
+
+		// Simply expand it if it is the last allocation and there is sufficient space
+		if (originalPtr == (char *)(chunkHead_ + 1) + chunkHead_->size - originalSize) {
+			size_t increment = newSize - originalSize;
+			increment = (increment + 3) & ~3;	// Force aligning size to 4
+			if (chunkHead_->size + increment <= chunkHead_->capacity) {
+				chunkHead_->size += increment;
+				RAPIDJSON_ASSERT(((uintptr_t)originalPtr & 3) == 0);	// returned buffer is aligned to 4
+				return originalPtr;
+			}
+		}
+
+		// Realloc process: allocate and copy memory, do not free original buffer.
+		void* newBuffer = Malloc(newSize);
+		RAPIDJSON_ASSERT(newBuffer != 0);	// Do not handle out-of-memory explicitly.
+		return memcpy(newBuffer, originalPtr, originalSize);
+	}
+
+	//! Frees a memory block (concept Allocator)
+	static void Free(void *) {} // Do nothing
+
+private:
+	//! Creates a new chunk.
+	/*! \param capacity Capacity of the chunk in bytes.
+	*/
+	void AddChunk(size_t capacity) {
+		ChunkHeader* chunk = (ChunkHeader*)baseAllocator_->Malloc(sizeof(ChunkHeader) + capacity);
+		chunk->capacity = capacity;
+		chunk->size = 0;
+		chunk->next = chunkHead_;
+		chunkHead_ =  chunk;
+	}
+
+	static const int kDefaultChunkCapacity = 64 * 1024; //!< Default chunk capacity.
+
+	//! Chunk header for perpending to each chunk.
+	/*! Chunks are stored as a singly linked list.
+	*/
+	struct ChunkHeader {
+		size_t capacity;	//!< Capacity of the chunk in bytes (excluding the header itself).
+		size_t size;		//!< Current size of allocated memory in bytes.
+		ChunkHeader *next;	//!< Next chunk in the linked list.
+	};
+
+	ChunkHeader *chunkHead_;	//!< Head of the chunk linked-list. Only the head chunk serves allocation.
+	size_t chunk_capacity_;		//!< The minimum capacity of chunk when they are allocated.
+	char *userBuffer_;			//!< User supplied buffer.
+	BaseAllocator* baseAllocator_;	//!< base allocator for allocating memory chunks.
+	BaseAllocator* ownBaseAllocator_;	//!< base allocator created by this object.
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Encoding
+
+/*! \class rapidjson::Encoding
+	\brief Concept for encoding of Unicode characters.
+
+\code
+concept Encoding {
+	typename Ch;	//! Type of character.
+
+	//! \brief Encode a Unicode codepoint to a buffer.
+	//! \param buffer pointer to destination buffer to store the result. It should have sufficient size of encoding one character.
+	//! \param codepoint An unicode codepoint, ranging from 0x0 to 0x10FFFF inclusively.
+	//! \returns the pointer to the next character after the encoded data.
+	static Ch* Encode(Ch *buffer, unsigned codepoint);
+};
+\endcode
+*/
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF8
+
+//! UTF-8 encoding.
+/*! http://en.wikipedia.org/wiki/UTF-8
+	\tparam CharType Type for storing 8-bit UTF-8 data. Default is char.
+	\implements Encoding
+*/
+template<typename CharType = char>
+struct UTF8 {
+	typedef CharType Ch;
+
+	static Ch* Encode(Ch *buffer, unsigned codepoint) {
+		if (codepoint <= 0x7F) 
+			*buffer++ = codepoint & 0xFF;
+		else if (codepoint <= 0x7FF) {
+			*buffer++ = 0xC0 | ((codepoint >> 6) & 0xFF);
+			*buffer++ = 0x80 | ((codepoint & 0x3F));
+		}
+		else if (codepoint <= 0xFFFF) {
+			*buffer++ = 0xE0 | ((codepoint >> 12) & 0xFF);
+			*buffer++ = 0x80 | ((codepoint >> 6) & 0x3F);
+			*buffer++ = 0x80 | (codepoint & 0x3F);
+		}
+		else {
+			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+			*buffer++ = 0xF0 | ((codepoint >> 18) & 0xFF);
+			*buffer++ = 0x80 | ((codepoint >> 12) & 0x3F);
+			*buffer++ = 0x80 | ((codepoint >> 6) & 0x3F);
+			*buffer++ = 0x80 | (codepoint & 0x3F);
+		}
+		return buffer;
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF16
+
+//! UTF-16 encoding.
+/*! http://en.wikipedia.org/wiki/UTF-16
+	\tparam CharType Type for storing 16-bit UTF-16 data. Default is wchar_t. C++11 may use char16_t instead.
+	\implements Encoding
+*/
+template<typename CharType = wchar_t>
+struct UTF16 {
+	typedef CharType Ch;
+
+	static Ch* Encode(Ch* buffer, unsigned codepoint) {
+		if (codepoint <= 0xFFFF) {
+			RAPIDJSON_ASSERT(codepoint < 0xD800 || codepoint > 0xDFFF); // Code point itself cannot be surrogate pair 
+			*buffer++ = static_cast<Ch>(codepoint);
+		}
+		else {
+			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+			unsigned v = codepoint - 0x10000;
+			*buffer++ = static_cast<Ch>((v >> 10) + 0xD800);
+			*buffer++ = (v & 0x3FF) + 0xDC00;
+		}
+		return buffer;
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// UTF32
+
+//! UTF-32 encoding. 
+/*! http://en.wikipedia.org/wiki/UTF-32
+	\tparam Ch Type for storing 32-bit UTF-32 data. Default is unsigned. C++11 may use char32_t instead.
+	\implements Encoding
+*/
+template<typename CharType = unsigned>
+struct UTF32 {
+	typedef CharType Ch;
+
+	static Ch *Encode(Ch* buffer, unsigned codepoint) {
+		RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+		*buffer++ = codepoint;
+		return buffer;
+	}
+};
+
+///////////////////////////////////////////////////////////////////////////////
+//  Stream
+
+/*! \class rapidjson::Stream
+	\brief Concept for reading and writing characters.
+
+	For read-only stream, no need to implement PutBegin(), Put() and PutEnd().
+
+	For write-only stream, only need to implement Put().
+
+\code
+concept Stream {
+	typename Ch;	//!< Character type of the stream.
+
+	//! Read the current character from stream without moving the read cursor.
+	Ch Peek() const;
+
+	//! Read the current character from stream and moving the read cursor to next character.
+	Ch Take();
+
+	//! Get the current read cursor.
+	//! \return Number of characters read from start.
+	size_t Tell();
+
+	//! Begin writing operation at the current read pointer.
+	//! \return The begin writer pointer.
+	Ch* PutBegin();
+
+	//! Write a character.
+	void Put(Ch c);
+
+	//! End the writing operation.
+	//! \param begin The begin write pointer returned by PutBegin().
+	//! \return Number of characters written.
+	size_t PutEnd(Ch* begin);
+}
+\endcode
+*/
+
+//! Put N copies of a character to a stream.
+template<typename Stream, typename Ch>
+inline void PutN(Stream& stream, Ch c, size_t n) {
+	for (size_t i = 0; i < n; i++)
+		stream.Put(c);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// StringStream
+
+//! Read-only string stream.
+/*! \implements Stream
+*/
+template <typename Encoding>
+struct GenericStringStream {
+	typedef typename Encoding::Ch Ch;
+
+	GenericStringStream(const Ch *src) : src_(src), head_(src) {}
+
+	Ch Peek() const { return *src_; }
+	Ch Take() { return *src_++; }
+	size_t Tell() const { return src_ - head_; }
+
+	Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
+	void Put(Ch) { RAPIDJSON_ASSERT(false); }
+	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+
+	const Ch* src_;		//!< Current read position.
+	const Ch* head_;	//!< Original head of the string.
+};
+
+typedef GenericStringStream<UTF8<> > StringStream;
+
+///////////////////////////////////////////////////////////////////////////////
+// InsituStringStream
+
+//! A read-write string stream.
+/*! This string stream is particularly designed for in-situ parsing.
+	\implements Stream
+*/
+template <typename Encoding>
+struct GenericInsituStringStream {
+	typedef typename Encoding::Ch Ch;
+
+	GenericInsituStringStream(Ch *src) : src_(src), dst_(0), head_(src) {}
+
+	// Read
+	Ch Peek() { return *src_; }
+	Ch Take() { return *src_++; }
+	size_t Tell() { return src_ - head_; }
+
+	// Write
+	Ch* PutBegin() { return dst_ = src_; }
+	void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+	size_t PutEnd(Ch* begin) { return dst_ - begin; }
+
+	Ch* src_;
+	Ch* dst_;
+	Ch* head_;
+};
+
+typedef GenericInsituStringStream<UTF8<> > InsituStringStream;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Type
 
-/*! \namespace rapidjson
-    \brief main RapidJSON namespace
-    \see CEREAL_RAPIDJSON_NAMESPACE
-*/
-CEREAL_RAPIDJSON_NAMESPACE_BEGIN
-
 //! Type of JSON value
 enum Type {
-    kNullType = 0,      //!< null
-    kFalseType = 1,     //!< false
-    kTrueType = 2,      //!< true
-    kObjectType = 3,    //!< object
-    kArrayType = 4,     //!< array
-    kStringType = 5,    //!< string
-    kNumberType = 6     //!< number
+	kNull_Type = 0,		//!< null
+	kFalseType = 1,		//!< false
+	kTrueType = 2,		//!< true
+	kObjectType = 3,	//!< object
+	kArrayType = 4,		//!< array 
+	kStringType = 5,	//!< string
+	kNumberType = 6,	//!< number
 };
 
-CEREAL_RAPIDJSON_NAMESPACE_END
+} // namespace rapidjson
 
-#endif // CEREAL_RAPIDJSON_CEREAL_RAPIDJSON_H_
+#endif // RAPIDJSON_RAPIDJSON_H_

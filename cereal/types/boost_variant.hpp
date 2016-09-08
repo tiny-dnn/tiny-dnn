@@ -79,8 +79,8 @@ namespace cereal
   } // namespace variant_detail
 
   //! Saving for boost::variant
-  template <class Archive, typename VariantType1, typename... VariantTypes> inline
-  void CEREAL_SAVE_FUNCTION_NAME( Archive & ar, boost::variant<VariantType1, VariantTypes...> const & variant )
+  template <class Archive, typename... VariantTypes> inline
+  void CEREAL_SAVE_FUNCTION_NAME( Archive & ar, boost::variant<VariantTypes...> const & variant )
   {
     int32_t which = variant.which();
     ar( CEREAL_NVP_("which", which) );
@@ -89,17 +89,17 @@ namespace cereal
   }
 
   //! Loading for boost::variant
-  template <class Archive, typename VariantType1, typename... VariantTypes> inline
-  void CEREAL_LOAD_FUNCTION_NAME( Archive & ar, boost::variant<VariantType1, VariantTypes...> & variant )
+  template <class Archive, typename... VariantTypes> inline
+  void CEREAL_LOAD_FUNCTION_NAME( Archive & ar, boost::variant<VariantTypes...> & variant )
   {
-    typedef typename boost::variant<VariantType1, VariantTypes...>::types types;
+    typedef typename boost::variant<VariantTypes...>::types types;
 
     int32_t which;
     ar( CEREAL_NVP_("which", which) );
     if(which >= boost::mpl::size<types>::value)
       throw Exception("Invalid 'which' selector when deserializing boost::variant");
 
-    variant_detail::load_variant<0, boost::variant<VariantType1, VariantTypes...>, VariantType1, VariantTypes...>(ar, which, variant);
+    variant_detail::load_variant<0, boost::variant<VariantTypes...>, VariantTypes...>(ar, which, variant);
   }
 } // namespace cereal
 
