@@ -66,6 +66,7 @@ class FullyConnectedGradOp : public core::OpKernel {
         tensor_t* db = params.has_bias_ ? &context.input_grad(2) : nullptr;
         tensor_t& prev_delta = context.input_grad(0);
         tensor_t& curr_delta = context.output_grad(1);
+        tensor_t dummy; // need lvalue for non-const reference
 
         // TODO(nyanp): Why we only need to initialize prev_delta ?
 
@@ -84,7 +85,7 @@ class FullyConnectedGradOp : public core::OpKernel {
                 prev_out,
                 W[0],
                 dW,
-                params.has_bias_ ? *db : tensor_t(),
+                params.has_bias_ ? *db : dummy,
                 curr_delta,
                 prev_delta,
                 params,
@@ -95,7 +96,7 @@ class FullyConnectedGradOp : public core::OpKernel {
                 prev_out,
                 W[0],
                 dW,
-                params.has_bias_ ? *db : tensor_t(),
+                params.has_bias_ ? *db : dummy,
                 curr_delta,
                 prev_delta,
                 params,
