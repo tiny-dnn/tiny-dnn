@@ -57,11 +57,13 @@ class FullyConnectedGradOp : public core::OpKernel {
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
+        auto params = OpKernel::params_->fully();
+
         // incoming/outcoming data
         const tensor_t& prev_out = context.input(0);
         const tensor_t& W        = context.input(1);
         tensor_t& dW = context.input_grad(1);
-        tensor_t& db = context.input_grad(2);
+        tensor_t* db = params.has_bias_ ? &context.input_grad(2) : nullptr;
         tensor_t& prev_delta = context.input_grad(0);
         tensor_t& curr_delta = context.output_grad(1);
 
@@ -82,10 +84,10 @@ class FullyConnectedGradOp : public core::OpKernel {
                 prev_out,
                 W[0],
                 dW,
-                db,
+                params.has_bias_ ? *db : tensor_t(),
                 curr_delta,
                 prev_delta,
-                OpKernel::params_->fully(),
+                params,
                 context.parallelize());
         }
         else if (engine == core::backend_t::avx) {
@@ -93,10 +95,10 @@ class FullyConnectedGradOp : public core::OpKernel {
                 prev_out,
                 W[0],
                 dW,
-                db,
+                params.has_bias_ ? *db : tensor_t(),
                 curr_delta,
                 prev_delta,
-                OpKernel::params_->fully(),
+                params,
                 context.parallelize());
         }
         else {
