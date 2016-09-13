@@ -531,7 +531,6 @@ private:
      */
     void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
         if (params_.pad_type == core::padding::valid) {
-            delta_unpadded = delta;
             return;
         }
 
