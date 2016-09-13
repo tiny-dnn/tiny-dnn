@@ -95,11 +95,11 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
 
     // calculating offset
     const int32_t offset_input =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input));
     const int32_t offset_filter =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
     const int32_t zero_in_total_space =
-        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
+        int64_to_int32(float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value));
 
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
@@ -223,12 +223,13 @@ void tiny_quantized_deconv2d_back_kernel(const deconv_params& params,
     std::vector<int32_t> dW_quantized(dW.size(), static_cast<int32_t>(0));
 
     // calculating offset
+    // TODO wangdiya: do we need to check overflows?
     const int32_t offset_prev_out =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_prev_out, max_prev_out);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_prev_out, max_prev_out));
     const int32_t offset_filter =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
     const int32_t offset_curr_delta =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_curr_delta, max_curr_delta);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_curr_delta, max_curr_delta));
     // const int32_t zero_in_prev_delta =
     //    float_to_quantized<int32_t>(0.0f, min_prev_delta_value, max_prev_delta_value);
 
@@ -384,11 +385,11 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
 
     // calculating offset
     const int32_t offset_input =
-        float_to_quantized_unclamped<uint8_t>(0.0f, in_r[0], in_r[1]);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, in_r[0], in_r[1]));
     const int32_t offset_filter =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
     const int32_t zero_in_total_space =
-        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
+        int64_to_int32(float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value));
 
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
@@ -426,7 +427,7 @@ void tiny_quantized_deconv2d_kernel(const deconv_params& params,
             int32_t * pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
             int32_t * paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
             std::for_each(pa_quantized, paa_quantized, [&](int32_t& f) {
-                f += (bias[o] - zero_in_total_space);
+                f += static_cast<int32_t>((bias[o] - zero_in_total_space));
             });
         }
     });

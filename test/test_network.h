@@ -445,7 +445,7 @@ TEST(network, gradient_check5) { // softmax - cross-entropy
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, 1e-1, GRAD_CHECK_RANDOM));
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second, 1e-1f, GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check6) { // sigmoid - cross-entropy
@@ -503,7 +503,7 @@ TEST(network, read_write)
     ASSERT_TRUE(n1.has_same_weights(n2, epsilon<float_t>()));
 
     for (int i = 0; i < 10; i++) {
-        tiny_dnn::float_t eps = std::abs(res1[i]) * 1e-5;
+        tiny_dnn::float_t eps = std::abs(res1[i]) * 1e-5f;
         ASSERT_TRUE(std::abs(res1[i] - res2[i]) < eps);
     }
 }

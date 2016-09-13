@@ -107,14 +107,14 @@ void serialization_test(T& src, T& dst)
     std::remove(tmp_file_path.c_str());
 
     vec_t v(src.in_data_size());
-    uniform_rand(v.begin(), v.end(), -1.0, 1.0);
+    uniform_rand(v.begin(), v.end(), -1.0f, 1.0f);
 
-    EXPECT_TRUE(src.has_same_weights(dst, 1E-5));
+    EXPECT_TRUE(src.has_same_weights(dst, 1E-5f));
 
     vec_t r1 = forward_pass(src, v);
     vec_t r2 = forward_pass(dst, v);
 
-    EXPECT_TRUE(is_near_container(r1, r2, 1E-4));
+    EXPECT_TRUE(is_near_container(r1, r2, 1E-4f));
 }
 
 

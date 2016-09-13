@@ -34,7 +34,7 @@ namespace tiny_dnn {
 
 TEST(dropout, randomized) {
     int num_units = 10000;
-    double dropout_rate = 0.1;
+    tiny_dnn::float_t dropout_rate = 0.1f;
     dropout_layer l(num_units, dropout_rate, net_phase::train);
     vec_t v(num_units, 1.0);
 
