@@ -32,56 +32,29 @@
 namespace tiny_dnn {
 
 TEST(convolutional, setup_tiny) {
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
-    EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
-    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
-    EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
-    EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.weights().size(), 2);           // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(), 2);     // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(), 3);            // num of input edges
-    EXPECT_EQ(l.outputs().size(), 2);           // num of outpus edges
-    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
-    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
-    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
-    EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
-    // EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
+    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
+
+    EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(),           cnn_size_t(3));  // num of input tensors
+    EXPECT_EQ(l.out_channels(),          cnn_size_t(2));  // num of output tensors
+    EXPECT_EQ(l.in_data_size(),          cnn_size_t(25)); // size of input tensors
+    EXPECT_EQ(l.out_data_size(),         cnn_size_t(18)); // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(),  cnn_size_t(1));  // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), cnn_size_t(1));  // num of output shapes
+    EXPECT_EQ(l.weights().size(),        cnn_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.weights_grads().size(),  cnn_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(),         cnn_size_t(3));  // num of input edges
+    EXPECT_EQ(l.outputs().size(),        cnn_size_t(2));  // num of outpus edges
+    EXPECT_EQ(l.in_types().size(),       cnn_size_t(3));  // num of input data types
+    EXPECT_EQ(l.out_types().size(),      cnn_size_t(2));  // num of output data types
+    EXPECT_EQ(l.fan_in_size(),           cnn_size_t(9));  // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(),          cnn_size_t(18)); // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "conv");         // string with layer type
+    EXPECT_TRUE(l.engine() == backend_t::tiny_dnn);       // the engine type
 }
-
-#ifdef CNN_USE_NNPACK
-TEST(convolutional, setup_nnp) {
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::nnpack);
-
-    EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
-    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
-    EXPECT_EQ(l.in_data_size(), 25);            // size of input tensors
-    EXPECT_EQ(l.out_data_size(), 18);           // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.weights().size(), 2);           // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(), 2);     // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(), 3);            // num of input edges
-    EXPECT_EQ(l.outputs().size(), 2);           // num of outpus edges
-    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
-    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
-    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
-    EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
-    // EXPECT_TRUE(l.backend_type() == backend_t::nnpack);
-}
-#endif
 
 TEST(convolutional, fprop) {
-    typedef network<sequential> CNN;
-    CNN nn;
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
@@ -102,7 +75,7 @@ TEST(convolutional, fprop) {
         , &out    = out_tensor[0]
         , &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), cnn_size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -151,8 +124,6 @@ TEST(convolutional, fprop) {
 
 #ifdef CNN_USE_NNPACK
 TEST(convolutional, fprop_nnp) {
-    typedef network<sequential> CNN;
-    CNN nn;
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::nnpack);
@@ -229,7 +200,9 @@ TEST(convolutional, gradient_check) { // tanh - mse
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check2) { // sigmoid - mse
@@ -238,7 +211,9 @@ TEST(convolutional, gradient_check2) { // sigmoid - mse
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check3) { // rectified - mse
@@ -248,7 +223,9 @@ TEST(convolutional, gradient_check3) { // rectified - mse
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check4) { // identity - mse
@@ -258,7 +235,9 @@ TEST(convolutional, gradient_check4) { // identity - mse
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
@@ -268,7 +247,9 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first,
+                                                 test_data.second,
+                                                 epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check6) { // sigmoid - absolute
@@ -278,7 +259,9 @@ TEST(convolutional, gradient_check6) { // sigmoid - absolute
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first,
+                                            test_data.second,
+                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
@@ -288,7 +271,22 @@ TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(test_data.first,
+                                                     test_data.second,
+                                                     epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
+    network<sequential> nn;
+
+    nn << convolutional_layer<sigmoid> (5, 5, 3, 1, 1, padding::same,
+                                        true, 1, 1, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, read_write)
@@ -318,6 +316,157 @@ TEST(convolutional, read_write2) {
     layer2.init_weight();
 
     serialization_test(layer1, layer2);
+}
+
+
+TEST(convolutional, copy_and_pad_input_valid) {
+
+    conv_params params;
+    params.in        = shape3d(5,5,1);
+    params.weight    = shape3d(3,3,2);
+    params.in_padded = shape3d(5,5,1);
+    params.out       = shape3d(3,3,1);
+    params.pad_type  = padding::valid; // test target
+    params.w_stride  = 1;
+    params.h_stride  = 1;
+
+    Conv2d conv2d_op;
+           conv2d_op.setParams(&params);
+
+    auto create_tensor = [](cnn_size_t batch_size,
+                            cnn_size_t vector_size) {
+        return tensor_t(batch_size, vec_t(vector_size));
+    };
+
+    tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
+
+    fill_tensor(in_tensor, float_t(1));
+
+    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
+
+    for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
+        EXPECT_EQ(out_tensor[0][i], float_t(1));
+    }
+}
+
+TEST(convolutional, copy_and_pad_input_same) {
+
+    conv_params params;
+    params.in        = shape3d(5,5,1);
+    params.weight    = shape3d(3,3,2);
+    params.in_padded = shape3d(7,7,1);
+    params.out       = shape3d(3,3,1);
+    params.pad_type  = padding::same; // test target
+    params.w_stride  = 1;
+    params.h_stride  = 1;
+
+    Conv2d conv2d_op;
+           conv2d_op.setParams(&params);
+
+    auto create_tensor = [](cnn_size_t batch_size,
+                            cnn_size_t vector_size) {
+        return tensor_t(batch_size, vec_t(vector_size));
+    };
+
+    tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
+
+    fill_tensor(in_tensor, float_t(1));
+
+    /* @in_tensor   --->   @out_tensor
+     *
+     *    1 1 1             0 0 0 0 0
+     *    1 1 1             0 1 1 1 0
+     *    1 1 1             0 1 1 1 0
+     *                      0 1 1 1 0
+     *                      0 0 0 0 0
+     */
+
+    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
+
+    EXPECT_EQ(out_tensor[0][7],  float_t(0));
+    EXPECT_EQ(out_tensor[0][8],  float_t(1));
+    EXPECT_EQ(out_tensor[0][9],  float_t(1));
+    EXPECT_EQ(out_tensor[0][10], float_t(1));
+    EXPECT_EQ(out_tensor[0][11], float_t(1));
+    EXPECT_EQ(out_tensor[0][12], float_t(1));
+    EXPECT_EQ(out_tensor[0][13], float_t(0));
+}
+
+TEST(convolutional, copy_and_unpad_valid) {
+
+    conv_params params;
+    params.in        = shape3d(5,5,1);
+    params.weight    = shape3d(3,3,2);
+    params.in_padded = shape3d(5,5,1);
+    params.out       = shape3d(3,3,1);
+    params.pad_type  = padding::valid; // test target
+    params.w_stride  = 1;
+    params.h_stride  = 1;
+
+    Conv2d conv2d_op;
+           conv2d_op.setParams(&params);
+
+    auto create_tensor = [](cnn_size_t batch_size,
+                            cnn_size_t vector_size) {
+        return tensor_t(batch_size, vec_t(vector_size));
+    };
+
+    tensor_t in_tensor = create_tensor(1, 1 * 7 * 7), out_tensor;
+
+    fill_tensor(in_tensor, float_t(1));
+
+    conv2d_op.copy_and_unpad_delta(in_tensor, out_tensor);
+
+    for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
+        EXPECT_EQ(out_tensor[0][i], float_t(1));
+    }
+}
+
+TEST(convolutional, copy_and_unpad_delta_same) {
+
+    conv_params params;
+    params.in        = shape3d(3,3,1);
+    params.weight    = shape3d(2,2,1);
+    params.in_padded = shape3d(5,5,1);
+    params.out       = shape3d(2,2,1);
+    params.pad_type  = padding::same; // test target
+    params.w_stride  = 1;
+    params.h_stride  = 1;
+
+    Conv2d conv2d_op;
+           conv2d_op.setParams(&params);
+
+    auto create_tensor = [](cnn_size_t batch_size,
+                            cnn_size_t vector_size) {
+        return tensor_t(batch_size, vec_t(vector_size));
+    };
+
+    tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
+
+    fill_tensor(in_tensor, float_t(0));
+
+    /*
+     * @in_tensor   --->   @out_tensor
+     *
+     * 0 0 0 0 0             1 1 1
+     * 0 1 1 1 0             1 1 1
+     * 0 1 1 1 0             1 1 1
+     * 0 1 1 1 0
+     * 0 0 0 0 0
+     *
+     */
+
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            in_tensor[0][6 + 5*i + j] = float_t(1);
+        }
+    }
+
+    conv2d_op.copy_and_unpad_delta(in_tensor, out_tensor);
+
+    for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
+        EXPECT_EQ(out_tensor[0][i], float_t(1));
+    }
 }
 
 } // namespace tiny-dnn

@@ -65,13 +65,11 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
         const vec_t&       bias = context.input(2)[0];
         tensor_t&      out_data = context.output(1);
 
-        // pad input data
-        tensor_t in_data_padded;
-        Conv2d::setParams(OpKernel::params_);
-        Conv2d::copy_and_pad_input(in_data, in_data_padded);
-
         // initialize outputs
         fill_tensor(out_data, float_t(0));
+
+        // set the convolution parameters
+        Conv2d::setParams(OpKernel::params_);
 
         // call convolution algorithm depending
         // on the selected engine type
@@ -80,7 +78,7 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
 
         if (engine == core::backend_t::tiny_dnn) {
             kernels::conv2d_op_custom(
-                in_data_padded,
+                in_data,
                 W,
                 bias,
                 out_data,
@@ -89,7 +87,7 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
         }
         else if (engine == core::backend_t::nnpack) {
             kernels::conv2d_op_nnpack(
-                in_data_padded,
+                in_data,
                 W,
                 bias,
                 out_data,
@@ -97,7 +95,7 @@ class Conv2dOp : private Conv2d, public core::OpKernel {
         }
         else if (engine == core::backend_t::avx) {
             kernels::conv2d_op_avx(
-                in_data_padded,
+                in_data,
                 W,
                 bias,
                 out_data,

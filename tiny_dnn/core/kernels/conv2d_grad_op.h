@@ -92,7 +92,6 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
                 prev_delta,
                 Conv2d::params(),
                 context.parallelize());
-
         }
         else if (engine == core::backend_t::avx) {
             kernels::conv2d_grad_op_avx(
@@ -107,11 +106,6 @@ class Conv2dGradOp : private Conv2d, public core::OpKernel {
         }
         else {
             throw nn_error("Not supported engine: " + to_string(engine));
-        }
-
-        // apply unpadding
-        if (Conv2d::params().pad_type == core::padding::same) {
-            Conv2d::copy_and_unpad_delta(prev_out, prev_delta);
         }
     }
 };

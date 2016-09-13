@@ -88,12 +88,12 @@ class avx_backend : public backend {
     void conv2d(const std::vector<tensor_t*>& in_data,
                 std::vector<tensor_t*>&       out_data) override {
         copy_and_pad_input(*in_data[0]);
-        const vec_t& W    = (*in_data[1])[0];
-        const vec_t& bias = (*in_data[2])[0];
-        tensor_t&    a    = *out_data[1];
-        const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
+        //const vec_t& W    = (*in_data[1])[0];
+        //const vec_t& bias = (*in_data[2])[0];
+        //tensor_t&    a    = *out_data[1];
+        //const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
 
-        fill_tensor(a, float_t(0));
+        //fill_tensor(a, float_t(0));
 
         //kernels::avx_conv2d_kernel(*params_c_,
         //    in, W, bias, a, layer_->parallelize());
@@ -115,10 +115,10 @@ class avx_backend : public backend {
                 std::vector<tensor_t*>&       in_grad) override {
         conv_layer_worker_specific_storage& cws = (*conv_layer_worker_storage_);
 
-        std::vector<const vec_t*>& prev_out = cws.prev_out_padded_;
+        //std::vector<const vec_t*>& prev_out = cws.prev_out_padded_;
         const vec_t& W  = (*in_data[1])[0];
         tensor_t&    dW = *in_grad[1];
-        tensor_t&    db = *in_grad[2];
+        //tensor_t&    db = *in_grad[2];
         tensor_t&    curr_delta = *out_grad[1];
         tensor_t*    prev_delta = (params_c_->pad_type == padding::same) ?
                                    &cws.prev_delta_padded_ : in_grad[0];
