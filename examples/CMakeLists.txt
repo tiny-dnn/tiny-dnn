@@ -22,7 +22,7 @@ add_executable(example_deconv_train deconv/train.cpp)
 target_link_libraries(example_deconv_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-if(USE_OPENCV AND OpenCV_FOUND)
+if(CNN_USE_OPENCV)
     add_executable(example_mnist_test mnist/test.cpp)
     target_link_libraries(example_mnist_test
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
@@ -30,20 +30,20 @@ if(USE_OPENCV AND OpenCV_FOUND)
     add_executable(example_deconv_visual deconv/visual.cpp)
     target_link_libraries(example_deconv_visual
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
-else(USE_OPENCV AND OpenCV_FOUND)
+else(CNN_USE_OPENCV)
     file(GLOB stb_image_hdrs mnist/stb_image/*.h)
     add_executable(example_mnist_test mnist/test_with_stb_image.cpp
                    ${stb_image_hdrs})
     target_link_libraries(example_mnist_test
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
-endif(USE_OPENCV AND OpenCV_FOUND)
+endif(CNN_USE_OPENCV)
 
 add_executable(example_cifar_train cifar10/train.cpp)
 target_link_libraries(example_cifar_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
 find_package(Protobuf QUIET)
-if(PROTOBUF_FOUND)
+if(CNN_USE_OPENCV AND PROTOBUF_FOUND)
     set(proto_file "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.pb.cc")
     if(EXISTS ${proto_file})
         add_executable(example_caffe_converter
@@ -74,6 +74,6 @@ if(PROTOBUF_FOUND)
     else()
         message(STATUS "Proto is not linked correctly, please make sure file exists.")
     endif()
-else()
+else(CNN_USE_OPENCV AND PROTOBUF_FOUND)
     message(STATUS "Cannot generate Caffe Importer. Please install Protobuf.")
-endif()
+endif(CNN_USE_OPENCV AND PROTOBUF_FOUND)
