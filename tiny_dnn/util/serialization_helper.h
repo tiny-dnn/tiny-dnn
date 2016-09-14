@@ -157,9 +157,9 @@ void start_loading_layer(T & ar) {}
 template <typename T>
 void finish_loading_layer(T & ar) {}
 
-void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
+inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
-void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
+inline void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
 
 } // namespace tiny_dnn
 
