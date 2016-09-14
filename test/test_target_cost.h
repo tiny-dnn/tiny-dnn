@@ -135,9 +135,9 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     // 2) assuming equal cost for each class, in which case the "true" function
     //    (identity) can be learned
 
-    const float_t p = 0.9;  // p(in == 1)
-    const float_t p0 = 0.6; // p(label == 1 | in == 0)
-    const float_t p1 = 0.9; // p(label == 1 | in == 1)
+    const float_t p = 0.9f;  // p(in == 1)
+    const float_t p0 = 0.6f; // p(label == 1 | in == 0)
+    const float_t p1 = 0.9f; // p(label == 1 | in == 1)
 
     auto create_net = []() {
         network<sequential> net;
@@ -210,8 +210,8 @@ TEST(target_cost, train_unbalanced_data) {
     // 2) assuming equal cost for each class, in which case the correct underlying
     //    function can be learned.
 
-    const float_t p = 0.9; // p(label == 1)
-    const float_t noise = 0.25;
+    const float_t p = 0.9f; // p(label == 1)
+    const float_t noise = 0.25f;
 
     auto create_net = []() {
         network<sequential> net;
@@ -223,8 +223,8 @@ TEST(target_cost, train_unbalanced_data) {
     network<sequential> net_equal_sample_cost = create_net();
     network<sequential> net_equal_class_cost  = create_net();
     adagrad optimizer1, optimizer2;
-    optimizer1.alpha = 0.02;
-    optimizer2.alpha = 0.02;
+    optimizer1.alpha = 0.02f;
+    optimizer2.alpha = 0.02f;
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;

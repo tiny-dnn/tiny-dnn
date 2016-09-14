@@ -118,13 +118,13 @@ TEST(quantized_deconvolutional, fprop) {
             EXPECT_NEAR(0.5, o, 1E-3);
     }
 
-    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
-    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
-    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+    weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
+    weight[3] = 0.0f;  weight[4] =-0.1f; weight[5] =-0.1f;
+    weight[6] = 0.05f; weight[7] =-0.2f; weight[8] = 0.05f;
 
-    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
-    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
-    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+    weight[9]  = 0.0f; weight[10] =-0.1f; weight[11] = 0.1f;
+    weight[12] = 0.1f; weight[13] =-0.2f; weight[14] = 0.3f;
+    weight[15] = 0.2f; weight[16] =-0.3f; weight[17] = 0.2f;
 
     in[0] = 3;  in[1] = 2;
     in[2] = 3;  in[3] = 0;

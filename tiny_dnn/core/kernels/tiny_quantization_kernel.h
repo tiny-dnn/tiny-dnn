@@ -53,11 +53,16 @@ int64_t float_to_quantized_unclamped(float input, float range_min, float range_m
   const double range = ((range_max - range_min) * range_adjust);
   const double range_scale = (number_of_steps / range);
   int64_t quantized =
-      (round(input * range_scale) - round(range_min * range_scale));
+      static_cast<int64_t>(round(input * range_scale) - round(range_min * range_scale));
   const int64_t lowest_quantized =
-      static_cast<double>(lowest<T>());
+      static_cast<int64_t>(lowest<T>());
   quantized += lowest_quantized;
   return quantized;
+}
+
+inline int32_t int64_to_int32(int64_t src) {
+    assert(src <= std::numeric_limits<int32_t>::max() && src >= std::numeric_limits<int32_t>::min());
+    return static_cast<int32_t>(src);
 }
 
 // This converts the float into the final quantized type, clamping/saturating
@@ -148,14 +153,14 @@ inline void requantize_many_in_new_range<int32_t, uint8_t>(
   const int fp_shift = 16;
   const float input_range = max_input - min_input;
   const float output_range = max_output - min_output;
-  const float recip_output_range = (255.0 / output_range);
+  const float recip_output_range = (255.0f / output_range);
   const int64_t recip_output_range_fp =
       static_cast<int64_t>(recip_output_range * (1 << fp_shift));
   const int64_t range_scale_fp =
-      static_cast<int64_t>(255.0 * (1 << fp_shift) * input_range / output_range);
+      static_cast<int64_t>(255.0f * (1 << fp_shift) * input_range / output_range);
   const int64_t input_offset_fp =
-      (min_input * recip_output_range_fp) + (range_scale_fp >> 1);
-  const int64_t output_offset_fp = round((min_output * 255.0) / output_range);
+      static_cast<int64_t>((min_input * recip_output_range_fp) + (range_scale_fp >> 1));
+  const int64_t output_offset_fp = static_cast<int64_t>(round((min_output * 255.0f) / output_range));
   const int64_t rounding_delta = 1 << (fp_shift - 1);
   // Inside this loop we just do minimal adds, multiplies, and shifts, in a way
   // that could be easily adapted for a SIMD implementation. It should also be

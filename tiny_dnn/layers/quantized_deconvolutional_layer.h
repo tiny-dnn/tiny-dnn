@@ -472,12 +472,13 @@ private:
 
                 for (cnn_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
                     float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-                    idx = params_.out.get_index(floor(params_.weight.width_ / 2),
-                                                 floor(params_.weight.height_ / 2), c);
+                    idx = params_.out.get_index(static_cast<size_t>(floor(params_.weight.width_ / 2)),
+                                                static_cast<size_t>(floor(params_.weight.height_ / 2)), c);
+
                     const float_t *pout = &out[sample][idx];
 
-                    for (cnn_size_t y = floor(params_.weight.height_ / 2);
-                        y < params_.out_unpadded.height_ + floor(params_.weight.height_ / 2);
+                    for (cnn_size_t y = static_cast<cnn_size_t>(floor(params_.weight.height_ / 2));
+                        y < params_.out_unpadded.height_ + static_cast<cnn_size_t>(floor(params_.weight.height_ / 2));
                         y++,
                         pout += params_.out.width_,
                         pimg += params_.out_unpadded.width_) {
