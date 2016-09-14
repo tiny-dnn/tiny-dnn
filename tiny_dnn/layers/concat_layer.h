@@ -104,9 +104,25 @@ public:
         }
     }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<concat_layer> & construct) {
+        std::vector<shape3d> in_shapes;
+
+        ar(in_shapes);
+        construct(in_shapes);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(in_shapes_);
+    }
+
 private:
     std::vector<shape3d> in_shapes_;
     shape3d out_shape_;
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::concat_layer, concat);

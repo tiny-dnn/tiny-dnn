@@ -68,6 +68,7 @@
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+#include "tiny_dnn/util/serialization_helper.h"
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf

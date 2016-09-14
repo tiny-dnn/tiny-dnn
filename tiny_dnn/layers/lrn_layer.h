@@ -45,6 +45,20 @@ public:
 
     typedef feedforward_layer<Activation> Base;
 
+    lrn_layer(const shape3d& in_shape,
+              cnn_size_t     local_size,
+              float_t        alpha  = 1.0,
+              float_t        beta   = 5.0,
+              norm_region    region = norm_region::across_channels)
+        : Base({ vector_type::data }),
+        in_shape_(in_shape),
+        size_(local_size),
+        alpha_(alpha),
+        beta_(beta),
+        region_(region),
+        in_square_(in_shape_.area()) {
+    }
+
     /**
     * @param layer       [in] the previous layer connected to this
     * @param local_size  [in] the number of channels(depths) to sum over
@@ -57,14 +71,7 @@ public:
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
-        : Base({ vector_type::data }),
-          in_shape_(prev->out_data_shape()[0]),
-          size_(local_size),
-          alpha_(alpha),
-          beta_(beta),
-          region_(region),
-          in_square_(in_shape_.area()) {
-    }
+        : lrn_layer(prev->out_data_shape()[0], local_size, alpha, beta, region) {}
 
     /**
      * @param in_width    [in] the width of input data
@@ -81,14 +88,7 @@ public:
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
-        : Base({vector_type::data}),
-          in_shape_(in_width, in_height, in_channels),
-          size_(local_size),
-          alpha_(alpha),
-          beta_(beta),
-          region_(region),
-          in_square_(in_shape_.area()) {
-    }
+        : lrn_layer(shape3d{in_width, in_height, in_channels}, local_size, alpha, beta, region){}
 
     size_t fan_in_size() const override {
         return size_;
@@ -139,6 +139,31 @@ public:
         CNN_UNREFERENCED_PARAMETER(out_grad);
         CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("not implemented");
+    }
+
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<lrn_layer> & construct) {
+        shape3d in_shape;
+        cnn_size_t size;
+        float_t alpha, beta;
+        norm_region region;
+
+        ar(cereal::make_nvp("in_shape", in_shape),
+           cereal::make_nvp("size", size),
+           cereal::make_nvp("alpha", alpha),
+           cereal::make_nvp("beta", beta),
+           cereal::make_nvp("region", region));
+        construct(in_shape, size, alpha, beta, region);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_shape", in_shape_),
+           cereal::make_nvp("size", size_),
+           cereal::make_nvp("alpha", alpha_),
+           cereal::make_nvp("beta", beta_),
+           cereal::make_nvp("region", region_));
     }
 
 private:
@@ -196,3 +221,6 @@ private:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::lrn_layer, lrn);
+

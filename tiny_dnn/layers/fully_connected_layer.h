@@ -124,7 +124,27 @@ public:
 
     std::string layer_type() const override { return "fully-connected"; }
 
- private:
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
+        size_t in_dim, out_dim;
+        bool has_bias;
+
+        ar(cereal::make_nvp("in_size", in_dim),
+           cereal::make_nvp("out_size", out_dim),
+           cereal::make_nvp("has_bias", has_bias));
+        construct(in_dim, out_dim, has_bias);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", params_.in_size_),
+           cereal::make_nvp("out_size", params_.out_size_),
+           cereal::make_nvp("has_bias", params_.has_bias_));
+    }
+
+protected:
+
     void set_params(const cnn_size_t in_size,
                     const cnn_size_t out_size,
                     bool             has_bias) {
@@ -160,3 +180,5 @@ public:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::fully_connected_layer, fully_connected);

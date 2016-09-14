@@ -64,19 +64,15 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       cnn_size_t     pooling_size,
                       backend_t      backend_type = backend_t::tiny_dnn,
                       backend_params b_params = backend_params())
-            : Base({ vector_type::data }) {
-        if ((in_width % pooling_size) || (in_height % pooling_size)) {
-            pooling_size_mismatch(in_width, in_height, pooling_size);
-        }
-        set_maxpool_params(shape3d(in_width, in_height, in_channels),
-                           shape3d(in_width  / pooling_size,
-                                   in_height / pooling_size,
-                                   in_channels),
-                           pooling_size, pooling_size);
+            : max_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size, backend_type, b_params) {
+    }
 
-        init_connection();
-        init_backend(backend_type);
-        Base::set_backend_type(backend_type);
+    max_pooling_layer(const shape3d& in_shape,
+                      cnn_size_t     pooling_size,
+                      cnn_size_t     stride,
+                      backend_t      backend_type = backend_t::tiny_dnn,
+                      backend_params b_params = backend_params())
+        : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_, pooling_size, stride, backend_type, b_params) {
     }
 
     /**
@@ -162,6 +158,22 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void set_sample_count(cnn_size_t sample_count) override {
         Base::set_sample_count(sample_count);
         max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out_.size()));
+    }
+
+
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<max_pooling_layer> & construct) {
+        shape3d in;
+        size_t stride, pool_size;
+
+        ar(cereal::make_nvp("in_size", in), cereal::make_nvp("pool_size", pool_size), cereal::make_nvp("stride", stride));
+        construct(in, pool_size, stride);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", params_.in_), cereal::make_nvp("pool_size", params_.pool_size_), cereal::make_nvp("stride", params_.stride_));
     }
 
 private:
@@ -280,3 +292,5 @@ private:
 };
 
 }  // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::max_pooling_layer, maxpool);

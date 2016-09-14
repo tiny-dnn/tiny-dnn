@@ -41,6 +41,17 @@
 
 namespace tiny_dnn {
 
+enum class content_type {
+    weights, ///< save/load the weights
+    model, ///< save/load the network architecture
+    weights_and_model ///< save/load both the weights and the architecture
+};
+
+enum class file_format {
+    binary,
+    json
+};
+
 struct result {
     result() : num_success(0), num_total(0) {}
 
@@ -406,39 +417,6 @@ public:
     }
 
     /**
-     * save network weights into stream
-     * @attention this saves only network *weights*, not network configuration
-     **/
-    void save(std::ostream& os) const {
-        os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
-        net_.save(os);
-    }
-
-    /**
-     * load network weights from stream
-     * @attention this loads only network *weights*, not network configuration
-     **/
-    void load(std::istream& is) {
-        is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
-        net_.load(is);
-    }
-
-    /**
-     * load network weights from filepath, 30 times faster than stream reading
-     * @attention this loads only network *weights*, not network configuration
-     **/
-    void fast_load(const char* filepath) {
-        FILE* stream = fopen(filepath, "r");
-        std::vector<float_t> data;
-        double temp;
-        while (fscanf(stream, "%lf", &temp) > 0)
-            data.push_back(float_t(temp));
-        fclose(stream);
-
-        net_.load(data);
-    }
-
-    /**
     * checking gradients calculated by bprop
     * detail information:
     * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
@@ -584,6 +562,124 @@ public:
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
+    void load(const std::string& filename,
+              content_type       what     = content_type::weights_and_model,
+              file_format        format   = file_format::binary) {
+        std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
+        if (ifs.fail() || ifs.bad())
+            throw nn_error("failed to open:" + filename);
+
+        switch (format) {
+            case file_format::binary:
+            {
+                cereal::BinaryInputArchive bi(ifs);
+                from_archive(bi, what);
+            }
+            break;
+            case file_format::json:
+            {
+                cereal::JSONInputArchive ji(ifs);
+                from_archive(ji, what);
+            }
+            break;
+            default:
+                throw nn_error("invalid serialization format");
+        }
+    }
+
+    void save(const std::string& filename,
+              content_type       what     = content_type::weights_and_model,
+              file_format        format   = file_format::binary) const {
+        std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
+        if (ofs.fail() || ofs.bad())
+            throw nn_error("failed to open:" + filename);
+
+        switch (format) {
+            case file_format::binary:
+            {
+                cereal::BinaryOutputArchive bo(ofs);
+                to_archive(bo, what);
+            }
+            break;
+            case file_format::json:
+            {
+                cereal::JSONOutputArchive jo(ofs);
+                to_archive(jo, what);
+            }
+            break;
+            default:
+                throw nn_error("invalid serialization format");
+        }
+    }
+
+    /**
+     * save the network architecture as json string
+     **/
+    std::string to_json() const {
+        std::stringstream ss;
+        {
+            cereal::JSONOutputArchive oa(ss);
+            to_archive(oa, content_type::model);
+        }
+        return ss.str();
+    }
+
+    /**
+     * load the network architecture from json string
+     **/
+    void from_json(const std::string& json_string) {
+        std::stringstream ss;
+        ss << json_string;
+        cereal::JSONInputArchive ia(ss);
+        from_archive(ia, content_type::model);
+    }
+
+    ///< @deprecated use save(filename,target,format) instead.
+    void save(std::ostream& os) const {
+        os.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
+        net_.save(os);
+    }
+
+    ///< @deprecated use load(filename,target,format) instead.
+    void load(std::istream& is) {
+        is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
+        net_.load(is);
+    }
+
+    /**
+    * load network weights from filepath, 30 times faster than stream reading
+    * @deprecated use load_weights instead.
+    **/
+    void fast_load(const char* filepath) {
+        FILE* stream = fopen(filepath, "r");
+        std::vector<float_t> data;
+        double temp;
+        while (fscanf(stream, "%lf", &temp) > 0)
+            data.push_back(float_t(temp));
+        fclose(stream);
+
+        net_.load(data);
+    }
+
+    template <typename OutputArchive>
+    void to_archive(OutputArchive& ar, content_type what = content_type::weights_and_model) const {
+        if (what == content_type::model || what == content_type::weights_and_model) {
+            net_.save_model(ar);
+        }
+        if (what == content_type::weights || what == content_type::weights_and_model) {
+            net_.save_weights(ar);
+        }
+    }
+
+    template <typename InputArchive>
+    void from_archive(InputArchive& ar, content_type what = content_type::weights_and_model) {
+        if (what == content_type::model || what == content_type::weights_and_model) {
+            net_.load_model(ar);
+        }
+        if (what == content_type::weights || what == content_type::weights_and_model) {
+            net_.load_weights(ar);
+        }
+    }
 protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
@@ -594,6 +690,7 @@ protected:
         return label_t(max_index(fprop(in)));
     }
 private:
+
 
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);

@@ -282,9 +282,9 @@ img.write("kernel0.bmp");
 
 ## io
 ### save and load the model
-Simply use operator << and >> to save/load network weights.
 
-save
+You can use ```network::save``` and ```network::load``` to save/load your model:
+
 ```cpp
 network<sequential> nn;
 
@@ -292,22 +292,46 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 3, 6)
     << max_pooling_layer<tan_h>(28, 28, 6, 2)
     << fully_connected_layer<tan_h>(14 * 14 * 6, 10);
 ...
-std::ofstream output("nets.txt");
-output << nn;
+
+nn.save("my-network");
+
+network<sequential> nn2;
+nn2.load("my-network");
 ```
 
-load
+The generated binary file will contain:
+- the architecture of model
+- the weights of the model
+
+You can also select file format, and what you want to save:
+
 ```cpp
-network<sequential> nn;
+// save the weights of the model in binary format
+nn.save("my-weights", content_type::weights, file_format::binary);
+nn.load("my-weights", content_type::weights, file_format::, file_format::json););
 
-nn << convolutional_layer<tan_h>(32, 32, 5, 3, 6)
-    << max_pooling_layer<tan_h>(28, 28, 6, 2)
-    << fully_connected_layer<tan_h>(14 * 14 * 6, 10);
-...
-std::ifstream input("nets.txt");
-input >> nn;
+// save the architecture of the model in json format
+nn.save("my-architecture", content_type::model, file_format::json);
+nn.load("my-architecture", content_type::model, file_format::json);
+
+// save both the architecture and the weights in binary format
+// these are equivalent to nn.save("my-network") and nn.load("my-network")
+nn.save("my-network", content_type::weights_and_model, file_format::binary);
+nn.load("my-network", content_type::weights_and_model, file_format::binary);
+
 ```
-*tiny_dnn saves only weights/biases array, not network structure itself*. So you must construct network(same as training time) before loading.
+
+If you want the architecture model in ```string``` format, you can use ```to_json``` and ```from_json```.
+
+```cpp
+std::string json = nn.to_json();
+
+cout << json;
+
+nn.from_json(json);
+```
+
+> Note: ```operator <<``` and ```operator >>``` APIs before tiny-dnn v0.1.1 are deprecated.
 
 ### import caffe's model
 [Import Caffe Model to tiny-dnn](../examples/caffe_converter/readme.md)

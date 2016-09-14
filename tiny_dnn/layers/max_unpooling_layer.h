@@ -50,15 +50,14 @@ public:
                         cnn_size_t in_height,
                         cnn_size_t in_channels,
                         cnn_size_t unpooling_size)
-        : Base({vector_type::data}),
-        unpool_size_(unpooling_size),
-        stride_(unpooling_size),
-        in_(in_width, in_height, in_channels),
-        out_(in_width * unpooling_size, in_height * unpooling_size, in_channels)
-    {
-        //set_worker_count(CNN_TASK_SIZE);
-        init_connection();
-    }
+        : max_unpooling_layer(in_width, in_height, in_channels, unpooling_size, unpooling_size)
+    {}
+
+    max_unpooling_layer(const shape3d& in_size,
+                        cnn_size_t unpooling_size,
+                        cnn_size_t stride)
+        : max_unpooling_layer(in_size.width_, in_size.height_, in_size.depth_, unpooling_size, unpooling_size)
+    {}
 
     /**
      * @param in_width     [in] width of input image
@@ -129,19 +128,6 @@ public:
         });
     }
 
-    /*void back_propagation_2nd(const std::vector<vec_t>& delta_in) override {
-        const vec_t& current_delta2 = delta_in[0];
-        const vec_t& prev_out = prev_->output(0);
-        const activation::function& prev_h = prev_->activation_function();
-
-        max_pooling_layer_worker_specific_storage& mws = max_pooling_layer_worker_storage_[0];
-
-        for (cnn_size_t i = 0; i < in_size_; i++) {
-            cnn_size_t outi = in2out_[i];
-            prev_delta2_[i] = (mws.out2inmax_[outi] == i) ? current_delta2[outi] * sqr(prev_h.df(prev_out[i])) : float_t(0);
-        }
-    }*/
-
     std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
     std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-unpool"; }
@@ -153,6 +139,21 @@ public:
         for (max_unpooling_layer_worker_specific_storage& mws : max_unpooling_layer_worker_storage_) {
             mws.in2outmax_.resize(out_.size());
         }
+    }
+
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
+        shape3d in;
+        size_t stride, unpool_size;
+
+        ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size), cereal::make_nvp("stride", stride));
+        construct(in, unpool_size, stride);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("unpool_size", unpool_size_), cereal::make_nvp("stride", stride_));
     }
 
 private:
@@ -214,3 +215,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+//CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::max_unpooling_layer, maxunpool);

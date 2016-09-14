@@ -80,14 +80,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t     h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_dnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
-            Base::set_backend_type(backend_type);
-    }
+        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
+                              connection_table(), pad_type, has_bias, w_stride, h_stride,
+                              backend_type, b_params)
+    {}
 
     /**
     * constructing convolutional layer
@@ -117,14 +113,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t     h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_dnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
-            Base::set_backend_type(backend_type);
-    }
+        : convolutional_layer(in_width, in_height, window_width, window_height, in_channels, out_channels,
+            connection_table(), pad_type, has_bias, w_stride, h_stride,
+            backend_type, b_params)
+    {}
 
     /**
     * constructing convolutional layer
@@ -154,15 +146,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t              h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_dnn,
                         backend_params b_params = backend_params())
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
-            Base::set_backend_type(backend_type);
-    }
+        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
+            connection_table, pad_type, has_bias, w_stride, h_stride,
+            backend_type, b_params)
+    {}
 
     /**
     * constructing convolutional layer
@@ -194,7 +181,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         cnn_size_t              h_stride = 1,
                         backend_t      backend_type = backend_t::tiny_dnn,
                         backend_params b_params = backend_params())
-        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
+        : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
                             out_channels, pad_type, has_bias,
@@ -376,6 +363,44 @@ class convolutional_layer : public feedforward_layer<Activation> {
             }
         }
         return img;
+    }
+
+
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<convolutional_layer> & construct) {
+        size_t w_width, w_height, out_ch, w_stride, h_stride;
+        bool has_bias;
+        shape3d in;
+        padding pad_type;
+        connection_table tbl;
+
+        ar(cereal::make_nvp("in_size", in),
+            cereal::make_nvp("window_width", w_width),
+            cereal::make_nvp("window_height", w_height),
+            cereal::make_nvp("out_channels", out_ch),
+            cereal::make_nvp("connection_table", tbl),
+            cereal::make_nvp("pad_type", pad_type),
+            cereal::make_nvp("has_bias", has_bias),
+            cereal::make_nvp("w_stride", w_stride),
+            cereal::make_nvp("h_stride", h_stride)
+        );
+
+        construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", params_.in),
+            cereal::make_nvp("window_width", params_.weight.width_),
+            cereal::make_nvp("window_height", params_.weight.height_),
+            cereal::make_nvp("out_channels", params_.out.depth_),
+            cereal::make_nvp("connection_table", params_.tbl),
+            cereal::make_nvp("pad_type", params_.pad_type),
+            cereal::make_nvp("has_bias", params_.has_bias),
+            cereal::make_nvp("w_stride", params_.w_stride),
+            cereal::make_nvp("h_stride", params_.h_stride)
+            );
     }
 
 private:
@@ -578,3 +603,5 @@ private:
 };
 
 }  // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::convolutional_layer, conv);
