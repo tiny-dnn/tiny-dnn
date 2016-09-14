@@ -75,7 +75,7 @@ class Device {
      *
      * @param type The device type. Can be only CPU.
      */
-    explicit Device(device_t type);
+    inline explicit Device(device_t type);
 
     /* CPU/GPU OpenCL constructor.
      * Device context is initialized in constructor.
@@ -84,7 +84,7 @@ class Device {
      * @param platform_id The platform identification number.
      * @param device_id The device identification number.
      */
-    explicit Device(device_t type,
+    inline explicit Device(device_t type,
                     const int platform_id,
                     const int device_id);
 
@@ -125,7 +125,7 @@ class Device {
      *
      * @param l The layer to be registered
      */
-    void registerOp(layer& l);
+    inline void registerOp(layer& l);
 
  private:
     /* The device type */

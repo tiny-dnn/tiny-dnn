@@ -33,7 +33,7 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-void tiny_quantized_conv2d_kernel(const conv_params& params,
+inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                                   const vec_t&       in,
                                   const vec_t&       W,
                                   const vec_t&       bias,
@@ -156,7 +156,7 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
 }
 
-void tiny_quantized_conv2d_back_kernel(const conv_params& params,
+inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
                                        const vec_t& prev_out,
                                        const vec_t& W,
                                        vec_t&       dW,
@@ -340,7 +340,7 @@ void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     }
 }
 
-void tiny_quantized_conv2d_kernel(const conv_params& params,
+inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                                   const vec_t&       in,
                                   const vec_t&       W,
                                   const vec_t&       bias,

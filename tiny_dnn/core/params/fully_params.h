@@ -39,7 +39,7 @@ class fully_params : public Params {
 };
 
 // TODO(nyanp): can we do better here?
-fully_params Params::fully() const {
+inline fully_params Params::fully() const {
     return *(static_cast<const fully_params*>(this));
 }
 
