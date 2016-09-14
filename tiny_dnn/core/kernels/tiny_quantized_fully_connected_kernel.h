@@ -35,11 +35,11 @@ namespace core {
 namespace kernels {
 
 inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
-                                           const vec_t&        in,
-                                           const vec_t&        W,
-                                           const vec_t&        b,
-                                           vec_t&              a,
-                                           const bool          layer_parallelize) {
+                                                  const vec_t&        in,
+                                                  const vec_t&        W,
+                                                  const vec_t&        b,
+                                                  vec_t&              a,
+                                                  const bool          layer_parallelize) {
     // input quantization
     float min_input(in[0]);
     float max_input(in[0]);
@@ -143,13 +143,13 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
 }
 
 inline void tiny_quantized_fully_connected_back_kernel(const fully_params& params,
-                                                const vec_t& prev_out,
-                                                const vec_t& W,
-                                                vec_t&       dW,
-                                                vec_t&       prev_delta,
-                                                vec_t&       curr_delta,
-                                                vec_t&       db,
-                                                const bool   layer_parallelize) {
+                                                       const vec_t& prev_out,
+                                                       const vec_t& W,
+                                                       vec_t&       dW,
+                                                       vec_t&       prev_delta,
+                                                       vec_t&       curr_delta,
+                                                       vec_t&       db,
+                                                       const bool   layer_parallelize) {
     // previous output quantization
     float min_prev_out(prev_out[0]);
     float max_prev_out(prev_out[0]);
@@ -263,15 +263,15 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
 }
 
 inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
-                                           const vec_t&        in,
-                                           const vec_t&        W,
-                                           const vec_t&        b,
-                                           const vec_t&        in_r,
-                                           const vec_t&        W_r,
-                                           const vec_t&        b_r,
-                                           vec_t&              a,
-                                           vec_t&              a_r,
-                                           const bool          layer_parallelize) {
+                                                  const vec_t&        in,
+                                                  const vec_t&        W,
+                                                  const vec_t&        b,
+                                                  const vec_t&        in_r,
+                                                  const vec_t&        W_r,
+                                                  const vec_t&        b_r,
+                                                  vec_t&              a,
+                                                  vec_t&              a_r,
+                                                  const bool          layer_parallelize) {
     // filter range
     float min_filter(W_r[0]);
     float max_filter(W_r[1]);

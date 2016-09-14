@@ -85,8 +85,8 @@ class Device {
      * @param device_id The device identification number.
      */
     inline explicit Device(device_t type,
-                    const int platform_id,
-                    const int device_id);
+                           const int platform_id,
+                           const int device_id);
 
     // Returns the device type
     device_t type() const { return type_; }

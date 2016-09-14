@@ -60,8 +60,8 @@ inline Device::Device(device_t type)
 }
 
 inline Device::Device(device_t type,
-                const int platform_id,
-                const int device_id)
+                      const int platform_id,
+                      const int device_id)
         : type_(type)
         , has_clcuda_api_(true)
         , platform_id_(platform_id)
