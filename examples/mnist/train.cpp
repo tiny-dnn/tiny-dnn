@@ -116,9 +116,8 @@ static void train_lenet(const std::string& data_dir_path) {
     // test and show results
     nn.test(test_images, test_labels).print_detail(std::cout);
 
-    // save networks
-    std::ofstream ofs("LeNet-weights");
-    ofs << nn;
+    // save network model & trained weights
+    nn.save("LeNet-model");
 }
 
 int main(int argc, char **argv) {
