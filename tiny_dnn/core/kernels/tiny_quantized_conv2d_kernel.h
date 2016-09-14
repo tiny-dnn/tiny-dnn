@@ -33,12 +33,12 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-void tiny_quantized_conv2d_kernel(const conv_params& params,
-                                  const vec_t&       in,
-                                  const vec_t&       W,
-                                  const vec_t&       bias,
-                                  vec_t&             a,
-                                  const bool layer_parallelize) {
+inline void tiny_quantized_conv2d_kernel(const conv_params& params,
+                                         const vec_t&       in,
+                                         const vec_t&       W,
+                                         const vec_t&       bias,
+                                         vec_t&             a,
+                                         const bool layer_parallelize) {
     // image quantization
     float min_input(in[0]);
     float max_input(in[0]);
@@ -156,13 +156,13 @@ void tiny_quantized_conv2d_kernel(const conv_params& params,
     a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
 }
 
-void tiny_quantized_conv2d_back_kernel(const conv_params& params,
-                                       const vec_t& prev_out,
-                                       const vec_t& W,
-                                       vec_t&       dW,
-                                       vec_t&       db,
-                                       vec_t&       curr_delta,
-                                       vec_t*       prev_delta) {
+inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
+                                              const vec_t& prev_out,
+                                              const vec_t& W,
+                                              vec_t&       dW,
+                                              vec_t&       db,
+                                              vec_t&       curr_delta,
+                                              vec_t*       prev_delta) {
     // previous output quantization
     float min_prev_out(prev_out[0]);
     float max_prev_out(prev_out[0]);
@@ -340,16 +340,16 @@ void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     }
 }
 
-void tiny_quantized_conv2d_kernel(const conv_params& params,
-                                  const vec_t&       in,
-                                  const vec_t&       W,
-                                  const vec_t&       bias,
-                                  const vec_t&       in_r,
-                                  const vec_t&       W_r,
-                                  const vec_t&       b_r,
-                                  vec_t&             a,
-                                  vec_t&             a_r,
-                                  const bool layer_parallelize) {
+inline void tiny_quantized_conv2d_kernel(const conv_params& params,
+                                         const vec_t&       in,
+                                         const vec_t&       W,
+                                         const vec_t&       bias,
+                                         const vec_t&       in_r,
+                                         const vec_t&       W_r,
+                                         const vec_t&       b_r,
+                                         vec_t&             a,
+                                         vec_t&             a_r,
+                                         const bool layer_parallelize) {
     // filter range
     float min_filter(W_r[0]);
     float max_filter(W_r[1]);

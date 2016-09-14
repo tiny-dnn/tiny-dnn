@@ -49,7 +49,7 @@
 
 namespace tiny_dnn {
  
-Device::Device(device_t type)
+inline Device::Device(device_t type)
         : type_(type), has_clcuda_api_(false) {
     nn_info("Initializing Non-OpenCL device ...");
     if (type == device_t::GPU) {
@@ -59,9 +59,9 @@ Device::Device(device_t type)
     nn_info("Initializing Non-OpenCL device ... OK");
 }
 
-Device::Device(device_t type,
-                const int platform_id,
-                const int device_id)
+inline Device::Device(device_t type,
+                      const int platform_id,
+                      const int device_id)
         : type_(type)
         , has_clcuda_api_(true)
         , platform_id_(platform_id)
@@ -110,7 +110,7 @@ Device::Device(device_t type,
 #endif
 }
 
-void Device::registerOp(layer& l) {
+inline void Device::registerOp(layer& l) {
     // TODO(egdar/nyanp): Should we raise an error here?
     if (!hasCLCudaAPI()) {
         throw nn_error("Cannot register layer: " + l.layer_type() +

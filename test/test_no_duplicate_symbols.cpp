@@ -27,7 +27,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "picotest/picotest.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 TEST(no_duplicate_symbols, no_duplicate_symbols) { 
     // The real test is that the tests link without errors due to duplicate symbols
