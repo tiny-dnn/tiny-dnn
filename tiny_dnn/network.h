@@ -566,6 +566,8 @@ public:
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) {
         std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
+        if (ifs.fail() || ifs.bad())
+            throw nn_error("failed to open:" + filename);
 
         switch (format) {
             case file_format::binary:
@@ -589,6 +591,8 @@ public:
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) const {
         std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
+        if (ofs.fail() || ofs.bad())
+            throw nn_error("failed to open:" + filename);
 
         switch (format) {
             case file_format::binary:
