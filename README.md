@@ -1,11 +1,17 @@
-tiny-dnn: A header-only, dependency-free deep learning framework for C++11
-========
-
-| **Linux/Mac OS** | **Windows** | **Coveralls** |
-|------------------|-------------|---------------|
-|[![Build Status](https://travis-ci.org/tiny-dnn/tiny-dnn.svg?branch=master)](https://travis-ci.org/tiny-dnn/tiny-dnn)|[![Build status](https://ci.appveyor.com/api/projects/status/a5syoifm8ct7b4l2?svg=true)](https://ci.appveyor.com/project/tinydnn/tiny-dnn)|[![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)|
+<div align="center">
+  <img src="https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters.png"><br><br>
+</div>
 
 tiny-dnn is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
+
+-----------------
+
+| **`Linux/Mac OS`** | **`Windows`** ||
+|------------------|-------------|---------------|
+|[![Build Status](https://travis-ci.org/tiny-dnn/tiny-dnn.svg?branch=master)](https://travis-ci.org/tiny-dnn/tiny-dnn)|[![Build status](https://ci.appveyor.com/api/projects/status/a5syoifm8ct7b4l2?svg=true)](https://ci.appveyor.com/project/tinydnn/tiny-dnn)| [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)|
+
+
+## Table of contents
 
 * [Features](#features)
 * [Comparison with other libraries](#comparison-with-other-libraries)
