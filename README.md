@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters.png"><br><br>
+  <img src="https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters-alpha-version.png"><br><br>
 </div>
 -----------------
 
