@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,23 +13,23 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(fully_connected, train) {
     network<sequential> nn;
@@ -39,11 +39,11 @@ TEST(fully_connected, train) {
 
     vec_t a(3), t(2), a2(3), t2(2);
 
-    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
-    t[0] = 0.3; t[1] = 0.7;
+    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
+    t[0] = 0.3f; t[1] = 0.7f;
 
-    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
-    t2[0] = 0.5; t2[1] = 0.1;
+    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
+    t2[0] = 0.5f; t2[1] = 0.1f;
 
     std::vector<vec_t> data, train;
 
@@ -53,7 +53,7 @@ TEST(fully_connected, train) {
         train.push_back(t);
         train.push_back(t2);
     }
-    optimizer.alpha = 0.1;
+    optimizer.alpha = 0.1f;
     nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
@@ -76,11 +76,11 @@ TEST(fully_connected, train2) {
 
     vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
-    a[0] = 3.0; a[1] = 1.0; a[2] = -1.0; a[3] = 4.0;
-    t[0] = 0.3; t[1] = 0.7; t[2] = 0.3;
+    a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
+    t[0] = 0.3f; t[1] = 0.7f; t[2] = 0.3f;
 
-    a2[0] = 1.0; a2[1] = 0.0; a2[2] = 4.0; a2[3] = 2.0;
-    t2[0] = 0.6; t2[1] = 0.0; t2[2] = 0.1;
+    a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
+    t2[0] = 0.6f; t2[1] = 0.0f; t2[2] = 0.1f;
 
     std::vector<vec_t> data, train;
 
@@ -90,7 +90,7 @@ TEST(fully_connected, train2) {
         train.push_back(t);
         train.push_back(t2);
     }
-    optimizer.alpha = 0.1;
+    optimizer.alpha = 0.1f;
     nn.train<mse>(optimizer, data, train, 1, 10);
 
     vec_t predicted = nn.predict(a);
@@ -110,7 +110,7 @@ TEST(fully_connected, gradient_check) {
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, 1e-4, GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(fully_connected, read_write)
@@ -127,7 +127,7 @@ TEST(fully_connected, read_write)
 TEST(fully_connected, forward)
 {
     fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
@@ -141,10 +141,29 @@ TEST(fully_connected, forward)
     }
 }
 
+#ifdef CNN_USE_NNPACK
+TEST(fully_connected, forward_nnp)
+{
+    fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
+    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+
+    l.weight_init(weight_init::constant(1.0));
+    l.bias_init(weight_init::constant(0.5));
+
+    vec_t in = {0,1,2,3};
+    vec_t out = l.forward({ {in} })[0][0];
+    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+
+    for (size_t i = 0; i < out_expected.size(); i++) {
+        EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+    }
+}
+#endif
+
 TEST(fully_connected, forward_nobias)
 {
     fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), 2);// in and W
+    EXPECT_EQ(l.in_channels(), cnn_size_t(2));// in and W
 
     l.weight_init(weight_init::constant(1.0));
 
@@ -157,4 +176,4 @@ TEST(fully_connected, forward_nobias)
     }
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

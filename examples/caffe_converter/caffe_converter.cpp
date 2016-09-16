@@ -29,10 +29,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ctime>
 
 #define CNN_USE_CAFFE_CONVERTER
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 #include <opencv2/imgcodecs.hpp>
@@ -163,7 +163,7 @@ void test(const string& model_file,
 
       preprocess(img, mean, 3, cv::Size(width, height), &input_channels);
 
-      vector<tiny_cnn::float_t> vec(inputvec.begin(), inputvec.end());
+      vector<tiny_dnn::float_t> vec(inputvec.begin(), inputvec.end());
 
       clock_t begin = clock();
 
@@ -173,10 +173,10 @@ void test(const string& model_file,
       double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
       cout <<"Elapsed time(s): " << elapsed_secs << endl;
 
-      vector<tiny_cnn::float_t> sorted(result.begin(), result.end());
+      vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
 
       int top_n = 5;
-      partial_sort(sorted.begin(), sorted.begin()+top_n, sorted.end(), greater<tiny_cnn::float_t>());
+      partial_sort(sorted.begin(), sorted.begin()+top_n, sorted.end(), greater<tiny_dnn::float_t>());
 
       for (int i = 0; i < top_n; i++) {
           size_t idx = distance(result.begin(), find(result.begin(), result.end(), sorted[i]));

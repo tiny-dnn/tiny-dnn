@@ -1,50 +1,92 @@
-sudo: false
+sudo: required
+dist: trusty
+
 language: cpp
+
 os:
   - linux
   - osx
+
 compiler:
   - gcc
   - clang
+
 cache:
+  pip: true
   directories:
-  - $HOME/opencv_3_1_0 # Cache is only available on travis container-based boxes
+    - $HOME/.pip-cache/
+    - $HOME/opencv_3_1_0
+    - $HOME/PeachPy
+    - $HOME/NNPACK
+
 addons:
   apt:
     sources:
-    - ubuntu-toolchain-r-test
+      - ubuntu-toolchain-r-test
+      - george-edison55-cmake-3.x
     packages:
-    - gcc-4.8
-    - g++-4.8
-    - clang
-    - cmake
-    - git
-    - libtbb-dev
-    - libjpeg8-dev
-    - libtiff4-dev
-    - libjasper-dev
-    - libpng12-dev 
-    - libgtk2.0-dev
-    - libavcodec-dev
-    - libavformat-dev
-    - libswscale-dev
-    - libv4l-dev
-    - libatlas-base-dev
-    - gfortran
-install:
-  - bash -x .travis/install.sh 
-script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then export CPLUS_INCLUDE_PATH="$HOME/opencv_3_1_0/include"; fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .; fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then cmake -DUSE_TBB=ON -DUSE_AVX=OFF -DBUILD_TESTS=ON .; fi
-  - make -j2 
-  - ./tiny_cnn_test
+      - gcc-4.8
+      - g++-4.8
+      - clang
+      - cmake
+      - git
+      # Optional dependencies
+      - libtbb-dev
+      # OpenCV dependencies
+      # TODO: revise if are needed
+      - libjpeg8-dev
+      - libtiff4-dev
+      - libjasper-dev
+      - libpng12-dev 
+      - libgtk2.0-dev
+      - libavcodec-dev
+      - libavformat-dev
+      - libswscale-dev
+      - libv4l-dev
+      - libatlas-base-dev
+      - gfortran
+
 branches:
   only:
     - master
     - feat/generic-computational-graph
+env:
+  global:
+    - BUILD_TESTS=ON
+    - BUILD_EXAMPLES=ON
+ 
+  matrix:
+    - USE_SSE=OFF USE_AVX=OFF
+    - USE_SSE=ON  USE_AVX=ON
+
 matrix:
   exclude: # On OSX g++ is a symlink to clang++ by default 
     - os: osx
       compiler: gcc
+
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
+       export CC="gcc-4.8";
+       export CXX="g++-4.8";
+    fi
+  - gcc --version
+  - g++ --version
+
+install:
+  - bash -x .travis/install.sh
+
+before_script:
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      cmake -DUSE_SSE=$USE_SSE
+            -DUSE_AVX=$USE_AVX
+            -DBUILD_TESTS=$BUILD_TESTS
+            -DBUILD_EXAMPLES=$BUILD_EXAMPLES
+            -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .;
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "osx"   ]; then
+      cmake -DUSE_TBB=ON 
+            -DUSE_AVX=OFF
+            -DBUILD_TESTS=$BUILD_TESTS .;
+    fi
+  
+script: make -j2 && ./test/tiny_dnn_test

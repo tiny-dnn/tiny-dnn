@@ -37,7 +37,7 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-ou
 ```
 
 What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each feature maps get different set of inputs (and hopefully they become compelemtary feature extractor).
-tiny-cnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
+tiny-dnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
 
 ## Loading Dataset
 Tiny-cnn supports idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
@@ -69,7 +69,7 @@ boost::timer t;
 // create callbacks
 auto on_enumerate_epoch = [&](){
     std::cout << t.elapsed() << "s elapsed." << std::endl;
-    tiny_cnn::result res = nn.test(test_images, test_labels);
+    tiny_dnn::result res = nn.test(test_images, test_labels);
     std::cout << res.num_success << "/" << res.num_total << std::endl;
     disp.restart(train_images.size());
     t.restart();
@@ -79,24 +79,21 @@ auto on_enumerate_minibatch = [&](){ disp += minibatch_size; };
 ```
 
 ## Saving/Loading models
-Just use ```operator <<``` and ```operator >>``` with ostream/istream.
+Just use ```network::save(filename)``` and ```network.load(filename)``` to write your whole model as binary file.
 
 ```cpp
-std::ofstream ofs("LeNet-weights");
-ofs << nn;
-
-std::ifstream ifs("LeNet-weights");
-ifs >> nn;
+nn.save("LeNet-model");
+nn.load("LeNet-model");
 ```
 
 ## Putting it all together
 train.cpp
 ```cpp
 #include <iostream>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 
 void construct_net(network<mse, adagrad>& nn) {
     // connection table [Y.Lecun, 1998 Table.1]
@@ -156,7 +153,7 @@ void train_lenet(std::string data_dir_path) {
     // create callback
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
         disp.restart(train_images.size());
@@ -176,9 +173,8 @@ void train_lenet(std::string data_dir_path) {
     // test and show results
     nn.test(test_images, test_labels).print_detail(std::cout);
 
-    // save networks
-    std::ofstream ofs("LeNet-weights");
-    ofs << nn;
+    // save network model & trained weights
+    nn.save("LeNet-model");
 }
 
 int main(int argc, char **argv) {
@@ -206,10 +202,10 @@ test.cpp
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
@@ -219,7 +215,7 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert tiny_cnn::image to cv::Mat and resize
+// convert tiny_dnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
     cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
     cv::Mat resized;
@@ -244,40 +240,11 @@ void convert_image(const std::string& imagefilename,
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
-
-void construct_net(network<mse, adagrad>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
-#define O true
-#define X false
-    static const bool tbl[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
-#undef O
-#undef X
-
-    // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
-}
-
 void recognize(const std::string& dictionary, const std::string& filename) {
     network<mse, adagrad> nn;
 
-    construct_net(nn);
-
     // load nets
-    ifstream ifs(dictionary.c_str());
-    ifs >> nn;
+    nn.load(dictionary);
 
     // convert imagefile to vec_t
     vec_t data;

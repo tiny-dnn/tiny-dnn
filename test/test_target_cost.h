@@ -1,22 +1,22 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
-#include "tiny_cnn/util/target_cost.h"
+#include "tiny_dnn/tiny_dnn.h"
+#include "tiny_dnn/util/target_cost.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(target_cost, calculate_label_counts) {
     const std::vector<label_t> t = { 0, 1, 4, 0, 1, 2 }; // note that there's no class "3"
 
     const std::vector<cnn_size_t> label_counts = calculate_label_counts(t);
 
-    EXPECT_EQ(label_counts.size(), 5);
-    EXPECT_EQ(label_counts[0], 2);
-    EXPECT_EQ(label_counts[1], 2);
-    EXPECT_EQ(label_counts[2], 1);
-    EXPECT_EQ(label_counts[3], 0);
-    EXPECT_EQ(label_counts[4], 1);
+    EXPECT_EQ(label_counts.size(), cnn_size_t(5));
+    EXPECT_EQ(label_counts[0], cnn_size_t(2));
+    EXPECT_EQ(label_counts[1], cnn_size_t(2));
+    EXPECT_EQ(label_counts[2], cnn_size_t(1));
+    EXPECT_EQ(label_counts[3], cnn_size_t(0));
+    EXPECT_EQ(label_counts[4], cnn_size_t(1));
 }
 
 TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
@@ -58,7 +58,7 @@ TEST(target_cost, create_balanced_target_cost_0) {
 
     for (size_t sample = 0; sample < t.size(); ++sample) {
         const vec_t& sample_cost = target_cost[sample];
-        EXPECT_EQ(sample_cost.size(), 5);
+        EXPECT_EQ(sample_cost.size(), cnn_size_t(5));
 
         for (size_t i = 0; i < sample_cost.size(); ++i) {
             EXPECT_NEAR(sample_cost[i], 1.0, 1e-6);
@@ -79,10 +79,10 @@ TEST(target_cost, create_balanced_target_cost_1) {
 
     for (size_t sample = 0; sample < t.size(); ++sample) {
         const vec_t& sample_cost = target_cost[sample];
-        EXPECT_EQ(sample_cost.size(), 5);
+        EXPECT_EQ(sample_cost.size(), cnn_size_t(5));
         EXPECT_GE(label_counts[t[sample]], 1U);
 
-        float_t expected_weight = t.size() / static_cast<double>(label_counts.size() * label_counts[t[sample]]);
+        float_t expected_weight = t.size() / static_cast<float_t>(label_counts.size() * label_counts[t[sample]]);
 
         for (size_t label = 0; label < sample_cost.size(); ++label) {
             EXPECT_NEAR(sample_cost[label], expected_weight, 1e-6);
@@ -103,11 +103,11 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
 
     for (size_t sample = 0; sample < t.size(); ++sample) {
         const vec_t& sample_cost = target_cost[sample];
-        EXPECT_EQ(sample_cost.size(), 5);
+        EXPECT_EQ(sample_cost.size(), cnn_size_t(5));
         EXPECT_GE(label_counts[t[sample]], 1U);
 
         const float_t expected_weight_w_0 = 1;
-        const float_t expected_weight_w_1 = t.size() / static_cast<double>(label_counts.size() * label_counts[t[sample]]);
+        const float_t expected_weight_w_1 = t.size() / static_cast<float_t>(label_counts.size() * label_counts[t[sample]]);
 
         for (size_t label = 0; label < sample_cost.size(); ++label) {
             const float_t label_cost = sample_cost[label];
@@ -135,9 +135,9 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     // 2) assuming equal cost for each class, in which case the "true" function
     //    (identity) can be learned
 
-    const float_t p = 0.9;  // p(in == 1)
-    const float_t p0 = 0.6; // p(label == 1 | in == 0)
-    const float_t p1 = 0.9; // p(label == 1 | in == 1)
+    const float_t p = 0.9f;  // p(in == 1)
+    const float_t p0 = 0.6f; // p(label == 1 | in == 0)
+    const float_t p1 = 0.9f; // p(label == 1 | in == 1)
 
     auto create_net = []() {
         network<sequential> net;
@@ -157,7 +157,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         bool in = bernoulli(p);
         bool label = in ? bernoulli(p1) : bernoulli(p0);
 
-        data.push_back({ in * 1.0 });
+        data.push_back({ static_cast<float_t>(in) });
         labels.push_back(label ? 1 : 0);
     }
 
@@ -187,12 +187,12 @@ TEST(target_cost, train_unbalanced_data_1dim) {
         // the test data is balanced between the classes
         const bool in = bernoulli(0.5);
         const label_t expected = in ? 1 : 0;
-        const vec_t input = { in * 1.0 };
+        const vec_t input = {static_cast<float_t>(in) };
         const label_t actual_equal_sample_cost = net_equal_sample_cost.predict_label(input);
         const label_t actual_equal_class_cost  = net_equal_class_cost .predict_label(input);
 
         // the first net always guesses the majority class
-        EXPECT_EQ(actual_equal_sample_cost, 1);
+        EXPECT_EQ(actual_equal_sample_cost, cnn_size_t(1));
 
         // count errors
         errors_equal_sample_cost += (expected == actual_equal_sample_cost) ? 0 : 1;
@@ -200,7 +200,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     }
 
     EXPECT_GE(errors_equal_sample_cost, 0.25 * tnum); // should have plenty of errors
-    EXPECT_EQ(errors_equal_class_cost,  0); // should have learned the desired function
+    EXPECT_EQ(errors_equal_class_cost,  cnn_size_t(0)); // should have learned the desired function
 }
 
 TEST(target_cost, train_unbalanced_data) {
@@ -210,8 +210,8 @@ TEST(target_cost, train_unbalanced_data) {
     // 2) assuming equal cost for each class, in which case the correct underlying
     //    function can be learned.
 
-    const float_t p = 0.9; // p(label == 1)
-    const float_t noise = 0.25;
+    const float_t p = 0.9f; // p(label == 1)
+    const float_t noise = 0.25f;
 
     auto create_net = []() {
         network<sequential> net;
@@ -223,8 +223,8 @@ TEST(target_cost, train_unbalanced_data) {
     network<sequential> net_equal_sample_cost = create_net();
     network<sequential> net_equal_class_cost  = create_net();
     adagrad optimizer1, optimizer2;
-    optimizer1.alpha = 0.02;
-    optimizer2.alpha = 0.02;
+    optimizer1.alpha = 0.02f;
+    optimizer2.alpha = 0.02f;
 
     std::vector<vec_t> data;
     std::vector<label_t> labels;
@@ -241,7 +241,8 @@ TEST(target_cost, train_unbalanced_data) {
             in1 = !in1;
         }
 
-        data.push_back({ in0 * 1.0, in1 * 1.0 });
+        data.push_back({ static_cast<float_t>(in0),
+                         static_cast<float_t>(in1) });
         labels.push_back(label ? 1 : 0);
     }
 
@@ -260,12 +261,13 @@ TEST(target_cost, train_unbalanced_data) {
         // the test data is balanced between the classes
         const bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
         const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
-        const vec_t input = { in[0] * 1.0, in[1] * 1.0 };
+        const vec_t input = { static_cast<float_t>(in[0]),
+                              static_cast<float_t>(in[1]) };
         const label_t actual_equal_sample_cost = net_equal_sample_cost.predict_label(input);
         const label_t actual_equal_class_cost  = net_equal_class_cost .predict_label(input);
 
         // the first net always guesses the majority class
-        EXPECT_EQ(actual_equal_sample_cost, 1);
+        EXPECT_EQ(actual_equal_sample_cost, cnn_size_t(1));
 
         // count errors
         errors_equal_sample_cost += (expected == actual_equal_sample_cost) ? 0 : 1;
@@ -273,7 +275,7 @@ TEST(target_cost, train_unbalanced_data) {
     }
 
     EXPECT_GE(errors_equal_sample_cost, 0.25 * tnum); // should have plenty of errors
-    EXPECT_EQ(errors_equal_class_cost,  0); // should have learned the desired function
+    EXPECT_EQ(errors_equal_class_cost,  cnn_size_t(0)); // should have learned the desired function
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

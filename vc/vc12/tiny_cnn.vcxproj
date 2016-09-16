@@ -14,31 +14,31 @@
     <ClCompile Include="..\..\examples\main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\tiny_cnn\activations\activation_function.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\dropout_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\lossfunctions\loss_function.h" />
-    <ClInclude Include="..\..\tiny_cnn\optimizers\optimizer.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\conv_kernel.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\deform.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\weight_init.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\image.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\product.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\nn_error.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\util.h" />
-    <ClInclude Include="..\..\tiny_cnn\util\aligned_allocator.h" />
-    <ClInclude Include="..\..\tiny_cnn\io\mnist_parser.h" />
-    <ClInclude Include="..\..\tiny_cnn\io\cifar10_parser.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\convolutional_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\input_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\layers.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\fully_connected_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\max_pooling_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\partial_connected_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\layers\average_pooling_layer.h" />
-    <ClInclude Include="..\..\tiny_cnn\tiny_cnn.h" />
-    <ClInclude Include="..\..\tiny_cnn\config.h" />
-    <ClInclude Include="..\..\tiny_cnn\network.h" />
+    <ClInclude Include="..\..\tiny_dnn\activations\activation_function.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\dropout_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\lossfunctions\loss_function.h" />
+    <ClInclude Include="..\..\tiny_dnn\optimizers\optimizer.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\conv_kernel.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\deform.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\weight_init.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\image.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\product.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\nn_error.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\util.h" />
+    <ClInclude Include="..\..\tiny_dnn\util\aligned_allocator.h" />
+    <ClInclude Include="..\..\tiny_dnn\io\mnist_parser.h" />
+    <ClInclude Include="..\..\tiny_dnn\io\cifar10_parser.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\convolutional_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\input_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\layers.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\fully_connected_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\max_pooling_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\partial_connected_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\layers\average_pooling_layer.h" />
+    <ClInclude Include="..\..\tiny_dnn\tiny_dnn.h" />
+    <ClInclude Include="..\..\tiny_dnn\config.h" />
+    <ClInclude Include="..\..\tiny_dnn\network.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and '$(VisualStudioVersion)' == ''">$(VCTargetsPath11)</VCTargetsPath>
@@ -46,7 +46,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{C7B38F22-F235-45A5-834A-DE2167849C4C}</ProjectGuid>
     <RootNamespace>cnn</RootNamespace>
-    <ProjectName>tiny_cnn</ProjectName>
+    <ProjectName>tiny_dnn</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

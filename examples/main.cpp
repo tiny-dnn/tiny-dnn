@@ -26,11 +26,11 @@
 */
 #include <iostream>
 #include <memory>
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
-using namespace tiny_cnn::layers;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
+using namespace tiny_dnn::layers;
 
 using namespace std;
 
@@ -107,7 +107,7 @@ void sample1_convnet(const string& data_dir_path) {
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
 
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
@@ -166,12 +166,12 @@ void sample2_mlp()
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
 
         std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         optimizer.alpha *= 0.85; // decay learning rate
-        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
+        optimizer.alpha = std::max((tiny_dnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -250,14 +250,14 @@ void sample4_dropout()
         std::cout << t.elapsed() << "s elapsed." << std::endl;
   
         dropout.set_context(net_phase::test);
-        tiny_cnn::result res = nn.test(test_images, test_labels);
+        tiny_dnn::result res = nn.test(test_images, test_labels);
         dropout.set_context(net_phase::train);
 
 
         std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         optimizer.alpha *= 0.99; // decay learning rate
-        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
+        optimizer.alpha = std::max((tiny_dnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();
@@ -274,7 +274,7 @@ void sample4_dropout()
     //std::cout << res.num_success << "/" << res.num_total << std::endl;
 }
 
-#include "tiny_cnn/util/target_cost.h"
+#include "tiny_dnn/util/target_cost.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // learning unbalanced training data
@@ -331,12 +331,12 @@ void sample5_unbalanced_training_data(const string& data_dir_path)
     auto on_enumerate_epoch = [&](){
         std::cout << t.elapsed() << "s elapsed." << std::endl;
 
-        tiny_cnn::result res = nn->test(test_images, test_labels);
+        tiny_dnn::result res = nn->test(test_images, test_labels);
 
         std::cout << optimizer.alpha << "," << res.num_success << "/" << res.num_total << std::endl;
 
         optimizer.alpha *= 0.85; // decay learning rate
-        optimizer.alpha = std::max((tiny_cnn::float_t)0.00001, optimizer.alpha);
+        optimizer.alpha = std::max((tiny_dnn::float_t)0.00001, optimizer.alpha);
 
         disp.restart(train_images.size());
         t.restart();

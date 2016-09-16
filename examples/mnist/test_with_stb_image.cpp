@@ -1,7 +1,6 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +12,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
@@ -31,10 +30,10 @@
 #include "stb_image/stb_image.h"
 #include "stb_image/stb_image_resize.h"
 #include "stb_image/stb_image_write.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
@@ -91,39 +90,10 @@ bool save_image(const std::string& imagefilename,
 	return (ret != 0);
 }
 
-void construct_net(network<sequential>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
-#define O true
-#define X false
-    static const bool tbl[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
-#undef O
-#undef X
-
-    // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
-}
-
 void recognize(const std::string& dictionary, const std::string& filename) {
     network<sequential> nn;
 
-    construct_net(nn);
-
-    // load nets
-    ifstream ifs(dictionary.c_str());
-    ifs >> nn;
+    nn.load(dictionary);
 
     // convert imagefile to vec_t
     vec_t data;
@@ -145,19 +115,19 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     // save outputs of each layer
     for (size_t i = 0; i < nn.depth(); i++) {
         auto out_img = nn[i]->output_to_image();
-		auto filename = "layer_" + std::to_string(i) + ".png";
-		if (!save_image(filename, out_img)) {
-			cout << "failed to save " << filename << endl;
-		}
+        auto filename = "layer_" + std::to_string(i) + ".png";
+        if (!save_image(filename, out_img)) {
+            cout << "failed to save " << filename << endl;
+        }
     }
     // save filter shape of first convolutional layer
-	{
-	    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-		auto filename = "weights.png";
-		if (!save_image(filename, weight)) {
-			cout << "failed to save " << filename << endl;
-		}
-	}
+    {
+        auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+        auto filename = "weights.png";
+        if (!save_image(filename, weight)) {
+            cout << "failed to save " << filename << endl;
+        }
+    }
 }
 
 int main(int argc, char** argv) {
@@ -165,5 +135,5 @@ int main(int argc, char** argv) {
         cout << "please specify image file";
         return 0;
     }
-    recognize("LeNet-weights", argv[1]);
+    recognize("LeNet-model", argv[1]);
 }

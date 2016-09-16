@@ -27,9 +27,9 @@
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 inline std::shared_ptr<network<sequential>>
 create_net_from_json(const std::string& caffemodeljson, const shape3d& shape = shape3d()) {
@@ -321,4 +321,4 @@ TEST(caffe_converter, conv2) {
 
 }
 
-} // namespace tiny-cnn
+} // namespace tiny-dnn

@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,15 +13,15 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
@@ -29,10 +29,10 @@
 /*#include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>*/
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
@@ -41,8 +41,8 @@ double rescale(double x) {
     Activation a;
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
-
-// convert tiny_cnn::image to cv::Mat and resize
+#ifdef CNN_USE_OPENCV
+// convert tiny_dnn::image to cv::Mat and resize
 cv::Mat image2mat(image<>& img) {
     cv::Mat ori(static_cast<int>(img.height()), static_cast<int>(img.width()), CV_8U, &img.at(0, 0));
     cv::Mat resized;
@@ -61,42 +61,36 @@ void convert_image(const std::string& imagefilename,
 
     cv::Mat_<uint8_t> resized;
     cv::resize(img, resized, cv::Size(w, h));
+#else
+    // load
+    int input_w, input_h, comp;
+    stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
+    if (!input_pixels) {
+        cout << "stbi_load failed";
+        return;
+    }
+
+    // resize
+    std::vector<uint8_t> resized(w * h);
+    uint8_t* resized_pixels = &(resized[0]);
+    int input_stride_in_bytes = input_w;
+    if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
+        cout << "stbir_resize_uint8 failed";
+        stbi_image_free(input_pixels);
+        return;
+    }
+    stbi_image_free(input_pixels);
+#endif
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
-
-void construct_net(network<sequential>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
-#define O true
-#define X false
-    static const bool tbl[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
-#undef O
-#undef X
-
-    // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
-}
-
 void recognize(const std::string& dictionary, const std::string& filename) {
     network<sequential> nn;
 
-    construct_net(nn);
+    nn.load(dictionary);
 
     // load nets
     ifstream ifs(dictionary.c_str());
@@ -136,5 +130,5 @@ int main(int argc, char** argv) {
         cout << "please specify image file";
         return 0;
     }
-    recognize("LeNet-weights", argv[1]);
+    recognize("LeNet-model", argv[1]);
 }

@@ -1,7 +1,7 @@
 /*
     Copyright (c) 2016, Taiga Nomi
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -13,23 +13,26 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
+#include <string>
+
 #include "picotest/picotest.h"
 #include "testhelper.h"
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-namespace tiny_cnn {
+namespace tiny_dnn {
 
 TEST(max_pool, read_write) {
     max_pooling_layer<tan_h> l1(100, 100, 5, 2);
@@ -55,6 +58,48 @@ TEST(max_pool, forward) {
         4, 2
     };
 
+    vec_t res = l.forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(max_pool, setup_tiny) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
+
+    EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
+    EXPECT_EQ(l.in_channels(),           cnn_size_t(1));  // num of input tensors
+    EXPECT_EQ(l.out_channels(),          cnn_size_t(2));  // num of output tensors
+    EXPECT_EQ(l.in_data_size(),          cnn_size_t(16)); // size of input tensors
+    EXPECT_EQ(l.out_data_size(),         cnn_size_t(4));  // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(),  cnn_size_t(1));  // num of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), cnn_size_t(1));  // num of output shapes
+    EXPECT_EQ(l.weights().size(),        cnn_size_t(0));  // the wieghts vector size
+    EXPECT_EQ(l.weights_grads().size(),  cnn_size_t(0));  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(),         cnn_size_t(1));  // num of input edges
+    EXPECT_EQ(l.outputs().size(),        cnn_size_t(2));  // num of outpus edges
+    EXPECT_EQ(l.in_types().size(),       cnn_size_t(1));  // num of input data types
+    EXPECT_EQ(l.out_types().size(),      cnn_size_t(2));  // num of output data types
+    EXPECT_EQ(l.fan_in_size(),           cnn_size_t(4));  // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(),          cnn_size_t(1));  // num of outgoing connections
+    EXPECT_STREQ(l.layer_type().c_str(), "max-pool");     // string with layer type
+}
+
+TEST(max_pool, forward_stride_tiny) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 6,
+        4, 2
+    };
+
     vec_t res = l.forward({ {in} })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
@@ -62,6 +107,28 @@ TEST(max_pool, forward) {
     }
 }
 
+#ifdef CNN_USE_NNPACK
+TEST(max_pool, forward_stride_nnp) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::nnpack);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 6,
+        4, 2
+    };
+
+    vec_t res = l.forward({ {in} })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+#endif
 
 TEST(max_pool, forward_stride) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 1);
@@ -114,5 +181,4 @@ TEST(max_pool, backward) {
     }
 }
 
-
-} // namespace tiny-cnn
+}  // namespace tiny_dnn
