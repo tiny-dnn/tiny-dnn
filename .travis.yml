@@ -45,6 +45,9 @@ addons:
       - libv4l-dev
       - libatlas-base-dev
       - gfortran
+      # Coveralls dependencies
+      - gem
+      - lcov
 
 branches:
   only:
@@ -74,12 +77,15 @@ before_install:
 
 install:
   - bash -x .travis/install.sh
+  - gem install coveralls-lcov
 
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      lcov --directory . --zerocounters;
       cmake -DUSE_SSE=$USE_SSE
             -DUSE_AVX=$USE_AVX
             -DBUILD_TESTS=$BUILD_TESTS
+            -DCOVERALLS=ON
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES
             -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .;
     fi
@@ -90,3 +96,14 @@ before_script:
     fi
   
 script: make -j2 && ./test/tiny_dnn_test
+
+after_success:
+  # send Coveralls log
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      cd ${TRAVIS_BUILD_DIR};
+      lcov --directory . --capture --output-file coverage.info;
+      lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info;
+      lcov --list coverage.info;
+      coveralls-lcov coverage.info
+    fi
+

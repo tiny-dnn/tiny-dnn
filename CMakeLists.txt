@@ -49,9 +49,10 @@ option(USE_OPENCV "Build tiny-dnn with OpenCV library support" OFF)
 option(USE_OPENCL "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN "Build tiny-dnn with GreenteaLibDNN library support" OFF)
 
-option(BUILD_TESTS    "Set to ON to build tests"         OFF)
-option(BUILD_EXAMPLES "Set to ON to build examples"      OFF)
-option(BUILD_DOCS     "Set to ON to build documentation" OFF)
+option(BUILD_TESTS    "Set to ON to build tests"              OFF)
+option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
+option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
+option(COVERALLS      "Set to ON to build with code coverage" OFF)
 
 ####
 # Create the library target
@@ -209,6 +210,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
+
+    # setup flags to generate codes coverage
+
+	if(BUILD_TESTS AND COVERALLS)
+		message(STATUS "Code coverage: Enabled")
+		set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+	else(BUILD_TESTS AND COVERALLS)
+		message(STATUS "Code coverage: Disabled")
+	endif(BUILD_TESTS AND COVERALLS)
+
 elseif(WIN32) # MSVC
 	if(USE_SSE)
 		add_definitions(-DCNN_USE_SSE)
