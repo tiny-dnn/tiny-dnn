@@ -100,6 +100,20 @@ public:
         }
     }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<power_layer> & construct) {
+        shape3d in_shape;
+        float_t factor;
+
+        ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("factor", factor));
+        construct(in_shape, factor);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_));
+    }
 private:
 
     shape3d in_shape_;
@@ -107,3 +121,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::power_layer, power);

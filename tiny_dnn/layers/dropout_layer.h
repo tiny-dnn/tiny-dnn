@@ -70,6 +70,10 @@ public:
         scale_ = float_t(1) / (float_t(1) - dropout_rate_);
     }
 
+    float_t dropout_rate() const {
+        return dropout_rate_;
+    }
+
     ///< number of incoming connections for each output unit
     size_t fan_in_size() const override
     {
@@ -160,6 +164,22 @@ public:
 		}
     }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<dropout_layer> & construct) {
+        net_phase phase;
+        float_t dropout_rate;
+        cnn_size_t in_size;
+
+        ar(cereal::make_nvp("in_size", in_size), cereal::make_nvp("dropout_rate", dropout_rate), cereal::make_nvp("phase", phase));
+        construct(in_size, dropout_rate, phase);
+    }
+    
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", in_size_), cereal::make_nvp("dropout_rate", dropout_rate_), cereal::make_nvp("phase", phase_));
+    }
+
 private:
     net_phase phase_;
     float_t dropout_rate_;
@@ -169,3 +189,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::dropout_layer, dropout);

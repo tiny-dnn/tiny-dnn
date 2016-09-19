@@ -35,11 +35,20 @@
 #include <cstdarg>
 #include <string>
 #include <sstream>
+
+#include <cereal/cereal.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/deque.hpp>
+
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/random.h"
+#include "tiny_dnn/util/serialization_helper.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -164,6 +173,13 @@ struct index3d {
 
     T size() const {
         return width_ * height_ * depth_;
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        ar(cereal::make_nvp("width", width_));
+        ar(cereal::make_nvp("height", height_));
+        ar(cereal::make_nvp("depth", depth_));
     }
 
     T width_;

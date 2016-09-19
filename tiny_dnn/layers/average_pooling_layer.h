@@ -148,46 +148,42 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
                           cnn_size_t pooling_size)
-            : Base(in_width * in_height * in_channels,
-                   in_width * in_height * in_channels / sqr(pooling_size),
-                   in_channels, in_channels, float_t(1) / sqr(pooling_size)),
-              stride_(pooling_size),
-              in_(in_width, in_height, in_channels),
-              out_(in_width/pooling_size, in_height/pooling_size, in_channels),
-              w_(pooling_size, pooling_size, in_channels) {
-        if ((in_width % pooling_size) || (in_height % pooling_size)) {
-            pooling_size_mismatch(in_width, in_height, pooling_size);
-        }
+            : average_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size)
+    {}
 
-        init_connection(pooling_size);
-    }
+    average_pooling_layer(const shape3d& in_shape,
+                          cnn_size_t pooling_size,
+                          cnn_size_t stride)
+        : average_pooling_layer(in_shape.width_, in_shape.width_, in_shape.depth_, pooling_size, stride)
+    {}
 
     /**
      * @param in_width     [in] width of input image
      * @param in_height    [in] height of input image
      * @param in_channels  [in] the number of input image channels(depth)
-     * @param pooling_size [in] factor by which to downscale
+     * @param pool_size    [in] factor by which to downscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
     average_pooling_layer(cnn_size_t in_width,
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
-                          cnn_size_t pooling_size,
+                          cnn_size_t pool_size,
                           cnn_size_t stride)
         : Base(in_width * in_height * in_channels,
-               pool_out_dim(in_width, pooling_size, stride) *
-               pool_out_dim(in_height, pooling_size, stride) * in_channels,
-               in_channels, in_channels, float_t(1) / sqr(pooling_size)),
+               pool_out_dim(in_width, pool_size, stride) *
+               pool_out_dim(in_height, pool_size, stride) * in_channels,
+               in_channels, in_channels, float_t(1) / sqr(pool_size)),
           stride_(stride),
+          pool_size_(pool_size),
           in_(in_width, in_height, in_channels),
-          out_(pool_out_dim(in_width, pooling_size, stride),
-               pool_out_dim(in_height, pooling_size, stride), in_channels),
-          w_(pooling_size, pooling_size, in_channels) {
-        if ((in_width % pooling_size) || (in_height % pooling_size)) {
-            pooling_size_mismatch(in_width, in_height, pooling_size);
+          out_(pool_out_dim(in_width, pool_size, stride),
+               pool_out_dim(in_height, pool_size, stride), in_channels),
+          w_(pool_size, pool_size, in_channels) {
+        if ((in_width % pool_size) || (in_height % pool_size)) {
+            pooling_size_mismatch(in_width, in_height, pool_size);
         }
 
-        init_connection(pooling_size);
+        init_connection(pool_size);
     }
 
     std::vector<index3d<cnn_size_t>> in_shape() const override {
@@ -234,8 +230,24 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             Base::bias2out_);
     }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<average_pooling_layer> & construct) {
+        shape3d in;
+        size_t stride, pool_size;
+
+        ar(cereal::make_nvp("in_size", in), cereal::make_nvp("pool_size", pool_size), cereal::make_nvp("stride", stride));
+        construct(in, pool_size, stride);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("pool_size", pool_size_), cereal::make_nvp("stride", stride_));
+    }
+
  private:
     size_t stride_;
+    size_t pool_size_;
     shape3d in_;
     shape3d out_;
     shape3d w_;
@@ -286,3 +298,5 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 };
 
 }  // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::average_pooling_layer, avepool);

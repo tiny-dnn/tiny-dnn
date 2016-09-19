@@ -240,6 +240,38 @@ public:
         calc_stddev(variance);
     }
 
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<batch_normalization_layer> & construct) {
+        shape3d in;
+        size_t in_spatial_size, in_channels;
+        float_t eps, momentum;
+        net_phase phase;
+        vec_t mean, variance;
+        
+        ar(cereal::make_nvp("in_spatial_size", in_spatial_size),
+            cereal::make_nvp("in_channels", in_channels),
+            cereal::make_nvp("epsilon", eps),
+            cereal::make_nvp("momentum", momentum),
+            cereal::make_nvp("phase", phase),
+            cereal::make_nvp("mean", mean),
+            cereal::make_nvp("variance", variance));
+        construct(in_spatial_size, in_channels, eps, momentum, phase);
+        construct->set_mean(mean);
+        construct->set_variance(variance);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("in_spatial_size", in_spatial_size_),
+           cereal::make_nvp("in_channels", in_channels_),
+           cereal::make_nvp("epsilon", eps_),
+           cereal::make_nvp("momentum", momentum_),
+           cereal::make_nvp("phase", phase_),
+           cereal::make_nvp("mean", mean_),
+           cereal::make_nvp("variance", variance_));
+    }
+
 private:
     void calc_stddev(const vec_t& variance) {
         for (size_t i = 0; i < in_channels_; i++) {
@@ -279,3 +311,5 @@ private:
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::batch_normalization_layer, batchnorm);

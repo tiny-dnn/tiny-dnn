@@ -79,14 +79,11 @@ auto on_enumerate_minibatch = [&](){ disp += minibatch_size; };
 ```
 
 ## Saving/Loading models
-Just use ```operator <<``` and ```operator >>``` with ostream/istream.
+Just use ```network::save(filename)``` and ```network.load(filename)``` to write your whole model as binary file.
 
 ```cpp
-std::ofstream ofs("LeNet-weights");
-ofs << nn;
-
-std::ifstream ifs("LeNet-weights");
-ifs >> nn;
+nn.save("LeNet-model");
+nn.load("LeNet-model");
 ```
 
 ## Putting it all together
@@ -176,9 +173,8 @@ void train_lenet(std::string data_dir_path) {
     // test and show results
     nn.test(test_images, test_labels).print_detail(std::cout);
 
-    // save networks
-    std::ofstream ofs("LeNet-weights");
-    ofs << nn;
+    // save network model & trained weights
+    nn.save("LeNet-model");
 }
 
 int main(int argc, char **argv) {
@@ -244,40 +240,11 @@ void convert_image(const std::string& imagefilename,
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
-
-void construct_net(network<mse, adagrad>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
-#define O true
-#define X false
-    static const bool tbl[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
-#undef O
-#undef X
-
-    // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
-}
-
 void recognize(const std::string& dictionary, const std::string& filename) {
     network<mse, adagrad> nn;
 
-    construct_net(nn);
-
     // load nets
-    ifstream ifs(dictionary.c_str());
-    ifs >> nn;
+    nn.load(dictionary);
 
     // convert imagefile to vec_t
     vec_t data;

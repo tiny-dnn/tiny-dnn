@@ -78,9 +78,25 @@ public:
         for (cnn_size_t i = 0; i < num_args_; i++)
             *in_grad[i] = *out_grad[0];
     }
+
+    template <class Archive>
+    static void load_and_construct(Archive & ar, cereal::construct<elementwise_add_layer> & construct) {
+        cnn_size_t num_args, dim;
+
+        ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
+        construct(num_args, dim);
+    }
+
+    template <class Archive>
+    void serialize(Archive & ar) {
+        serialize_prolog(ar, this);
+        ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
+    }
 private:
     cnn_size_t num_args_;
     cnn_size_t dim_;
 };
 
 } // namespace tiny_dnn
+
+CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::elementwise_add_layer, elementwise_add);

@@ -27,11 +27,37 @@
 #pragma once
 
 #include <vector>
+#include <tuple>
 #include <unordered_map>
+#include <cereal/types/utility.hpp>
+#include <cereal/types/tuple.hpp>
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/optimizers/optimizer.h"
+
+namespace cereal {
+
+template <typename Archive>
+void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
+    ar(cereal::make_size_tag((cereal::size_type)v.size()));
+    for (auto n : v) {
+        tiny_dnn::layer::save_layer(ar, *n);
+    }
+}
+
+
+template <typename Archive>
+void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
+    cereal::size_type size;
+    ar(cereal::make_size_tag(size));
+
+    for (size_t i = 0; i < size; i++) {
+        v.emplace_back(tiny_dnn::layer::load_layer(ar));
+    }
+}
+
+}
 
 namespace tiny_dnn {
 
@@ -136,13 +162,13 @@ class nodes {
         return nodes_.back()->out_value_range().second;
     }
 
-    virtual void save(std::ostream& os) const { // NOLINT
+    void save(std::ostream& os) const { // NOLINT
         for (auto& l : nodes_) {
             l->save(os);
         }
     }
 
-    virtual void load(std::istream& is) { // NOLINT
+    void load(std::istream& is) { // NOLINT
         setup(false);
         for (auto& l : nodes_) {
             l->load(is);
@@ -165,6 +191,27 @@ class nodes {
             assert(t[i] < outdim);
             vec->emplace_back(outdim, target_value_min());
             vec->back()[t[i]] = target_value_max();
+        }
+    }
+
+    template <typename OutputArchive>
+    void save_model(OutputArchive & oa) const;
+
+    template <typename InputArchive>
+    void load_model(InputArchive & ia);
+
+
+    template <typename OutputArchive>
+    void save_weights(OutputArchive & oa) const {
+        for (auto n : nodes_) {
+            oa(*n);
+        }
+    }
+
+    template <typename InputArchive>
+    void load_weights(InputArchive & ia) {
+        for (auto n : nodes_) {
+            ia(*n);
         }
     }
 
@@ -201,7 +248,6 @@ class nodes {
         return output;
     }
 
- protected:
     template <typename T>
     void push_back_impl(T&& node, std::true_type) {  // is_rvalue_reference
         own_nodes_.push_back(std::make_shared<
@@ -282,7 +328,21 @@ class sequential : public nodes {
         }
     }
 
+    template <typename InputArchive>
+    void load_connections(InputArchive& ia) {
+        for (cnn_size_t i = 0; i < nodes_.size() - 1; i++) {
+            auto head = nodes_[i];
+            auto tail = nodes_[i + 1];
+            connect(head, tail, 0, 0);
+        }
+    }
+
+    template <typename OutputArchive>
+    void save_connections(OutputArchive& ) const { }
+
 private:
+    friend class nodes;
+
     std::vector<tensor_t> normalize_out(const std::vector<tensor_t>& out)
     {
         // normalize indexing back to [sample][layer][feature]
@@ -388,7 +448,79 @@ class graph : public nodes {
         setup(false);
     }
 
- private:
+private:
+    friend class nodes;
+
+    struct _graph_connection {
+        void add_connection(size_t head, size_t tail, size_t head_index, size_t tail_index) {
+            if (!is_connected(head, tail, head_index, tail_index)) {
+                connections.emplace_back(head, tail, head_index, tail_index);
+            }
+        }
+
+        bool is_connected(size_t head, size_t tail, size_t head_index, size_t tail_index) const {
+            return std::find(connections.begin(),
+                             connections.end(),
+                             std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
+        }
+
+        template <typename Archive>
+        void serialize(Archive & ar) {
+            ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
+        }
+
+        std::vector<std::tuple<size_t, size_t, size_t, size_t>> connections;
+        std::vector<size_t> in_nodes, out_nodes;
+    };
+
+    template <typename OutputArchive>
+    void save_connections(OutputArchive& oa) const {
+        _graph_connection gc;
+        std::unordered_map<node*, size_t> node2id;
+        size_t idx = 0;
+
+        for (auto n : nodes_) {
+            node2id[n] = idx++;
+        }
+        for (auto l : input_layers_) {
+            gc.in_nodes.push_back(node2id[l]);
+        }
+        for (auto l : output_layers_) {
+            gc.out_nodes.push_back(node2id[l]);
+        }
+
+        for (auto l : input_layers_) {
+            graph_traverse(l, [=](layer& l) {}, [&](edge& e) {
+                auto next = e.next();
+                cnn_size_t head_index = e.prev()->next_port(e);
+
+                for (auto n : next) {
+                    cnn_size_t tail_index = n->prev_port(e);
+                    gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                }
+            });
+        }
+
+        oa(cereal::make_nvp("graph", gc));
+    }
+
+    template <typename InputArchive>
+    void load_connections(InputArchive& ia) {
+        _graph_connection gc;
+        ia(cereal::make_nvp("graph", gc));
+
+        for (auto c : gc.connections) {
+            size_t head, tail, head_index, tail_index;
+            std::tie(head, tail, head_index, tail_index) = c;
+            connect(nodes_[head], nodes_[tail], head_index, tail_index);
+        }
+        for (auto in : gc.in_nodes) {
+            input_layers_.push_back(nodes_[in]);
+        }
+        for (auto out : gc.out_nodes) {
+            output_layers_.push_back(nodes_[out]);
+        }
+    }
 
      // normalize indexing back to [sample][layer][feature]
      std::vector<tensor_t> merge_outs() {
@@ -422,5 +554,39 @@ class graph : public nodes {
     std::vector<layerptr_t> input_layers_;
     std::vector<layerptr_t> output_layers_;
 };
+
+
+
+template <typename OutputArchive>
+void nodes::save_model(OutputArchive & oa) const {
+    oa(cereal::make_nvp("nodes", nodes_));
+
+    if (typeid(*this) == typeid(sequential)) {
+        dynamic_cast<const sequential*>(this)->save_connections(oa);
+    }
+    else {
+        dynamic_cast<const graph*>(this)->save_connections(oa);
+    }
+}
+
+template <typename InputArchive>
+void nodes::load_model(InputArchive & ia) {
+    own_nodes_.clear();
+    nodes_.clear();
+
+    ia(cereal::make_nvp("nodes", own_nodes_));
+
+    for (auto& n : own_nodes_) {
+        nodes_.push_back(&*n);
+    }
+
+    if (typeid(*this) == typeid(sequential)) {
+        dynamic_cast<sequential*>(this)->load_connections(ia);
+    }
+    else {
+        dynamic_cast<graph*>(this)->load_connections(ia);
+    }
+}
+
 
 }  // namespace tiny_dnn
