@@ -106,4 +106,3 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov coverage.info
     fi
-
