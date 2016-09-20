@@ -223,7 +223,7 @@ more sample, read examples/main.cpp or [MNIST example](https://github.com/tiny-d
 
 ## Contributing
 Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-dnn development!
-For a quick guide to contributing, take a look at the [Contribution Documents](doc/CONTRIBUTING.md).
+For a quick guide to contributing, take a look at the [Contribution Documents](docs/developer_guides/How-to-contribute.md).
 
 ## References
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
