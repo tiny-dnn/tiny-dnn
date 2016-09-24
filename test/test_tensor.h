@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,51 +24,56 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
+#pragma once
 #include "gtest/gtest.h"
+#include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+using namespace tiny_dnn;
 
-#ifndef CNN_NO_SERIALIZATION
-#include "test_serialization.h"
-#endif
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-// TODO(yida): fix broken test
-//#include "test_average_unpooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_deconvolutional_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_batch_norm_layer.h"
-#include "test_nodes.h"
-#include "test_core.h"
-#include "test_models.h"
-#include "test_slice_layer.h"
-#include "test_concat_layer.h"
-#include "test_power_layer.h"
-#include "test_quantization.h"
-#include "test_quantized_convolutional_layer.h"
-#include "test_quantized_deconvolutional_layer.h"
-#ifdef CNN_USE_GEMMLOWP
-#include "test_quantized_fully_connected_layer.h"
-#endif
+namespace tiny_dnn {
 
-#ifdef CNN_USE_CAFFE_CONVERTER
-#include "test_caffe_converter.h"
-#endif
+TEST(tensor, shape) {
+    Tensor tensor(1,2,2,2);
 
-#include "test_tensor.h"
-#include "test_image.h"
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    EXPECT_EQ(tensor.shape()[0], cnn_size_t(1));
+    EXPECT_EQ(tensor.shape()[1], cnn_size_t(2));
+    EXPECT_EQ(tensor.shape()[2], cnn_size_t(2));
+    EXPECT_EQ(tensor.shape()[3], cnn_size_t(2));
 }
+
+TEST(tensor, access_data) {
+    Tensor tensor(1,2,2,2);
+
+    float_t* begin_ptr = tensor.ptr(0,0,0,0);
+    float_t* end1_ptr  = tensor.ptr(0,1,1,0);
+    float_t* end2_ptr  = tensor.ptr(0,1,1,1);
+
+    // set tensor data
+    
+    // channel #1
+    for (float_t* i = begin_ptr; i != end1_ptr + 1; i++) {
+        *i = float_t(1);
+    }
+
+    // channel #2
+    for (float_t* i = end1_ptr + 1; i != end2_ptr + 1; i++) {
+        *i = float_t(2);
+    }
+
+    // check data
+    
+    for (cnn_size_t i = 0; i < 2; ++i) {
+        for (cnn_size_t j = 0; j < 2; ++j) {
+            for (cnn_size_t k = 0; k < 1; ++k) {
+                if (k == 0) {
+                    EXPECT_EQ(tensor.at(0,i,j,k), cnn_size_t(1));
+                } else {
+                    EXPECT_EQ(tensor.at(0,i,j,k), cnn_size_t(2));
+                }
+            }
+        }
+    }
+}
+
+} // namespace tiny-dnn
