@@ -21,21 +21,19 @@ install:
 # gradient-check test is too slow to execute on debug mode
 configuration: Release
 
+environment:
+  matrix:
+  - msvc: 14
+  - msvc: 12
+
 before_build:
-  - cmd: mkdir build_msvc2015
-  - cmd: cd build_msvc2015
-  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
-  - cmd: mkdir build_msvc2013
-  - cmd: cd build_msvc2013
-  - cmd: '%cmake% -G "Visual Studio 12 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: mkdir build_vc%msvc%
+  - cmd: cd build_vc%msvc%
+  - cmd: '%cmake% -G "Visual Studio %msvc% Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
-  - cmd: 'cd C:\projects\build_msvc2013\test\Release'
-  - cmd: tiny_dnn_test.exe
-  - cmd: 'cd C:\projects\build_msvc2015\test\Release'
+  - cmd: 'cd C:\projects\build_vc%msvc%\test\Release'
   - cmd: tiny_dnn_test.exe
 
 build:
-  - project: C:\projects\build_msvc2015\tiny_dnn.sln
-  - project: C:\projects\build_msvc2013\tiny_dnn.sln
-  
+  - project: C:\projects\build_vc%msvc%\tiny_dnn.sln
