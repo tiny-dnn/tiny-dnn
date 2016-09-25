@@ -33,6 +33,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/types/memory.hpp>
 #include "tiny_dnn/util/nn_error.h"
+#include "tiny_dnn/util/macro.h"
 
 namespace tiny_dnn {
 
@@ -104,7 +105,7 @@ namespace detail {
 template <typename InputArchive, typename T>
 std::shared_ptr<T> load_layer_impl(InputArchive& ia) {
 
-    using ST = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
+    using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
 
     auto valid = std::make_shared<bool>(false);
 
