@@ -33,5 +33,5 @@ after_build:
   - cmd: 'cd C:\projects\build_vc%msvc%\test\Release'
   - cmd: tiny_dnn_test.exe
 
-build:
-  project: C:\projects\build_vc%msvc%\tiny_dnn.sln
+build_script:
+  - msbuild C:\projects\build_vc%msvc%\tiny_dnn.sln
