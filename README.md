@@ -72,7 +72,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
     - average unpooling
 	- max unpooling
 - normalization
-    - contrast normalization
+    - contrast normalization (only forward pass)
     - batch normalization
 - split/merge
     - concat
@@ -130,7 +130,8 @@ Some cmake options are available:
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
 *tiny-dnn use c++11 standard library for parallelization by default
-**to build tests, type `git submodule update --init` before build
+
+**tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash
@@ -177,12 +178,11 @@ void construct_cnn() {
     net.train<mse>(optimizer, train_images, train_labels, 30, 50);
 
     // save
-    std::ofstream ofs("weights");
-    ofs << net;
+    net.save("net");
 
     // load
-    // std::ifstream ifs("weights");
-    // ifs >> net;
+    // network<sequential> net2;
+    // net2.load("net");
 }
 ```
 construct multi-layer perceptron(mlp)
