@@ -67,27 +67,55 @@ class Tensor {
     // Returns the tensor shape
     std::vector<cnn_size_t> shape() const { return shape_; }
     
-    // Returns the value of a requested position in the tensor
-    float_t at(const cnn_size_t batch,  const cnn_size_t width,
-               const cnn_size_t height, const cnn_size_t depth) const {
+    // Returns the value of a specified index in the tensor.
+    // Checked version (throw exceptions for out-of-range error)
+    float_t& at(const cnn_size_t batch,
+                const cnn_size_t width,
+                const cnn_size_t height,
+                const cnn_size_t depth) {
         return *access_data(batch, width, height, depth);
     }
 
-    // Returns the pointer to a requested position in the tensor
-    float_t* ptr(const cnn_size_t batch,  const cnn_size_t width,
-                 const cnn_size_t height, const cnn_size_t depth) const {
+    const float_t& at(const cnn_size_t batch,
+                      const cnn_size_t width,
+                      const cnn_size_t height,
+                      const cnn_size_t depth) const {
+        return *access_data(batch, width, height, depth);
+    }
+
+    // Returns the pointer to a specified index in the tensor
+    // Checked version (throw exceptions for out-of-range error)
+    float_t* ptr(const cnn_size_t batch,
+                 const cnn_size_t width,
+                 const cnn_size_t height,
+                 const cnn_size_t depth) {
+        return access_data(batch, width, height, depth);
+    }
+    
+    const float_t* ptr(const cnn_size_t batch,
+                       const cnn_size_t width,
+                       const cnn_size_t height,
+                       const cnn_size_t depth) const {
         return access_data(batch, width, height, depth);
     }
 
+    // zero-overhead version (same performance to raw pointer access.
+    // have an assertion for out-of-range error)
+    float_t& operator[] (cnn_size_t index) {
+        return *access_data(index);
+    }
+
+    const float_t& operator[] (cnn_size_t index) const {
+        return *access_data(index);
+    }
+    
  private:
     // Initializes the data buffer with zeroes
     void init_data(const cnn_size_t batch,  const cnn_size_t width,
                    const cnn_size_t height, const cnn_size_t depth) {
-        if (batch <= 0 || width <= 0 || height <= 0 || depth <= 0) {
-            nn_error("Tensor size must be a positive number");
-        }
-        data_cpu_ = std::make_shared<std::vector<float_t> >(
-            batch * width * height * depth, float_t(0));
+        data_cpu_ = std::unique_ptr<std::vector<float_t> >(
+            new std::vector<float_t>(
+                batch * width * height * depth, float_t(0)));
     }
 
     // Initializes the shape vector
@@ -103,19 +131,20 @@ class Tensor {
                          const cnn_size_t width,
                          const cnn_size_t height,
                          const cnn_size_t depth) const {
-        if ((batch  < 0 || batch  > shape_[0]) ||
-            (width  < 0 || width  > shape_[1]) ||
-            (height < 0 || height > shape_[2]) ||
-            (depth  < 0 || depth  > shape_[3])) {
-            nn_error("Access tensor out of dimension");
+        if (batch  > shape_[0] || width > shape_[1] ||
+            height > shape_[2] || depth > shape_[3]) {
+            nn_error("Access tensor out of range.");
         }
-        /*return &data_cpu_->at(batch  * shape_[1] * shape_[2] * shape_[3] + 
-                                depth  * shape_[1] * shape_[2] +
-                                height * shape_[1] + width);*/
-        return &data_cpu_->at(shape_[1] * shape_[2] * (
-                      batch * shape_[3] + depth) + height + width);
+
+        // TODO(edgar): check how to deal with cpu/gpu
+        return &data_cpu_->at(shape_[1] * shape_[2] *
+            ( shape_[3] * batch + depth ) + height + width);
     }
 
+    float_t* access_data(const cnn_size_t index) const {
+        // TODO(edgar): check how to deal with cpu/gpu
+        return &data_cpu_->at(index);
+    }
 
  private:
     /* Vector with the size of the tensor
@@ -127,7 +156,7 @@ class Tensor {
     std::vector<cnn_size_t> shape_;
 
     /* Pointer to the Tensor data in CPU mode */
-    std::shared_ptr<std::vector<float_t> > data_cpu_;
+    std::unique_ptr<std::vector<float_t> > data_cpu_;
 };
 
 // Overloaded method to print the Tensor class to the standard output
