@@ -4,6 +4,9 @@ init:
 environment:
   home: C:\projects
   cmake: C:\projects\cmake-3.4.1-win32-x86\bin\cmake.exe
+  matrix:
+  - msvc: 14
+  - msvc: 12
 
 version: '{branch}-{build}'
 
@@ -20,11 +23,6 @@ install:
 
 # gradient-check test is too slow to execute on debug mode
 configuration: Release
-
-environment:
-  matrix:
-  - msvc: 14
-  - msvc: 12
 
 before_build:
   - cmd: mkdir build_vc%msvc%
