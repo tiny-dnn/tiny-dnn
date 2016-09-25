@@ -233,6 +233,7 @@ elseif(WIN32) # MSVC
 	# include specific flags for release and debug modes.
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}
         /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj /LTCG")
+    set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} /bigobj")       
 	add_definitions(-D _CRT_SECURE_NO_WARNINGS)
 endif()
 
