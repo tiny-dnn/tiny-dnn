@@ -4,6 +4,9 @@ init:
 environment:
   home: C:\projects
   cmake: C:\projects\cmake-3.4.1-win32-x86\bin\cmake.exe
+  matrix:
+  - msvc: 14
+  - msvc: 12
 
 version: '{branch}-{build}'
 
@@ -22,13 +25,13 @@ install:
 configuration: Release
 
 before_build:
-  - cmd: mkdir build
-  - cmd: cd build
-  - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: mkdir build_vc%msvc%
+  - cmd: cd build_vc%msvc%
+  - cmd: '%cmake% -G "Visual Studio %msvc% Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
-  - cmd: 'cd C:\projects\build\test\Release'
+  - cmd: 'cd C:\projects\build_vc%msvc%\test\Release'
   - cmd: tiny_dnn_test.exe
 
-build:
-  project: C:\projects\build\tiny_dnn.sln
+build_script:
+  - msbuild C:\projects\build_vc%msvc%\tiny_dnn.sln

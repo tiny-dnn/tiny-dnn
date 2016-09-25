@@ -39,11 +39,12 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
-#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/deque.hpp>
 
 #include "tiny_dnn/config.h"
+#include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
@@ -57,8 +58,6 @@
 #include "third_party/CLCudaAPI/cupp11.h"
 #endif
 #endif
-
-#define CNN_UNREFERENCED_PARAMETER(x) (void)(x)
 
 namespace tiny_dnn {
 
@@ -386,10 +385,5 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
     nn_warn("TinyDNN was not build with OpenCL or CUDA support.");
 #endif
 }
-
-#if defined(_MSC_VER) && (_MSC_VER <= 1800)
-#define CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
-#define CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
-#endif
 
 } // namespace tiny_dnn
