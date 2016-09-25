@@ -60,7 +60,7 @@ public:
     void backward_activation(const tensor_t& prev_delta, const tensor_t& this_out, tensor_t& curr_delta) {
 
         // @todo consider parallelism
-        for (cnn_size_t sample = 0, sample_count = this_out.size(); sample < sample_count; ++sample) {
+        for_i(this_out.size(), [&](cnn_size_t sample) {
             const vec_t& out_vec = this_out[sample];
             const vec_t& prev_delta_vec = prev_delta[sample];
             vec_t& curr_delta_vec = curr_delta[sample];
@@ -78,7 +78,7 @@ public:
                     curr_delta_vec[c] = vectorize::dot(&prev_delta_vec[0], &df[0], len);
                 }
             }
-        }
+        });
     }
 
     Activation h_;
