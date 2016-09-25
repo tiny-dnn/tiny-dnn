@@ -22,13 +22,20 @@ install:
 configuration: Release
 
 before_build:
-  - cmd: mkdir build
-  - cmd: cd build
+  - cmd: mkdir build_msvc2015
+  - cmd: cd build_msvc2015
   - cmd: '%cmake% -G "Visual Studio 14 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: mkdir build_msvc2013
+  - cmd: cd build_msvc2013
+  - cmd: '%cmake% -G "Visual Studio 12 Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
-  - cmd: 'cd C:\projects\build\test\Release'
+  - cmd: 'cd C:\projects\build_msvc2013\test\Release'
+  - cmd: tiny_dnn_test.exe
+  - cmd: 'cd C:\projects\build_msvc2015\test\Release'
   - cmd: tiny_dnn_test.exe
 
 build:
-  project: C:\projects\build\tiny_dnn.sln
+  - project: C:\projects\build_msvc2015\tiny_dnn.sln
+  - project: C:\projects\build_msvc2013\tiny_dnn.sln
+  
