@@ -34,4 +34,4 @@ after_build:
   - cmd: tiny_dnn_test.exe
 
 build:
-  - project: C:\projects\build_vc%msvc%\tiny_dnn.sln
+  project: C:\projects\build_vc%msvc%\tiny_dnn.sln
