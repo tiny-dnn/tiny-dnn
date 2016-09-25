@@ -57,6 +57,14 @@
  */
 #define CNN_USE_STDOUT
 
+
+/**
+ * disable serialization/deserialization function
+ * You can uncomment this to speedup compilation&linking time,
+ * if you don't use network::save / network::load functions.
+ **/
+//#define CNN_NO_SERIALIZATION
+
 /**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
@@ -67,16 +75,8 @@
 #define CNN_TASK_SIZE 8
 #endif
 
-#if !defined(_MSC_VER) || (_MSC_VER >= 1900) // default generation of move constructor is unsupported in VS2013
-#define CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
-#endif
-
-#if !defined(_MSC_VER)
-#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC
-#endif
-
-#if defined _WIN32
-#define CNN_WINDOWS
+#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
+#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
 #endif
 
 namespace tiny_dnn {

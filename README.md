@@ -120,18 +120,21 @@ Some cmake options are available:
 
 |options|description|default|additional requirements to use|
 |-----|-----|----|----|
-|USE_TBB|Use [Intel TBB](https://www.threadingbuildingblocks.org/) for parallelization|OFF*|[Intel TBB](https://www.threadingbuildingblocks.org/)|
-|USE_OMP|Use OpenMP for parallelization|OFF*|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
+|USE_TBB|Use [Intel TBB](https://www.threadingbuildingblocks.org/) for parallelization|OFF*1|[Intel TBB](https://www.threadingbuildingblocks.org/)|
+|USE_OMP|Use OpenMP for parallelization|OFF*1|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
 |USE_OPENCV|Use OpenCV for sample/test programs|ON|[Open Source Computer Vision Library](http://opencv.org/)|
-|BUILD_TESTS|Build unit tests|OFF|-**|
+|USE_SERIALIZER|Enable model serialization|ON*2|-|
+|BUILD_TESTS|Build unit tests|OFF|-*3|
 |BUILD_EXAMPLES|Build example projects|ON|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
-*tiny-dnn use c++11 standard library for parallelization by default
+*1 tiny-dnn use c++11 standard library for parallelization by default
 
-**tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
+*2 If you don't use serialization, you can switch off to speedup compilation time.
+
+*3 tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash

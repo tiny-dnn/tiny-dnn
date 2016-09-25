@@ -39,15 +39,16 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 ####
 # Define user options
-option(USE_SSE    "Build tiny-dnn with SSE library support"     ON)
-option(USE_AVX    "Build tiny-dnn with AVX library support"     ON)
-option(USE_AVX2   "Build tiny-dnn with AVX2 library support"   OFF)
-option(USE_TBB    "Build tiny-dnn with TBB library support"    OFF)
-option(USE_OMP    "Build tiny-dnn with OMP library support"    OFF)
-option(USE_NNPACK "Build tiny-dnn with NNPACK library support" OFF)
-option(USE_OPENCV "Build tiny-dnn with OpenCV library support" OFF)
-option(USE_OPENCL "Build tiny-dnn with OpenCL library support" OFF) 
-option(USE_LIBDNN "Build tiny-dnn with GreenteaLibDNN library support" OFF)
+option(USE_SSE        "Build tiny-dnn with SSE library support"     ON)
+option(USE_AVX        "Build tiny-dnn with AVX library support"     ON)
+option(USE_AVX2       "Build tiny-dnn with AVX2 library support"   OFF)
+option(USE_TBB        "Build tiny-dnn with TBB library support"    OFF)
+option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
+option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
+option(USE_OPENCV     "Build tiny-dnn with OpenCV library support" OFF)
+option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
+option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
+option(USE_SERIALIZER "Build tiny-dnn with Serialization support" ON)
 
 option(BUILD_TESTS    "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
@@ -92,6 +93,10 @@ elseif(USE_TBB AND NOT TBB_FOUND)
     # set the paths to headers and libs by hand.
     message(FATAL_ERROR "Intel TBB not found. Please set TBB_INCLUDE_DIRS & "
             "TBB_LIBRARIES")
+endif()
+
+if(NOT USE_SERIALIZER)
+    add_definitions(-DCNN_NO_SERIALIZATION)
 endif()
 
 # Find Open Multi-Processing (OpenMP)
