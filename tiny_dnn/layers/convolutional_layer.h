@@ -223,7 +223,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
         copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
         std::vector<tensor_t*> in_data_;
-        in_data_.push_back(&cws_.prev_out_padded_);
+        in_data_.push_back(in_data_padded(in_data));
+
         for (cnn_size_t i = 1; i < in_data.size(); ++i) {
             in_data_.push_back(in_data[i]);
         }
@@ -257,7 +258,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
         std::vector<tensor_t*> in_data_;
-        in_data_.push_back(&cws_.prev_out_padded_);
+        in_data_.push_back(in_data_padded(in_data));
         for (cnn_size_t i = 1; i < in_data.size(); ++i) {
             in_data_.push_back(in_data[i]);
         }
@@ -274,6 +275,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         auto ctx = OpKernelContext(in_data_, out_data, out_grad, in_grad_);
              ctx.setParams(&params_);
              ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
 
         // launch convolutional kernel
         kernel_back_->compute(ctx);
@@ -404,6 +406,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
     }
 
 private:
+    tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
+        return (params_.pad_type == core::padding::valid) ? in[0] : &cws_.prev_out_padded_;
+    }
+
     void conv_set_params(const shape3d& in,
                          cnn_size_t     w_width,
                          cnn_size_t     w_height,
@@ -430,8 +436,8 @@ private:
 
         // init padding buffer
         if (params_.pad_type == padding::same) {
-			cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
-		}
+            cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
+        }
     }
 
     cnn_size_t in_length(cnn_size_t in_length,
@@ -517,7 +523,6 @@ private:
      */
     void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
         if (params_.pad_type == core::padding::valid) {
-            out = in;
             return;
         }
 
