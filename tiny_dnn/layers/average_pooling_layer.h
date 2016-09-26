@@ -47,7 +47,7 @@ void tiny_average_pooling_kernel(bool parallelize,
                                  std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
                                  Activation&                   h) {
  
-    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
+    for_i(in_data[0]->size(), [&](size_t sample) {
         const vec_t& in = (*in_data[0])[sample];
         const vec_t& W = (*in_data[1])[0];
         const vec_t& b = (*in_data[2])[0];
@@ -71,10 +71,10 @@ void tiny_average_pooling_kernel(bool parallelize,
         }
 
         assert(out.size() == out2wi.size());
-        for_i(parallelize, out2wi.size(), [&](int i) {
+        for (size_t i = 0; i < out2wi.size(); i++) {
             out[i] = h.f(a, i);
-        });
-    }
+        }
+    });
 }
 
 // back_propagation
@@ -89,7 +89,7 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                       std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
                                       std::vector<std::vector<cnn_size_t>>& bias2out) {
 
-    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
+    for_i(in_data[0]->size(), [&](size_t sample) {
         const vec_t& prev_out   = (*in_data[0])[sample];
         const vec_t& W          = (*in_data[1])[0];
         vec_t&       dW         = (*in_grad[1])[sample];
@@ -125,7 +125,7 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
 
             db[i] += diff;
         }
-    }
+    });
 }
 
 
