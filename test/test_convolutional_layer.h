@@ -153,6 +153,8 @@ TEST(convolutional, fprop) {
     }
 }
 
+// test for AVX backends
+
 #ifdef CNN_USE_AVX
 TEST(convolutional, fprop_avx) {
 
@@ -170,6 +172,7 @@ TEST(convolutional, fprop_avx) {
     vec_t& out_noavx = buf.out_at(0)[0];
 
     for (size_t i = 0; i < out_avx.size(); i++) {
+        // check if all outputs between default backend and avx backend are the same
         EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }
 }
@@ -374,7 +377,7 @@ TEST(convolutional, bprop_avx_wstride) {
     }
 }
 
-#endif
+#endif // CNN_USE_AVX
 
 #ifdef CNN_USE_NNPACK
 TEST(convolutional, fprop_nnp) {
@@ -541,6 +544,51 @@ TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
                                        test_data.second,
                                        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
+    network<sequential> nn;
+
+    nn << convolutional_layer<sigmoid>(7, 7, 1, 2, 1, padding::valid,
+        true, 2, 1, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check10_h_stride) { // sigmoid - mse - h_stride > 1
+    network<sequential> nn;
+
+    nn << convolutional_layer<sigmoid>(7, 7, 1, 2, 1, padding::valid,
+        true, 1, 2, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has connection-tbl
+    network<sequential> nn;
+    bool tbl[3 * 3] = {
+        true, false, true,
+        false, true, false,
+        true, true, false };
+
+    connection_table connections(tbl, 3, 3);
+
+    nn << convolutional_layer<sigmoid>(7, 7, 3, 3, 1, connections, padding::valid,
+        true, 1, 1, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, read_write)
