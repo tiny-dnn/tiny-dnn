@@ -44,6 +44,8 @@
 */
 #pragma once
 
+#include "tiny_dnn/core/framework/device.fwd.h"
+
 namespace tiny_dnn {
 
 /* Class modelling a Tensor
@@ -108,7 +110,17 @@ class Tensor {
     const float_t& operator[] (cnn_size_t index) const {
         return *access_data(index);
     }
-    
+
+    void toDevice(const Device& device) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+        CLCudaAPI::Context ctx = device.context();
+        CLCudaAPI::Queue queue = device.queue();
+
+        data_gpu_ = std::make_shared<CLCudaAPI::Buffer<float_t> >(
+            ctx, queue, data_cpu_->begin(), data_cpu_->end());
+#endif
+    }
+
  private:
     // Initializes the data buffer with zeroes
     void init_data(const cnn_size_t batch,  const cnn_size_t width,
@@ -155,8 +167,13 @@ class Tensor {
      */
     std::vector<cnn_size_t> shape_;
 
-    /* Pointer to the Tensor data in CPU mode */
+    /* Pointer to the Tensor data in pure CPU mode */
     std::unique_ptr<std::vector<float_t> > data_cpu_;
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+    /* Pointer to the Tensor data in OpenCL mode */
+    std::shared_ptr<CLCudaAPI::Buffer<float_t> > data_gpu_;
+#endif
 };
 
 // Overloaded method to print the Tensor class to the standard output
