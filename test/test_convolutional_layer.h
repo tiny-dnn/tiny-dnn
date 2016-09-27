@@ -153,6 +153,98 @@ TEST(convolutional, fprop) {
     }
 }
 
+TEST(convolutional, with_stride) {
+    /*
+      forward - pass:
+
+      [0,1,2,3,4, 
+       1,2,3,4,5,          [1,1,1,           [ 9.5,    18.5,      
+       2,3,4,5,6,  *  0.5*  1,1,1,  + 0.5 = 
+       3,4,5,6,7,           1,1,1]            18.5,    27.5]
+       4,5,6,7,8]
+    
+    */
+
+    float_t in[] = {
+        0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+        1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
+        2.0f, 3.0f, 4.0f, 5.0f, 6.0f,
+        3.0f, 4.0f, 5.0f, 6.0f, 7.0f,
+        4.0f, 5.0f, 6.0f, 7.0f, 8.0f
+    };
+
+    float_t w[] = {
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f
+    };
+
+    float_t b[] = {
+        0.5f
+    };
+
+    float_t expected_out[] = {
+         9.5f, 18.5f,
+        18.5f, 27.5f
+    };
+
+    convolutional_layer<identity> l(5, 5, 3, 1, 1, padding::valid, true, 2, 2);
+    tensor_buf data(l, false), grad(l, false);
+
+    data.in_at(0)[0] = vec_t(in, in + 25);
+    data.in_at(1)[0] = vec_t(w, w + 9);
+    data.in_at(2)[0] = vec_t(b, b + 1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+
+    vec_t& actual = data.out_at(0)[0];
+
+    for (size_t i = 0; i < 4; i++) {
+        ASSERT_DOUBLE_EQ(expected_out[i], actual[i]);
+    }
+
+
+    float_t curr_delta[] = {
+        -1.0f, 2.0f,
+        3.0f, 0.0f,
+    };
+
+    float_t expected_prev_delta[] = {
+        -0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
+         1.0f,  1.0f, 2.0f, 1.0f, 1.0f,
+         1.5f,  1.5f, 1.5f, 0.0f, 0.0f,
+         1.5f,  1.5f, 1.5f, 0.0f, 0.0f
+    };
+
+    float_t expected_dw[] = {
+        10.0f, 14.0f, 18.0f,
+        14.0f, 18.0f, 22.0f,
+        18.0f, 22.0f, 26.0f
+    };
+
+    float_t expected_db[] = {
+        4.0f
+    };
+
+    grad.out_at(0)[0] = vec_t(curr_delta, curr_delta + 4);
+
+    l.back_propagation(data.in_buf(), data.out_buf(), grad.out_buf(), grad.in_buf());
+
+    const vec_t& actual_delta = grad.in_at(0)[0];
+    const vec_t& actual_dw = grad.in_at(1)[0];
+    const vec_t& actual_db = grad.in_at(2)[0];
+
+    for (size_t i = 0; i < 25; i++) {
+        ASSERT_DOUBLE_EQ(actual_delta[i], expected_prev_delta[i]);
+    }
+    for (size_t i = 0; i < 9; i++) {
+        ASSERT_DOUBLE_EQ(actual_dw[i], expected_dw[i]);
+    }
+    ASSERT_DOUBLE_EQ(actual_db[0], expected_db[0]);
+
+}
+
 // test for AVX backends
 
 #ifdef CNN_USE_AVX
@@ -549,10 +641,10 @@ TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
 TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid>(7, 7, 1, 2, 1, padding::valid,
+    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
         true, 2, 1, core::backend_t::tiny_dnn);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
         test_data.second,
@@ -562,10 +654,10 @@ TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
 TEST(convolutional, gradient_check10_h_stride) { // sigmoid - mse - h_stride > 1
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid>(7, 7, 1, 2, 1, padding::valid,
+    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
         true, 1, 2, core::backend_t::tiny_dnn);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
         test_data.second,
