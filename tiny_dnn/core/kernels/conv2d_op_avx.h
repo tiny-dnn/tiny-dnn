@@ -63,79 +63,39 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
     static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
     const __m128 y_bias_scale = _mm_set_ss(bias_scale);
     if (out.height_ == 1 && out.width_ == 1) {
-        if (stride == 5) {
-            const float* pw = (const float*) &W[0];
-            for (size_t o=0; o<out.depth_; ++o) {
-                __m256 sum0 = _mm256_setzero_ps();
-                __m256 sum1 = _mm256_setzero_ps();
-                __m256 sum2 = _mm256_setzero_ps();
-                __m128 sum3 = _mm_setzero_ps();
-                const float* pi = (const float*) &in[0];
-                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, pi += inarea) {
-                    if (!tbl.is_connected(o, inc)) {
-                        continue;
-                    }
-                    __m256 w0 = _mm256_loadu_ps(pw+0);
-                    __m256 w1 = _mm256_loadu_ps(pw+8);
-                    __m256 w2 = _mm256_loadu_ps(pw+16);
-                    __m256 i0 = _mm256_loadu_ps(pi+0);
-                    __m256 i1 = _mm256_loadu_ps(pi+8);
-                    __m256 i2 = _mm256_loadu_ps(pi+16);
-                    __m128 w3 = _mm_load_ss(pw+24);
-                    __m128 i3 = _mm_load_ss(pi+24);
-                    __m256 tmp0 = _mm256_mul_ps(w0, i0);
-                    __m256 tmp1 = _mm256_mul_ps(w1, i1);
-                    __m256 tmp2 = _mm256_mul_ps(w2, i2);
-                    __m128 tmp3 = _mm_mul_ps(w3, i3);
-                    sum0 = _mm256_add_ps(tmp0, sum0);
-                    sum1 = _mm256_add_ps(tmp1, sum1);
-                    sum2 = _mm256_add_ps(tmp2, sum2);
-                    sum3 = _mm_add_ps(tmp3, sum3);
+        const float* pw = (const float*)&W[0];
+        for (size_t o = 0; o < out.depth_; ++o) {
+            __m256 sum0 = _mm256_setzero_ps();
+            __m256 sum1 = _mm256_setzero_ps();
+            __m256 sum2 = _mm256_setzero_ps();
+            __m128 sum3 = _mm_setzero_ps();
+            const float* pi = (const float*)&in[0];
+            for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, pi += inarea) {
+                if (!tbl.is_connected(o, inc)) {
+                    continue;
                 }
-                __m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
-                __m128 b = _mm_load_ss(&bias[o]);
-                __m128 hsum = hsum256_ps(sum);
-                b = madd128_ss(b, y_bias_scale, sum3);
-                _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
+                __m256 w0 = _mm256_loadu_ps(pw + 0);
+                __m256 w1 = _mm256_loadu_ps(pw + 8);
+                __m256 w2 = _mm256_loadu_ps(pw + 16);
+                __m256 i0 = _mm256_loadu_ps(pi + 0);
+                __m256 i1 = _mm256_loadu_ps(pi + 8);
+                __m256 i2 = _mm256_loadu_ps(pi + 16);
+                __m128 w3 = _mm_load_ss(pw + 24);
+                __m128 i3 = _mm_load_ss(pi + 24);
+                __m256 tmp0 = _mm256_mul_ps(w0, i0);
+                __m256 tmp1 = _mm256_mul_ps(w1, i1);
+                __m256 tmp2 = _mm256_mul_ps(w2, i2);
+                __m128 tmp3 = _mm_mul_ps(w3, i3);
+                sum0 = _mm256_add_ps(tmp0, sum0);
+                sum1 = _mm256_add_ps(tmp1, sum1);
+                sum2 = _mm256_add_ps(tmp2, sum2);
+                sum3 = _mm_add_ps(tmp3, sum3);
             }
-        } else {
-            for (size_t o = 0; o < out.depth_; ++o) {
-                __m256 sum = _mm256_setzero_ps();
-                size_t widx = 25/* weight_.area() */ * params.in.depth_ * o;
-                size_t inidx = 0;
-                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, widx += 25, inidx += inarea) {
-                    if (!tbl.is_connected(o, inc)) {
-                        continue;
-                    }
-                    const float* pw = (const float*) &W[widx];
-                    __m256 w0 = _mm256_loadu_ps(pw+0);
-                    __m256 w1 = _mm256_loadu_ps(pw+5);
-                    __m256 w2 = _mm256_loadu_ps(pw+10);
-                    __m256 w3 = _mm256_loadu_ps(pw+15);
-                    __m256 w4 = _mm256_loadu_ps(pw+20);
-                    w0 = _mm256_and_ps(w0, mask);
-                    w1 = _mm256_and_ps(w1, mask);
-                    w2 = _mm256_and_ps(w2, mask);
-                    w3 = _mm256_and_ps(w3, mask);
-                    w4 = _mm256_and_ps(w4, mask);
-                    const float* pi = (const float*) &in[inidx];
-                    __m256 i0 = _mm256_loadu_ps(pi + 0 * stride);
-                    __m256 i1 = _mm256_loadu_ps(pi + 1 * stride);
-                    __m256 i2 = _mm256_loadu_ps(pi + 2 * stride);
-                    __m256 i3 = _mm256_loadu_ps(pi + 3 * stride);
-                    __m256 i4 = _mm256_loadu_ps(pi + 4 * stride);
-                    __m256 sum0 = madd256_ps(w0, i0, sum);
-                    __m256 sum1 = _mm256_mul_ps(w1, i1);
-                    sum0 = madd256_ps(w2, i2, sum0);
-                    sum1 = madd256_ps(w3, i3, sum1);
-                    sum0 = madd256_ps(w4, i4, sum0);
-                    sum = _mm256_add_ps(sum0, sum1);
-                }
-                __m128 b = _mm_load_ss(&bias[o]);
-                __m128 hsum = hsum256_ps(sum);
-                hsum = madd128_ps(b, y_bias_scale, hsum);
-                _mm_store_ss(&a[o], hsum);
-            }
+            __m256 sum = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
+            __m128 b = _mm_load_ss(&bias[o]);
+            __m128 hsum = hsum256_ps(sum);
+            b = madd128_ss(b, y_bias_scale, sum3);
+            _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
         }
     } else {
         const size_t nblocks = out.width_ / 4;
@@ -192,10 +152,10 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 float* ppa = pa;
                 for (cnn_size_t y = 0; y < out.height_; y++) {
                     const float* pi0 = (pi + y * stride);
-                    const float* pi1 = pi0 + 1 * stride;
-                    const float* pi2 = pi0 + 2 * stride;
-                    const float* pi3 = pi0 + 3 * stride;
-                    const float* pi4 = pi0 + 4 * stride;
+                    const float* pi1 = pi0 + 1 * in_padded.width_;
+                    const float* pi2 = pi0 + 2 * in_padded.width_;
+                    const float* pi3 = pi0 + 3 * in_padded.width_;
+                    const float* pi4 = pi0 + 4 * in_padded.width_;
                     cnn_size_t x = 0;
                     if (w_stride == 1) {
                         __m256 dst0, dst1, dst2, dst3;
@@ -293,106 +253,58 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
     const size_t in_stride = params.h_stride * in_padded.width_;
     const size_t in_padded_area = in_padded.area();
     if (out.height_ == 1 && out.width_ == 1) {
-        if (in_stride == 5) {
-            for (size_t o = 0; o < out.depth_; ++o) {
-                __m256d sum0 = _mm256_setzero_pd();
-                __m256d sum1 = _mm256_setzero_pd();
-                __m256d sum2 = _mm256_setzero_pd();
-                __m256d sum3 = _mm256_setzero_pd();
-                __m256d sum4 = _mm256_setzero_pd();
-                __m256d sum5 = _mm256_setzero_pd();
-                __m128d sum6 = _mm_setzero_pd();
-                size_t inidx = 0;
-                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, inidx += in_padded_area) {
-                    if (!tbl.is_connected(o, inc)) {
-                        continue;
-                    }
-                    __m256d w0 = _mm256_loadu_pd(pw+0);
-                    __m256d w1 = _mm256_loadu_pd(pw+4);
-                    __m256d w2 = _mm256_loadu_pd(pw+8);
-                    __m256d w3 = _mm256_loadu_pd(pw+12);
-                    __m256d w4 = _mm256_loadu_pd(pw+16);
-                    __m256d w5 = _mm256_loadu_pd(pw+20);
-                    __m128d w6 = _mm_load_sd(pw+24);
-                    const double* pi = (const double*) &in[inidx];
-                    __m256d i0 = _mm256_loadu_pd(pi+0);
-                    __m256d i1 = _mm256_loadu_pd(pi+4);
-                    __m256d i2 = _mm256_loadu_pd(pi+8);
-                    __m256d i3 = _mm256_loadu_pd(pi+12);
-                    __m256d i4 = _mm256_loadu_pd(pi+16);
-                    __m256d i5 = _mm256_loadu_pd(pi+20);
-                    __m128d i6 = _mm_load_sd(pi+24);
-                    __m256d tmp0 = _mm256_mul_pd(w0, i0);
-                    __m256d tmp1 = _mm256_mul_pd(w1, i1);
-                    __m256d tmp2 = _mm256_mul_pd(w2, i2);
-                    __m256d tmp3 = _mm256_mul_pd(w3, i3);
-                    __m256d tmp4 = _mm256_mul_pd(w4, i4);
-                    __m256d tmp5 = _mm256_mul_pd(w5, i5);
-                    __m128d tmp6 = _mm_mul_pd(w6, i6);
-                    sum0 = _mm256_add_pd(tmp0, sum0);
-                    sum1 = _mm256_add_pd(tmp1, sum1);
-                    sum2 = _mm256_add_pd(tmp2, sum2);
-                    sum3 = _mm256_add_pd(tmp3, sum3);
-                    sum4 = _mm256_add_pd(tmp4, sum4);
-                    sum5 = _mm256_add_pd(tmp5, sum5);
-                    sum6 = _mm_add_pd(tmp6, sum6);
+        for (size_t o = 0; o < out.depth_; ++o) {
+            __m256d sum0 = _mm256_setzero_pd();
+            __m256d sum1 = _mm256_setzero_pd();
+            __m256d sum2 = _mm256_setzero_pd();
+            __m256d sum3 = _mm256_setzero_pd();
+            __m256d sum4 = _mm256_setzero_pd();
+            __m256d sum5 = _mm256_setzero_pd();
+            __m128d sum6 = _mm_setzero_pd();
+            size_t inidx = 0;
+            for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, inidx += in_padded_area) {
+                if (!tbl.is_connected(o, inc)) {
+                    continue;
                 }
-                sum0 = _mm256_add_pd(sum0, sum1);
-                sum2 = _mm256_add_pd(sum2, sum3);
-                sum4 = _mm256_add_pd(sum4, sum5);
-                sum0 = _mm256_add_pd(sum0, sum2);
-                __m256d sum = _mm256_add_pd(sum0, sum4);
-                __m128d b = _mm_load_sd(&bias[o]);
-                __m128d hsum = hsum256_pd(sum);
-                b = madd128_sd(b, y_bias_scale, sum6);
-                _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
+                __m256d w0 = _mm256_loadu_pd(pw + 0);
+                __m256d w1 = _mm256_loadu_pd(pw + 4);
+                __m256d w2 = _mm256_loadu_pd(pw + 8);
+                __m256d w3 = _mm256_loadu_pd(pw + 12);
+                __m256d w4 = _mm256_loadu_pd(pw + 16);
+                __m256d w5 = _mm256_loadu_pd(pw + 20);
+                __m128d w6 = _mm_load_sd(pw + 24);
+                const double* pi = (const double*)&in[inidx];
+                __m256d i0 = _mm256_loadu_pd(pi + 0);
+                __m256d i1 = _mm256_loadu_pd(pi + 4);
+                __m256d i2 = _mm256_loadu_pd(pi + 8);
+                __m256d i3 = _mm256_loadu_pd(pi + 12);
+                __m256d i4 = _mm256_loadu_pd(pi + 16);
+                __m256d i5 = _mm256_loadu_pd(pi + 20);
+                __m128d i6 = _mm_load_sd(pi + 24);
+                __m256d tmp0 = _mm256_mul_pd(w0, i0);
+                __m256d tmp1 = _mm256_mul_pd(w1, i1);
+                __m256d tmp2 = _mm256_mul_pd(w2, i2);
+                __m256d tmp3 = _mm256_mul_pd(w3, i3);
+                __m256d tmp4 = _mm256_mul_pd(w4, i4);
+                __m256d tmp5 = _mm256_mul_pd(w5, i5);
+                __m128d tmp6 = _mm_mul_pd(w6, i6);
+                sum0 = _mm256_add_pd(tmp0, sum0);
+                sum1 = _mm256_add_pd(tmp1, sum1);
+                sum2 = _mm256_add_pd(tmp2, sum2);
+                sum3 = _mm256_add_pd(tmp3, sum3);
+                sum4 = _mm256_add_pd(tmp4, sum4);
+                sum5 = _mm256_add_pd(tmp5, sum5);
+                sum6 = _mm_add_pd(tmp6, sum6);
             }
-        } else {
-            for (size_t o=0; o<out.depth_; ++o) {
-                __m256d sum_a = _mm256_setzero_pd();
-                __m128d sum_b = _mm_setzero_pd();
-                size_t inidx = 0;
-                for (cnn_size_t inc = 0; inc < params.in.depth_; ++inc, pw += 25, inidx += in_padded_area) {
-                    if (!tbl.is_connected(o, inc)) {
-                        continue;
-                    }
-                    __m256d w0a = _mm256_loadu_pd(pw+0);
-                    __m128d w0b = _mm_load_sd(pw+4);
-                    __m256d w1a = _mm256_loadu_pd(pw+5);
-                    __m128d w1b = _mm_load_sd(pw+9);
-                    __m256d w2a = _mm256_loadu_pd(pw+10);
-                    __m128d w2b = _mm_load_sd(pw+14);
-                    __m256d w3a = _mm256_loadu_pd(pw+15);
-                    __m128d w3b = _mm_load_sd(pw+19);
-                    __m256d w4a = _mm256_loadu_pd(pw+20);
-                    __m128d w4b = _mm_load_sd(pw+24);
-                    const double* pi = (const double*) &in[inidx];
-                    __m256d i0a = _mm256_loadu_pd(pi + 0 * in_stride);
-                    __m128d i0b = _mm_load_sd(pi + 0 * in_stride + 4);
-                    __m256d i1a = _mm256_loadu_pd(pi + 1 * in_stride);
-                    __m128d i1b = _mm_load_sd(pi + 1 * in_stride + 4);
-                    __m256d i2a = _mm256_loadu_pd(pi + 2 * in_stride);
-                    __m128d i2b = _mm_load_sd(pi + 2 * in_stride + 4);
-                    __m256d i3a = _mm256_loadu_pd(pi + 3 * in_stride);
-                    __m128d i3b = _mm_load_sd(pi + 3 * in_stride + 4);
-                    __m256d i4a = _mm256_loadu_pd(pi + 4 * in_stride);
-                    __m128d i4b = _mm_load_sd(pi + 4 * in_stride + 4);
-                    sum_a = madd256_pd(w0a, i0a, sum_a);
-                    sum_b = madd128_pd(w0b, i0b, sum_b);
-                    sum_a = madd256_pd(w1a, i1a, sum_a);
-                    sum_b = madd128_pd(w1b, i1b, sum_b);
-                    sum_a = madd256_pd(w2a, i2a, sum_a);
-                    sum_b = madd128_pd(w2b, i2b, sum_b);
-                    sum_a = madd256_pd(w3a, i3a, sum_a);
-                    sum_b = madd128_pd(w3b, i3b, sum_b);
-                    sum_a = madd256_pd(w4a, i4a, sum_a);
-                    sum_b = madd128_pd(w4b, i4b, sum_b);
-                }
-                __m128d b = _mm_load_sd(&bias[o]);
-                __m128d hsum = hsum256_pd(sum_a);
-                b = _mm_fmadd_sd(b, y_bias_scale, sum_b);
-                _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
-            }
+            sum0 = _mm256_add_pd(sum0, sum1);
+            sum2 = _mm256_add_pd(sum2, sum3);
+            sum4 = _mm256_add_pd(sum4, sum5);
+            sum0 = _mm256_add_pd(sum0, sum2);
+            __m256d sum = _mm256_add_pd(sum0, sum4);
+            __m128d b = _mm_load_sd(&bias[o]);
+            __m128d hsum = hsum256_pd(sum);
+            b = madd128_sd(b, y_bias_scale, sum6);
+            _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
         }
     } else {
         for (cnn_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
@@ -434,10 +346,10 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 const double* pi = pi0;
                 double* pa2 = pa;
                 for (cnn_size_t y = 0; y < out.height_; ++y, pi += in_stride, pa2 += out.width_) {
-                    const double* pi1 = pi + 1 * in_stride;
-                    const double* pi2 = pi + 2 * in_stride;
-                    const double* pi3 = pi + 3 * in_stride;
-                    const double* pi4 = pi + 4 * in_stride;
+                    const double* pi1 = pi + 1 * in_padded.width_;
+                    const double* pi2 = pi + 2 * in_padded.width_;
+                    const double* pi3 = pi + 3 * in_padded.width_;
+                    const double* pi4 = pi + 4 * in_padded.width_;
                     for (cnn_size_t x = 0; x < out.width_; ++x) {
                         __m128d sum = _mm_load_sd(&pa2[x]);
                         __m256d i0a = _mm256_loadu_pd(pi);

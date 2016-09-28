@@ -198,10 +198,10 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
 
             size_t widx = 25 * inc;
             size_t wstep = 25 * in.depth_;
-            const __m256 mask2 = mask;
+
             if (tbl.is_empty()) {
                 for (cnn_size_t outc = 0; outc < out.depth_; outc++, widx+=wstep) {
-                    __m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
+                    __m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
                     const float* pw = (const float*)&W[widx];
                     __m256 w0 = _mm256_loadu_ps(pw+0);
                     __m256 w1 = _mm256_loadu_ps(pw + 8);
@@ -218,7 +218,7 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
-                    __m256 delta_src = _mm256_and_ps(_mm256_broadcast_ss(&curr_delta[outc]), mask2);
+                    __m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
                     const float* pw = (const float*)&W[widx];
                     __m256 w0 = _mm256_loadu_ps(pw + 0);
                     __m256 w1 = _mm256_loadu_ps(pw + 8);
@@ -392,27 +392,43 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
                 for (cnn_size_t wy = 0; wy < 5 /* weight.height_ */; wy++) {
                     for (cnn_size_t wx = 0; wx < 5 /* weight.width_ */; wx++) {
                         const float* prevo = &prev_out[in_padded.get_index(wx, wy, inc)];
-                        __m128 prev_sum = _mm_load_ss(&dW[widx]);
-                        __m256 sum0 = _mm256_setzero_ps();
-                        __m256 sum1 = _mm256_setzero_ps();
-                        for (cnn_size_t y = 0; y < out.height_; y++) {
-                            // vectorize::dot
-                            const float* pa = prevo + y * in_padded.width_;
-                            const float* pb = delta + y * out.width_;
-                            for (size_t i = 0; i < nblocks; ++i) {
-                                __m256 a = _mm256_loadu_ps(pa + 8 * i);
-                                __m256 b = _mm256_loadu_ps(pb + 8 * i);
-                                sum0 = madd256_ps(a, b, sum0);
+
+                        if (w_stride > 1) {
+                            float_t dst = float_t(0);
+
+                            for (cnn_size_t y = 0; y < params.out.height_; y++) {
+                                cnn_size_t prevo_idx = y * params.in_padded.width_ * params.h_stride;
+                                cnn_size_t delta_idx = y * params.out.width_;
+
+                                for (cnn_size_t x = 0; x < params.out.width_; x++) {
+                                    dst += prevo[prevo_idx + x * params.w_stride] * delta[delta_idx + x];
+                                }
                             }
-                            if (remainder) {
-                                __m256 a = _mm256_loadu_ps(pa + 8 * nblocks);
-                                __m256 b = _mm256_loadu_ps(pb + 8 * nblocks);
-                                sum1 = madd256_ps(a, b, sum1);
-                            }
+                            dW[widx] += dst;
                         }
-                        sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
-                        __m256 sum = _mm256_add_ps(sum0, sum1);
-                        _mm_store_ss(&dW[widx], _mm_add_ps(prev_sum, hsum256_ps(sum)));
+                        else {
+                            __m128 prev_sum = _mm_load_ss(&dW[widx]);
+                            __m256 sum0 = _mm256_setzero_ps();
+                            __m256 sum1 = _mm256_setzero_ps();
+                            for (cnn_size_t y = 0; y < out.height_; y++) {
+                                // vectorize::dot
+                                const float* pa = prevo + y * in_padded.width_ * params.h_stride;
+                                const float* pb = delta + y * out.width_;
+                                for (size_t i = 0; i < nblocks; ++i) {
+                                    __m256 a = _mm256_loadu_ps(pa + 8 * i);
+                                    __m256 b = _mm256_loadu_ps(pb + 8 * i);
+                                    sum0 = madd256_ps(a, b, sum0);
+                                }
+                                if (remainder) {
+                                    __m256 a = _mm256_loadu_ps(pa + 8 * nblocks);
+                                    __m256 b = _mm256_loadu_ps(pb + 8 * nblocks);
+                                    sum1 = madd256_ps(a, b, sum1);
+                                }
+                            }
+                            sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
+                            __m256 sum = _mm256_add_ps(sum0, sum1);
+                            _mm_store_ss(&dW[widx], _mm_add_ps(prev_sum, hsum256_ps(sum)));
+                        }
                         ++widx;
                     }
                 }

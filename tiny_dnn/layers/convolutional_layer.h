@@ -449,15 +449,17 @@ private:
     static cnn_size_t conv_out_length(cnn_size_t in_length,
                                       cnn_size_t window_size,
                                       cnn_size_t stride, padding pad_type) {
-        float_t tmp;
+
+        size_t output_length;
+
         if (pad_type == padding::same) {
-            tmp = static_cast<float_t>(in_length) / stride;
+            output_length = in_length;
         } else if (pad_type == padding::valid) {
-            tmp = static_cast<float_t>(in_length - window_size + 1) / stride;
+            output_length = in_length - window_size + 1;
         } else {
             throw nn_error("Not recognized pad_type.");
         }
-        return static_cast<cnn_size_t>(ceil(tmp));
+        return (output_length + stride - 1) / stride;
     }
 
     static cnn_size_t conv_out_dim(cnn_size_t in_width,

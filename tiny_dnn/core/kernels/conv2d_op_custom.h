@@ -166,18 +166,29 @@ conv2d_op_custom(const tensor_t&        prev_out,
 
                         cnn_size_t idx = 0;
                         idx = params.in_padded.get_index(wx, wy, inc);
-                        //const float_t * prevo = &(*prev_out[sample])[idx];
                         const float_t * prevo = &prev_out[sample][idx];
 
                         idx = params.out.get_index(0, 0, outc);
                         const float_t * delta = &curr_delta[sample][idx];
 
-                        for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                            dst += vectorize::dot(
-                                prevo + y * params.in_padded.width_,
-                                delta + y * params.out.width_,
-                                params.out.width_);
+                        if (params.w_stride > 1) {
+                            for (cnn_size_t y = 0; y < params.out.height_; y++) {
+                                cnn_size_t prevo_idx = y * params.in_padded.width_ * params.h_stride;
+                                cnn_size_t delta_idx = y * params.out.width_;
+
+                                for (cnn_size_t x = 0; x < params.out.width_; x++) {
+                                    dst += prevo[prevo_idx + x * params.w_stride] * delta[delta_idx + x];
+                                }
+                            }
+                        } else {
+                            for (cnn_size_t y = 0; y < params.out.height_; y++) {
+                                dst += vectorize::dot(
+                                    prevo + y * params.in_padded.width_ * params.h_stride,
+                                    delta + y * params.out.width_,
+                                    params.out.width_);
+                            }
                         }
+
 
                         idx = params.in.depth_ * outc + inc;
                         dW[sample][params.weight.get_index(wx, wy, idx)] += dst;

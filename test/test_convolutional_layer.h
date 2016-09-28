@@ -54,40 +54,71 @@ TEST(convolutional, setup_tiny) {
     EXPECT_TRUE(l.engine() == backend_t::tiny_dnn);       // the engine type
 }
 
+inline void randomize_tensor(tensor_t& tensor)
+{
+    for (auto& vec : tensor) {
+        uniform_rand(vec.begin(), vec.end(), -1.0f, 1.0f);
+    }
+}
+
+// prepare tensor buffers for unit test
+class tensor_buf {
+public:
+    tensor_buf(tensor_buf& other)
+        : in_data_(other.in_data_), out_data_(other.out_data_) {
+        for (auto& d : in_data_) in_ptr_.push_back(&d);
+        for (auto& d : out_data_) out_ptr_.push_back(&d);
+    }
+
+    explicit tensor_buf(const layer& l, bool randomize = true)
+    : in_data_(l.in_channels()), out_data_(l.out_channels()),
+      in_ptr_(l.in_channels()),  out_ptr_(l.out_channels()) {
+
+        for (size_t i = 0; i < l.in_channels(); i++) {
+            in_data_[i].resize(1, vec_t(l.in_shape()[i].size()));
+            in_ptr_[i] = &in_data_[i];
+        }
+
+        for (size_t i = 0; i < l.out_channels(); i++) {
+            out_data_[i].resize(1, vec_t(l.out_shape()[i].size()));
+            out_ptr_[i] = &out_data_[i];
+        }
+
+        if (randomize) {
+            for (auto& tensor : in_data_)  randomize_tensor(tensor);
+            for (auto& tensor : out_data_) randomize_tensor(tensor);
+        }
+    }
+
+    tensor_t& in_at(size_t i) { return in_data_[i]; }
+    tensor_t& out_at(size_t i) { return out_data_[i]; }
+
+    std::vector<tensor_t*>& in_buf()  { return in_ptr_; }
+    std::vector<tensor_t*>& out_buf() { return out_ptr_; }
+
+private:
+    std::vector<tensor_t> in_data_, out_data_;
+    std::vector<tensor_t*> in_ptr_, out_ptr_;
+};
+
 TEST(convolutional, fprop) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
-    // layer::forward_propagation expects tensors, even if we feed only one input at a time
-    auto create_simple_tensor = [](size_t vector_size) {
-        return tensor_t(1, vec_t(vector_size));
-    };
-
-    // create simple tensors that wrap the payload vectors of the correct size
-    tensor_t in_tensor     = create_simple_tensor(25)
-           , out_tensor    = create_simple_tensor(18)
-           , a_tensor      = create_simple_tensor(18)
-           , weight_tensor = create_simple_tensor(18)
-           , bias_tensor   = create_simple_tensor(2);
+    tensor_buf buf(l, false);
 
     // short-hand references to the payload vectors
-    vec_t &in     = in_tensor[0]
-        , &out    = out_tensor[0]
-        , &weight = weight_tensor[0];
+    vec_t &in     = buf.in_at(0)[0]
+        , &out    = buf.out_at(0)[0]
+        , &weight = buf.in_at(1)[0];
 
     ASSERT_EQ(l.in_shape()[1].size(), cnn_size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<tensor_t*> in_data, out_data;
-    in_data.push_back(&in_tensor);
-    in_data.push_back(&weight_tensor);
-    in_data.push_back(&bias_tensor);
-    out_data.push_back(&out_tensor);
-    out_data.push_back(&a_tensor);
     l.setup(false);
     {
-        l.forward_propagation(in_data, out_data);
+        l.forward_propagation(buf.in_buf(), buf.out_buf());
 
         for (auto o: out)
             EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
@@ -108,7 +139,7 @@ TEST(convolutional, fprop) {
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     {
-        l.forward_propagation(in_data, out_data);
+        l.forward_propagation(buf.in_buf(), buf.out_buf());
 
         EXPECT_NEAR(0.4875026, out[0], 1E-5);
         EXPECT_NEAR(0.8388910, out[1], 1E-5);
@@ -121,6 +152,324 @@ TEST(convolutional, fprop) {
         EXPECT_NEAR(0.6899745, out[8], 1E-5);
     }
 }
+
+TEST(convolutional, with_stride) {
+    /*
+      forward - pass:
+
+      [0,1,2,3,4, 
+       1,2,3,4,5,          [1,1,1,           [ 9.5,    18.5,      
+       2,3,4,5,6,  *  0.5*  1,1,1,  + 0.5 = 
+       3,4,5,6,7,           1,1,1]            18.5,    27.5]
+       4,5,6,7,8]
+    
+    */
+
+    float_t in[] = {
+        0.0f, 1.0f, 2.0f, 3.0f, 4.0f,
+        1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
+        2.0f, 3.0f, 4.0f, 5.0f, 6.0f,
+        3.0f, 4.0f, 5.0f, 6.0f, 7.0f,
+        4.0f, 5.0f, 6.0f, 7.0f, 8.0f
+    };
+
+    float_t w[] = {
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f,
+        0.5f, 0.5f, 0.5f
+    };
+
+    float_t b[] = {
+        0.5f
+    };
+
+    float_t expected_out[] = {
+         9.5f, 18.5f,
+        18.5f, 27.5f
+    };
+
+    convolutional_layer<identity> l(5, 5, 3, 1, 1, padding::valid, true, 2, 2);
+    tensor_buf data(l, false), grad(l, false);
+
+    data.in_at(0)[0] = vec_t(in, in + 25);
+    data.in_at(1)[0] = vec_t(w, w + 9);
+    data.in_at(2)[0] = vec_t(b, b + 1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+
+    vec_t& actual = data.out_at(0)[0];
+
+    for (size_t i = 0; i < 4; i++) {
+        ASSERT_DOUBLE_EQ(expected_out[i], actual[i]);
+    }
+
+
+    float_t curr_delta[] = {
+        -1.0f, 2.0f,
+        3.0f, 0.0f,
+    };
+
+    float_t expected_prev_delta[] = {
+        -0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
+        -0.5f, -0.5f, 0.5f, 1.0f, 1.0f,
+         1.0f,  1.0f, 2.0f, 1.0f, 1.0f,
+         1.5f,  1.5f, 1.5f, 0.0f, 0.0f,
+         1.5f,  1.5f, 1.5f, 0.0f, 0.0f
+    };
+
+    float_t expected_dw[] = {
+        10.0f, 14.0f, 18.0f,
+        14.0f, 18.0f, 22.0f,
+        18.0f, 22.0f, 26.0f
+    };
+
+    float_t expected_db[] = {
+        4.0f
+    };
+
+    grad.out_at(0)[0] = vec_t(curr_delta, curr_delta + 4);
+
+    l.back_propagation(data.in_buf(), data.out_buf(), grad.out_buf(), grad.in_buf());
+
+    const vec_t& actual_delta = grad.in_at(0)[0];
+    const vec_t& actual_dw = grad.in_at(1)[0];
+    const vec_t& actual_db = grad.in_at(2)[0];
+
+    for (size_t i = 0; i < 25; i++) {
+        ASSERT_DOUBLE_EQ(actual_delta[i], expected_prev_delta[i]);
+    }
+    for (size_t i = 0; i < 9; i++) {
+        ASSERT_DOUBLE_EQ(actual_dw[i], expected_dw[i]);
+    }
+    ASSERT_DOUBLE_EQ(actual_db[0], expected_db[0]);
+
+}
+
+// test for AVX backends
+
+#ifdef CNN_USE_AVX
+TEST(convolutional, fprop_avx) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2);
+
+    tensor_buf buf(l), buf2(l);
+
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(buf.in_buf(), buf2.out_buf());
+
+    vec_t& out_avx = buf2.out_at(0)[0];
+    vec_t& out_noavx = buf.out_at(0)[0];
+
+    for (size_t i = 0; i < out_avx.size(); i++) {
+        // check if all outputs between default backend and avx backend are the same
+        EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    }
+}
+
+TEST(convolutional, bprop_avx) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2);
+
+    tensor_buf data(l), grad1(l);
+    tensor_buf grad2(grad1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(), grad2.in_buf());
+
+    for (size_t ch = 0; ch < l.out_channels(); ch++) {
+        vec_t& out_noavx = grad1.in_at(ch)[0];
+        vec_t& out_avx = grad2.in_at(ch)[0];
+        for (size_t i = 0; i < out_avx.size(); i++) {
+            EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+        }
+    }
+}
+
+TEST(convolutional, fprop_avx_1x1out) {
+
+    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2);
+
+    tensor_buf buf(l), buf2(l);
+
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(buf.in_buf(), buf2.out_buf());
+
+    vec_t& out_avx = buf2.out_at(0)[0];
+    vec_t& out_noavx = buf.out_at(0)[0];
+
+    for (size_t i = 0; i < out_avx.size(); i++) {
+        EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    }
+}
+
+TEST(convolutional, bprop_avx_1x1out) {
+
+    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2);
+
+    tensor_buf data(l), grad1(l);
+    tensor_buf grad2(grad1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(), grad2.in_buf());
+
+    for (size_t ch = 0; ch < l.out_channels(); ch++) {
+        vec_t& out_noavx = grad1.in_at(ch)[0];
+        vec_t& out_avx = grad2.in_at(ch)[0];
+        for (size_t i = 0; i < out_avx.size(); i++) {
+            EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+        }
+    }
+}
+
+TEST(convolutional, fprop_avx_hstride) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+
+    tensor_buf buf(l), buf2(l);
+
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(buf.in_buf(), buf2.out_buf());
+
+    vec_t& out_avx = buf2.out_at(0)[0];
+    vec_t& out_noavx = buf.out_at(0)[0];
+
+    for (size_t i = 0; i < out_avx.size(); i++) {
+        EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    }
+}
+
+TEST(convolutional, bprop_avx_hstride) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+
+    tensor_buf data(l), grad1(l);
+    tensor_buf grad2(grad1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(), grad2.in_buf());
+
+    for (size_t ch = 0; ch < l.out_channels(); ch++) {
+        vec_t& out_noavx = grad1.in_at(ch)[0];
+        vec_t& out_avx = grad2.in_at(ch)[0];
+        for (size_t i = 0; i < out_avx.size(); i++) {
+            EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+        }
+    }
+}
+
+TEST(convolutional, fprop_avx_hstride_1x1out) {
+
+    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2, padding::valid, true, 1, 2);
+
+    tensor_buf buf(l), buf2(l);
+
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(buf.in_buf(), buf2.out_buf());
+
+    vec_t& out_avx = buf2.out_at(0)[0];
+    vec_t& out_noavx = buf.out_at(0)[0];
+
+    for (size_t i = 0; i < out_avx.size(); i++) {
+        EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    }
+}
+
+TEST(convolutional, bprop_avx_hstride_1x1out) {
+
+    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2, padding::valid, true, 1, 2);
+
+    tensor_buf data(l), grad1(l);
+    tensor_buf grad2(grad1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(), grad2.in_buf());
+
+    for (size_t ch = 0; ch < l.out_channels(); ch++) {
+        vec_t& out_noavx = grad1.in_at(ch)[0];
+        vec_t& out_avx = grad2.in_at(ch)[0];
+        for (size_t i = 0; i < out_avx.size(); i++) {
+            EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+        }
+    }
+}
+
+TEST(convolutional, fprop_avx_wstride) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
+
+    tensor_buf buf(l), buf2(l);
+
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(buf.in_buf(), buf2.out_buf());
+
+    vec_t& out_avx = buf2.out_at(0)[0];
+    vec_t& out_noavx = buf.out_at(0)[0];
+
+    for (size_t i = 0; i < out_avx.size(); i++) {
+        EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    }
+}
+
+TEST(convolutional, bprop_avx_wstride) {
+
+    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
+
+    tensor_buf data(l), grad1(l);
+    tensor_buf grad2(grad1);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
+
+    l.set_backend_type(tiny_dnn::core::backend_t::avx);
+
+    l.forward_propagation(data.in_buf(), data.out_buf());
+    l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(), grad2.in_buf());
+
+    for (size_t ch = 0; ch < l.out_channels(); ch++) {
+        vec_t& out_noavx = grad1.in_at(ch)[0];
+        vec_t& out_avx = grad2.in_at(ch)[0];
+        for (size_t i = 0; i < out_avx.size(); i++) {
+            EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+        }
+    }
+}
+
+#endif // CNN_USE_AVX
 
 #ifdef CNN_USE_NNPACK
 TEST(convolutional, fprop_nnp) {
@@ -287,6 +636,51 @@ TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
     EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
                                        test_data.second,
                                        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
+    network<sequential> nn;
+
+    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
+        true, 2, 1, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check10_h_stride) { // sigmoid - mse - h_stride > 1
+    network<sequential> nn;
+
+    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
+        true, 1, 2, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has connection-tbl
+    network<sequential> nn;
+    bool tbl[3 * 3] = {
+        true, false, true,
+        false, true, false,
+        true, true, false };
+
+    connection_table connections(tbl, 3, 3);
+
+    nn << convolutional_layer<sigmoid>(7, 7, 3, 3, 1, connections, padding::valid,
+        true, 1, 1, core::backend_t::tiny_dnn);
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(convolutional, read_write)
