@@ -48,10 +48,9 @@ public:
         };
     }
 
-    template <typename T>
-    void register_saver(const std::string& name, std::function<void(OutputArchive&, const T*)> func) {
+    void register_saver(const std::string& name, std::function<void(OutputArchive&, const layer*)> func) {
         savers_[name] = [=](void* ar, const layer* l) {
-            return func(*reinterpret_cast<OutputArchive*>(ar), dynamic_cast<const T*>(l));
+            return func(*reinterpret_cast<OutputArchive*>(ar), l);
         };
     }
 
@@ -96,7 +95,8 @@ public:
 private:
     void check_if_serialization_enabled() const {
 #ifdef CNN_NO_SERIALIZATION
-        static_assert(false, "You are using save/load functions, but serialization function is disabled in current configuration.\n\n"
+        static_assert(sizeof(InputArchive)==0,
+                             "You are using save/load functions, but serialization function is disabled in current configuration.\n\n"
                              "You need to undef CNN_NO_SERIALIZATION to enable these functions.\n"
                              "If you are using cmake, you can use -DUSE_SERIALIZER=ON option.\n\n");
 #endif
@@ -119,29 +119,25 @@ std::shared_ptr<T> load_layer_impl(InputArchive& ia) {
 
     using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
 
-    auto valid = std::make_shared<bool>(false);
+    std::unique_ptr<ST> bn(new ST());
 
-    std::shared_ptr<T> bn;
-    bn.reset(reinterpret_cast<T*>(new ST()),
-        [=](T* t) {
-        if (*valid)
-            t->~T();
-        delete reinterpret_cast<ST*>(t);
-    });
-
-    cereal::memory_detail::LoadAndConstructLoadWrapper<InputArchive, T> wrapper(bn.get());
+    cereal::memory_detail::LoadAndConstructLoadWrapper<InputArchive, T> wrapper(reinterpret_cast<T*>(bn.get()));
 
     wrapper.CEREAL_SERIALIZE_FUNCTION_NAME(ia);
 
-    *valid = true;
-    return bn;
+    std::shared_ptr<T> t;
+    t.reset(reinterpret_cast<T*>(bn.get()));
+    bn.release();
+
+    return t;
 }
 
 template <typename OutputArchive, typename T>
-void save_layer_impl(OutputArchive& oa, const T *layer) {
+void save_layer_impl(OutputArchive& oa, const layer *layer) {
     typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
 
-    oa (cereal::make_nvp(serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(T)), *layer));
+    oa (cereal::make_nvp(serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(T)),
+                         *dynamic_cast<const T*>(layer)));
 }
 
 template <typename InputArchive, typename OutputArchive, typename T>
@@ -149,7 +145,7 @@ struct automatic_layer_generator_register {
     explicit automatic_layer_generator_register(const std::string& s) {
         serialization_helper<InputArchive, OutputArchive>::get_instance().register_loader(s, load_layer_impl<InputArchive, T>);
         serialization_helper<InputArchive, OutputArchive>::get_instance().template register_type<T>(s);
-        serialization_helper<InputArchive, OutputArchive>::get_instance().template register_saver<T>(s, save_layer_impl<OutputArchive, T>);
+        serialization_helper<InputArchive, OutputArchive>::get_instance().register_saver(s, save_layer_impl<OutputArchive, T>);
     }
 };
 
