@@ -58,9 +58,9 @@ TEST(quantization_utils, float_to_quantized) {
 TEST(quantization_utils, quantized_to_float) {
   EXPECT_LT(fabsf(0.0f - core::kernels::quantized_to_float<uint8_t>(0, 0.0f, 1.0f)), 1 / 255.0f);
   EXPECT_LT(fabsf(0.0f - core::kernels::quantized_to_float<uint8_t>(0, 0.0f, 2.0f)), 1 / 255.0f);
-  EXPECT_LT(fabsf(0.5f - core::kernels::quantized_to_float<uint8_t>(127, 0.0f, 1.0f)),
+  EXPECT_LT(fabsf(127.0f/255.0f - core::kernels::quantized_to_float<uint8_t>(127, 0.0f, 1.0f)),
             1 / 255.0f);
-  EXPECT_LT(fabsf(1.0f - core::kernels::quantized_to_float<uint8_t>(127, 0.0f, 2.0f)),
+  EXPECT_LT(fabsf(2*127.0f/255.0f - core::kernels::quantized_to_float<uint8_t>(127, 0.0f, 2.0f)),
             1 / 255.0f);
   EXPECT_LT(fabsf(1.0f - core::kernels::quantized_to_float<uint8_t>(255, 0.0f, 1.0f)),
             1 / 255.0f);
