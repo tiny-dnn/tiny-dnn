@@ -7,6 +7,8 @@ environment:
   matrix:
   - msvc: 14
   - msvc: 12
+  - platform: 
+  - platform: Win64
 
 version: '{branch}-{build}'
 
@@ -24,14 +26,10 @@ install:
 # gradient-check test is too slow to execute on debug mode
 configuration: Release
 
-platform:
-  - x86
-  - x64
-
 before_build:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: '%cmake% -G "Visual Studio %msvc% Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: '%cmake% -G "Visual Studio %msvc% %platform%" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
   - cmd: 'cd C:\projects\build\test\Release'
