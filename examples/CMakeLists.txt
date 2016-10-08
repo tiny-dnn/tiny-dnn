@@ -18,23 +18,17 @@ add_executable(example_mnist_train mnist/train.cpp)
 target_link_libraries(example_mnist_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
+add_executable(example_mnist_test mnist/test.cpp)
+target_link_libraries(example_mnist_test
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
 add_executable(example_deconv_train deconv/train.cpp)
 target_link_libraries(example_deconv_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
 if(CNN_USE_OPENCV)
-    add_executable(example_mnist_test mnist/test.cpp)
-    target_link_libraries(example_mnist_test
-        ${project_library_target_name} ${REQUIRED_LIBRARIES})
-
     add_executable(example_deconv_visual deconv/visual.cpp)
     target_link_libraries(example_deconv_visual
-        ${project_library_target_name} ${REQUIRED_LIBRARIES})
-else(CNN_USE_OPENCV)
-    file(GLOB stb_image_hdrs mnist/stb_image/*.h)
-    add_executable(example_mnist_test mnist/test_with_stb_image.cpp
-                   ${stb_image_hdrs})
-    target_link_libraries(example_mnist_test
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
 endif(CNN_USE_OPENCV)
 

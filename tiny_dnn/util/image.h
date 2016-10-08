@@ -29,29 +29,105 @@
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
+#include "tiny_dnn/util/util.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_STATIC // We need this define to avoid multiple definition
+#include "third_party/stb/stb_image.h"
+
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_STATIC
+#include "third_party/stb/stb_image_resize.h"
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_STATIC
+#include "third_party/stb/stb_image_write.h"
 
 namespace tiny_dnn {
 
-//TODO finish update this class with 'depth'
+inline bool ends_with(std::string const & value, std::string const & ending) {
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
+enum class image_load_type {
+    grayscale,    ///< load image and convert automatically to 8-bit grayscale
+    keep_original ///< load image and keep original color channels
+};
+
+/**
+ * Simple image utility class
+ */
 template<typename T = unsigned char>
 class image {
 public:
-    typedef T intensity_t;
+    typedef uint8_t intensity_t;
+    typedef typename std::vector<intensity_t>::iterator iterator;
+    typedef typename std::vector<intensity_t>::const_iterator const_iterator;
 
     image() : width_(0), height_(0), depth_(1) {}
 
+    /**
+     * create image from raw pointer
+     */
     image(const T* data, size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(depth_ * width_ * height_, 0) 
     {
         memcpy(&data_[0],data, depth_ * width * height*sizeof(T));
     }
 
-    image(index3d<cnn_size_t> rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(depth_ * width_ * height_, 0) {}
+    /**
+     * create WxHxD image filled with 0
+     */
+    image(const shape3d& size) : width_(size.width_), height_(size.height_), depth_(size.depth_), data_(depth_ * width_ * height_, 0) {}
 
+    /**
+     * create WxH image filled with 0
+     */
     image(size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(width * height, 0) {}
 
     image(const image& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(rhs.data_) {}
 
     image(const image&& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(std::move(rhs.data_)) {}
+
+    /**
+     * create image from file
+     * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
+     *                        (see detail at the comments in thrid_party/stb/stb_image.h)
+     */
+    image(const std::string& filename, image_load_type load_type = image_load_type::grayscale)
+    {
+        stbi_uc* input_pixels = stbi_load(filename.c_str(), &width_, &height_, &depth_, load_type == image_load_type::grayscale ? 1 : 0);
+        if (input_pixels == nullptr) {
+            throw nn_error("failed to open image:" + std::string(stbi_failure_reason()));
+        }
+
+        data_.resize(width_*height_*depth_);
+        std::copy(input_pixels, input_pixels + data_.size(), data_.begin());
+
+        stbi_image_free(input_pixels);
+    }
+
+    /**
+     * create image from file with specific size
+     * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
+     *                        (see detail at the comments in thrid_party/stb/stb_image.h)
+     */
+    image(const std::string& filename, size_t width, size_t height)
+    {
+        int srcw, srch, depth;
+        stbi_uc* input_pixels = stbi_load(filename.c_str(), &srcw, &srch, &depth, 1);
+        if (input_pixels == nullptr) {
+            throw nn_error("failed to open image:" + filename);
+        }
+        depth_ = 1;
+        data_.resize(width*height);
+
+        if (!stbir_resize_uint8(input_pixels, srcw, srch, 0, &data_[0], width, height, 0, 1)) {
+            throw nn_error("failed to resize image");
+        }
+
+        stbi_image_free(input_pixels);
+    }
 
     image& operator = (const image& rhs) {
         width_ = rhs.width_;
@@ -69,56 +145,21 @@ public:
         return *this;
     }
 
-    void write(const std::string& path) const { // WARNING: This is OS dependent (writes of bytes with reinterpret_cast depend on endianness)
-        std::ofstream ofs(path.c_str(), std::ios::binary | std::ios::out);
-
-        if (!is_little_endian())
-            throw nn_error("image::write for bit-endian is not supported");
-
-        const uint32_t line_pitch = ((width_ + 3) / 4) * 4;
-        const uint32_t header_size = 14 + 12 + 256 * 3;
-        const uint32_t data_size = line_pitch * height_;
-        
-        // file header(14 byte)
-        const uint16_t file_type = ('M' << 8) | 'B';
-        const uint32_t file_size = header_size + data_size;
-        const uint32_t reserved = 0;
-        const uint32_t offset_bytes = header_size;
-
-        ofs.write(reinterpret_cast<const char*>(&file_type), 2);
-        ofs.write(reinterpret_cast<const char*>(&file_size), 4);
-        ofs.write(reinterpret_cast<const char*>(&reserved), 4);
-        ofs.write(reinterpret_cast<const char*>(&offset_bytes), 4);
-
-        // info header(12byte)
-        const uint32_t info_header_size = 12;
-        const int16_t width = static_cast<int16_t>(width_);
-        const int16_t height = static_cast<int16_t>(height_);
-        const uint16_t planes = 1;
-        const uint16_t bit_count = 8;
-
-        ofs.write(reinterpret_cast<const char*>(&info_header_size), 4);
-        ofs.write(reinterpret_cast<const char*>(&width), 2);
-        ofs.write(reinterpret_cast<const char*>(&height), 2);
-        ofs.write(reinterpret_cast<const char*>(&planes), 2);
-        ofs.write(reinterpret_cast<const char*>(&bit_count), 2);
-
-        // color palette (256*3byte)
-        for (int i = 0; i < 256; i++) {
-            const auto v = static_cast<const char>(i);
-            ofs.write(&v, 1);//R
-            ofs.write(&v, 1);//G
-            ofs.write(&v, 1);//B
+    void save(const std::string& path) const {
+        int ret;
+        if (ends_with(path, "png")) {
+            ret = stbi_write_png(path.c_str(), width_, height_, depth_, (const void*)&data_[0], 0);
         }
-
-        // data
-        for (size_t i = 0; i < height_; i++) {
-            ofs.write(reinterpret_cast<const char*>(&data_[(height_ - 1 - i) * width_]), width_);
-            if (line_pitch != width_) {
-                uint32_t dummy = 0;
-                ofs.write(reinterpret_cast<const char*>(&dummy), line_pitch - width_);
-            }
+        else {
+            ret = stbi_write_bmp(path.c_str(), width_, height_, depth_, (const void*)&data_[0]);
         }
+        if (ret == 0) {
+            throw nn_error("failed to save image:" + path);
+        }
+    }
+
+    void write(const std::string& path) const {
+        save(path);
     }
 
     void resize(size_t width, size_t height) 
@@ -147,6 +188,11 @@ public:
         return data_[z * width_ * height_ + y * width_ + x];
     }
 
+    iterator begin() { return data_.begin(); }
+    iterator end() { return data_.end();  }
+    const_iterator begin() const { return data_.begin(); }
+    const_iterator end() const { return data_.end(); }
+
     intensity_t& operator[](std::size_t idx)       { return data_[idx]; };
     const intensity_t& operator[](std::size_t idx) const { return data_[idx]; };
 
@@ -154,6 +200,11 @@ public:
     size_t height() const { return height_; }
     size_t depth() const {return depth_;}
     const std::vector<intensity_t>& data() const { return data_; }
+
+    vec_t to_vec() const {
+        return vec_t(data_.begin(), data_.end());
+    }
+
 private:
     size_t width_;
     size_t height_;
