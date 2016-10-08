@@ -291,11 +291,7 @@ class sequential : public nodes {
         nodes_.front()->set_in_data({ reordered_data[0] });
 
         for (auto l : nodes_) {
-            if (l->initialized()) {
-                l->forward();
-            } else {
-                throw nn_error("Layer " + l->layer_type() + " not initialized.");
-            }
+            l->forward();
         }
 
         const std::vector<tensor_t> out = nodes_.back()->output();

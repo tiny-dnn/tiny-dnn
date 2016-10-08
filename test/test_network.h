@@ -140,8 +140,34 @@ TEST(network, add) {
     network<sequential> net;
     net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same);
 
-    EXPECT_EQ(net.out_data_size(), cnn_size_t(32*32*6));
-    //EXPECT_EQ(net.depth(), 1);
+    EXPECT_EQ(net.depth(), 1);
+}
+
+TEST(network, manual_init) {
+    // initializing weights directly
+    network<sequential> net;
+    net << convolutional_layer<identity>(3, 3, 3, 1, 1)
+        << fully_connected_layer<softmax>(1, 2, false);
+
+    adagrad opt;
+
+    vec_t* c1_w = net[0]->weights()[0];
+    vec_t* c1_b = net[0]->weights()[1];
+    vec_t* f1_w = net[1]->weights()[0];
+
+    EXPECT_EQ(c1_w->size(), 9);
+    EXPECT_EQ(c1_b->size(), 1);
+    EXPECT_EQ(f1_w->size(), 2);
+
+    *c1_w = { 0,1,2,3,4,5,6,7,8 };
+    *c1_b = { 1 };
+    *f1_w = { 1,2 };
+
+    // check if the training and predicting works
+    // https://github.com/tiny-dnn/tiny-dnn/issues/330
+    net.predict({ 1,1,1,1,1,1,1,1,1 });
+
+    net.train<mse, adagrad>(opt, tensor_t{ {1,1,1,1,1,1,1,1,1} }, tensor_t{ {1,2} }, 1, 1);
 }
 
 // TODO(nyanp): check out values again since the routine it's a bit sensitive

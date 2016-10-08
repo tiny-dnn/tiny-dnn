@@ -108,7 +108,6 @@ class layer : public node {
     // getter
 
     bool parallelize() const { return parallelize_; }
-    bool initialized() const { return initialized_; }
 
     // TODO(edgar): Deprecated: use the below method 
     core::backend_t backend_type() const {
