@@ -241,7 +241,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("pool_size", pool_size_), cereal::make_nvp("stride", stride_));
     }
 
@@ -299,4 +299,3 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
 }  // namespace tiny_dnn
 
-CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::average_pooling_layer, avepool);

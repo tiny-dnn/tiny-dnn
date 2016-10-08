@@ -89,7 +89,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
     }
 private:
@@ -99,4 +99,3 @@ private:
 
 } // namespace tiny_dnn
 
-CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::elementwise_add_layer, elementwise_add);

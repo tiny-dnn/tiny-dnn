@@ -26,94 +26,23 @@
 */
 #pragma once
 #include "tiny_dnn/layers/layer.h"
-#include "input_layer.h"
-
-namespace tiny_dnn {
-
-class layers {
-public:
-    layers() { add(std::make_shared<input_layer>()); }
-
-    layers(const layers& rhs) { construct(rhs); }
-
-    layers& operator = (const layers& rhs) {
-        layers_.clear();
-        construct(rhs);
-        return *this;
-    }
-
-    void add(std::shared_ptr<layer> new_tail) {
-        if (tail())  tail()->connect(new_tail);
-        layers_.push_back(new_tail);
-    }
-
-    bool empty() const { return layers_.size() == 0; }
-
-    layer* head() const { return empty() ? 0 : layers_[0].get(); }
-
-    layer* tail() const { return empty() ? 0 : layers_[layers_.size() - 1].get(); }
-
-    template <typename T>
-    const T& at(size_t index) const {
-        const T* v = dynamic_cast<const T*>(layers_[index + 1].get());
-        if (v) return *v;
-        throw nn_error("failed to cast");
-    }
-
-    const layer* operator [] (size_t index) const {
-        return layers_[index + 1].get();
-    }
-
-    layer* operator [] (size_t index) {
-        return layers_[index + 1].get();
-    }
-
-    void init_weight() {
-        for (auto pl : layers_)
-            pl->init_weight();
-    }
-
-    bool is_exploded() const {
-        for (auto pl : layers_)
-            if (pl->is_exploded()) return true;
-        return false;
-    }
-
-    void divide_hessian(int denominator) {
-        for (auto pl : layers_)
-            pl->divide_hessian(denominator);
-    }
-
-    template <typename Optimizer>
-    void update_weights(Optimizer *o, size_t worker_size, size_t batch_size) {
-        for (auto pl : layers_)
-            pl->update_weight(o, static_cast<cnn_size_t>(worker_size), batch_size);
-    }
-    
-    void set_parallelize(bool parallelize) {
-        for (auto pl : layers_)
-            pl->set_parallelize(parallelize);
-    }
-
-    // get depth(number of layers) of networks
-    size_t depth() const {
-        return layers_.size() - 1; // except input-layer
-    }
-
-    void set_worker_count(cnn_size_t thread_count) {
-        for (auto pl : layers_) {
-            pl->set_worker_count(thread_count);
-        }
-    }
-
-private:
-    void construct(const layers& rhs) {
-        add(std::make_shared<input_layer>());
-        for (size_t i = 1; i < rhs.layers_.size(); i++)
-            add(rhs.layers_[i]);
-    }
-
-    std::vector<std::shared_ptr<layer>> layers_;
-};
-
-} // namespace tiny_dnn
+#include "tiny_dnn/layers/arithmetic_layer.h"
+#include "tiny_dnn/layers/average_pooling_layer.h"
+#include "tiny_dnn/layers/average_unpooling_layer.h"
+#include "tiny_dnn/layers/batch_normalization_layer.h"
+#include "tiny_dnn/layers/concat_layer.h"
+#include "tiny_dnn/layers/convolutional_layer.h"
+#include "tiny_dnn/layers/deconvolutional_layer.h"
+#include "tiny_dnn/layers/dropout_layer.h"
+#include "tiny_dnn/layers/feedforward_layer.h"
+#include "tiny_dnn/layers/fully_connected_layer.h"
+#include "tiny_dnn/layers/linear_layer.h"
+#include "tiny_dnn/layers/lrn_layer.h"
+#include "tiny_dnn/layers/max_pooling_layer.h"
+#include "tiny_dnn/layers/max_unpooling_layer.h"
+#include "tiny_dnn/layers/partial_connected_layer.h"
+#include "tiny_dnn/layers/power_layer.h"
+#include "tiny_dnn/layers/quantized_convolutional_layer.h"
+#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
+#include "tiny_dnn/layers/slice_layer.h"

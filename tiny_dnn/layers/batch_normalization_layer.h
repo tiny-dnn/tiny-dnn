@@ -262,7 +262,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_spatial_size", in_spatial_size_),
            cereal::make_nvp("in_channels", in_channels_),
            cereal::make_nvp("epsilon", eps_),
@@ -311,5 +311,3 @@ private:
 };
 
 } // namespace tiny_dnn
-
-CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::batch_normalization_layer, batchnorm);

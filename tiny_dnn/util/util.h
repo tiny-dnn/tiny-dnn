@@ -49,7 +49,6 @@
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/random.h"
-#include "tiny_dnn/util/serialization_helper.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL

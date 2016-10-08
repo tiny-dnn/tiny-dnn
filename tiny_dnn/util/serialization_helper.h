@@ -34,10 +34,9 @@
 #include <cereal/types/memory.hpp>
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/macro.h"
+#include "tiny_dnn/layers/layers.h"
 
 namespace tiny_dnn {
-
-class layer;
 
 template <typename InputArchive, typename OutputArchive>
 class serialization_helper {
@@ -92,6 +91,7 @@ public:
         static serialization_helper instance;
         return instance;
     }
+
 private:
     void check_if_serialization_enabled() const {
 #ifdef CNN_NO_SERIALIZATION
@@ -109,13 +109,33 @@ private:
 
     std::map<std::type_index, std::string> type_names_;
 
-    serialization_helper() {}
+#define CNN_REGISTER_LAYER_BODY(layer_type, layer_name) \
+    register_loader(layer_name, detail::load_layer_impl<InputArchive, layer_type>);\
+    register_type<layer_type>(layer_name);\
+    register_saver(layer_name, detail::save_layer_impl<OutputArchive, layer_type>)
+
+#define CNN_REGISTER_LAYER(layer_type, layer_name) CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
+
+#define CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, activation_type, layer_name) \
+CNN_REGISTER_LAYER_BODY(layer_type<activation::activation_type>, #layer_name "<" #activation_type ">")
+
+#define CNN_REGISTER_LAYER_WITH_ACTIVATIONS(layer_type, layer_name) \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_h, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, softmax, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, identity, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, sigmoid, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, relu, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, leaky_relu, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, elu, layer_name); \
+CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
+
+    serialization_helper();
 };
 
 namespace detail {
 
 template <typename InputArchive, typename T>
-std::shared_ptr<T> load_layer_impl(InputArchive& ia) {
+std::shared_ptr<layer> load_layer_impl(InputArchive& ia) {
 
     using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
 
@@ -125,7 +145,7 @@ std::shared_ptr<T> load_layer_impl(InputArchive& ia) {
 
     wrapper.CEREAL_SERIALIZE_FUNCTION_NAME(ia);
 
-    std::shared_ptr<T> t;
+    std::shared_ptr<layer> t;
     t.reset(reinterpret_cast<T*>(bn.get()));
     bn.release();
 
@@ -149,16 +169,16 @@ struct automatic_layer_generator_register {
     }
 };
 
-} // namespace detail
-
-template <typename OutputArchive, typename T>
-void serialize_prolog(OutputArchive& oa, const T*) {
+template <typename OutputArchive>
+void serialize_prolog(OutputArchive& oa, std::type_index typeindex) {
     typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
 
     oa(cereal::make_nvp("type",
-                        serialization_helper<InputArchive, OutputArchive>::get_instance()
-                        .serialization_name(typeid(T))));
+        serialization_helper<InputArchive, OutputArchive>::get_instance()
+        .serialization_name(typeindex)));
 }
+
+} // namespace detail
 
 template <typename T>
 void start_loading_layer(T & ar) {}
@@ -169,6 +189,45 @@ void finish_loading_layer(T & ar) {}
 inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
 inline void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
+
+
+template <typename InputArchive, typename OutputArchive>
+serialization_helper<InputArchive, OutputArchive>::serialization_helper() {
+#include "serialization_layer_list.h"
+}
+
+
+/**
+* generate layer from cereal's Archive
+**/
+template <typename InputArchive>
+std::shared_ptr<layer> layer::load_layer(InputArchive & ia) {
+    typedef typename cereal::traits::detail::get_output_from_input<InputArchive>::type OutputArchive;
+
+    start_loading_layer(ia);
+
+    std::string p;
+    ia(cereal::make_nvp("type", p));
+    auto l = serialization_helper<InputArchive, OutputArchive>::get_instance().load(p, ia);
+
+    finish_loading_layer(ia);
+
+    return l;
+}
+
+template <typename OutputArchive>
+void layer::save_layer(OutputArchive & oa, const layer& l) {
+    typedef typename cereal::traits::detail::get_input_from_output<OutputArchive>::type InputArchive;
+
+    std::string name = serialization_helper<InputArchive, OutputArchive>::get_instance().serialization_name(typeid(l));
+    serialization_helper<InputArchive, OutputArchive>::get_instance().save(name, oa, &l);
+}
+
+
+template <class Archive>
+void layer::serialize_prolog(Archive & ar) {
+    detail::serialize_prolog(ar, typeid(*this));
+}
 
 } // namespace tiny_dnn
 

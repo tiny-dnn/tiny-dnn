@@ -392,7 +392,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in),
             cereal::make_nvp("window_width", params_.weight.width_),
             cereal::make_nvp("window_height", params_.weight.height_),
@@ -610,5 +610,3 @@ private:
 };
 
 }  // namespace tiny_dnn
-
-CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::convolutional_layer, conv);

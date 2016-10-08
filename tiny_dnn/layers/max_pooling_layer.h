@@ -172,7 +172,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in_), cereal::make_nvp("pool_size", params_.pool_size_), cereal::make_nvp("stride", params_.stride_));
     }
 
@@ -293,4 +293,3 @@ private:
 
 }  // namespace tiny_dnn
 
-CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::max_pooling_layer, maxpool);

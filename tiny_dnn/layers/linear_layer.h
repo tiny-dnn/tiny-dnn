@@ -105,7 +105,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
     }
 
@@ -115,5 +115,3 @@ protected:
 };
 
 } // namespace tiny_dnn
-
-CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATIONS(tiny_dnn::linear_layer, linear);

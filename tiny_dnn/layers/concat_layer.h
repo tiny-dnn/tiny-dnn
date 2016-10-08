@@ -114,7 +114,7 @@ public:
 
     template <class Archive>
     void serialize(Archive & ar) {
-        serialize_prolog(ar, this);
+        layer::serialize_prolog(ar);
         ar(in_shapes_);
     }
 
@@ -124,5 +124,3 @@ private:
 };
 
 } // namespace tiny_dnn
-
-CNN_REGISTER_LAYER_SERIALIZER(tiny_dnn::concat_layer, concat);
