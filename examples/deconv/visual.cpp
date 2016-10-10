@@ -25,7 +25,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
@@ -39,28 +38,17 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert tiny_dnn::image to cv::Mat and resize
-cv::Mat image2mat(image<>& img) {
-    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
-    cv::Mat resized;
-    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
-    return resized;
-}
-
 void convert_image(const std::string& imagefilename,
     double minv,
     double maxv,
     int w,
     int h,
     vec_t& data) {
-    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
 
-    cv::Mat_<uint8_t> resized;
-    cv::resize(img, resized, cv::Size(w, h));
+    image<> img(imagefilename, w, h);
 
     // mnist dataset is "white on black", so negate required
-    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
+    std::transform(img.begin(), img.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
@@ -142,13 +130,13 @@ void recognize(const std::string& dictionary, const std::string& filename, const
     // visualize outputs of each layer
     for (size_t i = 0; i < nn.layer_size(); i++) {
         auto out_img = nn[i]->output_to_image();
-        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+        auto filename = "layer_" + std::to_string(i) + ".png";
+        out_img.save(filename);
     }
     // visualize filter shape of first convolutional layer
     auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-    cv::imshow("weights:", image2mat(weightc));
-
-    cv::waitKey(0);
+    auto filename = "weights.png";
+    weightc.save(filename);
 }
 
 int main(int argc, char** argv) {

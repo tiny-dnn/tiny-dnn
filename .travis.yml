@@ -15,7 +15,6 @@ cache:
   pip: true
   directories:
     - $HOME/.pip-cache/
-    - $HOME/opencv_3_1_0
     - $HOME/PeachPy
     - $HOME/NNPACK
 
@@ -32,19 +31,6 @@ addons:
       - git
       # Optional dependencies
       - libtbb-dev
-      # OpenCV dependencies
-      # TODO: revise if are needed
-      - libjpeg8-dev
-      - libtiff4-dev
-      - libjasper-dev
-      - libpng12-dev 
-      - libgtk2.0-dev
-      - libavcodec-dev
-      - libavformat-dev
-      - libswscale-dev
-      - libv4l-dev
-      - libatlas-base-dev
-      - gfortran
       # Coveralls dependencies
       - gem
       - lcov
@@ -86,8 +72,7 @@ before_script:
             -DUSE_AVX=$USE_AVX
             -DBUILD_TESTS=$BUILD_TESTS
             -DCOVERALLS=ON
-            -DBUILD_EXAMPLES=$BUILD_EXAMPLES
-            -DOpenCV_DIR="$HOME/opencv_3_1_0/share/OpenCV" .;
+            -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
   - if [ "$TRAVIS_OS_NAME" == "osx"   ]; then
       cmake -DUSE_TBB=ON 
