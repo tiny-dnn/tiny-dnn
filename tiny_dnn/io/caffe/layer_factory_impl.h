@@ -52,6 +52,8 @@ typedef tiny_dnn::shape3d shape_t;
 #include <fcntl.h>
 #define CNN_OPEN_BINARY(filename) open(filename, _O_RDONLY|_O_BINARY)
 #define CNN_OPEN_TXT(filename) open(filename, _O_RDONLY)
+#pragma warning(push)
+#pragma warning(disable:4996)
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -266,8 +268,8 @@ inline std::shared_ptr<layer> create_batchnorm(const caffe::LayerParameter& laye
 
     *top_shape = bottom_shape;
 
-    float_t eps = 1e-5;
-    float_t momentum = 0.999;
+    float_t eps = 1e-5f;
+    float_t momentum = 0.999f;
 
     if (layer.has_batch_norm_param()) {
         auto bn_param = layer.batch_norm_param();
@@ -925,7 +927,7 @@ class caffe_layer_vector {
             layer_table[l.name()] = &nodes.back();
         }
 
-        for (int i = 0; i < nodes.size(); i++) {
+        for (size_t i = 0; i < nodes.size(); i++) {
             auto& l = nodes[i];
 
             if (l.layer->bottom_size() > 0 && blob_table[l.layer->bottom(0)]) {
@@ -1135,3 +1137,7 @@ class caffe_layer_vector {
 
 }  // namespace detail
 }  // namespace tiny_dnn
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

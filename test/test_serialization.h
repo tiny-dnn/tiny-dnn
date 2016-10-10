@@ -36,7 +36,7 @@ TEST(serialization, sequential_to_json) {
     network<sequential> net1, net2;
 
     net1 << fully_connected_layer<tan_h>(10, 100)
-         << dropout_layer(100, 0.3, net_phase::test)
+         << dropout_layer(100, 0.3f, net_phase::test)
          << fully_connected_layer<softmax>(100, 9)
          << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
 
@@ -102,7 +102,7 @@ TEST(serialization, sequential_weights) {
     auto res1 = net1.predict(data);
     auto res2 = net2.predict(data);
 
-    EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+    EXPECT_TRUE(net1.has_same_weights(net2, 1e-3f));
 
     for (int i = 0; i < 6; i++) {
         EXPECT_FLOAT_EQ(res1[i], res2[i]);

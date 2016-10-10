@@ -483,7 +483,7 @@ TEST(network, gradient_check5) { // softmax - cross-entropy
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             1e-1, GRAD_CHECK_RANDOM));
+                                             1e-1f, GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check6) { // sigmoid - cross-entropy
