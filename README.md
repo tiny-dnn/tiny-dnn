@@ -120,25 +120,28 @@ Some cmake options are available:
 
 |options|description|default|additional requirements to use|
 |-----|-----|----|----|
-|USE_TBB|Use [Intel TBB](https://www.threadingbuildingblocks.org/) for parallelization|OFF*1|[Intel TBB](https://www.threadingbuildingblocks.org/)|
-|USE_OMP|Use OpenMP for parallelization|OFF*1|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
+|USE_TBB|Use [Intel TBB](https://www.threadingbuildingblocks.org/) for parallelization|OFF<sup>1</sup>|[Intel TBB](https://www.threadingbuildingblocks.org/)|
+|USE_OMP|Use OpenMP for parallelization|OFF<sup>1</sup>|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
-|USE_OPENCV|Use OpenCV for sample/test programs|ON|[Open Source Computer Vision Library](http://opencv.org/)|
-|USE_SERIALIZER|Enable model serialization|ON*2|-|
-|BUILD_TESTS|Build unit tests|OFF|-*3|
-|BUILD_EXAMPLES|Build example projects|ON|-|
+|USE_OPENCV|Use OpenCV for sample/test programs|OFF|[Open Source Computer Vision Library](http://opencv.org/)|
+|USE_NNPACK|Use NNPACK for convolution operation|OFF|[Acceleration package for neural networks on multi-core CPUs](https://github.com/Maratyszcza/NNPACK)|
+|USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
+|USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
+|USE_SERIALIZER|Enable model serialization|ON<sup>2</sup>|-|
+|BUILD_TESTS|Build unit tests|OFF|-<sup>3</sup>|
+|BUILD_EXAMPLES|Build example projects|OFF|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
-*1 tiny-dnn use c++11 standard library for parallelization by default
+<sup>1</sup> tiny-dnn use c++11 standard library for parallelization by default
 
-*2 If you don't use serialization, you can switch off to speedup compilation time.
+<sup>2</sup> If you don't use serialization, you can switch off to speedup compilation time.
 
-*3 tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
+<sup>3</sup> tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash
-cmake -DUSE_TBB=ON -DBUILD_EXAMPLES=ON .
+cmake -DUSE_TBB=ON -DBUILD_TESTS=ON .
 ```
 
 ## Customize configurations
