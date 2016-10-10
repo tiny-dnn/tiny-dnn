@@ -150,7 +150,7 @@ public:
 
     void resize(size_t width, size_t height) 
     {
-        data_.resize(width * height);
+        data_.resize(width * height * depth_);
         width_ = width;
         height_ = height;
         //depth_ = depth;
