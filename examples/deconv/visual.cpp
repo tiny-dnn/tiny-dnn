@@ -45,10 +45,11 @@ void convert_image(const std::string& imagefilename,
     int h,
     vec_t& data) {
 
-    image<> img(imagefilename, w, h);
+    image<> img(imagefilename, image_type::grayscale);
+    image<> resized = resize_image(img, w, h);
 
     // mnist dataset is "white on black", so negate required
-    std::transform(img.begin(), img.end(), std::back_inserter(data),
+    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
@@ -56,10 +57,10 @@ void convert_image(const std::string& imagefilename,
 void construct_net(network<sequential>& nn) {
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << average_pooling_layer<identity>(28, 28, 6, 2)
+       << average_pooling_layer<activation::identity>(28, 28, 6, 2)
        << convolutional_layer<tan_h>(14, 14, 5, 6, 16)
        << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
-       << average_unpooling_layer<identity>(14, 14, 6, 2)
+       << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
        << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 }
 
@@ -77,7 +78,7 @@ void train_network(network<sequential> nn, const string& train_dir_path) {
     std::vector<vec_t> training_images_corrupted(train_images);
 
     for (auto& d : training_images_corrupted) {
-        d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
+        d = corrupt(move(d), 0.1f, 0.0f); // corrupt 10% data
     }
 
     gradient_descent optimizer;
@@ -135,8 +136,7 @@ void recognize(const std::string& dictionary, const std::string& filename, const
     }
     // visualize filter shape of first convolutional layer
     auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-    auto filename = "weights.png";
-    weightc.save(filename);
+    weightc.save("weights.png");
 }
 
 int main(int argc, char** argv) {

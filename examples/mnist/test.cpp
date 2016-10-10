@@ -44,10 +44,11 @@ void convert_image(const std::string& imagefilename,
     int h,
     vec_t& data) {
 
-    image<> img(imagefilename, w, h);
+    image<> img(imagefilename, image_type::grayscale);
+    image<> resized = resize_image(img, w, h);
 
     // mnist dataset is "white on black", so negate required
-    std::transform(img.begin(), img.end(), std::back_inserter(data),
+    std::transform(resized.begin(), resized.end(), std::back_inserter(data),
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 

@@ -51,9 +51,9 @@ TEST(image, copy_ctor) {
     image<uint8_t> src(a, 3, 1, image_type::grayscale);
     image<float> dst(src);
 
-    EXPECT_FLOAT_EQ(0.0, dst.at(0, 0));
-    EXPECT_FLOAT_EQ(127.0, dst.at(1, 0));
-    EXPECT_FLOAT_EQ(255.0, dst.at(2, 0));
+    EXPECT_FLOAT_EQ(0.0f, dst.at(0, 0));
+    EXPECT_FLOAT_EQ(127.0f, dst.at(1, 0));
+    EXPECT_FLOAT_EQ(255.0f, dst.at(2, 0));
 }
 
 TEST(image, create_from_array_uint8) {
@@ -363,15 +363,15 @@ TEST(image, read_bmp_24bit_rgb2gray) {
 
 TEST(image, resize)
 {
-    image<> img(shape3d(10, 10, 10), image_type::grayscale);
+    image<> img(shape3d(10, 10, 3), image_type::rgb);
 
     img.resize(32, 32);
 
     EXPECT_EQ(32, img.width());
     EXPECT_EQ(32, img.height());
-    EXPECT_EQ(10, img.depth());
-    EXPECT_EQ(image_type::grayscale, img.type());
-    EXPECT_EQ(32 * 32 * 10, img.data().size());
+    EXPECT_EQ(3, img.depth());
+    EXPECT_EQ(image_type::rgb, img.type());
+    EXPECT_EQ(32 * 32 * 3, img.data().size());
 }
 
 TEST(image, empty)
