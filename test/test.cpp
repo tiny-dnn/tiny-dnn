@@ -64,6 +64,8 @@ using namespace tiny_dnn::activation;
 #include "test_caffe_converter.h"
 #endif
 
+#include "test_image.h"
+
 int main(void) {
     return RUN_ALL_TESTS();
 }
