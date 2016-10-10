@@ -29,6 +29,7 @@
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
+#include <array>
 #include "tiny_dnn/util/util.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -50,9 +51,10 @@ inline bool ends_with(std::string const & value, std::string const & ending) {
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-enum class image_load_type {
+enum class image_type {
     grayscale,    ///< load image and convert automatically to 8-bit grayscale
-    keep_original ///< load image and keep original color channels
+    rgb, ///< load image and keep original color channels
+    bgr
 };
 
 /**
@@ -61,7 +63,7 @@ enum class image_load_type {
 template<typename T = unsigned char>
 class image {
 public:
-    typedef uint8_t intensity_t;
+    typedef T intensity_t;
     typedef typename std::vector<intensity_t>::iterator iterator;
     typedef typename std::vector<intensity_t>::const_iterator const_iterator;
 
@@ -70,88 +72,67 @@ public:
     /**
      * create image from raw pointer
      */
-    image(const T* data, size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(depth_ * width_ * height_, 0) 
+    image(const T* data, size_t width, size_t height, image_type type)
+        : width_(width), height_(height), depth_(type == image_type::grayscale ? 1: 3), type_(type), data_(depth_ * width_ * height_, 0)
     {
-        memcpy(&data_[0],data, depth_ * width * height*sizeof(T));
+        std::copy(data, data + width * height * depth_, &data_[0]);
     }
 
     /**
      * create WxHxD image filled with 0
      */
-    image(const shape3d& size) : width_(size.width_), height_(size.height_), depth_(size.depth_), data_(depth_ * width_ * height_, 0) {}
+    image(const shape3d& size, image_type type)
+        : width_(size.width_), height_(size.height_), depth_(size.depth_),
+          type_(type),
+          data_(depth_ * width_ * height_, 0){
+        if (type == image_type::grayscale && size.depth_ != 1) {
+            throw nn_error("depth must be 1 in grayscale");
+        }
+        else if (type != image_type::grayscale && size.depth_ != 3) {
+            throw nn_error("depth must be 3 in rgb/bgr");
+        }
+    }
 
-    /**
-     * create WxH image filled with 0
-     */
-    image(size_t width, size_t height) : width_(width), height_(height), depth_(1), data_(width * height, 0) {}
-
-    image(const image& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(rhs.data_) {}
-
-    image(const image&& rhs) : width_(rhs.width_), height_(rhs.height_), depth_(rhs.depth_), data_(std::move(rhs.data_)) {}
+    template <typename T>
+    image(const image<T>& rhs) : width_(rhs.width()), height_(rhs.height()), depth_(rhs.depth()), type_(rhs.type()), data_(rhs.shape().size()) {
+        std::copy(rhs.begin(), rhs.end(), data_.begin());
+    }
 
     /**
      * create image from file
      * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
      *                        (see detail at the comments in thrid_party/stb/stb_image.h)
      */
-    image(const std::string& filename, image_load_type load_type = image_load_type::grayscale)
+    image(const std::string& filename, image_type image_type)
     {
-        stbi_uc* input_pixels = stbi_load(filename.c_str(), &width_, &height_, &depth_, load_type == image_load_type::grayscale ? 1 : 0);
+        int w, h, d;
+        stbi_uc* input_pixels = stbi_load(filename.c_str(), &w, &h, &d, image_type == image_type::grayscale ? 1 : 3);
         if (input_pixels == nullptr) {
             throw nn_error("failed to open image:" + std::string(stbi_failure_reason()));
         }
 
+        width_  = static_cast<size_t>(w);
+        height_ = static_cast<size_t>(h);
+        depth_  = image_type == image_type::grayscale ? 1 : 3;
+        type_ = image_type;
+
         data_.resize(width_*height_*depth_);
-        std::copy(input_pixels, input_pixels + data_.size(), data_.begin());
 
+        // reorder to HxWxD -> DxHxW
+        from_rgb(input_pixels, input_pixels + data_.size());
+   
         stbi_image_free(input_pixels);
-    }
-
-    /**
-     * create image from file with specific size
-     * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
-     *                        (see detail at the comments in thrid_party/stb/stb_image.h)
-     */
-    image(const std::string& filename, size_t width, size_t height)
-    {
-        int srcw, srch, depth;
-        stbi_uc* input_pixels = stbi_load(filename.c_str(), &srcw, &srch, &depth, 1);
-        if (input_pixels == nullptr) {
-            throw nn_error("failed to open image:" + filename);
-        }
-        depth_ = 1;
-        data_.resize(width*height);
-
-        if (!stbir_resize_uint8(input_pixels, srcw, srch, 0, &data_[0], width, height, 0, 1)) {
-            throw nn_error("failed to resize image");
-        }
-
-        stbi_image_free(input_pixels);
-    }
-
-    image& operator = (const image& rhs) {
-        width_ = rhs.width_;
-        height_ = rhs.height_;
-        depth_ = rhs.depth_;
-        data_ = rhs.data_;
-        return *this;
-    }
-
-    image& operator = (const image&& rhs) {
-        width_ = rhs.width_;
-        height_ = rhs.height_;
-        depth_ = rhs.depth_;
-        data_ = std::move(rhs.data_);
-        return *this;
     }
 
     void save(const std::string& path) const {
         int ret;
+        std::vector<uint8_t> buf = to_rgb<uint8_t>();
+
         if (ends_with(path, "png")) {
-            ret = stbi_write_png(path.c_str(), width_, height_, depth_, (const void*)&data_[0], 0);
+            ret = stbi_write_png(path.c_str(), width_, height_, depth_, (const void*)&buf[0], 0);
         }
         else {
-            ret = stbi_write_bmp(path.c_str(), width_, height_, depth_, (const void*)&data_[0]);
+            ret = stbi_write_bmp(path.c_str(), width_, height_, depth_, (const void*)&buf[0]);
         }
         if (ret == 0) {
             throw nn_error("failed to save image:" + path);
@@ -188,6 +169,7 @@ public:
         return data_[z * width_ * height_ + y * width_ + x];
     }
 
+    bool empty() const { return data_.empty(); }
     iterator begin() { return data_.begin(); }
     iterator end() { return data_.end();  }
     const_iterator begin() const { return data_.begin(); }
@@ -199,18 +181,148 @@ public:
     size_t width() const { return width_; }
     size_t height() const { return height_; }
     size_t depth() const {return depth_;}
+    image_type type() const { return type_; }
+    shape3d shape() const { return shape3d(width_, height_, depth_); }
     const std::vector<intensity_t>& data() const { return data_; }
+    vec_t to_vec() const { return vec_t(begin(), end()); }
 
-    vec_t to_vec() const {
-        return vec_t(data_.begin(), data_.end());
+    template <typename T>
+    std::vector<T> to_rgb() const {
+        if (depth_ == 1) {
+            return std::vector<T>(data_.begin(), data_.end());
+        }
+        else {
+            std::vector<T> buf(shape().size());
+            auto order = depth_order(type_);
+            auto dst = buf.begin();
+
+            for (size_t y = 0; y < height_; y++)
+                for (size_t x = 0; x < width_; x++)
+                    for (size_t i = 0; i < depth_; i++)
+                        *dst++ = static_cast<T>(at(x, y, order[i]));
+            return buf;
+        }
+    }
+
+    template <typename Iter>
+    void from_rgb(Iter begin, Iter end) { 
+        if (depth_ == 1) {
+            std::copy(begin, end, data_.begin());
+        }
+        else {
+            auto order = depth_order(type_);
+            assert(std::distance(begin, end) == data_.size());
+
+            for (size_t y = 0; y < height_; y++)
+                for (size_t x = 0; x < width_; x++)
+                    for (size_t i = 0; i < depth_; i++)
+                        at(x, y, order[i]) = static_cast<intensity_t>(*begin++);
+        }
     }
 
 private:
+    std::array<size_t, 3> depth_order(image_type img) const {
+        if (img == image_type::rgb) {
+            return{ 0,1,2 };
+        }
+        else {
+            assert(img == image_type::bgr);
+            return{ 2,1,0 };
+        }
+    }
     size_t width_;
     size_t height_;
     size_t depth_;
+    image_type type_;
     std::vector<intensity_t> data_;
 };
+
+template <typename T>
+image<float_t> mean_image(const image<T>& src)
+{
+    image<float_t> mean(shape3d(1, 1, src.depth()), src.type());
+
+    for (size_t i = 0; i < src.depth(); i++) {
+        float_t sum = 0.0f;
+        for (size_t y = 0; y < src.height(); y++) {
+            for (size_t x = 0; x < src.width(); x++) {
+                sum += src.at(x, y, i);
+            }
+        }
+        mean.at(0, 0, i) = sum / (src.width() * src.height());
+    }
+
+    return mean;
+}
+
+inline void resize_image_core(const uint8_t* src, int srcw, int srch, uint8_t* dst, int dstw, int dsth, int channels)
+{
+    stbir_resize_uint8(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
+}
+
+inline void resize_image_core(const float* src, int srcw, int srch, float* dst, int dstw, int dsth, int channels)
+{
+    stbir_resize_float(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
+}
+
+template <typename T>
+inline image<T> resize_image(const image<T>& src, int width, int height)
+{
+    image<T> resized(shape3d(width, height, src.depth()), src.type());
+    std::vector<T> src_rgb = src.to_rgb<T>();
+    std::vector<T> dst_rgb(resized.shape().size());
+
+    resize_image_core(&src_rgb[0], src.width(), src.height(), &dst_rgb[0], width, height, src.depth());
+
+    resized.from_rgb(dst_rgb.begin(), dst_rgb.end());
+
+    return resized;
+}
+
+// dst[x,y,d] = lhs[x,y,d] - rhs[x,y,d]
+template <typename T>
+image<T> subtract_image(const image<T>& lhs, const image<T>& rhs)
+{
+    if (lhs.shape() != rhs.shape()) {
+        throw nn_error("Shapes of lhs/rhs must be same. lhs:" + to_string(lhs.shape()) + ",rhs:" + to_string(rhs.shape()));
+    }
+
+    image<T> dst(lhs.width(), lhs.height(), lhs.depth());
+
+    auto dstit = dst.begin();
+    auto lhsit = lhs.begin();
+    auto rhsit = rhs.begin();
+
+    for (; dstit != dst.end(); ++dstit, ++lhsit, ++rhsit) {
+        *dstit = *lhsit - *rhsit;
+    }
+    return dst;
+}
+
+template <typename T>
+image<T> subtract_scalar(const image<T>& lhs, const image<T>& rhs)
+{
+    if (lhs.depth() != rhs.depth()) {
+        throw nn_error("Depth of lhs/rhs must be same. lhs:" + to_string(lhs.depth()) + ",rhs:" + to_string(rhs.depth()));
+    }
+    if (rhs.width() != 1 || rhs.height() != 1) {
+        throw nn_error("rhs must be 1x1xN");
+    }
+
+    image<T> dst(lhs.shape(), lhs.type());
+
+    auto dstit = dst.begin();
+    auto lhsit = lhs.begin();
+    auto rhsit = rhs.begin();
+
+    for (size_t i = 0; i < lhs.depth(); i++, ++rhsit) {
+        for (size_t j = 0; j < lhs.width() * lhs.height(); j++, ++dstit, ++lhsit) {
+            *dstit = *lhsit - *rhsit;
+        }
+    }
+
+    return dst;
+}
 
 /**
  * visualize 1d-vector
