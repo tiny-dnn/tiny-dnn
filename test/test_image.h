@@ -45,6 +45,17 @@ TEST(image, default_ctor_float) {
     EXPECT_TRUE(img.empty());
 }
 
+TEST(image, copy_ctor) {
+    uint8_t a[] = { 0,127,255 };
+
+    image<uint8_t> src(a, 3, 1, image_type::grayscale);
+    image<float> dst(src);
+
+    EXPECT_FLOAT_EQ(0.0, dst.at(0, 0));
+    EXPECT_FLOAT_EQ(127.0, dst.at(1, 0));
+    EXPECT_FLOAT_EQ(255.0, dst.at(2, 0));
+}
+
 TEST(image, create_from_array_uint8) {
     uint8_t src[] = { 1,2,3,4,5,6 };
 

@@ -32,6 +32,11 @@
 #include <array>
 #include "tiny_dnn/util/util.h"
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4996) // suppress warnings about using fopen
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC // We need this define to avoid multiple definition
 #include "third_party/stb/stb_image.h"
@@ -95,7 +100,7 @@ public:
 
     template <typename T>
     image(const image<T>& rhs) : width_(rhs.width()), height_(rhs.height()), depth_(rhs.depth()), type_(rhs.type()), data_(rhs.shape().size()) {
-        std::copy(rhs.begin(), rhs.end(), data_.begin());
+        std::transform(rhs.begin(), rhs.end(), data_.begin(), [](T src) { return static_cast<intensity_t>(src); });
     }
 
     /**
@@ -427,3 +432,7 @@ inline image<T> vec2image(const vec_t& vec, const index3d<cnn_size_t>& maps) {
 }
 
 } // namespace tiny_dnn
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif

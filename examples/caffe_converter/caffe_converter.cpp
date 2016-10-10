@@ -47,18 +47,6 @@ image<float> compute_mean(const string& mean_file, int width, int height)
     return mean_image(original);
 }
 
-cv::ColorConversionCodes get_cvt_codes(int src_channels, int dst_channels)
-{
-    assert(src_channels != dst_channels);
-
-    if (dst_channels == 3)
-        return src_channels == 1 ? cv::COLOR_GRAY2BGR : cv::COLOR_BGRA2BGR;
-    else if (dst_channels == 1)
-        return src_channels == 3 ? cv::COLOR_BGR2GRAY : cv::COLOR_BGRA2GRAY;
-    else
-        throw runtime_error("unsupported color code");
-}
-
 void preprocess(const image<float>& img,
                  const image<float>& mean,
                  int width,
@@ -133,7 +121,7 @@ void test(const string& model_file,
 
       vec_t vec;
 
-      preprocess(img2, mean2, width, height, &vec);
+      preprocess(img, mean, width, height, &vec);
 
       clock_t begin = clock();
       
