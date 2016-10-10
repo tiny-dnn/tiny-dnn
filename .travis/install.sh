@@ -16,6 +16,4 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     mkdir "${HOME}/homebrew-cache"
     tar -czvf "${HOME}/homebrew-cache/homebrew-cache.tar.gz" --directory /usr/local/Cellar tbb cmake
   fi
-elif [ "$TRAVIS_OS_NAME" == "linux" ]; then
-
 fi
