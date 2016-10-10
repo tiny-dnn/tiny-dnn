@@ -27,7 +27,7 @@ configuration: Release
 before_build:
   - cmd: mkdir build_vc%msvc%
   - cmd: cd build_vc%msvc%
-  - cmd: '%cmake% -G "Visual Studio %msvc% Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: '%cmake% -G "Visual Studio %msvc% Win64" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
   - cmd: 'cd C:\projects\build_vc%msvc%\test\Release'
