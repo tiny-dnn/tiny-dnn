@@ -98,8 +98,8 @@ public:
         }
     }
 
-    template <typename T>
-    image(const image<T>& rhs) : width_(rhs.width()), height_(rhs.height()), depth_(rhs.depth()), type_(rhs.type()), data_(rhs.shape().size()) {
+    template <typename U>
+    image(const image<U>& rhs) : width_(rhs.width()), height_(rhs.height()), depth_(rhs.depth()), type_(rhs.type()), data_(rhs.shape().size()) {
         std::transform(rhs.begin(), rhs.end(), data_.begin(), [](T src) { return static_cast<intensity_t>(src); });
     }
 
@@ -191,20 +191,20 @@ public:
     const std::vector<intensity_t>& data() const { return data_; }
     vec_t to_vec() const { return vec_t(begin(), end()); }
 
-    template <typename T>
-    std::vector<T> to_rgb() const {
+    template <typename U>
+    std::vector<U> to_rgb() const {
         if (depth_ == 1) {
-            return std::vector<T>(data_.begin(), data_.end());
+            return std::vector<U>(data_.begin(), data_.end());
         }
         else {
-            std::vector<T> buf(shape().size());
+            std::vector<U> buf(shape().size());
             auto order = depth_order(type_);
             auto dst = buf.begin();
 
             for (size_t y = 0; y < height_; y++)
                 for (size_t x = 0; x < width_; x++)
                     for (size_t i = 0; i < depth_; i++)
-                        *dst++ = static_cast<T>(at(x, y, order[i]));
+                        *dst++ = static_cast<U>(at(x, y, order[i]));
             return buf;
         }
     }
