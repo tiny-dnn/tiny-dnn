@@ -1871,7 +1871,6 @@ static void stbir__resample_vertical_upsample(stbir__info* stbir_info, int n, in
     float* ring_buffer = stbir_info->ring_buffer;
     int ring_buffer_begin_index = stbir_info->ring_buffer_begin_index;
     int ring_buffer_first_scanline = stbir_info->ring_buffer_first_scanline;
-    int ring_buffer_last_scanline = stbir_info->ring_buffer_last_scanline;
     int ring_buffer_length = stbir_info->ring_buffer_length_bytes/sizeof(float);
 
     int n0,n1, output_row_start;

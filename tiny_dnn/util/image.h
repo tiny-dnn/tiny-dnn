@@ -108,18 +108,18 @@ public:
      * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
      *                        (see detail at the comments in thrid_party/stb/stb_image.h)
      */
-    image(const std::string& filename, image_type image_type)
+    image(const std::string& filename, image_type type)
     {
         int w, h, d;
-        stbi_uc* input_pixels = stbi_load(filename.c_str(), &w, &h, &d, image_type == image_type::grayscale ? 1 : 3);
+        stbi_uc* input_pixels = stbi_load(filename.c_str(), &w, &h, &d, type == image_type::grayscale ? 1 : 3);
         if (input_pixels == nullptr) {
             throw nn_error("failed to open image:" + std::string(stbi_failure_reason()));
         }
 
         width_  = static_cast<size_t>(w);
         height_ = static_cast<size_t>(h);
-        depth_  = image_type == image_type::grayscale ? 1 : 3;
-        type_ = image_type;
+        depth_  = type == image_type::grayscale ? 1 : 3;
+        type_ = type;
 
         data_.resize(width_*height_*depth_);
 
@@ -274,7 +274,7 @@ template <typename T>
 inline image<T> resize_image(const image<T>& src, int width, int height)
 {
     image<T> resized(shape3d(width, height, src.depth()), src.type());
-    std::vector<T> src_rgb = src.to_rgb<T>();
+    std::vector<T> src_rgb = src.template to_rgb<T>();
     std::vector<T> dst_rgb(resized.shape().size());
 
     resize_image_core(&src_rgb[0], src.width(), src.height(), &dst_rgb[0], width, height, src.depth());
