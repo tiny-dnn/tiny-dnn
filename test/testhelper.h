@@ -172,7 +172,8 @@ inline bool resolve_path(const std::string& filename, std::string& path) {
        "../test/",
        "../../test/",
        "../../../test/",
-       "../../../tiny-dnn/test/"      
+       "../../tiny_dnn/test/",
+       "../../../tiny_dnn/test/" 
     };
 
     for (size_t i = 0; i < sizeof(path_list) / sizeof(path_list[0]); i++) {
