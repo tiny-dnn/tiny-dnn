@@ -198,7 +198,6 @@ docs/_build
 #################
 *.exe
 *.dll
-*.bmp
 *.bin
 *.pb.cc
 *.pb.h
