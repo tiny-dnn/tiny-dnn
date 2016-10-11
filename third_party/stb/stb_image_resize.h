@@ -191,6 +191,8 @@ typedef uint32_t stbir_uint32;
 
 #ifdef STB_IMAGE_RESIZE_STATIC
 #define STBIRDEF static
+#elif defined(STB_IMAGE_RESIZE_INLINE)
+#define STBIRDEF inline
 #else
 #ifdef __cplusplus
 #define STBIRDEF extern "C"

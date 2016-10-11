@@ -121,6 +121,8 @@ extern "C" {
 
 #ifdef STB_IMAGE_WRITE_STATIC
 #define STBIWDEF static
+#elif defined(STB_IMAGE_WRITE_INLINE)
+#define STBIWDEF inline
 #else
 #define STBIWDEF extern
 extern int stbi_write_tga_with_rle;
