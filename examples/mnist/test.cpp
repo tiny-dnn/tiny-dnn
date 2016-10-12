@@ -1,7 +1,6 @@
 /*
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
-
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
     * Redistributions of source code must retain the above copyright
@@ -25,10 +24,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <opencv2/opencv.hpp>
-/*#include <opencv2/imgproc.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>*/
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
@@ -41,14 +36,6 @@ double rescale(double x) {
     Activation a;
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
-#ifdef CNN_USE_OPENCV
-// convert tiny_dnn::image to cv::Mat and resize
-cv::Mat image2mat(image<>& img) {
-    cv::Mat ori(static_cast<int>(img.height()), static_cast<int>(img.width()), CV_8U, &img.at(0, 0));
-    cv::Mat resized;
-    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
-    return resized;
-}
 
 void convert_image(const std::string& imagefilename,
     double minv,
@@ -56,31 +43,9 @@ void convert_image(const std::string& imagefilename,
     int w,
     int h,
     vec_t& data) {
-    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
 
-    cv::Mat_<uint8_t> resized;
-    cv::resize(img, resized, cv::Size(w, h));
-#else
-    // load
-    int input_w, input_h, comp;
-    stbi_uc* input_pixels = stbi_load(imagefilename.c_str(), &input_w, &input_h, &comp, 1);
-    if (!input_pixels) {
-        cout << "stbi_load failed";
-        return;
-    }
-
-    // resize
-    std::vector<uint8_t> resized(w * h);
-    uint8_t* resized_pixels = &(resized[0]);
-    int input_stride_in_bytes = input_w;
-    if (!stbir_resize_uint8(input_pixels, input_w, input_h, input_stride_in_bytes, resized_pixels, w, h, w, 1)) {
-        cout << "stbir_resize_uint8 failed";
-        stbi_image_free(input_pixels);
-        return;
-    }
-    stbi_image_free(input_pixels);
-#endif
+    image<> img(imagefilename, image_type::grayscale);
+    image<> resized = resize_image(img, w, h);
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
@@ -91,10 +56,6 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     network<sequential> nn;
 
     nn.load(dictionary);
-
-    // load nets
-    ifstream ifs(dictionary.c_str());
-    ifs >> nn;
 
     // convert imagefile to vec_t
     vec_t data;
@@ -113,16 +74,18 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     for (int i = 0; i < 3; i++)
         cout << scores[i].second << "," << scores[i].first << endl;
 
-    // visualize outputs of each layer
-    for (size_t i = 0; i < nn.layer_size(); i++) {
+    // save outputs of each layer
+    for (size_t i = 0; i < nn.depth(); i++) {
         auto out_img = nn[i]->output_to_image();
-        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+        auto filename = "layer_" + std::to_string(i) + ".png";
+        out_img.save(filename);
     }
-    // visualize filter shape of first convolutional layer
-    auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-    cv::imshow("weights:", image2mat(weight));
-
-    cv::waitKey(0);
+    // save filter shape of first convolutional layer
+    {
+        auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+        auto filename = "weights.png";
+        weight.save(filename);
+    }
 }
 
 int main(int argc, char** argv) {

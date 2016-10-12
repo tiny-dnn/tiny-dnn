@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <memory>
 #include <ctime>
-
+#define NO_STRICT
 #define CNN_USE_CAFFE_CONVERTER
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -35,69 +35,34 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 using namespace std;
 
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
-cv::Mat compute_mean(const string& mean_file, int width, int height)
+image<float> compute_mean(const string& mean_file, int width, int height)
 {
     caffe::BlobProto blob;
     detail::read_proto_from_binary(mean_file, &blob);
 
-    vector<cv::Mat> channels;
     auto data = blob.mutable_data()->mutable_data();
 
-    for (int i = 0; i < blob.channels(); i++, data += blob.height() * blob.width())
-        channels.emplace_back(blob.height(), blob.width(), CV_32FC1, data);
+    image<float> original(data, blob.width(), blob.height(), image_type::bgr);
 
-    cv::Mat mean;
-    cv::merge(channels, mean);
-
-    return cv::Mat(cv::Size(width, height), mean.type(), cv::mean(mean));
+    return mean_image(original);
 }
 
-cv::ColorConversionCodes get_cvt_codes(int src_channels, int dst_channels)
+void preprocess(const image<float>& img,
+                 const image<float>& mean,
+                 int width,
+                 int height,
+                 vec_t* dst)
 {
-    assert(src_channels != dst_channels);
+    image<float> resized = resize_image(img, width, height);
 
-    if (dst_channels == 3)
-        return src_channels == 1 ? cv::COLOR_GRAY2BGR : cv::COLOR_BGRA2BGR;
-    else if (dst_channels == 1)
-        return src_channels == 3 ? cv::COLOR_BGR2GRAY : cv::COLOR_BGRA2GRAY;
-    else
-        throw runtime_error("unsupported color code");
-}
+    image<> resized_uint8(resized);
 
-void preprocess(const cv::Mat& img,
-                const cv::Mat& mean,
-                int num_channels,
-                cv::Size geometry,
-                vector<cv::Mat>* input_channels)
-{
-    cv::Mat sample;
-
-    // convert color
-    if (img.channels() != num_channels)
-        cv::cvtColor(img, sample, get_cvt_codes(img.channels(), num_channels));
-    else
-        sample = img;
-
-    // resize
-    cv::Mat sample_resized;
-    cv::resize(sample, sample_resized, geometry);
-
-    cv::Mat sample_float;
-    sample_resized.convertTo(sample_float, num_channels == 3 ? CV_32FC3 : CV_32FC1);
-
-    // subtract mean
-    if (mean.size().width > 0) {
-        cv::Mat sample_normalized;
-        cv::subtract(sample_float, mean, sample_normalized);
-        cv::split(sample_normalized, *input_channels);
+    if (!mean.empty()) {
+        image<float> normalized = subtract_scalar(resized, mean);
+        *dst = normalized.to_vec();
     }
     else {
-        cv::split(sample_float, *input_channels);
+        *dst = resized.to_vec();
     }
 }
 
@@ -116,8 +81,8 @@ vector<string> get_label_list(const string& label_file)
     return lines;
 }
 
-void load_validation_data(const std::string& validation_file,
-                          std::vector<std::pair<std::string, int>>* validation) {
+void load_validation_data(const string& validation_file,
+                          vector<pair<string, int>>* validation) {
   string line;
   ifstream ifs(validation_file.c_str());
 
@@ -152,21 +117,14 @@ void test(const string& model_file,
 
     for (size_t i = 0; i < validation.size(); ++i) {
 
-      cv::Mat img = cv::imread(img_file, -1);
-      //cv::Mat img = cv::imread(validation[i].first, -1);
+      image<float> img(img_file, image_type::bgr);
 
-      vector<float> inputvec(width*height*channels);
-      vector<cv::Mat> input_channels;
+      vec_t vec;
 
-      for (int i = 0; i < channels; i++)
-          input_channels.emplace_back(height, width, CV_32FC1, &inputvec[width*height*i]);
-
-      preprocess(img, mean, 3, cv::Size(width, height), &input_channels);
-
-      vector<tiny_dnn::float_t> vec(inputvec.begin(), inputvec.end());
+      preprocess(img, mean, width, height, &vec);
 
       clock_t begin = clock();
-
+      
       auto result = net->predict(vec);
 
       clock_t end = clock();

@@ -29,7 +29,7 @@ configuration: Release
 before_build:
   - cmd: mkdir build
   - cmd: cd build
-  - cmd: '%cmake% -G "%generator%" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
+  - cmd: '%cmake% -G "%generator%" -DUSE_SSE=ON -DBUILD_TESTS=ON -DBUILD_EXAMPLES=ON -DCMAKE_INSTALL_PREFIX=..\install ..\tiny-dnn'
 
 after_build:
   - cmd: 'cd C:\projects\build\test\Release'

@@ -165,6 +165,26 @@ inline double epsilon() {
     return 1e-4;
 }
 
+inline bool resolve_path(const std::string& filename, std::string& path) {
+    static const char* path_list[] = {
+       "",
+       "./test/",
+       "../test/",
+       "../../test/",
+       "../../../test/",
+       "../../tiny-dnn/test/",
+       "../../../tiny-dnn/test/" 
+    };
+
+    for (size_t i = 0; i < sizeof(path_list) / sizeof(path_list[0]); i++) {
+        if (exists(path_list[i] + filename)) {
+            path = path_list[i] + filename;
+            return true;
+        }
+    }
+    return false;
+}
+
 namespace {
     std::pair<std::vector<tensor_t>, std::vector<std::vector<label_t>>> generate_gradient_check_data(
         cnn_size_t input_dimension, cnn_size_t sample_count = 5, cnn_size_t class_count = 2)

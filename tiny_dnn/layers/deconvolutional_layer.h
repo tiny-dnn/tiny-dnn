@@ -467,15 +467,16 @@ private:
             for (cnn_size_t sample = 0; sample < out.size(); sample++) {
                 cnn_size_t idx = 0;
                 vec_t& dst = (*dst_tensor)[sample];
+                size_t wieght_w_half = static_cast<size_t>(floor(params_.weight.width_ / 2));
+                size_t wieght_h_half = static_cast<size_t>(floor(params_.weight.height_ / 2));
 
                 for (cnn_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
                     float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-                    idx = params_.out.get_index(floor(params_.weight.width_ / 2),
-                                                floor(params_.weight.height_ / 2), c);
+                    idx = params_.out.get_index(wieght_w_half, wieght_h_half, c);
                     const float_t *pout = &out[sample][idx];
 
-                    for (cnn_size_t y = floor(params_.weight.height_ / 2);
-                        y < params_.out_unpadded.height_ + floor(params_.weight.height_ / 2);
+                    for (cnn_size_t y = wieght_h_half;
+                        y < params_.out_unpadded.height_ + wieght_h_half;
                         y++,
                         pout += params_.out.width_,
                         pimg += params_.out_unpadded.width_) {

@@ -141,9 +141,9 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, netwo
 {
     detail::caffe_layer_vector src_net(layer);
 
-    int tinycnn_layer_idx = 0;
+    size_t tinycnn_layer_idx = 0;
 
-    for (int caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
+    for (size_t caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
         auto type = src_net[caffe_layer_idx].type();
 
         if (detail::layer_skipped(type) || !detail::layer_has_weights(type)) {

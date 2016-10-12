@@ -25,7 +25,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
@@ -39,25 +38,15 @@ double rescale(double x) {
     return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-// convert tiny_dnn::image to cv::Mat and resize
-cv::Mat image2mat(image<>& img) {
-    cv::Mat ori(img.height(), img.width(), CV_8U, &img.at(0, 0));
-    cv::Mat resized;
-    cv::resize(ori, resized, cv::Size(), 3, 3, cv::INTER_AREA);
-    return resized;
-}
-
 void convert_image(const std::string& imagefilename,
     double minv,
     double maxv,
     int w,
     int h,
     vec_t& data) {
-    auto img = cv::imread(imagefilename, cv::IMREAD_GRAYSCALE);
-    if (img.data == nullptr) return; // cannot open, or it's not an image
 
-    cv::Mat_<uint8_t> resized;
-    cv::resize(img, resized, cv::Size(w, h));
+    image<> img(imagefilename, image_type::grayscale);
+    image<> resized = resize_image(img, w, h);
 
     // mnist dataset is "white on black", so negate required
     std::transform(resized.begin(), resized.end(), std::back_inserter(data),
@@ -68,10 +57,10 @@ void convert_image(const std::string& imagefilename,
 void construct_net(network<sequential>& nn) {
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << average_pooling_layer<identity>(28, 28, 6, 2)
+       << average_pooling_layer<activation::identity>(28, 28, 6, 2)
        << convolutional_layer<tan_h>(14, 14, 5, 6, 16)
        << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
-       << average_unpooling_layer<identity>(14, 14, 6, 2)
+       << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
        << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
 }
 
@@ -89,7 +78,7 @@ void train_network(network<sequential> nn, const string& train_dir_path) {
     std::vector<vec_t> training_images_corrupted(train_images);
 
     for (auto& d : training_images_corrupted) {
-        d = corrupt(move(d), 0.1, 0.0); // corrupt 10% data
+        d = corrupt(move(d), 0.1f, 0.0f); // corrupt 10% data
     }
 
     gradient_descent optimizer;
@@ -142,13 +131,12 @@ void recognize(const std::string& dictionary, const std::string& filename, const
     // visualize outputs of each layer
     for (size_t i = 0; i < nn.layer_size(); i++) {
         auto out_img = nn[i]->output_to_image();
-        cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
+        auto filename = "layer_" + std::to_string(i) + ".png";
+        out_img.save(filename);
     }
     // visualize filter shape of first convolutional layer
     auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
-    cv::imshow("weights:", image2mat(weightc));
-
-    cv::waitKey(0);
+    weightc.save("weights.png");
 }
 
 int main(int argc, char** argv) {
