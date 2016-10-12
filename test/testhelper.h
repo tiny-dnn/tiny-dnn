@@ -168,7 +168,7 @@ inline double epsilon() {
 inline bool resolve_path(const std::string& filename, std::string& path) {
     static const char* path_list[] = {
        "",
-       "./",
+       "./test/",
        "../test/",
        "../../test/",
        "../../../test/",
