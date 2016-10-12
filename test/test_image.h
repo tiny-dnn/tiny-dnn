@@ -370,7 +370,7 @@ TEST(image, resize)
     EXPECT_EQ(32, img.width());
     EXPECT_EQ(32, img.height());
     EXPECT_EQ(3, img.depth());
-    EXPECT_EQ(image_type::rgb, img.type());
+    EXPECT_EQ((int)image_type::rgb, (int)img.type());
     EXPECT_EQ(32 * 32 * 3, img.data().size());
 }
 
