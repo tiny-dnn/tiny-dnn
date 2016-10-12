@@ -49,6 +49,7 @@
 #define STB_IMAGE_WRITE_INLINE
 #include "third_party/stb/stb_image_write.h"
 
+
 namespace tiny_dnn {
 
 inline bool ends_with(std::string const & value, std::string const & ending) {
@@ -228,11 +229,11 @@ public:
 private:
     std::array<size_t, 3> depth_order(image_type img) const {
         if (img == image_type::rgb) {
-            return{ 0,1,2 };
+            return{ {0,1,2} };
         }
         else {
             assert(img == image_type::bgr);
-            return{ 2,1,0 };
+            return{ {2,1,0 } };
         }
     }
     size_t width_;

@@ -65,7 +65,7 @@ TEST(image, create_from_array_uint8) {
         EXPECT_EQ(3, img.width());
         EXPECT_EQ(2, img.height());
         EXPECT_EQ(1, img.depth());
-        EXPECT_EQ(image_type::grayscale, img.type());
+        EXPECT_EQ((int)image_type::grayscale, (int)img.type());
         EXPECT_EQ(5, img.at(1, 1));
     }
 
@@ -75,7 +75,7 @@ TEST(image, create_from_array_uint8) {
         EXPECT_EQ(1, img.width());
         EXPECT_EQ(2, img.height());
         EXPECT_EQ(3, img.depth());
-        EXPECT_EQ(image_type::rgb, img.type());
+        EXPECT_EQ((int)image_type::rgb, (int)img.type());
         EXPECT_EQ(4, img.at(0, 1, 1));
     }
 }
@@ -90,7 +90,7 @@ TEST(image, create_from_array_float) {
         EXPECT_EQ(3, img.width());
         EXPECT_EQ(2, img.height());
         EXPECT_EQ(1, img.depth());
-        EXPECT_EQ(image_type::grayscale, img.type());
+        EXPECT_EQ((int)image_type::grayscale, (int)img.type());
         EXPECT_FLOAT_EQ(5.0f, img.at(1, 1));
     }
 
@@ -100,7 +100,7 @@ TEST(image, create_from_array_float) {
         EXPECT_EQ(1, img.width());
         EXPECT_EQ(2, img.height());
         EXPECT_EQ(3, img.depth());
-        EXPECT_EQ(image_type::rgb, img.type());
+        EXPECT_EQ((int)image_type::rgb, (int)img.type());
         EXPECT_FLOAT_EQ(4.0f, img.at(0, 1, 1));
     }
 }
