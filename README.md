@@ -3,11 +3,13 @@
 </div>
 -----------------
 
-| **`Linux/Mac OS`** | **`Windows`** ||
-|------------------|-------------|---------------|
-|[![Build Status](https://travis-ci.org/tiny-dnn/tiny-dnn.svg?branch=master)](https://travis-ci.org/tiny-dnn/tiny-dnn)|[![Build status](https://ci.appveyor.com/api/projects/status/a5syoifm8ct7b4l2?svg=true)](https://ci.appveyor.com/project/tinydnn/tiny-dnn)| [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)[![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users)|
+[![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)
 
 **tiny-dnn** is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
+
+| **`Linux/Mac OS`** | **`Windows`** |
+|------------------|-------------|
+|[![Build Status](https://travis-ci.org/tiny-dnn/tiny-dnn.svg?branch=master)](https://travis-ci.org/tiny-dnn/tiny-dnn)|[![Build status](https://ci.appveyor.com/api/projects/status/a5syoifm8ct7b4l2?svg=true)](https://ci.appveyor.com/project/tinydnn/tiny-dnn)|
 
 ## Table of contents
 
@@ -129,7 +131,7 @@ Some cmake options are available:
 |USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
 |USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
 |USE_SERIALIZER|Enable model serialization|ON<sup>2</sup>|-|
-|BUILD_TESTS|Build unit tests|OFF|-<sup>3</sup>|
+|BUILD_TESTS|Build unit tests|OFF<sup>3</sup>|-|
 |BUILD_EXAMPLES|Build example projects|OFF|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 
@@ -249,10 +251,13 @@ The BSD 3-Clause License
 We have a gitter rooms for discussing new features & QA.
 Feel free to join us!
 
-for developers:
-
-https://gitter.im/tiny-dnn/developers
-
-for users:
-
-https://gitter.im/tiny-dnn/users
+<table>
+<tr>
+    <td><b> developers </b></td>
+    <td> https://gitter.im/tiny-dnn/developers </td>
+</tr>
+<tr>
+    <td><b> users </b></td>
+    <td> https://gitter.im/tiny-dnn/users </td>
+</tr>
+</table>
