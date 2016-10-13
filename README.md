@@ -20,7 +20,7 @@
 * [Contributing](#contributing)
 * [References](#references)
 * [License](#license)
-* [Mailing list](#mailing-list)
+* [Gitter rooms](#gitter-rooms)
 
 Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
@@ -245,7 +245,14 @@ other useful reference lists:
 ## License
 The BSD 3-Clause License
 
-## Mailing list
-google group for questions and discussions:
+## Gitter rooms
+We have a gitter rooms for discussing new features & QA.
+Feel free to join us!
 
-https://groups.google.com/forum/#!forum/tiny-dnn-users
+for developers:
+
+https://gitter.im/tiny-dnn/developers
+
+for users:
+
+https://gitter.im/tiny-dnn/users
