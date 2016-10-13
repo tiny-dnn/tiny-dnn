@@ -58,10 +58,10 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
 
 inline backend_t default_engine() {
 #ifdef CNN_USE_AVX
-    if (__builtin_cpu_supports("avx")) {
-        return backend_t::avx;
-    }
+#if defined(__AVX__) || defined(__AVX2__)
+    return backend_t::avx;
 #endif
+#endif // CNN_USE_AVX
     return backend_t::tiny_dnn;
 }
 
