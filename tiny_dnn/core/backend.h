@@ -35,6 +35,7 @@
 namespace tiny_dnn {
 namespace core {
 
+// TODO(edgar): remove this
 class context;
 
 enum class backend_t { tiny_dnn, nnpack, libdnn, avx, opencl };
@@ -55,6 +56,16 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
 
 /*enum class Engine { OpenCL };*/
 
+inline backend_t default_engine() {
+#ifdef CNN_USE_AVX
+#if defined(__AVX__) || defined(__AVX2__)
+    return backend_t::avx;
+#endif
+#endif // CNN_USE_AVX
+    return backend_t::tiny_dnn;
+}
+
+// TODO(edgar): remove this
 struct backend_params {
     backend_params() {}
 };

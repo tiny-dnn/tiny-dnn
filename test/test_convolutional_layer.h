@@ -51,7 +51,6 @@ TEST(convolutional, setup_tiny) {
     EXPECT_EQ(l.fan_in_size(),           cnn_size_t(9));  // num of incoming connections
     EXPECT_EQ(l.fan_out_size(),          cnn_size_t(18)); // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "conv");         // string with layer type
-    EXPECT_TRUE(l.engine() == backend_t::tiny_dnn);       // the engine type
 }
 
 inline void randomize_tensor(tensor_t& tensor)

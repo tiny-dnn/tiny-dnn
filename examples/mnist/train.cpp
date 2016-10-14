@@ -45,7 +45,9 @@ static void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
-    core::backend_t backend_type = core::backend_t::tiny_dnn;
+    // by default will use backend_t::tiny_dnn unless you compiled
+    // with -DUSE_AVX=ON and your device supports AVX intrinsics
+    core::backend_t backend_type = core::default_engine();
 
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
