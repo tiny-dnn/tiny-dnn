@@ -32,7 +32,9 @@
 
 using namespace tiny_dnn::activation;
 
+#ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
+#endif
 #include "test_network.h"
 #include "test_average_pooling_layer.h"
 // TODO(yida): fix broken test
