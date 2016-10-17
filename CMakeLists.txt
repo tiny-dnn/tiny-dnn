@@ -47,7 +47,7 @@ option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
 option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
-option(USE_SERIALIZER "Build tiny-dnn with Serialization support" ON)
+option(USE_SERIALIZER "Build tiny-dnn with Serialization support" OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
