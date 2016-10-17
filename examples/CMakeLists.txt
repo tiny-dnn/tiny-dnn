@@ -2,6 +2,8 @@ add_executable(benchmarks_all benchmarks/main.cpp)
 target_link_libraries(benchmarks_all
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
+if(USE_SERIALIZER)
+
 add_executable(example_mnist_train mnist/train.cpp)
 target_link_libraries(example_mnist_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
@@ -13,6 +15,8 @@ target_link_libraries(example_mnist_test
 add_executable(example_deconv_train deconv/train.cpp)
 target_link_libraries(example_deconv_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
+endif()
 
 add_executable(example_deconv_visual deconv/visual.cpp)
 target_link_libraries(example_deconv_visual
