@@ -217,7 +217,8 @@ public:
         }
         else {
             auto order = depth_order(type_);
-            assert(std::distance(begin, end) == data_.size());
+            assert(static_cast<cnn_size_t>(
+                std::distance(begin, end)) == data_.size());
 
             for (size_t y = 0; y < height_; y++)
                 for (size_t x = 0; x < width_; x++)
