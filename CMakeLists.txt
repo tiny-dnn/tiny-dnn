@@ -210,21 +210,9 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
 
 	# include extra flags to the compiler
 	# TODO: add info about those flags.
-
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
-
-    # setup flags to generate codes coverage
-
-if(FALSE)
-	if(BUILD_TESTS AND COVERALLS)
-		message(STATUS "Code coverage: Enabled")
-		set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-	else(BUILD_TESTS AND COVERALLS)
-		message(STATUS "Code coverage: Disabled")
-	endif(BUILD_TESTS AND COVERALLS)
-endif()
 elseif(WIN32) # MSVC
 	if(USE_SSE)
 		add_definitions(-DCNN_USE_SSE)
