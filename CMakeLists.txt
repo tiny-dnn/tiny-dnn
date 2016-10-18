@@ -142,7 +142,7 @@ if((NOT USE_TBB) AND (NOT USE_OMP) AND (NOT WIN32))
     message(STATUS "TBB and OMP disabled: Using Pthread instead.")
 else((NOT USE_TBB) AND (NOT USE_OMP))
     set(USE_PTHREAD OFF)
-endif((NOT USE_TBB) AND (NOT USE_OMP))
+endif((NOT USE_TBB) AND (NOT USE_OMP) AND (NOT WIN32))
 
 find_package(OpenCL QUIET)
 if(USE_OPENCL AND OpenCL_FOUND)
