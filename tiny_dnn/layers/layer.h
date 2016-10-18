@@ -82,6 +82,7 @@ class layer : public node {
               out_type_(out_type) {
         weight_init_ = std::make_shared<weight_init::xavier>();
         bias_init_ = std::make_shared<weight_init::constant>();
+        trainable_ = true;
     }
 
     layer(const layer&) = default;
@@ -267,6 +268,9 @@ class layer : public node {
 
     std::vector<vector_type> out_types() const { return out_type_; }
 
+    void set_trainable(bool trainable) { trainable_ = trainable; }
+
+    bool trainable() const { return trainable_; }
 
     /**
      * return output value range
@@ -496,6 +500,11 @@ class layer : public node {
     }
 
     void init_weight() {
+        if (!trainable_) {
+            initialized_ = true;
+            return;
+        }
+
         for (cnn_size_t i = 0; i < in_channels_; i++) {
             switch (in_type_[i]) {
                 case vector_type::weight:
@@ -522,7 +531,7 @@ class layer : public node {
     void update_weight(optimizer *o, cnn_size_t batch_size) {
         float_t rcp_batch_size = float_t(1) / float_t(batch_size);
         for (size_t i = 0; i < in_type_.size(); i++) {
-            if (is_trainable_weight(in_type_[i])) {
+            if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t diff;
                 vec_t& target = *get_weight_data(i);
 
@@ -600,6 +609,7 @@ class layer : public node {
     Device* device_ptr_ = nullptr;
 
  private:
+    bool trainable_;
     std::shared_ptr<weight_init::function> weight_init_;
     std::shared_ptr<weight_init::function> bias_init_;
 
