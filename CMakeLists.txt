@@ -135,7 +135,7 @@ endif()
 
 # in case that TBB and OMP are not enabled/found,
 # we enable standard C++11 multithread support.
-if((NOT USE_TBB) AND (NOT USE_OMP))
+if((NOT USE_TBB) AND (NOT USE_OMP) AND (NOT WIN32))
     #list(APPEND EXTRA_C_FLAGS -pthread)
     set(USE_PTHREAD ON)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
