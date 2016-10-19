@@ -53,8 +53,19 @@ TEST(core, add_bad_device) {
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::opencl);
-
-    my_gpu_device.registerOp(l);
+    try {
+        my_gpu_device.registerOp(l);
+        EXPECT_TRUE(false);
+    }
+    catch (const nn_error& e) {
+        std::string err_mess = "Cannot register layer: " + l.layer_type() +
+                               ". Device has disabled OpenCL support. Please specify platform and device "
+                                       "in Device constructor";
+        EXPECT_STREQ(err_mess.c_str(), e.what());
+    }
+    catch(...) {
+        EXPECT_TRUE(false);
+    }
 }
 
 TEST(core, add_bad_layer) {
@@ -65,16 +76,28 @@ TEST(core, add_bad_layer) {
     // in each test we reset program register
     ProgramManager::getInstance().reset();
 
-    Device my_gpu_device(device_t::CPU, 2, 0);
+    Device my_gpu_device(device_t::GPU, 0, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
-    my_gpu_device.registerOp(l);
+    try {
+        my_gpu_device.registerOp(l);
+        EXPECT_TRUE(false);
+    }
+    catch (const nn_error& e) {
+        std::string err_mess = "Cannot register layer: " + l.layer_type() +
+                               ". Enabled engine: " + to_string(l.engine()) + ". OpenCL engine (backend_t::opencl) "
+                                                                                      "should be used.";
+        EXPECT_STREQ(err_mess.c_str(), e.what());
+        }
+    catch(...) {
+        EXPECT_TRUE(false);
+    }
 }
 
 TEST(core, device_add_op) {
-    // An Op with OpenCL engine is registeres to
+    // An Op with OpenCL engine is registered to
     // a GPU device which will compile its program, and
     // will place it to the general register.
 
@@ -82,7 +105,7 @@ TEST(core, device_add_op) {
     // in each test we reset program register
     ProgramManager::getInstance().reset();
 
-    Device my_gpu_device(device_t::GPU, 2, 0);
+    Device my_gpu_device(device_t::GPU, 0, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::opencl);
