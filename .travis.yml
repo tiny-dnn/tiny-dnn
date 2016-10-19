@@ -95,3 +95,4 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
+  - python third_party/cpplint.py tiny_dnn/*/* examples/* test/*
