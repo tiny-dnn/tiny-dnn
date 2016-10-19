@@ -11,8 +11,10 @@ target_link_libraries(tiny_dnn_test
 
 if(COVERALLS)
 	message(STATUS "Code coverage: Enabled")
-    target_compile_options(tiny_dnn_test INTERFACE
-        "-g -O0 --coverage -fprofile-arcs -ftest-coverage")
+    set_target_properties(tiny_dnn_test
+        PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage"
+                   LINK_FLAGS "-lgcov --coverage")
+
 else(COVERALLS)
 	message(STATUS "Code coverage: Disabled")
 endif(COVERALLS)
