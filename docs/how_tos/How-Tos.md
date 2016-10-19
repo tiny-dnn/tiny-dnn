@@ -174,6 +174,17 @@ nn.train<cross_entropy>(optimizer, train_images, train_labels, 50, 20, [](){},
 
 ### train unbalanced data
 
+
+## "freeze" layers
+
+You can use ```layer::set_trainable``` to exclude a layer from updating its weights.
+
+```cpp
+network<sequential> net = make_mlp({10,20,10});
+
+net[1]->set_trainable(false); // freeze 2nd layer
+```
+
 ## use/evaluate trained model
 ### predict a value
 

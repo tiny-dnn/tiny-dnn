@@ -548,4 +548,44 @@ TEST(network, read_write)
     }
 }
 
+TEST(network, trainable) {
+    auto net = make_mlp<sigmoid>({ 2,3,2,1 }); // fc(2,3) - fc(3,2) - fc(2,1)
+
+    // trainable=false, or "freeze" 2nd layer fc(3,2)
+    net[1]->set_trainable(false);
+
+    vec_t w0 = { 0,1,2,3,4,5 };
+    vec_t w1 = { 6,7,8,9,8,7 };
+    vec_t w2 = { 6,5 };
+
+    *net[0]->weights()[0] = { 0,1,2,3,4,5 };
+    *net[1]->weights()[0] = { 6,7,8,9,8,7 };
+    *net[2]->weights()[0] = { 6,5 };
+
+    adam a;
+
+    net.init_weight();
+
+    auto w0_standby = *net[0]->weights()[0];
+    auto w1_standby = *net[1]->weights()[0];
+    auto w2_standby = *net[2]->weights()[0];
+
+    EXPECT_NE(w0, w0_standby);
+    EXPECT_EQ(w1, w1_standby);
+    EXPECT_NE(w2, w2_standby);
+
+    std::vector<vec_t> data{ {1,0}, {0,2} };
+    std::vector<vec_t> out{ {2}, {1} };
+
+    net.fit<mse>(a, data, out, 1, 1);
+
+    auto w0_after_update = *net[0]->weights()[0];
+    auto w1_after_update = *net[1]->weights()[0];
+    auto w2_after_update = *net[2]->weights()[0];
+
+    EXPECT_NE(w0, w0_after_update);
+    EXPECT_EQ(w1, w1_after_update);
+    EXPECT_NE(w2, w2_after_update);
+}
+
 } // namespace tiny-dnn
