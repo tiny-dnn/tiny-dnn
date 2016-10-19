@@ -33,11 +33,11 @@ using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
-/*TEST(core, device) {
+TEST(core, device) {
     // CPU and GPU devices are instantiated
 
     Device my_cpu_device(device_t::CPU);
-    Device my_gpu_device(device_t::CPU, 0, 0);
+    Device my_gpu_device(device_t::GPU, 0, 0);
 }
 
 TEST(core, add_bad_device) {
@@ -52,7 +52,7 @@ TEST(core, add_bad_device) {
     Device my_gpu_device(device_t::CPU);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::OpenCL);
+        padding::valid, true, 1, 1, backend_t::opencl);
 
     my_gpu_device.registerOp(l);
 }
@@ -85,9 +85,9 @@ TEST(core, device_add_op) {
     Device my_gpu_device(device_t::GPU, 2, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::OpenCL);
+        padding::valid, true, 1, 1, backend_t::opencl);
 
-    //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::OpenCL);
+    //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
 
@@ -103,7 +103,7 @@ TEST(core, device_add_op) {
 
     ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
 #endif
-}*/
+}
 
 TEST(core, ocl_conv) {
     // Since Singleton has a general state,
@@ -113,7 +113,7 @@ TEST(core, ocl_conv) {
     Device my_gpu_device(device_t::GPU, 0, 0);
 
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::LibDNN);
+        padding::valid, true, 1, 1, backend_t::libdnn);
 
     // first time op registration: OK
     my_gpu_device.registerOp(l);

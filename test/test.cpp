@@ -35,7 +35,7 @@ using namespace tiny_dnn::activation;
 #ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
 #endif
-#include "test_network.h"
+/*#include "test_network.h"
 #include "test_average_pooling_layer.h"
 // TODO(yida): fix broken test
 //#include "test_average_unpooling_layer.h"
@@ -48,7 +48,7 @@ using namespace tiny_dnn::activation;
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
 #include "test_batch_norm_layer.h"
-#include "test_nodes.h"
+#include "test_nodes.h"*/
 // TODO(edgar): build apart GPU tests
 //#include "test_core.h"
 #include "test_models.h"
