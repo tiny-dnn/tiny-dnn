@@ -28,12 +28,35 @@
 #include "picotest/picotest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
+#include "third_party/CLCudaAPI/clpp11.h"
 
 using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
+TEST(core, platforms_and_devices) {
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
+
+    //check which platforms are available and which devices
+    auto platforms = CLCudaAPI::GetAllPlatforms();
+    EXPECT_LT(0, platforms.size());
+    for (auto &p: platforms)  {
+        EXPECT_LT(0, p.NumDevices());
+        for (size_t d = 0; d < p.NumDevices(); ++d) {
+            auto dev = CLCudaAPI::Device(p, d);
+            std::cout << "Device " << d << " is " << dev.Type() << "\n";
+        }
+    }
+}
+
 TEST(core, device) {
+    // Since Singleton has a general state,
+    // in each test we reset program register
+    ProgramManager::getInstance().reset();
+
     // CPU and GPU devices are instantiated
 
     Device my_cpu_device(device_t::CPU);
