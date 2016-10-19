@@ -91,3 +91,4 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov coverage.info
     fi
+  - python third_party/cpplint.py tiny_dnn/*/* examples/* test/*
