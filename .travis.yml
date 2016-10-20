@@ -15,8 +15,6 @@ cache:
   pip: true
   directories:
     - $HOME/.pip-cache/
-    - $HOME/PeachPy
-    - $HOME/NNPACK
 
 addons:
   apt:
@@ -31,18 +29,19 @@ addons:
       - git
       # Optional dependencies
       - libtbb-dev
-      # Coveralls dependencies
+      # coveralls dependencies
       - gem
       - lcov
 
 branches:
   only:
     - master
-    - feat/generic-computational-graph
 env:
   global:
+    - USE_TBB=ON
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
+    - COVERALLS=ON
 
   matrix:
     - USE_SSE=OFF USE_AVX=OFF
@@ -66,16 +65,23 @@ install:
   - gem install coveralls-lcov
 
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --zerocounters;
+      cmake -DUSE_TBB=$USE_TBB
+            -DUSE_SSE=$USE_SSE
+            -DUSE_AVX=$USE_AVX
+            -DBUILD_TESTS=$BUILD_TESTS
+            -DCOVERALLS=$COVERALLS
+            -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
+    fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
       cmake -DUSE_SSE=$USE_SSE
             -DUSE_AVX=$USE_AVX
             -DBUILD_TESTS=$BUILD_TESTS
-            -DCOVERALLS=ON
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "osx"   ]; then
-      cmake -DUSE_TBB=ON
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+      cmake -DUSE_TBB=$USE_TBB
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
@@ -83,14 +89,15 @@ before_script:
 script:
   - make -j2
   - test/tiny_dnn_test
-  - python third_party/cpplint.py --filter=-build/header_guard,-runtime/references tiny_dnn/*/* examples/*/* test/*
+  - python third_party/cpplint.py \
+      --extensions=cpp,h
+      --filter=-build/header_guard,-runtime/references
+      tiny_dnn/*/* examples/*/* test/*
 
 after_success:
-  # send Coveralls log
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      cd ${TRAVIS_BUILD_DIR};
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --capture --output-file coverage.info;
-      lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info;
+      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' --output-file coverage.info;
       lcov --list coverage.info;
-      coveralls-lcov coverage.info
+      coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
