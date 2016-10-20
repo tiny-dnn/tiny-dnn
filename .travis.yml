@@ -15,6 +15,8 @@ cache:
   pip: true
   directories:
     - $HOME/.pip-cache/
+    - $HOME/PeachPy
+    - $HOME/NNPACK
 
 addons:
   apt:
@@ -29,26 +31,25 @@ addons:
       - git
       # Optional dependencies
       - libtbb-dev
-      # coveralls dependencies
+      # Coveralls dependencies
       - gem
       - lcov
 
 branches:
   only:
     - master
+    - feat/generic-computational-graph
 env:
   global:
-    - USE_TBB=ON
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
-    - COVERALLS=ON
- 
+
   matrix:
     - USE_SSE=OFF USE_AVX=OFF
     - USE_SSE=ON  USE_AVX=ON
 
 matrix:
-  exclude: # On OSX g++ is a symlink to clang++ by default 
+  exclude: # On OSX g++ is a symlink to clang++ by default
     - os: osx
       compiler: gcc
 
@@ -65,34 +66,31 @@ install:
   - gem install coveralls-lcov
 
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
       lcov --directory . --zerocounters;
-      cmake -DUSE_TBB=$USE_TBB
-            -DUSE_SSE=$USE_SSE
-            -DUSE_AVX=$USE_AVX
-            -DBUILD_TESTS=$BUILD_TESTS
-            -DCOVERALLS=$COVERALLS
-            -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
-    fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
       cmake -DUSE_SSE=$USE_SSE
             -DUSE_AVX=$USE_AVX
             -DBUILD_TESTS=$BUILD_TESTS
+            -DCOVERALLS=ON
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      cmake -DUSE_TBB=$USE_TBB
+  - if [ "$TRAVIS_OS_NAME" == "osx"   ]; then
+      cmake -DUSE_TBB=ON
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
-  
-script: make -j2 && ./test/tiny_dnn_test
+
+script:
+  - make -j2
+  - test/tiny_dnn_test
+  - python third_party/cpplint.py --filter=-build/header_guard,-runtime/references tiny_dnn/*/* examples/*/* test/*
 
 after_success:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
+  # send Coveralls log
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      cd ${TRAVIS_BUILD_DIR};
       lcov --directory . --capture --output-file coverage.info;
-      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' --output-file coverage.info;
+      lcov --remove coverage.info 'tests/*' '/usr/*' --output-file coverage.info;
       lcov --list coverage.info;
-      coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
+      coveralls-lcov coverage.info
     fi
-  - python third_party/cpplint.py tiny_dnn/*/* examples/* test/*
