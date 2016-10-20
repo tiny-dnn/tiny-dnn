@@ -70,7 +70,8 @@ device_t device_type(size_t &platform, size_t &device) {
 #define TINY_DNN_GET_DEVICE_AND_PLATFORM size_t cl_platform, cl_device; \
                                          device_t device = device_type(cl_platform, cl_device);
 #else
-#define TINY_DNN_GET_DEVICE_AND_PLATFORM device_t device = device_t::NONE;
+#define TINY_DNN_GET_DEVICE_AND_PLATFORM size_t cl_platform, cl_device; \
+                                         device_t device = device_t::NONE;
 #endif //defined(USE_OPENCL) || defined(USE_CUDA)
 /*
 TEST(core, platforms_and_devices) {
