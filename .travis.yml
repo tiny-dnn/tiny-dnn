@@ -90,8 +90,8 @@ script:
   - make -j2
   - test/tiny_dnn_test
   - python third_party/cpplint.py \
-      --extensions=cpp,h
-      --filter=-build/header_guard,-runtime/references
+      --extensions=cpp,h \
+      --filter=-build/header_guard,-runtime/references,-build/namespaces,-build/c++11 \
       tiny_dnn/*/* examples/*/* test/*
 
 after_success:
