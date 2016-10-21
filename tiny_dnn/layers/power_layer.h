@@ -84,11 +84,11 @@ public:
 
         for (cnn_size_t i = 0; i < x.size(); i++) {
             for (cnn_size_t j = 0; j < x[i].size(); j++) {
-                // f(x) = scale*x^factor
+                // f(x) = (scale*x)^factor
                 // ->
                 //   dx = dy * df(x)
-                //      = dy * factor * x^(factor-1)
-                //      = dy * factor * f(x) / x
+                //      = dy * scale * factor * (scale * x)^(factor - 1)
+                //      = dy * scale * factor * (scale * x)^factor * (scale * x)^(-1)
                 //      = dy * factor * y / x
                 if (std::abs(x[i][j]) > 1e-10) {
                     dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
