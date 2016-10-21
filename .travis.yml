@@ -42,13 +42,13 @@ env:
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
     - COVERALLS=ON
- 
+
   matrix:
     - USE_SSE=OFF USE_AVX=OFF
     - USE_SSE=ON  USE_AVX=ON
 
 matrix:
-  exclude: # On OSX g++ is a symlink to clang++ by default 
+  exclude: # On OSX g++ is a symlink to clang++ by default
     - os: osx
       compiler: gcc
 
@@ -85,8 +85,10 @@ before_script:
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
-  
-script: make -j2 && ./test/tiny_dnn_test
+
+script:
+  - make -j2
+  - test/tiny_dnn_test
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
@@ -95,3 +97,5 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
+  # coding style test
+  - bash -x .travis/cpplint_test.sh

@@ -33,6 +33,8 @@
 #include <map>
 #include <set>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/nodes.h"
 #include "tiny_dnn/util/util.h"
@@ -42,9 +44,9 @@
 namespace tiny_dnn {
 
 enum class content_type {
-    weights, ///< save/load the weights
-    model, ///< save/load the network architecture
-    weights_and_model ///< save/load both the weights and the architecture
+    weights,  ///< save/load the weights
+    model,    ///< save/load the network architecture
+    weights_and_model  ///< save/load both the weights and the architecture
 };
 
 enum class file_format {
@@ -61,7 +63,9 @@ struct result {
 
     template <typename Char, typename CharTraits>
     void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
-        os << "accuracy:" << accuracy() << "% (" << num_success << "/" << num_total << ")" << std::endl;
+      os << "accuracy:" << accuracy()
+         << "% (" << num_success << "/"
+         << num_total << ")" << std::endl;
     }
 
     template <typename Char, typename CharTraits>
@@ -98,8 +102,8 @@ struct result {
 };
 
 enum grad_check_mode {
-    GRAD_CHECK_ALL, ///< check all elements of weights
-    GRAD_CHECK_RANDOM ///< check 10 randomly selected weights
+    GRAD_CHECK_ALL,    ///< check all elements of weights
+    GRAD_CHECK_RANDOM  ///< check 10 randomly selected weights
 };
 
 template <typename NetType>
@@ -108,9 +112,12 @@ class network;
 template <typename Layer>
 network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
-void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
-void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs);
-
+void construct_graph(network<graph>& graph,
+                     const std::vector<std::shared_ptr<layer>>& inputs,
+                     const std::vector<std::shared_ptr<layer>>& outputs);
+void construct_graph(network<graph>& graph,
+                     const std::vector<layer*>& inputs,
+                     const std::vector<layer*>& outputs);
 /**
  * A model of neural networks in tiny-dnn
  *
@@ -147,9 +154,8 @@ void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, c
  *                if the network has branch/merge, "graph" can be used.
  **/
 template<typename NetType>
-class network
-{
-public:
+class network {
+ public:
     typedef typename std::vector<layerptr_t>::iterator iterator;
     typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
@@ -196,7 +202,7 @@ public:
      **/
     template <typename Range>
     vec_t        predict(const Range& in) {
-        using std::begin; // for ADL
+        using std::begin;  // for ADL
         using std::end;
         return predict(vec_t(begin(in), end(in)));
     }
@@ -221,7 +227,8 @@ public:
      * @param n_threads          number of tasks
      * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
      */
-    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate>
+    template <typename Error, typename Optimizer,
+              typename OnBatchEnumerate, typename OnEpochEnumerate>
     bool train(Optimizer&                  optimizer,
                const std::vector<vec_t>&   inputs,
                const std::vector<label_t>& class_labels,
@@ -231,15 +238,15 @@ public:
                OnEpochEnumerate            on_epoch_enumerate,
                const bool                  reset_weights = false,
                const int                   n_threads = CNN_TASK_SIZE,
-               const std::vector<vec_t>&   t_cost = std::vector<vec_t>()
-               )
-    {
+               const std::vector<vec_t>&   t_cost = std::vector<vec_t>()) {
         std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
         normalize_tensor(inputs, input_tensor);
         normalize_tensor(class_labels, output_tensor);
         if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
 
-        return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch, on_batch_enumerate, on_epoch_enumerate, reset_weights, n_threads, t_cost_tensor);
+        return fit<Error>(optimizer, input_tensor, output_tensor, batch_size,
+                          epoch, on_batch_enumerate, on_epoch_enumerate,
+                          reset_weights, n_threads, t_cost_tensor);
     }
 
     /**
@@ -284,7 +291,9 @@ public:
     * @param n_threads          number of tasks
     * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
     */
-    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate, typename T, typename U>
+    template <typename Error, typename Optimizer,
+              typename OnBatchEnumerate, typename OnEpochEnumerate,
+              typename T, typename U>
     bool fit(Optimizer&            optimizer,
              const std::vector<T>& inputs,
              const std::vector<U>& desired_outputs,
@@ -294,15 +303,15 @@ public:
              OnEpochEnumerate      on_epoch_enumerate,
              const bool            reset_weights = false,
              const int             n_threads = CNN_TASK_SIZE,
-             const std::vector<U>& t_cost = std::vector<U>()
-             )
-    {
+             const std::vector<U>& t_cost = std::vector<U>()) {
         std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
         normalize_tensor(inputs, input_tensor);
         normalize_tensor(desired_outputs, output_tensor);
         if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
 
-        return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch, on_batch_enumerate, on_epoch_enumerate, reset_weights, n_threads, t_cost_tensor);
+        return fit<Error>(optimizer, input_tensor, output_tensor, batch_size,
+                          epoch, on_batch_enumerate, on_epoch_enumerate,
+                          reset_weights, n_threads, t_cost_tensor);
     }
 
     /**
@@ -318,7 +327,8 @@ public:
              const std::vector<U>& desired_outputs,
              size_t                batch_size = 1,
              int                   epoch = 1) {
-        return fit<Error>(optimizer, inputs, desired_outputs, batch_size, epoch, nop, nop);
+        return fit<Error>(optimizer, inputs, desired_outputs,
+                          batch_size, epoch, nop, nop);
     }
 
     /**
@@ -334,14 +344,19 @@ public:
                const std::vector<label_t>& class_labels,
                size_t                      batch_size = 1,
                int                         epoch = 1) {
-        return train<Error>(optimizer, inputs, class_labels, batch_size, epoch, nop, nop);
+        return train<Error>(optimizer, inputs, class_labels,
+                            batch_size, epoch, nop, nop);
     }
 
     /**
      * @deprecated use fit instead for regression task
      **/
     template<typename Error, typename Optimizer>
-    bool train(Optimizer& optimizer, const std::vector<vec_t>& in, const std::vector<vec_t>& t, size_t batch_size = 1, int epoch = 1) {
+    bool train(Optimizer&                optimizer,
+               const std::vector<vec_t>& in,
+               const std::vector<vec_t>& t,
+               size_t                    batch_size = 1,
+               int                       epoch = 1) {
         return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
     }
 
@@ -388,7 +403,8 @@ public:
      * calculate loss value (the smaller, the better) for regression task
      **/
     template <typename E>
-    float_t get_loss(const std::vector<vec_t>& in, const std::vector<vec_t>& t) {
+    float_t get_loss(const std::vector<vec_t>& in,
+                     const std::vector<vec_t>& t) {
         float_t sum_loss = float_t(0);
 
         for (size_t i = 0; i < in.size(); i++) {
@@ -408,10 +424,10 @@ public:
         normalize_tensor(in, in_tensor);
 
         for (size_t i = 0; i < in.size(); i++) {
-
             const tensor_t predicted = predict(in_tensor[i]);
-            for (size_t j = 0; j < predicted.size(); j++)
+            for (size_t j = 0; j < predicted.size(); j++) {
                 sum_loss += E::f(predicted[j], t[i][j]);
+            }
         }
         return sum_loss;
     }
@@ -422,21 +438,21 @@ public:
     * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
     **/
     template <typename E>
-    bool gradient_check(const std::vector<tensor_t>& in, const std::vector<std::vector<label_t>>& t, float_t eps, grad_check_mode mode) {
-
+    bool gradient_check(const std::vector<tensor_t>& in,
+                        const std::vector<std::vector<label_t>>& t,
+                        float_t eps, grad_check_mode mode) {
         assert(in.size() == t.size());
 
         std::vector<tensor_t> v(t.size());
-        for (cnn_size_t sample = 0, sample_count = t.size(); sample < sample_count; ++sample) {
+        const cnn_size_t sample_count = t.size();
+        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             net_.label2vec(&t[sample][0], t[sample].size(), &v[sample]);
         }
 
-        for (auto current : net_) { // ignore first input layer
+        for (auto current : net_) {  // ignore first input layer
             if (current->weights().size() < 2) {
                 continue;
             }
-
-
             vec_t& w = *current->weights()[0];
             vec_t& b = *current->weights()[1];
             tensor_t& dw = (*current->weights_grads()[0]);
@@ -446,16 +462,24 @@ public:
 
             switch (mode) {
             case GRAD_CHECK_ALL:
-                for (int i = 0; i < (int)w.size(); i++)
-                    if (!calc_delta<E>(in, v, w, dw, i, eps)) return false;
-                for (int i = 0; i < (int)b.size(); i++)
-                    if (!calc_delta<E>(in, v, b, db, i, eps)) return false;
+                for (int i = 0; i < static_cast<int>(w.size()); i++)
+                    if (!calc_delta<E>(in, v, w, dw, i, eps)) {
+                        return false;
+                    }
+                for (int i = 0; i < static_cast<int>(b.size()); i++)
+                    if (!calc_delta<E>(in, v, b, db, i, eps)) {
+                        return false;
+                    }
                 break;
             case GRAD_CHECK_RANDOM:
                 for (int i = 0; i < 10; i++)
-                    if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) return false;
+                    if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
+                        return false;
+                    }
                 for (int i = 0; i < 10; i++)
-                    if (!calc_delta<E>(in, v, b, db, uniform_idx(b), eps)) return false;
+                    if (!calc_delta<E>(in, v, b, db, uniform_idx(b), eps)) {
+                        return false;
+                    }
                 break;
             default:
                 throw nn_error("unknown grad-check type");
@@ -481,14 +505,14 @@ public:
     /**
      * return raw pointer of index-th layer
      **/
-    const layer* operator [] (size_t index) const {
+    const layer* operator[] (size_t index) const {
         return net_[index];
     }
 
     /**
      * return raw pointer of index-th layer
      **/
-    layer* operator [] (size_t index) {
+    layer* operator[] (size_t index) {
         return net_[index];
     }
 
@@ -662,25 +686,32 @@ public:
     }
 
     template <typename OutputArchive>
-    void to_archive(OutputArchive& ar, content_type what = content_type::weights_and_model) const {
-        if (what == content_type::model || what == content_type::weights_and_model) {
+    void to_archive(OutputArchive& ar,
+                    content_type what = content_type::weights_and_model) const {
+        if (what == content_type::model ||
+            what == content_type::weights_and_model) {
             net_.save_model(ar);
         }
-        if (what == content_type::weights || what == content_type::weights_and_model) {
+        if (what == content_type::weights ||
+            what == content_type::weights_and_model) {
             net_.save_weights(ar);
         }
     }
 
     template <typename InputArchive>
-    void from_archive(InputArchive& ar, content_type what = content_type::weights_and_model) {
-        if (what == content_type::model || what == content_type::weights_and_model) {
+    void from_archive(InputArchive& ar,
+                      content_type what = content_type::weights_and_model) {
+        if (what == content_type::model ||
+            what == content_type::weights_and_model) {
             net_.load_model(ar);
         }
-        if (what == content_type::weights || what == content_type::weights_and_model) {
+        if (what == content_type::weights ||
+            what == content_type::weights_and_model) {
             net_.load_weights(ar);
         }
     }
-protected:
+
+ protected:
     float_t fprop_max(const vec_t& in, int idx = 0) {
         const vec_t& prediction = fprop(in, idx);
         return *std::max_element(std::begin(prediction), std::end(prediction));
@@ -689,16 +720,21 @@ protected:
     label_t fprop_max_index(const vec_t& in) {
         return label_t(max_index(fprop(in)));
     }
-private:
 
-
+ private:
     template <typename Layer>
     friend network<sequential>& operator << (network<sequential>& n, Layer&& l);
 
-    friend void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs);
-    friend void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs);
+    friend void construct_graph(network<graph>& graph,
+        const std::vector<std::shared_ptr<layer>>& inputs,
+        const std::vector<std::shared_ptr<layer>>& outputs);
 
-    template <typename Error, typename Optimizer, typename OnBatchEnumerate, typename OnEpochEnumerate>
+    friend void construct_graph(network<graph>& graph,
+        const std::vector<layer*>& inputs,
+        const std::vector<layer*>& outputs);
+
+    template <typename Error, typename Optimizer,
+              typename OnBatchEnumerate, typename OnEpochEnumerate>
     bool fit(Optimizer&                   optimizer,
         const std::vector<tensor_t>& inputs,
         const std::vector<tensor_t>& desired_outputs,
@@ -708,10 +744,8 @@ private:
         OnEpochEnumerate             on_epoch_enumerate,
         const bool                   reset_weights = false,
         const int                    n_threads = CNN_TASK_SIZE,
-        const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()
-    )
-    {
-        //check_training_data(in, t);
+        const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()) {
+        // check_training_data(in, t);
         check_target_cost_matrix(desired_outputs, t_cost);
         set_netphase(net_phase::train);
         net_.setup(reset_weights);
@@ -720,7 +754,6 @@ private:
             n->set_parallelize(true);
         optimizer.reset();
         for (int iter = 0; iter < epoch; iter++) {
-
             for (size_t i = 0; i < inputs.size(); i += batch_size) {
                 train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
                     static_cast<int>(std::min(batch_size, inputs.size() - i)),
@@ -728,10 +761,10 @@ private:
                     get_target_cost_sample_pointer(t_cost, i));
                 on_batch_enumerate();
 
-                //if (i % 100 == 0 && layers_.is_exploded()) {
-                //    std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
-                //    return false;
-                //}
+                /* if (i % 100 == 0 && layers_.is_exploded()) {
+                  std::cout << "[Warning]Detected infinite value in weight. stop learning." << std::endl;
+                    return false;
+                } */
             }
             on_epoch_enumerate();
         }
@@ -773,14 +806,13 @@ private:
                         int             batch_size,
                         const int       num_tasks,
                         const tensor_t* t_cost) {
-		std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
-		std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
-		std::vector<tensor_t> t_cost_batch = t_cost
-			? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
-			: std::vector<tensor_t>();
+        std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
+        std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
+        std::vector<tensor_t> t_cost_batch = t_cost
+            ? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
+            : std::vector<tensor_t>();
 
-		bprop<E>(fprop(in_batch), t_batch, t_cost_batch);
-
+        bprop<E>(fprop(in_batch), t_batch, t_cost_batch);
         net_.update_weights(&optimizer, batch_size);
     }
 
@@ -807,7 +839,8 @@ private:
 //    }
 
     template <typename E>
-    bool calc_delta(const std::vector<tensor_t>& in, const std::vector<tensor_t>& v,
+    bool calc_delta(const std::vector<tensor_t>& in,
+                    const std::vector<tensor_t>& v,
                     vec_t& w, tensor_t& dw, int check_index, double eps) {
         static const float_t delta = std::sqrt(
             std::numeric_limits<float_t>::epsilon());
@@ -859,12 +892,16 @@ private:
 
     // convenience wrapper for the function below
     template <typename E>
-    void bprop(const std::vector<vec_t>& out, const std::vector<vec_t>& t, const std::vector<vec_t>& t_cost) {
-        bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t}, std::vector<tensor_t>{t_cost});
+    void bprop(const std::vector<vec_t>& out,
+               const std::vector<vec_t>& t, const std::vector<vec_t>& t_cost) {
+        bprop<E>(std::vector<tensor_t>{out},
+                 std::vector<tensor_t>{t}, std::vector<tensor_t>{t_cost});
     }
 
     template <typename E>
-    void bprop(const std::vector<tensor_t>& out, const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
+    void bprop(const std::vector<tensor_t>& out,
+               const std::vector<tensor_t>& t,
+               const std::vector<tensor_t>& t_cost) {
         std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
         net_.backward(delta);
     }
@@ -872,42 +909,54 @@ private:
     void check_t(size_t i, label_t t, cnn_size_t dim_out) {
         if (t >= dim_out) {
             std::ostringstream os;
-            os << format_str("t[%u]=%u, dim(network output)=%u", i, t, dim_out) << std::endl;
-            os << "in classification task, dim(network output) must be greater than max class id." << std::endl;
-            if (dim_out == 1)
-                os << std::endl << "(for regression, use vector<vec_t> instead of vector<label_t> for training signal)" << std::endl;
+            os << format_str("t[%u]=%u, dim(net output)=%u\n", i, t, dim_out);
+            os << "in classification task, dim(net output) ";
+            os << "must be greater than max class id.\n";
+            if (dim_out == 1) {
+                os << "\n(for regression, use vector<vec_t> ";
+                os << "instead of vector<label_t> for training signal)\n";
+            }
 
             throw nn_error("output dimension mismatch!\n " + os.str());
         }
     }
 
     void check_t(size_t i, const vec_t& t, cnn_size_t dim_out) {
-        if (t.size() != dim_out)
-            throw nn_error(format_str("output dimension mismatch!\n dim(target[%u])=%u, dim(network output size=%u", i, t.size(), dim_out));
+        if (t.size() != dim_out) {
+            throw nn_error(format_str(
+                "output dimension mismatch!\n dim(target[%u])=%u, "
+                "dim(network output size=%u", i, t.size(), dim_out));
+        }
     }
 
     template <typename T>
-    void check_training_data(const std::vector<vec_t>& in, const std::vector<T>& t) {
+    void check_training_data(const std::vector<vec_t>& in,
+                             const std::vector<T>& t) {
         cnn_size_t dim_in = in_data_size();
         cnn_size_t dim_out = out_data_size();
 
-        if (in.size() != t.size())
-            throw nn_error("number of training data must be equal to label data");
+        if (in.size() != t.size()) {
+            throw nn_error("size of training data must be equal to label data");
+        }
 
         size_t num = in.size();
 
         for (size_t i = 0; i < num; i++) {
-            if (in[i].size() != dim_in)
-                throw nn_error(format_str("input dimension mismatch!\n dim(data[%u])=%d, dim(network input)=%u", i, in[i].size(), dim_in));
-
+            if (in[i].size() != dim_in) {
+                throw nn_error(format_str(
+                    "input dimension mismatch!\n dim(data[%u])=%d, "
+                    "dim(network input)=%u", i, in[i].size(), dim_in));
+            }
             check_t(i, t[i], dim_out);
         }
     }
 
-    void check_target_cost_matrix(const std::vector<tensor_t>& t, const std::vector<tensor_t>& t_cost) {
+    void check_target_cost_matrix(const std::vector<tensor_t>& t,
+                                  const std::vector<tensor_t>& t_cost) {
         if (!t_cost.empty()) {
             if (t.size() != t_cost.size()) {
-                throw nn_error("if target cost is supplied, its length must equal that of target data");
+                throw nn_error("if target cost is supplied, "
+                               "its length must equal that of target data");
             }
 
             for (size_t i = 0, end = t.size(); i < end; i++) {
@@ -919,38 +968,43 @@ private:
     // regression
     void check_target_cost_element(const vec_t& t, const vec_t& t_cost) {
         if (t.size() != t_cost.size()) {
-            throw nn_error("if target cost is supplied for a regression task, its shape must be identical to the target data");
+            throw nn_error("if target cost is supplied for a regression task, "
+                           "its shape must be identical to the target data");
         }
     }
     void check_target_cost_element(const tensor_t& t, const tensor_t& t_cost) {
         if (t.size() != t_cost.size()) {
-            throw nn_error("if target cost is supplied for a regression task, its shape must be identical to the target data");
+            throw nn_error("if target cost is supplied for a regression task, "
+                           "its shape must be identical to the target data");
         }
         for (size_t i = 0; i < t.size(); i++)
             check_target_cost_element(t[i], t_cost[i]);
     }
 
-    const tensor_t* get_target_cost_sample_pointer(const std::vector<tensor_t>& t_cost, size_t i) {
+    const tensor_t* get_target_cost_sample_pointer(
+        const std::vector<tensor_t>& t_cost, size_t i) {
         if (!t_cost.empty()) {
             assert(i < t_cost.size());
             return &(t_cost[i]);
-        }
-        else {
+        } else {
             return nullptr;
         }
     }
 
-    void normalize_tensor(const std::vector<tensor_t>& inputs, std::vector<tensor_t>& normalized) {
+    void normalize_tensor(const std::vector<tensor_t>& inputs,
+                          std::vector<tensor_t>& normalized) {
         normalized = inputs;
     }
 
-    void normalize_tensor(const std::vector<vec_t>& inputs, std::vector<tensor_t>& normalized) {
+    void normalize_tensor(const std::vector<vec_t>& inputs,
+                          std::vector<tensor_t>& normalized) {
         normalized.reserve(inputs.size());
         for (size_t i = 0; i < inputs.size(); i++)
             normalized.emplace_back(tensor_t{ inputs[i] });
     }
 
-    void normalize_tensor(const std::vector<label_t>& inputs, std::vector<tensor_t>& normalized) {
+    void normalize_tensor(const std::vector<label_t>& inputs,
+                          std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
         net_.label2vec(&inputs[0], inputs.size(), &vec);
@@ -971,30 +1025,31 @@ private:
  * @param sizepatch [size of the patch, such as the total number of pixel in the patch is sizepatch*sizepatch ]
  * @return [vector of vec_c (sample) to be passed to test function]
  */
-inline std::vector<vec_t> image2vec(const float_t* data, const unsigned int  rows, const unsigned int cols, const unsigned int sizepatch, const unsigned int step=1)
-{
-    assert(step>0);
-    std::vector<vec_t> res((cols-sizepatch)*(rows-sizepatch)/(step*step),vec_t(sizepatch*sizepatch));
-        for_i((cols-sizepatch)*(rows-sizepatch)/(step*step), [&](int count)
-        {
+inline std::vector<vec_t> image2vec(const float_t* data,
+                                    const unsigned int  rows,
+                                    const unsigned int cols,
+                                    const unsigned int sizepatch,
+                                    const unsigned int step = 1) {
+    assert(step > 0);
+    std::vector<vec_t> res((cols-sizepatch) * (rows-sizepatch) / (step*step),
+                           vec_t(sizepatch*sizepatch));
+        for_i((cols-sizepatch)*(rows-sizepatch)/(step*step), [&](int count) {
             const int j = step*(count / ((cols-sizepatch)/step));
             const int i = step*(count % ((cols-sizepatch)/step));
 
-            //vec_t sample(sizepatch*sizepatch);
+            // vec_t sample(sizepatch*sizepatch);
 
-            if (i+sizepatch < cols && j+sizepatch < rows)
-            for (unsigned int k=0;k<sizepatch*sizepatch;k++)
-            //for_i(sizepatch*sizepatch, [&](int k)
-            {
-                unsigned int y = k / sizepatch + j;
-                unsigned int x = k % sizepatch + i;
-                res[count][k] = data[x+y*cols];
+            if (i+sizepatch < cols && j+sizepatch < rows) {
+                for (unsigned int k = 0; k < sizepatch*sizepatch; k++) {
+                // for_i(sizepatch*sizepatch, [&](int k) {
+                    unsigned int y = k / sizepatch + j;
+                    unsigned int x = k % sizepatch + i;
+                    res[count][k] = data[x+y*cols];
+                }
+                //});
+                // res[count] = (sample);
             }
-            //);
-            //res[count] = (sample);
         });
-
-
     return res;
 }
 
@@ -1005,31 +1060,38 @@ network<sequential>& operator << (network<sequential>& n, Layer&& l) {
 }
 
 template <typename NetType, typename Char, typename CharTraits>
-std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char, CharTraits>& os, const network<NetType>& n) {
+std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char,
+                                                   CharTraits>& os,
+                                                   const network<NetType>& n) {
     n.save(os);
     return os;
 }
 
 template <typename NetType, typename Char, typename CharTraits>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char, CharTraits>& os, network<NetType>& n) {
+std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char,
+                                                   CharTraits>& os,
+                                                   network<NetType>& n) {
     n.load(os);
     return os;
 }
 
-inline void construct_graph(network<graph>& graph, const std::vector<layer*>& inputs, const std::vector<layer*>& outputs)
-{
+inline void construct_graph(network<graph>& graph,
+                            const std::vector<layer*>& inputs,
+                            const std::vector<layer*>& outputs) {
     graph.net_.construct(inputs, outputs);
 }
 
-inline void construct_graph(network<graph>& graph, const std::vector<std::shared_ptr<layer>>& inputs, const std::vector<std::shared_ptr<layer>>& outputs)
-{
+inline void construct_graph(network<graph>& graph,
+    const std::vector<std::shared_ptr<layer>>& inputs,
+    const std::vector<std::shared_ptr<layer>>& outputs) {
     std::vector<layer*> in_ptr, out_ptr;
     auto shared2ptr = [](std::shared_ptr<layer> l) { return l.get(); };
 
-    std::transform(inputs.begin(), inputs.end(), std::back_inserter(in_ptr), shared2ptr);
-    std::transform(outputs.begin(), outputs.end(), std::back_inserter(out_ptr), shared2ptr);
+    std::transform(inputs.begin(), inputs.end(),
+                   std::back_inserter(in_ptr), shared2ptr);
+    std::transform(outputs.begin(), outputs.end(),
+                   std::back_inserter(out_ptr), shared2ptr);
 
     graph.net_.construct(in_ptr, out_ptr);
 }
-
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
