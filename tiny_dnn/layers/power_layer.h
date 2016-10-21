@@ -94,7 +94,7 @@ public:
                     dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
                 }
                 else {
-                    dx[i][j] = dy[i][j] * factor_ * std::pow(x[i][j], factor_ - 1.0f);
+                    dx[i][j] = dy[i][j] * scale_ * factor_ * std::pow(x[i][j], factor_ - 1.0f);
                 }
             }
         }
