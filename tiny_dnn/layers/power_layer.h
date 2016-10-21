@@ -87,14 +87,14 @@ public:
                 // f(x) = scale*x^factor
                 // ->
                 //   dx = dy * df(x)
-                //      = dy * scale * factor * x^(factor-1)
-                //      = dy * scale * factor * f(x) / x
-                //      = dy * scale * factor * y / x
+                //      = dy * factor * x^(factor-1)
+                //      = dy * factor * f(x) / x
+                //      = dy * factor * y / x
                 if (std::abs(x[i][j]) > 1e-10) {
-                    dx[i][j] = dy[i][j] * scale_ * factor_ * y[i][j] / x[i][j];
+                    dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
                 }
                 else {
-                    dx[i][j] = dy[i][j] * scale_ * factor_ * std::pow(x[i][j], factor_ - 1.0f);
+                    dx[i][j] = dy[i][j] * factor_ * std::pow(x[i][j], factor_ - 1.0f);
                 }
             }
         }
