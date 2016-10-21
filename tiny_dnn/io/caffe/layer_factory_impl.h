@@ -204,6 +204,14 @@ std::shared_ptr<layer> create_tanh(const caffe::LayerParameter& layer,
 }
 
 inline
+std::shared_ptr<layer> create_power(const caffe::LayerParameter& layer,
+                                    const shape_t& bottom_shape, shape_t *) {
+    auto power = std::make_shared<power_layer>(bottom_shape, layer.power_param().power(), layer.power_param().scale());
+    return power;
+}
+
+    
+inline
 std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape,
                                       shape_t *top_shape) {
@@ -776,7 +784,7 @@ inline bool layer_supported(const std::string& type) {
         "InnerProduct", "Convolution", "Deconvolution", "Pooling",
         "LRN", "Dropout",
         "SoftmaxWithLoss", "SigmoidCrossEntropyLoss",
-        "ReLU", "Sigmoid", "TanH", "Softmax", "BatchNorm"
+        "ReLU", "Sigmoid", "TanH", "Softmax", "BatchNorm", "Power"
     };
 
     for (size_t i = 0; i < sizeof(supported) / sizeof(supported[0]); i++) {
@@ -851,6 +859,10 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
 
     if (layer_type == "TanH") {
         return detail::create_tanh(layer, in_shape, out_shape);
+    }
+    
+    if (layer_type == "Power") {
+        return detail::create_power(layer, in_shape, out_shape);
     }
 
     throw nn_error("layer parser not found");
