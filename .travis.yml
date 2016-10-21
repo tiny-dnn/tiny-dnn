@@ -83,10 +83,6 @@ before_script:
 script:
   - make -j2
   - test/tiny_dnn_test
-  - python third_party/cpplint.py \
-      --extensions=cpp,h
-      --filter=-build/header_guard,-runtime/references
-      tiny_dnn/*/* examples/*/* test/*
 
 after_success:
   # send Coveralls log
@@ -97,3 +93,5 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov coverage.info
     fi
+  # coding style test
+  - bash -x .travis/cpplint_test.sh
