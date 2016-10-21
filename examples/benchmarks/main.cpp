@@ -33,29 +33,29 @@
 using namespace tiny_dnn;
 using namespace std;
 
-int  main(int argc, char** argv) {
-    
-    models::alexnet nn;
+int main(int argc, char **argv) {
 
-    // change all layers at once
-    nn.weight_init(weight_init::constant(2.0));
-    nn.bias_init(weight_init::constant(2.0));
-    nn.init_weight();
+  models::alexnet nn;
 
-    vec_t in(224*224*3);
-    
-    // generate random variables
-    uniform_rand(in.begin(), in.end(), 0, 1);
+  // change all layers at once
+  nn.weight_init(weight_init::constant(2.0));
+  nn.bias_init(weight_init::constant(2.0));
+  nn.init_weight();
 
-    timer t; // start the timer
-    
-    // predict
-    auto res = nn.predict(in);
+  vec_t in(224 * 224 * 3);
 
-    double elapsed_ms = t.elapsed();
-    t.stop();
+  // generate random variables
+  uniform_rand(in.begin(), in.end(), 0, 1);
 
-    cout << "Elapsed time(ms): " << elapsed_ms << endl;
+  timer t; // start the timer
+
+  // predict
+  auto res = nn.predict(in);
+
+  double elapsed_ms = t.elapsed();
+  t.stop();
+
+  cout << "Elapsed time(ms): " << elapsed_ms << endl;
 }
 
 
