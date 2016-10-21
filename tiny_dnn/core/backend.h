@@ -40,18 +40,22 @@ class context;
 
 enum class backend_t { tiny_dnn, nnpack, libdnn, avx, opencl };
 
-inline std::ostream& operator << (std::ostream& os, backend_t type) {
-    switch (type) {
-        case backend_t::tiny_dnn: os << "TinyDNN"; break;
-        case backend_t::nnpack:   os << "NNPACK";  break;
-        case backend_t::libdnn:   os << "LibDNN";  break;
-        case backend_t::avx:      os << "AVX";     break;
-        case backend_t::opencl:   os << "OpenCL";  break;
-        default:
-            throw nn_error("Not supported ostream enum.");
-            break;
-    }
-    return os;
+inline std::ostream &operator<<(std::ostream &os, backend_t type) {
+  switch (type) {
+    case backend_t::tiny_dnn: os << "TinyDNN";
+      break;
+    case backend_t::nnpack: os << "NNPACK";
+      break;
+    case backend_t::libdnn: os << "LibDNN";
+      break;
+    case backend_t::avx: os << "AVX";
+      break;
+    case backend_t::opencl: os << "OpenCL";
+      break;
+    default:throw nn_error("Not supported ostream enum.");
+      break;
+  }
+  return os;
 }
 
 /*enum class Engine { OpenCL };*/
@@ -59,99 +63,99 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
 inline backend_t default_engine() {
 #ifdef CNN_USE_AVX
 #if defined(__AVX__) || defined(__AVX2__)
-    return backend_t::avx;
+  return backend_t::avx;
 #endif
 #endif // CNN_USE_AVX
-    return backend_t::tiny_dnn;
+  return backend_t::tiny_dnn;
 }
 
 // TODO(edgar): remove this
 struct backend_params {
-    backend_params() {}
+  backend_params() {}
 };
 
 class backend {
  public:
-    // context holds solution-dependent parameters
-    // context should be able to hold any types of structures (like boost::any)
-    explicit backend(context* ctx_ = nullptr) {}
+  // context holds solution-dependent parameters
+  // context should be able to hold any types of structures (like boost::any)
+  explicit backend(context *ctx_ = nullptr) {}
 
-    // core math functions
+  // core math functions
 
-    virtual void conv2d(const std::vector<tensor_t*>& in_data,
-                        std::vector<tensor_t*>&       out_data) = 0;
+  virtual void conv2d(const std::vector<tensor_t *> &in_data,
+                      std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
-                          std::vector<tensor_t*>&       out_data) = 0;
+  virtual void conv2d_q(const std::vector<tensor_t *> &in_data,
+                        std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void conv2d_eq(const std::vector<tensor_t*>& in_data,
-                           std::vector<tensor_t*>&       out_data) = 0;
+  virtual void conv2d_eq(const std::vector<tensor_t *> &in_data,
+                         std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void conv2d(const std::vector<tensor_t*>& in_data,
-                        const std::vector<tensor_t*>& out_data,
-                        std::vector<tensor_t*>&       out_grad,
-                        std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void conv2d(const std::vector<tensor_t *> &in_data,
+                      const std::vector<tensor_t *> &out_data,
+                      std::vector<tensor_t *> &out_grad,
+                      std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void conv2d_q(const std::vector<tensor_t *> &in_data,
+                        const std::vector<tensor_t *> &out_data,
+                        std::vector<tensor_t *> &out_grad,
+                        std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void deconv2d(const std::vector<tensor_t*>& in_data,
-                          std::vector<tensor_t*>&       out_data) = 0;
+  virtual void deconv2d(const std::vector<tensor_t *> &in_data,
+                        std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void deconv2d_q(const std::vector<tensor_t*>& in_data,
-                            std::vector<tensor_t*>&       out_data) = 0;
+  virtual void deconv2d_q(const std::vector<tensor_t *> &in_data,
+                          std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void deconv2d_eq(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) = 0;
+  virtual void deconv2d_eq(const std::vector<tensor_t *> &in_data,
+                           std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void deconv2d(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void deconv2d(const std::vector<tensor_t *> &in_data,
+                        const std::vector<tensor_t *> &out_data,
+                        std::vector<tensor_t *> &out_grad,
+                        std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void deconv2d_q(const std::vector<tensor_t*>& in_data,
-                            const std::vector<tensor_t*>& out_data,
-                            std::vector<tensor_t*>&       out_grad,
-                            std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void deconv2d_q(const std::vector<tensor_t *> &in_data,
+                          const std::vector<tensor_t *> &out_data,
+                          std::vector<tensor_t *> &out_grad,
+                          std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void maxpool(const std::vector<tensor_t*>& in_data,
-                         std::vector<tensor_t*>&       out_data) = 0;
+  virtual void maxpool(const std::vector<tensor_t *> &in_data,
+                       std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void maxpool(const std::vector<tensor_t*>& in_data,
-                         const std::vector<tensor_t*>& out_data,
-                         std::vector<tensor_t*>&       out_grad,
-                         std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void maxpool(const std::vector<tensor_t *> &in_data,
+                       const std::vector<tensor_t *> &out_data,
+                       std::vector<tensor_t *> &out_grad,
+                       std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void fully(const std::vector<tensor_t*>& in_data,
-                       std::vector<tensor_t*>&       out_data) = 0;
+  virtual void fully(const std::vector<tensor_t *> &in_data,
+                     std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void fully_q(const std::vector<tensor_t*>& in_data,
-                         std::vector<tensor_t*>&       out_data) = 0;
+  virtual void fully_q(const std::vector<tensor_t *> &in_data,
+                       std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void fully_eq(const std::vector<tensor_t*>& in_data,
-                          std::vector<tensor_t*>&       out_data) = 0;
+  virtual void fully_eq(const std::vector<tensor_t *> &in_data,
+                        std::vector<tensor_t *> &out_data) = 0;
 
-    virtual void fully(const std::vector<tensor_t*>& in_data,
-                       const std::vector<tensor_t*>& out_data,
-                       std::vector<tensor_t*>&       out_grad,
-                       std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void fully(const std::vector<tensor_t *> &in_data,
+                     const std::vector<tensor_t *> &out_data,
+                     std::vector<tensor_t *> &out_grad,
+                     std::vector<tensor_t *> &in_grad) = 0;
 
-    virtual void fully_q(const std::vector<tensor_t*>& in_data,
-                         const std::vector<tensor_t*>& out_data,
-                         std::vector<tensor_t*>&       out_grad,
-                         std::vector<tensor_t*>&       in_grad) = 0;
+  virtual void fully_q(const std::vector<tensor_t *> &in_data,
+                       const std::vector<tensor_t *> &out_data,
+                       std::vector<tensor_t *> &out_grad,
+                       std::vector<tensor_t *> &in_grad) = 0;
 
-    context* get_context() const { return ctx_; }
+  context *get_context() const { return ctx_; }
 
-    void set_layer(layerptr_t layer) { layer_ = layer; }
+  void set_layer(layerptr_t layer) { layer_ = layer; }
 
-    virtual backend_t type() const = 0;
+  virtual backend_t type() const = 0;
 
  protected:
-    context* ctx_;
-    layerptr_t layer_;
+  context *ctx_;
+  layerptr_t layer_;
 };
 
 }  // namespace core

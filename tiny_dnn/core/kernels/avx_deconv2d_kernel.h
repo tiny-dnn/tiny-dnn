@@ -33,14 +33,14 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-inline void avx_deconv2d_kernel(const deconv_params& params,
-                                const tensor_t& in,
-                                const vec_t& W,
-                                const vec_t& bias,
-                                tensor_t&    a,
-                                const bool   layer_parallelize) {
-    // fallback to non-avx version
-    tiny_deconv2d_kernel(params, in, W, bias, a, layer_parallelize);
+inline void avx_deconv2d_kernel(const deconv_params &params,
+                                const tensor_t &in,
+                                const vec_t &W,
+                                const vec_t &bias,
+                                tensor_t &a,
+                                const bool layer_parallelize) {
+  // fallback to non-avx version
+  tiny_deconv2d_kernel(params, in, W, bias, a, layer_parallelize);
 }
 
 }  // namespace kernels

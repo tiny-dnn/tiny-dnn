@@ -31,93 +31,94 @@
 
 namespace tiny_dnn {
 
-
 /**
  * y = x^factor
  **/
 class power_layer : public layer {
-public:
-    typedef layer Base;
+ public:
+  typedef layer Base;
 
-    power_layer(const shape3d& in_shape, float_t factor)
-        : layer({ vector_type::data }, { vector_type::data }),
+  power_layer(const shape3d &in_shape, float_t factor)
+      : layer({vector_type::data}, {vector_type::data}),
         in_shape_(in_shape), factor_(factor) {
-    }
+  }
 
-    power_layer(const layer& prev_layer, float_t factor)
-        : layer({ vector_type::data }, { vector_type::data }),
+  power_layer(const layer &prev_layer, float_t factor)
+      : layer({vector_type::data}, {vector_type::data}),
         in_shape_(prev_layer.out_shape()[0]), factor_(factor) {
+  }
+
+  std::string layer_type() const override {
+    return "power";
+  }
+
+  std::vector<shape3d> in_shape() const override {
+    return {in_shape_};
+  }
+
+  std::vector<shape3d> out_shape() const override {
+    return {in_shape_};
+  }
+
+  void forward_propagation(const std::vector<tensor_t *> &in_data,
+                           std::vector<tensor_t *> &out_data) override {
+    const tensor_t &x = *in_data[0];
+    tensor_t &y = *out_data[0];
+
+    for (cnn_size_t i = 0; i < x.size(); i++) {
+      std::transform(x[i].begin(), x[i].end(), y[i].begin(), [=](float_t x) {
+        return std::pow(x, factor_);
+      });
     }
+  }
 
-    std::string layer_type() const override {
-        return "power";
-    }
+  void back_propagation(const std::vector<tensor_t *> &in_data,
+                        const std::vector<tensor_t *> &out_data,
+                        std::vector<tensor_t *> &out_grad,
+                        std::vector<tensor_t *> &in_grad) override {
+    tensor_t &dx = *in_grad[0];
+    const tensor_t &dy = *out_grad[0];
+    const tensor_t &x = *in_data[0];
+    const tensor_t &y = *out_data[0];
 
-    std::vector<shape3d> in_shape() const override {
-        return {in_shape_};
-    }
-
-    std::vector<shape3d> out_shape() const override {
-        return {in_shape_};
-    }
-
-    void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>& out_data) override {
-        const tensor_t& x = *in_data[0];
-        tensor_t&       y = *out_data[0];
-
-        for (cnn_size_t i = 0; i < x.size(); i++) {
-            std::transform(x[i].begin(), x[i].end(), y[i].begin(), [=](float_t x) {
-                return std::pow(x, factor_); 
-            });
+    for (cnn_size_t i = 0; i < x.size(); i++) {
+      for (cnn_size_t j = 0; j < x[i].size(); j++) {
+        // f(x) = x^factor
+        // ->
+        //   dx = dy * df(x)
+        //      = dy * factor * x^(factor-1)
+        //      = dy * factor * f(x) / x
+        //      = dy * factor * y / x
+        if (std::abs(x[i][j]) > 1e-10) {
+          dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
+        } else {
+          dx[i][j] = dy[i][j] * factor_ * std::pow(x[i][j], factor_ - 1.0f);
         }
+      }
     }
+  }
 
-    void back_propagation(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) override {
-        tensor_t&       dx = *in_grad[0];
-        const tensor_t& dy = *out_grad[0];
-        const tensor_t& x  = *in_data[0];
-        const tensor_t& y = *out_data[0];
+  template<class Archive>
+  static void load_and_construct(Archive &ar,
+                                 cereal::construct<power_layer> &construct) {
+    shape3d in_shape;
+    float_t factor;
 
-        for (cnn_size_t i = 0; i < x.size(); i++) {
-            for (cnn_size_t j = 0; j < x[i].size(); j++) {
-                // f(x) = x^factor
-                // ->
-                //   dx = dy * df(x)
-                //      = dy * factor * x^(factor-1)
-                //      = dy * factor * f(x) / x
-                //      = dy * factor * y / x
-                if (std::abs(x[i][j]) > 1e-10) {
-                    dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
-                }
-                else {
-                    dx[i][j] = dy[i][j] * factor_ * std::pow(x[i][j], factor_ - 1.0f);
-                }
-            }
-        }
-    }
+    ar(cereal::make_nvp("in_size", in_shape),
+       cereal::make_nvp("factor", factor));
+    construct(in_shape, factor);
+  }
 
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<power_layer> & construct) {
-        shape3d in_shape;
-        float_t factor;
+  template<class Archive>
+  void serialize(Archive &ar) {
+    layer::serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", in_shape_),
+       cereal::make_nvp("factor", factor_));
+  }
+ private:
 
-        ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("factor", factor));
-        construct(in_shape, factor);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_));
-    }
-private:
-
-    shape3d in_shape_;
-    float_t factor_;
+  shape3d in_shape_;
+  float_t factor_;
 };
 
 } // namespace tiny_dnn

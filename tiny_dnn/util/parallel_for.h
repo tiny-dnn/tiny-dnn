@@ -68,29 +68,30 @@ void xparallel_for(int begin, int end, const Func& f) {
 #else
 
 struct blocked_range {
-    typedef int const_iterator;
+  typedef int const_iterator;
 
-    blocked_range(int begin, int end) : begin_(begin), end_(end) {}
-    blocked_range(size_t begin, size_t end) : begin_(static_cast<int>(begin)), end_(static_cast<int>(end)) {}
+  blocked_range(int begin, int end) : begin_(begin), end_(end) {}
+  blocked_range(size_t begin, size_t end)
+      : begin_(static_cast<int>(begin)), end_(static_cast<int>(end)) {}
 
-    const_iterator begin() const { return begin_; }
-    const_iterator end() const { return end_; }
-private:
-    int begin_;
-    int end_;
+  const_iterator begin() const { return begin_; }
+  const_iterator end() const { return end_; }
+ private:
+  int begin_;
+  int end_;
 };
 
 template<typename Func>
-void xparallel_for(size_t begin, size_t end, const Func& f) {
-    blocked_range r(begin, end);
-    f(r);
+void xparallel_for(size_t begin, size_t end, const Func &f) {
+  blocked_range r(begin, end);
+  f(r);
 }
 
 #if defined(CNN_USE_OMP)
 
 template<typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-    #pragma omp parallel for
+#pragma omp parallel for
     for (int i=begin; i<end; ++i)
         f(blocked_range(i,i+1));
 }
@@ -106,30 +107,32 @@ void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
 
 template<typename Func>
 void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
-    int nthreads = std::thread::hardware_concurrency();
-    int blockSize = (end - start) / nthreads;
-    if (blockSize*nthreads < end - start)
-        blockSize++;
+  int nthreads = std::thread::hardware_concurrency();
+  int blockSize = (end - start) / nthreads;
+  if (blockSize * nthreads < end - start)
+    blockSize++;
 
-    std::vector<std::future<void>> futures;
+  std::vector<std::future<void>> futures;
 
-    int blockStart = start;
-    int blockEnd = blockStart + blockSize;
+  int blockStart = start;
+  int blockEnd = blockStart + blockSize;
+  if (blockEnd > end) blockEnd = end;
+
+  for (int i = 0; i < nthreads; i++) {
+    futures.push_back(std::move(std::async(std::launch::async,
+                                           [blockStart, blockEnd, &f] {
+                                             f(blocked_range(blockStart,
+                                                             blockEnd));
+                                           })));
+
+    blockStart += blockSize;
+    blockEnd = blockStart + blockSize;
+    if (blockStart >= end) break;
     if (blockEnd > end) blockEnd = end;
+  }
 
-    for (int i = 0; i < nthreads; i++) {
-        futures.push_back(std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-            f(blocked_range(blockStart, blockEnd));
-        })));
-
-        blockStart += blockSize;
-        blockEnd = blockStart + blockSize;
-        if (blockStart >= end) break;
-        if (blockEnd > end) blockEnd = end;
-    }
-
-    for (auto &future : futures)
-        future.wait();
+  for (auto &future : futures)
+    future.wait();
 }
 
 #endif
@@ -138,45 +141,60 @@ void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
 
 template<typename T, typename U>
 bool value_representation(U const &value) {
-    return static_cast<U>(static_cast<T>(value)) == value;
+  return static_cast<U>(static_cast<T>(value)) == value;
 }
 
 template<typename T, typename Func>
 inline
-void for_(std::true_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
-    parallelize = parallelize && value_representation<int>(end);
-    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) :
-                  xparallel_for(begin, static_cast<int>(end), f);
+void for_(std::true_type,
+          bool parallelize,
+          int begin,
+          T end,
+          Func f,
+          int grainsize = 100) {
+  parallelize = parallelize && value_representation<int>(end);
+  parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) :
+  xparallel_for(begin, static_cast<int>(end), f);
 }
 
 template<typename T, typename Func>
 inline
-void for_(std::false_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
-    parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) : xparallel_for(begin, end, f);
+void for_(std::false_type,
+          bool parallelize,
+          int begin,
+          T end,
+          Func f,
+          int grainsize = 100) {
+  parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize)
+              : xparallel_for(begin, end, f);
 }
 
 template<typename T, typename Func>
 inline
 void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
-    static_assert(std::is_integral<T>::value, "end must be integral type");
-    for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f, grainsize);
+  static_assert(std::is_integral<T>::value, "end must be integral type");
+  for_(typename std::is_unsigned<T>::type(),
+       parallelize,
+       begin,
+       end,
+       f,
+       grainsize);
 }
 
-template <typename T, typename Func>
-void for_i(bool parallelize, T size, Func f, int grainsize = 100)
-{
-    for_(parallelize, 0, size, [&](const blocked_range& r) {
+template<typename T, typename Func>
+void for_i(bool parallelize, T size, Func f, int grainsize = 100) {
+  for_(parallelize, 0, size, [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
 #endif
-        for (int i = r.begin(); i < r.end(); i++)
-            f(i);
-    }, grainsize);
+    for (int i = r.begin(); i < r.end(); i++)
+      f(i);
+  }, grainsize);
 }
 
-template <typename T, typename Func>
+template<typename T, typename Func>
 void for_i(T size, Func f, int grainsize = 100) {
-    for_i(true, size, f, grainsize);
+  for_i(true, size, f, grainsize);
 }
 
 } // namespace tiny_dnn

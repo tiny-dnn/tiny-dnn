@@ -69,5 +69,5 @@ using namespace tiny_dnn::activation;
 #include "test_image.h"
 
 int main(void) {
-    return RUN_ALL_TESTS();
+  return RUN_ALL_TESTS();
 }
