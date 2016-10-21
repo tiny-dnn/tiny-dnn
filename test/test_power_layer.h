@@ -32,7 +32,7 @@
 namespace tiny_dnn {
 
 TEST(power, forward) {
-    power_layer pw(shape3d(3,2,1), 2.0);
+    power_layer pw(shape3d(3,2,1), 2.0, 1.5);
 
     tensor_t in = {
         { 0,1,2,3,4,5 },
@@ -40,8 +40,8 @@ TEST(power, forward) {
     };
 
     tensor_t out_expected = {
-        { 0*0,1*1,2*2,3*3,4*4,5*5 },
-        { 5*5,4*4,3*3,2*2,1*1,0*0 }
+        { 0*0*1.5,1*1*1.5,2*2*1.5,3*3*1.5,4*4*1.5,5*5*1.5 },
+        { 5*5*1.5,4*4*1.5,3*3*1.5,2*2*1.5,1*1*1.5,0*0*1.5 }
     };
 
     auto out = pw.forward({in});
@@ -57,7 +57,7 @@ TEST(power, gradient_check) {
     network<sequential> nn;
 
     nn << fully_connected_layer<tan_h>(10, 20)
-       << power_layer(shape3d(20, 1, 1), 3.0)
+       << power_layer(shape3d(20, 1, 1), 3.0, 1.5)
        << fully_connected_layer<tan_h>(20, 10);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
