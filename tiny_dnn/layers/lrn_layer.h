@@ -220,4 +220,4 @@ private:
     vec_t in_square_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

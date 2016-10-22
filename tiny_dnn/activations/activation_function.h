@@ -173,5 +173,5 @@ public:
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
-} // namespace activation
-} // namespace tiny_dnn
+}  // namespace activation
+}  // namespace tiny_dnn

@@ -35,26 +35,26 @@ using namespace tiny_dnn::activation;
 using namespace tiny_dnn::layers;
 
 class test_fc_layer : public fully_connected_layer<tan_h> {
-public:
-    typedef fully_connected_layer<tan_h> base;
+ public:
+  typedef fully_connected_layer<tan_h> base;
 
-    test_fc_layer() : base(10, 10) {
-        ++counter();
-    }
+  test_fc_layer() : base(10, 10) {
+      ++counter();
+  }
 
-    test_fc_layer(const test_fc_layer& fc) : base(10, 10) {
-        ++counter();
-    }
+  test_fc_layer(const test_fc_layer& fc) : base(10, 10) {
+      ++counter();
+  }
 
-    virtual ~test_fc_layer() {
-        --counter();
-    }
+  virtual ~test_fc_layer() {
+      --counter();
+  }
 
-    test_fc_layer(test_fc_layer&& r) : base(std::move(r)){
-        ++counter();
-    }
+  test_fc_layer(test_fc_layer&& r) : base(std::move(r)) {
+      ++counter();
+  }
 
-    static int& counter() { static int i = 0; return i; }
+  static int& counter() { static int i = 0; return i; }
 };
 
 TEST(network, construct_sequential_by_local_variables) {
@@ -128,7 +128,6 @@ TEST(network, out_dim) {
 }
 
 TEST(network, name) {
-
     network<sequential> net1;
     network<sequential> net2("foo");
 
@@ -159,15 +158,19 @@ TEST(network, manual_init) {
     EXPECT_EQ(c1_b->size(), static_cast<cnn_size_t>(1));
     EXPECT_EQ(f1_w->size(), static_cast<cnn_size_t>(2));
 
-    *c1_w = { 0,1,2,3,4,5,6,7,8 };
-    *c1_b = { 1 };
-    *f1_w = { 1,2 };
+    *c1_w = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    *c1_b = {1};
+    *f1_w = {1, 2};
 
     // check if the training and predicting works
     // https://github.com/tiny-dnn/tiny-dnn/issues/330
-    net.predict({ 1,1,1,1,1,1,1,1,1 });
+    net.predict({1, 1, 1, 1, 1, 1, 1, 1, 1});
 
-    net.train<mse, adagrad>(opt, tensor_t{ {1,1,1,1,1,1,1,1,1} }, tensor_t{ {1,2} }, 1, 1);
+    net.train<mse, adagrad>(opt,
+                            tensor_t{{1, 1, 1, 1, 1, 1, 1, 1, 1}},
+                            tensor_t{{1, 2}},
+                            1,
+                            1);
 }
 
 // TODO(nyanp): check out values again since the routine it's a bit sensitive
@@ -284,7 +287,7 @@ TEST(network, test) {
     }
 
     auto out = net.test(in);
-    for (int i = 0; i < data_num; i++) { 
+    for (int i = 0; i < data_num; i++) {
         for (size_t j = 0; j < out[i].size(); j++)
             EXPECT_FLOAT_EQ(out[i][j], expected[i][0]);
     }
@@ -397,7 +400,7 @@ TEST(network, bias_init_per_layer) {
         EXPECT_NEAR(w2[i], 1.0, 1e-10);
 }
 
-TEST(network, gradient_check) { // sigmoid - cross-entropy
+TEST(network, gradient_check) {  // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<sequential> network;
@@ -486,7 +489,7 @@ TEST(network, gradient_check5) { // softmax - cross-entropy
                                              1e-1f, GRAD_CHECK_RANDOM));
 }
 
-TEST(network, gradient_check6) { // sigmoid - cross-entropy
+TEST(network, gradient_check6) {  // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<sequential> network;
@@ -499,11 +502,11 @@ TEST(network, gradient_check6) { // sigmoid - cross-entropy
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             epsilon<float_t>(), GRAD_CHECK_ALL));
+                                             epsilon<float_t>(),
+                                             GRAD_CHECK_ALL));
 }
 
-TEST(network, read_write)
-{
+TEST(network, read_write) {
     typedef mse loss_func;
     typedef network<sequential> network;
 
@@ -549,18 +552,18 @@ TEST(network, read_write)
 }
 
 TEST(network, trainable) {
-    auto net = make_mlp<sigmoid>({ 2,3,2,1 }); // fc(2,3) - fc(3,2) - fc(2,1)
+    auto net = make_mlp<sigmoid>({2, 3, 2, 1}); // fc(2,3) - fc(3,2) - fc(2,1)
 
     // trainable=false, or "freeze" 2nd layer fc(3,2)
     net[1]->set_trainable(false);
 
-    vec_t w0 = { 0,1,2,3,4,5 };
-    vec_t w1 = { 6,7,8,9,8,7 };
-    vec_t w2 = { 6,5 };
+    vec_t w0 = {0, 1, 2, 3, 4, 5};
+    vec_t w1 = {6, 7, 8, 9, 8, 7};
+    vec_t w2 = {6, 5};
 
-    *net[0]->weights()[0] = { 0,1,2,3,4,5 };
-    *net[1]->weights()[0] = { 6,7,8,9,8,7 };
-    *net[2]->weights()[0] = { 6,5 };
+    *net[0]->weights()[0] = {0, 1, 2, 3, 4, 5};
+    *net[1]->weights()[0] = {6, 7, 8, 9, 8, 7};
+    *net[2]->weights()[0] = {6, 5};
 
     adam a;
 
@@ -574,8 +577,8 @@ TEST(network, trainable) {
     EXPECT_EQ(w1, w1_standby);
     EXPECT_NE(w2, w2_standby);
 
-    std::vector<vec_t> data{ {1,0}, {0,2} };
-    std::vector<vec_t> out{ {2}, {1} };
+    std::vector<vec_t> data{{1, 0}, {0, 2}};
+    std::vector<vec_t> out{{2}, {1}};
 
     net.fit<mse>(a, data, out, 1, 1);
 
@@ -588,4 +591,4 @@ TEST(network, trainable) {
     EXPECT_NE(w2, w2_after_update);
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -80,7 +80,7 @@ inline void parse_mnist_image(std::ifstream& ifs,
             = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
 }
 
-} // namespace detail
+}  // namespace detail
 
 /**
  * parse MNIST database format labels with rescaling/resizing
@@ -165,4 +165,4 @@ inline void parse_mnist_images(const std::string& image_file,
     }
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

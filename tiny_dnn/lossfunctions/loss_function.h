@@ -206,7 +206,7 @@ void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vecto
         }
     }
 }
-} // namespace
+}  // namespace
 
 // gradient for a minibatch
 template <typename E>
@@ -239,4 +239,4 @@ std::vector<tensor_t> gradient(const std::vector<tensor_t>& y,
     return gradients;
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

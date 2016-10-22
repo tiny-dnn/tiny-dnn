@@ -102,4 +102,4 @@ inline void parse_cifar10(const std::string& filename,
     }
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

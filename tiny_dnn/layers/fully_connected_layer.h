@@ -179,4 +179,4 @@ protected:
     std::shared_ptr<core::OpKernel> kernel_back_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

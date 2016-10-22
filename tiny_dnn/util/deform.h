@@ -37,4 +37,4 @@ inline vec_t corrupt(vec_t&& in, float_t corruption_level, float_t min_value) {
 }
 
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

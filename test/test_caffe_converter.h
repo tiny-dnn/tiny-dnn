@@ -321,4 +321,4 @@ TEST(caffe_converter, conv2) {
 
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -180,4 +180,4 @@ TEST(quantized_fully_connected, forward_nobias)
     }
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

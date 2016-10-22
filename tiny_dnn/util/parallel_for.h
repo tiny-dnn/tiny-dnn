@@ -179,4 +179,4 @@ void for_i(T size, Func f, int grainsize = 100) {
     for_i(true, size, f, grainsize);
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

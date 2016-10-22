@@ -53,4 +53,4 @@ TEST(models, alexnet) {
     auto res = nn.predict(in);
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

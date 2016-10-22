@@ -391,4 +391,4 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
 #endif
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

@@ -162,7 +162,7 @@ TEST(quantized_convolutional, fprop_npp) {
     {
         l.forward_propagation(in_data, out_data);
 
-        for (auto o: out)
+        for (auto o : out)
             EXPECT_NEAR(0.5, o, 1E-3);
     }
 
@@ -289,4 +289,4 @@ TEST(quantized_convolutional, read_write2) {
     serialization_test(layer1, layer2);
 }
 */
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

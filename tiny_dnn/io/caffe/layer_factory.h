@@ -179,4 +179,4 @@ inline void reload_weight_from_caffe_protobinary(const std::string& caffebinary,
     reload_weight_from_caffe_net(np, net);
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

@@ -310,4 +310,4 @@ private:
     bool update_immidiately_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

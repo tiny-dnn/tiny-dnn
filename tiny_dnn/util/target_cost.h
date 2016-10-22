@@ -57,4 +57,4 @@ inline std::vector<vec_t> create_balanced_target_cost(const std::vector<label_t>
     return target_cost;
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

@@ -433,7 +433,7 @@ inline image<T> vec2image(const vec_t& vec, const index3d<cnn_size_t>& maps) {
     return img;
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
 
 #ifdef _MSC_VER
 #pragma warning(pop)

@@ -85,4 +85,4 @@ public:
     explicit nn_not_implemented_error(const std::string& msg = "not implemented") : nn_error(msg) {}
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

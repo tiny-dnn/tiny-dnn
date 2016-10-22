@@ -126,5 +126,5 @@ public:
     }
 };
 
-} // namespace weight_init
-} // namespace tiny_dnn
+}  // namespace weight_init
+}  // namespace tiny_dnn

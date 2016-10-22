@@ -290,4 +290,4 @@ TEST(deconvolutional, read_write2) {
     serialization_test(layer1, layer2);
 }
 */
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

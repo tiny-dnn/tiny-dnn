@@ -100,4 +100,4 @@ void gaussian_rand(Iter begin, Iter end, float_t mean, float_t sigma) {
         *it = gaussian_rand(mean, sigma);
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
