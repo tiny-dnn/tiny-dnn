@@ -26,7 +26,7 @@
 */
 
 #define _CRT_SECURE_NO_WARNINGS
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 TEST(no_duplicate_symbols, no_duplicate_symbols) { 

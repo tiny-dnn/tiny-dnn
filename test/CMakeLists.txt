@@ -1,20 +1,35 @@
+include(CTest)
+enable_testing()
+
+
+include(../third_party/DownloadProject/DownloadProject.cmake)
+#set(gtest_disable_pthreads on) #TODO(randl): Windows?
+download_project(
+        PROJ googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG master
+        UPDATE_DISCONNECTED 1
+)
+
+add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+
 enable_testing()
 
 add_executable(print_device print_device.cpp)
 target_link_libraries(print_device
-    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+        ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
 add_executable(tiny_dnn_test test.cpp test_no_duplicate_symbols.cpp)
-target_link_libraries(tiny_dnn_test 
-    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+target_link_libraries(tiny_dnn_test
+        ${project_library_target_name} ${REQUIRED_LIBRARIES} gtest gmock)
 
 
-if(COVERALLS)
-	message(STATUS "Code coverage: Enabled")
+if (COVERALLS)
+    message(STATUS "Code coverage: Enabled")
     set_target_properties(tiny_dnn_test
-        PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage"
-                   LINK_FLAGS "-lgcov --coverage")
+            PROPERTIES COMPILE_FLAGS "${CMAKE_CXX_FLAGS} -g -fprofile-arcs -ftest-coverage"
+            LINK_FLAGS "-lgcov --coverage")
 
-else(COVERALLS)
-	message(STATUS "Code coverage: Disabled")
-endif(COVERALLS)
+else (COVERALLS)
+    message(STATUS "Code coverage: Disabled")
+endif (COVERALLS)
