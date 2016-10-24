@@ -177,7 +177,6 @@ class avx_backend : public backend {
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
                   std::vector<tensor_t*>&       in_grad) override {
-
         deconv_layer_worker_specific_storage& cws = (*deconv_layer_worker_storage_);
         if (params_d_->pad_type == padding::same)
             copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);

@@ -26,7 +26,10 @@
 */
 #pragma once
 
-#include "params.h"
+#include <algorithm>
+#include <string>
+#include <vector>
+#include "tiny_dnn/core/params/params.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -83,8 +86,7 @@ struct connection_table {
 
         if (is_empty()) {
             ar(cereal::make_nvp("connection", std::string("all")));
-        }
-        else {
+        } else {
             ar(cereal::make_nvp("connection", connected_));
         }
     }

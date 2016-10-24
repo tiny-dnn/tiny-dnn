@@ -34,30 +34,30 @@ using namespace tiny_dnn::activation;
 // recongnition on MNIST similar to LaNet-5 adding deconvolution
 
 void deconv_lanet(network<graph>& nn,
-    std::vector<label_t> train_labels,
-    std::vector<label_t> test_labels,
-    std::vector<vec_t> train_images,
-    std::vector<vec_t> test_images)
-{
+                  std::vector<label_t> train_labels,
+                  std::vector<label_t> test_labels,
+                  std::vector<vec_t> train_images,
+                  std::vector<vec_t> test_images) {
     // connection table [Y.Lecun, 1998 Table.1]
-    #define O true
-    #define X false
-        static const bool tbl[] = {
-            O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-            O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-            O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-            X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-            X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-            X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-        };
-    #undef O
-    #undef X
+#define O true
+#define X false
+    static const bool tbl[] = {
+        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
+        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
+        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
+        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
+        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
+        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
+    };
+#undef O
+#undef X
 
     // declare nodes
-    input_layer i1(shape3d(32,32,1));
+    input_layer i1(shape3d(32, 32, 1));
     convolutional_layer<tan_h> c1(32, 32, 5, 1, 6);
     average_pooling_layer<tan_h> p1(28, 28, 6, 2);
-    deconvolutional_layer<tan_h> d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
+    deconvolutional_layer<tan_h>
+        d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
     average_pooling_layer<tan_h> p2(18, 18, 16, 2);
     convolutional_layer<tan_h> c2(9, 9, 9, 16, 120);
     fully_connected_layer<tan_h> f1(120, 10);
@@ -74,20 +74,21 @@ void deconv_lanet(network<graph>& nn,
     int num_epochs = 30;
 
     adagrad optimizer;
-    optimizer.alpha *= static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
+    optimizer.alpha *=
+        static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
-        std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_dnn::result res = nn.test(test_images, test_labels);
-        std::cout << res.num_success << "/" << res.num_total << std::endl;
+      std::cout << t.elapsed() << "s elapsed." << std::endl;
+      tiny_dnn::result res = nn.test(test_images, test_labels);
+      std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart((unsigned long)train_images.size());
-        t.restart();
+      disp.restart((unsigned long)train_images.size());
+      t.restart();
     };
 
     auto on_enumerate_minibatch = [&](){
-        disp += minibatch_size;
+      disp += minibatch_size;
     };
 
     // training
@@ -107,10 +108,10 @@ void deconv_lanet(network<graph>& nn,
 ///////////////////////////////////////////////////////////////////////////////
 // Deconcolutional Auto-encoder
 void deconv_ae(network<sequential>& nn,
-    std::vector<label_t> train_labels,
-    std::vector<label_t> test_labels,
-    std::vector<vec_t> train_images,
-    std::vector<vec_t> test_images) {
+               std::vector<label_t> train_labels,
+               std::vector<label_t> test_labels,
+               std::vector<vec_t> train_images,
+               std::vector<vec_t> test_images) {
 
     // construct nets
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
@@ -124,8 +125,10 @@ void deconv_ae(network<sequential>& nn,
 
     std::vector<vec_t> training_images_corrupted(train_images);
 
-    for (auto& d : training_images_corrupted) {
-        d = corrupt(move(d), tiny_dnn::float_t(0.1), tiny_dnn::float_t(0.0)); // corrupt 10% data
+    for (auto &d : training_images_corrupted) {
+        d = corrupt(move(d),
+                    tiny_dnn::float_t(0.1),
+                    tiny_dnn::float_t(0.0));  // corrupt 10% data
     }
 
     gradient_descent optimizer;
@@ -142,18 +145,18 @@ void deconv_ae(network<sequential>& nn,
 
 ///////////////////////////////////////////////////////////////////////////////
 // ENet
-void enet(network<graph>& nn,
-    std::vector<label_t> train_labels,
-    std::vector<label_t> test_labels,
-    std::vector<vec_t> train_images,
-    std::vector<vec_t> test_images) {
+void enet(network<graph> &nn,
+          std::vector<label_t> train_labels,
+          std::vector<label_t> test_labels,
+          std::vector<vec_t> train_images,
+          std::vector<vec_t> test_images) {
 
     // initial module
-    input_layer ii0(shape3d(32,32,1));
+    input_layer ii0(shape3d(32, 32, 1));
     convolutional_layer<tan_h> ic1(32, 32, 3, 1, 8, padding::same, true, 2, 2);
     max_pooling_layer<tan_h> ip1(32, 32, 1, 2);
     convolutional_layer<tan_h> ic2(16, 16, 1, 1, 8, padding::same);
-    concat_layer icc1(2, 16*16*8);
+    concat_layer icc1(2, 16 * 16 * 8);
 
     ii0 << ip1 << ic2;
     ii0 << ic1;
@@ -163,28 +166,31 @@ void enet(network<graph>& nn,
     max_pooling_layer<tan_h> b1p1(16, 16, 16, 2);
     convolutional_layer<tan_h> b1c2(8, 8, 1, 16, 32, padding::same);
     convolutional_layer<tan_h> b1c1(16, 16, 1, 16, 32, padding::same);
-    convolutional_layer<tan_h> b1c3(16, 16, 2, 32, 32, padding::same, true, 2, 2);
+    convolutional_layer<tan_h>
+        b1c3(16, 16, 2, 32, 32, padding::same, true, 2, 2);
     convolutional_layer<tan_h> b1c4(8, 8, 1, 32, 32, padding::same);
-    concat_layer b1cc1(2, 8*8*32);
+    concat_layer b1cc1(2, 8 * 8 * 32);
 
     icc1 << b1p1 << b1c2;
     icc1 << b1c1 << b1c3 << b1c4;
     (b1c2, b1c4) << b1cc1;
 
     // bottle neck module 2
-    deconvolutional_layer<tan_h> b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
-    deconvolutional_layer<tan_h> b2d2(16, 16, 1, 16, 1, padding::same, true, 2, 2);
-    fully_connected_layer<tan_h> f1(32*32, 10);
+    deconvolutional_layer<tan_h>
+        b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
+    deconvolutional_layer<tan_h>
+        b2d2(16, 16, 1, 16, 1, padding::same, true, 2, 2);
+    fully_connected_layer<tan_h> f1(32 * 32, 10);
     b1cc1 << b2d1 << b2d2 << f1;
 
     // construct whole network
-    construct_graph(nn, { &ii0 }, { &f1 });
+    construct_graph(nn, {&ii0}, {&f1});
 
     // load train-data and make corruption
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp((unsigned long)train_images.size());
+    progress_display disp((unsigned long) train_images.size());
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
@@ -193,17 +199,17 @@ void enet(network<graph>& nn,
     optimizer.alpha *= tiny_dnn::float_t(std::sqrt(minibatch_size));
 
     // create callback
-    auto on_enumerate_epoch = [&](){
-        std::cout << t.elapsed() << "s elapsed." << std::endl;
-        tiny_dnn::result res = nn.test(test_images, test_labels);
-        std::cout << res.num_success << "/" << res.num_total << std::endl;
+    auto on_enumerate_epoch = [&]() {
+      std::cout << t.elapsed() << "s elapsed." << std::endl;
+      tiny_dnn::result res = nn.test(test_images, test_labels);
+      std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart((unsigned long)train_images.size());
-        t.restart();
+      disp.restart((unsigned long) train_images.size());
+      t.restart();
     };
 
-    auto on_enumerate_minibatch = [&](){
-        disp += minibatch_size;
+    auto on_enumerate_minibatch = [&]() {
+      disp += minibatch_size;
     };
 
     // training
@@ -251,7 +257,8 @@ void train(std::string data_dir_path, std::string experiment) {
 int main(int argc, char **argv) {
     if (argc != 3) {
         std::cerr << "Usage : " << argv[0]
-                  << " path_to_data (example:../data) (example:deconv_lanet, deconv_ae or enet)" << std::endl;
+                  << " path_to_data (example:../data)"
+                  << "(example:deconv_lanet, deconv_ae or enet)" << std::endl;
         return -1;
     }
     train(argv[1], argv[2]);

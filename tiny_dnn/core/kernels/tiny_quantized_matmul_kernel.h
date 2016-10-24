@@ -66,7 +66,6 @@ void tiny_quantized_matmul(const std::vector<T1>&  a,
                           const int32_t offset_c,
                           const int32_t mult_c,
                           const int32_t shift_c) {
-
     // Make sure that we have valid quantization ranges for the input buffers.
     // If the difference between the min and max is negative or zero, it makes
     // it hard to do meaningful intermediate operations on the values.
@@ -110,9 +109,9 @@ void tiny_quantized_matmul(const std::vector<T1>&  a,
                                                offset_a, offset_b, lda, ldb,
                                                ldc);
         } else {
-          gemmlowp_multiply<false, false, false>(a_data, b_data, c_data, m, n, k,
-                                                offset_a, offset_b, lda, ldb,
-                                                ldc);
+          gemmlowp_multiply<false, false, false>(a_data, b_data, c_data, m, n,
+                                                 k, offset_a, offset_b, lda,
+                                                 ldb, ldc);
         }
       }
     } /*else {
@@ -127,6 +126,6 @@ void tiny_quantized_matmul(const std::vector<T1>&  a,
         min_a, max_a, min_b, max_b, &min_c_value, &max_c_value);*/
   }
 
-}
-}
+}  // namespace kernels
+}  // namespace core
 }  // namespace tiny_dnn

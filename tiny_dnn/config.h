@@ -30,22 +30,22 @@
 /**
  * define if you want to use intel TBB library
  */
-//#define CNN_USE_TBB
+// #define CNN_USE_TBB
 
 /**
  * define to enable avx vectorization
  */
-//#define CNN_USE_AVX
+// #define CNN_USE_AVX
 
 /**
  * define to enable sse2 vectorization
  */
-//#define CNN_USE_SSE
+// #define CNN_USE_SSE
 
 /**
  * define to enable OMP parallelization
  */
-//#define CNN_USE_OMP
+// #define CNN_USE_OMP
 
 /**
  * define to use exceptions
@@ -76,7 +76,7 @@
 #endif
 
 #if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
-#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
+#define CNN_USE_GEMMLOWP  // gemmlowp doesn't support MSVC/mingw
 #endif
 
 namespace tiny_dnn {
@@ -97,4 +97,4 @@ typedef float float_t;
  **/
 typedef std::size_t cnn_size_t;
 
-}
+}  // namespace tiny_dnn

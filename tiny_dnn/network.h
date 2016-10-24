@@ -31,10 +31,12 @@
 #include <iterator>
 #include <iomanip>
 #include <map>
+#include <memory>
 #include <set>
 #include <limits>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "tiny_dnn/nodes.h"
 #include "tiny_dnn/util/util.h"

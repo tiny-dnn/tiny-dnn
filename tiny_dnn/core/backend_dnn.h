@@ -26,6 +26,7 @@
 */
 #pragma once
 
+#include <vector>
 #include "tiny_dnn/core/backend.h"
 
 namespace tiny_dnn {
