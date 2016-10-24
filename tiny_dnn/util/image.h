@@ -34,11 +34,11 @@
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable:4996) // suppress warnings about using fopen
+#pragma warning(disable:4996)  // suppress warnings about using fopen
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_INLINE // We need this define to avoid multiple definition
+#define STB_IMAGE_INLINE  // We need this define to avoid multiple definition
 #include "third_party/stb/stb_image.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -59,7 +59,7 @@ inline bool ends_with(std::string const & value, std::string const & ending) {
 
 enum class image_type {
     grayscale,    ///< load image and convert automatically to 8-bit grayscale
-    rgb, ///< load image and keep original color channels
+    rgb,  ///< load image and keep original color channels
     bgr
 };
 

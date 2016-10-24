@@ -89,10 +89,10 @@ TEST(max_pool, setup_tiny) {
 TEST(max_pool, forward_stride_tiny) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {

@@ -31,19 +31,19 @@ namespace tiny_dnn {
 namespace weight_init {
 
 class function {
-public:
-    virtual void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) = 0;
+ public:
+  virtual void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) = 0;
 };
 
 class scalable : public function {
-public:
-    scalable(float_t value) : scale_(value) {}
+ public:
+  scalable(float_t value) : scale_(value) {}
 
-    void scale(float_t value) {
-        scale_ = value;
-    }
-protected:
-    float_t scale_;
+  void scale(float_t value) {
+    scale_ = value;
+  }
+ protected:
+  float_t scale_;
 };
 
 /**
@@ -54,15 +54,15 @@ protected:
  * Proc. AISTATS 10, May 2010, vol.9, pp249-256
  **/
 class xavier : public scalable {
-public:
-    xavier() : scalable(float_t(6)) {}
-    explicit xavier(float_t value) : scalable(value) {}
+ public:
+  xavier() : scalable(float_t(6)) {}
+  explicit xavier(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
-        const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
+  void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
+    const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
-        uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);     
-    }
+    uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
+  }
 };
 
 /**
@@ -73,57 +73,57 @@ public:
  * Neural Networks, Tricks of the Trade, Springer, 1998
  **/
 class lecun : public scalable {
-public:
-    lecun() : scalable(float_t(1)) {}
-    explicit lecun(float_t value) : scalable(value) {}
+ public:
+  lecun() : scalable(float_t(1)) {}
+  explicit lecun(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
-        CNN_UNREFERENCED_PARAMETER(fan_out);
+  void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
+    CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        const float_t weight_base = scale_ / std::sqrt(float_t(fan_in));
+    const float_t weight_base = scale_ / std::sqrt(float_t(fan_in));
 
-        uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
-    }
+    uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
+  }
 };
 
 class gaussian : public scalable {
-public:
-    gaussian() : scalable(float_t(1)) {}
-    explicit gaussian(float_t sigma) : scalable(sigma) {}
+ public:
+  gaussian() : scalable(float_t(1)) {}
+  explicit gaussian(float_t sigma) : scalable(sigma) {}
 
-    void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
-        CNN_UNREFERENCED_PARAMETER(fan_in);
-        CNN_UNREFERENCED_PARAMETER(fan_out);
+  void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
+    CNN_UNREFERENCED_PARAMETER(fan_in);
+    CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        gaussian_rand(weight->begin(), weight->end(), float_t(0), scale_);
-    }
+    gaussian_rand(weight->begin(), weight->end(), float_t(0), scale_);
+  }
 };
 
 class constant : public scalable {
-public:
-    constant() : scalable(float_t(0)) {}
-    explicit constant(float_t value) : scalable(value) {}
+ public:
+  constant() : scalable(float_t(0)) {}
+  explicit constant(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
-        CNN_UNREFERENCED_PARAMETER(fan_in);
-        CNN_UNREFERENCED_PARAMETER(fan_out);
+  void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
+    CNN_UNREFERENCED_PARAMETER(fan_in);
+    CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        std::fill(weight->begin(), weight->end(), scale_);
-    }
+    std::fill(weight->begin(), weight->end(), scale_);
+  }
 };
 
 class he : public scalable {
-public:
-    he() : scalable(float_t(2)) {}
-    explicit he(float_t value) : scalable(value) {}
+ public:
+  he() : scalable(float_t(2)) {}
+  explicit he(float_t value) : scalable(value) {}
 
-    void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
-        CNN_UNREFERENCED_PARAMETER(fan_out);
+  void fill(vec_t *weight, cnn_size_t fan_in, cnn_size_t fan_out) override {
+    CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        const float_t sigma = std::sqrt(scale_ /fan_in);
+    const float_t sigma = std::sqrt(scale_ / fan_in);
 
-        gaussian_rand(weight->begin(), weight->end(), float_t(0), sigma);
-    }
+    gaussian_rand(weight->begin(), weight->end(), float_t(0), sigma);
+  }
 };
 
 }  // namespace weight_init

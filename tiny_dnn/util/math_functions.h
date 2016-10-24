@@ -84,4 +84,4 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
     }
 }
 
-}
+} // namespace tiny_dnn

@@ -437,7 +437,7 @@ TEST(network, gradient_check2) {  // tan_h - mse
                                              GRAD_CHECK_RANDOM));
 }
 
-TEST(network, gradient_check3) { // mixture - mse
+TEST(network, gradient_check3) {  // mixture - mse
     typedef mse loss_func;
     typedef network<sequential> network;
 
@@ -455,7 +455,7 @@ TEST(network, gradient_check3) { // mixture - mse
                                              GRAD_CHECK_RANDOM));
 }
 
-TEST(network, gradient_check4) { // sigmoid - cross-entropy
+TEST(network, gradient_check4) {  // sigmoid - cross-entropy
     typedef cross_entropy loss_func;
     typedef sigmoid activation;
     typedef network<sequential> network;
@@ -474,7 +474,7 @@ TEST(network, gradient_check4) { // sigmoid - cross-entropy
                                              GRAD_CHECK_RANDOM));
 }
 
-TEST(network, gradient_check5) { // softmax - cross-entropy
+TEST(network, gradient_check5) {  // softmax - cross-entropy
     typedef cross_entropy loss_func;
     typedef softmax activation;
     typedef network<sequential> network;

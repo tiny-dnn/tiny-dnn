@@ -25,12 +25,13 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include <string>
 #include "tiny_dnn/config.h"
 
 #ifdef CNN_WINDOWS
 #ifndef NOMINMAX
 #define NOMINMAX
-#endif // ifdef NOMINMAX
+#endif  // ifdef NOMINMAX
 #include <Windows.h>
 #endif
 
@@ -96,4 +97,4 @@ inline void coloredPrint(Color c, const std::string& msg) {
     coloredPrint(c, msg.c_str());
 }
 
-} // tiny_dnn
+}  // namespace tiny_dnn
