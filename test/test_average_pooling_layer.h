@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -38,7 +38,7 @@ TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
 
   network nn;
   nn << fully_connected_layer<activation>(3, 8)
-     << average_pooling_layer<activation>(4, 2, 1, 2); // 4x2 => 2x1
+     << average_pooling_layer<activation>(4, 2, 1, 2);  // 4x2 => 2x1
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();

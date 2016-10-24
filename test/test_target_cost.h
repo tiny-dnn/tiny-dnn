@@ -25,8 +25,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/util/target_cost.h"
 
@@ -34,7 +35,7 @@ namespace tiny_dnn {
 
 TEST(target_cost, calculate_label_counts) {
   const std::vector<label_t>
-      t = {0, 1, 4, 0, 1, 2}; // note that there's no class "3"
+      t = {0, 1, 4, 0, 1, 2};  // note that there's no class "3"
 
   const std::vector<cnn_size_t> label_counts = calculate_label_counts(t);
 
@@ -83,7 +84,7 @@ TEST(target_cost, create_balanced_target_cost_0) {
   const float_t w = 0;
 
   const std::vector<label_t>
-      t = {0, 1, 4, 0, 1, 2}; // note that there's no class "3"
+      t = {0, 1, 4, 0, 1, 2};  // note that there's no class "3"
 
   const auto target_cost = create_balanced_target_cost(t, w);
 
@@ -103,7 +104,7 @@ TEST(target_cost, create_balanced_target_cost_1) {
   const float_t w = 1;
 
   const std::vector<label_t>
-      t = {0, 1, 4, 0, 1, 2}; // note that there's no class "3"
+      t = {0, 1, 4, 0, 1, 2};  // note that there's no class "3"
 
   const auto target_cost = create_balanced_target_cost(t, w);
 
@@ -129,7 +130,7 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
   const float_t w = 0.5;
 
   const std::vector<label_t>
-      t = {0, 1, 4, 0, 1, 2}; // note that there's no class "3"
+      t = {0, 1, 4, 0, 1, 2};  // note that there's no class "3"
 
   const auto target_cost = create_balanced_target_cost(t, w);
 
@@ -167,14 +168,15 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
 
 TEST(target_cost, train_unbalanced_data_1dim) {
   // train a really simple function with noisy, unbalanced training data:
-  // 1) assuming equal cost for each training sample, in which case the total cost
-  //    (error) is rightly minimized by always guessing the majority class (1), and
+  // 1) assuming equal cost for each training sample, in which case the total
+  // cost (error) is rightly minimized by always guessing the majority class (1)
+  // , and
   // 2) assuming equal cost for each class, in which case the "true" function
   //    (identity) can be learned
 
-  const float_t p = 0.9f;  // p(in == 1)
-  const float_t p0 = 0.6f; // p(label == 1 | in == 0)
-  const float_t p1 = 0.9f; // p(label == 1 | in == 1)
+  const float_t p = 0.9f;   // p(in == 1)
+  const float_t p0 = 0.6f;  // p(label == 1 | in == 0)
+  const float_t p1 = 0.9f;  // p(label == 1 | in == 1)
 
   auto create_net = []() {
     network<sequential> net;
@@ -260,15 +262,16 @@ TEST(target_cost, train_unbalanced_data_1dim) {
   }
 
   EXPECT_GE(errors_equal_sample_cost,
-            0.25 * tnum); // should have plenty of errors
+            0.25 * tnum);  // should have plenty of errors
   EXPECT_EQ(errors_equal_class_cost,
-            cnn_size_t(0)); // should have learned the desired function
+            cnn_size_t(0));  // should have learned the desired function
 }
 
 TEST(target_cost, train_unbalanced_data) {
   // train xor function with noisy, unbalanced training data:
-  // 1) assuming equal cost for each training sample, in which case the total cost
-  //    (error) is rightly minimized by always guessing the majority class (1), and
+  // 1) assuming equal cost for each training sample, in which case the total
+  // cost (error) is rightly minimized by always guessing the majority class (1)
+  // , and
   // 2) assuming equal cost for each class, in which case the correct underlying
   //    function can be learned.
 
@@ -357,9 +360,9 @@ TEST(target_cost, train_unbalanced_data) {
   }
 
   EXPECT_GE(errors_equal_sample_cost,
-            0.25 * tnum); // should have plenty of errors
+            0.25 * tnum);  // should have plenty of errors
   EXPECT_EQ(errors_equal_class_cost,
-            cnn_size_t(0)); // should have learned the desired function
+            cnn_size_t(0));  // should have learned the desired function
 }
 
 }  // namespace tiny_dnn

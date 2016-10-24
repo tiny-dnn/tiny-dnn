@@ -25,14 +25,14 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <memory>
+#include <utility>
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
-using namespace tiny_dnn::activation;
-using namespace tiny_dnn::layers;
 
 class test_fc_layer : public fully_connected_layer<tan_h> {
  public:
@@ -280,7 +280,7 @@ TEST(network, test) {
     for (int i = 0; i < data_num; i++) {
         vec_t v(30);
         uniform_rand(v.begin(), v.end(), -1.0, 1.0);
-        float_t sum = std::accumulate(v.begin(), v.end(), (float_t)0.0);
+        float_t sum = std::accumulate(v.begin(), v.end(), (float_t) 0.0);
 
         in.emplace_back(v);
         expected.emplace_back(vec_t{sum});
@@ -319,7 +319,6 @@ TEST(network, bracket_operator) {
     EXPECT_EQ(net[1]->layer_type(), "ave-pool");
 }
 
-
 TEST(network, weight_init) {
     network<sequential> net;
 
@@ -330,8 +329,8 @@ TEST(network, weight_init) {
     net.weight_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->weights()[0];
-    vec_t& w2 = *net[1]->weights()[0];
+    vec_t &w1 = *net[0]->weights()[0];
+    vec_t &w2 = *net[1]->weights()[0];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -351,8 +350,8 @@ TEST(network, weight_init_per_layer) {
     net[1]->weight_init(weight_init::constant(1.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->weights()[0];
-    vec_t& w2 = *net[1]->weights()[0];
+    vec_t &w1 = *net[0]->weights()[0];
+    vec_t &w2 = *net[1]->weights()[0];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -370,8 +369,8 @@ TEST(network, bias_init) {
     net.bias_init(weight_init::constant(2.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->weights()[1];
-    vec_t& w2 = *net[1]->weights()[1];
+    vec_t &w1 = *net[0]->weights()[1];
+    vec_t &w2 = *net[1]->weights()[1];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -390,8 +389,8 @@ TEST(network, bias_init_per_layer) {
     net[1]->bias_init(weight_init::constant(1.0));
     net.init_weight();
 
-    vec_t& w1 = *net[0]->weights()[1];
-    vec_t& w2 = *net[1]->weights()[1];
+    vec_t &w1 = *net[0]->weights()[1];
+    vec_t &w2 = *net[1]->weights()[1];
 
     for (size_t i = 0; i < w1.size(); i++)
         EXPECT_NEAR(w1[i], 2.0, 1e-10);
@@ -406,19 +405,20 @@ TEST(network, gradient_check) {  // sigmoid - cross-entropy
     typedef network<sequential> network;
 
     network nn;
-    nn << fully_connected_layer<activation>(10, 14*14*3)
+    nn << fully_connected_layer<activation>(10, 14 * 14 * 3)
        << convolutional_layer<activation>(14, 14, 5, 3, 6)
        << average_pooling_layer<activation>(10, 10, 6, 2)
-       << fully_connected_layer<activation>(5*5*6, 3);
+       << fully_connected_layer<activation>(5 * 5 * 6, 3);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             epsilon<float_t>(), GRAD_CHECK_RANDOM));
+                                             epsilon<float_t>(),
+                                             GRAD_CHECK_RANDOM));
 }
 
-TEST(network, gradient_check2) { // tan_h - mse
+TEST(network, gradient_check2) {  // tan_h - mse
     typedef mse loss_func;
     typedef tan_h activation;
     typedef network<sequential> network;
@@ -433,7 +433,8 @@ TEST(network, gradient_check2) { // tan_h - mse
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             epsilon<float_t>(), GRAD_CHECK_RANDOM));
+                                             epsilon<float_t>(),
+                                             GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check3) { // mixture - mse
@@ -450,7 +451,8 @@ TEST(network, gradient_check3) { // mixture - mse
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             epsilon<float_t>(), GRAD_CHECK_RANDOM));
+                                             epsilon<float_t>(),
+                                             GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check4) { // sigmoid - cross-entropy
@@ -468,7 +470,8 @@ TEST(network, gradient_check4) { // sigmoid - cross-entropy
     nn.init_weight();
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             epsilon<float_t>(), GRAD_CHECK_RANDOM));
+                                             epsilon<float_t>(),
+                                             GRAD_CHECK_RANDOM));
 }
 
 TEST(network, gradient_check5) { // softmax - cross-entropy
@@ -517,14 +520,14 @@ TEST(network, read_write) {
        << convolutional_layer<tan_h>(14, 14, 5, 6, 16) // C3, 6@14x14-in, 16@10x10-in
        << average_pooling_layer<tan_h>(10, 10, 16, 2) // S4, 16@10x10-in, 16@5x5-out
        << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10); // F6, 120-in, 10-out
+       << fully_connected_layer<tan_h>(120, 10);  // F6, 120-in, 10-out
 
     n2 << convolutional_layer<tan_h>(32, 32, 5, 1, 6) // C1, 1@32x32-in, 6@28x28-out
        << average_pooling_layer<tan_h>(28, 28, 6, 2) // S2, 6@28x28-in, 6@14x14-out
        << convolutional_layer<tan_h>(14, 14, 5, 6, 16) // C3, 6@14x14-in, 16@10x10-in
        << average_pooling_layer<tan_h>(10, 10, 16, 2) // S4, 16@10x10-in, 16@5x5-out
        << convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << fully_connected_layer<tan_h>(120, 10); // F6, 120-in, 10-out
+       << fully_connected_layer<tan_h>(120, 10);  // F6, 120-in, 10-out
 
     n1.init_weight();
     n2.init_weight();
@@ -552,7 +555,7 @@ TEST(network, read_write) {
 }
 
 TEST(network, trainable) {
-    auto net = make_mlp<sigmoid>({2, 3, 2, 1}); // fc(2,3) - fc(3,2) - fc(2,1)
+    auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
 
     // trainable=false, or "freeze" 2nd layer fc(3,2)
     net[1]->set_trainable(false);

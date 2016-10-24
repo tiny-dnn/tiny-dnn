@@ -25,29 +25,32 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <memory>
+#include <string>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
-inline std::shared_ptr<network<sequential>>
-create_net_from_json(const std::string& caffemodeljson, const shape3d& shape = shape3d()) {
-    std::string tmp_file_path = unique_path();
+inline std::shared_ptr <network<sequential>>
+create_net_from_json(const std::string &caffemodeljson,
+                     const shape3d &shape = shape3d()) {
+  std::string tmp_file_path = unique_path();
 
-    {
-        std::ofstream ofs(tmp_file_path.c_str());
-        ofs << caffemodeljson;
-    }
-    auto model = create_net_from_caffe_prototxt(tmp_file_path, shape);
+  {
+    std::ofstream ofs(tmp_file_path.c_str());
+    ofs << caffemodeljson;
+  }
+  auto model = create_net_from_caffe_prototxt(tmp_file_path, shape);
 
-    std::remove(tmp_file_path.c_str());
+  std::remove(tmp_file_path.c_str());
 
-    return model;
+  return model;
 }
 
 TEST(caffe_converter, rectangle_input) {
-    std::string json = R"(
+  std::string json = R"(
     name: "RectangleNet"
     input: "data"
     input_shape {
@@ -77,26 +80,23 @@ TEST(caffe_converter, rectangle_input) {
     }
     )";
 
+  auto model = create_net_from_json(json);
 
-    auto model = create_net_from_json(json);
+  // conv->pool->conv->pool->fc->relu->fc->softmax
+  ASSERT_EQ(model->depth(), 2);
 
-    // conv->pool->conv->pool->fc->relu->fc->softmax
-    ASSERT_EQ(model->depth(), 2);
+  EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 1));
+  EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(22, 38, 96));
 
-    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 1));
-    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(22, 38, 96));
-
-
-    EXPECT_EQ((*model)[1]->in_shape()[0], shape3d(22*38*96, 1, 1));
-    EXPECT_EQ((*model)[1]->out_shape()[0], shape3d(10, 1, 1));
-
+  EXPECT_EQ((*model)[1]->in_shape()[0], shape3d(22 * 38 * 96, 1, 1));
+  EXPECT_EQ((*model)[1]->out_shape()[0], shape3d(10, 1, 1));
 }
 
 /**
  * test if we can parse lenet-model, defined in caffe/examples/mnsit
  **/
 TEST(caffe_converter, lenet) {
-    std::string json = R"(
+  std::string json = R"(
     name: "LeNet"
     layer {
       name: "mnist"
@@ -267,58 +267,56 @@ TEST(caffe_converter, lenet) {
     }
     )";
 
-    auto model = create_net_from_json(json, shape3d(28, 28, 1));
+  auto model = create_net_from_json(json, shape3d(28, 28, 1));
 
-    // conv->pool->conv->pool->fc->relu->fc->softmax
-    ASSERT_EQ(model->depth(), 8);
+  // conv->pool->conv->pool->fc->relu->fc->softmax
+  ASSERT_EQ(model->depth(), 8);
 
-    // conv1 28x28x1 -> 24x24x20
-    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));   // in: 28x28x1
-    EXPECT_EQ((*model)[0]->in_shape()[1], shape3d(5, 5, 20));    // weight: 5x5x20
-    EXPECT_EQ((*model)[0]->in_shape()[2], shape3d(1, 1, 20));    // bias: 1x1x20
-    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 24, 20)); // out:24x24x20
-    EXPECT_EQ((*model)[0]->layer_type(), "conv");
+  // conv1 28x28x1 -> 24x24x20
+  EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));   // in: 28x28x1
+  EXPECT_EQ((*model)[0]->in_shape()[1], shape3d(5, 5, 20));    // weight: 5x5x20
+  EXPECT_EQ((*model)[0]->in_shape()[2], shape3d(1, 1, 20));    // bias: 1x1x20
+  EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 24, 20)); // out:24x24x20
+  EXPECT_EQ((*model)[0]->layer_type(), "conv");
 
-    // pool1 24x24x20 -> 12x12x20
-    EXPECT_EQ((*model)[1]->in_shape()[0], shape3d(24, 24, 20));
-    EXPECT_EQ((*model)[1]->out_shape()[0], shape3d(12, 12, 20));
-    EXPECT_EQ((*model)[1]->layer_type(), "max-pool");
+  // pool1 24x24x20 -> 12x12x20
+  EXPECT_EQ((*model)[1]->in_shape()[0], shape3d(24, 24, 20));
+  EXPECT_EQ((*model)[1]->out_shape()[0], shape3d(12, 12, 20));
+  EXPECT_EQ((*model)[1]->layer_type(), "max-pool");
 
-    // conv2 12x12x20 -> 8x8x50
-    EXPECT_EQ((*model)[2]->in_shape()[0], shape3d(12, 12, 20));
-    EXPECT_EQ((*model)[2]->in_shape()[1], shape3d(5, 5, 1000));
-    EXPECT_EQ((*model)[2]->in_shape()[2], shape3d(1, 1, 50));
-    EXPECT_EQ((*model)[2]->out_shape()[0], shape3d(8, 8, 50));
-    EXPECT_EQ((*model)[2]->layer_type(), "conv");
+  // conv2 12x12x20 -> 8x8x50
+  EXPECT_EQ((*model)[2]->in_shape()[0], shape3d(12, 12, 20));
+  EXPECT_EQ((*model)[2]->in_shape()[1], shape3d(5, 5, 1000));
+  EXPECT_EQ((*model)[2]->in_shape()[2], shape3d(1, 1, 50));
+  EXPECT_EQ((*model)[2]->out_shape()[0], shape3d(8, 8, 50));
+  EXPECT_EQ((*model)[2]->layer_type(), "conv");
 
-    // pool2 8x8x50 -> 4x4x50
-    EXPECT_EQ((*model)[3]->in_shape()[0], shape3d(8, 8, 50));
-    EXPECT_EQ((*model)[3]->out_shape()[0], shape3d(4, 4, 50));
-    EXPECT_EQ((*model)[3]->layer_type(), "max-pool");
+  // pool2 8x8x50 -> 4x4x50
+  EXPECT_EQ((*model)[3]->in_shape()[0], shape3d(8, 8, 50));
+  EXPECT_EQ((*model)[3]->out_shape()[0], shape3d(4, 4, 50));
+  EXPECT_EQ((*model)[3]->layer_type(), "max-pool");
 
-    // fc
-    EXPECT_EQ((*model)[4]->in_shape()[0], shape3d(4 * 4 * 50, 1, 1));
-    EXPECT_EQ((*model)[4]->out_shape()[0], shape3d(500, 1, 1));
-    EXPECT_EQ((*model)[4]->layer_type(), "fully-connected");
+  // fc
+  EXPECT_EQ((*model)[4]->in_shape()[0], shape3d(4 * 4 * 50, 1, 1));
+  EXPECT_EQ((*model)[4]->out_shape()[0], shape3d(500, 1, 1));
+  EXPECT_EQ((*model)[4]->layer_type(), "fully-connected");
 
-    // relu
-    EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
-    EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
-    EXPECT_EQ((*model)[5]->layer_type(), "linear");
+  // relu
+  EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
+  EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
+  EXPECT_EQ((*model)[5]->layer_type(), "linear");
 
-    // fc
-    EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
-    EXPECT_EQ((*model)[6]->out_shape()[0], shape3d(10, 1, 1));
-    EXPECT_EQ((*model)[6]->layer_type(), "fully-connected");
+  // fc
+  EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
+  EXPECT_EQ((*model)[6]->out_shape()[0], shape3d(10, 1, 1));
+  EXPECT_EQ((*model)[6]->layer_type(), "fully-connected");
 
-    // softmax
-    EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
-    EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
-    EXPECT_EQ((*model)[7]->layer_type(), "linear");
+  // softmax
+  EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
+  EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
+  EXPECT_EQ((*model)[7]->layer_type(), "linear");
 }
 
 TEST(caffe_converter, conv2) {
-
 }
-
 }  // namespace tiny_dnn

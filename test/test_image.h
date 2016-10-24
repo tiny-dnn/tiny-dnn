@@ -25,11 +25,11 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
-
-using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
@@ -228,7 +228,7 @@ TEST(image, read_png_8bit_rgba) {
     image<uint8_t> img(path, image_type::bgr);
 
     EXPECT_EQ(static_cast<cnn_size_t>(3),
-              img.depth()); // alpha channel is just ignored
+              img.depth());  // alpha channel is just ignored
 
     // bgr order
     EXPECT_EQ(255, img.at(31, 31, 0));
@@ -315,7 +315,7 @@ TEST(image, read_bmp_24bit) {
     image<uint8_t> img(path, image_type::bgr);
 
     EXPECT_EQ(static_cast<cnn_size_t>(3),
-              img.depth()); // alpha channel is just ignored
+              img.depth());  // alpha channel is just ignored
 
     // bgr order
     EXPECT_EQ(255, img.at(31, 31, 0));

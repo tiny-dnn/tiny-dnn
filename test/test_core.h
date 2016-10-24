@@ -25,8 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #include "third_party/CLCudaAPI/clpp11.h"
@@ -63,7 +65,7 @@ device_t device_type(size_t *platform, size_t *device) {
             }
         }
 
-    //no CPUs or GPUs
+    // no CPUs or GPUs
     return device_t::NONE;
 }
 
@@ -127,6 +129,7 @@ TEST(core, add_bad_device) {
             "device in Device constructor";
     EXPECT_STREQ(err_mess.c_str(), e.what());
   }
+using namespace tiny_dnn;
   catch (...) {
     EXPECT_TRUE(false);
   }
@@ -180,7 +183,7 @@ TEST(core, device_add_op) {
         convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
                                        padding::valid, true, 1, 1, backend_t::opencl);
 
-        //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
+        // max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
 
         ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
 
@@ -208,8 +211,8 @@ TEST(core, ocl_conv) {
   if (device != device_t::NONE) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-                                   padding::valid, true, 1, 1, backend_t::libdnn);
+    convolutional_layer<sigmoid>
+        l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::libdnn);
 
     // first time op registration: OK
     my_gpu_device.registerOp(l);
@@ -230,7 +233,7 @@ TEST(core, ocl_conv) {
     , &out = out_tensor[0]
     , &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), 18);  // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 

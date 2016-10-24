@@ -25,32 +25,31 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
 TEST(models, alexnet) {
-    models::alexnet nn("alexnet");
- 
-    ASSERT_EQ(nn.name(), "alexnet");
-    EXPECT_EQ(nn.in_data_size(), cnn_size_t(224 * 224 * 3));
+  models::alexnet nn("alexnet");
 
-    vec_t in(nn.in_data_size());
+  ASSERT_EQ(nn.name(), "alexnet");
+  EXPECT_EQ(nn.in_data_size(), cnn_size_t(224 * 224 * 3));
 
-    // generate random variables
-    uniform_rand(in.begin(), in.end(), 0, 1);
+  vec_t in(nn.in_data_size());
 
-    // init wieghts and biases
-    nn.weight_init(weight_init::constant(2.0));
-    nn.bias_init(weight_init::constant(2.0));
-    nn.init_weight();
+  // generate random variables
+  uniform_rand(in.begin(), in.end(), 0, 1);
 
-    // predict
-    auto res = nn.predict(in);
+  // init wieghts and biases
+  nn.weight_init(weight_init::constant(2.0));
+  nn.bias_init(weight_init::constant(2.0));
+  nn.init_weight();
+
+  // predict
+  auto res = nn.predict(in);
 }
 
 }  // namespace tiny_dnn
