@@ -722,9 +722,9 @@ TEST(convolutional, read_write2) {
   };
 #undef O
 #undef X
-  convolutional_layer <tan_h>
+  convolutional_layer<tan_h>
       layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-  convolutional_layer <tan_h>
+  convolutional_layer<tan_h>
       layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
   layer1.init_weight();
   layer2.init_weight();

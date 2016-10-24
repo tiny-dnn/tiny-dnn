@@ -144,7 +144,7 @@ TEST(core, add_bad_layer) {
   if (device != device_t::NONE) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
-    convolutional_layer <sigmoid>
+    convolutional_layer<sigmoid>
         l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
     try {

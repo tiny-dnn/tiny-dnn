@@ -51,7 +51,7 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
 }
 
 TEST(ave_unpool, forward) {
-  average_unpooling_layer <identity> l(2, 2, 1, 2);
+  average_unpooling_layer<identity> l(2, 2, 1, 2);
   vec_t in = {
       4, 3,
       1.5, -0.5
@@ -76,7 +76,7 @@ TEST(ave_unpool, forward) {
 }
 
 TEST(ave_unpool, forward_stride) {
-  average_unpooling_layer <identity> l(3, 3, 1, 2, 1);
+  average_unpooling_layer<identity> l(3, 3, 1, 2, 1);
   vec_t in = {
       0, 1, 2,
       8, 7, 5,
@@ -102,8 +102,8 @@ TEST(ave_unpool, forward_stride) {
 }
 
 TEST(ave_unpool, read_write) {
-  average_unpooling_layer <tan_h> l1(100, 100, 5, 2);
-  average_unpooling_layer <tan_h> l2(100, 100, 5, 2);
+  average_unpooling_layer<tan_h> l1(100, 100, 5, 2);
+  average_unpooling_layer<tan_h> l2(100, 100, 5, 2);
 
   l1.setup(true);
   l2.setup(true);
