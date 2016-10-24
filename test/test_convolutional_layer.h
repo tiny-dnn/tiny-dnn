@@ -156,12 +156,12 @@ TEST(convolutional, with_stride) {
     /*
       forward - pass:
 
-      [0,1,2,3,4, 
-       1,2,3,4,5,          [1,1,1,           [ 9.5,    18.5,      
-       2,3,4,5,6,  *  0.5*  1,1,1,  + 0.5 = 
+      [0,1,2,3,4,
+       1,2,3,4,5,          [1,1,1,           [ 9.5,    18.5,
+       2,3,4,5,6,  *  0.5*  1,1,1,  + 0.5 =
        3,4,5,6,7,           1,1,1]            18.5,    27.5]
        4,5,6,7,8]
-    
+
     */
 
     float_t in[] = {
@@ -743,8 +743,7 @@ TEST(convolutional, copy_and_pad_input_valid) {
     params.w_stride  = 1;
     params.h_stride  = 1;
 
-    Conv2d conv2d_op;
-           conv2d_op.setParams(&params);
+    Conv2dPadding conv2d_padding(params);
 
     auto create_tensor = [](cnn_size_t batch_size,
                             cnn_size_t vector_size) {
@@ -755,7 +754,7 @@ TEST(convolutional, copy_and_pad_input_valid) {
 
     fill_tensor(in_tensor, float_t(1));
 
-    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
+    conv2d_padding.copy_and_pad_input(in_tensor, out_tensor);
 
     for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
@@ -773,8 +772,7 @@ TEST(convolutional, copy_and_pad_input_same) {
     params.w_stride  = 1;
     params.h_stride  = 1;
 
-    Conv2d conv2d_op;
-           conv2d_op.setParams(&params);
+    Conv2dPadding conv2d_padding(params);
 
     auto create_tensor = [](cnn_size_t batch_size,
                             cnn_size_t vector_size) {
@@ -794,7 +792,7 @@ TEST(convolutional, copy_and_pad_input_same) {
      *                      0 0 0 0 0
      */
 
-    conv2d_op.copy_and_pad_input(in_tensor, out_tensor);
+    conv2d_padding.copy_and_pad_input(in_tensor, out_tensor);
 
     EXPECT_EQ(out_tensor[0][7],  float_t(0));
     EXPECT_EQ(out_tensor[0][8],  float_t(1));
@@ -816,8 +814,7 @@ TEST(convolutional, copy_and_unpad_valid) {
     params.w_stride  = 1;
     params.h_stride  = 1;
 
-    Conv2d conv2d_op;
-           conv2d_op.setParams(&params);
+    Conv2dPadding conv2d_padding(params);
 
     auto create_tensor = [](cnn_size_t batch_size,
                             cnn_size_t vector_size) {
@@ -828,7 +825,7 @@ TEST(convolutional, copy_and_unpad_valid) {
 
     fill_tensor(in_tensor, float_t(1));
 
-    conv2d_op.copy_and_unpad_delta(in_tensor, out_tensor);
+    conv2d_padding.copy_and_unpad_delta(in_tensor, out_tensor);
 
     for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
@@ -846,8 +843,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
     params.w_stride  = 1;
     params.h_stride  = 1;
 
-    Conv2d conv2d_op;
-           conv2d_op.setParams(&params);
+    Conv2dPadding conv2d_padding(params);
 
     auto create_tensor = [](cnn_size_t batch_size,
                             cnn_size_t vector_size) {
@@ -875,7 +871,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
         }
     }
 
-    conv2d_op.copy_and_unpad_delta(in_tensor, out_tensor);
+    conv2d_padding.copy_and_unpad_delta(in_tensor, out_tensor);
 
     for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
