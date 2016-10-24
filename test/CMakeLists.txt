@@ -2,7 +2,7 @@ include(CTest)
 enable_testing()
 
 
-include(../third_party/DownloadProject/DownloadProject.cmake)
+include(../cmake/DownloadProject/DownloadProject.cmake)
 #set(gtest_disable_pthreads on) #TODO(randl): Windows?
 download_project(
         PROJ googletest
