@@ -41,13 +41,13 @@ namespace kernels {
 
 // float ver
 template <typename Allocator>
-void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
-                                const std::vector<float, Allocator>& prev_out,
-                                const std::vector<float, Allocator>& W,
-                                std::vector<float, Allocator>&       dW,
-                                std::vector<float, Allocator>&       db,
-                                std::vector<float, Allocator>&       curr_delta,
-                                std::vector<float, Allocator>*       prev_delta) {
+void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
+                                    const std::vector<float, Allocator>& prev_out,
+                                    const std::vector<float, Allocator>& W,
+                                    std::vector<float, Allocator>&       dW,
+                                    std::vector<float, Allocator>&       db,
+                                    std::vector<float, Allocator>&       curr_delta,
+                                    std::vector<float, Allocator>*       prev_delta) {
     auto& in        = params.in;
     auto& out       = params.out;
     auto& in_padded = params.in_padded;
@@ -456,93 +456,31 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
 // double ver
 template <typename Allocator>
 void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
-                                const std::vector<double, Allocator>& prev_out,
+                                const std::vector<std::vector<double, Allocator>>& prev_out,
                                 const std::vector<double, Allocator>& W,
-                                std::vector<double, Allocator>&       dW,
-                                std::vector<double, Allocator>&       db,
-                                std::vector<double, Allocator>&       curr_delta,
-                                std::vector<double, Allocator>*       prev_delta) {
-    // propagate delta to previous layer
-    for_i(params.in.depth_, [&](int inc) {
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
-            if (!params.tbl.is_connected(outc, inc)) continue;
+                                std::vector<std::vector<double, Allocator>>&       dW,
+                                std::vector<std::vector<double, Allocator>>&       db,
+                                std::vector<std::vector<double, Allocator>>&       curr_delta,
+                                std::vector<std::vector<double, Allocator>>&       prev_delta) {
+    // backward-pass fallbacks to tiny-backend at float_t == double
+    conv2d_op_custom(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
+}
 
-            cnn_size_t idx = 0;
-            idx = params.in.depth_ * outc + inc;
-            idx = params.weight.get_index(0, 0, idx);
-            const float_t *pw = &W[idx];
-
-            idx = params.out.get_index(0, 0, outc);
-            const float_t *pdelta_src = &curr_delta[idx];
-
-            idx = params.in_padded.get_index(0, 0, inc);
-            float_t *pdelta_dst = &(*prev_delta)[idx];
-
-            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                for (cnn_size_t x = 0; x < params.out.width_; x++) {
-                    const float_t * ppw = pw;
-
-                    idx = y * params.out.width_ + x;
-                    const float_t ppdelta_src = pdelta_src[idx];
-
-                    float_t * ppdelta_dst = pdelta_dst +
-                          y * params.h_stride * params.in_padded.width_ +
-                          x * params.w_stride;
-
-                    for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {    // NOLINT
-                        for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) { // NOLINT
-                            idx = wy * params.in_padded.width_ + wx;
-                            ppdelta_dst[idx] += *ppw++ * ppdelta_src;
-                        }
-                    }
-                }
-            }
-        }
+// float ver
+template <typename Allocator>
+void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
+                                const std::vector<std::vector<float, Allocator>>& prev_out,
+                                const std::vector<float, Allocator>& W,
+                                std::vector<std::vector<float, Allocator>>&       dW,
+                                std::vector<std::vector<float, Allocator>>&       db,
+                                std::vector<std::vector<float, Allocator>>&       curr_delta,
+                                std::vector<std::vector<float, Allocator>>&       prev_delta) {
+    for_i(prev_out.size(), [&](int sample) {
+        avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample], db[sample],
+            curr_delta[sample], &prev_delta[sample]);
     });
+} 
 
-    // accumulate dw
-    for_i(params.in.depth_, [&](int inc) {
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
-            if (!params.tbl.is_connected(outc, inc)) continue;
-
-            for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
-                for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
-                    float_t dst = float_t(0);
-
-                    cnn_size_t idx = 0;
-                    idx = params.in_padded.get_index(wx, wy, inc);
-                    const float_t * prevo = &prev_out[idx];
-
-                    idx = params.out.get_index(0, 0, outc);
-                    const float_t * delta = &curr_delta[idx];
-
-                    for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                        dst += vectorize::dot(
-                            prevo + y * params.in_padded.width_,
-                            delta + y * params.out.width_,
-                            params.out.width_);
-                    }
-
-                    idx = params.in.depth_ * outc + inc;
-                    dW[params.weight.get_index(wx, wy, idx)] += dst;
-                }
-            }
-        }
-    });
-
-    // accumulate db
-    if (params.has_bias) {
-        //vec_t& db = *in_grad[2];
-
-        for (cnn_size_t outc = 0; outc < params.out.depth_; outc++) {
-            cnn_size_t idx = params.out.get_index(0, 0, outc);
-            const float_t * delta = &curr_delta[idx];
-            const float_t * deltaa = delta + params.out.width_ *
-                                             params.out.height_;
-            db[outc] += std::accumulate(delta, deltaa, float_t(0));
-        }
-    }
-} // avx_conv2d_5x5_back_kernel double ver
 
 #endif // CNN_USE_AVX
 
@@ -557,10 +495,7 @@ conv2d_grad_op_avx(const tensor_t&        prev_out,
                    const bool    layer_parallelize) {
 #ifdef CNN_USE_AVX
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
-        for_i(prev_out.size(), [&](int sample) {
-            avx_conv2d_5x5_back_kernel(params, prev_out[sample], W, dW[sample], db[sample],
-                                       curr_delta[sample], &prev_delta[sample]);
-        });
+        avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db, curr_delta, prev_delta);
         return;
     }
 #endif
