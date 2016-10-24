@@ -375,7 +375,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                         __m128d sum_c = hsum256_pd(sum_a);
                         sum = _mm_add_sd(sum, sum_b);
                         _mm_store_sd(&pa2[x], _mm_add_sd(sum, sum_c));
-                        pi0 += w_stride;
+                        pi  += w_stride;
                         pi1 += w_stride;
                         pi2 += w_stride;
                         pi3 += w_stride;
