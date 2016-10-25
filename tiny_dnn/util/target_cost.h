@@ -1,3 +1,7 @@
+// Copyright (c) 2013-2016, Taiga Nomi. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 #pragma once
 #include "tiny_dnn/util/util.h"
 #include <numeric> // std::accumulate
