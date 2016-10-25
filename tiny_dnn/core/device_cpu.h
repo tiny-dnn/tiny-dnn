@@ -11,8 +11,7 @@ namespace core {
 
 class cpu_device : public device {
  public:
-    explicit cpu_device(const int id) : device(id) {}
-
+  explicit cpu_device(const int id) : device(id) {}
 };
 
 }  // namespace core

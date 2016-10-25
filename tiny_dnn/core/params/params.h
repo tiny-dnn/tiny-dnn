@@ -12,9 +12,9 @@ class fully_params;
 /* Base class to model operation parameters */
 class Params {
  public:
-    Params() {}
+  Params() {}
 
-    fully_params fully() const;
+  fully_params fully() const;
 };
 
 }  // namespace core

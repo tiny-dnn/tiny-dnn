@@ -11,112 +11,112 @@ namespace core {
 
 class dnn_backend : public backend {
  public:
-    // context holds solution-dependent parameters
-    // context should be able to hold any types of structures (like boost::any)
-    dnn_backend() {}
+  // context holds solution-dependent parameters
+  // context should be able to hold any types of structures (like boost::any)
+  dnn_backend() {}
 
-    // core math functions
+  // core math functions
 
-    void conv2d(const std::vector<tensor_t*>& in_data,
-                std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
+  void conv2d(const std::vector<tensor_t*>& in_data,
+              std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void conv2d_q(const std::vector<tensor_t*>& in_data,
-                  std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
+  void conv2d_q(const std::vector<tensor_t*>& in_data,
+                std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void conv2d_eq(const std::vector<tensor_t*>& in_data,
-                   std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
+  void conv2d_eq(const std::vector<tensor_t*>& in_data,
+                 std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void conv2d(const std::vector<tensor_t*>& in_data,
+  void conv2d(const std::vector<tensor_t*>& in_data,
+              const std::vector<tensor_t*>& out_data,
+              std::vector<tensor_t*>& out_grad,
+              std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void conv2d_q(const std::vector<tensor_t*>& in_data,
                 const std::vector<tensor_t*>& out_data,
-                std::vector<tensor_t*>&       out_grad,
-                std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
+                std::vector<tensor_t*>& out_grad,
+                std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void conv2d_q(const std::vector<tensor_t*>& in_data,
+  void deconv2d(const std::vector<tensor_t*>& in_data,
+                std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void deconv2d_q(const std::vector<tensor_t*>& in_data,
+                  std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void deconv2d_eq(const std::vector<tensor_t*>& in_data,
+                   std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void deconv2d(const std::vector<tensor_t*>& in_data,
+                const std::vector<tensor_t*>& out_data,
+                std::vector<tensor_t*>& out_grad,
+                std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void deconv2d_q(const std::vector<tensor_t*>& in_data,
                   const std::vector<tensor_t*>& out_data,
-                  std::vector<tensor_t*>&       out_grad,
-                  std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
+                  std::vector<tensor_t*>& out_grad,
+                  std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void deconv2d(const std::vector<tensor_t*>& in_data,
-                  std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
+  void maxpool(const std::vector<tensor_t*>& in_data,
+               std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void deconv2d_q(const std::vector<tensor_t*>& in_data,
-                    std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void deconv2d_eq(const std::vector<tensor_t*>& in_data,
-                     std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void deconv2d(const std::vector<tensor_t*>& in_data,
-                  const std::vector<tensor_t*>& out_data,
-                  std::vector<tensor_t*>&       out_grad,
-                  std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void deconv2d_q(const std::vector<tensor_t*>& in_data,
-                    const std::vector<tensor_t*>& out_data,
-                    std::vector<tensor_t*>&       out_grad,
-                    std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void maxpool(const std::vector<tensor_t*>& in_data,
-                 std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void maxpool(const std::vector<tensor_t*>& in_data,
-                 const std::vector<tensor_t*>& out_data,
-                 std::vector<tensor_t*>&       out_grad,
-                 std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(const std::vector<tensor_t*>& in_data,
-               std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully_q(const std::vector<tensor_t*>& in_data,
-                 std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully_eq(const std::vector<tensor_t*>& in_data,
-                  std::vector<tensor_t*>&       out_data) override {
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(const std::vector<tensor_t*>& in_data,
+  void maxpool(const std::vector<tensor_t*>& in_data,
                const std::vector<tensor_t*>& out_data,
-               std::vector<tensor_t*>&       out_grad,
-               std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
+               std::vector<tensor_t*>& out_grad,
+               std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    void fully_q(const std::vector<tensor_t*>& in_data,
-                 const std::vector<tensor_t*>& out_data,
-                 std::vector<tensor_t*>&       out_grad,
-                 std::vector<tensor_t*>&       in_grad) override {
-        throw nn_error("not implemented yet.");
-    }
+  void fully(const std::vector<tensor_t*>& in_data,
+             std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
 
-    backend_t type() const override { return backend_t::libdnn; }
+  void fully_q(const std::vector<tensor_t*>& in_data,
+               std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void fully_eq(const std::vector<tensor_t*>& in_data,
+                std::vector<tensor_t*>& out_data) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void fully(const std::vector<tensor_t*>& in_data,
+             const std::vector<tensor_t*>& out_data,
+             std::vector<tensor_t*>& out_grad,
+             std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  void fully_q(const std::vector<tensor_t*>& in_data,
+               const std::vector<tensor_t*>& out_data,
+               std::vector<tensor_t*>& out_grad,
+               std::vector<tensor_t*>& in_grad) override {
+    throw nn_error("not implemented yet.");
+  }
+
+  backend_t type() const override { return backend_t::libdnn; }
 };
 
 }  // namespace core

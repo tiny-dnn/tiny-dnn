@@ -15,11 +15,8 @@ namespace kernels {
 
 inline void nnp_deconv2d_kernel(const conv_params& params,
                                 const std::vector<const vec_t*>& in,
-                                const vec_t&       W,
-                                const vec_t&       bias,
-                                tensor_t&          a) {
-
-}
+                                const vec_t& W, const vec_t& bias,
+                                tensor_t& a) {}
 
 }  // namespace kernels
 }  // namespace core

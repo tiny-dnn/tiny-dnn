@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #pragma once
-#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/arithmetic_layer.h"
 #include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/average_unpooling_layer.h"
@@ -14,6 +13,7 @@
 #include "tiny_dnn/layers/dropout_layer.h"
 #include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
+#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
 #include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"

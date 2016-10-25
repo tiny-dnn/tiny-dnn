@@ -11,48 +11,47 @@
 #include "tiny_dnn/core/framework/device.h"
 #include "tiny_dnn/core/framework/program_manager.h"
 
-#include "tiny_dnn/layers/input_layer.h"
-#include "tiny_dnn/layers/feedforward_layer.h"
-#include "tiny_dnn/layers/convolutional_layer.h"
-#include "tiny_dnn/layers/quantized_convolutional_layer.h"
-#include "tiny_dnn/layers/deconvolutional_layer.h"
-#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
-#include "tiny_dnn/layers/fully_connected_layer.h"
-#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
-#include "tiny_dnn/layers/average_pooling_layer.h"
-#include "tiny_dnn/layers/max_pooling_layer.h"
-#include "tiny_dnn/layers/linear_layer.h"
-#include "tiny_dnn/layers/lrn_layer.h"
-#include "tiny_dnn/layers/dropout_layer.h"
 #include "tiny_dnn/layers/arithmetic_layer.h"
-#include "tiny_dnn/layers/concat_layer.h"
-#include "tiny_dnn/layers/max_unpooling_layer.h"
+#include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/average_unpooling_layer.h"
 #include "tiny_dnn/layers/batch_normalization_layer.h"
-#include "tiny_dnn/layers/slice_layer.h"
+#include "tiny_dnn/layers/concat_layer.h"
+#include "tiny_dnn/layers/convolutional_layer.h"
+#include "tiny_dnn/layers/deconvolutional_layer.h"
+#include "tiny_dnn/layers/dropout_layer.h"
+#include "tiny_dnn/layers/feedforward_layer.h"
+#include "tiny_dnn/layers/fully_connected_layer.h"
+#include "tiny_dnn/layers/input_layer.h"
+#include "tiny_dnn/layers/linear_layer.h"
+#include "tiny_dnn/layers/lrn_layer.h"
+#include "tiny_dnn/layers/max_pooling_layer.h"
+#include "tiny_dnn/layers/max_unpooling_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
+#include "tiny_dnn/layers/quantized_convolutional_layer.h"
+#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
+#include "tiny_dnn/layers/slice_layer.h"
 
 #include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
-#include "tiny_dnn/util/weight_init.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/deform.h"
-#include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/graph_visualizer.h"
+#include "tiny_dnn/util/image.h"
+#include "tiny_dnn/util/product.h"
+#include "tiny_dnn/util/weight_init.h"
 
-#include "tiny_dnn/io/mnist_parser.h"
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+#include "tiny_dnn/io/mnist_parser.h"
 #include "tiny_dnn/util/serialization_helper.h"
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
 #include "tiny_dnn/io/caffe/layer_factory.h"
 #endif
-
 
 // shortcut version of layer names
 namespace tiny_dnn {
@@ -97,7 +96,6 @@ using max_unpool = tiny_dnn::max_unpooling_layer<T>;
 
 template <class T>
 using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
-
 }
 
 #include "tiny_dnn/models/alexnet.h"
@@ -113,5 +111,4 @@ using batch_norm = tiny_dnn::batch_normalization_layer;
 using slice = tiny_dnn::slice_layer;
 
 using power = tiny_dnn::power_layer;
-
 }

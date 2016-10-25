@@ -12,103 +12,96 @@ namespace tiny_dnn {
  */
 class Conv2d {
  public:
-    /* Applies padding to an input tensor given the convolution parameters
-     *
-     * @param in The input tensor
-     * @param out The output tensor with padding applied
-     */
-    void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
-        if (params_.pad_type == core::padding::valid) {
-            out = in;
-            return;
+  /* Applies padding to an input tensor given the convolution parameters
+   *
+   * @param in The input tensor
+   * @param out The output tensor with padding applied
+   */
+  void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
+    if (params_.pad_type == core::padding::valid) {
+      out = in;
+      return;
+    }
+
+    tensor_t buf(in.size());
+
+    for_i(true, buf.size(), [&](int sample) {
+      // alloc temporary buffer.
+      buf[sample].resize(params_.in.depth_ * params_.in_padded.height_ *
+                         params_.in_padded.width_);
+
+      // make padded version in order to avoid corner-case in fprop/bprop
+      for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+        float_t* pimg = &buf[sample][params_.in_padded.get_index(
+            params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
+        const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
+
+        for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+          std::copy(pin, pin + params_.in.width_, pimg);
+          pin += params_.in.width_;
+          pimg += params_.in_padded.width_;
         }
+      }
+    });
 
-        tensor_t buf(in.size());
+    // shrink buffer to output
+    out = buf;
+  }
 
-        for_i(true, buf.size(), [&](int sample) {
-            // alloc temporary buffer.
-            buf[sample].resize(params_.in.depth_ *
-                               params_.in_padded.height_ *
-                               params_.in_padded.width_);
-
-            // make padded version in order to avoid corner-case in fprop/bprop
-            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                float_t* pimg = &buf[sample][params_.in_padded.get_index(
-                                             params_.weight.width_  / 2,
-                                             params_.weight.height_ / 2, c)];
-                const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
-
-                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                    std::copy(pin, pin + params_.in.width_, pimg);
-                    pin  += params_.in.width_;
-                    pimg += params_.in_padded.width_;
-                }
-            }
-        });
-
-        // shrink buffer to output
-        out = buf;
+  /* Applies unpadding to an input tensor given the convolution parameters
+   *
+   * @param in The input tensor
+   * @param out The output tensor with unpadding applied
+   */
+  void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
+    if (params_.pad_type == core::padding::valid) {
+      delta_unpadded = delta;
+      return;
     }
 
-    /* Applies unpadding to an input tensor given the convolution parameters
-     *
-     * @param in The input tensor
-     * @param out The output tensor with unpadding applied
-     */
-    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
-        if (params_.pad_type == core::padding::valid) {
-            delta_unpadded = delta;
-            return;
+    tensor_t buf(delta.size());
+
+    for_i(true, buf.size(), [&](int sample) {
+      // alloc temporary buffer.
+      buf[sample].resize(params_.in.depth_ * params_.in.height_ *
+                         params_.in.width_);
+
+      for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+        const float_t* pin = &delta[sample][params_.in_padded.get_index(
+            params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
+        float_t* pdst = &buf[sample][params_.in.get_index(0, 0, c)];
+
+        for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+          std::copy(pin, pin + params_.in.width_, pdst);
+          pdst += params_.in.width_;
+          pin += params_.in_padded.width_;
         }
-        
-        tensor_t buf(delta.size());
+      }
+    });
 
-        for_i(true, buf.size(), [&](int sample) {
-            // alloc temporary buffer.
-            buf[sample].resize(params_.in.depth_ *
-                               params_.in.height_ *
-                               params_.in.width_);
+    // shrink buffer to output
+    delta_unpadded = buf;
+  }
 
-            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                const float_t *pin =
-                    &delta[sample][params_.in_padded.get_index(
-                                   params_.weight.width_  / 2,
-                                   params_.weight.height_ / 2, c)];
-                float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
+  // Set and cast a params raw pointer to a specific convolution
+  // operation parameters
+  void setParams(core::Params* params) { params_ = cast_conv_params(params); }
 
-                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                    std::copy(pin, pin + params_.in.width_, pdst);
-                    pdst += params_.in.width_;
-                    pin  += params_.in_padded.width_;
-                }
-            }
-        });
-
-        // shrink buffer to output
-        delta_unpadded = buf;
-    }
-
-    // Set and cast a params raw pointer to a specific convolution
-    // operation parameters
-    void setParams(core::Params* params) {
-        params_ = cast_conv_params(params);
-    }
-
-    // Returns the convolution parameters
-    core::conv_params params() const { return params_; }
+  // Returns the convolution parameters
+  core::conv_params params() const { return params_; }
 
  private:
-    /* Cast a params raw pointer to a specific convolution operation parameters
-     *
-     * @param params The raw pointer to the parameters
-     */
-    core::conv_params& cast_conv_params(core::Params* params) const {
-        return *(static_cast<core::conv_params*>(params));
-    }
+  /* Cast a params raw pointer to a specific convolution operation parameters
+   *
+   * @param params The raw pointer to the parameters
+   */
+  core::conv_params& cast_conv_params(core::Params* params) const {
+    return *(static_cast<core::conv_params*>(params));
+  }
 
  private:
-    /* The convolution parameters */
-    core::conv_params params_;
+  /* The convolution parameters */
+  core::conv_params params_;
 };
 
 }  // namespace tiny_dnn

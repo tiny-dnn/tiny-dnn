@@ -31,10 +31,9 @@
 #define CNN_USE_EXCEPTIONS
 
 /**
- * comment out if you want tiny-dnn to be quiet 
+ * comment out if you want tiny-dnn to be quiet
  */
 #define CNN_USE_STDOUT
-
 
 /**
  * disable serialization/deserialization function
@@ -54,7 +53,7 @@
 #endif
 
 #if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
-#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
+#define CNN_USE_GEMMLOWP  // gemmlowp doesn't support MSVC/mingw
 #endif
 
 namespace tiny_dnn {
@@ -70,5 +69,4 @@ typedef float float_t;
  * change to smaller type if memory footprint is severe
  **/
 typedef std::size_t cnn_size_t;
-
 }

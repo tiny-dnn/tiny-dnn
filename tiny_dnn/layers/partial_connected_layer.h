@@ -3,149 +3,148 @@
 // found in the LICENSE file.
 
 #pragma once
-#include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
-template<typename Activation>
+template <typename Activation>
 class partial_connected_layer : public feedforward_layer<Activation> {
-public:
-    CNN_USE_LAYER_MEMBERS;
+ public:
+  CNN_USE_LAYER_MEMBERS;
 
-    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > io_connections;
-    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wi_connections;
-    typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wo_connections;
-    typedef feedforward_layer<Activation> Base;
+  typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > io_connections;
+  typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wi_connections;
+  typedef std::vector<std::pair<cnn_size_t, cnn_size_t> > wo_connections;
+  typedef feedforward_layer<Activation> Base;
 
-    partial_connected_layer(cnn_size_t in_dim,
-                            cnn_size_t out_dim,
-                            size_t     weight_dim,
-                            size_t     bias_dim,
-                            float_t    scale_factor = float_t(1))
-        : Base(std_input_order(bias_dim > 0)),
-          weight2io_(weight_dim),
-          out2wi_(out_dim),
-          in2wo_(in_dim),
-          bias2out_(bias_dim),
-          out2bias_(out_dim),
-          scale_factor_(scale_factor){}
+  partial_connected_layer(cnn_size_t in_dim, cnn_size_t out_dim,
+                          size_t weight_dim, size_t bias_dim,
+                          float_t scale_factor = float_t(1))
+      : Base(std_input_order(bias_dim > 0)),
+        weight2io_(weight_dim),
+        out2wi_(out_dim),
+        in2wo_(in_dim),
+        bias2out_(bias_dim),
+        out2bias_(out_dim),
+        scale_factor_(scale_factor) {}
 
-    size_t param_size() const {
-        size_t total_param = 0;
-        for (auto w : weight2io_)
-            if (w.size() > 0) total_param++;
-        for (auto b : bias2out_)
-            if (b.size() > 0) total_param++;
-        return total_param;
+  size_t param_size() const {
+    size_t total_param = 0;
+    for (auto w : weight2io_)
+      if (w.size() > 0) total_param++;
+    for (auto b : bias2out_)
+      if (b.size() > 0) total_param++;
+    return total_param;
+  }
+
+  size_t fan_in_size() const override { return max_size(out2wi_); }
+
+  size_t fan_out_size() const override { return max_size(in2wo_); }
+
+  void connect_weight(cnn_size_t input_index, cnn_size_t output_index,
+                      cnn_size_t weight_index) {
+    weight2io_[weight_index].emplace_back(input_index, output_index);
+    out2wi_[output_index].emplace_back(weight_index, input_index);
+    in2wo_[input_index].emplace_back(weight_index, output_index);
+  }
+
+  void connect_bias(cnn_size_t bias_index, cnn_size_t output_index) {
+    out2bias_[output_index] = bias_index;
+    bias2out_[bias_index].push_back(output_index);
+  }
+
+  void forward_propagation(const std::vector<tensor_t*>& in_data,
+                           std::vector<tensor_t*>& out_data) override {
+    const tensor_t& in = *in_data[0];
+    const vec_t& W = (*in_data[1])[0];
+    const vec_t& b = (*in_data[2])[0];
+    tensor_t& a = *out_data[1];
+
+    // @todo revise the parallelism strategy
+    for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count;
+         ++sample) {
+      vec_t& a_sample = a[sample];
+
+      for_i(parallelize_, out2wi_.size(), [&](int i) {
+        const wi_connections& connections = out2wi_[i];
+
+        float_t& a_element = a_sample[i];
+
+        a_element = float_t(0);
+
+        for (auto connection : connections)  // 13.1%
+          a_element +=
+              W[connection.first] * in[sample][connection.second];  // 3.2%
+
+        a_element *= scale_factor_;
+        a_element += b[out2bias_[i]];
+      });
     }
 
-    size_t fan_in_size() const override {
-        return max_size(out2wi_);
-    }
+    this->forward_activation(*out_data[0], *out_data[1]);
+  }
 
-    size_t fan_out_size() const override {
-        return max_size(in2wo_);
-    }
+  void back_propagation(const std::vector<tensor_t*>& in_data,
+                        const std::vector<tensor_t*>& out_data,
+                        std::vector<tensor_t*>& out_grad,
+                        std::vector<tensor_t*>& in_grad) override {
+    const tensor_t& prev_out = *in_data[0];
+    const vec_t& W = (*in_data[1])[0];
+    vec_t& dW = (*in_grad[1])[0];
+    vec_t& db = (*in_grad[2])[0];
+    tensor_t& prev_delta = *in_grad[0];
+    tensor_t& curr_delta = *out_grad[0];
 
-    void connect_weight(cnn_size_t input_index, cnn_size_t output_index, cnn_size_t weight_index) {
-        weight2io_[weight_index].emplace_back(input_index, output_index);
-        out2wi_[output_index].emplace_back(weight_index, input_index);
-        in2wo_[input_index].emplace_back(weight_index, output_index);
-    }
+    this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-    void connect_bias(cnn_size_t bias_index, cnn_size_t output_index) {
-        out2bias_[output_index] = bias_index;
-        bias2out_[bias_index].push_back(output_index);
-    }
+    // @todo revise the parallelism strategy
+    for (cnn_size_t sample = 0, sample_count = prev_out.size();
+         sample < sample_count; ++sample) {
+      for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
+        for (int i = r.begin(); i != r.end(); i++) {
+          const wo_connections& connections = in2wo_[i];
+          float_t delta = float_t(0);
 
-    void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>& out_data) override {
-        const tensor_t& in  = *in_data[0];
-        const vec_t&    W   = (*in_data[1])[0];
-        const vec_t&    b   = (*in_data[2])[0];
-        tensor_t&       a   = *out_data[1];
+          for (auto connection : connections)
+            delta += W[connection.first] *
+                     curr_delta[sample][connection.second];  // 40.6%
 
-        // @todo revise the parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
-            vec_t& a_sample = a[sample];
-
-            for_i(parallelize_, out2wi_.size(), [&](int i) {
-                const wi_connections& connections = out2wi_[i];
-
-                float_t& a_element = a_sample[i];
-
-                a_element = float_t(0);
-
-                for (auto connection : connections)// 13.1%
-                    a_element += W[connection.first] * in[sample][connection.second]; // 3.2%
-
-                a_element *= scale_factor_;
-                a_element += b[out2bias_[i]];
-            });
+          prev_delta[sample][i] = delta * scale_factor_;  // 2.1%
         }
+      });
 
-        this->forward_activation(*out_data[0], *out_data[1]);
-    }
+      for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
+        for (int i = r.begin(); i < r.end(); i++) {
+          const io_connections& connections = weight2io_[i];
+          float_t diff = float_t(0);
 
-    void back_propagation(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) override {
-        const tensor_t& prev_out    = *in_data[0];
-        const vec_t&    W           = (*in_data[1])[0];
-        vec_t&          dW          = (*in_grad[1])[0];
-        vec_t&          db          = (*in_grad[2])[0];
-        tensor_t&       prev_delta  = *in_grad[0];
-        tensor_t&       curr_delta  = *out_grad[0];
+          for (auto connection : connections)  // 11.9%
+            diff += prev_out[sample][connection.first] *
+                    curr_delta[sample][connection.second];
 
-        this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
-
-        // @todo revise the parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = prev_out.size(); sample < sample_count; ++sample) {
-            for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
-                for (int i = r.begin(); i != r.end(); i++) {
-                    const wo_connections& connections = in2wo_[i];
-                    float_t delta = float_t(0);
-
-                    for (auto connection : connections)
-                        delta += W[connection.first] * curr_delta[sample][connection.second]; // 40.6%
-
-                    prev_delta[sample][i] = delta * scale_factor_; // 2.1%
-                }
-            });
-
-            for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
-                for (int i = r.begin(); i < r.end(); i++) {
-                    const io_connections& connections = weight2io_[i];
-                    float_t diff = float_t(0);
-
-                    for (auto connection : connections) // 11.9%
-                        diff += prev_out[sample][connection.first] * curr_delta[sample][connection.second];
-
-                    dW[i] += diff * scale_factor_;
-                }
-            });
-
-            for (size_t i = 0; i < bias2out_.size(); i++) {
-                const std::vector<cnn_size_t>& outs = bias2out_[i];
-                float_t diff = float_t(0);
-
-                for (auto o : outs)
-                    diff += curr_delta[sample][o];
-
-                db[i] += diff;
-            }
+          dW[i] += diff * scale_factor_;
         }
-    }
+      });
 
-protected:
-    std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
-    std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
-    std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
-    std::vector<std::vector<cnn_size_t> > bias2out_;
-    std::vector<size_t> out2bias_;
-    float_t scale_factor_;
+      for (size_t i = 0; i < bias2out_.size(); i++) {
+        const std::vector<cnn_size_t>& outs = bias2out_[i];
+        float_t diff = float_t(0);
+
+        for (auto o : outs) diff += curr_delta[sample][o];
+
+        db[i] += diff;
+      }
+    }
+  }
+
+ protected:
+  std::vector<io_connections> weight2io_;  // weight_id -> [(in_id, out_id)]
+  std::vector<wi_connections> out2wi_;     // out_id -> [(weight_id, in_id)]
+  std::vector<wo_connections> in2wo_;      // in_id -> [(weight_id, out_id)]
+  std::vector<std::vector<cnn_size_t> > bias2out_;
+  std::vector<size_t> out2bias_;
+  float_t scale_factor_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
