@@ -1,29 +1,7 @@
-/*
-    Copyright (c) 2013, Taiga Nomi
-    All rights reserved.
+// Copyright (c) 2013-2016, Taiga Nomi. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 #pragma once
 #include "picotest/picotest.h"
 #include "testhelper.h"
@@ -114,7 +92,8 @@ TEST(quantized_fully_connected, gradient_check) {
 
     uniform_rand(a.begin(), a.end(), -1, 1);
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(),
+GRAD_CHECK_ALL));
 }
 
 TEST(quantized_fully_connected, read_write)
@@ -128,56 +107,54 @@ TEST(quantized_fully_connected, read_write)
     quantized_serialization_test(l1, l2);
 }*/
 
-TEST(quantized_fully_connected, forward)
-{
-    quantized_fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+TEST(quantized_fully_connected, forward) {
+  quantized_fully_connected_layer<identity> l(4, 2);
+  EXPECT_EQ(l.in_channels(), cnn_size_t(3));  // in, W and b
 
-    l.weight_init(weight_init::constant(1.0));
-    l.bias_init(weight_init::constant(0.5));
+  l.weight_init(weight_init::constant(1.0));
+  l.bias_init(weight_init::constant(0.5));
 
-    vec_t in = {0,1,2,3};
-    vec_t out = l.forward({ { in } })[0][0];
-    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+  vec_t in = {0, 1, 2, 3};
+  vec_t out = l.forward({{in}})[0][0];
+  vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
-    for (size_t i = 0; i < out_expected.size(); i++) {
-        EXPECT_NEAR(out_expected[i], out[i], 1E-2);
-    }
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+  }
 }
 
 #ifdef CNN_USE_NNPACK
-TEST(quantized_fully_connected, forward_nnp)
-{
-    quantized_fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+TEST(quantized_fully_connected, forward_nnp) {
+  quantized_fully_connected_layer<identity> l(4, 2, true,
+                                              core::backend_t::nnpack);
+  EXPECT_EQ(l.in_channels(), cnn_size_t(3));  // in, W and b
 
-    l.weight_init(weight_init::constant(1.0));
-    l.bias_init(weight_init::constant(0.5));
+  l.weight_init(weight_init::constant(1.0));
+  l.bias_init(weight_init::constant(0.5));
 
-    vec_t in = {0,1,2,3};
-    vec_t out = l.forward({ {in} })[0][0];
-    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+  vec_t in = {0, 1, 2, 3};
+  vec_t out = l.forward({{in}})[0][0];
+  vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
-    for (size_t i = 0; i < out_expected.size(); i++) {
-        EXPECT_NEAR(out_expected[i], out[i], 1E-2);
-    }
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+  }
 }
 #endif
 
-TEST(quantized_fully_connected, forward_nobias)
-{
-    quantized_fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(2));// in and W
+TEST(quantized_fully_connected, forward_nobias) {
+  quantized_fully_connected_layer<identity> l(4, 2, false);
+  EXPECT_EQ(l.in_channels(), cnn_size_t(2));  // in and W
 
-    l.weight_init(weight_init::constant(1.0));
+  l.weight_init(weight_init::constant(1.0));
 
-    vec_t in = { 0,1,2,3 };
-    vec_t out = l.forward({ { in } })[0][0];
-    vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
+  vec_t in = {0, 1, 2, 3};
+  vec_t out = l.forward({{in}})[0][0];
+  vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
-    for (size_t i = 0; i < out_expected.size(); i++) {
-        EXPECT_NEAR(out_expected[i], out[i], 1E-2);
-    }
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+  }
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny-dnn
