@@ -45,10 +45,10 @@ TEST(lrn, cross) {
 
     auto out = lrn.forward({ {vec_t(in, in + 4)} })[0][0];
 
-    EXPECT_FLOAT_EQ(expected[0], out[0]);
-    EXPECT_FLOAT_EQ(expected[1], out[1]);
-    EXPECT_FLOAT_EQ(expected[2], out[2]);
-    EXPECT_FLOAT_EQ(expected[3], out[3]);
+    EXPECT_NEAR(expected[0], out[0], epsilon<float_t>());
+    EXPECT_NEAR(expected[1], out[1], epsilon<float_t>());
+    EXPECT_NEAR(expected[2], out[2], epsilon<float_t>());
+    EXPECT_NEAR(expected[3], out[3], epsilon<float_t>());
 }
 
 TEST(lrn, read_write) {

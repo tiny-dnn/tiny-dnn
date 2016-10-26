@@ -40,8 +40,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                                          vec_t&             a,
                                          const bool layer_parallelize) {
     // image quantization
-    float min_input(in[0]);
-    float max_input(in[0]);
+    float_t min_input(in[0]);
+    float_t max_input(in[0]);
     for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -52,8 +52,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
     std::vector<uint8_t> in_quantized =
         float_tensor_to_quantized<uint8_t>(in, min_input, max_input);
     // filter quantization
-    float min_filter(W[0]);
-    float max_filter(W[0]);
+    float_t min_filter(W[0]);
+    float_t max_filter(W[0]);
     for (cnn_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -68,8 +68,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
     std::vector<uint8_t> W_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
     // bias quantization
-    float min_bias(0);
-    float max_bias(0);
+    float_t min_bias(0);
+    float_t max_bias(0);
     std::vector<uint8_t> bias_quantized;
     if (params.has_bias) {
         for (cnn_size_t inc = 0; inc < params.out.depth_; inc++) {
@@ -84,8 +84,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             float_tensor_to_quantized<uint8_t>(bias, min_bias, max_bias);
     }
     // output range
-    float min_output_value;
-    float max_output_value;
+    float_t min_output_value;
+    float_t max_output_value;
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         min_input, max_input, min_filter, max_filter, &min_output_value,
         &max_output_value);
@@ -144,8 +144,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
         }
     });
 
-    float min_output_requantized;
-    float max_output_requantized;
+    float_t min_output_requantized;
+    float_t max_output_requantized;
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
     // Requantize from 32bits to 8 bits for next layer
@@ -164,8 +164,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
                                               vec_t&       curr_delta,
                                               vec_t*       prev_delta) {
     // previous output quantization
-    float min_prev_out(prev_out[0]);
-    float max_prev_out(prev_out[0]);
+    float_t min_prev_out(prev_out[0]);
+    float_t max_prev_out(prev_out[0]);
     for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -177,8 +177,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         float_tensor_to_quantized<uint8_t>(prev_out, min_prev_out, max_prev_out);
 
     // filter quantization
-    float min_filter(W[0]);
-    float max_filter(W[0]);
+    float_t min_filter(W[0]);
+    float_t max_filter(W[0]);
     for (cnn_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
             cnn_size_t idx = params.in_padded.get_index(0, 0, inc);
@@ -194,8 +194,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
 
     // current delta quantization
-    float min_curr_delta(curr_delta[0]);
-    float max_curr_delta(curr_delta[0]);
+    float_t min_curr_delta(curr_delta[0]);
+    float_t max_curr_delta(curr_delta[0]);
     for (cnn_size_t inc = 0; inc < params.out.depth_; inc++) {
         for (cnn_size_t ins = 0; ins < params.out.height_*params.out.height_; ins++) {
             cnn_size_t idx = params.out.get_index(0, 0, inc);
@@ -207,8 +207,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         float_tensor_to_quantized<uint8_t>(curr_delta, min_curr_delta, max_curr_delta);
 
     // output range for previous delta
-    float min_prev_delta_value;
-    float max_prev_delta_value;
+    float_t min_prev_delta_value;
+    float_t max_prev_delta_value;
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         min_curr_delta, max_curr_delta, min_filter, max_filter, &min_prev_delta_value,
         &max_prev_delta_value);
@@ -216,8 +216,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     std::vector<int32_t> prev_delta_quantized(prev_delta->size(), static_cast<int32_t>(0));
 
     // output range for dW
-    float min_dW_value;
-    float max_dW_value;
+    float_t min_dW_value;
+    float_t max_dW_value;
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         min_curr_delta, max_curr_delta, min_prev_out, max_prev_out, &min_dW_value,
         &max_dW_value);
@@ -273,8 +273,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         }
     });
 
-    float min_prev_delta_requantized;
-    float max_prev_delta_requantized;
+    float_t min_prev_delta_requantized;
+    float_t max_prev_delta_requantized;
     std::vector<uint8_t> prev_delta_requantized(prev_delta_quantized.size(), static_cast<uint8_t>(0));
 
     // Requantize from 32bits to 8 bits for next layer
@@ -315,8 +315,8 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
         }
     });
 
-    float min_dW_requantized;
-    float max_dW_requantized;
+    float_t min_dW_requantized;
+    float_t max_dW_requantized;
     std::vector<uint8_t> dW_requantized(dW_quantized.size(), static_cast<uint8_t>(0));
 
     // requantize from 32bits to 8 bits for next layer
@@ -351,15 +351,15 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                                          vec_t&             a_r,
                                          const bool layer_parallelize) {
     // filter range
-    float min_filter(W_r[0]);
-    float max_filter(W_r[1]);
+    float_t min_filter(W_r[0]);
+    float_t max_filter(W_r[1]);
     if (W_r[0] == W_r[1]) {
       max_filter = W_r[1] + 1e-3f;
       min_filter = W_r[0] - 1e-3f;
     }
     // bias range
-    float min_bias(b_r[0]);
-    float max_bias(b_r[1]);
+    float_t min_bias(b_r[0]);
+    float_t max_bias(b_r[1]);
     if (params.has_bias) {
         if (min_bias == max_bias) {
           max_bias = b_r[1] + 1e-3f;
@@ -367,8 +367,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
         }
     }
     // output range
-    float min_output_value;
-    float max_output_value;
+    float_t min_output_value;
+    float_t max_output_value;
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         in_r[0], in_r[1], min_filter, max_filter, &min_output_value,
         &max_output_value);
@@ -438,8 +438,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
         }
     });
 
-    float min_output_requantized;
-    float max_output_requantized;
+    float_t min_output_requantized;
+    float_t max_output_requantized;
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
     // Requantize from 32bits to 8 bits for next layer
@@ -447,7 +447,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
         &min_output_requantized, &max_output_requantized, &a_requantized);
     // store directly in float datatype
     for (size_t i = 0; i < a_requantized.size(); i++) {
-        a[i] = static_cast<float>(a_requantized[i]);
+        a[i] = static_cast<float_t>(a_requantized[i]);
     }
     a_r[0] = min_output_requantized;
     a_r[1] = max_output_requantized;

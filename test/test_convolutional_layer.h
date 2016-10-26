@@ -253,6 +253,8 @@ TEST(convolutional, fprop_avx) {
 
     tensor_buf buf(l), buf2(l);
 
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
     l.set_backend_type(tiny_dnn::core::backend_t::avx);
@@ -274,6 +276,8 @@ TEST(convolutional, bprop_avx) {
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
+
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -298,6 +302,8 @@ TEST(convolutional, fprop_avx_1x1out) {
 
     tensor_buf buf(l), buf2(l);
 
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
     l.set_backend_type(tiny_dnn::core::backend_t::avx);
@@ -318,6 +324,8 @@ TEST(convolutional, bprop_avx_1x1out) {
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
+
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -342,6 +350,8 @@ TEST(convolutional, fprop_avx_hstride) {
 
     tensor_buf buf(l), buf2(l);
 
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
     l.set_backend_type(tiny_dnn::core::backend_t::avx);
@@ -362,6 +372,8 @@ TEST(convolutional, bprop_avx_hstride) {
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
+
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -386,6 +398,8 @@ TEST(convolutional, fprop_avx_hstride_1x1out) {
 
     tensor_buf buf(l), buf2(l);
 
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
     l.set_backend_type(tiny_dnn::core::backend_t::avx);
@@ -406,6 +420,8 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
+
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -430,6 +446,8 @@ TEST(convolutional, fprop_avx_wstride) {
 
     tensor_buf buf(l), buf2(l);
 
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
     l.set_backend_type(tiny_dnn::core::backend_t::avx);
@@ -450,6 +468,8 @@ TEST(convolutional, bprop_avx_wstride) {
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
+
+    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());

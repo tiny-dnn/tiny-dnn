@@ -48,6 +48,7 @@ option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
 option(USE_SERIALIZER "Build tiny-dnn with Serialization support" ON)
+option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
@@ -96,6 +97,10 @@ endif()
 
 if(NOT USE_SERIALIZER)
     add_definitions(-DCNN_NO_SERIALIZATION)
+endif()
+
+if(USE_DOUBLE)
+    add_definitions(-DCNN_USE_DOUBLE)
 endif()
 
 # Find Open Multi-Processing (OpenMP)

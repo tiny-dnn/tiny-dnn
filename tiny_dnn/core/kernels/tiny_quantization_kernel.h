@@ -43,7 +43,7 @@ T lowest()  {
 // We have to be able to detect and handle overflows in int32, so this function
 // uses doubles and int64's to make sure we have enough room.
 template <class T>
-int64_t float_to_quantized_unclamped(float input, float range_min, float range_max) {
+int64_t float_to_quantized_unclamped(float_t input, float_t range_min, float_t range_max) {
   if (range_min == range_max) {
     return 0;
   }
@@ -68,7 +68,7 @@ inline int32_t int64_to_int32(int64_t src) {
 // This converts the float into the final quantized type, clamping/saturating
 // any over or underflows.
 template <class T>
-T float_to_quantized(float input, float range_min, float range_max) {
+T float_to_quantized(float_t input, float_t range_min, float_t range_max) {
   int64_t quantized = float_to_quantized_unclamped<T>(input, range_min, range_max);
   const int64_t lowest_quantized =
       static_cast<int64_t>(lowest<T>());
@@ -80,7 +80,7 @@ T float_to_quantized(float input, float range_min, float range_max) {
 }
 
 template <class T>
-float quantized_to_float(T input, float range_min, float range_max) {
+float quantized_to_float(T input, float_t range_min, float_t range_max) {
   if (range_min == range_max) {
     return range_min;
   }
@@ -93,11 +93,11 @@ float quantized_to_float(T input, float range_min, float range_max) {
       static_cast<int64_t>(lowest<T>());
   const double offset_input = static_cast<double>(input) - lowest_quantized;
   const double result = range_min + (offset_input * range_scale);
-  return static_cast<float>(result);
+  return static_cast<float_t>(result);
 }
 
 template <class T>
-float float_for_one_quantized_level(float range_min, float range_max) {
+float float_for_one_quantized_level(float_t range_min, float_t range_max) {
   const int64_t highest_ = static_cast<int64_t>(highest<T>());
   const int64_t lowest_ = static_cast<int64_t>(lowest<T>());
   const float float_for_one_quantized_level =
@@ -106,12 +106,12 @@ float float_for_one_quantized_level(float range_min, float range_max) {
 }
 
 template <class T1, class T2, class T3>
-void quantization_range_for_multiplication(float min_a, float max_a, float min_b,
-                                        float max_b, float* min_c,
-                                        float* max_c) {
-  const float a_float_for_one_quant_level =
+void quantization_range_for_multiplication(float_t min_a, float_t max_a, float_t min_b,
+                                           float_t max_b, float_t* min_c,
+                                           float_t* max_c) {
+  const float_t a_float_for_one_quant_level =
       float_for_one_quantized_level<T1>(min_a, max_a);
-  const float b_float_for_one_quant_level =
+  const float_t b_float_for_one_quant_level =
       float_for_one_quantized_level<T2>(min_b, max_b);
 
   const int64_t c_highest = static_cast<int64_t>(highest<T3>());
@@ -124,18 +124,18 @@ void quantization_range_for_multiplication(float min_a, float max_a, float min_b
 }
 
 template <class T1, class T2>
-inline T2 requantize_in_new_range(T1 input, float min_input, float max_input,
-                               float min_new, float max_new) {
-  const float input_float = quantized_to_float<T1>(input, min_input, max_input);
+inline T2 requantize_in_new_range(T1 input, float_t min_input, float_t max_input,
+                                  float_t min_new, float_t max_new) {
+  const float_t input_float = quantized_to_float<T1>(input, min_input, max_input);
   return float_to_quantized<T2>(input_float, min_new, max_new);
 }
 
 template <class T1, class T2>
-inline void requantize_many_in_new_range(T1* input, size_t count, float min_input,
-                                     float max_input, float min_output,
-                                     float max_output, T2* output) {
+inline void requantize_many_in_new_range(T1* input, size_t count, float_t min_input,
+                                         float_t max_input, float_t min_output,
+                                         float_t max_output, T2* output) {
   for (size_t index = 0; index < count; ++index) {
-    const float input_float =
+    const float_t input_float =
         quantized_to_float<T1>(input[index], min_input, max_input);
     output[index] = float_to_quantized<T2>(input_float, min_output, max_output);
   }
@@ -146,8 +146,8 @@ inline void requantize_many_in_new_range(T1* input, size_t count, float min_inpu
 // possible using only fixed-point math for the inner loop.
 template <>
 inline void requantize_many_in_new_range<int32_t, uint8_t>(
-    int32_t* input, size_t count, float min_input, float max_input,
-    float min_output, float max_output, uint8_t* output) {
+    int32_t* input, size_t count, float_t min_input, float_t max_input,
+    float_t min_output, float_t max_output, uint8_t* output) {
   // Initially we calculate all the constants we need once, before we go into
   // the inner loop.
   const int fp_shift = 16;
@@ -183,7 +183,7 @@ inline void requantize_many_in_new_range<int32_t, uint8_t>(
 
 // REQUIRES: 'result->NumElements() == input.NumElements()'
 template <class T>
-void float_tensor_to_quantized_in_place(const vec_t& input, float min, float max,
+void float_tensor_to_quantized_in_place(const vec_t& input, float_t min, float_t max,
                                    std::vector<T>* result) {
   const int data_size = input.size();
   for (int i = 0; i < data_size; ++i) {
@@ -192,7 +192,7 @@ void float_tensor_to_quantized_in_place(const vec_t& input, float min, float max
 }
 
 template <class T>
-std::vector<T> float_tensor_to_quantized(const vec_t& input, float min, float max) {
+std::vector<T> float_tensor_to_quantized(const vec_t& input, float_t min, float_t max) {
   std::vector<T> result(input.size(), static_cast<T>(0));
   float_tensor_to_quantized_in_place<T>(input, min, max, &result);
   return result;
@@ -200,7 +200,7 @@ std::vector<T> float_tensor_to_quantized(const vec_t& input, float min, float ma
 
 // REQUIRES: 'result->NumElements() == input.NumElements()'
 template <class T>
-void quantized_tensor_to_float_in_place(const std::vector<T>& input, float min, float max,
+void quantized_tensor_to_float_in_place(const std::vector<T>& input, float_t min, float_t max,
                                    vec_t* result) {
   const int data_size = input.size();
   for (int i = 0; i < data_size; ++i) {
@@ -209,15 +209,15 @@ void quantized_tensor_to_float_in_place(const std::vector<T>& input, float min, 
 }
 
 template <class T>
-vec_t quantized_tensor_to_float(const std::vector<T>& input, float min, float max) {
+vec_t quantized_tensor_to_float(const std::vector<T>& input, float_t min, float_t max) {
   vec_t result(input.size(), static_cast<float_t>(0));
   quantized_tensor_to_float_in_place<T>(input, min, max, &result);
   return result;
 }
 
 template <class T1, class T2>
-void quantize_down_and_shrink_range( std::vector<T1>& input, float min_input, float max_input,
-                               float* min_new, float* max_new, std::vector<T2>* output){
+void quantize_down_and_shrink_range( std::vector<T1>& input, float_t min_input, float_t max_input,
+                                    float_t* min_new, float_t* max_new, std::vector<T2>* output){
   const int32_t input_lowest_quantized = static_cast<int32_t>(lowest<T1>());
   const int32_t input_highest_quantized = static_cast<int32_t>(highest<T1>());
   T1 actual_min_quantized = input_highest_quantized;

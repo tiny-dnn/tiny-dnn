@@ -106,7 +106,8 @@ conv2d_op_custom(const tensor_t&         in_data,
 /******************************************************************/
 
 
-inline void
+template <typename tensor_t, typename vec_t>
+void
 conv2d_op_custom(const tensor_t&        prev_out,
                  const vec_t&                  W,
                  tensor_t&                    dW,
@@ -115,6 +116,9 @@ conv2d_op_custom(const tensor_t&        prev_out,
                  tensor_t&            prev_delta,
                  const core::conv_params& params,
                  const bool          parallelize) {
+
+    typedef typename vec_t::value_type float_t;
+
     for_i(parallelize, prev_out.size(), [&](int sample) {
         // propagate delta to previous layer
         for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
