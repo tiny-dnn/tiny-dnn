@@ -60,7 +60,9 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
     const size_t stride = params.h_stride * in_padded.width_;
     const size_t inarea = in_padded.area();
 
+    static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
     static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
+
     const __m128 y_bias_scale = _mm_set_ss(bias_scale);
     if (out.height_ == 1 && out.width_ == 1) {
         const float* pw = (const float*)&W[0];
@@ -129,11 +131,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 const float* pw = (const float*) &W[25 * (params.in.depth_ * o + inc)];
                 const float* pi = (const float*) &in[in_padded.get_index(0, 0, inc)];
 
-                __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
-                __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
-                __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
-                __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
-                __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
+                __m256 w0a = _mm256_maskload_ps(pw+0, imask);
+                __m256 w1a = _mm256_maskload_ps(pw+5, imask);
+                __m256 w2a = _mm256_maskload_ps(pw+10, imask);
+                __m256 w3a = _mm256_maskload_ps(pw+15, imask);
+                __m256 w4a = _mm256_maskload_ps(pw+20, imask);
                 __m256 w0b = leftShift<4>(w0a);
                 __m256 w1b = leftShift<4>(w1a);
                 __m256 w2b = leftShift<4>(w2a);
@@ -207,7 +209,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                         __m256 i1 = _mm256_loadu_ps(pi1);
                         __m256 i2 = _mm256_loadu_ps(pi2);
                         __m256 i3 = _mm256_loadu_ps(pi3);
-                        __m256 i4 = _mm256_loadu_ps(pi4);
+                        __m256 i4 = _mm256_maskload_ps(pi4, imask);
                         __m256 sum0 = _mm256_mul_ps(w0a, i0);
                         __m256 sum1 = _mm256_mul_ps(w1a, i1);
                         sum0 = madd256_ps(w2a, i2, sum0);

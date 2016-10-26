@@ -56,6 +56,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     const size_t in_padded_area = in_padded.area();
     float* pdelta_dst_org = &(*prev_delta)[0];
     const size_t  h_stride2 = params.h_stride * in_padded.width_;
+    static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
     static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
     // propagate delta to previous layer
     if (w_stride == 1 && out.width_ >= 4) {
@@ -165,7 +166,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             __m256 dst1 = _mm256_loadu_ps(delta_dst1);
             __m256 dst2 = _mm256_loadu_ps(delta_dst2);
             __m256 dst3 = _mm256_loadu_ps(delta_dst3);
-            __m256 dst4 = _mm256_loadu_ps(delta_dst4);
+            __m256 dst4 = _mm256_maskload_ps(delta_dst4, imask);
 
             // *FROM
             // ---0 0000
@@ -282,7 +283,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             _mm256_storeu_ps(delta_dst1, dst1);
             _mm256_storeu_ps(delta_dst2, dst2);
             _mm256_storeu_ps(delta_dst3, dst3);
-            _mm256_storeu_ps(delta_dst4, dst4);
+            _mm256_maskstore_ps(delta_dst4, imask, dst4);
         } // for
     } else {
         for (size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
@@ -292,11 +293,11 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
                 const float* pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
                 float* pdelta_dst = pdelta_dst_org;
-                __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
-                __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
-                __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
-                __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
-                __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
+                __m256 w0a = _mm256_maskload_ps(pw+0, imask);
+                __m256 w1a = _mm256_maskload_ps(pw+5, imask);
+                __m256 w2a = _mm256_maskload_ps(pw+10, imask);
+                __m256 w3a = _mm256_maskload_ps(pw+15, imask);
+                __m256 w4a = _mm256_maskload_ps(pw+20, imask);
                 for (cnn_size_t y = 0; y < out.height_; y++) {
                     float* delta_dst0 = pdelta_dst;
                     float* delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
@@ -309,7 +310,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                         __m256 dst1 = _mm256_loadu_ps(delta_dst1);
                         __m256 dst2 = _mm256_loadu_ps(delta_dst2);
                         __m256 dst3 = _mm256_loadu_ps(delta_dst3);
-                        __m256 dst4 = _mm256_loadu_ps(delta_dst4);
+                        __m256 dst4 = _mm256_maskload_ps(delta_dst4, imask);
                         dst0 = madd256_ps(w0a, delta_src, dst0);
                         dst1 = madd256_ps(w1a, delta_src, dst1);
                         dst2 = madd256_ps(w2a, delta_src, dst2);
@@ -319,7 +320,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                         _mm256_storeu_ps(delta_dst1, dst1);
                         _mm256_storeu_ps(delta_dst2, dst2);
                         _mm256_storeu_ps(delta_dst3, dst3);
-                        _mm256_storeu_ps(delta_dst4, dst4);
+                        _mm256_maskstore_ps(delta_dst4, imask, dst4);
                         delta_dst0 += w_stride;
                         delta_dst1 += w_stride;
                         delta_dst2 += w_stride;
@@ -343,7 +344,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             _mm256_storeu_ps(&floats[5], _mm256_loadu_ps(pprev_out + in_padded_width * 1));
             _mm256_storeu_ps(&floats[10], _mm256_loadu_ps(pprev_out + in_padded_width * 2));
             _mm256_storeu_ps(&floats[15], _mm256_loadu_ps(pprev_out + in_padded_width * 3));
-            _mm256_storeu_ps(&floats[20], _mm256_loadu_ps(pprev_out + in_padded_width * 4));
+            _mm256_storeu_ps(&floats[20], _mm256_maskload_ps(pprev_out + in_padded_width * 4, imask));
             __m256 prevos0 = _mm256_load_ps(&floats[0]);
             __m256 prevos1 = _mm256_load_ps(&floats[8]);
             __m256 prevos2 = _mm256_load_ps(&floats[16]);
@@ -420,8 +421,8 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                                     sum0 = madd256_ps(a, b, sum0);
                                 }
                                 if (remainder) {
-                                    __m256 a = _mm256_loadu_ps(pa + 8 * nblocks);
-                                    __m256 b = _mm256_loadu_ps(pb + 8 * nblocks);
+                                    __m256 a = _mm256_maskload_ps(pa + 8 * nblocks, mask);
+                                    __m256 b = _mm256_maskload_ps(pb + 8 * nblocks, mask);
                                     sum1 = madd256_ps(a, b, sum1);
                                 }
                             }
