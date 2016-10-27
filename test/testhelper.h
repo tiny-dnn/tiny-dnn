@@ -28,7 +28,7 @@
 #include <string>
 #include <iostream>
 #include <cstdio>
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {

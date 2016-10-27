@@ -27,7 +27,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#include "picotest/picotest.h"
+#include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn::activation;
@@ -68,6 +68,8 @@ using namespace tiny_dnn::activation;
 
 #include "test_image.h"
 
-int main(void) {
+
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

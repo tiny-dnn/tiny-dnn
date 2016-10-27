@@ -203,6 +203,12 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     return s;
 }
 
+template <typename T>
+std::ostream& operator << (std::ostream& s, const index3d<T>& d) {
+    s << d.width_ << "x" << d.height_ << "x" << d.depth_;
+    return s;
+}
+
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
     s << "[";
