@@ -78,12 +78,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool           has_bias = true,
                         cnn_size_t     w_stride = 1,
                         cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
-                              connection_table(), pad_type, has_bias, w_stride, h_stride,
-                              backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_size, window_size,
+			      in_channels, out_channels, connection_table(),
+			      pad_type, has_bias, w_stride, h_stride,
+			      backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -111,12 +110,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool           has_bias = true,
                         cnn_size_t     w_stride = 1,
                         cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_width, window_height, in_channels, out_channels,
-            connection_table(), pad_type, has_bias, w_stride, h_stride,
-            backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_width, window_height,
+			      in_channels, out_channels, connection_table(),
+			      pad_type, has_bias, w_stride, h_stride,
+			      backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -144,12 +142,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool                    has_bias = true,
                         cnn_size_t              w_stride = 1,
                         cnn_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
-            connection_table, pad_type, has_bias, w_stride, h_stride,
-            backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_size, window_size,
+			      in_channels, out_channels, connection_table,
+			      pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -179,8 +176,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool                    has_bias = true,
                         cnn_size_t              w_stride = 1,
                         cnn_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
+                        backend_t      backend_type = core::default_engine())
         : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -460,7 +456,6 @@ private:
     static cnn_size_t conv_out_length(cnn_size_t in_length,
                                       cnn_size_t window_size,
                                       cnn_size_t stride, padding pad_type) {
-
         size_t output_length;
 
         if (pad_type == padding::same) {
