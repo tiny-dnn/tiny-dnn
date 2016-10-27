@@ -23,6 +23,10 @@ add_executable(tiny_dnn_test test.cpp test_no_duplicate_symbols.cpp)
 target_link_libraries(tiny_dnn_test
     ${project_library_target_name} ${REQUIRED_LIBRARIES} gtest gmock)
 
+add_test(all_tests tiny_dnn_test)
+# workaround for https://gitlab.kitware.com/cmake/cmake/issues/8774
+add_custom_target(run_tests COMMAND ${CMAKE_CTEST_COMMAND}
+    DEPENDS tiny_dnn_test)
 
 if(COVERALLS)
     message(STATUS "Code coverage: Enabled")
