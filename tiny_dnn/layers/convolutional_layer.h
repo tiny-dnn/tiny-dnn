@@ -261,6 +261,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
         std::vector<tensor_t*> in_data_;
         in_data_.push_back(in_data_padded(in_data));
+
         for (cnn_size_t i = 1; i < in_data.size(); ++i) {
             in_data_.push_back(in_data[i]);
         }

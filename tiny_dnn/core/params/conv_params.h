@@ -135,7 +135,6 @@ class Conv2dPadding {
      */
     void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
         if (params_.pad_type == core::padding::valid) {
-            out = in;
             return;
         }
 
@@ -171,7 +170,6 @@ class Conv2dPadding {
      */
     void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
         if (params_.pad_type == core::padding::valid) {
-            delta_unpadded = delta;
             return;
         }
 
