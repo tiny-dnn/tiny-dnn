@@ -78,12 +78,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool           has_bias = true,
                         cnn_size_t     w_stride = 1,
                         cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
-                              connection_table(), pad_type, has_bias, w_stride, h_stride,
-                              backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_size, window_size,
+			      in_channels, out_channels, connection_table(),
+			      pad_type, has_bias, w_stride, h_stride,
+			      backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -111,12 +110,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool           has_bias = true,
                         cnn_size_t     w_stride = 1,
                         cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_width, window_height, in_channels, out_channels,
-            connection_table(), pad_type, has_bias, w_stride, h_stride,
-            backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_width, window_height,
+			      in_channels, out_channels, connection_table(),
+			      pad_type, has_bias, w_stride, h_stride,
+			      backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -144,12 +142,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool                    has_bias = true,
                         cnn_size_t              w_stride = 1,
                         cnn_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
-        : convolutional_layer(in_width, in_height, window_size, window_size, in_channels, out_channels,
-            connection_table, pad_type, has_bias, w_stride, h_stride,
-            backend_type, b_params)
-    {}
+                        backend_t      backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height, window_size, window_size,
+			      in_channels, out_channels, connection_table,
+			      pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -179,8 +176,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         bool                    has_bias = true,
                         cnn_size_t              w_stride = 1,
                         cnn_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine(),
-                        backend_params b_params = backend_params())
+                        backend_t      backend_type = core::default_engine())
         : Base(std_input_order(has_bias)) {
             conv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -195,6 +191,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     convolutional_layer(convolutional_layer&& other)  // NOLINT
             : Base(std::move(other))
             , params_(std::move(other.params_))
+            , padding_op_(std::move(other.padding_op_))
             , kernel_fwd_(std::move(other.kernel_fwd_))
             , kernel_back_(std::move(other.kernel_back_))
             , cws_(std::move(other.cws_)) {
@@ -220,7 +217,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>&       out_data) override { 
-        copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
+        // apply padding to the input tensor
+        padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
         std::vector<tensor_t*> in_data_;
         in_data_.push_back(in_data_padded(in_data));
@@ -259,6 +257,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
         std::vector<tensor_t*> in_data_;
         in_data_.push_back(in_data_padded(in_data));
+
         for (cnn_size_t i = 1; i < in_data.size(); ++i) {
             in_data_.push_back(in_data[i]);
         }
@@ -281,7 +280,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         kernel_back_->compute(ctx);
 
         // unpad deltas
-        copy_and_unpad_delta(cws_.prev_delta_padded_, *in_grad[0]);
+        padding_op_.copy_and_unpad_delta(cws_.prev_delta_padded_, *in_grad[0]);
     }
 
     void set_sample_count(cnn_size_t sample_count) override {
@@ -308,10 +307,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return std::string("conv");
     }
 
+    //TODO(edgar): check this
     std::string kernel_file() const override {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
     }
 
+    //TODO(edgar): is it really needed?
     std::string kernel_header() const override {
         std::stringstream ss;
         ss << "#define MULTI\n";
@@ -369,7 +370,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<convolutional_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar, cereal::construct<convolutional_layer> & construct) {
         size_t w_width, w_height, out_ch, w_stride, h_stride;
         bool has_bias;
         shape3d in;
@@ -387,7 +389,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", h_stride)
         );
 
-        construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
+        construct(in.width_, in.height_, w_width, w_height, in.depth_,
+                  out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
     }
 
     template <class Archive>
@@ -407,7 +410,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
-        return (params_.pad_type == core::padding::valid) ? in[0] : &cws_.prev_out_padded_;
+        return (params_.pad_type == core::padding::valid) ?
+            in[0] : &cws_.prev_out_padded_;
     }
 
     void conv_set_params(const shape3d& in,
@@ -438,6 +442,9 @@ private:
         if (params_.pad_type == padding::same) {
             cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
         }
+
+        // set parameters to padding operation
+        padding_op_ = Conv2dPadding(params_);
     }
 
     cnn_size_t in_length(cnn_size_t in_length,
@@ -449,7 +456,6 @@ private:
     static cnn_size_t conv_out_length(cnn_size_t in_length,
                                       cnn_size_t window_size,
                                       cnn_size_t stride, padding pad_type) {
-
         size_t output_length;
 
         if (pad_type == padding::same) {
@@ -518,85 +524,11 @@ private:
     }
 
  private:
-    /* Applies padding to an input tensor given the convolution parameters
-     *
-     * @param in The input tensor
-     * @param out The output tensor with padding applied
-     */
-    void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
-        if (params_.pad_type == core::padding::valid) {
-            return;
-        }
-
-        tensor_t buf(in.size());
-
-        for_i(true, buf.size(), [&](int sample) {
-            // alloc temporary buffer.
-            //buf[sample].resize(params_.in.depth_ *
-              //                 params_.in_padded.height_ *
-                //               params_.in_padded.width_);
-            buf[sample].resize(params_.in_padded.size());
-
-            // make padded version in order to avoid corner-case in fprop/bprop
-            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                float_t* pimg = &buf[sample][params_.in_padded.get_index(
-                                             params_.weight.width_  / 2,
-                                             params_.weight.height_ / 2, c)];
-                const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
-
-                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                    std::copy(pin, pin + params_.in.width_, pimg);
-                    pin  += params_.in.width_;
-                    pimg += params_.in_padded.width_;
-                }
-            }
-        });
-
-        // shrink buffer to output
-        out = buf;
-    }
-
-    /* Applies unpadding to an input tensor given the convolution parameters
-     *
-     * @param in The input tensor
-     * @param out The output tensor with unpadding applied
-     */
-    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
-        if (params_.pad_type == core::padding::valid) {
-            return;
-        }
-
-        tensor_t buf(delta.size());
-
-        for_i(true, buf.size(), [&](int sample) {
-            // alloc temporary buffer.
-            //buf[sample].resize(params_.in.depth_ *
-              //                 params_.in.height_ *
-                //               params_.in.width_);
-            buf[sample].resize(params_.in.size());
-
-            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
-                const float_t *pin =
-                    &delta[sample][params_.in_padded.get_index(
-                                   params_.weight.width_  / 2,
-                                   params_.weight.height_ / 2, c)];
-                float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
-
-                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
-                    std::copy(pin, pin + params_.in.width_, pdst);
-                    pdst += params_.in.width_;
-                    pin  += params_.in_padded.width_;
-                }
-            }
-        });
-
-        // shrink buffer to output
-        delta_unpadded = buf;
-    }
-
- private:
     /* The convolution parameters */
     conv_params params_;
+
+    /* Padding operation */
+    Conv2dPadding padding_op_;
 
     /* Forward and backward ops */
     std::shared_ptr<core::OpKernel> kernel_fwd_;

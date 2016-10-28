@@ -29,6 +29,7 @@
 namespace tiny_dnn {
 namespace core {
 
+class  conv_params;
 class fully_params;
 
 /* Base class to model operation parameters */
@@ -36,6 +37,7 @@ class Params {
  public:
     Params() {}
 
+    conv_params   conv() const;
     fully_params fully() const;
 };
 

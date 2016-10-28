@@ -119,5 +119,88 @@ class conv_params : public Params {
     }
 };
 
+inline conv_params Params::conv() const {
+    return *(static_cast<const conv_params*>(this));
+}
+
+class Conv2dPadding {
+ public:
+    Conv2dPadding() {}
+    Conv2dPadding(const conv_params& params) : params_(params) {}
+
+    /* Applies padding to an input tensor given the convolution parameters
+     *
+     * @param in The input tensor
+     * @param out The output tensor with padding applied
+     */
+    void copy_and_pad_input(const tensor_t& in, tensor_t& out) {
+        if (params_.pad_type == core::padding::valid) {
+            return;
+        }
+
+        tensor_t buf(in.size());
+
+        for_i(true, buf.size(), [&](int sample) {
+            // alloc temporary buffer.
+            buf[sample].resize(params_.in_padded.size());
+
+            // make padded version in order to avoid corner-case in fprop/bprop
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                float_t* pimg = &buf[sample][params_.in_padded.get_index(
+                                             params_.weight.width_  / 2,
+                                             params_.weight.height_ / 2, c)];
+                const float_t* pin = &in[sample][params_.in.get_index(0, 0, c)];
+
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pimg);
+                    pin  += params_.in.width_;
+                    pimg += params_.in_padded.width_;
+                }
+            }
+        });
+
+        // shrink buffer to output
+        out = buf;
+    }
+
+    /* Applies unpadding to an input tensor given the convolution parameters
+     *
+     * @param in The input tensor
+     * @param out The output tensor with unpadding applied
+     */
+    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
+        if (params_.pad_type == core::padding::valid) {
+            return;
+        }
+
+        tensor_t buf(delta.size());
+
+        for_i(true, buf.size(), [&](int sample) {
+            // alloc temporary buffer.
+            buf[sample].resize(params_.in.size());
+
+            for (cnn_size_t c = 0; c < params_.in.depth_; c++) {
+                const float_t *pin =
+                    &delta[sample][params_.in_padded.get_index(
+                                   params_.weight.width_  / 2,
+                                   params_.weight.height_ / 2, c)];
+                float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
+
+                for (cnn_size_t y = 0; y < params_.in.height_; y++) {
+                    std::copy(pin, pin + params_.in.width_, pdst);
+                    pdst += params_.in.width_;
+                    pin  += params_.in_padded.width_;
+                }
+            }
+        });
+
+        // shrink buffer to output
+        delta_unpadded = buf;
+    }
+
+ private:
+    conv_params params_;
+};
+
 }  // namespace core
 }  // namespace tiny_dnn
