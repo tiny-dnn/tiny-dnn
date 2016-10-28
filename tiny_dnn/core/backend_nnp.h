@@ -27,10 +27,8 @@
 #pragma once
 
 #include "tiny_dnn/core/backend.h"
-// #include "tiny_dnn/core/kernels/nnp_conv2d_kernel.h"
 #include "tiny_dnn/core/kernels/nnp_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/nnp_maxpool_kernel.h"
-#include "tiny_dnn/core/kernels/nnp_fully_kernel.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -172,8 +170,8 @@ class nnp_backend : public backend {
         vec_t&          b = (*in_data[2])[0];
         tensor_t&       a = *out_data[1];
 
-        kernels::nnp_fully_connected_kernel(*params_f_,
-            in, W, b, a, layer_->parallelize());
+        //kernels::nnp_fully_connected_kernel(*params_f_,
+        //    in, W, b, a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,

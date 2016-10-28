@@ -29,14 +29,11 @@
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/core/backend.h"
 
-#include "tiny_dnn/core/kernels/tiny_conv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_conv2d_kernel.h"
-#include "tiny_dnn/core/kernels/tiny_conv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_deconv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_maxpool_kernel.h"
-#include "tiny_dnn/core/kernels/tiny_fully_connected_kernel.h"
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/core/kernels/tiny_quantized_fully_connected_kernel.h"
 #endif
@@ -101,8 +98,8 @@ class tiny_backend : public backend {
 
         fill_tensor(a, float_t(0));
 
-        kernels::tiny_conv2d_kernel(*params_c_,
-            in, W, bias, a, layer_->parallelize());
+        //kernels::tiny_conv2d_kernel(*params_c_,
+        //    in, W, bias, a, layer_->parallelize());
     }
 
     // quantized convolution
@@ -165,8 +162,8 @@ class tiny_backend : public backend {
 
         fill_tensor(*prev_delta, float_t(0));
 
-        kernels::tiny_conv2d_back_kernel(*params_c_,
-            prev_out, W, dW, db, curr_delta, prev_delta);
+        //kernels::tiny_conv2d_back_kernel(*params_c_,
+        //    prev_out, W, dW, db, curr_delta, prev_delta);
 
         if (params_c_->pad_type == padding::same) {
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
@@ -356,9 +353,9 @@ class tiny_backend : public backend {
         const vec_t&    W   = (*in_data[1])[0];
         tensor_t&       a   = *out_data[1];
 
-        kernels::tiny_fully_connected_kernel(*params_f_,
-            in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-            a, layer_->parallelize());
+        //kernels::tiny_fully_connected_kernel(*params_f_,
+        //    in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
+        //    a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -412,8 +409,8 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
-            W, dW, prev_delta, curr_delta, db, layer_->parallelize());
+        //kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
+        //    W, dW, prev_delta, curr_delta, db, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
