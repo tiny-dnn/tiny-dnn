@@ -188,4 +188,4 @@ private:
 	std::vector<std::vector<uint8_t>> mask_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

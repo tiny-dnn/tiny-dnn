@@ -27,9 +27,9 @@
 #pragma once
 
 #include <string>
-
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -47,10 +47,10 @@ TEST(max_pool, read_write) {
 TEST(max_pool, forward) {
     max_pooling_layer<identity> l(4, 4, 1, 2);
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -89,10 +89,10 @@ TEST(max_pool, setup_tiny) {
 TEST(max_pool, forward_stride_tiny) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -136,7 +136,7 @@ TEST(max_pool, forward_stride) {
         0, 1, 2, 3,
         8, 7, 5, 6,
         4, 3, 1, 2,
-        0,-1,-2,-3
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -145,7 +145,7 @@ TEST(max_pool, forward_stride) {
         4, 3, 2
     };
 
-    vec_t res = l.forward({ { in } })[0][0];
+    vec_t res = l.forward({{in}})[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -155,10 +155,10 @@ TEST(max_pool, forward_stride) {
 TEST(max_pool, backward) {
     max_pooling_layer<identity> l(4, 4, 1, 2);
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t out_grad = {
@@ -173,8 +173,8 @@ TEST(max_pool, backward) {
         0, 0, 0, 0
     };
 
-    l.forward({ {in} })[0];
-    vec_t in_grad = l.backward(std::vector<tensor_t>{ {out_grad}})[0][0];
+    l.forward({{in}})[0];
+    vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
 
     for (size_t i = 0; i < in_grad.size(); i++) {
         EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);

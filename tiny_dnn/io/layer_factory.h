@@ -53,4 +53,4 @@ network<sequential> make_mlp(const std::vector<cnn_size_t>& units) {
 }
 
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

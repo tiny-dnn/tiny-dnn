@@ -63,4 +63,4 @@ private:
     shape3d shape_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

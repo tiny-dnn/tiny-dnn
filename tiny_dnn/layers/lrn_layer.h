@@ -25,8 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
 #include <algorithm>
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
@@ -220,4 +220,4 @@ private:
     vec_t in_square_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

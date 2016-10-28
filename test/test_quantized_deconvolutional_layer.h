@@ -25,8 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -268,4 +268,4 @@ TEST(quantized_deconvolutional, read_write2) {
     serialization_test(layer1, layer2);
 }*/
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

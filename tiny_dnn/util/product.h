@@ -278,7 +278,7 @@ inline void reduce_aligned(const typename T::value_type* src, std::size_t  size,
         dst[i] += src[i];
 }
 
-} // namespace detail
+}  // namespace detail
 
 #if defined(CNN_USE_AVX)
 #define VECTORIZE_TYPE(T) detail::avx<T>
@@ -315,4 +315,4 @@ void reduce(const T* src, std::size_t  size, T* dst) {
         return detail::reduce_nonaligned<VECTORIZE_TYPE(T)>(src, size, dst);
 }
 
-} // namespace vectorize
+}  // namespace vectorize

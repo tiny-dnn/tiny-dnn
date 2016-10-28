@@ -96,6 +96,6 @@ class progress_display
   progress_display &operator = (const progress_display &) = delete;
 };
 
-} // namespace
+}  // namespace
 
 #endif

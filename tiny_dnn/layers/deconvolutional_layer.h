@@ -500,4 +500,4 @@ private:
     deconv_layer_worker_specific_storage deconv_layer_worker_storage_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

@@ -26,6 +26,7 @@
 */
 #pragma once
 
+#include <vector>
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/core/params/conv_params.h"
 #include "tiny_dnn/core/params/deconv_params.h"
@@ -61,7 +62,7 @@ inline backend_t default_engine() {
 #if defined(__AVX__) || defined(__AVX2__)
     return backend_t::avx;
 #endif
-#endif // CNN_USE_AVX
+#endif  // CNN_USE_AVX
     return backend_t::tiny_dnn;
 }
 

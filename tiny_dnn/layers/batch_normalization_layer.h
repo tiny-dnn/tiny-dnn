@@ -25,11 +25,11 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include <algorithm>
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/math_functions.h"
 #include "tiny_dnn/layers/layer.h"
 
-#include <algorithm>
 
 namespace tiny_dnn {
 
@@ -310,4 +310,4 @@ private:
     bool update_immidiately_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

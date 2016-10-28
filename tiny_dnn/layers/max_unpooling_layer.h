@@ -214,4 +214,4 @@ private:
 
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

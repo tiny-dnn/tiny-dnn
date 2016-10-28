@@ -178,7 +178,7 @@ void serialize_prolog(OutputArchive& oa, std::type_index typeindex) {
         .serialization_name(typeindex)));
 }
 
-} // namespace detail
+}  // namespace detail
 
 template <typename T>
 void start_loading_layer(T & ar) {}
@@ -229,7 +229,7 @@ void layer::serialize_prolog(Archive & ar) {
     detail::serialize_prolog(ar, typeid(*this));
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
 
 #define CNN_REGISTER_LAYER_SERIALIZER_BODY(layer_type, layer_name, unique_name) \
 static tiny_dnn::detail::automatic_layer_generator_register<cereal::JSONInputArchive, cereal::JSONOutputArchive, layer_type> s_register_##unique_name(layer_name);\
@@ -268,5 +268,5 @@ CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATION(layer_type, leaky_relu, layer_name
 CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATION(layer_type, elu, layer_name); \
 CNN_REGISTER_LAYER_SERIALIZER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 
-#endif // CNN_NO_SERIALIZATION
+#endif  // CNN_NO_SERIALIZATION
 

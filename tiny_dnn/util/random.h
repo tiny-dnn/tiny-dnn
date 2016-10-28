@@ -81,7 +81,7 @@ inline void set_random_seed(unsigned int seed) {
 
 template<typename Container>
 inline int uniform_idx(const Container& t) {
-    return uniform_rand(0, int(t.size() - 1));
+    return uniform_rand(0, static_cast<int>(t.size() - 1));
 }
 
 inline bool bernoulli(float_t p) {
@@ -100,4 +100,4 @@ void gaussian_rand(Iter begin, Iter end, float_t mean, float_t sigma) {
         *it = gaussian_rand(mean, sigma);
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

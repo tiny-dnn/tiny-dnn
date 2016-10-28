@@ -195,4 +195,4 @@ public:
     float_t mu; // momentum
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

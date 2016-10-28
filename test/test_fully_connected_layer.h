@@ -25,8 +25,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+#include <vector>
+#include "gtest/gtest.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -110,11 +111,13 @@ TEST(fully_connected, gradient_check) {
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+                                       test_data.second,
+                                       epsilon<float_t>(),
+                                       GRAD_CHECK_ALL));
 }
 
-TEST(fully_connected, read_write)
-{
+TEST(fully_connected, read_write) {
     fully_connected_layer<tan_h> l1(100, 100);
     fully_connected_layer<tan_h> l2(100, 100);
 
@@ -124,17 +127,16 @@ TEST(fully_connected, read_write)
     serialization_test(l1, l2);
 }
 
-TEST(fully_connected, forward)
-{
+TEST(fully_connected, forward) {
     fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+    EXPECT_EQ(l.in_channels(), cnn_size_t(3));  // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
 
-    vec_t in = {0,1,2,3};
-    vec_t out = l.forward({ {in} })[0][0];
-    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+    vec_t in = {0, 1, 2, 3};
+    vec_t out = l.forward({{in}})[0][0];
+    vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
     for (size_t i = 0; i < out_expected.size(); i++) {
         EXPECT_FLOAT_EQ(out_expected[i], out[i]);
@@ -142,17 +144,16 @@ TEST(fully_connected, forward)
 }
 
 #ifdef CNN_USE_NNPACK
-TEST(fully_connected, forward_nnp)
-{
+TEST(fully_connected, forward_nnp) {
     fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
-    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+    EXPECT_EQ(l.in_channels(), 3);  // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
 
-    vec_t in = {0,1,2,3};
+    vec_t in = {0, 1, 2, 3};
     vec_t out = l.forward({ {in} })[0][0];
-    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+    vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
     for (size_t i = 0; i < out_expected.size(); i++) {
         EXPECT_FLOAT_EQ(out_expected[i], out[i]);
@@ -160,20 +161,19 @@ TEST(fully_connected, forward_nnp)
 }
 #endif
 
-TEST(fully_connected, forward_nobias)
-{
+TEST(fully_connected, forward_nobias) {
     fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(2));// in and W
+    EXPECT_EQ(l.in_channels(), cnn_size_t(2));  // in and W
 
     l.weight_init(weight_init::constant(1.0));
 
-    vec_t in = { 0,1,2,3 };
-    vec_t out = l.forward({ { in } })[0][0];
-    vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
+    vec_t in = {0, 1, 2, 3};
+    vec_t out = l.forward({{in}})[0][0];
+    vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
     for (size_t i = 0; i < out_expected.size(); i++) {
         EXPECT_FLOAT_EQ(out_expected[i], out[i]);
     }
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

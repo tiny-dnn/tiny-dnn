@@ -44,7 +44,7 @@ public:
     typedef layer Base;
 
     /**
-     * @param in_shape @ [in] size (width * height * channels) of input data
+     * @param in_shape ï¿½@ [in] size (width * height * channels) of input data
      * @param slice_type  [in] target axis of slicing
      * @param num_outputs [in] number of output layers
      *
@@ -253,4 +253,4 @@ private:
     std::vector<cnn_size_t> slice_size_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

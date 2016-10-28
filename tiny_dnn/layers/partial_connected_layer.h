@@ -170,4 +170,4 @@ protected:
     float_t scale_factor_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

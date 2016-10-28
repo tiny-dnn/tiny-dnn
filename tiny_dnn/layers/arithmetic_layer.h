@@ -97,5 +97,5 @@ private:
     cnn_size_t dim_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
 
