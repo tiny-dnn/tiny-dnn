@@ -30,6 +30,7 @@ find_package(Protobuf QUIET)
 if(PROTOBUF_FOUND)
     set(proto_file "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.pb.cc")
     if(EXISTS ${proto_file})
+        include_directories(${PROTOBUF_INCLUDE_DIRS})
         add_executable(example_caffe_converter
                        caffe_converter/caffe_converter.cpp ${proto_file})
         target_link_libraries(example_caffe_converter
