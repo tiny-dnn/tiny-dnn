@@ -64,7 +64,13 @@ class nnp_backend : public backend {
 
     void conv2d(const std::vector<tensor_t*>& in_data,
                 std::vector<tensor_t*>&       out_data) override {
-        if (!params_c_->has_bias) {
+	if (params_c_) return;  // workaround to fix warnings
+	if (params_f_) return;  // workaround to fix warnings
+	if (params_d_) return;  // workaround to fix warnings
+	if (conv_layer_worker_storage_) return;    // workaround to fix warnings
+	if (deconv_layer_worker_storage_) return;  // workaround to fix warnings
+
+        /*if (!params_c_->has_bias) {
             throw nn_error("NNPACK Convolution requires a bias term.");
         }
 
@@ -72,20 +78,18 @@ class nnp_backend : public backend {
             throw nn_error("NNPACK Convolution requires stride 1.");
         }
 
-/*
         copy_and_pad_input(*in_data[0]);
-        //const vec_t& W = (*in_data[1])[0];
-        //const vec_t& bias = (*in_data[2])[0];
+        const vec_t& W = (*in_data[1])[0];
+        const vec_t& bias = (*in_data[2])[0];
         tensor_t&    a = *out_data[1];
-        //const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
+        const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
 
         fill_tensor(a, float_t(0));
-*/
 
         // TODO
         throw nn_not_implemented_error();
 
-        // kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);
+        kernels::nnp_conv2d_kernel(*params_c_, in, W, bias, a);*/
     }
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
@@ -165,13 +169,13 @@ class nnp_backend : public backend {
 
     void fully(const std::vector<tensor_t*>& in_data,
                std::vector<tensor_t*>&       out_data) override {
-        const tensor_t& in = *in_data[0];
+        /*const tensor_t& in = *in_data[0];
         const vec_t&    W = (*in_data[1])[0];
         vec_t&          b = (*in_data[2])[0];
         tensor_t&       a = *out_data[1];
 
-        //kernels::nnp_fully_connected_kernel(*params_f_,
-        //    in, W, b, a, layer_->parallelize());
+        kernels::nnp_fully_connected_kernel(*params_f_,
+            in, W, b, a, layer_->parallelize());*/
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
