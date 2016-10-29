@@ -103,11 +103,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 * adam
 
 ## Dependencies
-##### Minimum requirements
 Nothing. All you need is a C++11 compiler.
-
-##### Requirements to build sample/test programs
-[OpenCV](http://opencv.org/)
 
 ## Build
 tiny-dnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
@@ -126,7 +122,6 @@ Some cmake options are available:
 |USE_OMP|Use OpenMP for parallelization|OFF<sup>1</sup>|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
-|USE_OPENCV|Use OpenCV for sample/test programs|OFF|[Open Source Computer Vision Library](http://opencv.org/)|
 |USE_NNPACK|Use NNPACK for convolution operation|OFF|[Acceleration package for neural networks on multi-core CPUs](https://github.com/Maratyszcza/NNPACK)|
 |USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
 |USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
