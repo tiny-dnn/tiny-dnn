@@ -75,6 +75,11 @@ enum class net_phase {
     test
 };
 
+enum class padding {
+    valid,  ///< use valid pixels of input
+    same    ///< add zero-padding around input so as to keep image size
+};
+
 template<typename T>
 T* reverse_endian(T* p) {
     std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));

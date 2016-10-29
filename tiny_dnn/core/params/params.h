@@ -41,10 +41,8 @@ class Params {
     fully_params fully() const;
 };
 
-enum class padding {
-    valid,  ///< use valid pixels of input
-    same    ///< add zero-padding around input so as to keep image size
-};
+/* @deprecated for backward compatibility */
+typedef tiny_dnn::padding padding;
 
 }  // namespace core
 }  // namespace tiny_dnn
