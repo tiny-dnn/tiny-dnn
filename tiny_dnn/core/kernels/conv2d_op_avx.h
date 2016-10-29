@@ -61,7 +61,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
     const size_t inarea = in_padded.area();
 
     static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
-    static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
+    // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 
     const __m128 y_bias_scale = _mm_set_ss(bias_scale);
     if (out.height_ == 1 && out.width_ == 1) {

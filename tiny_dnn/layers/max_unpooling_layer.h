@@ -93,7 +93,7 @@ public:
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>&       out_data)  override {
         const vec_t& in  = *in_data[0];
-        vec_t&       out = *out_data[0];
+        // vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
         std::vector<cnn_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
 
