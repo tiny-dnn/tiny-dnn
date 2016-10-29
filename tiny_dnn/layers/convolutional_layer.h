@@ -453,21 +453,6 @@ private:
                (in_length + window_size - 1) : in_length;
     }
 
-    static cnn_size_t conv_out_length(cnn_size_t in_length,
-                                      cnn_size_t window_size,
-                                      cnn_size_t stride, padding pad_type) {
-        size_t output_length;
-
-        if (pad_type == padding::same) {
-            output_length = in_length;
-        } else if (pad_type == padding::valid) {
-            output_length = in_length - window_size + 1;
-        } else {
-            throw nn_error("Not recognized pad_type.");
-        }
-        return (output_length + stride - 1) / stride;
-    }
-
     static cnn_size_t conv_out_dim(cnn_size_t in_width,
                                    cnn_size_t in_height,
                                    cnn_size_t window_size,

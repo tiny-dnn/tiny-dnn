@@ -357,6 +357,24 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
     }
 }
 
+inline cnn_size_t conv_out_length(cnn_size_t in_length,
+                                  cnn_size_t window_size,
+                                  cnn_size_t stride,
+                                  padding pad_type) {
+    size_t output_length;
+
+    if (pad_type == padding::same) {
+        output_length = in_length;
+    }
+    else if (pad_type == padding::valid) {
+        output_length = in_length - window_size + 1;
+    }
+    else {
+        throw nn_error("Not recognized pad_type.");
+    }
+    return (output_length + stride - 1) / stride;
+}
+
 // get all platforms (drivers), e.g. NVIDIA
 // https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 

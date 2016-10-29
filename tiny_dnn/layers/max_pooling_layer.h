@@ -105,8 +105,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             : Base({ vector_type::data }) {
         set_maxpool_params(
             shape3d(in_width, in_height, in_channels),
-            shape3d(pool_out_dim(in_width, pooling_size_x, stride_x, pad_type),
-                    pool_out_dim(in_height, pooling_size_y, stride_y, pad_type),
+            shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
+                    conv_out_length(in_height, pooling_size_y, stride_y, pad_type),
                     in_channels),
             pooling_size_x, pooling_size_y, stride_x, stride_y, pad_type);
 
@@ -210,14 +210,6 @@ private:
 
     max_pooling_layer_worker_specific_storage
     max_pooling_layer_worker_storage_;
-
-    static cnn_size_t pool_out_dim(cnn_size_t in_size,
-                                   cnn_size_t pooling_size,
-                                   cnn_size_t stride,
-                                   core::padding padding) {
-        float_t tmp = static_cast<float_t>(in_size - pooling_size) / stride;
-        return static_cast<cnn_size_t>(std::ceil(tmp) + float_t(1.0));
-    }
 
     void connect_kernel(cnn_size_t pooling_size_x,
                         cnn_size_t pooling_size_y,
