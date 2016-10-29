@@ -31,11 +31,6 @@
 namespace tiny_dnn {
 namespace core {
 
-enum class padding {
-    valid,  ///< use valid pixels of input
-    same    ///< add zero-padding around input so as to keep image size
-};
-
 struct conv_layer_worker_specific_storage {
     std::vector<const vec_t*> prev_out_padded_;
     std::vector<vec_t> prev_out_buf_;
