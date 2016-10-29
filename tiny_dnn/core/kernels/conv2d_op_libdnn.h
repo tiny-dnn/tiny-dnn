@@ -56,7 +56,10 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
  public:
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
             : core::OpKernel(context)
-            , initialized_(false) {
+#ifdef CNN_USE_LIBDNN
+            , initialized_(false)
+#endif
+    	{
         // TODO(edgar): remove this if statement when refactor
         // the init_backend() routine at layer level.
         if (OpKernel::device_ != nullptr) {
@@ -117,14 +120,14 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
             // TODO(edgar/naibaf): enable when second generation
             // kernel are available
 
-            /*if (!initialized_) {
-                kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
+            if (!initialized_) {
+                /*kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
                               const_cast<float_t*>(weights_ptr), nullptr,
                               const_cast<float_t*>(bias_ptr), nullptr,
                               const_cast<float_t*>(input_ptr), nullptr,
                               batch_size);
-                initialized_ = true;
-            }*/
+                initialized_ = true;*/
+            }
 
             // call libdnn forward
 
@@ -295,8 +298,8 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 #ifdef CNN_USE_LIBDNN
     std::shared_ptr<greentea::device> dev_ptr_;
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
-#endif
     bool initialized_;
+#endif
 };
 
 class Conv2dLibDNNBackwardOp : public core::OpKernel {

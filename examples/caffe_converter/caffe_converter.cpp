@@ -106,7 +106,7 @@ void test(const string& model_file,
     auto net = create_net_from_caffe_prototxt(model_file);
     reload_weight_from_caffe_protobinary(trained_file, net.get());
 
-    int channels = (*net)[0]->in_data_shape()[0].depth_;
+    // int channels = (*net)[0]->in_data_shape()[0].depth_;
     int width = (*net)[0]->in_data_shape()[0].width_;
     int height = (*net)[0]->in_data_shape()[0].height_;
 
