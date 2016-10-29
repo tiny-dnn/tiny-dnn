@@ -28,12 +28,9 @@
 
 #include "tiny_dnn/core/backend.h"
 
-// #include "tiny_dnn/core/kernels/avx_conv2d_kernel.h"
-// #include "tiny_dnn/core/kernels/avx_conv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/avx_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/avx_deconv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/avx_maxpool_kernel.h"
-#include "tiny_dnn/core/kernels/avx_fully_connected_kernel.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -242,9 +239,9 @@ class avx_backend : public backend {
         const vec_t&    W = (*in_data[1])[0];
         tensor_t&       a = *out_data[1];
 
-        kernels::avx_fully_connected_kernel(*params_f_,
-            in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-            a, layer_->parallelize());
+        //kernels::avx_fully_connected_kernel(*params_f_,
+        //    in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
+        //    a, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -270,8 +267,8 @@ class avx_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
-            W, dW, prev_delta, curr_delta, db, layer_->parallelize());
+        //kernels::avx_fully_connected_back_kernel(*params_f_, prev_out,
+        //    W, dW, prev_delta, curr_delta, db, layer_->parallelize());
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
