@@ -133,9 +133,7 @@ class tan_h : public function {
 public:
     using function::df;
     float_t f(const vec_t& v, cnn_size_t i) const override {
-        const float_t ep = std::exp(v[i]);
-        const float_t em = std::exp(-v[i]); 
-        return (ep - em) / (ep + em);
+        return std::tanh(v[i]);
     }
 
     // fast approximation of tanh (improve 2-3% speed in LeNet-5)
