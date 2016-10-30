@@ -75,6 +75,16 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_, pooling_size, stride, backend_type, b_params) {
     }
 
+    max_pooling_layer(cnn_size_t     in_width,
+                      cnn_size_t     in_height,
+                      cnn_size_t     in_channels,
+                      cnn_size_t     pooling_size,
+                      cnn_size_t     stride,
+                      backend_t      backend_type = core::default_engine(),
+                      backend_params b_params = backend_params())
+        : max_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size, stride, stride, padding::valid, backend_type, b_params) {
+    }
+
     /**
      * @param in_width     [in] width of input image
      * @param in_height    [in] height of input image
@@ -85,17 +95,20 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     max_pooling_layer(cnn_size_t     in_width,
                       cnn_size_t     in_height,
                       cnn_size_t     in_channels,
-                      cnn_size_t     pooling_size,
-                      cnn_size_t     stride,
-                      backend_t      backend_type = backend_t::tiny_dnn,
+                      cnn_size_t     pooling_size_x,
+                      cnn_size_t     pooling_size_y,
+                      cnn_size_t     stride_x,
+                      cnn_size_t     stride_y,
+                      padding        pad_type = padding::valid,
+                      backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
             : Base({ vector_type::data }) {
         set_maxpool_params(
             shape3d(in_width, in_height, in_channels),
-            shape3d(pool_out_dim(in_width, pooling_size, stride),
-                    pool_out_dim(in_height, pooling_size, stride),
+            shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
+                    conv_out_length(in_height, pooling_size_y, stride_y, pad_type),
                     in_channels),
-            pooling_size, stride);
+            pooling_size_x, pooling_size_y, stride_x, stride_y, pad_type);
 
         init_connection();
         init_backend(backend_type);
@@ -140,10 +153,10 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
     std::vector<index3d<cnn_size_t>>
-    in_shape() const override { return { params_.in_ }; }
+    in_shape() const override { return { params_.in }; }
 
     std::vector<index3d<cnn_size_t>>
-    out_shape() const override { return { params_.out_, params_.out_ }; }
+    out_shape() const override { return { params_.out, params_.out }; }
 
     std::string layer_type() const override {
         return std::string("max-pool");
@@ -153,27 +166,38 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/pooling.cl");
     }
 
-    size_t pool_size() const { return params_.pool_size_; }
+    std::pair<cnn_size_t, cnn_size_t> pool_size() const { return std::make_pair(params_.pool_size_x, params_.pool_size_y); }
 
     void set_sample_count(cnn_size_t sample_count) override {
         Base::set_sample_count(sample_count);
-        max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out_.size()));
+        max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out.size()));
     }
 
 
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<max_pooling_layer> & construct) {
         shape3d in;
-        size_t stride, pool_size;
+        cnn_size_t stride_x, stride_y, pool_size_x, pool_size_y;
+        padding pad_type;
 
-        ar(cereal::make_nvp("in_size", in), cereal::make_nvp("pool_size", pool_size), cereal::make_nvp("stride", stride));
-        construct(in, pool_size, stride);
+        ar(cereal::make_nvp("in_size", in),
+           cereal::make_nvp("pool_size_x", pool_size_x),
+           cereal::make_nvp("pool_size_y", pool_size_y),
+           cereal::make_nvp("stride_x", stride_x),
+           cereal::make_nvp("stride_y", stride_y),
+            cereal::make_nvp("pad_type", pad_type));
+        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y, stride_x, stride_y, pad_type);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in_), cereal::make_nvp("pool_size", params_.pool_size_), cereal::make_nvp("stride", params_.stride_));
+        ar(cereal::make_nvp("in_size", params_.in),
+            cereal::make_nvp("pool_size_x", params_.pool_size_x),
+            cereal::make_nvp("pool_size_y", params_.pool_size_y),
+            cereal::make_nvp("stride_x", params_.stride_x),
+            cereal::make_nvp("stride_y", params_.stride_y),
+            cereal::make_nvp("pad_type", params_.pad_type));
     }
 
 private:
@@ -187,31 +211,25 @@ private:
     max_pooling_layer_worker_specific_storage
     max_pooling_layer_worker_storage_;
 
-    static cnn_size_t pool_out_dim(cnn_size_t in_size,
-                                   cnn_size_t pooling_size,
-                                   cnn_size_t stride) {
-        float_t tmp = static_cast<float_t>(in_size - pooling_size) / stride;
-        return static_cast<cnn_size_t>(std::ceil(tmp) + float_t(1.0));
-    }
-
-    void connect_kernel(cnn_size_t pooling_size,
+    void connect_kernel(cnn_size_t pooling_size_x,
+                        cnn_size_t pooling_size_y,
                         cnn_size_t outx,
                         cnn_size_t outy,
                         cnn_size_t c) {
         cnn_size_t dxmax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size),
-                     params_.in_.width_ - outx * params_.stride_));
+            std::min(static_cast<size_t>(pooling_size_x),
+                     params_.in.width_ - outx * params_.stride_x));
 
         cnn_size_t dymax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size),
-                     params_.in_.height_ - outy * params_.stride_));
+            std::min(static_cast<size_t>(pooling_size_y),
+                     params_.in.height_ - outy * params_.stride_y));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
             for (cnn_size_t dx = 0; dx < dxmax; dx++) {
-                cnn_size_t in_index = params_.in_.get_index(
-                    static_cast<cnn_size_t>(outx * params_.stride_ + dx),
-                    static_cast<cnn_size_t>(outy * params_.stride_ + dy), c);
-                cnn_size_t out_index = params_.out_.get_index(outx, outy, c);
+                cnn_size_t in_index = params_.in.get_index(
+                    static_cast<cnn_size_t>(outx * params_.stride_x + dx),
+                    static_cast<cnn_size_t>(outy * params_.stride_y + dy), c);
+                cnn_size_t out_index = params_.out.get_index(outx, outy, c);
 
                 if (in_index >= in2out_.size()) {
                     throw nn_error("index overflow");
@@ -226,14 +244,14 @@ private:
     }
 
     void init_connection() {
-        in2out_.resize(params_.in_.size());
-        out2in_.resize(params_.out_.size());
-        //max_pooling_layer_worker_storage_.out2inmax_.resize(params_.out_.size());
+        in2out_.resize(params_.in.size());
+        out2in_.resize(params_.out.size());
 
-        for (cnn_size_t c = 0; c < params_.in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < params_.out_.height_; ++y) {
-                for (cnn_size_t x = 0; x < params_.out_.width_; ++x) {
-                    connect_kernel(static_cast<cnn_size_t>(params_.pool_size_),
+        for (cnn_size_t c = 0; c < params_.in.depth_; ++c) {
+            for (cnn_size_t y = 0; y < params_.out.height_; ++y) {
+                for (cnn_size_t x = 0; x < params_.out.width_; ++x) {
+                    connect_kernel(params_.pool_size_x,
+                                   params_.pool_size_y,
                                    x, y, c);
                 }
             }
@@ -282,12 +300,18 @@ private:
 
     void set_maxpool_params(const shape3d& in,
                             const shape3d& out,
-                            cnn_size_t pooling_size,
-                            cnn_size_t stride) {
-        params_.in_        = in;
-        params_.out_       = out;
-        params_.pool_size_ = pooling_size;
-        params_.stride_    = stride;
+                            cnn_size_t pooling_size_x,
+                            cnn_size_t pooling_size_y,
+                            cnn_size_t stride_x,
+                            cnn_size_t stride_y,
+                            padding pad_type) {
+        params_.in        = in;
+        params_.out       = out;
+        params_.pool_size_x = pooling_size_x;
+        params_.pool_size_y = pooling_size_y;
+        params_.stride_x    = stride_x;
+        params_.stride_y    = stride_y;
+        params_.pad_type    = pad_type;
     }
 };
 

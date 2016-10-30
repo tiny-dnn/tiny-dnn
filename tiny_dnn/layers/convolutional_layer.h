@@ -410,7 +410,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
-        return (params_.pad_type == core::padding::valid) ?
+        return (params_.pad_type == padding::valid) ?
             in[0] : &cws_.prev_out_padded_;
     }
 
@@ -451,21 +451,6 @@ private:
                          cnn_size_t window_size, padding pad_type) const {
         return pad_type == padding::same ?
                (in_length + window_size - 1) : in_length;
-    }
-
-    static cnn_size_t conv_out_length(cnn_size_t in_length,
-                                      cnn_size_t window_size,
-                                      cnn_size_t stride, padding pad_type) {
-        size_t output_length;
-
-        if (pad_type == padding::same) {
-            output_length = in_length;
-        } else if (pad_type == padding::valid) {
-            output_length = in_length - window_size + 1;
-        } else {
-            throw nn_error("Not recognized pad_type.");
-        }
-        return (output_length + stride - 1) / stride;
     }
 
     static cnn_size_t conv_out_dim(cnn_size_t in_width,

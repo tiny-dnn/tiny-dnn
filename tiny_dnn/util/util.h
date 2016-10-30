@@ -75,6 +75,11 @@ enum class net_phase {
     test
 };
 
+enum class padding {
+    valid,  ///< use valid pixels of input
+    same    ///< add zero-padding around input so as to keep image size
+};
+
 template<typename T>
 T* reverse_endian(T* p) {
     std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));
@@ -350,6 +355,24 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
     for (auto& t : tensor) {
         t.resize(size, value);
     }
+}
+
+inline cnn_size_t conv_out_length(cnn_size_t in_length,
+                                  cnn_size_t window_size,
+                                  cnn_size_t stride,
+                                  padding pad_type) {
+    size_t output_length;
+
+    if (pad_type == padding::same) {
+        output_length = in_length;
+    }
+    else if (pad_type == padding::valid) {
+        output_length = in_length - window_size + 1;
+    }
+    else {
+        throw nn_error("Not recognized pad_type.");
+    }
+    return (output_length + stride - 1) / stride;
 }
 
 // get all platforms (drivers), e.g. NVIDIA

@@ -146,11 +146,11 @@ class nnp_backend : public backend {
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
-        if (params_m_->stride_ != 2) {
+        if (params_m_->stride_x != 2 || params_m_->stride_y != 2) {
             throw nn_error("NNPACK Max-Pool requires a stride == 2.");
         }
 
-        if (params_m_->pool_size_ != 2) {
+        if (params_m_->pool_size_x != 2 || params_m_->pool_size_y != 2) {
             throw nn_error("NNPACK Max-Pool requires a pool size == 2.");
         }
 

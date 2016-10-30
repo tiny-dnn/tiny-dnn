@@ -39,12 +39,12 @@ inline void nnp_maxpool_kernel(const maxpool_params& params,
                                tensor_t&                a) {
 #ifdef CNN_USE_NNPACK
 
-    const cnn_size_t input_channels  = params.in_.depth_;
-    const cnn_size_t output_channels = params.out_.depth_;
+    const cnn_size_t input_channels  = params.in.depth_;
+    const cnn_size_t output_channels = params.out.depth_;
 
     const nnp_size input_size = {
-        static_cast<size_t>(params.in_.width_),
-        static_cast<size_t>(params.in_.height_)
+        static_cast<size_t>(params.in.width_),
+        static_cast<size_t>(params.in.height_)
     };
 
     const nnp_padding input_padding = {
@@ -55,13 +55,13 @@ inline void nnp_maxpool_kernel(const maxpool_params& params,
     };
 
     const nnp_size pooling_size = {
-        static_cast<size_t>(params.pool_size_),
-        static_cast<size_t>(params.pool_size_)
+        static_cast<size_t>(params.pool_size_x),
+        static_cast<size_t>(params.pool_size_y)
     };
 
     const nnp_size pooling_stride = {
-        static_cast<size_t>(params.stride_),
-        static_cast<size_t>(params.stride_)
+        static_cast<size_t>(params.stride_x),
+        static_cast<size_t>(params.stride_y)
     };
 
     const float* input_ptr = reinterpret_cast<const float*>(&in[0]);

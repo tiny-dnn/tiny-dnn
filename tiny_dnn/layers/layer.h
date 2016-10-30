@@ -729,12 +729,13 @@ inline void data_mismatch(const layer& layer, const vec_t& data) {
 
 inline void pooling_size_mismatch(cnn_size_t in_width,
                                   cnn_size_t in_height,
-                                  cnn_size_t pooling_size) {
+                                  cnn_size_t pooling_size_x,
+                                  cnn_size_t pooling_size_y) {
     std::ostringstream os;
 
     os << std::endl;
     os << "WxH:" << in_width << "x" << in_height << std::endl;
-    os << "pooling-size:" << pooling_size << std::endl;
+    os << "pooling-size:" << pooling_size_x << "x" << pooling_size_y << std::endl;
 
     std::string detail_info = os.str();
 
