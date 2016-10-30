@@ -189,7 +189,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                           cnn_size_t     pool_size_y,
                           cnn_size_t     stride_x,
                           cnn_size_t     stride_y,
-                          core::padding  pad_type)
+                          padding        pad_type = padding::valid)
         : Base(in_width * in_height * in_channels,
             conv_out_length(in_width, pool_size_x, stride_x, pad_type) *
             conv_out_length(in_height, pool_size_y, stride_y, pad_type) * in_channels,

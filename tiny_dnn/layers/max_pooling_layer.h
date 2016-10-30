@@ -99,7 +99,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       cnn_size_t     pooling_size_y,
                       cnn_size_t     stride_x,
                       cnn_size_t     stride_y,
-                      core::padding  pad_type,
+                      padding        pad_type = padding::valid,
                       backend_t      backend_type = backend_t::tiny_dnn,
                       backend_params b_params = backend_params())
             : Base({ vector_type::data }) {
