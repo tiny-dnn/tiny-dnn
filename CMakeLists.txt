@@ -18,6 +18,12 @@ if(POLICY CMP0015)
 endif(POLICY CMP0015)
 
 #####
+# Enables project() command manages VERSION variables.
+if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+endif(POLICY CMP0048)
+
+#####
 # Change the default build type from Debug to Release, while still
 # supporting overriding the build type.
 #
