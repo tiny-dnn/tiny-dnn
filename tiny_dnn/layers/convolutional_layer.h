@@ -410,7 +410,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
-        return (params_.pad_type == core::padding::valid) ?
+        return (params_.pad_type == padding::valid) ?
             in[0] : &cws_.prev_out_padded_;
     }
 

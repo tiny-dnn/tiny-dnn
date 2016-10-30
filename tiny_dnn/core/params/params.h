@@ -41,8 +41,5 @@ class Params {
     fully_params fully() const;
 };
 
-/* @deprecated for backward compatibility */
-typedef tiny_dnn::padding padding;
-
 }  // namespace core
 }  // namespace tiny_dnn

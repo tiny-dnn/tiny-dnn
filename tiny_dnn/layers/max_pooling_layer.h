@@ -178,7 +178,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     static void load_and_construct(Archive & ar, cereal::construct<max_pooling_layer> & construct) {
         shape3d in;
         cnn_size_t stride_x, stride_y, pool_size_x, pool_size_y;
-        core::padding pad_type;
+        padding pad_type;
 
         ar(cereal::make_nvp("in_size", in),
            cereal::make_nvp("pool_size_x", pool_size_x),
@@ -304,7 +304,7 @@ private:
                             cnn_size_t pooling_size_y,
                             cnn_size_t stride_x,
                             cnn_size_t stride_y,
-                            core::padding pad_type) {
+                            padding pad_type) {
         params_.in        = in;
         params_.out       = out;
         params_.pool_size_x = pooling_size_x;
