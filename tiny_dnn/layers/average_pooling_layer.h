@@ -321,8 +321,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                         cnn_size_t x,
                         cnn_size_t y,
                         cnn_size_t inc) {
-        cnn_size_t dymax = std::min(pooling_size_x, in_.height_ - y);
-        cnn_size_t dxmax = std::min(pooling_size_y, in_.width_ - x);
+        cnn_size_t dymax = std::min(pooling_size_y, in_.height_ - y);
+        cnn_size_t dxmax = std::min(pooling_size_x, in_.width_ - x);
         cnn_size_t dstx = x / stride_x_;
         cnn_size_t dsty = y / stride_y_;
         cnn_size_t outidx = out_.get_index(dstx, dsty, inc);
