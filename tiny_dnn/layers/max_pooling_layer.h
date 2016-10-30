@@ -166,7 +166,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/pooling.cl");
     }
 
-    size_t pool_size() const { return params_.pool_size_; }
+    std::pair<cnn_size_t, cnn_size_t> pool_size() const { return std::make_pair(params_.pool_size_x, params_.pool_size_y); }
 
     void set_sample_count(cnn_size_t sample_count) override {
         Base::set_sample_count(sample_count);

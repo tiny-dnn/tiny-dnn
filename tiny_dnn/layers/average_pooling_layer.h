@@ -281,6 +281,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         );
     }
 
+    std::pair<cnn_size_t, cnn_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }
+
  private:
     cnn_size_t stride_x_;
     cnn_size_t stride_y_;
