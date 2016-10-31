@@ -86,7 +86,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-			    pooling_size, stride, stride, padding::valid,				    backend_type, b_params) {}
+			    pooling_size, stride, stride, padding::valid,
+			    backend_type, b_params) {}
 
     /**
      * @param in_width     [in] width of input image

@@ -80,7 +80,15 @@ class MaxPoolOp : public core::OpKernel {
                 params.out2in,
                 context.parallelize());
         } else if (engine == core::backend_t::nnpack) {
-	     kernels::maxpool_op_nnpack(
+	    if (params.stride_x != 2 || params.stride_y != 2) {
+                 throw nn_error("NNPACK Max-Pool requires a stride == 2.");
+            }
+
+            if (params.pool_size_x != 2 || params.pool_size_y != 2) {
+                 throw nn_error("NNPACK Max-Pool requires a pool size == 2.");
+            }
+
+	    kernels::maxpool_op_nnpack(
                 in_data,
                 out_data,
 		params);
