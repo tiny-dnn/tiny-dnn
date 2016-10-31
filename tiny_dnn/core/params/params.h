@@ -29,16 +29,18 @@
 namespace tiny_dnn {
 namespace core {
 
-class  conv_params;
-class fully_params;
+class    conv_params;
+class   fully_params;
+class maxpool_params;
 
 /* Base class to model operation parameters */
 class Params {
  public:
     Params() {}
 
-    conv_params   conv() const;
-    fully_params fully() const;
+    conv_params       conv() const;
+    fully_params     fully() const;
+    maxpool_params maxpool() const;
 };
 
 }  // namespace core
