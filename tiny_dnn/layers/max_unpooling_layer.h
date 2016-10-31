@@ -177,8 +177,8 @@ private:
 
     void connect_kernel(cnn_size_t unpooling_size, cnn_size_t inx, cnn_size_t iny, cnn_size_t  c)
     {
-        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min((size_t)unpooling_size, inx * stride_ - out_.width_));
-        cnn_size_t dymax = static_cast<cnn_size_t>(std::min((size_t)unpooling_size, iny * stride_ - out_.height_));
+        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min(unpooling_size, inx * stride_ - out_.width_));
+        cnn_size_t dymax = static_cast<cnn_size_t>(std::min(unpooling_size, iny * stride_ - out_.height_));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
             for (cnn_size_t dx = 0; dx < dxmax; dx++) {

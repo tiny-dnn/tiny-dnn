@@ -212,14 +212,14 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const override {
+    virtual cnn_size_t fan_in_size() const override {
         return  params_.weight.width_ *
                 params_.weight.height_ *
                 params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const override {
+    virtual cnn_size_t fan_out_size() const override {
         return  (params_.weight.width_ * params_.w_stride) *
                 (params_.weight.height_ * params_.h_stride) *
                 params_.out.depth_;
