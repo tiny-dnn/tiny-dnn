@@ -61,11 +61,11 @@ public:
         init_backend(std::move(Base::get_backend_type()));
     }
 
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return params_.in_size_;
     }
 
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return params_.out_size_;
     }
 
