@@ -98,8 +98,8 @@ class conv_params : public Params {
     index3d<cnn_size_t> weight;
     bool has_bias;
     padding pad_type;
-    size_t w_stride;
-    size_t h_stride;
+    cnn_size_t w_stride;
+    cnn_size_t h_stride;
 
     friend std::ostream& operator<<(std::ostream &o,
                                     const core::conv_params& param) {

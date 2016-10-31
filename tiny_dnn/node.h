@@ -106,13 +106,13 @@ class edge {
         std::fill(dst->begin(), dst->end(), static_cast<float_t>(0));
 
         // @todo consider adding parallelism
-		for (cnn_size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
 			vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
 		}
     }
 
     void clear_grads() {
-		for (cnn_size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
 			std::fill(grad_[sample].begin(), grad_[sample].end(), (float_t)0);
 		}
     }
@@ -208,7 +208,7 @@ inline std::shared_ptr<U>& operator << (std::shared_ptr<T>& lhs,
 
 template <typename T, typename U>
 inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
-    for (size_t i = 0; i < lhs.nodes_.size(); i++) {
+    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(lhs.nodes_.size()); i++) {
         connect(&*lhs.nodes_[i], &*rhs, 0, i);
     }
     return rhs;
@@ -216,7 +216,7 @@ inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
 
 template <typename T, typename U>
 inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
-    for (size_t i = 0; i < rhs.nodes_.size(); i++) {
+    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(rhs.nodes_.size()); i++) {
         connect(&*lhs, &*rhs.nodes_[i], i, 0);
     }
     return rhs;
@@ -224,7 +224,7 @@ inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
 
 template <typename T, typename U>
 inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
-    for (size_t i = 0; i < lhs.nodes_.size(); i++) {
+    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(lhs.nodes_.size()); i++) {
         connect(lhs.nodes_[i], &rhs, 0, i);
     }
     return rhs;
@@ -232,7 +232,7 @@ inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
 
 template <typename T, typename U>
 inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
-    for (size_t i = 0; i < rhs.nodes_.size(); i++) {
+    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(rhs.nodes_.size()); i++) {
         connect(&lhs, rhs.nodes_[i], i, 0);
     }
     return rhs;

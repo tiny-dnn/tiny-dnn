@@ -127,11 +127,11 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         init_backend(std::move(Base::backend_type()));
     }
 
-    size_t fan_in_size() const override {
-        return out2in_[0].size();
+    cnn_size_t fan_in_size() const override {
+        return static_cast<cnn_size_t>(out2in_[0].size());
     }
 
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return 1;
     }
 

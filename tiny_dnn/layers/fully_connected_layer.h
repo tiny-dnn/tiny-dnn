@@ -65,11 +65,11 @@ public:
         init_backend(std::move(other.engine()));
     }
 
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return params_.in_size_;
     }
 
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return params_.out_size_;
     }
 
@@ -126,7 +126,7 @@ public:
 
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
-        size_t in_dim, out_dim;
+        cnn_size_t in_dim, out_dim;
         bool has_bias;
 
         ar(cereal::make_nvp("in_size", in_dim),

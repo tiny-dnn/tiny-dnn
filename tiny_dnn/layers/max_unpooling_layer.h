@@ -144,7 +144,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
         shape3d in;
-        size_t stride, unpool_size;
+        cnn_size_t stride, unpool_size;
 
         ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size), cereal::make_nvp("stride", stride));
         construct(in, unpool_size, stride);
@@ -157,8 +157,8 @@ public:
     }
 
 private:
-    size_t unpool_size_;
-    size_t stride_;
+    cnn_size_t unpool_size_;
+    cnn_size_t stride_;
     std::vector<cnn_size_t> out2in_; // mapping out => in (N:1)
     std::vector<std::vector<cnn_size_t> > in2out_; // mapping in => out (1:N)
 

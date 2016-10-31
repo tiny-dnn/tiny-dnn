@@ -61,7 +61,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     // propagate delta to previous layer
     if (w_stride == 1 && out.width_ >= 4) {
         const cnn_size_t nblocks = out.width_ / 4;
-        for (size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
             for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
@@ -156,7 +156,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             }
         }
     } else if (out.height_ == 1 && out.width_ == 1) {
-        for (size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
             float* delta_dst0 = pdelta_dst_org;
             float* delta_dst1 = &pdelta_dst_org[in_padded.width_ * 1];
             float* delta_dst2 = &pdelta_dst_org[in_padded.width_ * 2];
@@ -286,7 +286,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             _mm256_maskstore_ps(delta_dst4, imask, dst4);
         } // for
     } else {
-        for (size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
             for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
 
@@ -337,7 +337,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     // accumulate dw
     if (out.width_ == 1 && out.height_ == 1) {
         const float* pprev_out = &prev_out[0];
-        for (size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
+        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
             VECTORIZE_ALIGN(32) float floats[28];
             size_t in_padded_width = in_padded.width_;
             _mm256_store_ps(&floats[0], _mm256_loadu_ps(pprev_out + in_padded_width * 0));
@@ -383,7 +383,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
         const size_t remainder = out.width_ & 7;
         __m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
         auto& weight = params.weight;
-        for (size_t inc = 0; inc < in.depth_; ++inc) {
+        for (cnn_size_t inc = 0; inc < in.depth_; ++inc) {
             for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
 
                 if (!tbl.is_connected(outc, inc)) continue;

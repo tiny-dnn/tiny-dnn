@@ -68,7 +68,7 @@ public:
 
         // @todo revise the parallelism strategy
         for_i(parallelize_, dim_, [&](int i) {
-            for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample)
+            for (cnn_size_t sample = 0, sample_count = static_cast<cnn_size_t>(in.size()); sample < sample_count; ++sample)
                 a[sample][i] = scale_ * in[sample][i] + bias_;
         });
         this->forward_activation(*out_data[0], *out_data[1]);
@@ -86,7 +86,7 @@ public:
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         // @todo revise parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = prev_delta.size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0; sample < static_cast<cnn_size_t>(prev_delta.size()); ++sample) {
             for_i(parallelize_, dim_, [&](int i) {
                 prev_delta[sample][i] = curr_delta[sample][i] * scale_;
             });

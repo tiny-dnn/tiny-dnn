@@ -444,7 +444,7 @@ class network {
         assert(in.size() == t.size());
 
         std::vector<tensor_t> v(t.size());
-        const cnn_size_t sample_count = t.size();
+        const cnn_size_t sample_count = static_cast<cnn_size_t>(t.size());
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             net_.label2vec(&t[sample][0], t[sample].size(), &v[sample]);
         }
@@ -847,7 +847,7 @@ class network {
 
         assert(in.size() == v.size());
 
-        const cnn_size_t sample_count = in.size();
+        const cnn_size_t sample_count = static_cast<cnn_size_t>(in.size());
 
         assert(sample_count > 0);
 
@@ -1007,7 +1007,7 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], inputs.size(), &vec);
+        net_.label2vec(&inputs[0], static_cast<cnn_size_t>(inputs.size()), &vec);
         normalize_tensor(vec, normalized);
     }
 

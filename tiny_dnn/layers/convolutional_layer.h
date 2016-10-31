@@ -199,13 +199,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
     }
 
     ///< number of incoming connections for each output unit
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return params_.weight.width_  *
                params_.weight.height_ * params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    size_t fan_out_size() const override  {
+    cnn_size_t fan_out_size() const override  {
         return (params_.weight.width_  / params_.w_stride) *
                (params_.weight.height_ / params_.h_stride) *
                 params_.out.depth_;
@@ -372,7 +372,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     template <class Archive>
     static void load_and_construct(
         Archive & ar, cereal::construct<convolutional_layer> & construct) {
-        size_t w_width, w_height, out_ch, w_stride, h_stride;
+        cnn_size_t w_width, w_height, out_ch, w_stride, h_stride;
         bool has_bias;
         shape3d in;
         padding pad_type;
