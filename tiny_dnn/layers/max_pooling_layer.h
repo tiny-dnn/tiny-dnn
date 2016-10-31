@@ -38,6 +38,7 @@
 #endif
 
 #include "tiny_dnn/core/kernels/maxpool_op.h"
+#include "tiny_dnn/core/kernels/maxpool_grad_op.h"
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/image.h"
@@ -85,8 +86,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-			    pooling_size, stride, stride, padding::valid,
-			    backend_type, b_params) {}
+			    pooling_size, stride, stride, padding::valid,				    backend_type, b_params) {}
 
     /**
      * @param in_width     [in] width of input image
@@ -125,7 +125,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             /*, out2in_(std::move(other.out2in_))
             , in2out_(std::move(other.in2out_))*/ {
         init_connection();
-        init_backend(std::move(Base::backend_type()));
+        init_backend(std::move(other.engine()));
     }
 
     cnn_size_t fan_in_size() const override {
@@ -173,7 +173,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
         // launch convolutional kernel
         kernel_back_->compute(ctx);
-
     }
 
     std::vector<index3d<cnn_size_t>>
@@ -200,7 +199,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 	     sample_count, std::vector<cnn_size_t>(params_.out.size()));
     }
 
-
     template <class Archive>
     static void
     load_and_construct(Archive & ar,
@@ -214,7 +212,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
            cereal::make_nvp("pool_size_y", pool_size_y),
            cereal::make_nvp("stride_x", stride_x),
            cereal::make_nvp("stride_y", stride_y),
-            cereal::make_nvp("pad_type", pad_type));
+           cereal::make_nvp("pad_type", pad_type));
         construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
 		  stride_x, stride_y, pad_type);
     }
@@ -223,11 +221,11 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in),
-            cereal::make_nvp("pool_size_x", params_.pool_size_x),
-            cereal::make_nvp("pool_size_y", params_.pool_size_y),
-            cereal::make_nvp("stride_x", params_.stride_x),
-            cereal::make_nvp("stride_y", params_.stride_y),
-            cereal::make_nvp("pad_type", params_.pad_type));
+           cereal::make_nvp("pool_size_x", params_.pool_size_x),
+           cereal::make_nvp("pool_size_y", params_.pool_size_y),
+           cereal::make_nvp("stride_x", params_.stride_x),
+           cereal::make_nvp("stride_y", params_.stride_y),
+           cereal::make_nvp("pad_type", params_.pad_type));
     }
 
 private:
@@ -298,8 +296,7 @@ private:
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new MaxPoolOp(ctx));
-            //kernel_back_.reset(new FullyConnectedGradOp(ctx));
-
+            kernel_back_.reset(new MaxPoolGradOp(ctx));
             return;
         }
         else {

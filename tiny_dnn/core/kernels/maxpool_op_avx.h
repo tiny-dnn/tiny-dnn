@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without
@@ -24,53 +24,30 @@
     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-#include "gtest/gtest.h"
-#include "tiny_dnn/tiny_dnn.h"
+#pragma once
+#include "tiny_dnn/core/kernels/tiny_maxpool_kernel.h"
 
-using namespace tiny_dnn::activation;
+namespace tiny_dnn {
+namespace kernels {
 
-/*#ifndef CNN_NO_SERIALIZATION
-#include "test_serialization.h"
-#endif
-#include "test_network.h"
-#include "test_average_pooling_layer.h"
-// TODO(yida): fix broken test
-//#include "test_average_unpooling_layer.h"
-#include "test_dropout_layer.h"
-#include "test_max_pooling_layer.h"
-#include "test_fully_connected_layer.h"
-#include "test_deconvolutional_layer.h"
-#include "test_convolutional_layer.h"
-#include "test_target_cost.h"
-#include "test_large_thread_count.h"
-#include "test_lrn_layer.h"
-#include "test_batch_norm_layer.h"
-#include "test_nodes.h"
-// TODO(edgar): build apart GPU tests
-//#include "test_core.h"
-#include "test_models.h"
-#include "test_slice_layer.h"
-#include "test_concat_layer.h"
-#include "test_power_layer.h"
-#include "test_quantization.h"
-#include "test_quantized_convolutional_layer.h"
-#include "test_quantized_deconvolutional_layer.h"
-#ifdef CNN_USE_GEMMLOWP
-#include "test_quantized_fully_connected_layer.h"
-#endif
-
-#ifdef CNN_USE_CAFFE_CONVERTER
-#include "test_caffe_converter.h"
-#endif
-
-#include "test_image.h"*/
-#include "test_max_pooling_layer.h"
-
-
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+inline void
+maxpool_op_avx(const tensor_t& in_data,
+               tensor_t&       out_data,
+               std::vector<std::vector<cnn_size_t>>& max_idx,
+               const std::vector<std::vector<cnn_size_t>>& out2in,
+               const bool layer_parallelize) {
+    maxpool_op_custom(in_data, out_data, max_idx, out2in, layer_parallelize);
 }
+
+inline void
+maxpool_grad_op_avx(tensor_t& prev_delta,
+                    const tensor_t&  curr_delta,
+                    std::vector<std::vector<cnn_size_t>>& max_idx,
+                    const std::vector<cnn_size_t>& in2out,
+                    const bool layer_parallelize) {
+    maxpool_grad_op_custom(prev_delta, curr_delta, max_idx, in2out,
+                           layer_parallelize);
+}
+
+}  // namespace kernels
+}  // namespace tiny_dnn
