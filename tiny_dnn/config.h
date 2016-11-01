@@ -26,6 +26,7 @@
 */
 #pragma once
 #include <cstddef>
+#include <cstdint>
 
 /**
  * define if you want to use intel TBB library
@@ -95,6 +96,6 @@ typedef float float_t;
  * size of layer, model, data etc.
  * change to smaller type if memory footprint is severe
  **/
-typedef std::size_t cnn_size_t;
+typedef std::uint32_t cnn_size_t;
 
 }

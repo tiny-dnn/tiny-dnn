@@ -62,11 +62,11 @@ public:
         return total_param;
     }
 
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return max_size(out2wi_);
     }
 
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return max_size(in2wo_);
     }
 
@@ -89,7 +89,7 @@ public:
         tensor_t&       a   = *out_data[1];
 
         // @todo revise the parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0, sample_count = static_cast<cnn_size_t>(in.size()); sample < sample_count; ++sample) {
             vec_t& a_sample = a[sample];
 
             for_i(parallelize_, out2wi_.size(), [&](int i) {
@@ -124,7 +124,7 @@ public:
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         // @todo revise the parallelism strategy
-        for (cnn_size_t sample = 0, sample_count = prev_out.size(); sample < sample_count; ++sample) {
+        for (cnn_size_t sample = 0, sample_count = static_cast<cnn_size_t>(prev_out.size()); sample < sample_count; ++sample) {
             for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
                 for (int i = r.begin(); i != r.end(); i++) {
                     const wo_connections& connections = in2wo_[i];

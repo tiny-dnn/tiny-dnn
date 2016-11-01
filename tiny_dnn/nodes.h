@@ -232,8 +232,8 @@ class nodes {
     // input:  [sample][channel][feature]
     // output: [channel][sample][feature]
     std::vector<tensor_t> reorder_for_layerwise_processing(const std::vector<tensor_t>& input) {
-        const cnn_size_t sample_count = input.size();
-        const cnn_size_t channel_count = input[0].size();
+        const cnn_size_t sample_count = static_cast<cnn_size_t>(input.size());
+        const cnn_size_t channel_count = static_cast<cnn_size_t>(input[0].size());
 
         // @todo we could perhaps pass pointers to underlying vec_t objects, in order to avoid copying
         std::vector<tensor_t> output(channel_count, tensor_t(sample_count));
@@ -344,10 +344,10 @@ private:
         // normalize indexing back to [sample][layer][feature]
         std::vector<tensor_t> normalized_output;
 
-        const cnn_size_t sample_count = out[0].size();
+        const size_t sample_count = out[0].size();
         normalized_output.resize(sample_count, tensor_t(1));
 
-        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+        for (size_t sample = 0; sample < sample_count; ++sample) {
             normalized_output[sample][0] = out[0][sample];
         }
 
@@ -363,7 +363,7 @@ class graph : public nodes {
  public:
     void backward(const std::vector<tensor_t>& out_grad) override {
 
-        cnn_size_t output_channel_count = out_grad[0].size();
+        cnn_size_t output_channel_count = static_cast<cnn_size_t>(out_grad[0].size());
 
         if (output_channel_count != output_layers_.size()) {
             throw nn_error("input size mismatch");
@@ -383,7 +383,7 @@ class graph : public nodes {
 
     std::vector<tensor_t> forward(const std::vector<tensor_t>& in_data) override {
 
-        cnn_size_t input_data_channel_count = in_data[0].size();
+        cnn_size_t input_data_channel_count = static_cast<cnn_size_t>(in_data[0].size());
 
         if (input_data_channel_count != input_layers_.size()) {
             throw nn_error("input size mismatch");
@@ -448,13 +448,13 @@ private:
     friend class nodes;
 
     struct _graph_connection {
-        void add_connection(size_t head, size_t tail, size_t head_index, size_t tail_index) {
+        void add_connection(cnn_size_t head, cnn_size_t tail, cnn_size_t head_index, cnn_size_t tail_index) {
             if (!is_connected(head, tail, head_index, tail_index)) {
                 connections.emplace_back(head, tail, head_index, tail_index);
             }
         }
 
-        bool is_connected(size_t head, size_t tail, size_t head_index, size_t tail_index) const {
+        bool is_connected(cnn_size_t head, cnn_size_t tail, cnn_size_t head_index, cnn_size_t tail_index) const {
             return std::find(connections.begin(),
                              connections.end(),
                              std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
@@ -465,14 +465,14 @@ private:
             ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
         }
 
-        std::vector<std::tuple<size_t, size_t, size_t, size_t>> connections;
-        std::vector<size_t> in_nodes, out_nodes;
+        std::vector<std::tuple<cnn_size_t, cnn_size_t, cnn_size_t, cnn_size_t>> connections;
+        std::vector<cnn_size_t> in_nodes, out_nodes;
     };
 
     template <typename OutputArchive>
     void save_connections(OutputArchive& oa) const {
         _graph_connection gc;
-        std::unordered_map<node*, size_t> node2id;
+        std::unordered_map<node*, cnn_size_t> node2id;
         size_t idx = 0;
 
         for (auto n : nodes_) {
@@ -506,7 +506,7 @@ private:
         ia(cereal::make_nvp("graph", gc));
 
         for (auto c : gc.connections) {
-            size_t head, tail, head_index, tail_index;
+            cnn_size_t head, tail, head_index, tail_index;
             std::tie(head, tail, head_index, tail_index) = c;
             connect(nodes_[head], nodes_[tail], head_index, tail_index);
         }
@@ -521,11 +521,11 @@ private:
      // normalize indexing back to [sample][layer][feature]
      std::vector<tensor_t> merge_outs() {
          std::vector<tensor_t> merged;
-         cnn_size_t output_channel_count = output_layers_.size();
+         cnn_size_t output_channel_count = static_cast<cnn_size_t>(output_layers_.size());
          for (cnn_size_t output_channel = 0; output_channel < output_channel_count; ++output_channel) {
              std::vector<tensor_t> out = output_layers_[output_channel]->output();
 
-             cnn_size_t sample_count = out[0].size();
+             cnn_size_t sample_count = static_cast<cnn_size_t>(out[0].size());
              if (output_channel == 0) {
                  assert(merged.empty());
                  merged.resize(sample_count, tensor_t(output_channel_count));

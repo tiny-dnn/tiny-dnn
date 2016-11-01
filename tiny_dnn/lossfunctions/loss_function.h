@@ -194,12 +194,12 @@ void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vecto
 {
     if (sample_gradient.size() == sample_cost.size()) {
         // @todo consider adding parallelism
-        for (cnn_size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+        for (size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
             if (sample_gradient[channel].size() == sample_cost[channel].size()) {
-                const cnn_size_t element_count = sample_gradient[channel].size();
+                const size_t element_count = sample_gradient[channel].size();
 
                 // @todo optimize? (use AVX or so)
-                for (cnn_size_t element = 0; element < element_count; ++element) {
+                for (size_t element = 0; element < element_count; ++element) {
                     sample_gradient[channel][element] *= sample_cost[channel][element];
                 }
             }
@@ -214,8 +214,8 @@ std::vector<tensor_t> gradient(const std::vector<tensor_t>& y,
                                const std::vector<tensor_t>& t,
                                const std::vector<tensor_t>& t_cost) {
 
-    const cnn_size_t sample_count = y.size();
-    const cnn_size_t channel_count = y[0].size();
+    const cnn_size_t sample_count = static_cast<cnn_size_t>(y.size());
+    const cnn_size_t channel_count = static_cast<cnn_size_t>(y[0].size());
 
     std::vector<tensor_t> gradients(sample_count);
  

@@ -90,12 +90,12 @@ public:
     virtual ~batch_normalization_layer(){}
 
     ///< number of incoming connections for each output unit
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return 1;
     }
 
     ///< number of outgoing connections for each input unit
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return 1;
     }
 
@@ -114,7 +114,7 @@ public:
         tensor_t& prev_delta     = *in_grad[0];
         tensor_t& curr_delta     = *out_grad[0];
         const tensor_t& curr_out = *out_data[0];
-        cnn_size_t num_samples   = curr_out.size();
+        cnn_size_t num_samples   = static_cast<cnn_size_t>(curr_out.size());
 
         CNN_UNREFERENCED_PARAMETER(in_data);
 
@@ -243,7 +243,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<batch_normalization_layer> & construct) {
         shape3d in;
-        size_t in_spatial_size, in_channels;
+        cnn_size_t in_spatial_size, in_channels;
         float_t eps, momentum;
         net_phase phase;
         vec_t mean, variance;

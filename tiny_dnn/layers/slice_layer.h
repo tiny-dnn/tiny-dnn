@@ -167,7 +167,7 @@ private:
 
     void slice_channels_forward(const tensor_t& in_data,
                                 std::vector<tensor_t*>& out_data) {
-        cnn_size_t num_samples = in_data.size();
+        cnn_size_t num_samples = static_cast<cnn_size_t>(in_data.size());
         cnn_size_t channel_idx = 0;
         cnn_size_t spatial_dim = in_shape_.area();
 
@@ -184,7 +184,7 @@ private:
 
     void slice_channels_backward(std::vector<tensor_t*>& out_grad,
                                  tensor_t&               in_grad) {
-        cnn_size_t num_samples = in_grad.size();
+        cnn_size_t num_samples = static_cast<cnn_size_t>(in_grad.size());
         cnn_size_t channel_idx = 0;
         cnn_size_t spatial_dim = in_shape_.area();
 

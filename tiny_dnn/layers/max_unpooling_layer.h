@@ -144,7 +144,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
         shape3d in;
-        size_t stride, unpool_size;
+        cnn_size_t stride, unpool_size;
 
         ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size), cereal::make_nvp("stride", stride));
         construct(in, unpool_size, stride);
@@ -157,8 +157,8 @@ public:
     }
 
 private:
-    size_t unpool_size_;
-    size_t stride_;
+    cnn_size_t unpool_size_;
+    cnn_size_t stride_;
     std::vector<cnn_size_t> out2in_; // mapping out => in (N:1)
     std::vector<std::vector<cnn_size_t> > in2out_; // mapping in => out (1:N)
 
@@ -177,8 +177,8 @@ private:
 
     void connect_kernel(cnn_size_t unpooling_size, cnn_size_t inx, cnn_size_t iny, cnn_size_t  c)
     {
-        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min((size_t)unpooling_size, inx * stride_ - out_.width_));
-        cnn_size_t dymax = static_cast<cnn_size_t>(std::min((size_t)unpooling_size, iny * stride_ - out_.height_));
+        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min(unpooling_size, inx * stride_ - out_.width_));
+        cnn_size_t dymax = static_cast<cnn_size_t>(std::min(unpooling_size, iny * stride_ - out_.height_));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
             for (cnn_size_t dx = 0; dx < dxmax; dx++) {

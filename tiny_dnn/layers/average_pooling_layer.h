@@ -56,10 +56,10 @@ void tiny_average_pooling_kernel(bool parallelize,
 
         auto oarea = out_dim.area();
         size_t idx = 0;
-        for (size_t d = 0; d < out_dim.depth_; ++d) {
+        for (cnn_size_t d = 0; d < out_dim.depth_; ++d) {
             float_t weight = W[d] * scale_factor;
             float_t bias = b[d];
-            for (size_t i = 0; i < oarea; ++i, ++idx) {
+            for (cnn_size_t i = 0; i < oarea; ++i, ++idx) {
                 const auto& connections = out2wi[idx];
                 float_t value = float_t(0);
                 for (auto connection : connections)// 13.1%
@@ -71,7 +71,7 @@ void tiny_average_pooling_kernel(bool parallelize,
         }
 
         assert(out.size() == out2wi.size());
-        for (size_t i = 0; i < out2wi.size(); i++) {
+        for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(out2wi.size()); i++) {
             out[i] = h.f(a, i);
         }
     });
@@ -256,7 +256,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<average_pooling_layer> & construct) {
         shape3d in;
-        size_t stride_x, stride_y, pool_size_x, pool_size_y;
+        cnn_size_t stride_x, stride_y, pool_size_x, pool_size_y;
         padding pad_type;
 
         ar(cereal::make_nvp("in_size", in),

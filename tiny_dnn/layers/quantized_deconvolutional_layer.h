@@ -212,14 +212,14 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const override {
+    virtual cnn_size_t fan_in_size() const override {
         return  params_.weight.width_ *
                 params_.weight.height_ *
                 params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const override {
+    virtual cnn_size_t fan_out_size() const override {
         return  (params_.weight.width_ * params_.w_stride) *
                 (params_.weight.height_ * params_.h_stride) *
                 params_.out.depth_;
@@ -472,8 +472,8 @@ private:
 
                 for (cnn_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
                     float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-                    idx = params_.out.get_index(static_cast<size_t>(floor(params_.weight.width_ / 2)),
-                                                static_cast<size_t>(floor(params_.weight.height_ / 2)), c);
+                    idx = params_.out.get_index(static_cast<cnn_size_t>(floor(params_.weight.width_ / 2)),
+                                                static_cast<cnn_size_t>(floor(params_.weight.height_ / 2)), c);
 
                     const float_t *pout = &out[sample][idx];
 
