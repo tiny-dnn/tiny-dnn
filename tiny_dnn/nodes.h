@@ -473,7 +473,7 @@ private:
     void save_connections(OutputArchive& oa) const {
         _graph_connection gc;
         std::unordered_map<node*, cnn_size_t> node2id;
-        size_t idx = 0;
+        cnn_size_t idx = 0;
 
         for (auto n : nodes_) {
             node2id[n] = idx++;
