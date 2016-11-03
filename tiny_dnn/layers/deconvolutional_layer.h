@@ -467,8 +467,8 @@ private:
             for (cnn_size_t sample = 0; sample < out.size(); sample++) {
                 cnn_size_t idx = 0;
                 vec_t& dst = (*dst_tensor)[sample];
-                size_t wieght_w_half = static_cast<size_t>(floor(params_.weight.width_ / 2));
-                size_t wieght_h_half = static_cast<size_t>(floor(params_.weight.height_ / 2));
+                cnn_size_t wieght_w_half = params_.weight.width_ / 2;
+                cnn_size_t wieght_h_half = params_.weight.height_ / 2;
 
                 for (cnn_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
                     float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
