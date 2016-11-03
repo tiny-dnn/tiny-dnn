@@ -76,7 +76,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
 
     cout << "start learning" << endl;
 
-    progress_display disp((unsigned long)train_images.size());
+    progress_display disp(train_images.size());
     timer t;
     const int n_minibatch = 10;     ///< minibatch size
     const int n_train_epochs = 30;  ///< training duration
@@ -89,7 +89,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
         tiny_dnn::result res = nn.test(test_images, test_labels);
         log << res.num_success << "/" << res.num_total << endl;
 
-        disp.restart((unsigned long)train_images.size());
+        disp.restart(train_images.size());
         t.restart();
     };
 
