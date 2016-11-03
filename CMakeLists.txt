@@ -224,7 +224,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
-elseif(WIN32) # MSVC
+elseif(MSVC)
 	if(USE_SSE)
 		add_definitions(-DCNN_USE_SSE)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:SSE2")

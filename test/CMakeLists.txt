@@ -16,7 +16,7 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 enable_testing()
 
 # in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
-if(WIN32) # MSVC
+if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
 endif()
