@@ -35,8 +35,8 @@ inline nnp_convolution_algorithm nnp_algorithm() {
     return nnp_convolution_algorithm_auto;
 }
 
-inline nnp_convolution_kernel_transform_strategy nnp_kts() {
-    return nnp_convolution_kernel_transform_strategy_reuse;
+inline nnp_convolution_transform_strategy nnp_kts() {
+    return nnp_convolution_transform_strategy_tuple_based;//some algorithm accept tuple based only
 }
 #endif
 
@@ -62,9 +62,11 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     const cnn_size_t input_channels = params.in.depth_;
     const cnn_size_t output_channels = params.out.depth_;
 
+    //input data passed by convolution layer has been padded already
+    //set input_size to padded size
     const nnp_size input_size = {
-        static_cast<size_t>(params.in.width_),
-        static_cast<size_t>(params.in.height_)
+        static_cast<size_t>(params.in_padded.width_),
+        static_cast<size_t>(params.in_padded.height_)
     };
 
     const nnp_size kernel_size = {
@@ -72,8 +74,9 @@ conv2d_op_nnpack(const tensor_t&         in_data,
         static_cast<size_t>(params.weight.height_)
     };
 
-    const float_t dx = params.in_padded.width_  - params.in.width_;
-    const float_t dy = params.in_padded.height_ - params.in.height_;
+    // input padded ,so no need to do padding
+    const float_t dx =0;// params.in_padded.width_  - params.in.width_;
+    const float_t dy =0;// params.in_padded.height_ - params.in.height_;
 
     // we'll assume that padding is symmetric
 
@@ -84,11 +87,15 @@ conv2d_op_nnpack(const tensor_t&         in_data,
         static_cast<size_t>(dx/2)   // left
     };
 
-    const float* input_ptr  = reinterpret_cast<const float*>(&in_data[0]);
-    const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
-    const float* bias_ptr   = reinterpret_cast<const float*>(&bias[0]);
+    const float* input_ptr  = reinterpret_cast<const float*>(in_data[0].data());
+    const float* kernel_ptr = reinterpret_cast<const float*>(W.data());
+    const float* bias_ptr   = reinterpret_cast<const float*>(bias.data());
+    const nnp_size stride= {
+        static_cast<size_t>(params.w_stride),
+        static_cast<size_t>(params.h_stride)
+    };
 
-    float* output_ptr = reinterpret_cast<float*>(&out_data[0]);
+    float* output_ptr = out_data[0].data();
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -105,6 +112,7 @@ conv2d_op_nnpack(const tensor_t&         in_data,
             input_size,
             padding,
             kernel_size,
+            stride,
             input_ptr,
             kernel_ptr,
             bias_ptr,
