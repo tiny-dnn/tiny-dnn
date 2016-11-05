@@ -15,6 +15,12 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
 enable_testing()
 
+# in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
+if(MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+endif()
+
 add_executable(print_device print_device.cpp)
 target_link_libraries(print_device
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
