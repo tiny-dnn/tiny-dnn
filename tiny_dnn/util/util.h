@@ -124,8 +124,10 @@ template <typename Container> inline bool has_infinite(const Container& c) {
 template <typename Container>
 cnn_size_t max_size(const Container& c) {
     typedef typename Container::value_type value_t;
-    return std::max_element(c.begin(), c.end(),
+    const auto max_size = std::max_element(c.begin(), c.end(),
         [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
+    assert(max_size <= std::numeric_limits<cnn_size_t>::max());
+    return static_cast<cnn_size_t>(max_size);
 }
 
 inline std::string format_str(const char *fmt, ...) {
