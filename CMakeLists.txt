@@ -331,6 +331,9 @@ install(FILES
 install(DIRECTORY   ${PROJECT_SOURCE_DIR}/${project_library_target_name}
         DESTINATION ${include_install_dir})
 
+# Check if protobuf available
+include(cmake/protoc.cmake)
+
 # Subdirectories for examples, testing and documentation
 # TODO: explain in brief about different examples, test and docs.
 if(BUILD_EXAMPLES)
