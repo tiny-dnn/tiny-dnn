@@ -26,7 +26,6 @@ add_executable(example_cifar_train cifar10/train.cpp)
 target_link_libraries(example_cifar_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-find_package(Protobuf QUIET)
 if(PROTO_CPP_AVAILABLE)
     include_directories(${PROTOBUF_INCLUDE_DIRS})
     set_source_files_properties(${proto_file} PROPERTIES GENERATED TRUE)
