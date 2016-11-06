@@ -30,6 +30,7 @@ find_package(Protobuf QUIET)
 if(PROTOBUF_FOUND)
     set(proto_file "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.pb.cc")
     if(EXISTS ${proto_file})
+        message(STATUS "Found proto-file: ${proto_file}")
         include_directories(${PROTOBUF_INCLUDE_DIRS})
         add_executable(example_caffe_converter
                        caffe_converter/caffe_converter.cpp ${proto_file})
@@ -46,6 +47,9 @@ if(PROTOBUF_FOUND)
             if(EXISTS ${PROTO_HDRS})
                 file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
                 file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
+                message(STATUS "Generate proto-files successed. ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
+            else()
+                message(STATUS "Cannot generate proto files")
             endif()
             add_executable(example_caffe_converter
                            caffe_converter/caffe_converter.cpp
