@@ -33,7 +33,7 @@ namespace tiny_dnn {
 
 
 /**
- * y = x^factor
+ * y = scale*x^factor
  **/
 class power_layer : public layer {
 public:
@@ -114,6 +114,14 @@ public:
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_), cereal::make_nvp("scale", scale_));
+    }
+
+    float_t factor() const {
+        return factor_;
+    }
+
+    float_t scale() const {
+        return scale_;
     }
 private:
 
