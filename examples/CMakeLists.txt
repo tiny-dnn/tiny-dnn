@@ -42,23 +42,26 @@ if(PROTOBUF_FOUND)
     elseif(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
         message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
         if(EXISTS ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
+            # Note that this line doesn't invoke protoc at configure time
             PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS
                 ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe/caffe.proto)
-            if(EXISTS ${PROTO_HDRS})
-                file(COPY ${PROTO_SRCS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
-                file(COPY ${PROTO_HDRS} DESTINATION "${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
-                message(STATUS "Generate proto-files successed. ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe")
-            else()
-                message(STATUS "Cannot generate proto files")
-            endif()
             add_executable(example_caffe_converter
                            caffe_converter/caffe_converter.cpp
                            ${PROTO_SRCS} ${PROTO_HDRS})
+            add_custom_target(generated_proto DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
+            add_dependencies(example_caffe_converter generated_proto)
+
+            # We need to invoke the copy after protoc compile finished
+            add_custom_command(TARGET generated_proto PRE_BUILD
+                               COMMAND ${CMAKE_COMMAND} -E copy
+                               ${PROTO_SRCS} ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe)
+            add_custom_command(TARGET generated_proto PRE_BUILD
+                               COMMAND ${CMAKE_COMMAND} -E copy
+                               ${PROTO_HDRS} ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe)
+
             target_link_libraries(example_caffe_converter
                 ${project_library_target_name}
                 ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
-            add_custom_target(generated_code DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
-            add_dependencies(example_caffe_converter generated_code)
         else()
             message(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
         endif()
