@@ -69,7 +69,7 @@ struct result {
     }
 
     template <typename Char, typename CharTraits>
-    void print_detail(std::basic_ostream<Char, CharTraits>& os) {
+    void print_detail(std::basic_ostream<Char, CharTraits>& os) const {
         print_summary(os);
         auto all_labels = labels();
 
@@ -80,8 +80,18 @@ struct result {
 
         for (auto r : all_labels) {
             os << std::setw(5) << r << " ";
-            for (auto c : all_labels)
-                os << std::setw(5) << confusion_matrix[r][c] << " ";
+            const auto row_iter = confusion_matrix.find(r);
+            for (auto c : all_labels) {
+                int count = 0;
+                if (row_iter != confusion_matrix.end()) {
+                    const auto& row = row_iter->second;
+                    const auto col_iter = row.find(c);
+                    if (col_iter != row.end()) {
+                        count = col_iter->second;
+                    }
+                }
+                os << std::setw(5) << count << " ";
+            }
             os << std::endl;
         }
     }
