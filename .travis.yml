@@ -32,6 +32,8 @@ addons:
       # coveralls dependencies
       - gem
       - lcov
+      # caffe-importer dependencies
+      - protobuf-compiler
 
 branches:
   only:
