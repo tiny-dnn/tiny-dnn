@@ -29,6 +29,7 @@ target_link_libraries(example_cifar_train
 find_package(Protobuf QUIET)
 if(PROTO_CPP_AVAILABLE)
     include_directories(${PROTOBUF_INCLUDE_DIRS})
+    set_source_files_properties(${proto_file} PROPERTIES GENERATED TRUE)
     add_executable(example_caffe_converter
                    caffe_converter/caffe_converter.cpp ${proto_file})
     target_link_libraries(example_caffe_converter
