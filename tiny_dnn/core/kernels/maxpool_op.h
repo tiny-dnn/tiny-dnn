@@ -58,7 +58,7 @@ class MaxPoolOp : public core::OpKernel {
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
-        auto params = OpKernel::params_->maxpool();
+        auto& params = OpKernel::params_->maxpool();
 
         // incomimg/outcoming data 
         const tensor_t& in_data = context.input(0);
@@ -74,7 +74,7 @@ class MaxPoolOp : public core::OpKernel {
 
         if (engine == core::backend_t::tiny_dnn) {
             kernels::maxpool_op_custom(
-	        in_data,
+                in_data,
                 out_data,
                 params.out2inmax,
                 params.out2in,
@@ -91,13 +91,13 @@ class MaxPoolOp : public core::OpKernel {
 	    kernels::maxpool_op_nnpack(
                 in_data,
                 out_data,
-		params);
+                params);
         } else if (engine == core::backend_t::avx) {
 	    kernels::maxpool_op_avx(
                 in_data,
                 out_data,
                 params.out2inmax,
-		params.out2in,
+                params.out2in,
                 context.parallelize());
         } else {
             throw nn_error("Not supported engine: " + to_string(engine));

@@ -68,7 +68,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-			    pooling_size, backend_type, b_params) {}
+                            pooling_size, backend_type, b_params) {}
 
     max_pooling_layer(const shape3d& in_shape,
                       cnn_size_t     pooling_size,
@@ -76,7 +76,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
         : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_,
-			    pooling_size, stride, backend_type, b_params) {}
+                            pooling_size, stride, backend_type, b_params) {}
 
     max_pooling_layer(cnn_size_t     in_width,
                       cnn_size_t     in_height,
@@ -86,8 +86,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-			    pooling_size, stride, stride, padding::valid,
-			    backend_type, b_params) {}
+                            pooling_size, stride, stride, padding::valid,
+                            backend_type, b_params) {}
 
     /**
      * @param in_width     [in] width of input image
@@ -122,11 +122,9 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     // move constructor
     max_pooling_layer(max_pooling_layer&& other)  // NOLINT
             : Base(std::move(other))
-            , params_(std::move(other.params_))
-            /*, out2in_(std::move(other.out2in_))
-            , in2out_(std::move(other.in2out_))*/ {
+            , params_(std::move(other.params_)) {
         init_connection();
-        init_backend(std::move(Base::backend_type()));
+        init_backend(std::move(Base::engine()));
     }
 
     cnn_size_t fan_in_size() const override {
@@ -139,11 +137,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>&       out_data) override {
-        /*// launch maxpool kernel
-        Base::backend_->maxpool(in_data, out_data);
-
-        // activations
-        this->forward_activation(*out_data[0], *out_data[1]);*/
 	// forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
@@ -160,9 +153,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        // launch maxpool kernel
-        //Base::backend_->maxpool(in_data, out_data, out_grad, in_grad);
-
 	// activations
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
@@ -234,11 +224,6 @@ private:
     /* The Max Poling operation params */
     maxpool_params params_;
 
-    /* mapping out => in (1:N) */
-    //std::vector<std::vector<cnn_size_t> > out2in_;
-    /* mapping in => out (N:1) */
-    //std::vector<cnn_size_t> in2out_;
-
     /* Forward and backward ops */
     std::shared_ptr<core::OpKernel> kernel_fwd_;
     std::shared_ptr<core::OpKernel> kernel_back_;
@@ -306,43 +291,6 @@ private:
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
 
-        /*std::shared_ptr<core::backend> backend = nullptr;
-
-        // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
-            backend = std::make_shared<core::tiny_backend>(
-                &out2in_,
-                &in2out_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &mws_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
-#ifdef CNN_USE_AVX
-        } else if (backend_type == backend_t::avx) {
-            backend = std::make_shared<core::avx_backend>(
-                &out2in_,
-                &in2out_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &mws_);
-#endif
-        } else {
-            throw nn_error("Not supported backend type.");
-        }
-
-        if (backend) {
-            Base::set_backend(backend);
-            Base::backend_->set_layer(this);
-        } else {
-            throw nn_error("Could not allocate the backend.");
-        }*/
     }
 
     void set_maxpool_params(const shape3d& in,

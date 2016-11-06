@@ -32,7 +32,7 @@
 
 using namespace tiny_dnn::activation;
 
-/*#ifndef CNN_NO_SERIALIZATION
+#ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
 #endif
 #include "test_network.h"
@@ -66,8 +66,7 @@ using namespace tiny_dnn::activation;
 #include "test_caffe_converter.h"
 #endif
 
-#include "test_image.h"*/
-#include "test_max_pooling_layer.h"
+#include "test_image.h"
 
 
 int main(int argc, char **argv) {

@@ -57,7 +57,7 @@ class MaxPoolGradOp : public core::OpKernel {
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
-        auto params = OpKernel::params_->maxpool();
+        auto& params = OpKernel::params_->maxpool();
 
         // incoming/outcoming data
         tensor_t& prev_delta = context.input_grad(0);
