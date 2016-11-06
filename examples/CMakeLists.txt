@@ -57,6 +57,8 @@ if(PROTOBUF_FOUND)
             target_link_libraries(example_caffe_converter
                 ${project_library_target_name}
                 ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
+            add_custom_target(generated_code DEPENDS ${PROTO_SRCS} ${PROTO_HDRS})
+            add_dependencies(example_caffe_converter generated_code)
         else()
             message(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
         endif()
