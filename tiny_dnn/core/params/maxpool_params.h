@@ -36,8 +36,8 @@ class maxpool_params : public Params {
     index3d<cnn_size_t> out;
     cnn_size_t          pool_size_x;
     cnn_size_t          pool_size_y;
-    size_t              stride_x;
-    size_t              stride_y;
+    cnn_size_t          stride_x;
+    cnn_size_t          stride_y;
     padding             pad_type;
     
     /* mapping out => max_index(in) (1:1) */
@@ -54,8 +54,8 @@ struct max_pooling_layer_worker_specific_storage {
 };
 
 // TODO(nyanp): can we do better here?
-inline maxpool_params Params::maxpool() const {
-    return *(static_cast<const maxpool_params*>(this));
+inline maxpool_params& Params::maxpool() {
+    return *(static_cast<maxpool_params*>(this));
 }
 
 }  // namespace core

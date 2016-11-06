@@ -38,6 +38,7 @@
 #endif
 
 #include "tiny_dnn/core/kernels/maxpool_op.h"
+#include "tiny_dnn/core/kernels/maxpool_grad_op.h"
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/image.h"
@@ -173,7 +174,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
         // launch convolutional kernel
         kernel_back_->compute(ctx);
-
     }
 
     std::vector<index3d<cnn_size_t>>
@@ -214,7 +214,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
            cereal::make_nvp("pool_size_y", pool_size_y),
            cereal::make_nvp("stride_x", stride_x),
            cereal::make_nvp("stride_y", stride_y),
-            cereal::make_nvp("pad_type", pad_type));
+           cereal::make_nvp("pad_type", pad_type));
         construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
 		  stride_x, stride_y, pad_type);
     }
@@ -249,11 +249,11 @@ private:
                         cnn_size_t outy,
                         cnn_size_t c) {
         cnn_size_t dxmax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size_x),
+            std::min(static_cast<cnn_size_t>(pooling_size_x),
                      params_.in.width_ - outx * params_.stride_x));
 
         cnn_size_t dymax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size_y),
+            std::min(static_cast<cnn_size_t>(pooling_size_y),
                      params_.in.height_ - outy * params_.stride_y));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
@@ -295,11 +295,11 @@ private:
         core::OpKernelConstruction(layer::device(), &params_);
 
         if (backend_type == backend_t::tiny_dnn ||
+	    backend_type == backend_t::nnpack ||
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new MaxPoolOp(ctx));
-            //kernel_back_.reset(new FullyConnectedGradOp(ctx));
-
+            kernel_back_.reset(new MaxPoolGradOp(ctx));
             return;
         }
         else {

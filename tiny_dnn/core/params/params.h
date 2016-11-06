@@ -38,9 +38,9 @@ class Params {
  public:
     Params() {}
 
-    conv_params       conv() const;
-    fully_params     fully() const;
-    maxpool_params maxpool() const;
+    conv_params        conv() const;
+    fully_params      fully() const;
+    maxpool_params& maxpool();
 };
 
 }  // namespace core

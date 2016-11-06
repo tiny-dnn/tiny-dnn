@@ -87,6 +87,8 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
 
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
+#else
+    throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
 
