@@ -33,7 +33,7 @@ addons:
       - gem
       - lcov
       # caffe-importer dependencies
-      - protobuf-compiler
+      - libprotobuf-dev
 
 branches:
   only:
