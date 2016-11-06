@@ -201,8 +201,8 @@ TEST(serialization, serialize_concat) {
 
     EXPECT_EQ(net[0]->layer_type(), "concat");
     EXPECT_EQ(net[0]->in_shape()[0], shape3d(2, 1, 1));
-    EXPECT_EQ(net[0]->in_shape()[0], shape3d(2, 1, 2));
-    EXPECT_EQ(net[0]->in_shape()[0], shape3d(2, 1, 3));
+    EXPECT_EQ(net[0]->in_shape()[1], shape3d(2, 1, 2));
+    EXPECT_EQ(net[0]->in_shape()[2], shape3d(2, 1, 3));
     EXPECT_EQ(net[0]->out_shape()[0], shape3d(2, 1, 6));
 }
 
@@ -248,7 +248,7 @@ TEST(serialization, serialize_fully) {
 
     net.from_json(json);
 
-    EXPECT_EQ(net[0]->layer_type(), "fully_connected");
+    EXPECT_EQ(net[0]->layer_type(), "fully-connected");
     EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
     EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
 }
