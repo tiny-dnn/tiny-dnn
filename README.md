@@ -134,7 +134,7 @@ Some cmake options are available:
 
 <sup>2</sup> If you don't use serialization, you can switch off to speedup compilation time.
 
-<sup>3</sup> tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
+<sup>3</sup> tiny-dnn uses [Google Test](https://github.com/google/googletest) as default framework to run unit tests. No pre-installation required, it's  automatically downloaded during CMake configuration.
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash
