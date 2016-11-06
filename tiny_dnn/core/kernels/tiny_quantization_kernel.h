@@ -186,7 +186,7 @@ template <class T>
 void float_tensor_to_quantized_in_place(const vec_t& input, float_t min, float_t max,
                                    std::vector<T>* result) {
   const size_t data_size = input.size();
-  for (int i = 0; i < data_size; ++i) {
+  for (size_t i = 0; i < data_size; ++i) {
     (*result)[i] = float_to_quantized<T>(input[i], min, max);
   }
 }
