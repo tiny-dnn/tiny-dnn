@@ -25,7 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/core/kernels/tiny_maxpool_kernel.h"
+
+#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
 
 namespace tiny_dnn {
 namespace kernels {

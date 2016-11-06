@@ -28,7 +28,6 @@
 
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/kernels/nnp_deconv2d_kernel.h"
-#include "tiny_dnn/core/kernels/nnp_maxpool_kernel.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -146,7 +145,7 @@ class nnp_backend : public backend {
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
-        if (params_m_->stride_x != 2 || params_m_->stride_y != 2) {
+        /**if (params_m_->stride_x != 2 || params_m_->stride_y != 2) {
             throw nn_error("NNPACK Max-Pool requires a stride == 2.");
         }
 
@@ -157,7 +156,7 @@ class nnp_backend : public backend {
         const tensor_t& in = *in_data[0];
         tensor_t&       a = *out_data[1];
 
-        kernels::nnp_maxpool_kernel(*params_m_, in, a);
+        kernels::nnp_maxpool_kernel(*params_m_, in, a);*/
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
