@@ -31,14 +31,12 @@
 #endif
 
 namespace tiny_dnn {
-namespace core {
 namespace kernels {
 
-inline void nnp_maxpool_kernel(const maxpool_params& params,
-                               const tensor_t&          in,
-                               tensor_t&                a) {
+inline void maxpool_op_nnpack(const tensor_t&          in,
+                              tensor_t&                 a,
+			      const maxpool_params& params) {
 #ifdef CNN_USE_NNPACK
-
     const cnn_size_t input_channels  = params.in.depth_;
     const cnn_size_t output_channels = params.out.depth_;
 
@@ -89,9 +87,10 @@ inline void nnp_maxpool_kernel(const maxpool_params& params,
 
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
+#else
+    throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
 
 }  // namespace kernels
-}  // namespace core
 }  // namespace tiny_dnn

@@ -27,15 +27,14 @@
 #pragma once
 
 namespace tiny_dnn {
-namespace core {
 namespace kernels {
 
-inline void tiny_maxpool_kernel(const tensor_t& in_data,
-                                tensor_t&       out_data,
-                                std::vector<std::vector<cnn_size_t>>& max_idx,
-                                const std::vector<std::vector<cnn_size_t>>& out2in,
-                                const bool layer_parallelize) {
-
+inline void
+maxpool_op_custom(const tensor_t& in_data,
+                  tensor_t&       out_data,
+                  std::vector<std::vector<cnn_size_t>>& max_idx,
+                  const std::vector<std::vector<cnn_size_t>>& out2in,
+                  const bool layer_parallelize) {
     for_i(layer_parallelize, in_data.size(), [&](int sample) {
         const vec_t& in = in_data[sample];
         vec_t& a = out_data[sample];
@@ -56,12 +55,12 @@ inline void tiny_maxpool_kernel(const tensor_t& in_data,
     });
 }
 
-inline void tiny_maxpool_back_kernel(tensor_t& prev_delta,
-                                     const tensor_t&  curr_delta,
-                                     std::vector<std::vector<cnn_size_t>>& max_idx,
-                                     const std::vector<cnn_size_t>& in2out,
-                                     const bool layer_parallelize) {
-
+inline void
+maxpool_grad_op_custom(tensor_t& prev_delta,
+                       const tensor_t&  curr_delta,
+                       std::vector<std::vector<cnn_size_t>>& max_idx,
+                       const std::vector<cnn_size_t>& in2out,
+                       const bool layer_parallelize) {
     for_i(layer_parallelize, prev_delta.size(), [&](int sample) {
         vec_t& prev       = prev_delta[sample];
         const vec_t& curr = curr_delta[sample];
@@ -72,10 +71,8 @@ inline void tiny_maxpool_back_kernel(tensor_t& prev_delta,
             prev[i] = (max[outi] == static_cast<cnn_size_t>(i)) ?
                        curr[outi] : float_t(0);
         }
-    });
-    
+    }); 
 }
 
 }  // namespace kernels
-}  // namespace core
 }  // namespace tiny_dnn

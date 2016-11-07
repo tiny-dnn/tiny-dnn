@@ -126,6 +126,8 @@ conv2d_op_nnpack(const tensor_t&         in_data,
 
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
+#else
+    throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
 

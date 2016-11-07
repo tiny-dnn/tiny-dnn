@@ -37,6 +37,9 @@
 #include "tiny_dnn/core/backend_avx.h"
 #endif
 
+#include "tiny_dnn/core/kernels/maxpool_op.h"
+#include "tiny_dnn/core/kernels/maxpool_grad_op.h"
+
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
@@ -64,16 +67,16 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       cnn_size_t     pooling_size,
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
-            : max_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size, backend_type, b_params) {
-    }
+        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
+                            pooling_size, backend_type, b_params) {}
 
     max_pooling_layer(const shape3d& in_shape,
                       cnn_size_t     pooling_size,
                       cnn_size_t     stride,
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
-        : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_, pooling_size, stride, backend_type, b_params) {
-    }
+        : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_,
+                            pooling_size, stride, backend_type, b_params) {}
 
     max_pooling_layer(cnn_size_t     in_width,
                       cnn_size_t     in_height,
@@ -82,8 +85,9 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       cnn_size_t     stride,
                       backend_t      backend_type = core::default_engine(),
                       backend_params b_params = backend_params())
-        : max_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size, stride, stride, padding::valid, backend_type, b_params) {
-    }
+        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
+                            pooling_size, stride, stride, padding::valid,
+                            backend_type, b_params) {}
 
     /**
      * @param in_width     [in] width of input image
@@ -118,17 +122,13 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     // move constructor
     max_pooling_layer(max_pooling_layer&& other)  // NOLINT
             : Base(std::move(other))
-            , params_(std::move(other.params_))
-            , out2in_(std::move(other.out2in_))
-            , in2out_(std::move(other.in2out_))
-            , max_pooling_layer_worker_storage_(
-                std::move(other.max_pooling_layer_worker_storage_)) {
+            , params_(std::move(other.params_)) {
         init_connection();
-        init_backend(std::move(Base::backend_type()));
+        init_backend(std::move(Base::engine()));
     }
 
     cnn_size_t fan_in_size() const override {
-        return static_cast<cnn_size_t>(out2in_[0].size());
+        return static_cast<cnn_size_t>(params_.out2in[0].size());
     }
 
     cnn_size_t fan_out_size() const override {
@@ -137,8 +137,13 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>&       out_data) override {
-        // launch maxpool kernel
-        Base::backend_->maxpool(in_data, out_data);
+	// forward convolutional op context
+        auto ctx = OpKernelContext(in_data, out_data);
+             ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
+
+        // launch convolutional kernel
+        kernel_fwd_->compute(ctx);
 
         // activations
         this->forward_activation(*out_data[0], *out_data[1]);
@@ -148,8 +153,17 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-        // launch maxpool kernel
-        Base::backend_->maxpool(in_data, out_data, out_grad, in_grad);
+	// activations
+        // TODO(edgar/nyanp): refactor and move activations outside
+        this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
+
+        // backward convolutional op context
+        auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
+             ctx.setParallelize(layer::parallelize());
+             ctx.setEngine(layer::engine());
+
+        // launch convolutional kernel
+        kernel_back_->compute(ctx);
     }
 
     std::vector<index3d<cnn_size_t>>
@@ -166,16 +180,21 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/pooling.cl");
     }
 
-    std::pair<cnn_size_t, cnn_size_t> pool_size() const { return std::make_pair(params_.pool_size_x, params_.pool_size_y); }
+    std::pair<cnn_size_t, cnn_size_t> pool_size() const {
+	return std::make_pair(params_.pool_size_x, params_.pool_size_y);
+    }
 
     void set_sample_count(cnn_size_t sample_count) override {
         Base::set_sample_count(sample_count);
-        max_pooling_layer_worker_storage_.out2inmax_.resize(sample_count, std::vector<cnn_size_t>(params_.out.size()));
+        params_.out2inmax.resize(
+	     sample_count, std::vector<cnn_size_t>(params_.out.size()));
     }
 
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<max_pooling_layer> & construct) {
+    static void
+    load_and_construct(Archive & ar,
+		       cereal::construct<max_pooling_layer> & construct) {
         shape3d in;
         cnn_size_t stride_x, stride_y, pool_size_x, pool_size_y;
         padding pad_type;
@@ -185,8 +204,9 @@ class max_pooling_layer : public feedforward_layer<Activation> {
            cereal::make_nvp("pool_size_y", pool_size_y),
            cereal::make_nvp("stride_x", stride_x),
            cereal::make_nvp("stride_y", stride_y),
-            cereal::make_nvp("pad_type", pad_type));
-        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y, stride_x, stride_y, pad_type);
+           cereal::make_nvp("pad_type", pad_type));
+        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
+		  stride_x, stride_y, pad_type);
     }
 
     template <class Archive>
@@ -201,15 +221,12 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
 private:
+    /* The Max Poling operation params */
     maxpool_params params_;
 
-    /* mapping out => in (1:N) */
-    std::vector<std::vector<cnn_size_t> > out2in_;
-    /* mapping in => out (N:1) */
-    std::vector<cnn_size_t> in2out_;
-
-    max_pooling_layer_worker_specific_storage
-    max_pooling_layer_worker_storage_;
+    /* Forward and backward ops */
+    std::shared_ptr<core::OpKernel> kernel_fwd_;
+    std::shared_ptr<core::OpKernel> kernel_back_;
 
     void connect_kernel(cnn_size_t pooling_size_x,
                         cnn_size_t pooling_size_y,
@@ -217,11 +234,11 @@ private:
                         cnn_size_t outy,
                         cnn_size_t c) {
         cnn_size_t dxmax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size_x),
+            std::min(static_cast<cnn_size_t>(pooling_size_x),
                      params_.in.width_ - outx * params_.stride_x));
 
         cnn_size_t dymax = static_cast<cnn_size_t>(
-            std::min(static_cast<size_t>(pooling_size_y),
+            std::min(static_cast<cnn_size_t>(pooling_size_y),
                      params_.in.height_ - outy * params_.stride_y));
 
         for (cnn_size_t dy = 0; dy < dymax; dy++) {
@@ -231,21 +248,21 @@ private:
                     static_cast<cnn_size_t>(outy * params_.stride_y + dy), c);
                 cnn_size_t out_index = params_.out.get_index(outx, outy, c);
 
-                if (in_index >= in2out_.size()) {
+                if (in_index >= params_.in2out.size()) {
                     throw nn_error("index overflow");
                 }
-                if (out_index >= out2in_.size()) {
+                if (out_index >= params_.out2in.size()) {
                     throw nn_error("index overflow");
                 }
-                in2out_[in_index] = out_index;
-                out2in_[out_index].push_back(in_index);
+                params_.in2out[in_index] = out_index;
+                params_.out2in[out_index].push_back(in_index);
             }
         }
     }
 
     void init_connection() {
-        in2out_.resize(params_.in.size());
-        out2in_.resize(params_.out.size());
+        params_.in2out.resize(params_.in.size());
+        params_.out2in.resize(params_.out.size());
 
         for (cnn_size_t c = 0; c < params_.in.depth_; ++c) {
             for (cnn_size_t y = 0; y < params_.out.height_; ++y) {
@@ -259,43 +276,21 @@ private:
     }
 
     void init_backend(backend_t backend_type) {
-        std::shared_ptr<core::backend> backend = nullptr;
+	core::OpKernelConstruction ctx =
+        core::OpKernelConstruction(layer::device(), &params_);
 
-        // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
-            backend = std::make_shared<core::tiny_backend>(
-                &out2in_,
-                &in2out_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &max_pooling_layer_worker_storage_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
-#ifdef CNN_USE_AVX
-        } else if (backend_type == backend_t::avx) {
-            backend = std::make_shared<core::avx_backend>(
-                &out2in_,
-                &in2out_,
-                [this](const tensor_t& p_delta,
-                       const tensor_t& out, tensor_t& c_delta) {
-                    return Base::backward_activation(p_delta, out, c_delta);
-                },
-                &max_pooling_layer_worker_storage_);
-#endif
-        } else {
-            throw nn_error("Not supported backend type.");
+        if (backend_type == backend_t::tiny_dnn ||
+	    backend_type == backend_t::nnpack ||
+            backend_type == backend_t::avx) {
+
+            kernel_fwd_.reset(new MaxPoolOp(ctx));
+            kernel_back_.reset(new MaxPoolGradOp(ctx));
+            return;
+        }
+        else {
+            throw nn_error("Not supported engine: " + to_string(backend_type));
         }
 
-        if (backend) {
-            Base::set_backend(backend);
-            Base::backend_->set_layer(this);
-        } else {
-            throw nn_error("Could not allocate the backend.");
-        }
     }
 
     void set_maxpool_params(const shape3d& in,
@@ -305,8 +300,8 @@ private:
                             cnn_size_t stride_x,
                             cnn_size_t stride_y,
                             padding pad_type) {
-        params_.in        = in;
-        params_.out       = out;
+        params_.in          = in;
+        params_.out         = out;
         params_.pool_size_x = pooling_size_x;
         params_.pool_size_y = pooling_size_y;
         params_.stride_x    = stride_x;
