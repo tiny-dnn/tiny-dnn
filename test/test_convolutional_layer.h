@@ -253,7 +253,7 @@ TEST(convolutional, fprop_avx) {
 
     tensor_buf buf(l), buf2(l);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
@@ -277,7 +277,7 @@ TEST(convolutional, bprop_avx) {
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -302,7 +302,7 @@ TEST(convolutional, fprop_avx_1x1out) {
 
     tensor_buf buf(l), buf2(l);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
@@ -325,7 +325,7 @@ TEST(convolutional, bprop_avx_1x1out) {
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -350,7 +350,7 @@ TEST(convolutional, fprop_avx_hstride) {
 
     tensor_buf buf(l), buf2(l);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
@@ -373,7 +373,7 @@ TEST(convolutional, bprop_avx_hstride) {
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -398,7 +398,7 @@ TEST(convolutional, fprop_avx_hstride_1x1out) {
 
     tensor_buf buf(l), buf2(l);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
@@ -421,7 +421,7 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -446,7 +446,7 @@ TEST(convolutional, fprop_avx_wstride) {
 
     tensor_buf buf(l), buf2(l);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(buf.in_buf(), buf.out_buf());
 
@@ -469,7 +469,7 @@ TEST(convolutional, bprop_avx_wstride) {
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
 
-    l.set_backend_type(tiny_dnn::core::backend_t::tiny_dnn);
+    l.set_backend_type(tiny_dnn::core::backend_t::custom);
 
     l.forward_propagation(data.in_buf(), data.out_buf());
     l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(), grad1.in_buf());
@@ -648,7 +648,7 @@ TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
     network<sequential> nn;
 
     nn << convolutional_layer<sigmoid> (5, 5, 3, 1, 1, padding::same,
-                                        true, 1, 1, core::backend_t::tiny_dnn);
+                                        true, 1, 1, core::backend_t::custom);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -661,7 +661,7 @@ TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
     network<sequential> nn;
 
     nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
-        true, 2, 1, core::backend_t::tiny_dnn);
+        true, 2, 1, core::backend_t::custom);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
@@ -674,7 +674,7 @@ TEST(convolutional, gradient_check10_h_stride) { // sigmoid - mse - h_stride > 1
     network<sequential> nn;
 
     nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
-        true, 1, 2, core::backend_t::tiny_dnn);
+        true, 1, 2, core::backend_t::custom);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
@@ -693,7 +693,7 @@ TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has co
     connection_table connections(tbl, 3, 3);
 
     nn << convolutional_layer<sigmoid>(7, 7, 3, 3, 1, connections, padding::valid,
-        true, 1, 1, core::backend_t::tiny_dnn);
+        true, 1, 1, core::backend_t::custom);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();

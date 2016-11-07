@@ -68,19 +68,14 @@ class FullyConnectedGradOp : public core::OpKernel {
         tensor_t& curr_delta = context.output_grad(1);
         tensor_t dummy; // need lvalue for non-const reference
 
-        // TODO(nyanp): Why we only need to initialize prev_delta ?
-
         // initialize outputs
-        //fill_tensor(dW, float_t(0));
-        //fill_tensor(db, float_t(0));
         fill_tensor(prev_delta, float_t(0));
-        //fill_tensor(curr_delta, float_t(0));
 
         // call the algorithm depending on the selected engine type
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
+        if (engine == core::backend_t::custom) {
             kernels::fully_connected_op_custom(
                 prev_out,
                 W[0],

@@ -74,7 +74,7 @@ class Conv2dOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
+        if (engine == core::backend_t::custom) {
             kernels::conv2d_op_custom(
                 in_data,
                 W[0],

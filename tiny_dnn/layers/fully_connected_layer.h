@@ -46,10 +46,10 @@ public:
      * @param out_dim [in] number of elements of the output
      * @param has_bias [in] whether to include additional bias to the layer
      **/
-    fully_connected_layer(cnn_size_t     in_dim,
-                          cnn_size_t     out_dim,
-                          bool           has_bias = true,
-                          backend_t      backend_type = core::default_engine())
+    fully_connected_layer(cnn_size_t in_dim,
+                          cnn_size_t out_dim,
+                          bool       has_bias = true,
+                          backend_t  backend_type = core::default_engine())
             : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
@@ -157,7 +157,7 @@ protected:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn ||
+        if (backend_type == backend_t::custom ||
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new FullyConnectedOp(ctx));

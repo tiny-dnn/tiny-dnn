@@ -69,16 +69,16 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t     in_width,
-                        cnn_size_t     in_height,
-                        cnn_size_t     window_size,
-                        cnn_size_t     in_channels,
-                        cnn_size_t     out_channels,
-                        padding        pad_type = padding::valid,
-                        bool           has_bias = true,
-                        cnn_size_t     w_stride = 1,
-                        cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
+    convolutional_layer(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1,
+                        backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_size, window_size,
 			      in_channels, out_channels, connection_table(),
 			      pad_type, has_bias, w_stride, h_stride,
@@ -100,17 +100,17 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t     in_width,
-                        cnn_size_t     in_height,
-                        cnn_size_t     window_width,
-                        cnn_size_t     window_height,
-                        cnn_size_t     in_channels,
-                        cnn_size_t     out_channels,
-                        padding        pad_type = padding::valid,
-                        bool           has_bias = true,
-                        cnn_size_t     w_stride = 1,
-                        cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
+    convolutional_layer(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_width,
+                        cnn_size_t window_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1,
+                        backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_width, window_height,
 			      in_channels, out_channels, connection_table(),
 			      pad_type, has_bias, w_stride, h_stride,
@@ -480,16 +480,14 @@ private:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn ||
+        if (backend_type == backend_t::custom ||
             backend_type == backend_t::nnpack ||
             backend_type == backend_t::avx) {
             
             kernel_fwd_.reset(new Conv2dOp(ctx));
             kernel_back_.reset(new Conv2dGradOp(ctx));
-
             return;
         }
-
         else if (backend_type == backend_t::opencl) {
             throw nn_error("Not implemented engine: " + to_string(backend_type));
             /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));

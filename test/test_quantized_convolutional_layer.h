@@ -33,7 +33,7 @@ namespace tiny_dnn {
 
 TEST(quantized_convolutional, setup_tiny) {
     quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::tiny_dnn);
+        padding::valid, true, 1, 1, backend_t::custom);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           cnn_size_t(3));  // num of input tensors
