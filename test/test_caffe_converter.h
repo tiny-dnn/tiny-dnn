@@ -317,8 +317,250 @@ TEST(caffe_converter, lenet) {
     EXPECT_EQ((*model)[7]->layer_type(), "linear");
 }
 
-TEST(caffe_converter, conv2) {
+TEST(caffe_converter, dropout) {
+    std::string json = R"(
+    name: "DropoutNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "dropout"
+      type: "Dropout"
+      bottom: "data"
+      top: "dropout"
+      dropout_param {
+        dropout_ratio: 0.3
+      }
+    }
+    )";
 
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    // tiny-dnn dropout doesn't hold spatial shape of input
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24*40, 1, 1));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24*40, 1, 1));
+    EXPECT_FLOAT_EQ(model->at<dropout_layer>(0).dropout_rate(), 0.3f);
+}
+
+
+TEST(caffe_converter, batchnorm) {
+    std::string json = R"(
+    name: "BNNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "bn"
+      type: "BatchNorm"
+      bottom: "data"
+      top: "normalized"
+      batch_norm_param {
+        moving_average_fraction: 0.8
+        eps: 1e-3
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    // tiny-dnn bn doesn't hold spatial shape of input
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24*40, 1, 1));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24*40, 1, 1));
+    EXPECT_FLOAT_EQ(model->at<batch_normalization_layer>(0).epsilon(), 1e-3f);
+    EXPECT_FLOAT_EQ(model->at<batch_normalization_layer>(0).momentum(), 0.8f);
+}
+
+TEST(caffe_converter, lrn) {
+    std::string json = R"(
+    name: "LRNNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 5
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "lrn"
+      type: "LRN"
+      bottom: "data"
+      top: "normalized"
+      lrn_param {
+        norm_region: WITHIN_CHANNEL
+        alpha: 1.5
+        beta: 0.8
+        local_size: 3
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 5));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 40, 5));
+}
+
+
+TEST(caffe_converter, conv_with_weights) {
+    std::string json = R"(
+    name: "ConvNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 3
+      dim: 3
+    }
+    layer {
+      name: "conv"
+      type: "Convolution"
+      bottom: "data"
+      top: "out"
+      convolution_param {
+        num_output: 1
+        kernel_size: 3
+        stride: 1
+      }
+      blobs {
+        data: 0
+        data: 1
+        data: 2
+        data: 3
+        data: 4
+        data: 5
+        data: 6
+        data: 7
+        data: 8
+        shape {
+          dim: 1
+          dim: 1
+          dim: 3
+          dim: 3
+        }
+      }
+      blobs {
+        data: 9
+        shape {
+          dim: 1
+          dim: 1
+          dim: 1
+          dim: 1
+        }
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    const vec_t* W = (*model)[0]->weights()[0];
+    const vec_t* b = (*model)[0]->weights()[1];
+
+    EXPECT_EQ(W->size(), 9);
+    for (int i = 0; i < 9; i++) {
+        EXPECT_FLOAT_EQ(W->at(i), (float_t)i);
+    }
+    EXPECT_EQ(b->size(), 1);
+    EXPECT_FLOAT_EQ(b->at(0), 9.0f);
+}
+
+
+
+TEST(caffe_converter, fully_with_weights) {
+    std::string json = R"(
+    name: "FcNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 2
+      dim: 2
+    }
+    layer {
+      name: "fc"
+      type: "InnerProduct"
+      bottom: "data"
+      top: "out"
+      inner_product_param {
+        num_output: 2
+        bias_term: true
+      }
+      blobs {
+        data: 0
+        data: 1
+        data: 2
+        data: 3
+        data: 4
+        data: 5
+        data: 6
+        data: 7
+        shape {
+          dim: 1
+          dim: 1
+          dim: 2
+          dim: 4
+        }
+      }
+      blobs {
+        data: 8
+        data: 9
+        shape {
+          dim: 1
+          dim: 1
+          dim: 1
+          dim: 2
+        }
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+    /*
+     caffe:
+     0 1 2 3
+     4 5 6 7
+
+     tiny-dnn:
+     0 4
+     1 5
+     2 6
+     3 7 
+    */
+
+    const vec_t* W = (*model)[0]->weights()[0];
+    const vec_t* b = (*model)[0]->weights()[1];
+
+    EXPECT_EQ(W->size(), 8);
+    EXPECT_FLOAT_EQ(W->at(0), 0.0f);
+    EXPECT_FLOAT_EQ(W->at(1), 4.0f);
+    EXPECT_FLOAT_EQ(W->at(2), 1.0f);
+    EXPECT_FLOAT_EQ(W->at(3), 5.0f);
+    EXPECT_FLOAT_EQ(W->at(4), 2.0f);
+    EXPECT_FLOAT_EQ(W->at(5), 6.0f);
+    EXPECT_FLOAT_EQ(W->at(6), 3.0f);
+    EXPECT_FLOAT_EQ(W->at(7), 7.0f);
+
+    EXPECT_EQ(b->size(), 2);
+    EXPECT_FLOAT_EQ(b->at(0), 8.0f);
+    EXPECT_FLOAT_EQ(b->at(1), 9.0f);
 }
 
 } // namespace tiny-dnn
