@@ -61,33 +61,30 @@ class max_pooling_layer : public feedforward_layer<Activation> {
      * @param in_channels  [in] the number of input image channels(depth)
      * @param pooling_size [in] factor by which to downscale
      **/
-    max_pooling_layer(cnn_size_t     in_width,
-                      cnn_size_t     in_height,
-                      cnn_size_t     in_channels,
-                      cnn_size_t     pooling_size,
-                      backend_t      backend_type = core::default_engine(),
-                      backend_params b_params = backend_params())
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size,
+                      backend_t  backend_type = core::default_engine())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-                            pooling_size, backend_type, b_params) {}
+                            pooling_size, backend_type) {}
 
     max_pooling_layer(const shape3d& in_shape,
                       cnn_size_t     pooling_size,
                       cnn_size_t     stride,
-                      backend_t      backend_type = core::default_engine(),
-                      backend_params b_params = backend_params())
+                      backend_t      backend_type = core::default_engine())
         : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_,
-                            pooling_size, stride, backend_type, b_params) {}
+                            pooling_size, stride, backend_type) {}
 
-    max_pooling_layer(cnn_size_t     in_width,
-                      cnn_size_t     in_height,
-                      cnn_size_t     in_channels,
-                      cnn_size_t     pooling_size,
-                      cnn_size_t     stride,
-                      backend_t      backend_type = core::default_engine(),
-                      backend_params b_params = backend_params())
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size,
+                      cnn_size_t stride,
+                      backend_t  backend_type = core::default_engine())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
                             pooling_size, stride, stride, padding::valid,
-                            backend_type, b_params) {}
+                            backend_type) {}
 
     /**
      * @param in_width     [in] width of input image
@@ -96,16 +93,15 @@ class max_pooling_layer : public feedforward_layer<Activation> {
      * @param pooling_size [in] factor by which to downscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    max_pooling_layer(cnn_size_t     in_width,
-                      cnn_size_t     in_height,
-                      cnn_size_t     in_channels,
-                      cnn_size_t     pooling_size_x,
-                      cnn_size_t     pooling_size_y,
-                      cnn_size_t     stride_x,
-                      cnn_size_t     stride_y,
-                      padding        pad_type = padding::valid,
-                      backend_t      backend_type = core::default_engine(),
-                      backend_params b_params = backend_params())
+    max_pooling_layer(cnn_size_t in_width,
+                      cnn_size_t in_height,
+                      cnn_size_t in_channels,
+                      cnn_size_t pooling_size_x,
+                      cnn_size_t pooling_size_y,
+                      cnn_size_t stride_x,
+                      cnn_size_t stride_y,
+                      padding    pad_type = padding::valid,
+                      backend_t  backend_type = core::default_engine())
             : Base({ vector_type::data }) {
         set_maxpool_params(
             shape3d(in_width, in_height, in_channels),
@@ -279,7 +275,7 @@ private:
 	core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn ||
+        if (backend_type == backend_t::custom ||
 	    backend_type == backend_t::nnpack ||
             backend_type == backend_t::avx) {
 

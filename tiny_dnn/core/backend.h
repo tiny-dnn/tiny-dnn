@@ -38,11 +38,11 @@ namespace core {
 // TODO(edgar): remove this
 class context;
 
-enum class backend_t { tiny_dnn, nnpack, libdnn, avx, opencl };
+enum class backend_t { custom, nnpack, libdnn, avx, opencl };
 
 inline std::ostream& operator << (std::ostream& os, backend_t type) {
     switch (type) {
-        case backend_t::tiny_dnn: os << "TinyDNN"; break;
+        case backend_t::custom:   os << "Custom";  break;
         case backend_t::nnpack:   os << "NNPACK";  break;
         case backend_t::libdnn:   os << "LibDNN";  break;
         case backend_t::avx:      os << "AVX";     break;
@@ -62,7 +62,7 @@ inline backend_t default_engine() {
     return backend_t::avx;
 #endif
 #endif // CNN_USE_AVX
-    return backend_t::tiny_dnn;
+    return backend_t::custom;
 }
 
 // TODO(edgar): remove this

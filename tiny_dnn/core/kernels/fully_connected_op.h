@@ -73,7 +73,7 @@ class FullyConnectedOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
+        if (engine == core::backend_t::custom) {
             kernels::fully_connected_op_custom(
                 in_data,
                 W[0],

@@ -72,7 +72,7 @@ class MaxPoolOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
+        if (engine == core::backend_t::custom) {
             kernels::maxpool_op_custom(
                 in_data,
                 out_data,

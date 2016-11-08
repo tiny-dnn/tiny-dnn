@@ -435,7 +435,7 @@ class tiny_backend : public backend {
 #endif
     }
 
-    backend_t type() const override { return backend_t::tiny_dnn; }
+    backend_t type() const override { return default_engine(); }
 
  private:
     /* Pointer to the convolution parameters */

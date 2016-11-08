@@ -70,7 +70,7 @@ class MaxPoolGradOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
+        if (engine == core::backend_t::custom) {
             kernels::maxpool_grad_op_custom(
                 prev_delta,
                 curr_delta,

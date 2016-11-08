@@ -80,8 +80,7 @@ public:
                                     bool           has_bias = true,
                                     cnn_size_t     w_stride = 1,
                                     cnn_size_t     h_stride = 1,
-                                    backend_t      backend_type = backend_t::tiny_dnn,
-                                    backend_params b_params = backend_params())
+                                    backend_t      backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
@@ -116,8 +115,7 @@ public:
                                     bool           has_bias = true,
                                     cnn_size_t     w_stride = 1,
                                     cnn_size_t     h_stride = 1,
-                                    backend_t      backend_type = backend_t::tiny_dnn,
-                                    backend_params b_params = backend_params())
+                                    backend_t      backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -152,8 +150,7 @@ public:
                                     bool                    has_bias = true,
                                     cnn_size_t              w_stride = 1,
                                     cnn_size_t              h_stride = 1,
-                                    backend_t               backend_type = backend_t::tiny_dnn,
-                                    backend_params          b_params = backend_params())
+                                    backend_t               backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
@@ -191,8 +188,7 @@ public:
                                     bool                    has_bias = true,
                                     cnn_size_t              w_stride = 1,
                                     cnn_size_t              h_stride = 1,
-                                    backend_t               backend_type = backend_t::tiny_dnn,
-                                    backend_params          b_params = backend_params())
+                                    backend_t               backend_type = core::backend_t::custom)
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -311,7 +307,7 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
+        if (backend_type == backend_t::custom) {
             backend = std::make_shared<core::tiny_backend>(&params_,
                 [this](const tensor_t& in) {
                     return copy_and_unpad_output(in);
