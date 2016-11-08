@@ -317,6 +317,178 @@ TEST(caffe_converter, lenet) {
     EXPECT_EQ((*model)[7]->layer_type(), "linear");
 }
 
+
+TEST(caffe_converter, lenet_v1) {
+    /*
+     * loading caffe's old version prototxt
+     *
+     */ 
+    std::string json = R"(
+    name: "LeNet"
+    input: "data"
+    input_dim: 64
+    input_dim: 1
+    input_dim: 28
+    input_dim: 28
+    layers {
+      name: "conv1"
+      type: CONVOLUTION
+      bottom: "data"
+      top: "conv1"
+      blobs_lr: 1
+      blobs_lr: 2
+      convolution_param {
+        num_output: 20
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+          type: "xavier"
+        }
+        bias_filler {
+          type: "constant"
+        }
+      }
+    }
+    layers {
+      name: "pool1"
+      type: POOLING
+      bottom: "conv1"
+      top: "pool1"
+      pooling_param {
+        pool: MAX
+        kernel_size: 2
+        stride: 2
+      }
+    }
+    layers {
+      name: "conv2"
+      type: CONVOLUTION
+      bottom: "pool1"
+      top: "conv2"
+      blobs_lr: 1
+      blobs_lr: 2
+      convolution_param {
+        num_output: 50
+        kernel_size: 5
+        stride: 1
+        weight_filler {
+          type: "xavier"
+        }
+        bias_filler {
+          type: "constant"
+        }
+      }
+    }
+    layers {
+      name: "pool2"
+      type: POOLING
+      bottom: "conv2"
+      top: "pool2"
+      pooling_param {
+        pool: MAX
+        kernel_size: 2
+        stride: 2
+      }
+    }
+    layers {
+      name: "ip1"
+      type: INNER_PRODUCT
+      bottom: "pool2"
+      top: "ip1"
+      blobs_lr: 1
+      blobs_lr: 2
+      inner_product_param {
+        num_output: 500
+        weight_filler {
+          type: "xavier"
+        }
+        bias_filler {
+          type: "constant"
+        }
+      }
+    }
+    layers {
+      name: "relu1"
+      type: RELU
+      bottom: "ip1"
+      top: "ip1"
+    }
+    layers {
+      name: "ip2"
+      type: INNER_PRODUCT
+      bottom: "ip1"
+      top: "ip2"
+      blobs_lr: 1
+      blobs_lr: 2
+      inner_product_param {
+        num_output: 10
+        weight_filler {
+          type: "xavier"
+        }
+        bias_filler {
+          type: "constant"
+        }
+      }
+    }
+    layers {
+      name: "prob"
+      type: SOFTMAX
+      bottom: "ip2"
+      top: "prob"
+    }
+    )";
+
+
+    auto model = create_net_from_json(json, shape3d(28, 28, 1));
+
+    // conv->pool->conv->pool->fc->relu->fc->softmax
+    ASSERT_EQ(model->depth(), 8);
+
+    // conv1 28x28x1 -> 24x24x20
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));   // in: 28x28x1
+    EXPECT_EQ((*model)[0]->in_shape()[1], shape3d(5, 5, 20));    // weight: 5x5x20
+    EXPECT_EQ((*model)[0]->in_shape()[2], shape3d(1, 1, 20));    // bias: 1x1x20
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 24, 20)); // out:24x24x20
+    EXPECT_EQ((*model)[0]->layer_type(), "conv");
+
+    // pool1 24x24x20 -> 12x12x20
+    EXPECT_EQ((*model)[1]->in_shape()[0], shape3d(24, 24, 20));
+    EXPECT_EQ((*model)[1]->out_shape()[0], shape3d(12, 12, 20));
+    EXPECT_EQ((*model)[1]->layer_type(), "max-pool");
+
+    // conv2 12x12x20 -> 8x8x50
+    EXPECT_EQ((*model)[2]->in_shape()[0], shape3d(12, 12, 20));
+    EXPECT_EQ((*model)[2]->in_shape()[1], shape3d(5, 5, 1000));
+    EXPECT_EQ((*model)[2]->in_shape()[2], shape3d(1, 1, 50));
+    EXPECT_EQ((*model)[2]->out_shape()[0], shape3d(8, 8, 50));
+    EXPECT_EQ((*model)[2]->layer_type(), "conv");
+
+    // pool2 8x8x50 -> 4x4x50
+    EXPECT_EQ((*model)[3]->in_shape()[0], shape3d(8, 8, 50));
+    EXPECT_EQ((*model)[3]->out_shape()[0], shape3d(4, 4, 50));
+    EXPECT_EQ((*model)[3]->layer_type(), "max-pool");
+
+    // fc
+    EXPECT_EQ((*model)[4]->in_shape()[0], shape3d(4 * 4 * 50, 1, 1));
+    EXPECT_EQ((*model)[4]->out_shape()[0], shape3d(500, 1, 1));
+    EXPECT_EQ((*model)[4]->layer_type(), "fully-connected");
+
+    // relu
+    EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
+    EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
+    EXPECT_EQ((*model)[5]->layer_type(), "linear");
+
+    // fc
+    EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
+    EXPECT_EQ((*model)[6]->out_shape()[0], shape3d(10, 1, 1));
+    EXPECT_EQ((*model)[6]->layer_type(), "fully-connected");
+
+    // softmax
+    EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
+    EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
+    EXPECT_EQ((*model)[7]->layer_type(), "linear");
+}
+
 TEST(caffe_converter, dropout) {
     std::string json = R"(
     name: "DropoutNet"
@@ -338,7 +510,6 @@ TEST(caffe_converter, dropout) {
     }
     )";
 
-
     auto model = create_net_from_json(json);
 
     ASSERT_EQ(model->depth(), 1);
@@ -349,6 +520,41 @@ TEST(caffe_converter, dropout) {
     EXPECT_FLOAT_EQ(model->at<dropout_layer>(0).dropout_rate(), 0.3f);
 }
 
+
+TEST(caffe_converter, conv_with_stride) {
+    std::string json = R"(
+    name: "DropoutNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 2
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "conv1"
+      type: "Convolution"
+      bottom: "data"
+      top: "conv1"
+      convolution_param {
+        num_output: 3
+        pad: 2
+        kernel_size: 5
+        stride_w: 3
+        stride_h: 2
+        bias_term: false
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 2));
+    EXPECT_EQ((*model)[0]->in_shape().size(), 2); // doesn't have bias
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(8, 20, 3));
+}
 
 TEST(caffe_converter, batchnorm) {
     std::string json = R"(
@@ -379,8 +585,40 @@ TEST(caffe_converter, batchnorm) {
     // tiny-dnn bn doesn't hold spatial shape of input
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24*40, 1, 1));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24*40, 1, 1));
+    EXPECT_EQ((*model)[0]->layer_type(), "batch-norm");
     EXPECT_FLOAT_EQ(model->at<batch_normalization_layer>(0).epsilon(), 1e-3f);
     EXPECT_FLOAT_EQ(model->at<batch_normalization_layer>(0).momentum(), 0.8f);
+}
+
+TEST(caffe_converter, ave_pool) {
+    std::string json = R"(
+    name: "PoolNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 2
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "pool"
+      type: "Pooling"
+      bottom: "data"
+      top: "pooled"
+      pooling_param {
+        pool: AVE
+        kernel_size: 2
+        stride: 2
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 2));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(12, 20, 2));
+    EXPECT_EQ((*model)[0]->layer_type(), "ave-pool");
 }
 
 TEST(caffe_converter, lrn) {

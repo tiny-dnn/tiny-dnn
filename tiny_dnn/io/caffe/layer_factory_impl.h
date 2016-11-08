@@ -704,8 +704,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
     if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
         load_weights_conv(layer, conv.get());
     }
-    //TODO
-    //*top_shape = conv->out_shape();
+
     *top_shape = conv->out_shape()[0];
     return conv;
 }
@@ -808,17 +807,6 @@ inline bool layer_skipped(const std::string& type) {
     return false;
 }
 
-inline bool layer_has_weights(const std::string& type) {
-    static const char* activations[] = {
-        "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
-        "ReLU", "Sigmoid", "TanH", "Softmax"
-    };
-    for (unsigned int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
-        if (activations[i] == type) return false;
-    }
-    return true;
-}
-
 inline bool layer_supported(const std::string& type) {
     static const char* supported[] = {
         "InnerProduct", "Convolution", "Deconvolution", "Pooling",
@@ -829,23 +817,6 @@ inline bool layer_supported(const std::string& type) {
 
     for (size_t i = 0; i < sizeof(supported) / sizeof(supported[0]); i++) {
         if (supported[i] == type) return true;
-    }
-    return false;
-}
-
-inline bool layer_match(const std::string& caffetype,
-                        const std::string& tiny_dnn_type) {
-    const char* conversions[][2] = {
-        { "InnerProduct", "fully-connected" },
-        { "Convolution", "conv" },
-        { "Deconvolution", "deconv" },
-        { "Pooling", "ave-pool" },
-        { "Pooling", "max-pool" }
-    };
-
-    for (size_t i = 0; i < sizeof(conversions) / sizeof(conversions[0]); i++) {
-        if (conversions[i][0] == caffetype &&
-            conversions[i][1] == tiny_dnn_type) return true;
     }
     return false;
 }
@@ -906,30 +877,6 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
     }
 
     throw nn_error("layer parser not found");
-
-    /*typedef std::function<std::shared_ptr<layer>(
-        const caffe::LayerParameter&, const shape_t&, shape_t*)> factoryimpl;
-
-    std::unordered_map<std::string, factoryimpl> factory_registry;
-
-    factory_registry["Convolution"] = detail::create_convlayer;
-    factory_registry["Deconvolution"] = detail::create_deconvlayer;
-    factory_registry["InnerProduct"] = detail::create_fullyconnected;
-    factory_registry["Pooling"] = detail::create_pooling;
-    factory_registry["LRN"] = detail::create_lrn;
-    factory_registry["Dropout"] = detail::create_dropout;
-    factory_registry["SoftmaxWithLoss"] = detail::create_softmax;
-    factory_registry["SigmoidCrossEntropyLoss"] = detail::create_sigmoid;
-    factory_registry["ReLU"] = detail::create_relu;
-    factory_registry["Sigmoid"] = detail::create_sigmoid;
-    factory_registry["TanH"] = detail::create_tanh;
-    factory_registry["Softmax"] = detail::create_softmax;
-
-    if (factory_registry.find(layer.type()) == factory_registry.end()) {
-        throw nn_error("layer parser not found");
-    }
-
-    return factory_registry[layer.type()](layer, in_shape, out_shape);*/
 }
 
 inline void load(const caffe::LayerParameter& src, layer *dst) {
