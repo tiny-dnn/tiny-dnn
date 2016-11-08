@@ -159,10 +159,18 @@ public:
         std::vector<uint8_t> buf = to_rgb<uint8_t>();
 
         if (detail::ends_with(path, "png")) {
-            ret = stbi_write_png(path.c_str(), width_, height_, depth_, (const void*)&buf[0], 0);
+            ret = stbi_write_png(path.c_str(),
+                                 static_cast<int>(width_),
+                                 static_cast<int>(height_),
+                                 static_cast<int>(depth_),
+                                 (const void*)&buf[0], 0);
         }
         else {
-            ret = stbi_write_bmp(path.c_str(), width_, height_, depth_, (const void*)&buf[0]);
+            ret = stbi_write_bmp(path.c_str(),
+                                 static_cast<int>(width_),
+                                 static_cast<int>(height_),
+                                 static_cast<int>(depth_),
+                                 (const void*)&buf[0]);
         }
         if (ret == 0) {
             throw nn_error("failed to save image:" + path);
@@ -298,11 +306,20 @@ image<float_t> mean_image(const image<T>& src)
 template <typename T>
 inline image<T> resize_image(const image<T>& src, int width, int height)
 {
-    image<T> resized(shape3d(width, height, src.depth()), src.type());
+    image<T> resized(shape3d(static_cast<cnn_size_t>(width),
+                             static_cast<cnn_size_t>(height),
+                             static_cast<cnn_size_t>(src.depth())),
+                     src.type());
     std::vector<T> src_rgb = src.template to_rgb<T>();
     std::vector<T> dst_rgb(resized.shape().size());
 
-    detail::resize_image_core(&src_rgb[0], src.width(), src.height(), &dst_rgb[0], width, height, src.depth());
+    detail::resize_image_core(&src_rgb[0],
+                              static_cast<int>(src.width()),
+                              static_cast<int>(src.height()),
+                              &dst_rgb[0],
+                              width,
+                              height,
+                              static_cast<int>(src.depth()));
 
     resized.from_rgb(dst_rgb.begin(), dst_rgb.end());
 

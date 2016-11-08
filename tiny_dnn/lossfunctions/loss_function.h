@@ -193,7 +193,7 @@ inline void apply_cost_if_defined(std::vector<vec_t>& sample_gradient,
                                   const std::vector<vec_t>& sample_cost) {
     if (sample_gradient.size() == sample_cost.size()) {
         // @todo consider adding parallelism
-        const cnn_size_t channel_count = sample_gradient.size();
+        const cnn_size_t channel_count = static_cast<cnn_size_t>(sample_gradient.size());
         for (size_t channel = 0; channel < channel_count; ++channel) {
             if (sample_gradient[channel].size() == sample_cost[channel].size()) {
                 const size_t element_count = sample_gradient[channel].size();

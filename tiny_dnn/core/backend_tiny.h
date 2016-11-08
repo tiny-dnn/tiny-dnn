@@ -207,7 +207,7 @@ class tiny_backend : public backend {
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         tensor_t&       a    = *out_data[1];
-        const tensor_t &in   = *in_data[0]; // input
+        const tensor_t& in   = *in_data[0]; // input
 
         fill_tensor(a, float_t(0), params_d_->out.size()); // deconv2d-kernel requires padded size buffer
 
@@ -222,7 +222,7 @@ class tiny_backend : public backend {
     void deconv2d_q(const std::vector<tensor_t*>&  in_data,
                     std::vector<tensor_t*>&        out_data) override {
         (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
-        const tensor_t &in   =  *in_data[0]; // input
+        const tensor_t& in   =  *in_data[0]; // input
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         tensor_t&       a    =  *out_data[1];
@@ -242,7 +242,7 @@ class tiny_backend : public backend {
     void deconv2d_eq(const std::vector<tensor_t*>&  in_data,
                      std::vector<tensor_t*>&        out_data) override {
         (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
-        const tensor_t &in   =  *in_data[0]; // input
+        const tensor_t& in   =  *in_data[0]; // input
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         const tensor_t& in_r =  *in_data[3];

@@ -202,6 +202,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     check_cxx_compiler_flag("-msse3" COMPILER_HAS_SSE_FLAG)
     check_cxx_compiler_flag("-mavx"  COMPILER_HAS_AVX_FLAG)
     check_cxx_compiler_flag("-mavx2" COMPILER_HAS_AVX2_FLAG)
+    check_cxx_compiler_flag("-mfma" COMPILER_HAS_AVX2_FLAG)
 
     # set Streaming SIMD Extension (SSE) instructions
     if(USE_SSE AND COMPILER_HAS_SSE_FLAG)
@@ -211,7 +212,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     # set Advanced Vector Extensions (AVX)
     if(USE_AVX AND COMPILER_HAS_AVX_FLAG)
         add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx -mfma")
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx")
     endif(USE_AVX AND COMPILER_HAS_AVX_FLAG)
     # set Advanced Vector Extensions 2 (AVX2)
     if(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
@@ -233,11 +234,21 @@ elseif(MSVC)
         add_definitions(-DCNN_USE_AVX)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX")
     endif(USE_AVX)
+    if(USE_AVX2)
+        add_definitions(-DCNN_USE_AVX)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX2")
+    endif(USE_AVX2)
     # include specific flags for release and debug modes.
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}
-        /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj /LTCG")
-    set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} /bigobj")       
+        /Ox /Oi /Ot /Oy /GL /fp:fast /GS-")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
+    set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /bigobj")
+    # this is fine
     add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D _SCL_SECURE_NO_WARNINGS)
+    # prolly powerless with header-only project
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /MP")
 endif()
 
 ####
