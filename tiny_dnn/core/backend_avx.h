@@ -210,6 +210,11 @@ class avx_backend : public backend {
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
+        // just to fix warning. Remove in a future
+        if (max_pooling_layer_worker_storage_) {}
+        if (out2in_) {}
+        if (in2out_) {}
+
         /*const tensor_t& in  = *in_data[0];
         tensor_t&       a   = *out_data[1];
         std::vector<std::vector<cnn_size_t>>& max_idx =
