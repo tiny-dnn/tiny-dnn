@@ -80,7 +80,10 @@ class MaxPoolOp : public core::OpKernel {
                 params.out2in,
                 context.parallelize());
         } else if (engine == core::backend_t::nnpack) {
-	    if (params.stride_x != 2 || params.stride_y != 2) {
+            // NNPACK supports stride != 2 or pool_size !=2
+            // there's optimization over stride=2 and pool_size=2
+            /*
+            if (params.stride_x != 2 || params.stride_y != 2) {
                  throw nn_error("NNPACK Max-Pool requires a stride == 2.");
             }
 
@@ -88,6 +91,7 @@ class MaxPoolOp : public core::OpKernel {
                  throw nn_error("NNPACK Max-Pool requires a pool size == 2.");
             }
 
+            */
 	    kernels::maxpool_op_nnpack(
                 in_data,
                 out_data,

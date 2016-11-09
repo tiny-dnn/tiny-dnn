@@ -38,7 +38,6 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
 			      const maxpool_params& params) {
 #ifdef CNN_USE_NNPACK
     const cnn_size_t input_channels  = params.in.depth_;
-    const cnn_size_t output_channels = params.out.depth_;
 
     const nnp_size input_size = {
         static_cast<size_t>(params.in.width_),
@@ -62,8 +61,8 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
         static_cast<size_t>(params.stride_y)
     };
 
-    const float* input_ptr = reinterpret_cast<const float*>(&in[0]);
-    float*      output_ptr = reinterpret_cast<float*>(&a[0]);
+    const float* input_ptr = in[0].data();
+    float*      output_ptr = a[0].data();
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -71,8 +70,8 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
 
     const auto status =
         nnp_max_pooling_output(
+            1,
             input_channels,
-            output_channels,
             input_size,
             input_padding,
             pooling_size,
