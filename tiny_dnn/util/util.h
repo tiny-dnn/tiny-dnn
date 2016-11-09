@@ -75,6 +75,11 @@ enum class net_phase {
     test
 };
 
+enum class padding {
+    valid,  ///< use valid pixels of input
+    same    ///< add zero-padding around input so as to keep image size
+};
+
 template<typename T>
 T* reverse_endian(T* p) {
     std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));
@@ -117,10 +122,12 @@ template <typename Container> inline bool has_infinite(const Container& c) {
 }
 
 template <typename Container>
-size_t max_size(const Container& c) {
+cnn_size_t max_size(const Container& c) {
     typedef typename Container::value_type value_t;
-    return std::max_element(c.begin(), c.end(),
+    const auto max_size = std::max_element(c.begin(), c.end(),
         [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
+    assert(max_size <= std::numeric_limits<cnn_size_t>::max());
+    return static_cast<cnn_size_t>(max_size);
 }
 
 inline std::string format_str(const char *fmt, ...) {
@@ -254,8 +261,8 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 
 template <typename T, typename Pred, typename Sum>
 cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
-    size_t sum = 0;
-    for (size_t i = 0; i < vec.size(); i++) {
+    cnn_size_t sum = 0;
+    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(vec.size()); i++) {
         if (p(i)) sum += s(vec[i]);
     }
     return sum;
@@ -350,6 +357,24 @@ inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
     for (auto& t : tensor) {
         t.resize(size, value);
     }
+}
+
+inline cnn_size_t conv_out_length(cnn_size_t in_length,
+                                  cnn_size_t window_size,
+                                  cnn_size_t stride,
+                                  padding pad_type) {
+    cnn_size_t output_length;
+
+    if (pad_type == padding::same) {
+        output_length = in_length;
+    }
+    else if (pad_type == padding::valid) {
+        output_length = in_length - window_size + 1;
+    }
+    else {
+        throw nn_error("Not recognized pad_type.");
+    }
+    return (output_length + stride - 1) / stride;
 }
 
 // get all platforms (drivers), e.g. NVIDIA

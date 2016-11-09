@@ -26,53 +26,53 @@
 */
 #pragma once
 
-#include "tiny_dnn/core/params/fully_params.h"
-
 namespace tiny_dnn {
-namespace core {
 namespace kernels {
 
-inline void nnp_fully_connected_kernel(const fully_params& params,
-                                       const tensor_t&     in,
-                                       const vec_t&        W,
-                                       vec_t&              b,
-                                       tensor_t&           a,
-                                       const bool          layer_parallelize) {
-#ifdef CNN_USE_NNPACK
-    const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
-    const float* input_ptr  = reinterpret_cast<const float*>(&in[0]);
-    float*       output_ptr = reinterpret_cast<float*>(&a[0]);
+inline void
+maxpool_op_custom(const tensor_t& in_data,
+                  tensor_t&       out_data,
+                  std::vector<std::vector<cnn_size_t>>& max_idx,
+                  const std::vector<std::vector<cnn_size_t>>& out2in,
+                  const bool layer_parallelize) {
+    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+        const vec_t& in = in_data[sample];
+        vec_t& a = out_data[sample];
+        std::vector<cnn_size_t>& max = max_idx[sample];
 
-    // TODO: embed it into a class
-    const size_t num_mkl_threads = 1;
-    pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
+        for (cnn_size_t i = 0; i < out2in.size(); i++) {
+            const auto& in_index = out2in[i];
+            float_t max_value = std::numeric_limits<float_t>::lowest();
 
-    const auto status =
-        nnp_fully_connected_inference(
-            params.in_size_,
-            params.out_size_,
-            input_ptr,
-            kernel_ptr,
-            output_ptr,
-            threadpool);
+            for (auto j : in_index) {
+                if (in[j] > max_value) {
+                    max_value = in[j];
+                    max[i] = j;
+                }
+            }
+            a[i] = max_value;
+        }
+    });
+}
 
-     if (status != nnp_status_success) {
-        throw nn_error("Could not succeed with nnp_max_pooling_output");
-    }
+inline void
+maxpool_grad_op_custom(tensor_t& prev_delta,
+                       const tensor_t&  curr_delta,
+                       std::vector<std::vector<cnn_size_t>>& max_idx,
+                       const std::vector<cnn_size_t>& in2out,
+                       const bool layer_parallelize) {
+    for_i(layer_parallelize, prev_delta.size(), [&](int sample) {
+        vec_t& prev       = prev_delta[sample];
+        const vec_t& curr = curr_delta[sample];
+        const std::vector<cnn_size_t>& max = max_idx[sample];
 
-    // TODO: embed it into a class
-    pthreadpool_destroy(threadpool);
-
-    // TODO: find a proper way to do this
-    if (params.has_bias_) {
-        for_i(layer_parallelize, params.out_size_, [&](int i) {
-            // TODO(edgar): revise this
-            // a[i] += b[i];
-        });
-    }
-#endif
+        for (cnn_size_t i = 0; i < in2out.size(); i++) {
+            cnn_size_t outi = in2out[i];
+            prev[i] = (max[outi] == static_cast<cnn_size_t>(i)) ?
+                       curr[outi] : float_t(0);
+        }
+    }); 
 }
 
 }  // namespace kernels
-}  // namespace core
 }  // namespace tiny_dnn

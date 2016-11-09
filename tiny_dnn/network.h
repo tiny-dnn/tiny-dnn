@@ -69,7 +69,7 @@ struct result {
     }
 
     template <typename Char, typename CharTraits>
-    void print_detail(std::basic_ostream<Char, CharTraits>& os) {
+    void print_detail(std::basic_ostream<Char, CharTraits>& os) const {
         print_summary(os);
         auto all_labels = labels();
 
@@ -80,8 +80,18 @@ struct result {
 
         for (auto r : all_labels) {
             os << std::setw(5) << r << " ";
-            for (auto c : all_labels)
-                os << std::setw(5) << confusion_matrix[r][c] << " ";
+            const auto row_iter = confusion_matrix.find(r);
+            for (auto c : all_labels) {
+                int count = 0;
+                if (row_iter != confusion_matrix.end()) {
+                    const auto& row = row_iter->second;
+                    const auto col_iter = row.find(c);
+                    if (col_iter != row.end()) {
+                        count = col_iter->second;
+                    }
+                }
+                os << std::setw(5) << count << " ";
+            }
             os << std::endl;
         }
     }
@@ -444,7 +454,7 @@ class network {
         assert(in.size() == t.size());
 
         std::vector<tensor_t> v(t.size());
-        const cnn_size_t sample_count = t.size();
+        const cnn_size_t sample_count = static_cast<cnn_size_t>(t.size());
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
             net_.label2vec(&t[sample][0], t[sample].size(), &v[sample]);
         }
@@ -847,7 +857,7 @@ class network {
 
         assert(in.size() == v.size());
 
-        const cnn_size_t sample_count = in.size();
+        const cnn_size_t sample_count = static_cast<cnn_size_t>(in.size());
 
         assert(sample_count > 0);
 
@@ -1007,7 +1017,7 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], inputs.size(), &vec);
+        net_.label2vec(&inputs[0], static_cast<cnn_size_t>(inputs.size()), &vec);
         normalize_tensor(vec, normalized);
     }
 

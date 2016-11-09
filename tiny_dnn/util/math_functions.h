@@ -40,7 +40,7 @@ inline void vector_div(vec_t& x, float_t denom) {
  * calculate mean/variance across channels
  */
 inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t channels, vec_t *mean, vec_t *variance) {
-    cnn_size_t num_examples = in.size();
+    cnn_size_t num_examples = static_cast<cnn_size_t>(in.size());
 
     assert(in[0].size() == spatial_dim * channels);
 

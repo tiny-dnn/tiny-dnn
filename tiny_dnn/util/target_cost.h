@@ -40,8 +40,8 @@ inline float_t get_sample_weight_for_balanced_target_cost(cnn_size_t classes, cn
 inline std::vector<vec_t> create_balanced_target_cost(const std::vector<label_t>& t, float_t w = 1.0)
 {
     const auto label_counts = calculate_label_counts(t);
-    const cnn_size_t total_sample_count = t.size();
-    const cnn_size_t class_count = label_counts.size();
+    const cnn_size_t total_sample_count = static_cast<cnn_size_t>(t.size());
+    const cnn_size_t class_count = static_cast<cnn_size_t>(label_counts.size());
 
     std::vector<vec_t> target_cost(t.size());
 

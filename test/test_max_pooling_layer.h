@@ -66,7 +66,7 @@ TEST(max_pool, forward) {
 }
 
 TEST(max_pool, setup_tiny) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::custom);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           cnn_size_t(1));  // num of input tensors
@@ -87,7 +87,7 @@ TEST(max_pool, setup_tiny) {
 }
 
 TEST(max_pool, forward_stride_tiny) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::tiny_dnn);
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::custom);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -101,6 +101,79 @@ TEST(max_pool, forward_stride_tiny) {
     };
 
     vec_t res = l.forward({ {in} })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(max_pool, forward_padding_same) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 2, 1, 1, padding::same, core::backend_t::custom);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 7, 6, 6,
+        8, 7, 6, 6,
+        4, 3, 2, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t res = l.forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(max_pool, forward_stride_x) {
+    max_pooling_layer<identity> l(4, 4, 1, 2, 1, 2, 1, padding::valid);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        1, 3,
+        8, 6,
+        4, 2,
+        0, -2
+    };
+    
+    EXPECT_EQ(l.out_shape()[0].width_, 2);
+    EXPECT_EQ(l.out_shape()[0].height_, 4);
+
+    vec_t res = l.forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+
+TEST(max_pool, forward_stride_y) {
+    max_pooling_layer<identity> l(4, 4, 1, 1, 2, 1, 2, padding::valid);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 7, 5, 6,
+        4, 3, 1, 2
+    };
+
+    EXPECT_EQ(l.out_shape()[0].width_, 4);
+    EXPECT_EQ(l.out_shape()[0].height_, 2);
+
+    vec_t res = l.forward({ { in } })[0][0];
 
     for (size_t i = 0; i < expected.size(); i++) {
         EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -180,5 +253,82 @@ TEST(max_pool, backward) {
         EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
     }
 }
+
+#ifndef CNN_NO_SERIALIZATION
+TEST(max_pool, serialization) {
+    max_pooling_layer<identity> src(4, 4, 1, 2);
+
+    std::string str = layer_to_json(src);
+
+    auto dst = json_to_layer(str);
+
+    EXPECT_EQ(src.in_shape()[0], dst->in_shape()[0]);
+    EXPECT_EQ(src.out_shape()[0], dst->out_shape()[0]);
+
+    vec_t in = {
+        9, 4, 8, 8,
+        0, 7, 3, 0,
+        4, 8, 1, 7,
+        0, 3,-2, 9
+    };
+
+    vec_t res1 = src.forward({ { in } })[0][0];
+    vec_t res2 = dst->forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < res1.size(); i++) {
+        EXPECT_FLOAT_EQ(res1[i], res2[i]);
+    }
+}
+
+TEST(max_pool, serialization_stride) {
+    max_pooling_layer<identity> src(4, 4, 1, 2, 1, 1, 2, padding::valid);
+
+    std::string str = layer_to_json(src);
+
+    auto dst = json_to_layer(str);
+
+    EXPECT_EQ(src.in_shape()[0], dst->in_shape()[0]);
+    EXPECT_EQ(src.out_shape()[0], dst->out_shape()[0]);
+
+    vec_t in = {
+        9, 4, 8, 8,
+        0, 7, 3, 0,
+        4, 8, 1, 7,
+        0, 3,-2, 9
+    };
+
+    vec_t res1 = src.forward({ { in } })[0][0];
+    vec_t res2 = dst->forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < res1.size(); i++) {
+        EXPECT_FLOAT_EQ(res1[i], res2[i]);
+    }
+}
+
+TEST(max_pool, serialization_padding) {
+    max_pooling_layer<identity> src(4, 4, 1, 2, 2, 1, 1, padding::same);
+
+    std::string str = layer_to_json(src);
+
+    auto dst = json_to_layer(str);
+
+    EXPECT_EQ(src.in_shape()[0], dst->in_shape()[0]);
+    EXPECT_EQ(src.out_shape()[0], dst->out_shape()[0]);
+
+    vec_t in = {
+        9, 4, 8, 8,
+        0, 7, 3, 0,
+        4, 8, 1, 7,
+        0, 3,-2, 9
+    };
+
+    vec_t res1 = src.forward({ { in } })[0][0];
+    vec_t res2 = dst->forward({ { in } })[0][0];
+
+    for (size_t i = 0; i < res1.size(); i++) {
+        EXPECT_FLOAT_EQ(res1[i], res2[i]);
+    }
+}
+#endif
 
 }  // namespace tiny_dnn

@@ -26,23 +26,29 @@
 */
 #pragma once
 
-#include <vector>
-
-#include "tiny_dnn/core/backend.h"
+#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
 
 namespace tiny_dnn {
-namespace core {
+namespace kernels {
 
-class device {
- public:
-    explicit device(const int id) : id_(id) {}
+inline void
+maxpool_op_avx(const tensor_t& in_data,
+               tensor_t&       out_data,
+               std::vector<std::vector<cnn_size_t>>& max_idx,
+               const std::vector<std::vector<cnn_size_t>>& out2in,
+               const bool layer_parallelize) {
+    maxpool_op_custom(in_data, out_data, max_idx, out2in, layer_parallelize);
+}
 
-    int get_id() const { return id_; }
+inline void
+maxpool_grad_op_avx(tensor_t& prev_delta,
+                    const tensor_t&  curr_delta,
+                    std::vector<std::vector<cnn_size_t>>& max_idx,
+                    const std::vector<cnn_size_t>& in2out,
+                    const bool layer_parallelize) {
+    maxpool_grad_op_custom(prev_delta, curr_delta, max_idx, in2out,
+                           layer_parallelize);
+}
 
- private:
-    int id_;
-    std::vector<std::shared_ptr<backend>> backends_;
-};
-
-}  // namespace core
+}  // namespace kernels
 }  // namespace tiny_dnn

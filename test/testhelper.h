@@ -208,4 +208,22 @@ namespace {
     }
 }
 
+#ifndef CNN_NO_SERIALIZATION
+inline std::string layer_to_json(const layer& src) {
+    std::ostringstream os;
+    {
+        cereal::JSONOutputArchive oa(os);
+        layer::save_layer(oa, src);
+    }
+    return os.str();
+}
+
+inline std::shared_ptr<layer> json_to_layer(const std::string& src) {
+    std::stringstream ss;
+    ss << src;
+    cereal::JSONInputArchive oa(ss);
+    return layer::load_layer(oa);
+}
+#endif
+
 } // namespace tiny_dnn

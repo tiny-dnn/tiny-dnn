@@ -75,13 +75,13 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    size_t fan_in_size() const override
+    cnn_size_t fan_in_size() const override
     {
         return 1;
     }
 
     ///< number of outgoing connections for each input unit
-    size_t fan_out_size() const override
+    cnn_size_t fan_out_size() const override
     {
         return 1;
     }
@@ -104,8 +104,8 @@ public:
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
 
-        for (cnn_size_t sample = 0, sample_count = prev_delta.size(); sample < sample_count; ++sample) {
-            for (size_t i = 0; i < curr_delta.size(); i++) {
+        for (cnn_size_t sample = 0; sample < static_cast<cnn_size_t>(prev_delta.size()); ++sample) {
+            for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(curr_delta.size()); i++) {
                 prev_delta[sample][i] = mask_[sample][i] * curr_delta[sample][i];
             }
         }
@@ -116,7 +116,7 @@ public:
         const tensor_t& in  = *in_data[0];
         tensor_t&       out = *out_data[0];
 
-        const cnn_size_t sample_count = in.size();
+        const size_t sample_count = in.size();
 
         if (mask_.size() < sample_count) {
             mask_.resize(sample_count, mask_[0]);
@@ -159,8 +159,8 @@ public:
     }
 
     void clear_mask() {
-		for (cnn_size_t sample = 0, sample_count = mask_.size(); sample < sample_count; ++sample) {
-			std::fill(mask_[sample].begin(), mask_[sample].end(), 0);
+        for (auto& sample : mask_) {
+			std::fill(sample.begin(), sample.end(), 0);
 		}
     }
 

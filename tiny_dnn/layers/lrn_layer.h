@@ -90,11 +90,11 @@ public:
               norm_region region = norm_region::across_channels)
         : lrn_layer(shape3d{in_width, in_height, in_channels}, local_size, alpha, beta, region){}
 
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return size_;
     }
 
-    size_t fan_out_size() const override {
+    cnn_size_t fan_out_size() const override {
         return size_;
     }
 

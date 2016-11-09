@@ -25,21 +25,38 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#include "tiny_dnn/core/params/params.h"
 
 namespace tiny_dnn {
 namespace core {
 
-struct maxpool_params {
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
-    size_t              pool_size_;
-    size_t              stride_;
+class maxpool_params : public Params {
+ public:
+    index3d<cnn_size_t> in;
+    index3d<cnn_size_t> out;
+    cnn_size_t          pool_size_x;
+    cnn_size_t          pool_size_y;
+    cnn_size_t          stride_x;
+    cnn_size_t          stride_y;
+    padding             pad_type;
+    
+    /* mapping out => max_index(in) (1:1) */
+    std::vector<std::vector<cnn_size_t>> out2inmax;
+    /* mapping out => in (1:N) */
+    std::vector<std::vector<cnn_size_t> > out2in;
+    /* mapping in => out (N:1) */
+    std::vector<cnn_size_t> in2out;
 };
 
 struct max_pooling_layer_worker_specific_storage {
     /* mapping out => max_index(in) (1:1) */
     std::vector<std::vector<cnn_size_t>> out2inmax_;
 };
+
+// TODO(nyanp): can we do better here?
+inline maxpool_params& Params::maxpool() {
+    return *(static_cast<maxpool_params*>(this));
+}
 
 }  // namespace core
 }  // namespace tiny_dnn

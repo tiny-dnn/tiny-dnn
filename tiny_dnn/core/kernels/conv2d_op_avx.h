@@ -54,19 +54,19 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
     auto& tbl       = params.tbl;
     auto  w_stride  = params.w_stride;
     
-    const size_t out_area = out.area();
+    const cnn_size_t out_area = out.area();
     cnn_size_t oidx = 0;
     float bias_scale = params.has_bias ? 1.0f : 0.0f;
-    const size_t stride = params.h_stride * in_padded.width_;
-    const size_t inarea = in_padded.area();
+    const cnn_size_t stride = params.h_stride * in_padded.width_;
+    const cnn_size_t inarea = in_padded.area();
 
     static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
-    static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
+    // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
 
     const __m128 y_bias_scale = _mm_set_ss(bias_scale);
     if (out.height_ == 1 && out.width_ == 1) {
         const float* pw = (const float*)&W[0];
-        for (size_t o = 0; o < out.depth_; ++o) {
+        for (cnn_size_t o = 0; o < out.depth_; ++o) {
             __m256 sum0 = _mm256_setzero_ps();
             __m256 sum1 = _mm256_setzero_ps();
             __m256 sum2 = _mm256_setzero_ps();
@@ -100,8 +100,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
             _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
         }
     } else {
-        const size_t nblocks = out.width_ / 4;
-        for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
+        const cnn_size_t nblocks = out.width_ / 4;
+        for (cnn_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
             float* pa = &a[oidx];
             // init to bias value
             float b = bias[o] * bias_scale;

@@ -70,7 +70,7 @@ public:
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
-        cnn_size_t num_samples = (*out_data[0]).size();
+        cnn_size_t num_samples = static_cast<cnn_size_t>((*out_data[0]).size());
         
         for (cnn_size_t s = 0; s < num_samples; s++) {
             float_t* outs = &(*out_data[0])[s][0];
@@ -90,9 +90,9 @@ public:
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
 
-        cnn_size_t num_samples = (*out_grad[0]).size();
+        size_t num_samples = (*out_grad[0]).size();
         
-        for (cnn_size_t s = 0; s < num_samples; s++) {
+        for (size_t s = 0; s < num_samples; s++) {
             const float_t* outs = &(*out_grad[0])[s][0];
             
             for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {

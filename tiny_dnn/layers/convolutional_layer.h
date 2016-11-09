@@ -69,16 +69,16 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t     in_width,
-                        cnn_size_t     in_height,
-                        cnn_size_t     window_size,
-                        cnn_size_t     in_channels,
-                        cnn_size_t     out_channels,
-                        padding        pad_type = padding::valid,
-                        bool           has_bias = true,
-                        cnn_size_t     w_stride = 1,
-                        cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
+    convolutional_layer(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_size,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1,
+                        backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_size, window_size,
 			      in_channels, out_channels, connection_table(),
 			      pad_type, has_bias, w_stride, h_stride,
@@ -100,17 +100,17 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    convolutional_layer(cnn_size_t     in_width,
-                        cnn_size_t     in_height,
-                        cnn_size_t     window_width,
-                        cnn_size_t     window_height,
-                        cnn_size_t     in_channels,
-                        cnn_size_t     out_channels,
-                        padding        pad_type = padding::valid,
-                        bool           has_bias = true,
-                        cnn_size_t     w_stride = 1,
-                        cnn_size_t     h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
+    convolutional_layer(cnn_size_t in_width,
+                        cnn_size_t in_height,
+                        cnn_size_t window_width,
+                        cnn_size_t window_height,
+                        cnn_size_t in_channels,
+                        cnn_size_t out_channels,
+                        padding    pad_type = padding::valid,
+                        bool       has_bias = true,
+                        cnn_size_t w_stride = 1,
+                        cnn_size_t h_stride = 1,
+                        backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_width, window_height,
 			      in_channels, out_channels, connection_table(),
 			      pad_type, has_bias, w_stride, h_stride,
@@ -199,13 +199,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
     }
 
     ///< number of incoming connections for each output unit
-    size_t fan_in_size() const override {
+    cnn_size_t fan_in_size() const override {
         return params_.weight.width_  *
                params_.weight.height_ * params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    size_t fan_out_size() const override  {
+    cnn_size_t fan_out_size() const override  {
         return (params_.weight.width_  / params_.w_stride) *
                (params_.weight.height_ / params_.h_stride) *
                 params_.out.depth_;
@@ -372,7 +372,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
     template <class Archive>
     static void load_and_construct(
         Archive & ar, cereal::construct<convolutional_layer> & construct) {
-        size_t w_width, w_height, out_ch, w_stride, h_stride;
+        cnn_size_t w_width, w_height, out_ch, w_stride, h_stride;
         bool has_bias;
         shape3d in;
         padding pad_type;
@@ -410,7 +410,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
-        return (params_.pad_type == core::padding::valid) ?
+        return (params_.pad_type == padding::valid) ?
             in[0] : &cws_.prev_out_padded_;
     }
 
@@ -453,21 +453,6 @@ private:
                (in_length + window_size - 1) : in_length;
     }
 
-    static cnn_size_t conv_out_length(cnn_size_t in_length,
-                                      cnn_size_t window_size,
-                                      cnn_size_t stride, padding pad_type) {
-        size_t output_length;
-
-        if (pad_type == padding::same) {
-            output_length = in_length;
-        } else if (pad_type == padding::valid) {
-            output_length = in_length - window_size + 1;
-        } else {
-            throw nn_error("Not recognized pad_type.");
-        }
-        return (output_length + stride - 1) / stride;
-    }
-
     static cnn_size_t conv_out_dim(cnn_size_t in_width,
                                    cnn_size_t in_height,
                                    cnn_size_t window_size,
@@ -495,16 +480,14 @@ private:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn ||
+        if (backend_type == backend_t::custom ||
             backend_type == backend_t::nnpack ||
             backend_type == backend_t::avx) {
             
             kernel_fwd_.reset(new Conv2dOp(ctx));
             kernel_back_.reset(new Conv2dGradOp(ctx));
-
             return;
         }
-
         else if (backend_type == backend_t::opencl) {
             throw nn_error("Not implemented engine: " + to_string(backend_type));
             /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));

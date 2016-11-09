@@ -46,61 +46,60 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
-#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
-#include "tiny_dnn/core/kernels/fully_connected_op_nnpack.h"
+#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
+#include "tiny_dnn/core/kernels/maxpool_op_nnpack.h"
+#include "tiny_dnn/core/kernels/maxpool_op_avx.h"
 
 namespace tiny_dnn {
 
-class FullyConnectedOp : public core::OpKernel {
+class MaxPoolOp : public core::OpKernel {
  public:
-    explicit FullyConnectedOp(const core::OpKernelConstruction& context)
+    explicit MaxPoolOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
-        auto params = OpKernel::params_->fully();
+        auto& params = OpKernel::params_->maxpool();
 
         // incomimg/outcoming data 
         const tensor_t& in_data = context.input(0);
-        const tensor_t&       W = context.input(1);
-        const tensor_t*    bias = params.has_bias_ ? &context.input(2) : nullptr;
         tensor_t&      out_data = context.output(1);
 
         // initialize outputs
         fill_tensor(out_data, float_t(0));
 
-        // call the algorithm depending  on the selected engine type
+        // call convolution algorithm depending
+        // on the selected engine type
 
         const core::backend_t engine = context.engine();
 
         if (engine == core::backend_t::custom) {
-            kernels::fully_connected_op_custom(
+            kernels::maxpool_op_custom(
                 in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
                 out_data,
-                params,
+                params.out2inmax,
+                params.out2in,
                 context.parallelize());
-        }
-        else if (engine == core::backend_t::nnpack) {
-            kernels::fully_connected_op_nnpack(
+        } else if (engine == core::backend_t::nnpack) {
+	    if (params.stride_x != 2 || params.stride_y != 2) {
+                 throw nn_error("NNPACK Max-Pool requires a stride == 2.");
+            }
+
+            if (params.pool_size_x != 2 || params.pool_size_y != 2) {
+                 throw nn_error("NNPACK Max-Pool requires a pool size == 2.");
+            }
+
+	    kernels::maxpool_op_nnpack(
                 in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
                 out_data,
-                params,
-                context.parallelize());
-        }
-        else if (engine == core::backend_t::avx) {
-            kernels::fully_connected_op_avx(
+                params);
+        } else if (engine == core::backend_t::avx) {
+	    kernels::maxpool_op_avx(
                 in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
                 out_data,
-                params,
+                params.out2inmax,
+                params.out2in,
                 context.parallelize());
-        }
-        else {
+        } else {
             throw nn_error("Not supported engine: " + to_string(engine));
         }
     }

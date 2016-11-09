@@ -58,7 +58,7 @@ public:
         out = in1;
 
         // @todo parallelize
-        for (cnn_size_t sample = 0, sample_count = in1.size(); sample < sample_count; ++sample) {
+        for (size_t sample = 0; sample < in1.size(); ++sample) {
             for (cnn_size_t i = 1; i < num_args_; i++) {
                 std::transform((*in_data[i])[sample].begin(),
                                (*in_data[i])[sample].end(),

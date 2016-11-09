@@ -65,7 +65,7 @@ public:
             const vec_t& prev_delta_vec = prev_delta[sample];
             vec_t& curr_delta_vec = curr_delta[sample];
 
-            const cnn_size_t len = prev_delta_vec.size();
+            const cnn_size_t len = static_cast<cnn_size_t>(prev_delta_vec.size());
             
             if (h_.one_hot()) {
                 for (cnn_size_t c = 0; c < len; c++) {

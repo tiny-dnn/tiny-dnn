@@ -73,11 +73,11 @@ class layer : public node {
      **/
     layer(const std::vector<vector_type>& in_type,
           const std::vector<vector_type>& out_type)
-            : node(in_type.size(), out_type.size()),
+            : node(static_cast<cnn_size_t>(in_type.size()), static_cast<cnn_size_t>(out_type.size())),
               initialized_(false),
               parallelize_(true),
-              in_channels_(in_type.size()),
-              out_channels_(out_type.size()),
+              in_channels_(static_cast<cnn_size_t>(in_type.size())),
+              out_channels_(static_cast<cnn_size_t>(out_type.size())),
               in_type_(in_type),
               out_type_(out_type) {
         weight_init_ = std::make_shared<weight_init::xavier>();
@@ -301,7 +301,7 @@ class layer : public node {
      * used only for weight/bias initialization methods which require fan-in size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_in_size() const {
+    virtual cnn_size_t fan_in_size() const {
         return in_shape()[0].width_;
     }
 
@@ -310,7 +310,7 @@ class layer : public node {
      * used only for weight/bias initialization methods which require fan-out size (e.g. xavier)
      * override if the layer has trainable weights, and scale of initialization is important
      **/
-    virtual size_t fan_out_size() const {
+    virtual cnn_size_t fan_out_size() const {
         return out_shape()[0].width_;
     }
 
@@ -451,7 +451,7 @@ class layer : public node {
         }
 
         // resize outs and stuff to have room for every input sample in the batch
-        set_sample_count(in_data[0]->size());
+        set_sample_count(static_cast<cnn_size_t>(in_data[0]->size()));
 
         for (cnn_size_t i = 0; i < out_channels_; i++) {
             out_data.push_back(ith_out_node(i)->get_data());
@@ -523,14 +523,14 @@ class layer : public node {
     }
 
     void clear_grads() {
-        for (size_t i = 0; i < in_type_.size(); i++) {
+        for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(in_type_.size()); i++) {
             ith_in_node(i)->clear_grads();
         }
     }
 
     void update_weight(optimizer *o, cnn_size_t batch_size) {
         float_t rcp_batch_size = float_t(1) / float_t(batch_size);
-        for (size_t i = 0; i < in_type_.size(); i++) {
+        for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t diff;
                 vec_t& target = *get_weight_data(i);
@@ -729,12 +729,13 @@ inline void data_mismatch(const layer& layer, const vec_t& data) {
 
 inline void pooling_size_mismatch(cnn_size_t in_width,
                                   cnn_size_t in_height,
-                                  cnn_size_t pooling_size) {
+                                  cnn_size_t pooling_size_x,
+                                  cnn_size_t pooling_size_y) {
     std::ostringstream os;
 
     os << std::endl;
     os << "WxH:" << in_width << "x" << in_height << std::endl;
-    os << "pooling-size:" << pooling_size << std::endl;
+    os << "pooling-size:" << pooling_size_x << "x" << pooling_size_y << std::endl;
 
     std::string detail_info = os.str();
 

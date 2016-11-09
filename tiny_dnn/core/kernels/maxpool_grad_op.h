@@ -46,61 +46,45 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
-#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
-#include "tiny_dnn/core/kernels/fully_connected_op_nnpack.h"
+#include "tiny_dnn/core/kernels/maxpool_op_avx.h"
+#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
 
 namespace tiny_dnn {
 
-class FullyConnectedOp : public core::OpKernel {
+class MaxPoolGradOp : public core::OpKernel {
  public:
-    explicit FullyConnectedOp(const core::OpKernelConstruction& context)
+    explicit MaxPoolGradOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
-        auto params = OpKernel::params_->fully();
+        auto& params = OpKernel::params_->maxpool();
 
-        // incomimg/outcoming data 
-        const tensor_t& in_data = context.input(0);
-        const tensor_t&       W = context.input(1);
-        const tensor_t*    bias = params.has_bias_ ? &context.input(2) : nullptr;
-        tensor_t&      out_data = context.output(1);
+        // incoming/outcoming data
+        tensor_t& prev_delta = context.input_grad(0);
+        tensor_t& curr_delta = context.output_grad(1);
 
         // initialize outputs
-        fill_tensor(out_data, float_t(0));
+        fill_tensor(prev_delta, float_t(0));
 
-        // call the algorithm depending  on the selected engine type
+        // call the algorithm depending on the selected engine type
 
         const core::backend_t engine = context.engine();
 
         if (engine == core::backend_t::custom) {
-            kernels::fully_connected_op_custom(
-                in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
-                out_data,
-                params,
+            kernels::maxpool_grad_op_custom(
+                prev_delta,
+                curr_delta,
+                params.out2inmax,
+                params.in2out,
                 context.parallelize());
-        }
-        else if (engine == core::backend_t::nnpack) {
-            kernels::fully_connected_op_nnpack(
-                in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
-                out_data,
-                params,
+        } else if (engine == core::backend_t::avx) {
+	    kernels::maxpool_grad_op_avx(
+                prev_delta,
+                curr_delta,
+                params.out2inmax,
+                params.in2out,
                 context.parallelize());
-        }
-        else if (engine == core::backend_t::avx) {
-            kernels::fully_connected_op_avx(
-                in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
-                out_data,
-                params,
-                context.parallelize());
-        }
-        else {
+        } else {
             throw nn_error("Not supported engine: " + to_string(engine));
         }
     }

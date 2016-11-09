@@ -80,8 +80,7 @@ public:
                                     bool           has_bias = true,
                                     cnn_size_t     w_stride = 1,
                                     cnn_size_t     h_stride = 1,
-                                    backend_t      backend_type = backend_t::tiny_dnn,
-                                    backend_params b_params = backend_params())
+                                    backend_t      backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
@@ -116,8 +115,7 @@ public:
                                     bool           has_bias = true,
                                     cnn_size_t     w_stride = 1,
                                     cnn_size_t     h_stride = 1,
-                                    backend_t      backend_type = backend_t::tiny_dnn,
-                                    backend_params b_params = backend_params())
+                                    backend_t      backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -152,8 +150,7 @@ public:
                                     bool                    has_bias = true,
                                     cnn_size_t              w_stride = 1,
                                     cnn_size_t              h_stride = 1,
-                                    backend_t               backend_type = backend_t::tiny_dnn,
-                                    backend_params          b_params = backend_params())
+                                    backend_t               backend_type = core::backend_t::custom)
         : Base(std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_size, window_size,
@@ -191,8 +188,7 @@ public:
                                     bool                    has_bias = true,
                                     cnn_size_t              w_stride = 1,
                                     cnn_size_t              h_stride = 1,
-                                    backend_t               backend_type = backend_t::tiny_dnn,
-                                    backend_params          b_params = backend_params())
+                                    backend_t               backend_type = core::backend_t::custom)
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
             deconv_set_params(shape3d(in_width, in_height, in_channels),
                             window_width, window_height,
@@ -212,14 +208,14 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    virtual size_t fan_in_size() const override {
+    virtual cnn_size_t fan_in_size() const override {
         return  params_.weight.width_ *
                 params_.weight.height_ *
                 params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual size_t fan_out_size() const override {
+    virtual cnn_size_t fan_out_size() const override {
         return  (params_.weight.width_ * params_.w_stride) *
                 (params_.weight.height_ * params_.h_stride) *
                 params_.out.depth_;
@@ -311,7 +307,7 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::tiny_dnn) {
+        if (backend_type == backend_t::custom) {
             backend = std::make_shared<core::tiny_backend>(&params_,
                 [this](const tensor_t& in) {
                     return copy_and_unpad_output(in);
@@ -472,8 +468,8 @@ private:
 
                 for (cnn_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
                     float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-                    idx = params_.out.get_index(static_cast<size_t>(floor(params_.weight.width_ / 2)),
-                                                static_cast<size_t>(floor(params_.weight.height_ / 2)), c);
+                    idx = params_.out.get_index(static_cast<cnn_size_t>(floor(params_.weight.width_ / 2)),
+                                                static_cast<cnn_size_t>(floor(params_.weight.height_ / 2)), c);
 
                     const float_t *pout = &out[sample][idx];
 
