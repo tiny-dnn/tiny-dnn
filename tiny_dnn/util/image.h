@@ -52,10 +52,34 @@
 
 namespace tiny_dnn {
 
+namespace detail {
+
+template <typename T>
+typename std::enable_if<std::is_unsigned<T>::value, T>::type saturated_sub(T s1, T s2) {
+    return s1 > s2 ? static_cast<T>(s1 - s2) : 0;
+}
+
+template <typename T>
+typename std::enable_if<!std::is_unsigned<T>::value, T>::type saturated_sub(T s1, T s2) {
+    return static_cast<T>(s1 - s2);
+}
+
 inline bool ends_with(std::string const & value, std::string const & ending) {
     if (ending.size() > value.size()) return false;
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
+
+inline void resize_image_core(const uint8_t* src, int srcw, int srch, uint8_t* dst, int dstw, int dsth, int channels)
+{
+    stbir_resize_uint8(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
+}
+
+inline void resize_image_core(const float* src, int srcw, int srch, float* dst, int dstw, int dsth, int channels)
+{
+    stbir_resize_float(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
+}
+
+} // namespace detail
 
 enum class image_type {
     grayscale,    ///< load image and convert automatically to 8-bit grayscale
@@ -134,7 +158,7 @@ public:
         int ret;
         std::vector<uint8_t> buf = to_rgb<uint8_t>();
 
-        if (ends_with(path, "png")) {
+        if (detail::ends_with(path, "png")) {
             ret = stbi_write_png(path.c_str(), width_, height_, depth_, (const void*)&buf[0], 0);
         }
         else {
@@ -262,16 +286,11 @@ image<float_t> mean_image(const image<T>& src)
     return mean;
 }
 
-inline void resize_image_core(const uint8_t* src, int srcw, int srch, uint8_t* dst, int dstw, int dsth, int channels)
-{
-    stbir_resize_uint8(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
-}
-
-inline void resize_image_core(const float* src, int srcw, int srch, float* dst, int dstw, int dsth, int channels)
-{
-    stbir_resize_float(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
-}
-
+/**
+ * resize image into width x height
+ * This function use Mitchell-Netrevalli filter with B=1/3, C=1/3 for downsampling, and
+ * and cubic spline algorithm for upsampling.
+ */
 template <typename T>
 inline image<T> resize_image(const image<T>& src, int width, int height)
 {
@@ -279,12 +298,13 @@ inline image<T> resize_image(const image<T>& src, int width, int height)
     std::vector<T> src_rgb = src.template to_rgb<T>();
     std::vector<T> dst_rgb(resized.shape().size());
 
-    resize_image_core(&src_rgb[0], src.width(), src.height(), &dst_rgb[0], width, height, src.depth());
+    detail::resize_image_core(&src_rgb[0], src.width(), src.height(), &dst_rgb[0], width, height, src.depth());
 
     resized.from_rgb(dst_rgb.begin(), dst_rgb.end());
 
     return resized;
 }
+
 
 // dst[x,y,d] = lhs[x,y,d] - rhs[x,y,d]
 template <typename T>
@@ -294,14 +314,14 @@ image<T> subtract_image(const image<T>& lhs, const image<T>& rhs)
         throw nn_error("Shapes of lhs/rhs must be same. lhs:" + to_string(lhs.shape()) + ",rhs:" + to_string(rhs.shape()));
     }
 
-    image<T> dst(lhs.width(), lhs.height(), lhs.depth());
+    image<T> dst(lhs.shape(), lhs.type());
 
     auto dstit = dst.begin();
     auto lhsit = lhs.begin();
     auto rhsit = rhs.begin();
 
     for (; dstit != dst.end(); ++dstit, ++lhsit, ++rhsit) {
-        *dstit = *lhsit - *rhsit;
+        *dstit = detail::saturated_sub(*lhsit, *rhsit);
     }
     return dst;
 }
@@ -324,7 +344,7 @@ image<T> subtract_scalar(const image<T>& lhs, const image<T>& rhs)
 
     for (size_t i = 0; i < lhs.depth(); i++, ++rhsit) {
         for (size_t j = 0; j < lhs.width() * lhs.height(); j++, ++dstit, ++lhsit) {
-            *dstit = *lhsit - *rhsit;
+            *dstit = detail::saturated_sub(*lhsit, *rhsit);
         }
     }
 
