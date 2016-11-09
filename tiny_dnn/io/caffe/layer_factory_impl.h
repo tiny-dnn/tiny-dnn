@@ -821,6 +821,23 @@ inline bool layer_supported(const std::string& type) {
     return false;
 }
 
+inline bool layer_match(const std::string& caffetype,
+                        const std::string& tiny_dnn_type) {
+    const char* conversions[][2] = {
+        { "InnerProduct", "fully-connected" },
+        { "Convolution", "conv" },
+        { "Deconvolution", "deconv" },
+        { "Pooling", "ave-pool" },
+        { "Pooling", "max-pool" }
+    };
+
+    for (size_t i = 0; i < sizeof(conversions) / sizeof(conversions[0]); i++) {
+        if (conversions[i][0] == caffetype &&
+            conversions[i][1] == tiny_dnn_type) return true;
+    }
+    return false;
+}
+
 inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
                                      const shape_t& in_shape,
                                      shape_t* out_shape) {
