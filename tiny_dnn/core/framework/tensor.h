@@ -48,6 +48,13 @@
 
 namespace tiny_dnn {
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+typedef CLCudaAPI::Buffer<float_t> buffer;
+typedef std::unique_ptr<buffer>    buffer_ptr;
+#endif
+
+typedef std::unique_ptr<std::vector<float_t> > data_ptr;
+
 /* Class modelling a Tensor
  */
 class Tensor {
@@ -116,18 +123,48 @@ class Tensor {
         CLCudaAPI::Context ctx = device.context();
         CLCudaAPI::Queue queue = device.queue();
 
-        data_gpu_ = std::make_shared<CLCudaAPI::Buffer<float_t> >(
-            ctx, queue, data_cpu_->begin(), data_cpu_->end());
+        device_data_ = buffer_ptr(new buffer(
+            ctx, queue, host_data_->begin(), host_data_->end()));
 #endif
+    }
+
+    void fromDevice(const Device& device) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+	CLCudaAPI::Queue queue = device.queue();
+
+        device_data_->Read(
+	    queue, host_data_->size(), &host_data_->at(0));
+#endif
+    }
+
+    template<typename T, typename U = float_t>
+    T host_data() const {
+        return static_cast<T>(*access_data(0));
+    }
+
+    template<typename T, typename U = float_t>
+    T mutable_host_data() {
+        return static_cast<T>(*access_data(0));
+    }
+
+    template<typename T, typename U = float_t>
+    T device_data() const {
+	fromDevice(device_);
+        return static_cast<T>(*access_data(0));
+    }
+
+    template<typename T, typename U = float_t>
+    T mutable_device_data() {
+	fromDevice(device_);
+        return static_cast<T>(*access_data(0));
     }
 
  private:
     // Initializes the data buffer with zeroes
     void init_data(const cnn_size_t batch,  const cnn_size_t width,
                    const cnn_size_t height, const cnn_size_t depth) {
-        data_cpu_ = std::unique_ptr<std::vector<float_t> >(
-            new std::vector<float_t>(
-                batch * width * height * depth, float_t(0)));
+        host_data_ = data_ptr(new std::vector<float_t>(
+            batch * width * height * depth, float_t(0.0)));
     }
 
     // Initializes the shape vector
@@ -149,13 +186,13 @@ class Tensor {
         }
 
         // TODO(edgar): check how to deal with cpu/gpu
-        return &data_cpu_->at(shape_[1] * shape_[2] *
+        return &host_data_->at(shape_[1] * shape_[2] *
             ( shape_[3] * batch + depth ) + height + width);
     }
 
     float_t* access_data(const cnn_size_t index) const {
         // TODO(edgar): check how to deal with cpu/gpu
-        return &data_cpu_->at(index);
+        return &host_data_->at(index);
     }
 
  private:
@@ -168,12 +205,15 @@ class Tensor {
     std::vector<cnn_size_t> shape_;
 
     /* Pointer to the Tensor data in pure CPU mode */
-    std::unique_ptr<std::vector<float_t> > data_cpu_;
+    data_ptr host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in OpenCL mode */
-    std::shared_ptr<CLCudaAPI::Buffer<float_t> > data_gpu_;
+    buffer_ptr device_data_;
 #endif
+
+    /* Pointer to the current device where the data resides */
+    Device* device_;
 };
 
 // Overloaded method to print the Tensor class to the standard output
