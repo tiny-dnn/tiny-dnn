@@ -70,12 +70,12 @@ device_t device_type(size_t &platform, size_t &device) {
     return device_t::NONE;
 }
 
-#define TINY_DNN_GET_DEVICE_AND_PLATFORM \
-    size_t cl_platform, cl_device;       \
+#define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
+    cnn_size_t cl_platform = 0, cl_device = 0; \
     device_t device = device_type(cl_platform, cl_device);
 #else
-#define TINY_DNN_GET_DEVICE_AND_PLATFORM \
-    size_t cl_platform, cl_device;       \
+#define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
+    cnn_size_t cl_platform = 0, cl_device = 0; \
     device_t device = device_t::NONE;
 #endif //defined(USE_OPENCL) || defined(USE_CUDA)
 
@@ -188,19 +188,22 @@ TEST(core, device_add_op) {
 
         //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(0));
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         // first time op registration: OK
         my_gpu_device.registerOp(l);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(1));
 
         // second time op registraion: we expect that Op it's not
         // registrated since it's already there.
         my_gpu_device.registerOp(l);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(1));
 #endif
     }
 }
@@ -236,7 +239,7 @@ TEST(core, ocl_conv) {
         , &out = out_tensor[0]
         , &weight = weight_tensor[0];
 
-        ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+        ASSERT_EQ(l.in_shape()[1].size(), static_cast<cnn_size_t>(18)); // weight
 
         uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 

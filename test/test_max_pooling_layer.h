@@ -146,8 +146,8 @@ TEST(max_pool, forward_stride_x) {
         0, -2
     };
     
-    EXPECT_EQ(l.out_shape()[0].width_, 2);
-    EXPECT_EQ(l.out_shape()[0].height_, 4);
+    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<cnn_size_t>(2));
+    EXPECT_EQ(l.out_shape()[0].height_, static_cast<cnn_size_t>(4));
 
     vec_t res = l.forward({ { in } })[0][0];
 
@@ -170,8 +170,8 @@ TEST(max_pool, forward_stride_y) {
         4, 3, 1, 2
     };
 
-    EXPECT_EQ(l.out_shape()[0].width_, 4);
-    EXPECT_EQ(l.out_shape()[0].height_, 2);
+    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<cnn_size_t>(4));
+    EXPECT_EQ(l.out_shape()[0].height_, static_cast<cnn_size_t>(2));
 
     vec_t res = l.forward({ { in } })[0][0];
 

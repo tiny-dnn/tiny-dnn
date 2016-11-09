@@ -189,12 +189,12 @@ std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t
     return grads;
 }
 
-namespace {
-void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vector<vec_t>& sample_cost)
-{
+inline void apply_cost_if_defined(std::vector<vec_t>& sample_gradient,
+                                  const std::vector<vec_t>& sample_cost) {
     if (sample_gradient.size() == sample_cost.size()) {
         // @todo consider adding parallelism
-        for (size_t channel = 0, channel_count = sample_gradient.size(); channel < channel_count; ++channel) {
+        const cnn_size_t channel_count = sample_gradient.size();
+        for (size_t channel = 0; channel < channel_count; ++channel) {
             if (sample_gradient[channel].size() == sample_cost[channel].size()) {
                 const size_t element_count = sample_gradient[channel].size();
 
@@ -206,7 +206,6 @@ void apply_cost_if_defined(std::vector<vec_t>& sample_gradient, const std::vecto
         }
     }
 }
-} // namespace
 
 // gradient for a minibatch
 template <typename E>
@@ -214,7 +213,7 @@ std::vector<tensor_t> gradient(const std::vector<tensor_t>& y,
                                const std::vector<tensor_t>& t,
                                const std::vector<tensor_t>& t_cost) {
 
-    const cnn_size_t sample_count = static_cast<cnn_size_t>(y.size());
+    const cnn_size_t sample_count  = static_cast<cnn_size_t>(y.size());
     const cnn_size_t channel_count = static_cast<cnn_size_t>(y[0].size());
 
     std::vector<tensor_t> gradients(sample_count);
@@ -227,7 +226,8 @@ std::vector<tensor_t> gradient(const std::vector<tensor_t>& y,
     for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
         assert(y[sample].size() == channel_count);
         assert(t[sample].size() == channel_count);
-        assert(t_cost.empty() || t_cost[sample].empty() || t_cost[sample].size() == channel_count);
+        assert(t_cost.empty() || t_cost[sample].empty() ||
+               t_cost[sample].size() == channel_count);
 
         gradients[sample] = gradient<E>(y[sample], t[sample]);
 
