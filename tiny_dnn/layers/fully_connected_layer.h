@@ -157,7 +157,7 @@ protected:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::custom ||
+        if (backend_type == backend_t::internal ||
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new FullyConnectedOp(ctx));

@@ -47,7 +47,7 @@
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #include "tiny_dnn/core/kernels/maxpool_op_avx.h"
-#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
+#include "tiny_dnn/core/kernels/maxpool_op_internal.h"
 
 namespace tiny_dnn {
 
@@ -70,8 +70,8 @@ class MaxPoolGradOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::custom) {
-            kernels::maxpool_grad_op_custom(
+        if (engine == core::backend_t::internal) {
+            kernels::maxpool_grad_op_internal(
                 prev_delta,
                 curr_delta,
                 params.out2inmax,

@@ -31,9 +31,9 @@
 
 namespace tiny_dnn {
 
-TEST(quantized_deconvolutional, setup_tiny) {
+TEST(quantized_deconvolutional, setup_internal) {
     quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::custom);
+        padding::valid, true, 1, 1, backend_t::internal);
   
     EXPECT_EQ(l.parallelize(),           true);            // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           cnn_size_t(3));   // num of input tensors

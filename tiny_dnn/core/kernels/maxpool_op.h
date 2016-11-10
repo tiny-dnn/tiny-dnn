@@ -46,7 +46,7 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/maxpool_op_custom.h"
+#include "tiny_dnn/core/kernels/maxpool_op_internal.h"
 #include "tiny_dnn/core/kernels/maxpool_op_nnpack.h"
 #include "tiny_dnn/core/kernels/maxpool_op_avx.h"
 
@@ -72,8 +72,8 @@ class MaxPoolOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::custom) {
-            kernels::maxpool_op_custom(
+        if (engine == core::backend_t::internal) {
+            kernels::maxpool_op_internal(
                 in_data,
                 out_data,
                 params.out2inmax,
