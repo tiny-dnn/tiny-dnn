@@ -275,8 +275,8 @@ private:
 	core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::custom ||
-	    backend_type == backend_t::nnpack ||
+        if (backend_type == backend_t::internal ||
+	    backend_type == backend_t::nnpack   ||
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new MaxPoolOp(ctx));

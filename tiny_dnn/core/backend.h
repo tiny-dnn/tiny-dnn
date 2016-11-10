@@ -38,15 +38,15 @@ namespace core {
 // TODO(edgar): remove this
 class context;
 
-enum class backend_t { custom, nnpack, libdnn, avx, opencl };
+enum class backend_t { internal, nnpack, libdnn, avx, opencl };
 
 inline std::ostream& operator << (std::ostream& os, backend_t type) {
     switch (type) {
-        case backend_t::custom:   os << "Custom";  break;
-        case backend_t::nnpack:   os << "NNPACK";  break;
-        case backend_t::libdnn:   os << "LibDNN";  break;
-        case backend_t::avx:      os << "AVX";     break;
-        case backend_t::opencl:   os << "OpenCL";  break;
+        case backend_t::internal: os << "Internal"; break;
+        case backend_t::nnpack:   os << "NNPACK";   break;
+        case backend_t::libdnn:   os << "LibDNN";   break;
+        case backend_t::avx:      os << "AVX";      break;
+        case backend_t::opencl:   os << "OpenCL";   break;
         default:
             throw nn_error("Not supported ostream enum.");
             break;
@@ -62,13 +62,8 @@ inline backend_t default_engine() {
     return backend_t::avx;
 #endif
 #endif // CNN_USE_AVX
-    return backend_t::custom;
+    return backend_t::internal;
 }
-
-// TODO(edgar): remove this
-struct backend_params {
-    backend_params() {}
-};
 
 class backend {
  public:
