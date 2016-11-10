@@ -28,7 +28,7 @@
 
 #include <vector>
 #include "tiny_dnn/core/params/conv_params.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op_internal.h"
 
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
@@ -501,8 +501,8 @@ conv2d_grad_op_avx(const tensor_t&        prev_out,
     }
 #endif
 
-    conv2d_op_custom(prev_out, W, dW, db, curr_delta,
-                     prev_delta, params, layer_parallelize);
+    conv2d_op_internal(prev_out, W, dW, db, curr_delta,
+                       prev_delta, params, layer_parallelize);
 }
 
 }  // namespace kernels

@@ -304,7 +304,7 @@ private:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::custom) {
+        if (backend_type == backend_t::internal) {
             backend = std::make_shared<core::tiny_backend>(&params_,
                     [this](const tensor_t& in) {
                         return copy_and_unpad_output(in);

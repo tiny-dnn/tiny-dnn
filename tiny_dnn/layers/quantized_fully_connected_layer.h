@@ -47,7 +47,7 @@ public:
     quantized_fully_connected_layer(cnn_size_t in_dim,
                                     cnn_size_t out_dim,
                                     bool       has_bias = true,
-                                    backend_t  backend_type = core::backend_t::custom)
+                                    backend_t  backend_type = core::backend_t::internal)
             : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
@@ -122,7 +122,7 @@ protected:
         std::shared_ptr<core::backend> backend = nullptr;
 
         // allocate new backend
-        if (backend_type == backend_t::custom) {
+        if (backend_type == backend_t::internal) {
             backend = std::make_shared<core::tiny_backend>(&params_,
                 [this](const tensor_t& p_delta,
                        const tensor_t& out, tensor_t& c_delta) {

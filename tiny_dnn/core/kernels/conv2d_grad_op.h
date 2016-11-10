@@ -47,7 +47,7 @@
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #include "tiny_dnn/core/kernels/conv2d_grad_op_avx.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op_internal.h"
 
 namespace tiny_dnn {
 
@@ -75,8 +75,8 @@ class Conv2dGradOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
         
-        if (engine == core::backend_t::custom) {
-            kernels::conv2d_op_custom(
+        if (engine == core::backend_t::internal) {
+            kernels::conv2d_op_internal(
                 prev_out,
                 W[0],
                 dW,

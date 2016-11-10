@@ -152,7 +152,7 @@ TEST(core, add_bad_layer) {
         Device my_gpu_device(device, cl_platform, cl_device);
 
         convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-            padding::valid, true, 1, 1, backend_t::custom);
+            padding::valid, true, 1, 1, backend_t::internal);
 
         try {
             my_gpu_device.registerOp(l);
