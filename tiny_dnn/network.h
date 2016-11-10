@@ -192,6 +192,11 @@ class network {
     tensor_t predict(const tensor_t& in) { return fprop(in); }
 
     /**
+    * executes forward-propagation and returns output
+    **/
+    std::vector<tensor_t> predict(const std::vector<tensor_t>& in) { return fprop(in); }
+
+    /**
      * executes forward-propagation and returns maximum output
      **/
     float_t      predict_max_value(const vec_t& in) {
