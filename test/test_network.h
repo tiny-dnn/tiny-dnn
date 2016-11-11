@@ -249,13 +249,29 @@ TEST(network, train_predict) {
 
     net.train<mse>(optimizer, data, label, 10, 10);
 
+    std::vector<tensor_t> parallel_input(tnum);
+    std::vector<tensor_t> expected_parallel_output(tnum);
 
     for (size_t i = 0; i < tnum; i++) {
-        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
-        label_t expected = (in[0] ^ in[1]) ? 1 : 0;
-        label_t actual = net.predict_label({ static_cast<float_t>(in[0]),
-                                             static_cast<float_t>(in[1]) });
+        const bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+        const vec_t input = { static_cast<float_t>(in[0]),
+                              static_cast<float_t>(in[1]) };
+        const label_t actual = net.predict_label(input);
         EXPECT_EQ(expected, actual);
+
+        const auto actual_vec = net.predict(input);
+        EXPECT_EQ(expected == 1, actual_vec[1] > actual_vec[0]);
+
+        parallel_input[i] = tensor_t{ input };
+        expected_parallel_output[i] = tensor_t{ actual_vec };
+    }
+
+    // test predicting multiple samples in parallel
+    const auto actual_parallel_output = net.predict(parallel_input);
+    for (size_t i = 0; i < tnum; i++) {
+        EXPECT_NEAR(expected_parallel_output[i][0][0], actual_parallel_output[i][0][0], 1e-10);
+        EXPECT_NEAR(expected_parallel_output[i][0][1], actual_parallel_output[i][0][1], 1e-10);
     }
 }
 
