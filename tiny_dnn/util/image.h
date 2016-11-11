@@ -188,7 +188,11 @@ public:
     size_t height() const { return height_; }
     size_t depth() const {return depth_;}
     image_type type() const { return type_; }
-    shape3d shape() const { return shape3d(width_, height_, depth_); }
+    shape3d shape() const {
+        return shape3d(static_cast<cnn_size_t>(width_),
+                       static_cast<cnn_size_t>(height_),
+                       static_cast<cnn_size_t>(depth_));
+    }
     const std::vector<intensity_t>& data() const { return data_; }
     vec_t to_vec() const { return vec_t(begin(), end()); }
 

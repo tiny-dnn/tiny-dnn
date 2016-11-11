@@ -461,7 +461,7 @@ class network {
         std::vector<tensor_t> v(t.size());
         const cnn_size_t sample_count = static_cast<cnn_size_t>(t.size());
         for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
-            net_.label2vec(&t[sample][0], t[sample].size(), &v[sample]);
+            net_.label2vec(&t[sample][0], static_cast<cnn_size_t>(t[sample].size()), &v[sample]);
         }
 
         for (auto current : net_) {  // ignore first input layer
