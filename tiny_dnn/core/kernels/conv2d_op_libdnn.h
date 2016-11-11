@@ -95,7 +95,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
                 in_data[i].begin(), in_data[i].end());
 
             auto dev_W = CLCudaAPI::Buffer<float_t>(ctx, queue,
-                W.begin[0](), W[0].end());
+                W[0].begin(), W[0].end());
 
             auto dev_bias = CLCudaAPI::Buffer<float_t>(ctx, queue,
                 bias[0].begin(), bias[0].end());
