@@ -39,7 +39,7 @@
 namespace tiny_dnn {
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-device_t device_type(size_t &platform, size_t &device) {
+device_t device_type(size_t *platform, size_t *device) {
   // check which platforms are available
   auto platforms = CLCudaAPI::GetAllPlatforms();
 
@@ -48,33 +48,27 @@ device_t device_type(size_t &platform, size_t &device) {
     return device_t::NONE;
   }
 
-  for (auto p = platforms.begin(); p != platforms.end(); ++p)
-    for (size_t d = 0; d < p->NumDevices(); ++d) {
-      auto dev = CLCudaAPI::Device(*p, d);
-      if (dev.Type() == "GPU") {
-        platform = p - platforms.begin();
-        device = d;
-        return device_t::GPU;
+  std::array<std::string, 2> devices_order = {"GPU", "CPU"};
+  std::map<std::string, device_t>
+      devices_t_order = {std::make_pair("GPU", device_t::GPU),
+                         std::make_pair("CPU", device_t::CPU)};
+  for (auto d_type: devices_order)
+    for (auto p = platforms.begin(); p != platforms.end(); ++p)
+      for (size_t d = 0; d < p->NumDevices(); ++d) {
+        auto dev = CLCudaAPI::Device(*p, d);
+        if (dev.Type() == d_type) {
+          *platform = p - platforms.begin();
+          *device = d;
+          return devices_t_order[d_type];
+        }
       }
-    }
-
-  for (auto p = platforms.begin(); p != platforms.end(); ++p)
-    for (size_t d = 0; d < p->NumDevices(); ++d) {
-      auto dev = CLCudaAPI::Device(*p, d);
-      if (dev.Type() == "CPU") {
-        platform = p - platforms.begin();
-        device = d;
-        return device_t::CPU;
-      }
-    }
-
   // no CPUs or GPUs
   return device_t::NONE;
 }
 
 #define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
     size_t cl_platform = 0, cl_device = 0; \
-    device_t device = device_type(cl_platform, cl_device);
+    device_t device = device_type(&cl_platform, &cl_device);
 #else
 #define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
     size_t cl_platform = 0, cl_device = 0; \
