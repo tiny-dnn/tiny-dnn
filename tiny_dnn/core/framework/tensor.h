@@ -48,76 +48,86 @@
 
 namespace tiny_dnn {
 
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-typedef CLCudaAPI::Buffer<float_t> buffer;
-typedef std::unique_ptr<buffer>    buffer_ptr;
-#endif
-
-typedef std::unique_ptr<std::vector<float_t> > data_ptr;
-
-/* Class modelling a Tensor
+/* Class modeling a Tensor
+ * @param b The size of the batch
+ * @param w The width of the tensor
+ * @param h The height of the tensor
+ * @param d The number of channels
  */
+template<class U = float_t,
+	 cnn_size_t b = 1,
+	 cnn_size_t w = 1,
+	 cnn_size_t h = 1,
+	 cnn_size_t d = 1>
 class Tensor {
  public:
     /* Default constructor for the Tensor class
-     * @param batch The size of the batch
-     * @param width The width of the tensor
-     * @param heigth The height of the tensor
-     * @param depth The number of channels
      */
-    explicit Tensor(const cnn_size_t batch,
-                    const cnn_size_t width,
-                    const cnn_size_t height,
-                    const cnn_size_t depth) : shape_(4) {
-        init_data (batch, width, height, depth);
-        init_shape(batch, width, height, depth);
+    Tensor() : shape_(4) {
+        init_data (b, w, h, d);
+        init_shape(b, w, h, d);
     }
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+    typedef CLCudaAPI::Buffer<U>    buffer;
+    typedef std::unique_ptr<buffer> buffer_ptr;
+#endif
+
+    typedef std::unique_ptr<std::vector<U> > data_ptr;
     
     // Returns the tensor shape
     std::vector<cnn_size_t> shape() const { return shape_; }
     
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
-    float_t& at(const cnn_size_t batch,
-                const cnn_size_t width,
-                const cnn_size_t height,
-                const cnn_size_t depth) {
-        return *access_data(batch, width, height, depth);
+    template<typename T>
+    T& at(const cnn_size_t batch,
+          const cnn_size_t width,
+          const cnn_size_t height,
+          const cnn_size_t depth) {
+        return *access_data<T>(batch, width, height, depth);
     }
 
-    const float_t& at(const cnn_size_t batch,
-                      const cnn_size_t width,
-                      const cnn_size_t height,
-                      const cnn_size_t depth) const {
-        return *access_data(batch, width, height, depth);
+    template<typename T>
+    const T& at(const cnn_size_t batch,
+                const cnn_size_t width,
+                const cnn_size_t height,
+                const cnn_size_t depth) const {
+        return *access_data<T>(batch, width, height, depth);
     }
 
     // Returns the pointer to a specified index in the tensor
     // Checked version (throw exceptions for out-of-range error)
-    float_t* ptr(const cnn_size_t batch,
-                 const cnn_size_t width,
-                 const cnn_size_t height,
-                 const cnn_size_t depth) {
-        return access_data(batch, width, height, depth);
+    template<typename T>
+    T* ptr(const cnn_size_t batch,
+           const cnn_size_t width,
+           const cnn_size_t height,
+           const cnn_size_t depth) {
+        return access_data<T>(batch, width, height, depth);
     }
     
-    const float_t* ptr(const cnn_size_t batch,
-                       const cnn_size_t width,
-                       const cnn_size_t height,
-                       const cnn_size_t depth) const {
-        return access_data(batch, width, height, depth);
+    template<typename T>
+    const T* ptr(const cnn_size_t batch,
+                 const cnn_size_t width,
+                 const cnn_size_t height,
+                 const cnn_size_t depth) const {
+        return access_data<T>(batch, width, height, depth);
     }
 
     // zero-overhead version (same performance to raw pointer access.
     // have an assertion for out-of-range error)
-    float_t& operator[] (cnn_size_t index) {
-        return *access_data(index);
+    template<typename T>
+    T& operator[] (cnn_size_t index) {
+        return *access_data<T>(index);
     }
 
-    const float_t& operator[] (cnn_size_t index) const {
-        return *access_data(index);
+    template<typename T>
+    const T& operator[] (cnn_size_t index) const {
+        return *access_data<T>(index);
     }
 
+    // this is only a proof of concept to copy data
+    // from one device to another.
     void toDevice(const Device& device) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         CLCudaAPI::Context ctx = device.context();
@@ -128,6 +138,8 @@ class Tensor {
 #endif
     }
 
+    // this is only a proof of concept to copy data
+    // from one device to another.
     void fromDevice(const Device& device) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 	CLCudaAPI::Queue queue = device.queue();
@@ -137,7 +149,7 @@ class Tensor {
 #endif
     }
 
-    template<typename T, typename U = float_t>
+    /*template<typename T, typename U = float_t>
     T host_data() const {
         return static_cast<T>(*access_data(0));
     }
@@ -157,13 +169,13 @@ class Tensor {
     T mutable_device_data() {
 	fromDevice(device_);
         return static_cast<T>(*access_data(0));
-    }
+    }*/
 
  private:
     // Initializes the data buffer with zeroes
     void init_data(const cnn_size_t batch,  const cnn_size_t width,
                    const cnn_size_t height, const cnn_size_t depth) {
-        host_data_ = data_ptr(new std::vector<float_t>(
+        host_data_ = data_ptr(new std::vector<U>(
             batch * width * height * depth, float_t(0.0)));
     }
 
@@ -176,23 +188,39 @@ class Tensor {
 
     // Method to access to the tensor data.
     // It checks if the requested position is feasible or not.
-    float_t* access_data(const cnn_size_t batch,
-                         const cnn_size_t width,
-                         const cnn_size_t height,
-                         const cnn_size_t depth) const {
+    template<typename T>
+    T* access_data(const cnn_size_t batch,
+                   const cnn_size_t width,
+                   const cnn_size_t height,
+                   const cnn_size_t depth) const {
         if (batch  > shape_[0] || width > shape_[1] ||
             height > shape_[2] || depth > shape_[3]) {
             nn_error("Access tensor out of range.");
         }
 
-        // TODO(edgar): check how to deal with cpu/gpu
-        return &host_data_->at(shape_[1] * shape_[2] *
-            ( shape_[3] * batch + depth ) + height + width);
+        U* value = &host_data_->at(shape_[1] * shape_[2] *
+                ( shape_[3] * batch + depth ) + height + width);
+
+        // in case that requested type is not the same as
+        // the specified during the tensor initilization
+        // we cast the type.
+        if (!std::is_same<T,U>::value) {
+	    return reinterpret_cast<T*>(value);
+	}
+	return value;
     }
 
-    float_t* access_data(const cnn_size_t index) const {
-        // TODO(edgar): check how to deal with cpu/gpu
-        return &host_data_->at(index);
+    template<typename T>
+    T* access_data(const cnn_size_t index) const {
+        U* value = &host_data_->at(index);
+
+        // in case that requested type is not the same as
+        // the specified during the tensor initilization
+        // we cast the type.
+        if (!std::is_same<T,U>::value) {
+	    return reinterpret_cast<T*>(value);
+	}
+	return value;
     }
 
  private:
@@ -217,7 +245,8 @@ class Tensor {
 };
 
 // Overloaded method to print the Tensor class to the standard output
-inline std::ostream& operator<< (std::ostream &os, const Tensor& tensor) {
+inline std::ostream& operator<< (std::ostream &os,
+		                 const Tensor<>& tensor) {
     std::vector<cnn_size_t> shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
@@ -226,7 +255,7 @@ inline std::ostream& operator<< (std::ostream &os, const Tensor& tensor) {
             os << "-- Data:\n";
             for (cnn_size_t k = 0; k < shape[1]; ++k) {
                 for (cnn_size_t l = 0; l < shape[2]; ++l) {
-                    os << tensor.at(i,k,l,j) << " ";
+                    os << tensor.at<float_t>(i,k,l,j) << " ";
                 }
                 os << ";\n";
             }
