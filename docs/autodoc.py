@@ -17,7 +17,7 @@ def get_layers(srcstring):
 # find constructor declarations
 # returns: array of string
 def get_constructors(srcstring, layer):
-    pat = layer + r'\(.+?[^\(]\)'
+    pat = r' +' + layer + r'\(.+?[^\(]\)'
     m = re.findall(pat, srcstring, re.M | re.DOTALL)
     return m
 
