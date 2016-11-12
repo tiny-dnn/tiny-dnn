@@ -34,7 +34,7 @@ using namespace tiny_dnn;
 namespace tiny_dnn {
 
 TEST(tensor, shape) {
-    Tensor tensor(1,2,2,2);
+    Tensor<float_t,1,2,2,2> tensor;
 
     EXPECT_EQ(tensor.shape()[0], cnn_size_t(1));
     EXPECT_EQ(tensor.shape()[1], cnn_size_t(2));
@@ -43,11 +43,11 @@ TEST(tensor, shape) {
 }
 
 TEST(tensor, access_data) {
-    Tensor tensor(1,2,2,2);
+    Tensor<float_t,1,2,2,2> tensor;
 
-    float_t* begin_ptr = tensor.ptr(0,0,0,0);
-    float_t* end1_ptr  = tensor.ptr(0,1,1,0);
-    float_t* end2_ptr  = tensor.ptr(0,1,1,1);
+    float_t* begin_ptr = tensor.ptr<float_t>(0,0,0,0);
+    float_t* end1_ptr  = tensor.ptr<float_t>(0,1,1,0);
+    float_t* end2_ptr  = tensor.ptr<float_t>(0,1,1,1);
 
     // set tensor data
     
@@ -67,9 +67,9 @@ TEST(tensor, access_data) {
         for (cnn_size_t j = 0; j < 2; ++j) {
             for (cnn_size_t k = 0; k < 1; ++k) {
                 if (k == 0) {
-                    EXPECT_EQ(tensor.at(0,i,j,k), cnn_size_t(1));
+                    EXPECT_EQ(tensor.at<float_t>(0,i,j,k), cnn_size_t(1));
                 } else {
-                    EXPECT_EQ(tensor.at(0,i,j,k), cnn_size_t(2));
+                    EXPECT_EQ(tensor.at<float_t>(0,i,j,k), cnn_size_t(2));
                 }
             }
         }
