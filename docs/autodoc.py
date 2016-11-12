@@ -87,6 +87,8 @@ files= glob.glob('../tiny_dnn/layers/*.h')
 
 docstring = ''
 
+print '# Layers\n\n'
+
 for file in files:
     f = open(file, 'r')
     srcstring = f.read()

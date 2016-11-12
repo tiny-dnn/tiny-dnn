@@ -23,6 +23,13 @@ How-Tos:
 
    how_tos/index   
 
+Layers:
+
+.. toctree::
+   :maxdepth: 1
+
+   layers/index   
+
 Examples(Link to github):
 
 * `MNIST image classification <https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist>`_
