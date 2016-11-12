@@ -479,55 +479,6 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
     }
 }
 
-inline void load_weights_deconv(const caffe::LayerParameter& src, layer *dst) {
-    // fill weight
-    auto weights = src.blobs(0);
-
-    //TODO: check if it works
-    //int out_channels = dst->out_shape().depth_;
-    //int in_channels = dst->in_shape().depth_;
-    int out_channels = dst->out_data_shape()[0].depth_;
-    int in_channels = dst->in_data_shape()[0].depth_;
-
-    connection_table table;
-    auto deconv_param = src.convolution_param();
-    int dst_idx = 0;
-    int src_idx = 0;
-    int window_size = get_kernel_size_2d(deconv_param);
-
-    if (deconv_param.has_group()) {
-        table = connection_table(deconv_param.group(), in_channels, out_channels);
-    }
-
-    vec_t& w = *dst->weights()[0];
-    vec_t& b = *dst->weights()[1];
-
-    // fill weights
-    for (int o = 0; o < out_channels; o++) {
-        for (int i = 0; i < in_channels; i++) {
-            if (!table.is_connected(o, i)) {
-                dst_idx += window_size * window_size;
-                continue;
-            }
-            for (int x = 0; x < window_size * window_size; x++) {
-                //TODO
-                //dst->weight()[dst_idx++] = weights.data(src_idx++);
-                w[dst_idx++] =  weights.data(src_idx++);
-            }
-        }
-    }
-
-    // fill bias
-    if (deconv_param.bias_term()) {
-        auto biases = src.blobs(1);
-        for (int o = 0; o < out_channels; o++) {
-            //TODO
-            //dst->bias()[o] = biases.data(o);
-            b[o] = biases.data(o);
-        }
-    }
-}
-
 inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
     auto pool_param = src.pooling_param();
 
@@ -794,7 +745,7 @@ std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
 
     // set weight (optional)
     if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
-        load_weights_deconv(layer, deconv.get());
+        load_weights_conv(layer, deconv.get());
     }
     //TODO
     //*top_shape = deconv->out_shape();
@@ -901,7 +852,7 @@ inline void load(const caffe::LayerParameter& src, layer *dst) {
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::load_weights_conv;
-    factory_registry["Deconvolution"] = detail::load_weights_deconv;
+    factory_registry["Deconvolution"] = detail::load_weights_conv;
     factory_registry["InnerProduct"] = detail::load_weights_fullyconnected;
     factory_registry["Pooling"] = detail::load_weights_pool;
 
