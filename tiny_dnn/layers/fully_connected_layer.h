@@ -158,7 +158,9 @@ protected:
         core::OpKernelConstruction(layer::device(), &params_);
 
         if (backend_type == backend_t::internal ||
-            backend_type == backend_t::avx) {
+            backend_type == backend_t::avx||
+            backend_type == backend_t::nnpack
+                ) {
 
             kernel_fwd_.reset(new FullyConnectedOp(ctx));
             kernel_back_.reset(new FullyConnectedGradOp(ctx));

@@ -185,6 +185,7 @@ TEST(max_pool, forward_stride_y) {
 
 #ifdef CNN_USE_NNPACK
 TEST(max_pool, forward_stride_nnp) {
+    nnp_initialize();
     max_pooling_layer<identity> l(4, 4, 1, 2, 2,
 		                  core::backend_t::nnpack);
     vec_t in = {
@@ -197,6 +198,30 @@ TEST(max_pool, forward_stride_nnp) {
     vec_t expected = {
         8, 6,
         4, 2
+    };
+
+    vec_t res = l.forward({ {in} })[0][0];
+
+    for (size_t i = 0; i < expected.size(); i++) {
+        EXPECT_FLOAT_EQ(expected[i], res[i]);
+    }
+}
+//add for pool size !=2 and stride !=2
+
+TEST(max_pool, forward_stride_nnp_not_2x2) {
+    nnp_initialize();
+    max_pooling_layer<identity> l(4, 4, 1, 3, 1,
+		                  core::backend_t::nnpack);
+    vec_t in = {
+        0, 1, 2, 3,
+        8, 7, 5, 6,
+        4, 3, 1, 2,
+        0,-1,-2,-3
+    };
+
+    vec_t expected = {
+        8, 7,
+        8, 7
     };
 
     vec_t res = l.forward({ {in} })[0][0];
