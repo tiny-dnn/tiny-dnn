@@ -621,6 +621,37 @@ TEST(caffe_converter, ave_pool) {
     EXPECT_EQ((*model)[0]->layer_type(), "ave-pool");
 }
 
+TEST(caffe_converter, deconv) {
+    std::string json = R"(
+    name: "DeconvNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 4
+      dim: 40
+      dim: 24
+    }
+    layer {
+      name: "conv"
+      type: "Deconvolution"
+      bottom: "data"
+      top: "out"
+      convolution_param {
+        num_output: 10
+        pad: 1
+        kernel_size: 3
+        group: 2
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 4));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 40, 10));
+}
+
 TEST(caffe_converter, lrn) {
     std::string json = R"(
     name: "LRNNet"
@@ -653,6 +684,111 @@ TEST(caffe_converter, lrn) {
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 40, 5));
 }
 
+TEST(caffe_converter, sigmoid) {
+    std::string json = R"(
+    name: "SigmoidNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 5
+      dim: 1
+    }
+    layer {
+      name: "activation"
+      type: "Sigmoid"
+      bottom: "data"
+      top: "out"
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(5, 1, 1));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(5, 1, 1));
+
+    vec_t in = { 0.0f, 0.1f, 0.5f, 0.9f, 1.0f };
+
+    auto ret = model->predict(in);
+    sigmoid a;
+
+    EXPECT_EQ(ret[0], a.f(in, 0));
+    EXPECT_EQ(ret[1], a.f(in, 1));
+    EXPECT_EQ(ret[2], a.f(in, 2));
+    EXPECT_EQ(ret[3], a.f(in, 3));
+    EXPECT_EQ(ret[4], a.f(in, 4));
+}
+
+TEST(caffe_converter, tanh) {
+    std::string json = R"(
+    name: "SigmoidNet"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 1
+      dim: 5
+    }
+    layer {
+      name: "activation"
+      type: "TanH"
+      bottom: "data"
+      top: "out"
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(5, 1, 1));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(5, 1, 1));
+
+    vec_t in = { -1.0f, -0.1f, 0.0f, 0.1f, 1.0f };
+
+    auto ret = model->predict(in);
+    tan_h a;
+
+    EXPECT_EQ(ret[0], a.f(in, 0));
+    EXPECT_EQ(ret[1], a.f(in, 1));
+    EXPECT_EQ(ret[2], a.f(in, 2));
+    EXPECT_EQ(ret[3], a.f(in, 3));
+    EXPECT_EQ(ret[4], a.f(in, 4));
+}
+
+TEST(caffe_converter, power) {
+    std::string json = R"(
+    name: "Power"
+    input: "data"
+    input_shape {
+      dim: 1
+      dim: 1
+      dim: 1
+      dim: 1
+    }
+    layer {
+      name: "pow"
+      type: "Power"
+      bottom: "data"
+      top: "out"
+      power_param {
+        power: 0.5
+        scale: 2.0
+      }
+    }
+    )";
+
+    auto model = create_net_from_json(json);
+
+    ASSERT_EQ(model->depth(), 1);
+
+    EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(1, 1, 1));
+    EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(1, 1, 1));
+    EXPECT_FLOAT_EQ((*model).at<power_layer>(0).factor(), 0.5f);
+    EXPECT_FLOAT_EQ((*model).at<power_layer>(0).scale(), 2.0f);
+}
 
 TEST(caffe_converter, conv_with_weights) {
     std::string json = R"(
