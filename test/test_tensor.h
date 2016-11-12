@@ -75,7 +75,7 @@ TEST(tensor, constructors) {
     t1 = std::move(t2);
 
     // check that we moved data
-    EXPECT_EQ(t1.size(), cnn_size_t(16));
+    EXPECT_EQ(t1.size(), serial_size_t(16));
 
     // expecting something here is wrong. t2 is in a valid but undefined state, no need to test it.
 
@@ -83,16 +83,16 @@ TEST(tensor, constructors) {
     Tensor<float_t> t3(std::move(t1));
 
     // check that we moved data
-    EXPECT_EQ(t3.size(), cnn_size_t(16));
+    EXPECT_EQ(t3.size(), serial_size_t(16));
 }
 
 TEST(tensor, shape) {
     Tensor<float_t> tensor(1,2,2,2);
 
-    EXPECT_EQ(tensor.shape()[0], cnn_size_t(1));
-    EXPECT_EQ(tensor.shape()[1], cnn_size_t(2));
-    EXPECT_EQ(tensor.shape()[2], cnn_size_t(2));
-    EXPECT_EQ(tensor.shape()[3], cnn_size_t(2));
+    EXPECT_EQ(tensor.shape()[0], serial_size_t(1));
+    EXPECT_EQ(tensor.shape()[1], serial_size_t(2));
+    EXPECT_EQ(tensor.shape()[2], serial_size_t(2));
+    EXPECT_EQ(tensor.shape()[3], serial_size_t(2));
 }
 
 TEST(tensor, size) {
@@ -130,12 +130,12 @@ TEST(tensor, check_bounds) {
 TEST(tensor, access_data1) {
     Tensor<float_t> tensor(1,2,2,1);
 
-    const std::array<cnn_size_t, 4>& shape = tensor.shape();
+    const std::array<serial_size_t, 4>& shape = tensor.shape();
 
-    for (cnn_size_t n = 0; n < shape[0]; ++n) {
-        for (cnn_size_t w = 0; w < shape[1]; ++w) {
-            for (cnn_size_t h = 0; h < shape[2]; ++h) {
-                for (cnn_size_t d = 0; d < shape[3]; ++d) {
+    for (serial_size_t n = 0; n < shape[0]; ++n) {
+        for (serial_size_t w = 0; w < shape[1]; ++w) {
+            for (serial_size_t h = 0; h < shape[2]; ++h) {
+                for (serial_size_t d = 0; d < shape[3]; ++d) {
                     EXPECT_EQ(tensor.host_at(n,w,h,d),   float_t(0.0));
                     EXPECT_EQ(*tensor.host_ptr(n,w,h,d), float_t(0.0));
                 }
@@ -161,11 +161,11 @@ TEST(tensor, access_data3) {
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
     float_t* ptr2 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr1[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr2[i] = float_t(2.0);
     }
 
@@ -174,11 +174,11 @@ TEST(tensor, access_data3) {
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
     const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr22[i], float_t(2.0));
     }
 }
@@ -191,24 +191,24 @@ TEST(tensor, access_data4) {
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
     float_t* ptr2 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr1[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr2[i] = float_t(2.0);
     }
 
     // check data using .at() accessor
 
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
         }
     }
 
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
         }
     }
@@ -222,21 +222,21 @@ TEST(tensor, access_data5) {
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
     float_t* ptr2 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr1[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         ptr2[i] = float_t(2.0);
     }
 
     // check data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
     }
 }
@@ -258,14 +258,14 @@ TEST(tensor, access_data6) {
 
     // check data using .at() accessor
 
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
         }
     }
     
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
         }
     }
@@ -291,11 +291,11 @@ TEST(tensor, access_data7) {
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
     const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr22[i], float_t(2.0));
     }
 }
@@ -317,11 +317,11 @@ TEST(tensor, access_data8) {
 
     // check data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
     }
 }
@@ -331,21 +331,21 @@ TEST(tensor, access_data9) {
 
     // modify data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[4 + i] = float_t(2.0);
     }
 
     // check data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
     }
 }
@@ -355,24 +355,24 @@ TEST(tensor, access_data10) {
 
     // modify data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[4 + i] = float_t(2.0);
     }
 
     // check data using .at() accessor
 
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
         }
     }
 
-    for (cnn_size_t i = 0; i < 2; ++i) {
-        for (cnn_size_t j = 0; j < 2; ++j) {
+    for (serial_size_t i = 0; i < 2; ++i) {
+        for (serial_size_t j = 0; j < 2; ++j) {
             EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
         }
     }
@@ -383,11 +383,11 @@ TEST(tensor, access_data11) {
 
     // modify data using operator[] accessor
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[i] = float_t(1.0);
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[4 + i] = float_t(2.0);
     }
 
@@ -396,11 +396,11 @@ TEST(tensor, access_data11) {
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
     const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
     }
 
-    for (cnn_size_t i = 0; i < 4; ++i) {
+    for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr22[i], float_t(2.0));
     }
 }
