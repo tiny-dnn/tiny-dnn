@@ -21,7 +21,7 @@ TEST(target_cost, calculate_label_counts) {
 
 TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
     const std::vector<cnn_size_t> class_sample_counts = { 1000, 100, 10, 1 };
-    const cnn_size_t class_count = class_sample_counts.size();
+    const cnn_size_t class_count = static_cast<cnn_size_t>(class_sample_counts.size());
     const cnn_size_t total_samples = std::accumulate(class_sample_counts.begin(), class_sample_counts.end(), static_cast<cnn_size_t>(0));
 
     std::vector<float_t> class_weights;

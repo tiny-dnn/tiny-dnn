@@ -382,7 +382,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     void copy_and_pad_input(const tensor_t& in) {
         conv_layer_worker_specific_storage& cws = cws_;
 
-        cnn_size_t sample_count = in.size();
+        cnn_size_t sample_count = static_cast<cnn_size_t>(in.size());
 
         cws.prev_out_padded_.resize(sample_count);
 
