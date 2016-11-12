@@ -517,7 +517,7 @@ TEST(network, gradient_check7) { // leaky-relu - mse
 	//       caffe's GradientChecker (they have kink/kink-range parameter to handle it)
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             3*epsilon<float_t>(), GRAD_CHECK_ALL));
+                                             10*epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(network, gradient_check8) { // elu - mse
@@ -536,7 +536,7 @@ TEST(network, gradient_check8) { // elu - mse
 	//       caffe's GradientChecker (they have kink/kink-range parameter to handle it)
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
-                                             3*epsilon<float_t>(), GRAD_CHECK_ALL));
+                                             10*epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(network, gradient_check9) { // tan_hp1m2 - mse
