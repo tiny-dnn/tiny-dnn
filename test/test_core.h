@@ -25,28 +25,31 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "testhelper.h"
+
 #include "tiny_dnn/tiny_dnn.h"
+
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #include "third_party/CLCudaAPI/clpp11.h"
 #endif //defined(USE_OPENCL) || defined(USE_CUDA)
-using namespace tiny_dnn;
 
 namespace tiny_dnn {
+
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 device_t device_type(size_t &platform, size_t &device) {
-    //check which platforms are available
+    // check which platforms are available
     auto platforms = CLCudaAPI::GetAllPlatforms();
 
     // if no platforms - return -1
-    if (platforms.size() == 0)
+    if (platforms.size() == 0) {
         return device_t::NONE;
+    }
 
     for (auto p = platforms.begin(); p != platforms.end(); ++p)
         for (size_t d = 0; d < p->NumDevices(); ++d) {
             auto dev = CLCudaAPI::Device(*p, d);
-            if (dev.Type()=="GPU") {
+            if (dev.Type() == "GPU") {
                 platform = p - platforms.begin();
                 device = d;
                 return device_t::GPU;
@@ -56,23 +59,26 @@ device_t device_type(size_t &platform, size_t &device) {
     for (auto p = platforms.begin(); p != platforms.end(); ++p)
         for (size_t d = 0; d < p->NumDevices(); ++d) {
             auto dev = CLCudaAPI::Device(*p, d);
-            if (dev.Type()=="CPU") {
+            if (dev.Type() == "CPU") {
                 platform = p - platforms.begin();
                 device = d;
                 return device_t::CPU;
             }
         }
 
-    //no CPUs or GPUs
+    // no CPUs or GPUs
     return device_t::NONE;
 }
 
-#define TINY_DNN_GET_DEVICE_AND_PLATFORM size_t cl_platform, cl_device; \
-                                         device_t device = device_type(cl_platform, cl_device);
+#define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
+    cnn_size_t cl_platform = 0, cl_device = 0; \
+    device_t device = device_type(cl_platform, cl_device);
 #else
-#define TINY_DNN_GET_DEVICE_AND_PLATFORM size_t cl_platform, cl_device; \
-                                         device_t device = device_t::NONE;
+#define TINY_DNN_GET_DEVICE_AND_PLATFORM       \
+    cnn_size_t cl_platform = 0, cl_device = 0; \
+    device_t device = device_t::NONE;
 #endif //defined(USE_OPENCL) || defined(USE_CUDA)
+
 /*
 TEST(core, platforms_and_devices) {
     // Since Singleton has a general state,
@@ -100,11 +106,12 @@ TEST(core, device) {
     Device my_cpu_device(device_t::CPU);
 
     TINY_DNN_GET_DEVICE_AND_PLATFORM;
-    if (device != device_t::NONE)
+    if (device != device_t::NONE) {
         Device my_gpu_device(device, cl_platform, cl_device);
+    }
 }
 
-TEST(core, add_bad_device) {
+/*TEST(core, add_bad_device) {
     // A simple CPU device cannot register an op.
     // A warning is expected telling the user to use
     // more parameters when device is created.
@@ -127,10 +134,10 @@ TEST(core, add_bad_device) {
                                        "in Device constructor";
         EXPECT_STREQ(err_mess.c_str(), e.what());
     }
-    catch(...) {
+    catch (...) {
         EXPECT_TRUE(false);
     }
-}
+}*/
 
 TEST(core, add_bad_layer) {
     // A GPU device cannot register an op with non-OpenCL engine.
@@ -145,7 +152,7 @@ TEST(core, add_bad_layer) {
         Device my_gpu_device(device, cl_platform, cl_device);
 
         convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-                                       padding::valid, true, 1, 1, backend_t::tiny_dnn);
+            padding::valid, true, 1, 1, backend_t::internal);
 
         try {
             my_gpu_device.registerOp(l);
@@ -181,19 +188,22 @@ TEST(core, device_add_op) {
 
         //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(0));
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         // first time op registration: OK
         my_gpu_device.registerOp(l);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(1));
 
         // second time op registraion: we expect that Op it's not
         // registrated since it's already there.
         my_gpu_device.registerOp(l);
 
-        ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+        ASSERT_EQ(ProgramManager::getInstance().num_programs(),
+                  static_cast<cnn_size_t>(1));
 #endif
     }
 }
@@ -229,7 +239,7 @@ TEST(core, ocl_conv) {
         , &out = out_tensor[0]
         , &weight = weight_tensor[0];
 
-        ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+        ASSERT_EQ(l.in_shape()[1].size(), static_cast<cnn_size_t>(18)); // weight
 
         uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 

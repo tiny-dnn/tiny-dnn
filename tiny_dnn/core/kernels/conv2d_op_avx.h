@@ -28,7 +28,7 @@
 
 #include <vector>
 #include "tiny_dnn/core/params/conv_params.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op_internal.h"
 
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
@@ -412,7 +412,7 @@ inline void conv2d_op_avx(const tensor_t&         in_data,
         return;
     }
 #endif
-    conv2d_op_custom(in_data, W, bias, out_data, params, layer_parallelize);
+    conv2d_op_internal(in_data, W, bias, out_data, params, layer_parallelize);
 }
 
 }  // namespace kernels

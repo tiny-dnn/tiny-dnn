@@ -28,7 +28,7 @@
 
 #include <vector>
 #include "tiny_dnn/core/params/conv_params.h"
-#include "tiny_dnn/core/kernels/conv2d_op_custom.h"
+#include "tiny_dnn/core/kernels/conv2d_op_internal.h"
 
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
@@ -464,7 +464,7 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
                                 std::vector<std::vector<double, Allocator>>&       curr_delta,
                                 std::vector<std::vector<double, Allocator>>&       prev_delta) {
     // backward-pass fallbacks to tiny-backend at float_t == double
-    conv2d_op_custom(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
+    conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
 }
 
 // float ver
@@ -501,8 +501,8 @@ conv2d_grad_op_avx(const tensor_t&        prev_out,
     }
 #endif
 
-    conv2d_op_custom(prev_out, W, dW, db, curr_delta,
-                     prev_delta, params, layer_parallelize);
+    conv2d_op_internal(prev_out, W, dW, db, curr_delta,
+                       prev_delta, params, layer_parallelize);
 }
 
 }  // namespace kernels

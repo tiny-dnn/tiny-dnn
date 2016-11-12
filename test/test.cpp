@@ -49,8 +49,7 @@ using namespace tiny_dnn::activation;
 #include "test_lrn_layer.h"
 #include "test_batch_norm_layer.h"
 #include "test_nodes.h"
-// TODO(edgar): build apart GPU tests
-//#include "test_core.h"
+#include "test_core.h"
 #include "test_models.h"
 #include "test_slice_layer.h"
 #include "test_concat_layer.h"

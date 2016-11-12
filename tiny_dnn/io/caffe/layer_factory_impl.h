@@ -360,7 +360,10 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
     auto weights = src.blobs(0);
     int curr = 0;
 
-    if (dst->out_size() * dst->in_size() !=
+    const auto dst_out_size = dst->out_size();
+    const auto dst_in_size = dst->in_size();
+
+    if (dst_out_size * dst_in_size !=
         static_cast<cnn_size_t>(weights.data_size())) {
         throw nn_error(
             std::string("layer size mismatch!") +
@@ -372,18 +375,18 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
     vec_t& b = *dst->weights()[1];
 
     // fill weights
-    for (size_t o = 0; o < dst->out_size(); o++) {
-        for (size_t i = 0; i < dst->in_size(); i++) {
+    for (size_t o = 0; o < dst_out_size; o++) {
+        for (size_t i = 0; i < dst_in_size; i++) {
             // TODO: how to access to weights?
             //dst->weight()[i * dst->out_size() + o] = weights.data(curr++); // transpose
-            w[i * dst->out_size() + o] = weights.data(curr++); // transpose
+            w[i * dst_out_size + o] = weights.data(curr++); // transpose
         }
     }
 
     // fill bias
     if (src.inner_product_param().bias_term()) {
         auto biases = src.blobs(1);
-        for (size_t o = 0; o < dst->out_size(); o++) {
+        for (size_t o = 0; o < dst_out_size; o++) {
             // TODO: how to access to biases?
             //dst->bias()[o] = biases.data(o);
             b[o] = biases.data(o);
