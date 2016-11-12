@@ -33,17 +33,27 @@ namespace tiny_dnn {
 
 
 /**
- * y = scale*x^factor
+ * element-wise pow: ```y = scale*x^factor```
  **/
 class power_layer : public layer {
 public:
     typedef layer Base;
 
+    /**
+     * @param in_shape [in] shape of input tensor
+     * @param factor   [in] floating-point number that specifies a power 
+     * @param scale    [in] scale factor for additional multiply
+     */
     power_layer(const shape3d& in_shape, float_t factor, float_t scale=1.0f)
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(in_shape), factor_(factor), scale_(scale) {
     }
 
+    /**
+     * @param prev_layer [in] previous layer to be connected
+     * @param factor     [in] floating-point number that specifies a power 
+     * @param scale      [in] scale factor for additional multiply
+     */
     power_layer(const layer& prev_layer, float_t factor, float_t scale=1.0f)
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(prev_layer.out_shape()[0]), factor_(factor), scale_(scale) {
