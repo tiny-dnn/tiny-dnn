@@ -28,13 +28,11 @@
 #include "tiny_dnn/util/util.h"
 #include <algorithm>
 
-extern bool g_log_softmax;
-
 
 namespace tiny_dnn {
 
 /**
- * f(x) = h(scale*x+bias)
+ * element-wise operation: ```f(x) = h(scale*x+bias)```
  */
 template<typename Activation>
 class linear_layer : public feedforward_layer<Activation> {
@@ -43,6 +41,11 @@ public:
 
     typedef feedforward_layer<Activation> Base;
 
+    /**
+     * @param dim   [in] number of elements
+     * @param scale [in] factor by which to multiply
+     * @param bias  [in] bias term
+     **/
     explicit linear_layer(cnn_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
         : Base({vector_type::data}),
         dim_(dim), scale_(scale), bias_(bias) {}

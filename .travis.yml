@@ -32,6 +32,9 @@ addons:
       # coveralls dependencies
       - gem
       - lcov
+      # caffe-importer dependencies
+      - libprotobuf-dev
+      - protobuf-compiler
 
 branches:
   only:
@@ -95,7 +98,7 @@ script:
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --capture --output-file coverage.info;
-      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' --output-file coverage.info;
+      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' 'tiny_dnn/io/caffe/caffe.pb.*' --output-file coverage.info;
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi

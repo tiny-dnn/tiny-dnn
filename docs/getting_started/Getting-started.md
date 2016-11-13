@@ -63,11 +63,10 @@ Generate prediction on the new data:
     auto y_label = net.predict_max_label(x_data);
 ```
 
-Save the trained parameter:
+Save the trained parameter and models:
 
 ```cpp
-    ofstream ofs("data", std::ios::binary);
-    ofs << net;
+    net.save("my-network");
 ```
 
 For a more in-depth about tiny-dnn, check out [MNIST classification](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist) where you can see the end-to-end example.

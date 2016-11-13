@@ -106,7 +106,7 @@ public:
         return { in_shape_, in_shape_ };
     }
 
-    std::string layer_type() const override { return "norm"; }
+    std::string layer_type() const override { return "lrn"; }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {

@@ -482,55 +482,6 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
     }
 }
 
-inline void load_weights_deconv(const caffe::LayerParameter& src, layer *dst) {
-    // fill weight
-    auto weights = src.blobs(0);
-
-    //TODO: check if it works
-    //int out_channels = dst->out_shape().depth_;
-    //int in_channels = dst->in_shape().depth_;
-    int out_channels = dst->out_data_shape()[0].depth_;
-    int in_channels = dst->in_data_shape()[0].depth_;
-
-    connection_table table;
-    auto deconv_param = src.convolution_param();
-    int dst_idx = 0;
-    int src_idx = 0;
-    int window_size = get_kernel_size_2d(deconv_param);
-
-    if (deconv_param.has_group()) {
-        table = connection_table(deconv_param.group(), in_channels, out_channels);
-    }
-
-    vec_t& w = *dst->weights()[0];
-    vec_t& b = *dst->weights()[1];
-
-    // fill weights
-    for (int o = 0; o < out_channels; o++) {
-        for (int i = 0; i < in_channels; i++) {
-            if (!table.is_connected(o, i)) {
-                dst_idx += window_size * window_size;
-                continue;
-            }
-            for (int x = 0; x < window_size * window_size; x++) {
-                //TODO
-                //dst->weight()[dst_idx++] = weights.data(src_idx++);
-                w[dst_idx++] =  weights.data(src_idx++);
-            }
-        }
-    }
-
-    // fill bias
-    if (deconv_param.bias_term()) {
-        auto biases = src.blobs(1);
-        for (int o = 0; o < out_channels; o++) {
-            //TODO
-            //dst->bias()[o] = biases.data(o);
-            b[o] = biases.data(o);
-        }
-    }
-}
-
 inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
     auto pool_param = src.pooling_param();
 
@@ -707,8 +658,7 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
     if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
         load_weights_conv(layer, conv.get());
     }
-    //TODO
-    //*top_shape = conv->out_shape();
+
     *top_shape = conv->out_shape()[0];
     return conv;
 }
@@ -798,7 +748,7 @@ std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
 
     // set weight (optional)
     if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
-        load_weights_deconv(layer, deconv.get());
+        load_weights_conv(layer, deconv.get());
     }
     //TODO
     //*top_shape = deconv->out_shape();
@@ -809,17 +759,6 @@ std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
 inline bool layer_skipped(const std::string& type) {
     if (type == "Data" || type == "EuclideanLoss" || type == "Input") return true;
     return false;
-}
-
-inline bool layer_has_weights(const std::string& type) {
-    static const char* activations[] = {
-        "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
-        "ReLU", "Sigmoid", "TanH", "Softmax"
-    };
-    for (unsigned int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
-        if (activations[i] == type) return false;
-    }
-    return true;
 }
 
 inline bool layer_supported(const std::string& type) {
@@ -909,30 +848,6 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
     }
 
     throw nn_error("layer parser not found");
-
-    /*typedef std::function<std::shared_ptr<layer>(
-        const caffe::LayerParameter&, const shape_t&, shape_t*)> factoryimpl;
-
-    std::unordered_map<std::string, factoryimpl> factory_registry;
-
-    factory_registry["Convolution"] = detail::create_convlayer;
-    factory_registry["Deconvolution"] = detail::create_deconvlayer;
-    factory_registry["InnerProduct"] = detail::create_fullyconnected;
-    factory_registry["Pooling"] = detail::create_pooling;
-    factory_registry["LRN"] = detail::create_lrn;
-    factory_registry["Dropout"] = detail::create_dropout;
-    factory_registry["SoftmaxWithLoss"] = detail::create_softmax;
-    factory_registry["SigmoidCrossEntropyLoss"] = detail::create_sigmoid;
-    factory_registry["ReLU"] = detail::create_relu;
-    factory_registry["Sigmoid"] = detail::create_sigmoid;
-    factory_registry["TanH"] = detail::create_tanh;
-    factory_registry["Softmax"] = detail::create_softmax;
-
-    if (factory_registry.find(layer.type()) == factory_registry.end()) {
-        throw nn_error("layer parser not found");
-    }
-
-    return factory_registry[layer.type()](layer, in_shape, out_shape);*/
 }
 
 inline void load(const caffe::LayerParameter& src, layer *dst) {
@@ -940,7 +855,7 @@ inline void load(const caffe::LayerParameter& src, layer *dst) {
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
     factory_registry["Convolution"] = detail::load_weights_conv;
-    factory_registry["Deconvolution"] = detail::load_weights_deconv;
+    factory_registry["Deconvolution"] = detail::load_weights_conv;
     factory_registry["InnerProduct"] = detail::load_weights_fullyconnected;
     factory_registry["Pooling"] = detail::load_weights_pool;
 

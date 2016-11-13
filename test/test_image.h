@@ -444,4 +444,98 @@ TEST(image, torgb)
     }
 }
 
+TEST(image, mean_image)
+{
+    std::vector<uint8_t> rgb = {
+        //  r    g    b
+        0, 127, 255,
+        1, 126, 254,
+        2, 125, 253,
+        3, 124, 252
+    };
+
+    float_t mean[] = {
+        (0+1+2+3)/4.0f, (127+126+125+124)/4.0f, (255+254+253+252)/4.0f
+    };
+
+    image<uint8_t> img(shape3d(2, 2, 3), image_type::rgb);
+    image<float_t> mean_expected(mean, 1, 1, image_type::rgb);
+
+    img.from_rgb(rgb.begin(), rgb.end());
+    auto mean_actual = mean_image(img);
+
+    ASSERT_EQ(mean_actual.shape(), shape3d(1, 1, 3));
+    EXPECT_FLOAT_EQ(mean_actual[0], mean_expected[0]);
+    EXPECT_FLOAT_EQ(mean_actual[1], mean_expected[1]);
+    EXPECT_FLOAT_EQ(mean_actual[2], mean_expected[2]);
+}
+
+TEST(image, subtract_scalar)
+{
+    uint8_t src_pixels[] = {
+        0, 1, 2, 3, // r
+        32,33,34,35, // g
+        252,253,254,255 // b
+    };
+
+    uint8_t sub_pixels[] = {
+        1,
+        15,
+        254
+    };
+
+    // should be saturated
+    uint8_t expected_pixels[] = {
+        0, 0, 1, 2,
+        17,18,19,20,
+        0, 0, 0, 1
+    };
+
+    image<uint8_t> src(src_pixels, 2, 2, image_type::rgb);
+    image<uint8_t> sub(sub_pixels, 1, 1, image_type::rgb);
+    image<uint8_t> expected(expected_pixels, 2, 2, image_type::rgb);
+
+    auto actual = subtract_scalar(src, sub);
+
+    for (size_t i = 0; i < 3; i++) {
+        EXPECT_EQ(actual.at(0, 0, i), expected.at(0, 0, i));
+        EXPECT_EQ(actual.at(0, 1, i), expected.at(0, 1, i));
+        EXPECT_EQ(actual.at(1, 0, i), expected.at(1, 0, i));
+        EXPECT_EQ(actual.at(1, 1, i), expected.at(1, 1, i));
+    }
+}
+
+TEST(image, subtract_image)
+{
+    uint8_t src_pixels[] = {
+        0, 1, // r
+        32,33, // g
+        254,255 // b
+    };
+
+    uint8_t sub_pixels[] = {
+        1, 1,
+        31,33,
+        0, 250
+    };
+
+    // should be saturated
+    uint8_t expected_pixels[] = {
+        0, 0,
+        1, 0,
+        254, 5
+    };
+
+    image<uint8_t> src(src_pixels, 2, 1, image_type::rgb);
+    image<uint8_t> sub(sub_pixels, 2, 1, image_type::rgb);
+    image<uint8_t> expected(expected_pixels, 2, 1, image_type::rgb);
+
+    auto actual = subtract_image(src, sub);
+
+    for (size_t i = 0; i < 3; i++) {
+        EXPECT_EQ(actual.at(0, 0, i), expected.at(0, 0, i));
+        EXPECT_EQ(actual.at(1, 0, i), expected.at(1, 0, i));
+    }
+}
+
 } // namespace tiny-dnn

@@ -32,6 +32,313 @@
 
 namespace tiny_dnn {
 
+TEST(serialization, serialize_conv) {
+    network<sequential> net;
+
+    std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "conv<sigmoid>",
+                "in_size" : {
+                    "width": 20,
+                    "height" : 20,
+                    "depth" : 10
+                },
+                "window_width" : 5,
+                "window_height" : 5,
+                "out_channels" : 5,
+                "connection_table" : {
+                    "rows": 0,
+                    "cols" : 0,
+                    "connection" : "all"
+                },
+                "pad_type" : 1,
+                "has_bias" : true,
+                "w_stride" : 2,
+                "h_stride" : 2
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "conv");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(20,20,10));
+    EXPECT_EQ(net[0]->in_shape()[1], shape3d(5, 5, 10*5));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(10,10,5));
+}
+
+
+TEST(serialization, serialize_maxpool) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "maxpool<softmax>",
+                "in_size": {
+                    "width": 10,
+                    "height": 10,
+                    "depth": 3
+                },
+                "pool_size_x": 2,
+                "pool_size_y": 2,
+                "stride_x": 1,
+                "stride_y": 1,
+                "pad_type": 1
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "max-pool");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+}
+
+
+TEST(serialization, serialize_avepool) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "avepool<relu>",
+                "in_size": {
+                    "width": 10,
+                    "height": 10,
+                    "depth": 3
+                },
+                "pool_size_x": 2,
+                "pool_size_y": 2,
+                "stride_x": 2,
+                "stride_y": 2,
+                "pad_type": 0
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "ave-pool");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 5, 3));
+}
+
+TEST(serialization, serialize_batchnorm) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "batchnorm",
+                "in_spatial_size": 3,
+                "in_channels": 2,
+                "epsilon": 0.001,
+                "momentum": 0.8,
+                "phase": 0,
+                "mean": [
+                    0,
+                    0
+                ],
+                "variance": [
+                    0,
+                    0
+                ]
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "batch-norm");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 2));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 2));
+    EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), 0.001f);
+    EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), 0.8f);
+}
+
+TEST(serialization, serialize_concat) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "concat",
+                "in_size": [
+                    {
+                        "width": 2,
+                        "height": 1,
+                        "depth": 1
+                    },
+                    {
+                        "width": 2,
+                        "height": 1,
+                        "depth": 2
+                    },
+                    {
+                        "width": 2,
+                        "height": 1,
+                        "depth": 3
+                    }
+                ]
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "concat");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(2, 1, 1));
+    EXPECT_EQ(net[0]->in_shape()[1], shape3d(2, 1, 2));
+    EXPECT_EQ(net[0]->in_shape()[2], shape3d(2, 1, 3));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(2, 1, 6));
+}
+
+TEST(serialization, serialize_dropout) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "dropout",
+                "in_size": 3,
+                "dropout_rate": 0.5,
+                "phase": 1
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "dropout");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 1));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 1));
+    EXPECT_FLOAT_EQ(net.at<dropout_layer>(0).dropout_rate(), 0.5f);
+}
+
+TEST(serialization, serialize_fully) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "fully_connected<elu>",
+                "in_size": 100,
+                "out_size": 20,
+                "has_bias": false
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "fully-connected");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
+}
+
+TEST(serialization, serialize_lrn) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "lrn<elu>",
+                "in_shape": {
+                    "width": 5,
+                    "height": 4,
+                    "depth": 6
+                },
+                "size": 3,
+                "alpha": 0.5,
+                "beta": 2.5,
+                "region": 1
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "lrn");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 4, 6));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 4, 6));
+}
+
+TEST(serialization, serialize_power) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "power",
+                "in_size": {
+                    "width": 3,
+                    "height": 2,
+                    "depth": 1
+                },
+                "factor": 0.5,
+                "scale": 0.2
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "power");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 2, 1));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 2, 1));
+    EXPECT_FLOAT_EQ(net.at<power_layer>(0).factor(), 0.5f);
+    EXPECT_FLOAT_EQ(net.at<power_layer>(0).scale(), 0.2f);
+}
+
+TEST(serialization, serialize_slice) {
+    network<sequential> net;
+
+    std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "slice",
+                "in_size": {
+                    "width": 3,
+                    "height": 2,
+                    "depth": 2
+                },
+                "slice_type": 1,
+                "num_outputs": 2
+            }
+        ]
+    }
+    )";
+
+    net.from_json(json);
+
+    EXPECT_EQ(net[0]->layer_type(), "slice");
+    EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 2, 2));
+    EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 2, 1));
+    EXPECT_EQ(net[0]->out_shape()[1], shape3d(3, 2, 1));
+}
+
 TEST(serialization, sequential_to_json) {
     network<sequential> net1, net2;
 

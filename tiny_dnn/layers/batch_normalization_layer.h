@@ -272,6 +272,14 @@ public:
            cereal::make_nvp("variance", variance_));
     }
 
+    float_t epsilon() const {
+        return eps_;
+    }
+
+    float_t momentum() const {
+        return momentum_;
+    }
+
 private:
     void calc_stddev(const vec_t& variance) {
         for (size_t i = 0; i < in_channels_; i++) {
