@@ -226,7 +226,7 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
     }
 
  private:
-    size_t stride_;
+    cnn_size_t stride_;
     shape3d in_;
     shape3d out_;
     shape3d w_;

@@ -203,7 +203,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
             : Base(std::move(other))
             , params_(std::move(other.params_))
             , cws_(std::move(other.cws_)) {
-        init_backend(std::move(Base::get_backend_type()));
+        init_backend(core::backend_t::internal);
     }
 
     ///< number of incoming connections for each output unit

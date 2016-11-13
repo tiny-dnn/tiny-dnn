@@ -12,6 +12,10 @@ add_executable(example_mnist_test mnist/test.cpp)
 target_link_libraries(example_mnist_test
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
+add_executable(example_mnist_quantized_train mnist/quantized.cpp)
+target_link_libraries(example_mnist_quantized_train
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
 add_executable(example_deconv_train deconv/train.cpp)
 target_link_libraries(example_deconv_train
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
