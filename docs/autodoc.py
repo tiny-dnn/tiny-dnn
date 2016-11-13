@@ -21,6 +21,13 @@ def get_constructors(srcstring, layer):
     m = re.findall(pat, srcstring, re.M | re.DOTALL)
     return m
 
+def replace_codeblock(comment):
+    comment = re.sub(r'@code', '```cpp', comment)
+    comment = re.sub(r'@endcode', '```', comment)
+    return comment
+
+def uncomment(comment):
+    return re.sub(r'^[/\s]+?\*+/?', '', comment, flags=re.MULTILINE).strip()
 
 def get_comment_before(srcstring, pos):
     cend = srcstring[:pos].rfind('*/')+2
@@ -30,18 +37,15 @@ def get_comment_before(srcstring, pos):
     if m:
         return ''
 
-    return srcstring[cbegin+2:cend-2]
+    return replace_codeblock(uncomment(srcstring[cbegin:cend]))
 
 # find c-style comment /* */ before the constructor
 # returns: string
 def get_constructor_comment(srcstring, constructor):
     pos = srcstring.find(constructor)
-    if srcstring[:pos].rfind('explicit') >= (pos - 9):
-        pos = pos - 9 # adjustment for explicit parameter
+    if srcstring[:pos].rfind('explicit') >= (pos - len('explicit ')):
+        pos = pos - len('explicit ') # adjustment for explicit parameter
     return get_comment_before(srcstring, pos)
-
-def uncomment(comment):
-    return re.sub(r'\*', '', comment).strip()
 
 def get_class_description(srcstring, beginofclass):
 
@@ -52,7 +56,7 @@ def get_class_description(srcstring, beginofclass):
         if re.match(r'template<.+>', srcstring[cbegin+1:]) is not None:
             return get_comment_before(srcstring, cbegin+1)
 
-    return get_comment_before(srcstring, beginofclass)
+    return get_comment_before(srcstring, beginofclass-len('class '))
 
 # returns: [arg, description] 
 def get_parameter_descriptions(constructor_comments):
@@ -109,6 +113,8 @@ for file in files:
             blocks.append(class_description + '\n')
 
         ctors = get_constructors(srcstring, layer)
+
+        blocks.append('### Constructors\n')
 
         for ctor in ctors:
             comment = get_constructor_comment(srcstring, ctor)

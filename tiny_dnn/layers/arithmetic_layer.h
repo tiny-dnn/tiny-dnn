@@ -31,10 +31,14 @@
 namespace tiny_dnn {
 
 /**
- * element-wise add N vectors
+ * element-wise add N vectors ```y_i = x0_i + x1_i + ... + xnum_i```
  **/
 class elementwise_add_layer : public layer {
 public:
+    /**
+     * @param num_args [in] number of inputs
+     * @param dim      [in] number of elements for each input
+     */
     elementwise_add_layer(cnn_size_t num_args, cnn_size_t dim)
     : layer(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}), num_args_(num_args), dim_(dim) {}
 

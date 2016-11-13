@@ -63,11 +63,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param in_channels  [in] input image channels (grayscale=1, rgb=3)
     * @param out_channels [in] output image channels
     * @param padding      [in] rounding strategy
-    *                          valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
-    *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    *                          - valid: use valid pixels of input only. ```output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels```
+    *                          - same: add zero-padding to keep same width/height. ```output-size = in-width * in-height * out_channels```
     * @param has_bias     [in] whether to add a bias vector to the filter outputs
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
+    * @param backend_type [in] specify backend engine you use
     **/
     convolutional_layer(cnn_size_t in_width,
                         cnn_size_t in_height,
@@ -94,11 +95,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param in_channels   [in] input image channels (grayscale=1, rgb=3)
     * @param out_channels  [in] output image channels
     * @param padding       [in] rounding strategy
-    *                          valid: use valid pixels of input only. output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels
-    *                          same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    *                           - valid: use valid pixels of input only. ```output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels```
+    *                           - same: add zero-padding to keep same width/height. ```output-size = in-width * in-height * out_channels```
     * @param has_bias     [in] whether to add a bias vector to the filter outputs
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
+    * @param backend_type [in] specify backend engine you use  
     **/
     convolutional_layer(cnn_size_t in_width,
                         cnn_size_t in_height,
@@ -126,11 +128,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param out_channels     [in] output image channels
     * @param connection_table [in] definition of connections between in-channels and out-channels
     * @param pad_type         [in] rounding strategy
-    *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
-    *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    *                              - valid: use valid pixels of input only. ```output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels```
+    *                              - same: add zero-padding to keep same width/height. ```output-size = in-width * in-height * out_channels```
     * @param has_bias         [in] whether to add a bias vector to the filter outputs
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
+    * @param backend_type [in] specify backend engine you use   
     **/
     convolutional_layer(cnn_size_t              in_width,
                         cnn_size_t              in_height,
@@ -159,11 +162,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param out_channels     [in] output image channels
     * @param connection_table [in] definition of connections between in-channels and out-channels
     * @param pad_type         [in] rounding strategy
-    *                               valid: use valid pixels of input only. output-size = (in-width - window_size + 1) * (in-height - window_size + 1) * out_channels
-    *                               same: add zero-padding to keep same width/height. output-size = in-width * in-height * out_channels
+    *                              - valid: use valid pixels of input only. ```output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels```
+    *                              - same: add zero-padding to keep same width/height. ```output-size = in-width * in-height * out_channels```
     * @param has_bias         [in] whether to add a bias vector to the filter outputs
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
+    * @param backend_type [in] specify backend engine you use   
     **/
     convolutional_layer(cnn_size_t              in_width,
                         cnn_size_t              in_height,

@@ -32,15 +32,30 @@ namespace tiny_dnn {
 
 /**
  * concat N layers along depth
+ *
+ * @code
+ * // in: [3,1,1],[3,1,1] out: [3,1,2] (in W,H,K order)
+ * concat_layer l1(2,3); 
+ *
+ * // in: [3,2,2],[3,2,5] out: [3,2,7] (in W,H,K order)
+ * concat_layer l2({shape3d(3,2,2),shape3d(3,2,5)});
+ * @endcode
  **/
 class concat_layer : public layer {
 public:
+    /**
+     * @param in_shapes [in] shapes of input tensors
+     */
     concat_layer(const std::vector<shape3d>& in_shapes)
     : layer(std::vector<vector_type>(in_shapes.size(), vector_type::data), {vector_type::data}),
       in_shapes_(in_shapes) {
         set_outshape();
     }
 
+    /**
+     * @param num_args [in] number of input tensors
+     * @param ndim     [in] number of elements for each input
+     */
     concat_layer(cnn_size_t num_args, cnn_size_t ndim)
         : layer(std::vector<vector_type>(num_args, vector_type::data), { vector_type::data }),
         in_shapes_(std::vector<shape3d>(num_args, shape3d(ndim,1,1))) {

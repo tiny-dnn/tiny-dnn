@@ -142,12 +142,12 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
      * @param in_width     [in] width of input image
      * @param in_height    [in] height of input image
      * @param in_channels  [in] the number of input image channels(depth)
-     * @param pooling_size [in] factor by which to downscale
+     * @param pool_size    [in] factor by which to downscale
      **/
     average_pooling_layer(cnn_size_t in_width,
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
-                          cnn_size_t pooling_size)
+                          cnn_size_t pool_size)
             : average_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size)
     {}
 
