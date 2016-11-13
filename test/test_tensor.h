@@ -34,7 +34,7 @@ using namespace tiny_dnn;
 namespace tiny_dnn {
 
 TEST(tensor, shape) {
-    Tensor<float_t,1,2,2,2> tensor;
+    Tensor<float_t> tensor(1,2,2,2);
 
     EXPECT_EQ(tensor.shape()[0], cnn_size_t(1));
     EXPECT_EQ(tensor.shape()[1], cnn_size_t(2));
@@ -43,7 +43,7 @@ TEST(tensor, shape) {
 }
 
 TEST(tensor, access_data) {
-    Tensor<float_t,1,2,2,2> tensor;
+    Tensor<float_t> tensor(1,2,2,2);
 
     float_t* begin_ptr = tensor.ptr<float_t>(0,0,0,0);
     float_t* end1_ptr  = tensor.ptr<float_t>(0,1,1,0);
