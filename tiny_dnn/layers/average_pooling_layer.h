@@ -148,13 +148,13 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                           cnn_size_t in_height,
                           cnn_size_t in_channels,
                           cnn_size_t pool_size)
-            : average_pooling_layer(in_width, in_height, in_channels, pooling_size, pooling_size)
+            : average_pooling_layer(in_width, in_height, in_channels, pool_size, pool_size)
     {}
 
     average_pooling_layer(const shape3d& in_shape,
-                          cnn_size_t pooling_size,
+                          cnn_size_t pool_size,
                           cnn_size_t stride)
-        : average_pooling_layer(in_shape.width_, in_shape.width_, in_shape.depth_, pooling_size, stride)
+        : average_pooling_layer(in_shape.width_, in_shape.width_, in_shape.depth_, pool_size, stride)
     {}
 
     /**
