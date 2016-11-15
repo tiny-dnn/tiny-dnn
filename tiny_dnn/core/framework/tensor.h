@@ -68,7 +68,7 @@ class Tensor {
     }
 
     // Returns the tensor shape
-    std::vector<cnn_size_t> shape() const { return shape_; }
+    const std::vector<cnn_size_t>& shape() const { return shape_; }
     
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
@@ -304,7 +304,7 @@ class Tensor {
 // Overloaded method to print the Tensor class to the standard output
 inline std::ostream& operator<< (std::ostream &os,
 		                 const Tensor<>& tensor) {
-    std::vector<cnn_size_t> shape = tensor.shape();
+    const std::vector<cnn_size_t>& shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
         for (cnn_size_t j = 0; j < shape[3]; ++j) {
