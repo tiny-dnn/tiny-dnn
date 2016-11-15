@@ -287,7 +287,8 @@ class Tensor {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (src[i] + 1e-10);
+            res[i] = this->operator[](i) / (src[i] +
+                std::numeric_limits<U>::min());
         });
 
         return std::move(res);
@@ -299,7 +300,8 @@ class Tensor {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (scalar + 1e-10);
+            res[i] = this->operator[](i) / (scalar +
+                std::numeric_limits<U>::min());
         });
 
         return std::move(res);
