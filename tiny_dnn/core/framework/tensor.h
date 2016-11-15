@@ -386,9 +386,7 @@ class Tensor {
 
     template<typename T>
     T* access_data(const size_t index) {
-        if (index >= host_data_->size()) {
-            throw nn_error("Access tensor out of range.");
-        }
+        assert(index < host_data_->size() && "Access tensor out of range.");
 
         U* value = &host_data_->operator[](index);
 
@@ -403,9 +401,7 @@ class Tensor {
 
     template<typename T>
     T* access_data(const size_t index) const {
-        if (index >= host_data_->size()) {
-            throw nn_error("Access tensor out of range.");
-        }
+        assert(index < host_data_->size() && "Access tensor out of range.");
 
         U* value = &host_data_->operator[](index);
 

@@ -90,7 +90,7 @@ TEST(tensor, check_bounds) {
     EXPECT_NO_THROW(tensor[0]);
     EXPECT_NO_THROW(tensor[3]);
 
-    EXPECT_THROW(tensor[4], nn_error);
+    EXPECT_DEBUG_DEATH(tensor[4], "");
 }
 
 TEST(tensor, access_data1) {
