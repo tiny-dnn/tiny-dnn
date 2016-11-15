@@ -82,6 +82,8 @@ class Tensor {
         resize();
     }
 
+    // Move constructor
+    Tensor(Tensor<U>&& other) = default;
 
     // Returns the tensor shape
     const std::vector<cnn_size_t>& shape() const { return shape_; }
@@ -193,98 +195,98 @@ class Tensor {
 
     /* @brief Element-wise addition
      */
-    Tensor<> add(const Tensor<>& src) const {
+    Tensor<U> add(const Tensor<U>& src) const {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) + src[i];
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise addition
      */
-    Tensor<> add(const float_t scalar) const {
+    Tensor<U> add(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) + scalar;
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise subtraction
      */
-    Tensor<> sub(const Tensor<>& src) const {
+    Tensor<U> sub(const Tensor<U>& src) const {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) - src[i];
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise subtraction
      */
-    Tensor<> sub(const float_t scalar) const {
+    Tensor<U> sub(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) - scalar;
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise multiplication
      */
-    Tensor<> mul(const Tensor<>& src) const {
+    Tensor<U> mul(const Tensor<U>& src) const {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) * src[i];
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise multiplication
      */
-    Tensor<> mul(const float_t scalar) const {
+    Tensor<U> mul(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) * scalar;
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise division
      */
-    Tensor<> div(const Tensor<>& src) const {
+    Tensor<U> div(const Tensor<>& src) const {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) / (src[i] + 1e-10);
         });
 
-        return res;
+        return std::move(res);
     }
 
     /* @brief Element-wise division
      */
-    Tensor<> div(const float_t scalar) const {
+    Tensor<U> div(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) / (scalar + 1e-10);
         });
 
-        return res;
+        return std::move(res);
     }
 
  private:
