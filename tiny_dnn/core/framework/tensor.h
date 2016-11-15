@@ -44,7 +44,8 @@
 */
 #pragma once
 
-#include <algorithm> // std::fill
+#include <cmath> // sqrt
+#include <algorithm> // std::fill, std::generate
 
 #include "tiny_dnn/core/framework/device.fwd.h"
 
@@ -193,6 +194,23 @@ class Tensor {
         std::fill(host_data_->begin(), host_data_->end(), value);
     }
 
+    /* @brief Fills the tensor with evenly-spaced values in the interval
+     *
+     * @param from The lower bound of the interval
+     * @param to The upper bound of the interval
+     */
+    void linspace(const U from, const U to) {
+        U start = from,
+            step = (to - from) / (host_data_->end() - host_data_->begin() - 1);
+        std::generate(host_data_->begin(),
+                      host_data_->end(),
+                      [&start, &step]() {
+                        U tmp = start;
+                        start += step;
+                        return tmp;
+                      });
+    }
+
     /* @brief Element-wise addition
      */
     Tensor<U> add(const Tensor<U>& src) const {
@@ -302,6 +320,30 @@ class Tensor {
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) / (scalar +
                 std::numeric_limits<U>::min());
+        });
+
+        return std::move(res);
+    }
+
+    /* @brief Element-wise square root
+     */
+    Tensor<U> sqrt() const {
+        Tensor<U> res(this->shape());
+
+        for_i(true, res.size(), [&](size_t i) {
+            res[i] = std::sqrt(this->operator[](i));
+        });
+
+        return std::move(res);
+    }
+
+    /* @brief Element-wise exponential
+     */
+    Tensor<U> exp() const {
+        Tensor<U> res(this->shape());
+
+        for_i(true, res.size(), [&](size_t i) {
+            res[i] = std::exp(this->operator[](i));
         });
 
         return std::move(res);
