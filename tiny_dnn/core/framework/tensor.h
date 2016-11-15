@@ -80,10 +80,10 @@ public:
      *
      *  Data will be hold by a std::vector with 64bytes alignment.
      */
-    explicit Tensor(const cnn_size_t d0,
-                    const cnn_size_t d1,
-                    const cnn_size_t d2,
-                    const cnn_size_t d3) {
+    explicit Tensor(const serial_size_t d0,
+                    const serial_size_t d1,
+                    const serial_size_t d2,
+                    const serial_size_t d3) {
         reshape(d0, d1, d2, d3);
     }
 
