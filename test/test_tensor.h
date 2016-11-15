@@ -392,5 +392,156 @@ TEST(tensor, fill) {
     }
 }
 
+TEST(tensor, add1) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(1.0));
+    t2.fill(float_t(3.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t3 = t1.add(t2);
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_EQ(t3[i], float_t(4.0));
+    }
+}
+
+TEST(tensor, add2) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(1.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t2 = t.add(float_t(2.0));
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t2[i], float_t(3.0));
+    }
+}
+
+TEST(tensor, sub1) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(1.0));
+    t2.fill(float_t(3.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t3 = t1.sub(t2);
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_EQ(t3[i], float_t(-2.0));
+    }
+}
+
+TEST(tensor, sub2) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(1.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t2 = t.sub(float_t(2.0));
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t2[i], float_t(-1.0));
+    }
+}
+
+TEST(tensor, mul1) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(2.0));
+    t2.fill(float_t(3.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t3 = t1.mul(t2);
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_EQ(t3[i], float_t(6.0));
+    }
+}
+
+TEST(tensor, mult2) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(2.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t2 = t.mul(float_t(2.0));
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t2[i], float_t(4.0));
+    }
+}
+
+TEST(tensor, div1) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(1.0));
+    t2.fill(float_t(2.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t3 = t1.div(t2);
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_EQ(t3[i], float_t(0.5));
+    }
+}
+
+TEST(tensor, div2) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(1.0));
+
+    // sum tensor along axis 0
+
+    Tensor<float_t> t2 = t.div(float_t(2.0));
+
+    // check that sum is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t2[i], float_t(0.5));
+    }
+}
 
 } // namespace tiny-dnn
