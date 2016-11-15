@@ -416,4 +416,10 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
 #endif
 }
 
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
 } // namespace tiny_dnn
