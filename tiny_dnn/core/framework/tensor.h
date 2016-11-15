@@ -304,7 +304,7 @@ private:
 // Overloaded method to print the Tensor class to the standard output
 template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
-    const Tensor<T>& tensor) {
+                         const Tensor<T>& tensor) {
     const std::vector<serial_size_t>& shape = tensor.shape();
     for (serial_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
