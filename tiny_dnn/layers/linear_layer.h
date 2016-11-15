@@ -46,7 +46,7 @@ public:
      * @param scale [in] factor by which to multiply
      * @param bias  [in] bias term
      **/
-    explicit linear_layer(cnn_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
+    explicit linear_layer(serial_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
         : Base({vector_type::data}),
         dim_(dim), scale_(scale), bias_(bias) {}
 
@@ -71,7 +71,7 @@ public:
 
         // @todo revise the parallelism strategy
         for_i(parallelize_, dim_, [&](int i) {
-            for (cnn_size_t sample = 0, sample_count = static_cast<cnn_size_t>(in.size()); sample < sample_count; ++sample)
+            for (serial_size_t sample = 0, sample_count = static_cast<serial_size_t>(in.size()); sample < sample_count; ++sample)
                 a[sample][i] = scale_ * in[sample][i] + bias_;
         });
         this->forward_activation(*out_data[0], *out_data[1]);
@@ -89,7 +89,7 @@ public:
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         // @todo revise parallelism strategy
-        for (cnn_size_t sample = 0; sample < static_cast<cnn_size_t>(prev_delta.size()); ++sample) {
+        for (serial_size_t sample = 0; sample < static_cast<serial_size_t>(prev_delta.size()); ++sample) {
             for_i(parallelize_, dim_, [&](int i) {
                 prev_delta[sample][i] = curr_delta[sample][i] * scale_;
             });
@@ -98,7 +98,7 @@ public:
 
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<linear_layer> & construct) {
-        cnn_size_t dim;
+        serial_size_t dim;
         float_t scale, bias;
 
         ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale), cereal::make_nvp("bias", bias));
@@ -113,7 +113,7 @@ public:
     }
 
 protected:
-    cnn_size_t dim_;
+    serial_size_t dim_;
     float_t scale_, bias_;
 };
 

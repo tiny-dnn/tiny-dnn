@@ -44,8 +44,8 @@ public:
      * @param out_dim [in] number of elements of the output
      * @param has_bias [in] whether to include additional bias to the layer
      **/
-    quantized_fully_connected_layer(cnn_size_t in_dim,
-                                    cnn_size_t out_dim,
+    quantized_fully_connected_layer(serial_size_t in_dim,
+                                    serial_size_t out_dim,
                                     bool       has_bias = true,
                                     backend_t  backend_type = core::backend_t::internal)
             : Base(std_input_order(has_bias)) {
@@ -60,30 +60,30 @@ public:
         init_backend(core::backend_t::internal);
     }
 
-    cnn_size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return params_.in_size_;
     }
 
-    cnn_size_t fan_out_size() const override {
+    serial_size_t fan_out_size() const override {
         return params_.out_size_;
     }
 
-    std::vector<index3d<cnn_size_t>> in_shape() const override {
+    std::vector<index3d<serial_size_t>> in_shape() const override {
         if (params_.has_bias_) {
-            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
-                     index3d<cnn_size_t>(params_.in_size_,
+            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
+                     index3d<serial_size_t>(params_.in_size_,
                                          params_.out_size_, 1),
-                     index3d<cnn_size_t>(params_.out_size_, 1, 1) };
+                     index3d<serial_size_t>(params_.out_size_, 1, 1) };
         } else {
-            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
-                     index3d<cnn_size_t>(params_.in_size_,
+            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
+                     index3d<serial_size_t>(params_.in_size_,
                                          params_.out_size_, 1) };
         }
     }
 
-    std::vector<index3d<cnn_size_t>> out_shape() const override {
-        return { index3d<cnn_size_t>(params_.out_size_, 1, 1),
-                 index3d<cnn_size_t>(params_.out_size_, 1, 1) };
+    std::vector<index3d<serial_size_t>> out_shape() const override {
+        return { index3d<serial_size_t>(params_.out_size_, 1, 1),
+                 index3d<serial_size_t>(params_.out_size_, 1, 1) };
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
@@ -110,8 +110,8 @@ public:
 protected:
     fully_params params_;
 
-    void set_params(const cnn_size_t in_size,
-                    const cnn_size_t out_size,
+    void set_params(const serial_size_t in_size,
+                    const serial_size_t out_size,
                     bool             has_bias) {
         params_.in_size_  = in_size;
         params_.out_size_ = out_size;

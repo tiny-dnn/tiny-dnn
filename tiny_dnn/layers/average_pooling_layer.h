@@ -56,10 +56,10 @@ void tiny_average_pooling_kernel(bool parallelize,
 
         auto oarea = out_dim.area();
         size_t idx = 0;
-        for (cnn_size_t d = 0; d < out_dim.depth_; ++d) {
+        for (serial_size_t d = 0; d < out_dim.depth_; ++d) {
             float_t weight = W[d] * scale_factor;
             float_t bias = b[d];
-            for (cnn_size_t i = 0; i < oarea; ++i, ++idx) {
+            for (serial_size_t i = 0; i < oarea; ++i, ++idx) {
                 const auto& connections = out2wi[idx];
                 float_t value = float_t(0);
                 for (auto connection : connections)// 13.1%
@@ -71,7 +71,7 @@ void tiny_average_pooling_kernel(bool parallelize,
         }
 
         assert(out.size() == out2wi.size());
-        for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(out2wi.size()); i++) {
+        for (serial_size_t i = 0; i < static_cast<serial_size_t>(out2wi.size()); i++) {
             out[i] = h.f(a, i);
         }
     });
@@ -87,7 +87,7 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                       float_t                         scale_factor,
                                       std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
                                       std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
-                                      std::vector<std::vector<cnn_size_t>>& bias2out) {
+                                      std::vector<std::vector<serial_size_t>>& bias2out) {
 
     for_i(in_data[0]->size(), [&](size_t sample) {
         const vec_t& prev_out   = (*in_data[0])[sample];
@@ -117,7 +117,7 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
         }
 
         for (size_t i = 0; i < bias2out.size(); i++) {
-            const std::vector<cnn_size_t>& outs = bias2out[i];
+            const std::vector<serial_size_t>& outs = bias2out[i];
             float_t diff = float_t(0);
 
             for (auto o : outs)
@@ -144,16 +144,16 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
      * @param in_channels  [in] the number of input image channels(depth)
      * @param pool_size    [in] factor by which to downscale
      **/
-    average_pooling_layer(cnn_size_t in_width,
-                          cnn_size_t in_height,
-                          cnn_size_t in_channels,
-                          cnn_size_t pool_size)
+    average_pooling_layer(serial_size_t in_width,
+                          serial_size_t in_height,
+                          serial_size_t in_channels,
+                          serial_size_t pool_size)
             : average_pooling_layer(in_width, in_height, in_channels, pool_size, pool_size)
     {}
 
     average_pooling_layer(const shape3d& in_shape,
-                          cnn_size_t pool_size,
-                          cnn_size_t stride)
+                          serial_size_t pool_size,
+                          serial_size_t stride)
         : average_pooling_layer(in_shape.width_, in_shape.width_, in_shape.depth_, pool_size, stride)
     {}
 
@@ -164,11 +164,11 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
      * @param pool_size    [in] factor by which to downscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    average_pooling_layer(cnn_size_t in_width,
-                          cnn_size_t in_height,
-                          cnn_size_t in_channels,
-                          cnn_size_t pool_size,
-                          cnn_size_t stride)
+    average_pooling_layer(serial_size_t in_width,
+                          serial_size_t in_height,
+                          serial_size_t in_channels,
+                          serial_size_t pool_size,
+                          serial_size_t stride)
         : average_pooling_layer(in_width, in_height, in_channels, pool_size, pool_size, stride, stride, padding::valid)
     {}
 
@@ -182,13 +182,13 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
     * @param stride_y     [in] interval at which to apply the filters to the input
     * @param pad_type     [in] padding mode(same/valid)
     **/
-    average_pooling_layer(cnn_size_t     in_width,
-                          cnn_size_t     in_height,
-                          cnn_size_t     in_channels,
-                          cnn_size_t     pool_size_x,
-                          cnn_size_t     pool_size_y,
-                          cnn_size_t     stride_x,
-                          cnn_size_t     stride_y,
+    average_pooling_layer(serial_size_t     in_width,
+                          serial_size_t     in_height,
+                          serial_size_t     in_channels,
+                          serial_size_t     pool_size_x,
+                          serial_size_t     pool_size_y,
+                          serial_size_t     stride_x,
+                          serial_size_t     stride_y,
                           padding        pad_type = padding::valid)
         : Base(in_width * in_height * in_channels,
             conv_out_length(in_width, pool_size_x, stride_x, pad_type) *
@@ -209,11 +209,11 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
         init_connection(pool_size_x, pool_size_y);
     }
-    std::vector<index3d<cnn_size_t>> in_shape() const override {
-        return { in_, w_, index3d<cnn_size_t>(1, 1, out_.depth_) };
+    std::vector<index3d<serial_size_t>> in_shape() const override {
+        return { in_, w_, index3d<serial_size_t>(1, 1, out_.depth_) };
     }
 
-    std::vector<index3d<cnn_size_t>> out_shape() const override {
+    std::vector<index3d<serial_size_t>> out_shape() const override {
         return { out_, out_ };
     }
 
@@ -256,7 +256,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<average_pooling_layer> & construct) {
         shape3d in;
-        cnn_size_t stride_x, stride_y, pool_size_x, pool_size_y;
+        serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
         padding pad_type;
 
         ar(cereal::make_nvp("in_size", in),
@@ -281,55 +281,55 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         );
     }
 
-    std::pair<cnn_size_t, cnn_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }
+    std::pair<serial_size_t, serial_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }
 
  private:
-    cnn_size_t stride_x_;
-    cnn_size_t stride_y_;
-    cnn_size_t pool_size_x_;
-    cnn_size_t pool_size_y_;
+    serial_size_t stride_x_;
+    serial_size_t stride_y_;
+    serial_size_t pool_size_x_;
+    serial_size_t pool_size_y_;
     padding pad_type_;
     shape3d in_;
     shape3d out_;
     shape3d w_;
 
-    static cnn_size_t pool_out_dim(cnn_size_t in_size,
-                                   cnn_size_t pooling_size,
-                                   cnn_size_t stride) {
+    static serial_size_t pool_out_dim(serial_size_t in_size,
+                                   serial_size_t pooling_size,
+                                   serial_size_t stride) {
         return static_cast<int>(std::ceil((
             static_cast<float_t>(in_size) - pooling_size) / stride) + 1);
     }
 
-    void init_connection(cnn_size_t pooling_size_x, cnn_size_t pooling_size_y) {
-        for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < in_.height_ - pooling_size_y + 1; y += stride_y_) {
-                for (cnn_size_t x = 0; x < in_.width_ - pooling_size_x + 1; x += stride_x_) {
+    void init_connection(serial_size_t pooling_size_x, serial_size_t pooling_size_y) {
+        for (serial_size_t c = 0; c < in_.depth_; ++c) {
+            for (serial_size_t y = 0; y < in_.height_ - pooling_size_y + 1; y += stride_y_) {
+                for (serial_size_t x = 0; x < in_.width_ - pooling_size_x + 1; x += stride_x_) {
                     connect_kernel(pooling_size_x, pooling_size_y, x, y, c);
                 }
             }
         }
 
-        for (cnn_size_t c = 0; c < in_.depth_; ++c) {
-            for (cnn_size_t y = 0; y < out_.height_; ++y) {
-                for (cnn_size_t x = 0; x < out_.width_; ++x) {
+        for (serial_size_t c = 0; c < in_.depth_; ++c) {
+            for (serial_size_t y = 0; y < out_.height_; ++y) {
+                for (serial_size_t x = 0; x < out_.width_; ++x) {
                     this->connect_bias(c, out_.get_index(x, y, c));
                 }
             }
         }
     }
 
-    void connect_kernel(cnn_size_t pooling_size_x,
-                        cnn_size_t pooling_size_y,
-                        cnn_size_t x,
-                        cnn_size_t y,
-                        cnn_size_t inc) {
-        cnn_size_t dymax = std::min(pooling_size_y, in_.height_ - y);
-        cnn_size_t dxmax = std::min(pooling_size_x, in_.width_ - x);
-        cnn_size_t dstx = x / stride_x_;
-        cnn_size_t dsty = y / stride_y_;
-        cnn_size_t outidx = out_.get_index(dstx, dsty, inc);
-        for (cnn_size_t dy = 0; dy < dymax; ++dy) {
-            for (cnn_size_t dx = 0; dx < dxmax; ++dx) {
+    void connect_kernel(serial_size_t pooling_size_x,
+                        serial_size_t pooling_size_y,
+                        serial_size_t x,
+                        serial_size_t y,
+                        serial_size_t inc) {
+        serial_size_t dymax = std::min(pooling_size_y, in_.height_ - y);
+        serial_size_t dxmax = std::min(pooling_size_x, in_.width_ - x);
+        serial_size_t dstx = x / stride_x_;
+        serial_size_t dsty = y / stride_y_;
+        serial_size_t outidx = out_.get_index(dstx, dsty, inc);
+        for (serial_size_t dy = 0; dy < dymax; ++dy) {
+            for (serial_size_t dx = 0; dx < dxmax; ++dx) {
                 this->connect_weight(
                     in_.get_index(x + dx, y + dy, inc),
                     outidx,

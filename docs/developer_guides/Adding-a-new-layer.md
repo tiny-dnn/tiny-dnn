@@ -83,7 +83,7 @@ std::vector<shape3d> out_shape() const override {
 Execute forward calculation in this method.
 
 ```cpp
-void forward_propagation(cnn_size_t worker_index,
+void forward_propagation(serial_size_t worker_index,
                          const std::vector<vec_t*>& in_data,
                          std::vector<vec_t*>& out_data) override {
     const vec_t& x = *in_data[0]; // it's size is in_shapes()[0] (=[x_size_,1,1])
@@ -110,7 +110,7 @@ input/output data managed by ```layer``` base class is *task-local*, so ```in_da
 #### back propagation
 
 ```cpp
-void back_propagation(cnn_size_t                index,
+void back_propagation(serial_size_t                index,
                       const std::vector<vec_t*>& in_data,
                       const std::vector<vec_t*>& out_data,
                       std::vector<vec_t*>&       out_grad,

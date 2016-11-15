@@ -58,23 +58,23 @@ typedef layer* layerptr_t;
  **/
 class node : public std::enable_shared_from_this<node> {
 public:
-    node(cnn_size_t in_size, cnn_size_t out_size)
+    node(serial_size_t in_size, serial_size_t out_size)
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}
 
     const std::vector<edgeptr_t>& prev() const { return prev_; }
     const std::vector<edgeptr_t>& next() const { return next_; }
 
-    cnn_size_t prev_port(const edge& e) const {
+    serial_size_t prev_port(const edge& e) const {
         auto it = std::find_if(prev_.begin(), prev_.end(),
                                [&](edgeptr_t ep) { return ep.get() == &e; });
-        return (cnn_size_t)std::distance(prev_.begin(), it);
+        return (serial_size_t)std::distance(prev_.begin(), it);
     }
 
-    cnn_size_t next_port(const edge& e) const {
+    serial_size_t next_port(const edge& e) const {
         auto it = std::find_if(next_.begin(), next_.end(),
                                [&](edgeptr_t ep) { return ep.get() == &e; });
-        return (cnn_size_t)std::distance(next_.begin(), it);
+        return (serial_size_t)std::distance(next_.begin(), it);
     }
 
     std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
@@ -83,7 +83,7 @@ public:
     node() = delete;
 
     friend void connect(layerptr_t head, layerptr_t tail,
-                        cnn_size_t head_index, cnn_size_t tail_index);
+                        serial_size_t head_index, serial_size_t tail_index);
 
     mutable std::vector<edgeptr_t> prev_;
     mutable std::vector<edgeptr_t> next_;
@@ -208,7 +208,7 @@ inline std::shared_ptr<U>& operator << (std::shared_ptr<T>& lhs,
 
 template <typename T, typename U>
 inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
-    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(lhs.nodes_.size()); i++) {
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size()); i++) {
         connect(&*lhs.nodes_[i], &*rhs, 0, i);
     }
     return rhs;
@@ -216,7 +216,7 @@ inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
 
 template <typename T, typename U>
 inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
-    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(rhs.nodes_.size()); i++) {
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size()); i++) {
         connect(&*lhs, &*rhs.nodes_[i], i, 0);
     }
     return rhs;
@@ -224,7 +224,7 @@ inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
 
 template <typename T, typename U>
 inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
-    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(lhs.nodes_.size()); i++) {
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size()); i++) {
         connect(lhs.nodes_[i], &rhs, 0, i);
     }
     return rhs;
@@ -232,7 +232,7 @@ inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
 
 template <typename T, typename U>
 inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
-    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(rhs.nodes_.size()); i++) {
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size()); i++) {
         connect(&lhs, rhs.nodes_[i], i, 0);
     }
     return rhs;

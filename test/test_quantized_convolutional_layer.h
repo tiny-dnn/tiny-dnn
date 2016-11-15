@@ -36,20 +36,20 @@ TEST(quantized_convolutional, setup_internal) {
         padding::valid, true, 1, 1, backend_t::internal);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(),           cnn_size_t(3));  // num of input tensors
-    EXPECT_EQ(l.out_channels(),          cnn_size_t(2));  // num of output tensors
-    EXPECT_EQ(l.in_data_size(),          cnn_size_t(25)); // size of input tensors
-    EXPECT_EQ(l.out_data_size(),         cnn_size_t(18)); // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(),  cnn_size_t(1));  // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), cnn_size_t(1));  // num of output shapes
-    EXPECT_EQ(l.weights().size(),        cnn_size_t(2));  // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(),  cnn_size_t(2));  // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(),         cnn_size_t(3));  // num of input edges
-    EXPECT_EQ(l.outputs().size(),        cnn_size_t(2));  // num of outpus edges
-    EXPECT_EQ(l.in_types().size(),       cnn_size_t(3));  // num of input data types
-    EXPECT_EQ(l.out_types().size(),      cnn_size_t(2));  // num of output data types
-    EXPECT_EQ(l.fan_in_size(),           cnn_size_t(9));  // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(),          cnn_size_t(18)); // num of outgoing connections
+    EXPECT_EQ(l.in_channels(),           serial_size_t(3));  // num of input tensors
+    EXPECT_EQ(l.out_channels(),          serial_size_t(2));  // num of output tensors
+    EXPECT_EQ(l.in_data_size(),          serial_size_t(25)); // size of input tensors
+    EXPECT_EQ(l.out_data_size(),         serial_size_t(18)); // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(),  serial_size_t(1));  // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), serial_size_t(1));  // num of output shapes
+    EXPECT_EQ(l.weights().size(),        serial_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.weights_grads().size(),  serial_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(),         serial_size_t(3));  // num of input edges
+    EXPECT_EQ(l.outputs().size(),        serial_size_t(2));  // num of outpus edges
+    EXPECT_EQ(l.in_types().size(),       serial_size_t(3));  // num of input data types
+    EXPECT_EQ(l.out_types().size(),      serial_size_t(2));  // num of output data types
+    EXPECT_EQ(l.fan_in_size(),           serial_size_t(9));  // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(),          serial_size_t(18)); // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "q_conv");  // string with layer type
 }
 
@@ -76,7 +76,7 @@ TEST(quantized_convolutional, fprop) {
         , &out = out_tensor[0]
         , &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), cnn_size_t(18)); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -148,7 +148,7 @@ TEST(quantized_convolutional, fprop_npp) {
         , &out = out_tensor[0]
         , &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), cnn_size_t(18)); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 

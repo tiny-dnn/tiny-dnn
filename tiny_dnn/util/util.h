@@ -61,10 +61,10 @@
 namespace tiny_dnn {
 
 ///< output label(class-index) for classification
-///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
-typedef cnn_size_t label_t;
+///< must be equal to serial_size_t, because size of last layer is equal to num. of classes
+typedef serial_size_t label_t;
 
-typedef cnn_size_t layer_size_t; // for backward compatibility
+typedef serial_size_t layer_size_t; // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
@@ -122,12 +122,12 @@ template <typename Container> inline bool has_infinite(const Container& c) {
 }
 
 template <typename Container>
-cnn_size_t max_size(const Container& c) {
+serial_size_t max_size(const Container& c) {
     typedef typename Container::value_type value_t;
     const auto max_size = std::max_element(c.begin(), c.end(),
         [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
-    assert(max_size <= std::numeric_limits<cnn_size_t>::max());
-    return static_cast<cnn_size_t>(max_size);
+    assert(max_size <= std::numeric_limits<serial_size_t>::max());
+    return static_cast<serial_size_t>(max_size);
 }
 
 inline std::string format_str(const char *fmt, ...) {
@@ -192,7 +192,7 @@ struct index3d {
     T depth_;
 };
 
-typedef index3d<cnn_size_t> shape3d;
+typedef index3d<serial_size_t> shape3d;
 
 template <typename T>
 bool operator == (const index3d<T>& lhs, const index3d<T>& rhs) {
@@ -219,7 +219,7 @@ std::ostream& operator << (std::ostream& s, const index3d<T>& d) {
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
     s << "[";
-    for (cnn_size_t i = 0; i < d.size(); i++) {
+    for (serial_size_t i = 0; i < d.size(); i++) {
         if (i) s << ",";
         s << "[" << d[i] << "]";
     }
@@ -260,9 +260,9 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 
 
 template <typename T, typename Pred, typename Sum>
-cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
-    cnn_size_t sum = 0;
-    for (cnn_size_t i = 0; i < static_cast<cnn_size_t>(vec.size()); i++) {
+serial_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
+    serial_size_t sum = 0;
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(vec.size()); i++) {
         if (p(i)) sum += s(vec[i]);
     }
     return sum;
@@ -353,17 +353,17 @@ inline void fill_tensor(tensor_t& tensor, float_t value) {
     }
 }
 
-inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
+inline void fill_tensor(tensor_t& tensor, float_t value, serial_size_t size) {
     for (auto& t : tensor) {
         t.resize(size, value);
     }
 }
 
-inline cnn_size_t conv_out_length(cnn_size_t in_length,
-                                  cnn_size_t window_size,
-                                  cnn_size_t stride,
+inline serial_size_t conv_out_length(serial_size_t in_length,
+                                  serial_size_t window_size,
+                                  serial_size_t stride,
                                   padding pad_type) {
-    cnn_size_t output_length;
+    serial_size_t output_length;
 
     if (pad_type == padding::same) {
         output_length = in_length;
@@ -380,8 +380,8 @@ inline cnn_size_t conv_out_length(cnn_size_t in_length,
 // get all platforms (drivers), e.g. NVIDIA
 // https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 
-inline void printAvailableDevice(const cnn_size_t platform_id,
-                                 const cnn_size_t device_id) {
+inline void printAvailableDevice(const serial_size_t platform_id,
+                                 const serial_size_t device_id) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
     // selects a specific device on the platform.

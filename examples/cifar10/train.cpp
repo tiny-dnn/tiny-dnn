@@ -37,9 +37,9 @@ void construct_net(N& nn) {
     typedef convolutional_layer<activation::identity> conv;
     typedef max_pooling_layer<relu> pool;
 
-    const cnn_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
-    const cnn_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
-    const cnn_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
+    const serial_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
+    const serial_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
+    const serial_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
 
     nn << conv(32, 32, 5, 3, n_fmaps, padding::same)
        << pool(32, 32, n_fmaps, 2)

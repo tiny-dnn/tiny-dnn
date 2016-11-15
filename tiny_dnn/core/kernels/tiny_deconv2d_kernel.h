@@ -40,33 +40,33 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
                                  const bool layer_parallelize) {
 
     for_i(layer_parallelize, in.size(), [&](int sample) {
-        for (cnn_size_t o = 0; o < params.out.depth_; o++) {
-            for (cnn_size_t inc = 0; inc < params.in.depth_; inc++) {
+        for (serial_size_t o = 0; o < params.out.depth_; o++) {
+            for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
                 if (!params.tbl.is_connected(o, inc)) continue;
 
-                cnn_size_t idx = 0;
+                serial_size_t idx = 0;
                 idx = params.in.depth_ * o + inc;
                 idx = params.weight.get_index(0, 0, idx);
                 assert(idx < W.size());
                 const float_t *pw = &W[idx];
 
                 idx = params.in.get_index(0, 0, inc);
-                assert(static_cast<cnn_size_t>(sample) < in.size() &&
+                assert(static_cast<serial_size_t>(sample) < in.size() &&
                        idx < in[sample].size());
                 const float_t *pi = &in[sample][idx];
 
                 idx = params.out.get_index(0, 0, o);
-                assert(static_cast<cnn_size_t>(sample) < a.size() &&
+                assert(static_cast<serial_size_t>(sample) < a.size() &&
                        idx < a[sample].size());
                 float_t *pa = &a[sample][idx];
 
-                for (cnn_size_t y = 0; y < params.in.height_; y++) {
-                    for (cnn_size_t x = 0; x < params.in.width_; x++) {
+                for (serial_size_t y = 0; y < params.in.height_; y++) {
+                    for (serial_size_t x = 0; x < params.in.width_; x++) {
                         const float_t * ppw = pw;
                         const float_t * ppi = pi + y * params.in.width_ + x;
                         // should be optimized for small kernel(3x3,5x5)
-                        for (cnn_size_t wy = 0; wy < params.weight.height_; wy++) {
-                            for (cnn_size_t wx = 0; wx < params.weight.width_; wx++) {
+                        for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
+                            for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
                                 pa[(y * params.h_stride + wy) *
                                     params.out.width_ + (x *
                                     params.w_stride + wx)] += ppw[wy *

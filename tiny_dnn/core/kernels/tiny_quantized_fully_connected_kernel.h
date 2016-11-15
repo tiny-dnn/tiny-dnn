@@ -43,7 +43,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     // input quantization
     float_t min_input(in[0]);
     float_t max_input(in[0]);
-    for (cnn_size_t c = 0; c < params.in_size_; c++) {
+    for (serial_size_t c = 0; c < params.in_size_; c++) {
         min_input = std::min(min_input, in[c]);
         max_input = std::max(max_input, in[c]);
     }
@@ -52,7 +52,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     // filter quantization
     float_t min_filter(W[0]);
     float_t max_filter(W[0]);
-    for (cnn_size_t c = 0; c < W.size(); c++) {
+    for (serial_size_t c = 0; c < W.size(); c++) {
         min_filter = std::min(min_filter, W[c]);
         max_filter = std::max(max_filter, W[c]);
     }
@@ -73,7 +73,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     float_t max_bias(0);
     std::vector<uint8_t> bias_quantized;
     if (params.has_bias_) {
-        for (cnn_size_t inc = 0; inc < b.size(); inc++) {
+        for (serial_size_t inc = 0; inc < b.size(); inc++) {
             min_bias = std::min(min_bias, b[inc]);
             max_bias = std::max(max_bias, b[inc]);
         }
@@ -120,7 +120,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     }
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
-            for (cnn_size_t c = 0; c < params.in_size_; c++) {
+            for (serial_size_t c = 0; c < params.in_size_; c++) {
                 a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }
@@ -153,7 +153,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
     // previous output quantization
     float_t min_prev_out(prev_out[0]);
     float_t max_prev_out(prev_out[0]);
-    for (cnn_size_t inc = 0; inc < prev_out.size(); inc++) {
+    for (serial_size_t inc = 0; inc < prev_out.size(); inc++) {
         min_prev_out = std::min(min_prev_out, prev_out[inc]);
         max_prev_out = std::max(min_prev_out, prev_out[inc]);
     }
@@ -163,7 +163,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
     // filter quantization
     float_t min_filter(W[0]);
     float_t max_filter(W[0]);
-    for (cnn_size_t c = 0; c < W.size(); c++) {
+    for (serial_size_t c = 0; c < W.size(); c++) {
         min_filter = std::min(min_filter, W[c]);
         max_filter = std::max(max_filter, W[c]);
     }
@@ -177,7 +177,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
     // current delta quantization
     float_t min_curr_delta(curr_delta[0]);
     float_t max_curr_delta(curr_delta[0]);
-    for (cnn_size_t inc = 0; inc < curr_delta.size(); inc++) {
+    for (serial_size_t inc = 0; inc < curr_delta.size(); inc++) {
             min_curr_delta = std::min(min_curr_delta, curr_delta[inc]);
             max_curr_delta = std::max(max_curr_delta, curr_delta[inc]);
     }
@@ -212,10 +212,10 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
     //const int32_t zero_in_prev_delta =
     //    float_to_quantized<int32_t>(0.0f, min_prev_delta_value, max_prev_delta_value);
 
-    for (cnn_size_t c = 0; c < params.in_size_; c++) {
+    for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        for (cnn_size_t io = 0; io < params.out_size_; io++) {
+        for (serial_size_t io = 0; io < params.out_size_; io++) {
             prev_delta_quantized[c] += (static_cast<int32_t>(curr_delta_quantized[io]) - offset_curr_delta)
                                        * (static_cast<int32_t>(W_quantized[c * params.out_size_ + io]) - offset_filter);
         }
@@ -235,8 +235,8 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
     for_(layer_parallelize, 0, size_t(params.out_size_), [&](const blocked_range& r) {
         // accumulate weight-step using delta
         // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-        for (cnn_size_t c = 0; c < params.in_size_; c++) {
-            for (cnn_size_t io = 0; io < params.out_size_; io++) {
+        for (serial_size_t c = 0; c < params.in_size_; c++) {
+            for (serial_size_t io = 0; io < params.out_size_; io++) {
                 dW_quantized[c * params.out_size_ + io] += (static_cast<int32_t>(curr_delta_quantized[io]) - offset_curr_delta)
                                                    * (static_cast<int32_t>(prev_out_quantized[c]) - offset_prev_out);
             }
@@ -341,7 +341,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     }
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
-            for (cnn_size_t c = 0; c < params.in_size_; c++) {
+            for (serial_size_t c = 0; c < params.in_size_; c++) {
                 a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }

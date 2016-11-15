@@ -46,16 +46,16 @@ public:
      * @param in_channels  [in] the number of input image channels(depth)
      * @param unpooling_size [in] factor by which to upscale
      **/
-    max_unpooling_layer(cnn_size_t in_width,
-                        cnn_size_t in_height,
-                        cnn_size_t in_channels,
-                        cnn_size_t unpooling_size)
+    max_unpooling_layer(serial_size_t in_width,
+                        serial_size_t in_height,
+                        serial_size_t in_channels,
+                        serial_size_t unpooling_size)
         : max_unpooling_layer(in_width, in_height, in_channels, unpooling_size, unpooling_size)
     {}
 
     max_unpooling_layer(const shape3d& in_size,
-                        cnn_size_t unpooling_size,
-                        cnn_size_t stride)
+                        serial_size_t unpooling_size,
+                        serial_size_t stride)
         : max_unpooling_layer(in_size.width_, in_size.height_, in_size.depth_, unpooling_size, unpooling_size)
     {}
 
@@ -66,11 +66,11 @@ public:
      * @param unpooling_size [in] factor by which to upscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    max_unpooling_layer(cnn_size_t in_width,
-                        cnn_size_t in_height,
-                        cnn_size_t in_channels,
-                        cnn_size_t unpooling_size,
-                        cnn_size_t stride)
+    max_unpooling_layer(serial_size_t in_width,
+                        serial_size_t in_height,
+                        serial_size_t in_channels,
+                        serial_size_t unpooling_size,
+                        serial_size_t stride)
         : Base({vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(stride),
@@ -89,13 +89,13 @@ public:
         return in2out_[0].size();
     }
 
-    void forward_propagation(cnn_size_t index,
+    void forward_propagation(serial_size_t index,
                              const std::vector<vec_t*>& in_data,
                              std::vector<vec_t*>&       out_data)  override {
         const vec_t& in  = *in_data[0];
         // vec_t&       out = *out_data[0];
         vec_t&       a   = *out_data[1];
-        std::vector<cnn_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
+        std::vector<serial_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
 
         for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
@@ -107,14 +107,14 @@ public:
         this->forward_activation(*out_data[0], *out_data[1]);
     }
 
-    void back_propagation(cnn_size_t                 index,
+    void back_propagation(serial_size_t                 index,
                           const std::vector<vec_t*>& in_data,
                           const std::vector<vec_t*>& out_data,
                           std::vector<vec_t*>&       out_grad,
                           std::vector<vec_t*>&       in_grad) override {
         vec_t&       prev_delta = *in_grad[0];
         vec_t&       curr_delta = *out_grad[1];
-        std::vector<cnn_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
+        std::vector<serial_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
 
         CNN_UNREFERENCED_PARAMETER(in_data);
 
@@ -122,18 +122,18 @@ public:
 
         for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
-                cnn_size_t outi = out2in_[i];
+                serial_size_t outi = out2in_[i];
                 prev_delta[i] = (max_idx[outi] == i) ? curr_delta[outi] : float_t(0);
             }
         });
     }
 
-    std::vector<index3d<cnn_size_t>> in_shape() const override { return {in_}; }
-    std::vector<index3d<cnn_size_t>> out_shape() const override { return {out_, out_}; }
+    std::vector<index3d<serial_size_t>> in_shape() const override { return {in_}; }
+    std::vector<index3d<serial_size_t>> out_shape() const override { return {out_, out_}; }
     std::string layer_type() const override { return "max-unpool"; }
     size_t unpool_size() const {return unpool_size_;}
 
-    virtual void set_worker_count(cnn_size_t worker_count) override {
+    virtual void set_worker_count(serial_size_t worker_count) override {
         Base::set_worker_count(worker_count);
         max_unpooling_layer_worker_storage_.resize(worker_count);
         for (max_unpooling_layer_worker_specific_storage& mws : max_unpooling_layer_worker_storage_) {
@@ -144,7 +144,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
         shape3d in;
-        cnn_size_t stride, unpool_size;
+        serial_size_t stride, unpool_size;
 
         ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size), cereal::make_nvp("stride", stride));
         construct(in, unpool_size, stride);
@@ -157,34 +157,34 @@ public:
     }
 
 private:
-    cnn_size_t unpool_size_;
-    cnn_size_t stride_;
-    std::vector<cnn_size_t> out2in_; // mapping out => in (N:1)
-    std::vector<std::vector<cnn_size_t> > in2out_; // mapping in => out (1:N)
+    serial_size_t unpool_size_;
+    serial_size_t stride_;
+    std::vector<serial_size_t> out2in_; // mapping out => in (N:1)
+    std::vector<std::vector<serial_size_t> > in2out_; // mapping in => out (1:N)
 
     struct max_unpooling_layer_worker_specific_storage {
-        std::vector<cnn_size_t> in2outmax_; // mapping max_index(out) => in (1:1)
+        std::vector<serial_size_t> in2outmax_; // mapping max_index(out) => in (1:1)
     };
 
     std::vector<max_unpooling_layer_worker_specific_storage> max_unpooling_layer_worker_storage_;
 
-    index3d<cnn_size_t> in_;
-    index3d<cnn_size_t> out_;
+    index3d<serial_size_t> in_;
+    index3d<serial_size_t> out_;
 
-    static cnn_size_t unpool_out_dim(cnn_size_t in_size, cnn_size_t unpooling_size, cnn_size_t stride) {
+    static serial_size_t unpool_out_dim(serial_size_t in_size, serial_size_t unpooling_size, serial_size_t stride) {
         return (int) (float_t)in_size * stride + unpooling_size - 1;
     }
 
-    void connect_kernel(cnn_size_t unpooling_size, cnn_size_t inx, cnn_size_t iny, cnn_size_t  c)
+    void connect_kernel(serial_size_t unpooling_size, serial_size_t inx, serial_size_t iny, serial_size_t  c)
     {
-        cnn_size_t dxmax = static_cast<cnn_size_t>(std::min(unpooling_size, inx * stride_ - out_.width_));
-        cnn_size_t dymax = static_cast<cnn_size_t>(std::min(unpooling_size, iny * stride_ - out_.height_));
+        serial_size_t dxmax = static_cast<serial_size_t>(std::min(unpooling_size, inx * stride_ - out_.width_));
+        serial_size_t dymax = static_cast<serial_size_t>(std::min(unpooling_size, iny * stride_ - out_.height_));
 
-        for (cnn_size_t dy = 0; dy < dymax; dy++) {
-            for (cnn_size_t dx = 0; dx < dxmax; dx++) {
-                cnn_size_t out_index = out_.get_index(static_cast<cnn_size_t>(inx * stride_ + dx),
-                                                      static_cast<cnn_size_t>(iny * stride_ + dy), c);
-                cnn_size_t in_index = in_.get_index(inx, iny, c);
+        for (serial_size_t dy = 0; dy < dymax; dy++) {
+            for (serial_size_t dx = 0; dx < dxmax; dx++) {
+                serial_size_t out_index = out_.get_index(static_cast<serial_size_t>(inx * stride_ + dx),
+                                                      static_cast<serial_size_t>(iny * stride_ + dy), c);
+                serial_size_t in_index = in_.get_index(inx, iny, c);
 
                 if (in_index >= in2out_.size())
                     throw nn_error("index overflow");
@@ -205,10 +205,10 @@ private:
             mws.in2outmax_.resize(in_.size());
         }
 
-        for (cnn_size_t c = 0; c < in_.depth_; ++c)
-            for (cnn_size_t y = 0; y < in_.height_; ++y)
-                for (cnn_size_t x = 0; x < in_.width_; ++x)
-                    connect_kernel(static_cast<cnn_size_t>(unpool_size_),
+        for (serial_size_t c = 0; c < in_.depth_; ++c)
+            for (serial_size_t y = 0; y < in_.height_; ++y)
+                for (serial_size_t x = 0; x < in_.width_; ++x)
+                    connect_kernel(static_cast<serial_size_t>(unpool_size_),
                                    x, y, c);
     }
 

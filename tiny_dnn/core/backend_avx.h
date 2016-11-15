@@ -64,8 +64,8 @@ class avx_backend : public backend {
       , backward_activation(f3) {}
 
     // maxpooling
-    avx_backend(std::vector<std::vector<cnn_size_t>>* out2in,
-                std::vector<cnn_size_t>* in2out,
+    avx_backend(std::vector<std::vector<serial_size_t>>* out2in,
+                std::vector<serial_size_t>* in2out,
                 std::function<void(const tensor_t&, const tensor_t&, tensor_t&)> f,
                 max_pooling_layer_worker_specific_storage* ptr)
       : max_pooling_layer_worker_storage_(ptr)
@@ -217,7 +217,7 @@ class avx_backend : public backend {
 
         /*const tensor_t& in  = *in_data[0];
         tensor_t&       a   = *out_data[1];
-        std::vector<std::vector<cnn_size_t>>& max_idx =
+        std::vector<std::vector<serial_size_t>>& max_idx =
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         kernels::avx_maxpool_kernel(in, a,
@@ -230,7 +230,7 @@ class avx_backend : public backend {
                  std::vector<tensor_t*>&       in_grad) override {
         /*tensor_t&       prev_delta = *in_grad[0];
         tensor_t&       curr_delta = *out_grad[1];
-        std::vector<std::vector<cnn_size_t>>& max_idx =
+        std::vector<std::vector<serial_size_t>>& max_idx =
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         CNN_UNREFERENCED_PARAMETER(in_data);
@@ -298,8 +298,8 @@ class avx_backend : public backend {
     conv_layer_worker_specific_storage* conv_layer_worker_storage_;
     deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
     max_pooling_layer_worker_specific_storage* max_pooling_layer_worker_storage_;
-    std::vector<std::vector<cnn_size_t>>* out2in_;
-    std::vector<cnn_size_t>* in2out_;
+    std::vector<std::vector<serial_size_t>>* out2in_;
+    std::vector<serial_size_t>* in2out_;
 
     /* Pointers to parent class functions */
     std::function<void(const tensor_t&)> copy_and_pad_input;

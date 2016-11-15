@@ -459,9 +459,9 @@ class network {
         assert(in.size() == t.size());
 
         std::vector<tensor_t> v(t.size());
-        const cnn_size_t sample_count = static_cast<cnn_size_t>(t.size());
-        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
-            net_.label2vec(&t[sample][0], static_cast<cnn_size_t>(t[sample].size()), &v[sample]);
+        const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
+        for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+            net_.label2vec(&t[sample][0], static_cast<serial_size_t>(t[sample].size()), &v[sample]);
         }
 
         for (auto current : net_) {  // ignore first input layer
@@ -548,14 +548,14 @@ class network {
     /**
      * return total number of elements of output data
      **/
-    cnn_size_t out_data_size() const {
+    serial_size_t out_data_size() const {
         return net_.out_data_size();
     }
 
     /**
      * return total number of elements of input data
      */
-    cnn_size_t in_data_size() const {
+    serial_size_t in_data_size() const {
         return net_.in_data_size();
     }
 
@@ -868,7 +868,7 @@ class network {
 
         assert(in.size() == v.size());
 
-        const cnn_size_t sample_count = static_cast<cnn_size_t>(in.size());
+        const serial_size_t sample_count = static_cast<serial_size_t>(in.size());
 
         assert(sample_count > 0);
 
@@ -886,13 +886,13 @@ class network {
 
         float_t f_p = float_t(0);
         w[check_index] = prev_w + delta;
-        for (cnn_size_t i = 0; i < sample_count; i++) {
+        for (serial_size_t i = 0; i < sample_count; i++) {
             f_p += get_loss<E>(in[i], v[i]);
         }
 
         float_t f_m = float_t(0);
         w[check_index] = prev_w - delta;
-        for (cnn_size_t i = 0; i < sample_count; i++) {
+        for (serial_size_t i = 0; i < sample_count; i++) {
             f_m += get_loss<E>(in[i], v[i]);
         }
 
@@ -903,7 +903,7 @@ class network {
         bprop<E>(fprop(in), v, std::vector<tensor_t>());
 
         float_t delta_by_bprop = 0;
-        for (cnn_size_t sample = 0; sample < sample_count; ++sample) {
+        for (serial_size_t sample = 0; sample < sample_count; ++sample) {
             delta_by_bprop += dw[sample][check_index];
         }
         net_.clear_grads();
@@ -927,7 +927,7 @@ class network {
         net_.backward(delta);
     }
 
-    void check_t(size_t i, label_t t, cnn_size_t dim_out) {
+    void check_t(size_t i, label_t t, serial_size_t dim_out) {
         if (t >= dim_out) {
             std::ostringstream os;
             os << format_str("t[%u]=%u, dim(net output)=%u\n", i, t, dim_out);
@@ -942,7 +942,7 @@ class network {
         }
     }
 
-    void check_t(size_t i, const vec_t& t, cnn_size_t dim_out) {
+    void check_t(size_t i, const vec_t& t, serial_size_t dim_out) {
         if (t.size() != dim_out) {
             throw nn_error(format_str(
                 "output dimension mismatch!\n dim(target[%u])=%u, "
@@ -953,8 +953,8 @@ class network {
     template <typename T>
     void check_training_data(const std::vector<vec_t>& in,
                              const std::vector<T>& t) {
-        cnn_size_t dim_in = in_data_size();
-        cnn_size_t dim_out = out_data_size();
+        serial_size_t dim_in = in_data_size();
+        serial_size_t dim_out = out_data_size();
 
         if (in.size() != t.size()) {
             throw nn_error("size of training data must be equal to label data");
@@ -1028,7 +1028,7 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], static_cast<cnn_size_t>(inputs.size()), &vec);
+        net_.label2vec(&inputs[0], static_cast<serial_size_t>(inputs.size()), &vec);
         normalize_tensor(vec, normalized);
     }
 
