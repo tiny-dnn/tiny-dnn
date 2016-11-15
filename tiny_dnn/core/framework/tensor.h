@@ -331,19 +331,19 @@ class Tensor {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
-          res[i] = std::sqrt(this->operator[](i));
+            res[i] = std::sqrt(this->operator[](i));
         });
 
         return std::move(res);
     }
 
-    /* @brief Element-wise square root
+    /* @brief Element-wise exponential
      */
     Tensor<U> exp() const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
-          res[i] = std::exp(this->operator[](i));
+            res[i] = std::exp(this->operator[](i));
         });
 
         return std::move(res);

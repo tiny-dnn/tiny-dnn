@@ -397,7 +397,7 @@ TEST(tensor, linspace) {
 
     // fill all tensor values with values from 1 to 16
 
-    tensor.linspace(float_t(1.0),float_t(16.0));
+    tensor.linspace(float_t(1.0), float_t(16.0));
 
     for (size_t i = 0; i < tensor.size(); ++i) {
         EXPECT_EQ(tensor[i], float_t(1.0+i));
@@ -406,10 +406,10 @@ TEST(tensor, linspace) {
     Tensor<float_t> tensor2(101,1,1,1);
     // fill all tensor values with from 0 to 1
 
-    tensor2.linspace(float_t(0.0),float_t(1.0));
+    tensor2.linspace(float_t(0.0), float_t(1.0));
 
     for (size_t i = 0; i < tensor2.size(); ++i) {
-        EXPECT_NEAR(tensor2[i], float_t(0.01*i),0.001);
+        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 0.001);
     }
 }
 
@@ -586,7 +586,7 @@ TEST(tensor, exp) {
     Tensor<float_t> t(2, 2, 2, 2);
 
     // fill tensor with initial values
-    t.linspace(float_t(1.0),float_t(16.0));
+    t.linspace(float_t(1.0), float_t(16.0));
 
     // calculate exp
 
