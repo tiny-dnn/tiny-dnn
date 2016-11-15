@@ -1,32 +1,50 @@
 /*
-    Copyright (c) 2016, Taiga Nomi, Edgar Riba
+    COPYRIGHT
+
+    All contributions by Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi
     All rights reserved.
+
+    All other contributions:
+    Copyright (c) 2013-2016, the respective contributors.
+    All rights reserved.
+
+    Each contributor holds copyright over their respective contributions.
+    The project versioning (Git) records all such contribution source information.
+
+    LICENSE
+
+    The BSD 3-Clause License
+
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    * Redistributions of source code must retain the above copyright notice, this
+      list of conditions and the following disclaimer.
+
+    * Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+    * Neither the name of tiny-dnn nor the names of its
+      contributors may be used to endorse or promote products derived from
+      this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include "gtest/gtest.h"
-#include "testhelper.h"
+
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
@@ -42,42 +60,66 @@ TEST(tensor, shape) {
     EXPECT_EQ(tensor.shape()[3], cnn_size_t(2));
 }
 
-TEST(tensor, access_data1) {
+TEST(tensor, check_bounds) {
     Tensor<float_t> tensor(1,2,2,1);
 
-    EXPECT_EQ(tensor.at<float_t>(0,0,0,0), float_t(0.0));
-    EXPECT_EQ(tensor.at<float_t>(0,0,1,0), float_t(0.0));
-    EXPECT_EQ(tensor.at<float_t>(0,1,0,0), float_t(0.0));
-    EXPECT_EQ(tensor.at<float_t>(0,1,1,0), float_t(0.0));
+    // check bounds with .at() accessor
+
+    EXPECT_NO_THROW(tensor.at<float_t>(0,0,0,0));
+    EXPECT_NO_THROW(tensor.at<float_t>(0,0,1,0));
+    EXPECT_NO_THROW(tensor.at<float_t>(0,1,0,0));
+    EXPECT_NO_THROW(tensor.at<float_t>(0,1,1,0));
 
     EXPECT_THROW(tensor.at<float_t>(0,0,0,1), nn_error);
     EXPECT_THROW(tensor.at<float_t>(1,0,0,0), nn_error);
     EXPECT_THROW(tensor.at<float_t>(1,0,0,1), nn_error);
+
+    // check bounds with .ptr() accessor
+
+    EXPECT_NO_THROW(tensor.ptr<float_t>(0,0,0,0));
+    EXPECT_NO_THROW(tensor.ptr<float_t>(0,0,1,0));
+    EXPECT_NO_THROW(tensor.ptr<float_t>(0,1,0,0));
+    EXPECT_NO_THROW(tensor.ptr<float_t>(0,1,1,0));
+
+    EXPECT_THROW(tensor.ptr<float_t>(0,0,0,1), nn_error);
+    EXPECT_THROW(tensor.ptr<float_t>(1,0,0,0), nn_error);
+    EXPECT_THROW(tensor.ptr<float_t>(1,0,0,1), nn_error);
+
+    // check bounds with operator[] accessor
+
+    EXPECT_NO_THROW(tensor[0]);
+    EXPECT_NO_THROW(tensor[3]);
+
+    EXPECT_THROW(tensor[4], nn_error);
+}
+
+TEST(tensor, access_data1) {
+    Tensor<float_t> tensor(1,2,2,1);
+
+    const std::vector<cnn_size_t>& shape = tensor.shape();
+
+    for (cnn_size_t n = 0; n < shape[0]; ++n) {
+        for (cnn_size_t w = 0; w < shape[1]; ++w) {
+            for (cnn_size_t h = 0; h < shape[2]; ++h) {
+                for (cnn_size_t d = 0; d < shape[3]; ++d) {
+                    EXPECT_EQ(tensor.at<float_t>(n,w,h,d),   float_t(0.0));
+                    EXPECT_EQ(*tensor.ptr<float_t>(n,w,h,d), float_t(0.0));
+                }
+            }
+        }
+    }
 }
 
 TEST(tensor, access_data2) {
     Tensor<float_t> tensor(1,2,2,1);
 
-    const float* ptr = tensor.ptr<float_t>(0,0,0,0);
-
-    size_t i = 0;
-    EXPECT_EQ(ptr[i++], float_t(0.0));
-    EXPECT_EQ(ptr[i++], float_t(0.0));
-    EXPECT_EQ(ptr[i++], float_t(0.0));
-    EXPECT_EQ(ptr[i++], float_t(0.0));
+    for (size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor[i], float_t(0.0));
+    }
 }
+
 
 TEST(tensor, access_data3) {
-    Tensor<float_t> tensor(1,2,2,1);
-
-    size_t i = 0;
-    EXPECT_EQ(tensor[i++], float_t(0.0));
-    EXPECT_EQ(tensor[i++], float_t(0.0));
-    EXPECT_EQ(tensor[i++], float_t(0.0));
-    EXPECT_EQ(tensor[i++], float_t(0.0));
-}
-
-TEST(tensor, access_data4) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .ptr() accessor
@@ -107,7 +149,7 @@ TEST(tensor, access_data4) {
     }
 }
 
-TEST(tensor, access_data5) {
+TEST(tensor, access_data4) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .ptr() accessor
@@ -139,7 +181,7 @@ TEST(tensor, access_data5) {
 }
 
 
-TEST(tensor, access_data6) {
+TEST(tensor, access_data5) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .ptr() accessor
@@ -166,7 +208,7 @@ TEST(tensor, access_data6) {
     }
 }
 
-TEST(tensor, access_data7) {
+TEST(tensor, access_data6) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .at() accessor
@@ -196,7 +238,7 @@ TEST(tensor, access_data7) {
     }
 }
 
-TEST(tensor, access_data8) {
+TEST(tensor, access_data7) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .at() accessor
@@ -225,7 +267,7 @@ TEST(tensor, access_data8) {
     }
 }
 
-TEST(tensor, access_data9) {
+TEST(tensor, access_data8) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using .at() accessor
@@ -251,7 +293,7 @@ TEST(tensor, access_data9) {
     }
 }
 
-TEST(tensor, access_data10) {
+TEST(tensor, access_data9) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using operator[] accessor
@@ -275,7 +317,7 @@ TEST(tensor, access_data10) {
     }
 }
 
-TEST(tensor, access_data11) {
+TEST(tensor, access_data10) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using operator[] accessor
@@ -303,7 +345,7 @@ TEST(tensor, access_data11) {
     }
 }
 
-TEST(tensor, access_data12) {
+TEST(tensor, access_data11) {
     Tensor<float_t> tensor(1,2,2,2);
 
     // modify data using operator[] accessor
