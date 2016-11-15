@@ -108,14 +108,12 @@ class Tensor {
 
     // zero-overhead version (same performance to raw pointer access.
     // have an assertion for out-of-range error)
-    template<typename T>
-    T& operator[] (const size_t index) {
-        return *access_data<T>(index);
+    U& operator[] (const size_t index) {
+        return *access_data<U>(index);
     }
 
-    template<typename T>
-    const T& operator[] (const size_t index) const {
-        return *access_data<T>(index);
+    const U& operator[] (const size_t index) const {
+        return *access_data<U>(index);
     }
 
     // this is only a proof of concept to copy data
@@ -198,14 +196,63 @@ class Tensor {
     T* access_data(const cnn_size_t d0,
                    const cnn_size_t d1,
                    const cnn_size_t d2,
-                   const cnn_size_t d3) const {
-        if (d0 > shape_[0] || d1 > shape_[1] ||
-            d2 > shape_[2] || d3 > shape_[3]) {
+                   const cnn_size_t d3) {
+        if (d0 >= shape_[0] || d1 >= shape_[1] ||
+            d2 >= shape_[2] || d3 >= shape_[3]) {
             throw nn_error("Access tensor out of range.");
         }
 
-        U* value = &host_data_->operator[](shape_[1] * shape_[2] *
-            ( shape_[3] * d0 + d3 ) + d1 + d2);
+        U* value = &host_data_->operator[](
+            shape_[1] * shape_[2] * shape_[3] * d0 +
+            shape_[1] * shape_[2] * d3 +
+            shape_[1] * d2 +
+            d1
+        );
+
+        // in case that requested type is not the same as
+        // the specified during the tensor initilization
+        // we cast the type.
+        if (!std::is_same<T,U>::value) {
+            return reinterpret_cast<T*>(value);
+        }
+        return value;
+    }
+
+    // Method to access to the tensor data.
+    // It checks if the requested position is feasible or not.
+    template<typename T>
+    T* access_data(const cnn_size_t d0,
+                   const cnn_size_t d1,
+                   const cnn_size_t d2,
+                   const cnn_size_t d3) const {
+        if (d0 >= shape_[0] || d1 >= shape_[1] ||
+            d2 >= shape_[2] || d3 >= shape_[3]) {
+            throw nn_error("Access tensor out of range.");
+        }
+
+        U* value = &host_data_->operator[](
+            shape_[1] * shape_[2] * shape_[3] * d0 +
+            shape_[1] * shape_[2] * d3 +
+            shape_[1] * d2 +
+            d1
+        );
+
+        // in case that requested type is not the same as
+        // the specified during the tensor initilization
+        // we cast the type.
+        if (!std::is_same<T,U>::value) {
+            return reinterpret_cast<T*>(value);
+        }
+        return value;
+    }
+
+    template<typename T>
+    T* access_data(const size_t index) {
+        if (index > host_data_->size()) {
+            throw nn_error("Access tensor out of range.");
+        }
+
+        U* value = &host_data_->operator[](index);
 
         // in case that requested type is not the same as
         // the specified during the tensor initilization
@@ -265,7 +312,7 @@ inline std::ostream& operator<< (std::ostream &os,
             os << "-- Data:\n";
             for (cnn_size_t k = 0; k < shape[1]; ++k) {
                 for (cnn_size_t l = 0; l < shape[2]; ++l) {
-                    os << tensor.at<float_t>(i,k,l,j) << " ";
+                    os << "   " << tensor.at<float_t>(i,k,l,j) << " ";
                 }
                 os << ";\n";
             }
