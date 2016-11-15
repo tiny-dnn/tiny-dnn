@@ -205,7 +205,7 @@ class Tensor {
             throw nn_error("Access tensor out of range.");
         }
 
-        U* value = &host_data_->at(shape_[1] * shape_[2] *
+        U* value = &host_data_->operator[](shape_[1] * shape_[2] *
             ( shape_[3] * d0 + d3 ) + d1 + d2);
 
         // in case that requested type is not the same as
@@ -223,7 +223,7 @@ class Tensor {
             throw nn_error("Access tensor out of range.");
         }
 
-        U* value = &host_data_->at(index);
+        U* value = &host_data_->operator[](index);
 
         // in case that requested type is not the same as
         // the specified during the tensor initilization
