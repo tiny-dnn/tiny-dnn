@@ -70,20 +70,20 @@ public:
     Tensor() : shape_{ 0,0,0,0 } {}
 
     /*
-        * Create a tensor of the given dimension.
-        * It is assumed that a tensor will hold data in NxWxHxD order,
-        * where:
-        *  N the batch axis
-        *  W the width axis
-        *  H the heigth axis
-        *  D the depth axis
-        *
-        *  Data will be hold by a std::vector with 64bytes alignment.
-        */
-    explicit Tensor(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) {
+     * Create a tensor of the given dimension.
+     * It is assumed that a tensor will hold data in NxWxHxD order,
+     * where:
+     *  N the batch axis
+     *  W the width axis
+     *  H the heigth axis
+     *  D the depth axis
+     *
+     *  Data will be hold by a std::vector with 64bytes alignment.
+     */
+    explicit Tensor(const cnn_size_t d0,
+                    const cnn_size_t d1,
+                    const cnn_size_t d2,
+                    const cnn_size_t d3) {
         reshape(d0, d1, d2, d3);
     }
 
