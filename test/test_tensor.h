@@ -565,4 +565,21 @@ TEST(tensor, div2) {
     }
 }
 
+TEST(tensor, sqrt) {
+    Tensor<float_t> t(2, 2, 2, 2);
+
+    // fill tensor with initial values
+    t.fill(float_t(4.0));
+
+    // calculate square root
+
+    Tensor<float_t> t2 = t.sqrt();
+
+    // check that root is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t2[i], float_t(2.0));
+    }
+}
+
 } // namespace tiny-dnn

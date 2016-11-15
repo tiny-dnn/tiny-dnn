@@ -44,6 +44,7 @@
 */
 #pragma once
 
+#include <cmath> // sqrt
 #include <algorithm> // std::fill, std::generate
 
 #include "tiny_dnn/core/framework/device.fwd.h"
@@ -319,6 +320,18 @@ class Tensor {
         for_i(true, res.size(), [&](size_t i) {
             res[i] = this->operator[](i) / (scalar +
                 std::numeric_limits<U>::min());
+        });
+
+        return std::move(res);
+    }
+
+    /* @brief Element-wise square root
+     */
+    Tensor<U> sqrt() const {
+        Tensor<U> res(this->shape());
+
+        for_i(true, res.size(), [&](size_t i) {
+          res[i] = std::sqrt(this->operator[](i));
         });
 
         return std::move(res);
