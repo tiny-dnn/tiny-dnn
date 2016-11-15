@@ -170,12 +170,11 @@ class Tensor {
     }
 
  private:
-    // Initializes the data buffer with zeroes
+    // Initializes the data buffer with the given value
     void resize(const U value = 0) {
         if (!host_data_) {
-            //host_data_ = std::unique_ptr<std::vector<U> >(
-            //    new std::vector<U>(size(), value));
-            host_data_ = make_unique<std::vector<U> >(size(), value);
+            host_data_ = make_unique<
+                std::vector<U, aligned_allocator<U, 64> > >(size(), value);
         } else {
             host_data_->resize(size(), value);
         }
@@ -244,7 +243,7 @@ class Tensor {
     std::vector<cnn_size_t> shape_;
 
     /* Pointer to the Tensor data in pure CPU mode */
-    std::unique_ptr<std::vector<U> > host_data_;
+    std::unique_ptr<std::vector<U, aligned_allocator<U, 64> > > host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in OpenCL mode */
