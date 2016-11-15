@@ -122,19 +122,8 @@ TEST(core, add_bad_device) {
 
     convolutional_layer<sigmoid>
         l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::libdnn);
-    try {
-        my_gpu_device.registerOp(l);
-        EXPECT_TRUE(false);
-    }
-    catch (const nn_error &e) {
-        std::string err_mess = "Cannot register layer: " + l.layer_type()
-            + ". Device has disabled OpenCL support. Please specify platform "
-                "and device in Device constructor";
-        EXPECT_STREQ(err_mess.c_str(), e.what());
-    }
-    catch (...) {
-        EXPECT_TRUE(false);
-    }
+
+    EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
 }
 
 TEST(core, add_bad_layer) {
@@ -147,26 +136,12 @@ TEST(core, add_bad_layer) {
 
     TINY_DNN_GET_DEVICE_AND_PLATFORM;
     if (device != device_t::NONE) {
-        Device my_gpu_device(device, cl_platform, cl_device);
+      Device my_gpu_device(device, cl_platform, cl_device);
 
-        convolutional_layer<sigmoid>
-            l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::internal);
+      convolutional_layer<sigmoid>
+          l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::internal);
 
-        try {
-            my_gpu_device.registerOp(l);
-            EXPECT_TRUE(false);
-        }
-        catch (const nn_error &e) {
-            std::string err_mess =
-                "Cannot register layer: " + l.layer_type()
-                    + ". Enabled engine: "
-                    + to_string(l.engine())
-                    + ". OpenCL engine (backend_t::opencl) should be used.";
-            EXPECT_STREQ(err_mess.c_str(), e.what());
-        }
-        catch (...) {
-            EXPECT_TRUE(false);
-        }
+      EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
     }
 }
 
