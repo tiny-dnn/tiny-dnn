@@ -196,6 +196,10 @@ class Tensor {
     /* @brief Element-wise addition
      */
     Tensor<U> add(const Tensor<U>& src) const {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
+        }
+
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -220,6 +224,10 @@ class Tensor {
     /* @brief Element-wise subtraction
      */
     Tensor<U> sub(const Tensor<U>& src) const {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
+        }
+
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -244,6 +252,10 @@ class Tensor {
     /* @brief Element-wise multiplication
      */
     Tensor<U> mul(const Tensor<U>& src) const {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
+        }
+
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -268,6 +280,10 @@ class Tensor {
     /* @brief Element-wise division
      */
     Tensor<U> div(const Tensor<>& src) const {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
+        }
+
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
