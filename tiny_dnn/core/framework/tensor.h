@@ -58,6 +58,14 @@ class Tensor {
 
     /*
      * Create a tensor of the given dimension.
+     * It is assumed that a tensor will hold data in NxWxHxD order,
+     * where:
+     *  N the batch axis
+     *  W the width axis
+     *  H the heigth axis
+     *  D the depth axis
+     *
+     *  Data will be hold by a std::vector with 64bytes alignment.
      */
     explicit Tensor(const cnn_size_t d0,
                     const cnn_size_t d1,
@@ -123,8 +131,8 @@ class Tensor {
         CLCudaAPI::Context ctx = device.context();
         CLCudaAPI::Queue queue = device.queue();
 
-        device_data_ = buffer_ptr(new buffer(
-            ctx, queue, host_data_->begin(), host_data_->end()));
+        device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
+            ctx, queue, host_data_->begin(), host_data_->end());
 #endif
     }
 
@@ -132,10 +140,10 @@ class Tensor {
     // from one device to another.
     void fromDevice(const Device& device) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-	CLCudaAPI::Queue queue = device.queue();
+        CLCudaAPI::Queue queue = device.queue();
 
         device_data_->Read(
-	    queue, host_data_->size(), &host_data_->at(0));
+            queue, host_data_->size(), &host_data_->at(0));
 #endif
     }
 
@@ -294,7 +302,7 @@ class Tensor {
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in OpenCL mode */
-    std::unique_ptr<CLCudaAPI::Buffer> device_data_;
+    std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
 #endif
 
     /* Pointer to the current device where the data resides */
