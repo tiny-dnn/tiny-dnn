@@ -44,6 +44,8 @@
 */
 #pragma once
 
+#include <algorithm> // std::fill
+
 #include "tiny_dnn/core/framework/device.fwd.h"
 
 namespace tiny_dnn {
@@ -173,6 +175,10 @@ class Tensor {
         size_t new_size = 1;
         for (auto d : shape_) { new_size *= d; }
         return new_size;
+    }
+
+    void fill(const U value) {
+        std::fill(host_data_->begin(), host_data_->end(), value);
     }
 
  private:

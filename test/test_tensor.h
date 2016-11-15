@@ -372,4 +372,25 @@ TEST(tensor, access_data11) {
     }
 }
 
+TEST(tensor, fill) {
+    Tensor<float_t> tensor(2,2,2,2);
+
+    // fill all tensor values with ones
+
+    tensor.fill(float_t(1.0));
+
+    for (size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor[i], float_t(1.0));
+    }
+ 
+    // fill all tensor values with twos
+
+    tensor.fill(float_t(2.0));
+
+    for (size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor[i], float_t(2.0));
+    }
+}
+
+
 } // namespace tiny-dnn
