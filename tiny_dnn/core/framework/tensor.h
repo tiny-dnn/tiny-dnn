@@ -44,7 +44,7 @@
 */
 #pragma once
 
-#include <algorithm> // std::fill
+#include <algorithm> // std::fill, std::generate
 
 #include "tiny_dnn/core/framework/device.fwd.h"
 
@@ -191,6 +191,23 @@ class Tensor {
      */
     void fill(const U value) {
         std::fill(host_data_->begin(), host_data_->end(), value);
+    }
+
+    /* @brief Fills the tensor with evenly-spaced values in the interval
+     *
+     * @param from The lower bound of the interval
+     * @param to The upper bound of the interval
+     */
+    void linspace(const U from, const U to) {
+        U start = from,
+            step = (to - from) / (host_data_->end() - host_data_->begin() - 1);
+        std::generate(host_data_->begin(),
+                      host_data_->end(),
+                      [&start, &step]() {
+                        U tmp = start;
+                        start += step;
+                        return tmp;
+                      });
     }
 
     /* @brief Element-wise addition
