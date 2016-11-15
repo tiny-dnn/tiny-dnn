@@ -337,6 +337,18 @@ class Tensor {
         return std::move(res);
     }
 
+    /* @brief Element-wise square root
+     */
+    Tensor<U> exp() const {
+        Tensor<U> res(this->shape());
+
+        for_i(true, res.size(), [&](size_t i) {
+          res[i] = std::exp(this->operator[](i));
+        });
+
+        return std::move(res);
+    }
+
  private:
     // Initializes the data buffer with the given value
     void resize(const U value = 0) {

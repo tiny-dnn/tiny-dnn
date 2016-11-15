@@ -582,4 +582,21 @@ TEST(tensor, sqrt) {
     }
 }
 
+TEST(tensor, exp) {
+    Tensor<float_t> t(2, 2, 2, 2);
+
+    // fill tensor with initial values
+    t.linspace(float_t(1.0),float_t(16.0));
+
+    // calculate exp
+
+    Tensor<float_t> t2 = t.exp();
+
+    // check that exponent is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_NEAR(t2[i], float_t(exp(float_t(i+1))), 1e-5);
+    }
+}
+
 } // namespace tiny-dnn
