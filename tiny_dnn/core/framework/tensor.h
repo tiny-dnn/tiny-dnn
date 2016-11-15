@@ -173,8 +173,9 @@ class Tensor {
     // Initializes the data buffer with zeroes
     void resize(const U value = 0) {
         if (!host_data_) {
-            host_data_ = std::unique_ptr<std::vector<U> >(
-                new std::vector<U>(size(), value));
+            //host_data_ = std::unique_ptr<std::vector<U> >(
+            //    new std::vector<U>(size(), value));
+            host_data_ = make_unique<std::vector<U> >(size(), value);
         } else {
             host_data_->resize(size(), value);
         }
