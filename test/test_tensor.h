@@ -44,6 +44,7 @@
 */
 #pragma once
 #include "gtest/gtest.h"
+#include "testhelper.h"
 
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -179,7 +180,6 @@ TEST(tensor, access_data4) {
         }
     }
 }
-
 
 TEST(tensor, access_data5) {
     Tensor<float_t> tensor(1,2,2,2);
@@ -410,7 +410,7 @@ TEST(tensor, linspace) {
     tensor2.linspace(float_t(0.0), float_t(1.0));
 
     for (size_t i = 0; i < tensor2.size(); ++i) {
-        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 0.001);
+        EXPECT_NEAR(tensor2[i], float_t(0.01*i), epsilon<float_t>());
     }
 }
 
@@ -430,7 +430,7 @@ TEST(tensor, add1) {
     // check that sum is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(4.0));
+        EXPECT_NEAR(t3[i], float_t(4.0), epsilon<float_t>());
     }
 }
 
@@ -448,7 +448,7 @@ TEST(tensor, add2) {
     // check that sum is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(3.0));
+        EXPECT_NEAR(t2[i], float_t(3.0), epsilon<float_t>());
     }
 }
 
@@ -468,7 +468,7 @@ TEST(tensor, sub1) {
     // check that sum is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(-2.0));
+        EXPECT_NEAR(t3[i], float_t(-2.0), epsilon<float_t>());
     }
 }
 
@@ -486,7 +486,7 @@ TEST(tensor, sub2) {
     // check that subtraction is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(-1.0));
+        EXPECT_NEAR(t2[i], float_t(-1.0), epsilon<float_t>());
     }
 }
 
@@ -506,7 +506,7 @@ TEST(tensor, mul1) {
     // check that subtraction is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(6.0));
+        EXPECT_NEAR(t3[i], float_t(6.0), epsilon<float_t>());
     }
 }
 
@@ -524,7 +524,7 @@ TEST(tensor, mult2) {
     // check that multiplication is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(4.0));
+        EXPECT_NEAR(t2[i], float_t(4.0), epsilon<float_t>());
     }
 }
 
@@ -544,7 +544,7 @@ TEST(tensor, div1) {
     // check that division is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(0.5));
+        EXPECT_NEAR(t3[i], float_t(0.5), epsilon<float_t>());
     }
 }
 
@@ -562,7 +562,7 @@ TEST(tensor, div2) {
     // check that division is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(0.5));
+        EXPECT_NEAR(t2[i], float_t(0.5), epsilon<float_t>());
     }
 }
 
@@ -579,7 +579,7 @@ TEST(tensor, sqrt) {
     // check that root is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(2.0));
+        EXPECT_NEAR(t2[i], float_t(2.0), epsilon<float_t>());
     }
 }
 
@@ -596,7 +596,7 @@ TEST(tensor, exp) {
     // check that exponent is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_NEAR(t2[i], float_t(exp(float_t(i+1))), 1e-5);
+        EXPECT_NEAR(t2[i], float_t(exp(float_t(i+1))), epsilon<float_t>());
     }
 }
 
