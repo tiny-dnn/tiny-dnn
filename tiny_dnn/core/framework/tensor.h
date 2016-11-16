@@ -300,7 +300,7 @@ class Tensor {
 
     /* @brief Element-wise division
      */
-    Tensor<U> div(const Tensor<>& src) const {
+    Tensor<U> div(const Tensor<U>& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -308,8 +308,9 @@ class Tensor {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (src[i] +
-                std::numeric_limits<U>::min());
+            const U tmp = src[i];
+            res[i] = tmp == U(0.0) ? std::numeric_limits<U>::quiet_NaN() :
+                this->operator[](i) / (tmp + std::numeric_limits<U>::min());
         });
 
         return std::move(res);
@@ -320,10 +321,14 @@ class Tensor {
     Tensor<U> div(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (scalar +
-                std::numeric_limits<U>::min());
-        });
+        if (scalar == float_t(0.0)) {
+            res.fill(std::numeric_limits<U>::quiet_NaN());
+        } else {
+            for_i(true, res.size(), [&](size_t i) {
+                res[i] = this->operator[](i) / (scalar +
+                    std::numeric_limits<U>::min());
+            });
+        }
 
         return std::move(res);
     }

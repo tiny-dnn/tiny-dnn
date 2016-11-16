@@ -61,6 +61,12 @@ TEST(tensor, shape) {
     EXPECT_EQ(tensor.shape()[3], cnn_size_t(2));
 }
 
+TEST(tensor, size) {
+    Tensor<float_t> tensor(2,2,2,2);
+
+    EXPECT_EQ(tensor.size(), size_t(2*2*2*2));
+}
+
 TEST(tensor, check_bounds) {
     Tensor<float_t> tensor(1,2,2,1);
 
@@ -604,6 +610,44 @@ TEST(tensor, div3) {
     // Expect a throw since shapes are different
 
     EXPECT_THROW(t1.div(t2), nn_error);
+}
+
+TEST(tensor, div4) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(1.0));
+    t2.fill(float_t(0.0));
+
+    // compute element-wise division along all tensor values
+
+    Tensor<float_t> t3 = t1.div(t2);
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t3[i]));
+    }
+}
+
+TEST(tensor, div5) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(1.0));
+
+    // compute element-wise division along all tensor values
+
+    Tensor<float_t> t2 = t.div(float_t(0.0));
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t2[i]));
+    }
 }
 
 TEST(tensor, sqrt) {
