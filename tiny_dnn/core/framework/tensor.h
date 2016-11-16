@@ -339,7 +339,9 @@ class Tensor {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = std::sqrt(this->operator[](i));
+            const U tmp = this->operator[](i);
+            res[i] = tmp < U(0.0) ? std::numeric_limits<U>::quiet_NaN()
+                : std::sqrt(tmp);
         });
 
         return std::move(res);
