@@ -44,7 +44,7 @@
 */
 #pragma once
 
-#include <cmath> // sqrt
+#include <cmath>     // sqrt
 #include <algorithm> // std::fill, std::generate
 
 #include "tiny_dnn/core/framework/device.fwd.h"
@@ -315,7 +315,7 @@ class Tensor {
         for_i(true, res.size(), [&](size_t i) {
             const U tmp = src[i];
             res[i] = tmp == U(0.0) ? std::numeric_limits<U>::quiet_NaN() :
-                this->operator[](i) / (tmp + std::numeric_limits<U>::min());
+                this->operator[](i) / tmp;
         });
 
         return std::move(res);
@@ -330,8 +330,7 @@ class Tensor {
             res.fill(std::numeric_limits<U>::quiet_NaN());
         } else {
             for_i(true, res.size(), [&](size_t i) {
-                res[i] = this->operator[](i) / (scalar +
-                    std::numeric_limits<U>::min());
+                res[i] = this->operator[](i) / scalar;
             });
         }
 
@@ -496,7 +495,7 @@ class Tensor {
 
 // Overloaded method to print the Tensor class to the standard output
 inline std::ostream& operator<< (std::ostream &os,
-		                 const Tensor<>& tensor) {
+                                 const Tensor<>& tensor) {
     const std::vector<cnn_size_t>& shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
