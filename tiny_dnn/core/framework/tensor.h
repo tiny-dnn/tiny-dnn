@@ -83,8 +83,11 @@ class Tensor {
         resize();
     }
 
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     // Move constructor
     Tensor(Tensor<U>&& other) = default;
+    Tensor &operator = (Tensor<U>&&) = default;
+#endif
 
     // Returns the tensor shape
     const std::vector<cnn_size_t>& shape() const { return shape_; }
