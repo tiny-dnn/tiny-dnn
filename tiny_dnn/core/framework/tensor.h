@@ -83,10 +83,15 @@ class Tensor {
         resize();
     }
 
+    ~Tensor() = default;
+
+    Tensor(const Tensor&) = default;
+    Tensor &operator =(const Tensor&) = default;
+
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     // Move constructor
-    Tensor(Tensor<U>&& other) = default;
-    Tensor &operator = (Tensor<U>&&) = default;
+    Tensor(Tensor&& other) = default;
+    Tensor &operator = (Tensor&&) = default;
 #endif
 
     // Returns the tensor shape
@@ -216,7 +221,7 @@ class Tensor {
 
     /* @brief Element-wise addition
      */
-    Tensor<U> add(const Tensor<U>& src) const {
+    Tensor add(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -232,7 +237,7 @@ class Tensor {
 
     /* @brief Element-wise addition
      */
-    Tensor<U> add(const float_t scalar) const {
+    Tensor add(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -244,7 +249,7 @@ class Tensor {
 
     /* @brief Element-wise subtraction
      */
-    Tensor<U> sub(const Tensor<U>& src) const {
+    Tensor sub(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -260,7 +265,7 @@ class Tensor {
 
     /* @brief Element-wise subtraction
      */
-    Tensor<U> sub(const float_t scalar) const {
+    Tensor sub(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -272,7 +277,7 @@ class Tensor {
 
     /* @brief Element-wise multiplication
      */
-    Tensor<U> mul(const Tensor<U>& src) const {
+    Tensor mul(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -288,7 +293,7 @@ class Tensor {
 
     /* @brief Element-wise multiplication
      */
-    Tensor<U> mul(const float_t scalar) const {
+    Tensor mul(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -300,7 +305,7 @@ class Tensor {
 
     /* @brief Element-wise division
      */
-    Tensor<U> div(const Tensor<U>& src) const {
+    Tensor div(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -318,7 +323,7 @@ class Tensor {
 
     /* @brief Element-wise division
      */
-    Tensor<U> div(const float_t scalar) const {
+    Tensor div(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         if (scalar == float_t(0.0)) {
@@ -335,7 +340,7 @@ class Tensor {
 
     /* @brief Element-wise square root
      */
-    Tensor<U> sqrt() const {
+    Tensor sqrt() const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -349,7 +354,7 @@ class Tensor {
 
     /* @brief Element-wise exponential
      */
-    Tensor<U> exp() const {
+    Tensor exp() const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
