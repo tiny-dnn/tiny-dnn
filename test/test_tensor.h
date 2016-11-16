@@ -650,7 +650,7 @@ TEST(tensor, div5) {
     }
 }
 
-TEST(tensor, sqrt) {
+TEST(tensor, sqrt1) {
     Tensor<float_t> t(2, 2, 2, 2);
 
     // fill tensor with initial values
@@ -664,6 +664,23 @@ TEST(tensor, sqrt) {
 
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_NEAR(t2[i], float_t(2.0), epsilon<float_t>());
+    }
+}
+
+TEST(tensor, sqrt2) {
+    Tensor<float_t> t(2, 2, 2, 2);
+
+    // fill tensor with initial values
+    t.fill(float_t(-1.0));
+
+    // compute element-wise square root along all tensor values
+
+    Tensor<float_t> t2 = t.sqrt();
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t2[i]));
     }
 }
 
