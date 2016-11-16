@@ -44,12 +44,57 @@
 */
 #pragma once
 #include "gtest/gtest.h"
+#include "testhelper.h"
 
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
 
 namespace tiny_dnn {
+
+TEST(tensor, constructors) {
+
+    Tensor<float_t> t1;
+    Tensor<float_t> t2(2,2,2,2); t2.fill(float_t(2.0));
+
+    t1 = t2;  // invoke assign copy ctor
+
+    // check that t2 values has been copyied to t1
+    for (size_t i = 0; i < t1.size(); ++i) {
+        EXPECT_EQ(t1[i], float_t(2.0));
+    }
+
+    t1 = Tensor<float_t>(1,1,1,1); // invoke copy ctor
+
+    // check that t1 have default values
+    for (size_t i = 0; i < t1.size(); ++i) {
+        EXPECT_EQ(t1[i], float_t(0.0));
+    }
+
+    // invoke move assign cto
+    t1 = std::move(t2);
+
+    // check that we moved data
+    EXPECT_EQ(t1.size(), cnn_size_t(16));
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    EXPECT_EQ(t2.size(), cnn_size_t(1.0));
+#else
+    // we'll assume that copy assign ctor is invoked
+    EXPECT_EQ(t2.size(), cnn_size_t(16));
+#endif
+
+    // invoke move ctor
+    Tensor<float_t> t3(std::move(t1));
+
+    // check that we moved data
+    EXPECT_EQ(t3.size(), cnn_size_t(16));
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    EXPECT_EQ(t1.size(), cnn_size_t(1.0));
+#else
+    // we'll assume that copy assign ctor is invoked
+    EXPECT_EQ(t1.size(), cnn_size_t(16));
+#endif
+}
 
 TEST(tensor, shape) {
     Tensor<float_t> tensor(1,2,2,2);
@@ -58,6 +103,12 @@ TEST(tensor, shape) {
     EXPECT_EQ(tensor.shape()[1], cnn_size_t(2));
     EXPECT_EQ(tensor.shape()[2], cnn_size_t(2));
     EXPECT_EQ(tensor.shape()[3], cnn_size_t(2));
+}
+
+TEST(tensor, size) {
+    Tensor<float_t> tensor(2,2,2,2);
+
+    EXPECT_EQ(tensor.size(), size_t(2*2*2*2));
 }
 
 TEST(tensor, check_bounds) {
@@ -179,7 +230,6 @@ TEST(tensor, access_data4) {
         }
     }
 }
-
 
 TEST(tensor, access_data5) {
     Tensor<float_t> tensor(1,2,2,2);
@@ -404,12 +454,13 @@ TEST(tensor, linspace) {
     }
 
     Tensor<float_t> tensor2(101,1,1,1);
+
     // fill all tensor values with from 0 to 1
 
     tensor2.linspace(float_t(0.0), float_t(1.0));
 
     for (size_t i = 0; i < tensor2.size(); ++i) {
-        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 0.001);
+        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 1e-5);
     }
 }
 
@@ -422,14 +473,14 @@ TEST(tensor, add1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise sum along all tensor values
 
     Tensor<float_t> t3 = t1.add(t2);
 
     // check that sum is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(4.0));
+        EXPECT_NEAR(t3[i], float_t(4.0), 1e-5);
     }
 }
 
@@ -440,15 +491,25 @@ TEST(tensor, add2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise sum along all tensor values
 
     Tensor<float_t> t2 = t.add(float_t(2.0));
 
     // check that sum is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(3.0));
+        EXPECT_NEAR(t2[i], float_t(3.0), 1e-5);
     }
+}
+
+TEST(tensor, add3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise sum along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.add(t2), nn_error);
 }
 
 TEST(tensor, sub1) {
@@ -460,14 +521,14 @@ TEST(tensor, sub1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise subtraction along all tensor values
 
     Tensor<float_t> t3 = t1.sub(t2);
 
     // check that sum is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(-2.0));
+        EXPECT_NEAR(t3[i], float_t(-2.0), 1e-5);
     }
 }
 
@@ -478,15 +539,25 @@ TEST(tensor, sub2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise subtraction along all tensor values
 
     Tensor<float_t> t2 = t.sub(float_t(2.0));
 
-    // check that sum is okay
+    // check that subtraction is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(-1.0));
+        EXPECT_NEAR(t2[i], float_t(-1.0), 1e-5);
     }
+}
+
+TEST(tensor, sub3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise subtraction along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.sub(t2), nn_error);
 }
 
 TEST(tensor, mul1) {
@@ -498,33 +569,43 @@ TEST(tensor, mul1) {
     t1.fill(float_t(2.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise multiplication along all tensor values
 
     Tensor<float_t> t3 = t1.mul(t2);
 
-    // check that sum is okay
+    // check that subtraction is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(6.0));
+        EXPECT_NEAR(t3[i], float_t(6.0), 1e-5);
     }
 }
 
-TEST(tensor, mult2) {
+TEST(tensor, mul2) {
     Tensor<float_t> t(2,2,2,2);
 
     // fill tensor with initial values
 
     t.fill(float_t(2.0));
 
-    // sum tensor along axis 0
+    // compute element-wise multiplication along all tensor values
 
     Tensor<float_t> t2 = t.mul(float_t(2.0));
 
-    // check that sum is okay
+    // check that multiplication is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(4.0));
+        EXPECT_NEAR(t2[i], float_t(4.0), 1e-5);
     }
+}
+
+TEST(tensor, mul3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise multiplication along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.mul(t2), nn_error);
 }
 
 TEST(tensor, div1) {
@@ -536,14 +617,14 @@ TEST(tensor, div1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(2.0));
 
-    // sum tensor along axis 0
+    // compute element-wise division along all tensor values
 
     Tensor<float_t> t3 = t1.div(t2);
 
-    // check that sum is okay
+    // check that division is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
-        EXPECT_EQ(t3[i], float_t(0.5));
+        EXPECT_NEAR(t3[i], float_t(0.5), 1e-5);
     }
 }
 
@@ -554,31 +635,96 @@ TEST(tensor, div2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise division along all tensor values
 
     Tensor<float_t> t2 = t.div(float_t(2.0));
 
-    // check that sum is okay
+    // check that division is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(0.5));
+        EXPECT_NEAR(t2[i], float_t(0.5), 1e-5);
     }
 }
 
-TEST(tensor, sqrt) {
+TEST(tensor, div3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise division along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.div(t2), nn_error);
+}
+
+TEST(tensor, div4) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t1.fill(float_t(1.0));
+    t2.fill(float_t(0.0));
+
+    // compute element-wise division along all tensor values
+
+    Tensor<float_t> t3 = t1.div(t2);
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t3.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t3[i]));
+    }
+}
+
+TEST(tensor, div5) {
+    Tensor<float_t> t(2,2,2,2);
+
+    // fill tensor with initial values
+
+    t.fill(float_t(1.0));
+
+    // compute element-wise division along all tensor values
+
+    Tensor<float_t> t2 = t.div(float_t(0.0));
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t2[i]));
+    }
+}
+
+TEST(tensor, sqrt1) {
     Tensor<float_t> t(2, 2, 2, 2);
 
     // fill tensor with initial values
     t.fill(float_t(4.0));
 
-    // calculate square root
+    // compute element-wise square root along all tensor values
 
     Tensor<float_t> t2 = t.sqrt();
 
     // check that root is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t2[i], float_t(2.0));
+        EXPECT_NEAR(t2[i], float_t(2.0), 1e-5);
+    }
+}
+
+TEST(tensor, sqrt2) {
+    Tensor<float_t> t(2, 2, 2, 2);
+
+    // fill tensor with initial values
+    t.fill(float_t(-1.0));
+
+    // compute element-wise square root along all tensor values
+
+    Tensor<float_t> t2 = t.sqrt();
+
+    // check that division is NaN
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_TRUE(std::isnan(t2[i]));
     }
 }
 
@@ -588,7 +734,7 @@ TEST(tensor, exp) {
     // fill tensor with initial values
     t.linspace(float_t(1.0), float_t(16.0));
 
-    // calculate exp
+    // compute element-wise exponent along all tensor values
 
     Tensor<float_t> t2 = t.exp();
 

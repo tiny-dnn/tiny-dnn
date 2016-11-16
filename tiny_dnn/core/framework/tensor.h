@@ -44,7 +44,7 @@
 */
 #pragma once
 
-#include <cmath> // sqrt
+#include <cmath>     // sqrt
 #include <algorithm> // std::fill, std::generate
 
 #include "tiny_dnn/core/framework/device.fwd.h"
@@ -83,8 +83,36 @@ class Tensor {
         resize();
     }
 
-    // Move constructor
-    Tensor(Tensor<U>&& other) = default;
+    ~Tensor() = default;
+
+    Tensor(const Tensor&) = default; // copy ctor
+
+    // We need to implement the copy assign constructor in order to make a deep copy
+    // of the data hold by the oject because the supported VS compilers don't allow
+    // move semantics and invoke copy and copy assing constructors instead.
+    // The main reason is that std::unique_ptr can only be moved since have deleted 
+    // copy assign constructors.
+
+    Tensor &operator = (const Tensor& other) {
+        shape_ = other.shape_;
+
+        // deep copy of pointed data
+
+        host_data_ = make_unique<
+            std::vector<U, aligned_allocator<U, 64> > >(*other.host_data_);
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+        device_data_ = make_unique<
+            std::unique_ptr<CLCudaAPI::Buffer<U> > >(*other.device_data_))
+#endif
+
+        return *this;
+    }
+
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    Tensor(Tensor&& other) = default;        // move ctor
+    Tensor &operator = (Tensor&&) = default; // move assign
+#endif
 
     // Returns the tensor shape
     const std::vector<cnn_size_t>& shape() const { return shape_; }
@@ -213,7 +241,7 @@ class Tensor {
 
     /* @brief Element-wise addition
      */
-    Tensor<U> add(const Tensor<U>& src) const {
+    Tensor add(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -229,7 +257,7 @@ class Tensor {
 
     /* @brief Element-wise addition
      */
-    Tensor<U> add(const float_t scalar) const {
+    Tensor add(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -241,7 +269,7 @@ class Tensor {
 
     /* @brief Element-wise subtraction
      */
-    Tensor<U> sub(const Tensor<U>& src) const {
+    Tensor sub(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -257,7 +285,7 @@ class Tensor {
 
     /* @brief Element-wise subtraction
      */
-    Tensor<U> sub(const float_t scalar) const {
+    Tensor sub(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -269,7 +297,7 @@ class Tensor {
 
     /* @brief Element-wise multiplication
      */
-    Tensor<U> mul(const Tensor<U>& src) const {
+    Tensor mul(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -285,7 +313,7 @@ class Tensor {
 
     /* @brief Element-wise multiplication
      */
-    Tensor<U> mul(const float_t scalar) const {
+    Tensor mul(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -297,7 +325,7 @@ class Tensor {
 
     /* @brief Element-wise division
      */
-    Tensor<U> div(const Tensor<>& src) const {
+    Tensor div(const Tensor& src) const {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
@@ -305,8 +333,9 @@ class Tensor {
         Tensor<U> res(src.shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (src[i] +
-                std::numeric_limits<U>::min());
+            const U tmp = src[i];
+            res[i] = tmp == U(0.0) ? std::numeric_limits<U>::quiet_NaN() :
+                this->operator[](i) / tmp;
         });
 
         return std::move(res);
@@ -314,24 +343,29 @@ class Tensor {
 
     /* @brief Element-wise division
      */
-    Tensor<U> div(const float_t scalar) const {
+    Tensor div(const float_t scalar) const {
         Tensor<U> res(this->shape());
 
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) / (scalar +
-                std::numeric_limits<U>::min());
-        });
+        if (scalar == float_t(0.0)) {
+            res.fill(std::numeric_limits<U>::quiet_NaN());
+        } else {
+            for_i(true, res.size(), [&](size_t i) {
+                res[i] = this->operator[](i) / scalar;
+            });
+        }
 
         return std::move(res);
     }
 
     /* @brief Element-wise square root
      */
-    Tensor<U> sqrt() const {
+    Tensor sqrt() const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
-            res[i] = std::sqrt(this->operator[](i));
+            const U tmp = this->operator[](i);
+            res[i] = tmp < U(0.0) ? std::numeric_limits<U>::quiet_NaN()
+                : std::sqrt(tmp);
         });
 
         return std::move(res);
@@ -339,7 +373,7 @@ class Tensor {
 
     /* @brief Element-wise exponential
      */
-    Tensor<U> exp() const {
+    Tensor exp() const {
         Tensor<U> res(this->shape());
 
         for_i(true, res.size(), [&](size_t i) {
@@ -467,11 +501,11 @@ class Tensor {
      */
     std::vector<cnn_size_t> shape_;
 
-    /* Pointer to the Tensor data in pure CPU mode */
+    /* Pointer to the Tensor data in pure in the host device */
     std::unique_ptr<std::vector<U, aligned_allocator<U, 64> > > host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    /* Pointer to the Tensor data in OpenCL mode */
+    /* Pointer to the Tensor data in the device */
     std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
 #endif
 
@@ -481,7 +515,7 @@ class Tensor {
 
 // Overloaded method to print the Tensor class to the standard output
 inline std::ostream& operator<< (std::ostream &os,
-		                 const Tensor<>& tensor) {
+                                 const Tensor<>& tensor) {
     const std::vector<cnn_size_t>& shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
