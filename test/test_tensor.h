@@ -404,6 +404,7 @@ TEST(tensor, linspace) {
     }
 
     Tensor<float_t> tensor2(101,1,1,1);
+
     // fill all tensor values with from 0 to 1
 
     tensor2.linspace(float_t(0.0), float_t(1.0));
@@ -422,7 +423,7 @@ TEST(tensor, add1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise sum along all tensor values
 
     Tensor<float_t> t3 = t1.add(t2);
 
@@ -440,7 +441,7 @@ TEST(tensor, add2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise sum along all tensor values
 
     Tensor<float_t> t2 = t.add(float_t(2.0));
 
@@ -460,7 +461,7 @@ TEST(tensor, sub1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise subtraction along all tensor values
 
     Tensor<float_t> t3 = t1.sub(t2);
 
@@ -478,11 +479,11 @@ TEST(tensor, sub2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise subtraction along all tensor values
 
     Tensor<float_t> t2 = t.sub(float_t(2.0));
 
-    // check that sum is okay
+    // check that subtraction is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_EQ(t2[i], float_t(-1.0));
@@ -498,11 +499,11 @@ TEST(tensor, mul1) {
     t1.fill(float_t(2.0));
     t2.fill(float_t(3.0));
 
-    // sum tensor along axis 0
+    // compute element-wise multiplication along all tensor values
 
     Tensor<float_t> t3 = t1.mul(t2);
 
-    // check that sum is okay
+    // check that subtraction is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
         EXPECT_EQ(t3[i], float_t(6.0));
@@ -516,11 +517,11 @@ TEST(tensor, mult2) {
 
     t.fill(float_t(2.0));
 
-    // sum tensor along axis 0
+    // compute element-wise multiplication along all tensor values
 
     Tensor<float_t> t2 = t.mul(float_t(2.0));
 
-    // check that sum is okay
+    // check that multiplication is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_EQ(t2[i], float_t(4.0));
@@ -536,11 +537,11 @@ TEST(tensor, div1) {
     t1.fill(float_t(1.0));
     t2.fill(float_t(2.0));
 
-    // sum tensor along axis 0
+    // compute element-wise division along all tensor values
 
     Tensor<float_t> t3 = t1.div(t2);
 
-    // check that sum is okay
+    // check that division is okay
 
     for (size_t i = 0; i < t3.size(); ++i) {
         EXPECT_EQ(t3[i], float_t(0.5));
@@ -554,11 +555,11 @@ TEST(tensor, div2) {
 
     t.fill(float_t(1.0));
 
-    // sum tensor along axis 0
+    // compute element-wise division along all tensor values
 
     Tensor<float_t> t2 = t.div(float_t(2.0));
 
-    // check that sum is okay
+    // check that division is okay
 
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_EQ(t2[i], float_t(0.5));
@@ -571,7 +572,7 @@ TEST(tensor, sqrt) {
     // fill tensor with initial values
     t.fill(float_t(4.0));
 
-    // calculate square root
+    // compute element-wise square root along all tensor values
 
     Tensor<float_t> t2 = t.sqrt();
 
@@ -588,7 +589,7 @@ TEST(tensor, exp) {
     // fill tensor with initial values
     t.linspace(float_t(1.0), float_t(16.0));
 
-    // calculate exp
+    // compute element-wise exponent along all tensor values
 
     Tensor<float_t> t2 = t.exp();
 
