@@ -452,6 +452,16 @@ TEST(tensor, add2) {
     }
 }
 
+TEST(tensor, add3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise sum along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.add(t2), nn_error);
+}
+
 TEST(tensor, sub1) {
     Tensor<float_t> t1(2,2,2,2);
     Tensor<float_t> t2(2,2,2,2);
@@ -490,6 +500,16 @@ TEST(tensor, sub2) {
     }
 }
 
+TEST(tensor, sub3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise subtraction along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.sub(t2), nn_error);
+}
+
 TEST(tensor, mul1) {
     Tensor<float_t> t1(2,2,2,2);
     Tensor<float_t> t2(2,2,2,2);
@@ -510,7 +530,7 @@ TEST(tensor, mul1) {
     }
 }
 
-TEST(tensor, mult2) {
+TEST(tensor, mul2) {
     Tensor<float_t> t(2,2,2,2);
 
     // fill tensor with initial values
@@ -526,6 +546,16 @@ TEST(tensor, mult2) {
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_NEAR(t2[i], float_t(4.0), epsilon<float_t>());
     }
+}
+
+TEST(tensor, mul3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise multiplication along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.mul(t2), nn_error);
 }
 
 TEST(tensor, div1) {
@@ -564,6 +594,16 @@ TEST(tensor, div2) {
     for (size_t i = 0; i < t2.size(); ++i) {
         EXPECT_NEAR(t2[i], float_t(0.5), epsilon<float_t>());
     }
+}
+
+TEST(tensor, div3) {
+    Tensor<float_t> t1(2,2,2,2);
+    Tensor<float_t> t2(4,4,4,4);
+
+    // compute element-wise division along all tensor values.
+    // Expect a throw since shapes are different
+
+    EXPECT_THROW(t1.div(t2), nn_error);
 }
 
 TEST(tensor, sqrt) {
