@@ -52,6 +52,50 @@ using namespace tiny_dnn;
 
 namespace tiny_dnn {
 
+TEST(tensor, constructors) {
+
+    Tensor<float_t> t1;
+    Tensor<float_t> t2(2,2,2,2); t2.fill(float_t(2.0));
+
+    t1 = t2;  // invoke assign copy ctor
+
+    // check that t2 values has been copyied to t1
+    for (size_t i = 0; i < t1.size(); ++i) {
+        EXPECT_EQ(t1[i], float_t(2.0));
+    }
+
+    t1 = Tensor<float_t>(1,1,1,1); // invoke copy ctor
+
+    // check that t1 have default values
+    for (size_t i = 0; i < t1.size(); ++i) {
+        EXPECT_EQ(t1[i], float_t(0.0));
+    }
+
+    // invoke move assign cto
+    t1 = std::move(t2);
+
+    // check that we moved data
+    EXPECT_EQ(t1.size(), cnn_size_t(16));
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    EXPECT_EQ(t2.size(), cnn_size_t(1.0));
+#else
+    // we'll assume that copy assign ctor is invoked
+    EXPECT_EQ(t2.size(), cnn_size_t(16));
+#endif
+
+    // invoke move ctor
+    Tensor<float_t> t3(std::move(t1));
+
+    // check that we moved data
+    EXPECT_EQ(t3.size(), cnn_size_t(16));
+#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    EXPECT_EQ(t1.size(), cnn_size_t(1.0));
+#else
+    // we'll assume that copy assign ctor is invoked
+    EXPECT_EQ(t1.size(), cnn_size_t(16));
+#endif
+}
+
 TEST(tensor, shape) {
     Tensor<float_t> tensor(1,2,2,2);
 

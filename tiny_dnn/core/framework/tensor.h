@@ -85,13 +85,33 @@ class Tensor {
 
     ~Tensor() = default;
 
-    Tensor(const Tensor&) = default;
-    Tensor &operator =(const Tensor&) = default;
+    Tensor(const Tensor&) = default; // copy ctor
+
+    // We need to implement the copy assign constructor in order to make a deep copy
+    // of the data hold by the oject because the supported VS compilers don't allow
+    // move semantics and invoke copy and copy assing constructors instead.
+    // The main reason is that std::unique_ptr can only be moved since have deleted 
+    // copy assign constructors.
+
+    Tensor &operator = (const Tensor& other) {
+        shape_ = other.shape_;
+
+        // deep copy of pointed data
+
+        host_data_ = make_unique<
+            std::vector<U, aligned_allocator<U, 64> > >(*other.host_data_);
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+        device_data_ = make_unique<
+            std::unique_ptr<CLCudaAPI::Buffer<U> > >(*other.device_data_))
+#endif
+
+        return *this;
+    }
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
-    // Move constructor
-    Tensor(Tensor&& other) = default;
-    Tensor &operator = (Tensor&&) = default;
+    Tensor(Tensor&& other) = default;        // move ctor
+    Tensor &operator = (Tensor&&) = default; // move assign
 #endif
 
     // Returns the tensor shape
@@ -481,11 +501,11 @@ class Tensor {
      */
     std::vector<cnn_size_t> shape_;
 
-    /* Pointer to the Tensor data in pure CPU mode */
+    /* Pointer to the Tensor data in pure in the host device */
     std::unique_ptr<std::vector<U, aligned_allocator<U, 64> > > host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    /* Pointer to the Tensor data in OpenCL mode */
+    /* Pointer to the Tensor data in the device */
     std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
 #endif
 
