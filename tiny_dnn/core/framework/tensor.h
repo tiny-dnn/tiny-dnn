@@ -65,8 +65,8 @@ template<typename U = float_t>
 class Tensor {
 public:
     /*
-        * Initializes an empty tensor.
-        */
+     * Initializes an empty tensor.
+     */
     Tensor() : shape_{ 0,0,0,0 } {}
 
     /*
@@ -145,25 +145,25 @@ public:
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
     U& host_at(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) {
+               const serial_size_t d1,
+               const serial_size_t d2,
+               const serial_size_t d3) {
         return *host_ptr(d0, d1, d2, d3);
     }
 
     U host_at(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) const {
+              const serial_size_t d1,
+              const serial_size_t d2,
+              const serial_size_t d3) const {
         return *host_ptr(d0, d1, d2, d3);
     }
 
     // Returns the pointer to a specified index in the tensor
     // Checked version (throw exceptions for out-of-range error)
     const U* host_ptr(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) const {
+                      const serial_size_t d1,
+                      const serial_size_t d2,
+                      const serial_size_t d3) const {
         if (d0 >= shape_[0] || d1 >= shape_[1] ||
             d2 >= shape_[2] || d3 >= shape_[3]) {
             throw nn_error("Access tensor out of range.");
@@ -178,9 +178,9 @@ public:
     }
 
     U* host_ptr(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) {
+                const serial_size_t d1,
+                const serial_size_t d2,
+                const serial_size_t d3) {
         if (d0 >= shape_[0] || d1 >= shape_[1] ||
             d2 >= shape_[2] || d3 >= shape_[3]) {
             throw nn_error("Access tensor out of range.");
@@ -227,9 +227,9 @@ public:
     }
 
     void reshape(const serial_size_t d0,
-        const serial_size_t d1,
-        const serial_size_t d2,
-        const serial_size_t d3) {
+                 const serial_size_t d1,
+                 const serial_size_t d2,
+                 const serial_size_t d3) {
         shape_[0] = d0;
         shape_[1] = d1;
         shape_[2] = d2;
@@ -280,11 +280,11 @@ private:
 
 private:
     /* Vector with the size of the tensor
-        * shape_[0]: batch
-        * shape_[1]: width
-        * shape_[2]: height
-        * shape_[3]: depth
-        */
+     * shape_[0]: batch
+     * shape_[1]: width
+     * shape_[2]: height
+     * shape_[3]: depth
+     */
     std::array<serial_size_t, 4> shape_;
 
     /* Pointer to the Tensor data in pure in the host device */
@@ -304,7 +304,7 @@ private:
 // Overloaded method to print the Tensor class to the standard output
 template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
-                         const Tensor<T>& tensor) {
+                                 const Tensor<T>& tensor) {
     const std::vector<serial_size_t>& shape = tensor.shape();
     for (serial_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
