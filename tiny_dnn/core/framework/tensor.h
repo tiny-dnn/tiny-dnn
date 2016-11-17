@@ -46,8 +46,18 @@
 
 #include <cmath>     // sqrt
 #include <algorithm> // std::fill, std::generate
+#include <numeric>   // std::accumulate
+#include <vector>
 
 #include "tiny_dnn/core/framework/device.fwd.h"
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+#ifdef USE_OPENCL
+#include "third_party/CLCudaAPI/clpp11.h"
+#else
+#include "third_party/CLCudaAPI/cupp11.h"
+#endif
+#endif
 
 namespace tiny_dnn {
 
@@ -57,7 +67,7 @@ class Tensor {
     /*
      * Initializes an empty tensor.
      */
-    Tensor() {}
+    Tensor() : shape_{ 0,0,0,0 } {}
 
     /*
      * Create a tensor of the given dimension.
@@ -74,144 +84,158 @@ class Tensor {
                     const cnn_size_t d1,
                     const cnn_size_t d2,
                     const cnn_size_t d3) {
-        reshape(d0, d1, d2, d3);
-        resize();
+        resize(d0, d1, d2, d3);
+    }
+
+    explicit Tensor(const std::array<cnn_size_t, 4>& shape) {
+        resize(shape[0], shape[1], shape[2], shape[3]);
     }
 
     explicit Tensor(const std::vector<cnn_size_t>& shape) {
-        reshape(shape[0], shape[1], shape[2], shape[3]);
-        resize();
+        assert(shape.size() == 4);
+        resize(shape[0], shape[1], shape[2], shape[3]);
     }
 
     ~Tensor() = default;
 
-    Tensor(const Tensor&) = default; // copy ctor
-
-    // We need to implement the copy assign constructor in order to make a deep copy
-    // of the data hold by the oject because the supported VS compilers don't allow
-    // move semantics and invoke copy and copy assing constructors instead.
-    // The main reason is that std::unique_ptr can only be moved since have deleted 
-    // copy assign constructors.
+    Tensor(const Tensor&) {
+        other.fromDevice();
+        shape_ = other.shape_;
+        host_data_ = other.host_data_;
+        data_is_on_host_ = true;
+        data_dirty_ = true;       
+        //device_data_ is intentionally left uninitialized.
+    }
 
     Tensor &operator = (const Tensor& other) {
+        other.fromDevice();
         shape_ = other.shape_;
+        data_is_on_host_ = true;
+        data_dirty_ = true;
+        host_data_ = other.host_data_;
 
-        // deep copy of pointed data
-
-        host_data_ = make_unique<
-            std::vector<U, aligned_allocator<U, 64> > >(*other.host_data_);
-
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-        device_data_ = make_unique<
-            std::unique_ptr<CLCudaAPI::Buffer<U> > >(*other.device_data_))
-#endif
-
+        //device_data_ is intentionally left as-is. It will be erased only if new tensor won't fit, and only when data gets moved to the GPU.
         return *this;
     }
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     Tensor(Tensor&& other) = default;        // move ctor
     Tensor &operator = (Tensor&&) = default; // move assign
+#else
+    Tensor(Tensor&& other) { // for VS2013 we need to manually implement these if we want to have move semantics
+        shape_ = std::move(other.shape_);
+        host_data_ = std::move(other.host_data_);
+        device_data_ = std::move(other.device_data_);
+        data_is_on_host_ = other.data_is_on_host_;
+        data_dirty_ = other.data_dirty_;
+        return *this;
+    }
+    Tensor &operator = (Tensor&& other) {
+        shape_ = std::move(other.shape_);
+        host_data_ = std::move(other.host_data_);
+        device_data_ = std::move(other.device_data_);
+        data_is_on_host_ = other.data_is_on_host_;
+        data_dirty_ = other.data_dirty_;
+}
 #endif
 
     // Returns the tensor shape
-    const std::vector<cnn_size_t>& shape() const { return shape_; }
+    const std::array<cnn_size_t, 4>& shape() const { return shape_; }
     
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
-    template<typename T>
-    T& at(const cnn_size_t d0,
+    U& host_at(const cnn_size_t d0,
           const cnn_size_t d1,
           const cnn_size_t d2,
           const cnn_size_t d3) {
-        return *access_data<T>(d0, d1, d2, d3);
+        return *host_ptr(d0, d1, d2, d3);
     }
 
-    template<typename T>
-    const T& at(const cnn_size_t d0,
+    U host_at(const cnn_size_t d0,
                 const cnn_size_t d1,
                 const cnn_size_t d2,
                 const cnn_size_t d3) const {
-        return *access_data<T>(d0, d1, d2, d3);
+        return *host_ptr(d0, d1, d2, d3);
     }
 
     // Returns the pointer to a specified index in the tensor
     // Checked version (throw exceptions for out-of-range error)
-    template<typename T>
-    T* ptr(const cnn_size_t d0,
-           const cnn_size_t d1,
-           const cnn_size_t d2,
-           const cnn_size_t d3) {
-        return access_data<T>(d0, d1, d2, d3);
+    const U* host_ptr(const cnn_size_t d0,
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) const {
+        if (d0 >= shape_[0] || d1 >= shape_[1] ||
+            d2 >= shape_[2] || d3 >= shape_[3]) {
+            throw nn_error("Access tensor out of range.");
+        }
+
+        return host_data() + (
+            shape_[1] * shape_[2] * shape_[3] * d0 +
+            shape_[1] * shape_[2] * d3 +
+            shape_[1] * d2 +
+            d1
+            );
     }
-    
-    template<typename T>
-    const T* ptr(const cnn_size_t d0,
-                 const cnn_size_t d1,
-                 const cnn_size_t d2,
-                 const cnn_size_t d3) const {
-        return access_data<T>(d0, d1, d2, d3);
+
+    U* host_ptr(const cnn_size_t d0,
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) {
+        if (d0 >= shape_[0] || d1 >= shape_[1] ||
+            d2 >= shape_[2] || d3 >= shape_[3]) {
+            throw nn_error("Access tensor out of range.");
+        }
+
+        return mutable_host_data() + (
+            shape_[1] * shape_[2] * shape_[3] * d0 +
+            shape_[1] * shape_[2] * d3 +
+            shape_[1] * d2 +
+            d1
+            );
     }
 
     // zero-overhead version (same performance to raw pointer access.
     // have an assertion for out-of-range error)
     U& operator[] (const size_t index) {
-        return *access_data<U>(index);
+        return mutable_host_data()[index];
     }
 
-    const U& operator[] (const size_t index) const {
-        return *access_data<U>(index);
+    U operator[] (const size_t index) const {
+        return host_data()[index];
     }
 
-    // this is only a proof of concept to copy data
-    // from one device to another.
-    void toDevice(const Device& device) {
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-        CLCudaAPI::Context ctx = device.context();
-        CLCudaAPI::Queue queue = device.queue();
-
-        device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
-            ctx, queue, host_data_->begin(), host_data_->end());
-#endif
+    const U* host_data() const {
+        if (!data_is_on_host_ && data_dirty_) {
+            fromDevice();
+        }
+        return host_data_.data();
+    }
+    
+    U* mutable_host_data() {
+        if (!data_is_on_host_ && data_dirty_) {
+            fromDevice();
+        }
+        data_dirty_ = true;
+        return host_data_.data();
     }
 
-    // this is only a proof of concept to copy data
-    // from one device to another.
-    void fromDevice(const Device& device) {
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-        CLCudaAPI::Queue queue = device.queue();
-
-        device_data_->Read(
-            queue, host_data_->size(), &host_data_->at(0));
-#endif
+    const void *device_data() const {
+        if (data_is_on_host_ && data_dirty_) const {
+            toDevice();
+        }
+        return (*device_data_)();
     }
 
-    /*template<typename T, typename U = float_t>
-    T host_data() const {
-        return static_cast<T>(*access_data(0));
+    void *mutable_device_data() {
+        if (data_is_on_host_ && data_dirty_) {
+            toDevice();
+        }
+        data_dirty_ = true;
+        return (*device_data_)();
     }
-
-    template<typename T, typename U = float_t>
-    T mutable_host_data() {
-        return static_cast<T>(*access_data(0));
-    }
-
-    template<typename T, typename U = float_t>
-    T device_data() const {
-	fromDevice(device_);
-        return static_cast<T>(*access_data(0));
-    }
-
-    template<typename T, typename U = float_t>
-    T mutable_device_data() {
-	fromDevice(device_);
-        return static_cast<T>(*access_data(0));
-    }*/
 
     size_t size() const {
-        size_t new_size = 1;
-        for (auto d : shape_) { new_size *= d; }
-        return new_size;
+        return host_data_.size();
     }
 
     /* @brief Fills all the tensor values with a given value
@@ -219,303 +243,220 @@ class Tensor {
      * @param value The value to fill the tensor
      */
     void fill(const U value) {
-        std::fill(host_data_->begin(), host_data_->end(), value);
+        data_is_on_host_ = true;
+        data_dirty_ = true;
+        std::fill(host_data_.begin(), host_data_.end(), value);
     }
 
-    /* @brief Fills the tensor with evenly-spaced values in the interval
-     *
-     * @param from The lower bound of the interval
-     * @param to The upper bound of the interval
-     */
-    void linspace(const U from, const U to) {
-        U start = from,
-            step = (to - from) / (host_data_->end() - host_data_->begin() - 1);
-        std::generate(host_data_->begin(),
-                      host_data_->end(),
-                      [&start, &step]() {
-                        U tmp = start;
-                        start += step;
-                        return tmp;
-                      });
-    }
+    // /* @brief Fills the tensor with evenly-spaced values in the interval
+    //  *
+    //  * @param from The lower bound of the interval
+    //  * @param to The upper bound of the interval
+    //  */
+    // void linspace(const U from, const U to) {
+    //     U start = from,
+    //         step = (to - from) / (host_data_->end() - host_data_->begin() - 1);
+    //     std::generate(host_data_->begin(),
+    //                   host_data_->end(),
+    //                   [&start, &step]() {
+    //                     U tmp = start;
+    //                     start += step;
+    //                     return tmp;
+    //                   });
+    // }
 
     /* @brief Element-wise addition
      */
     Tensor add(const Tensor& src) const {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
-        }
-
-        Tensor<U> res(src.shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) + src[i];
-        });
-
-        return std::move(res);
+        return binary_element_wise_operation(src, std::plus<U>());
     }
 
     /* @brief Element-wise addition
      */
-    Tensor add(const float_t scalar) const {
-        Tensor<U> res(this->shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) + scalar;
-        });
-
-        return std::move(res);
+    Tensor add(const U scalar) const {
+        return binary_scalar_operation(scalar, std::plus<U>());
     }
 
     /* @brief Element-wise subtraction
      */
     Tensor sub(const Tensor& src) const {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
-        }
-
-        Tensor<U> res(src.shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) - src[i];
-        });
-
-        return std::move(res);
+        return binary_element_wise_operation(src, std::minus<U>());
     }
 
     /* @brief Element-wise subtraction
      */
-    Tensor sub(const float_t scalar) const {
-        Tensor<U> res(this->shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) - scalar;
-        });
-
-        return std::move(res);
+    Tensor sub(const U scalar) const {
+        return add(-scalar);
     }
 
     /* @brief Element-wise multiplication
      */
     Tensor mul(const Tensor& src) const {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
-        }
-
-        Tensor<U> res(src.shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) * src[i];
-        });
-
-        return std::move(res);
+        return binary_element_wise_operation(src, std::multiplies<U>());
     }
 
     /* @brief Element-wise multiplication
      */
-    Tensor mul(const float_t scalar) const {
-        Tensor<U> res(this->shape());
-
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = this->operator[](i) * scalar;
-        });
-
-        return std::move(res);
+    Tensor mul(const U scalar) const {
+        return binary_scalar_operation(scalar, std::multiplies<U>());
     }
 
     /* @brief Element-wise division
      */
     Tensor div(const Tensor& src) const {
+        return binary_element_wise_operation(src, [](U a, U b)
+        {
+            return (b == U(0.0)) ? std::numeric_limits<U>::quiet_NaN() :
+                a / b;
+
+        });
+    }
+
+    /* @brief Element-wise division
+     */
+    Tensor div(const U scalar) const {
+        if (scalar == U(0.0)) {
+            Tensor<U> res(this->shape());
+            res.fill(std::numeric_limits<U>::quiet_NaN());
+            return std::move(res);
+        } else {
+            return binary_scalar_operation(src, std::divides<U>());
+        }
+
+    }
+
+    /* @brief Element-wise square root
+     */
+    Tensor sqrt() const {
+        return unary_element_wise_operation([](U v) {return std::sqrt(v); }); // lambda used because types cannot be deduced by simply specifying std::sqrt 
+    }
+
+    /* @brief Element-wise exponential
+     */
+    Tensor exp() const {
+        return unary_element_wise_operation([](U v) {return std::exp(v); }); // lambda used because types cannot be deduced by simply specifying std::exp
+    }
+
+ private:
+     void toDevice() const {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+         CLCudaAPI::Queue queue = device->queue();
+         if (device_data_ && device_data_->GetSize() >= host_data_.size()) {
+             device_data_->Write(queue, host_data.size(), host_data_.data(), 0);
+         } else {
+             CLCudaAPI::Context ctx = device->context();
+             device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
+                 ctx, queue, host_data_.begin(), host_data_.end());
+         }
+
+#endif
+         data_is_on_host_ = false;
+         data_dirty_ = false;
+     }
+
+     void fromDevice() const {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+         assert(device_);
+         assert(device_data_);
+         device_data_->Read(device_->queue(), host_data_.size(), const_cast<U*>(host_data_.data())); // using const_cast<> to avoid making host_data_ entirely mutable
+#endif
+         data_is_on_host_ = true;
+         data_dirty_ = false;
+     }
+
+    // Initializes the shape vector
+    void resize(const cnn_size_t d0,
+                 const cnn_size_t d1,
+                 const cnn_size_t d2,
+                 const cnn_size_t d3) {
+	    shape_[0] = d0;
+	    shape_[1] = d1;
+	    shape_[2] = d2;
+	    shape_[3] = d3;
+        host_data_.resize(std::accumulate(std::begin(shape_), std::end(shape_), size_t(1), std::multiplies<size_t>()), U(0));
+    }
+
+    template<typename F> Tensor binary_element_wise_operation(const Tensor &src, F f) const
+    {
         if (this->shape() != src.shape()) {
             throw nn_error("Tensor must have same shape");
         }
 
         Tensor<U> res(src.shape());
 
-        for_i(true, res.size(), [&](size_t i) {
-            const U tmp = src[i];
-            res[i] = tmp == U(0.0) ? std::numeric_limits<U>::quiet_NaN() :
-                this->operator[](i) / tmp;
+        const U* dst = res.mutable_host_data();
+        const U* src1 = host_data();
+        const U* src2 = src.host_data();
+
+        for_i(true, res.size(), [dst, src1, src2, &f](size_t i) {
+            dst[i] = f(src1[i], src2[i]);
         });
 
         return std::move(res);
     }
 
-    /* @brief Element-wise division
-     */
-    Tensor div(const float_t scalar) const {
-        Tensor<U> res(this->shape());
-
-        if (scalar == float_t(0.0)) {
-            res.fill(std::numeric_limits<U>::quiet_NaN());
-        } else {
-            for_i(true, res.size(), [&](size_t i) {
-                res[i] = this->operator[](i) / scalar;
-            });
+    template<typename F> Tensor unary_element_wise_operation(F f) const
+    {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
         }
 
-        return std::move(res);
-    }
+        Tensor<U> res(src.shape());
 
-    /* @brief Element-wise square root
-     */
-    Tensor sqrt() const {
-        Tensor<U> res(this->shape());
+        const U* dst = res.mutable_host_data();
+        const U* src1 = host_data();
 
-        for_i(true, res.size(), [&](size_t i) {
-            const U tmp = this->operator[](i);
-            res[i] = tmp < U(0.0) ? std::numeric_limits<U>::quiet_NaN()
-                : std::sqrt(tmp);
+        for_i(true, res.size(), [dst, src1, &f](size_t i) {
+            dst[i] = f(src1[i]);
         });
 
         return std::move(res);
     }
 
-    /* @brief Element-wise exponential
-     */
-    Tensor exp() const {
-        Tensor<U> res(this->shape());
+    template<typename F> Tensor binary_scalar_operation(U scalar, F f) const
+    {
+        if (this->shape() != src.shape()) {
+            throw nn_error("Tensor must have same shape");
+        }
 
-        for_i(true, res.size(), [&](size_t i) {
-            res[i] = std::exp(this->operator[](i));
+        Tensor<U> res(src.shape());
+
+        const U* dst = res.mutable_host_data();
+        const U* src1 = host_data();
+
+        for_i(true, res.size(), [dst, src1, scalar, &f](size_t i) {
+            dst[i] = f(src1[i], scalar);
         });
 
         return std::move(res);
     }
-
- private:
-    // Initializes the data buffer with the given value
-    void resize(const U value = 0) {
-        if (!host_data_) {
-            host_data_ = make_unique<
-                std::vector<U, aligned_allocator<U, 64> > >(size(), value);
-        } else {
-            host_data_->resize(size(), value);
-        }
-    }
-
-    // Initializes the shape vector
-    void reshape(const cnn_size_t d0,
-                 const cnn_size_t d1,
-                 const cnn_size_t d2,
-                 const cnn_size_t d3) {
-	    shape_.resize(4);
-	    shape_[0] = d0;
-	    shape_[1] = d1;
-	    shape_[2] = d2;
-	    shape_[3] = d3;
-    }
-
-    // Method to access to the tensor data.
-    // It checks if the requested position is feasible or not.
-    template<typename T>
-    T* access_data(const cnn_size_t d0,
-                   const cnn_size_t d1,
-                   const cnn_size_t d2,
-                   const cnn_size_t d3) {
-        if (d0 >= shape_[0] || d1 >= shape_[1] ||
-            d2 >= shape_[2] || d3 >= shape_[3]) {
-            throw nn_error("Access tensor out of range.");
-        }
-
-        U* value = &host_data_->operator[](
-            shape_[1] * shape_[2] * shape_[3] * d0 +
-            shape_[1] * shape_[2] * d3 +
-            shape_[1] * d2 +
-            d1
-        );
-
-        // in case that requested type is not the same as
-        // the specified during the tensor initilization
-        // we cast the type.
-        if (!std::is_same<T,U>::value) {
-            return reinterpret_cast<T*>(value);
-        }
-        return value;
-    }
-
-    // Method to access to the tensor data.
-    // It checks if the requested position is feasible or not.
-    template<typename T>
-    T* access_data(const cnn_size_t d0,
-                   const cnn_size_t d1,
-                   const cnn_size_t d2,
-                   const cnn_size_t d3) const {
-        if (d0 >= shape_[0] || d1 >= shape_[1] ||
-            d2 >= shape_[2] || d3 >= shape_[3]) {
-            throw nn_error("Access tensor out of range.");
-        }
-
-        U* value = &host_data_->operator[](
-            shape_[1] * shape_[2] * shape_[3] * d0 +
-            shape_[1] * shape_[2] * d3 +
-            shape_[1] * d2 +
-            d1
-        );
-
-        // in case that requested type is not the same as
-        // the specified during the tensor initilization
-        // we cast the type.
-        if (!std::is_same<T,U>::value) {
-            return reinterpret_cast<T*>(value);
-        }
-        return value;
-    }
-
-    template<typename T>
-    T* access_data(const size_t index) {
-        assert(index < host_data_->size() && "Access tensor out of range.");
-
-        U* value = &host_data_->operator[](index);
-
-        // in case that requested type is not the same as
-        // the specified during the tensor initilization
-        // we cast the type.
-        if (!std::is_same<T,U>::value) {
-            return reinterpret_cast<T*>(value);
-        }
-        return value;
-    }
-
-    template<typename T>
-    T* access_data(const size_t index) const {
-        assert(index < host_data_->size() && "Access tensor out of range.");
-
-        U* value = &host_data_->operator[](index);
-
-        // in case that requested type is not the same as
-        // the specified during the tensor initilization
-        // we cast the type.
-        if (!std::is_same<T,U>::value) {
-            return reinterpret_cast<T*>(value);
-        }
-        return value;
-    }
-
- private:
+private:
     /* Vector with the size of the tensor
      * shape_[0]: batch
      * shape_[1]: width
      * shape_[2]: height
      * shape_[3]: depth
      */
-    std::vector<cnn_size_t> shape_;
+    std::array<cnn_size_t, 4> shape_;
 
     /* Pointer to the Tensor data in pure in the host device */
-    std::unique_ptr<std::vector<U, aligned_allocator<U, 64> > > host_data_;
+    std::vector<U, aligned_allocator<U, 64> > host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in the device */
     std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
 #endif
+    mutable bool data_is_on_host_;      //< current data is on host if true, on device if false.
+    mutable bool data_dirty_;           //< set to true if current data might have been modified
 
     /* Pointer to the current device where the data resides */
     Device* device_;
 };
 
 // Overloaded method to print the Tensor class to the standard output
+template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
-                                 const Tensor<>& tensor) {
+                                 const Tensor<T>& tensor) {
     const std::vector<cnn_size_t>& shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
@@ -524,7 +465,7 @@ inline std::ostream& operator<< (std::ostream &os,
             os << "-- Data:\n";
             for (cnn_size_t k = 0; k < shape[1]; ++k) {
                 for (cnn_size_t l = 0; l < shape[2]; ++l) {
-                    os << "   " << tensor.at<float_t>(i,k,l,j) << " ";
+                    os << "   " << tensor.at(i,k,l,j) << " ";
                 }
                 os << ";\n";
             }
