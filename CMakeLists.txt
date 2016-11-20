@@ -356,7 +356,7 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 if(BUILD_DOCS)
-    add_subdirectory(doc)
+    add_subdirectory(docs)
 endif(BUILD_DOCS)
 
 ####
