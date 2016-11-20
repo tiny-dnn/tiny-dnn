@@ -702,6 +702,20 @@ TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has co
         epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+TEST(convolutional, gradient_check12_pad_same) { // sigmoid - mse - padding same
+	network<sequential> nn;
+
+	nn << fully_connected_layer<identity>(10, 5*5) <<
+		convolutional_layer<sigmoid>(5, 5, 3, 1, 1, padding::same,
+		true, 1, 1, core::backend_t::internal);
+
+	const auto test_data = generate_gradient_check_data(nn.in_data_size());
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+		test_data.second,
+		epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
 TEST(convolutional, read_write)
 {
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);

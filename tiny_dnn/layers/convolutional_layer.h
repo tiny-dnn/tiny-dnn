@@ -272,7 +272,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         }
 
         if (params_.pad_type == padding::same) {
-            *in_grad_[0] = cws_.prev_delta_padded_;
+            in_grad_[0] = &cws_.prev_delta_padded_;
         }
 
         auto ctx = OpKernelContext(in_data_, out_data, out_grad, in_grad_);
