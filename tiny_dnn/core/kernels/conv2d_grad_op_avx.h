@@ -60,9 +60,9 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
     // propagate delta to previous layer
     if (w_stride == 1 && out.width_ >= 4) {
-        const cnn_size_t nblocks = out.width_ / 4;
-        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
+        const serial_size_t nblocks = out.width_ / 4;
+        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
                 const float* pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
@@ -87,14 +87,14 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 __m256 w2d = leftShift<12>(w2a);
                 __m256 w3d = leftShift<12>(w3a);
                 __m256 w4d = leftShift<12>(w4a);
-                for (cnn_size_t y = 0; y < out.height_; y++) {
+                for (serial_size_t y = 0; y < out.height_; y++) {
                     const float* pdelta_src2 = pdelta_src;
                     float* delta_dst0 = pdelta_dst;
                     float* delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
                     float* delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
                     float* delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
                     float* delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
-                    for (cnn_size_t n = 0; n < nblocks; ++n) {
+                    for (serial_size_t n = 0; n < nblocks; ++n) {
                         __m256 delta_src = _mm256_broadcast_ps((const __m128*)pdelta_src2);
                         __m256 dst0 = _mm256_loadu_ps(delta_dst0 + 4 * n);
                         __m256 dst1 = _mm256_loadu_ps(delta_dst1 + 4 * n);
@@ -132,7 +132,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                         _mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
                         pdelta_src2 += 4;
                     }
-                    for (cnn_size_t x = nblocks * 4; x < out.width_; x++) {
+                    for (serial_size_t x = nblocks * 4; x < out.width_; x++) {
                         __m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
                         __m256 dst0 = _mm256_loadu_ps(delta_dst0 + x);
                         __m256 dst1 = _mm256_loadu_ps(delta_dst1 + x);
@@ -156,7 +156,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             }
         }
     } else if (out.height_ == 1 && out.width_ == 1) {
-        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
             float* delta_dst0 = pdelta_dst_org;
             float* delta_dst1 = &pdelta_dst_org[in_padded.width_ * 1];
             float* delta_dst2 = &pdelta_dst_org[in_padded.width_ * 2];
@@ -201,7 +201,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             size_t wstep = 25 * in.depth_;
 
             if (tbl.is_empty()) {
-                for (cnn_size_t outc = 0; outc < out.depth_; outc++, widx+=wstep) {
+                for (serial_size_t outc = 0; outc < out.depth_; outc++, widx+=wstep) {
                     __m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
                     const float* pw = (const float*)&W[widx];
                     __m256 w0 = _mm256_loadu_ps(pw+0);
@@ -215,7 +215,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 }
             }
             else {
-                for (cnn_size_t outc = 0; outc < out.depth_; outc++, widx += wstep) {
+                for (serial_size_t outc = 0; outc < out.depth_; outc++, widx += wstep) {
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
@@ -286,8 +286,8 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             _mm256_maskstore_ps(delta_dst4, imask, dst4);
         } // for
     } else {
-        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
 
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
@@ -298,13 +298,13 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 __m256 w2a = _mm256_maskload_ps(pw+10, imask);
                 __m256 w3a = _mm256_maskload_ps(pw+15, imask);
                 __m256 w4a = _mm256_maskload_ps(pw+20, imask);
-                for (cnn_size_t y = 0; y < out.height_; y++) {
+                for (serial_size_t y = 0; y < out.height_; y++) {
                     float* delta_dst0 = pdelta_dst;
                     float* delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
                     float* delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
                     float* delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
                     float* delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
-                    for (cnn_size_t x = 0; x < out.width_; x++) {
+                    for (serial_size_t x = 0; x < out.width_; x++) {
                         __m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
                         __m256 dst0 = _mm256_loadu_ps(delta_dst0);
                         __m256 dst1 = _mm256_loadu_ps(delta_dst1);
@@ -337,7 +337,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     // accumulate dw
     if (out.width_ == 1 && out.height_ == 1) {
         const float* pprev_out = &prev_out[0];
-        for (cnn_size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
+        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
             VECTORIZE_ALIGN(32) float floats[28];
             size_t in_padded_width = in_padded.width_;
             _mm256_store_ps(&floats[0], _mm256_loadu_ps(pprev_out + in_padded_width * 0));
@@ -349,10 +349,10 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             __m256 prevos1 = _mm256_load_ps(&floats[8]);
             __m256 prevos2 = _mm256_load_ps(&floats[16]);
             __m128 prevos3 = _mm_load_ss(&floats[24]);
-            cnn_size_t widx = 25 * inc;
-            cnn_size_t widx_delta = 25 * in.depth_;
+            serial_size_t widx = 25 * inc;
+            serial_size_t widx_delta = 25 * in.depth_;
             float* pdW = &dW[widx];
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++, pdW += widx_delta) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++, pdW += widx_delta) {
                 if (!tbl.is_connected(outc, inc)) {
                     continue;
                 }
@@ -383,25 +383,25 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
         const size_t remainder = out.width_ & 7;
         __m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
         auto& weight = params.weight;
-        for (cnn_size_t inc = 0; inc < in.depth_; ++inc) {
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
 
                 if (!tbl.is_connected(outc, inc)) continue;
                 const float* delta = &curr_delta[out.get_index(0, 0, outc)];
 
-                cnn_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
-                for (cnn_size_t wy = 0; wy < 5 /* weight.height_ */; wy++) {
-                    for (cnn_size_t wx = 0; wx < 5 /* weight.width_ */; wx++) {
+                serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+                for (serial_size_t wy = 0; wy < 5 /* weight.height_ */; wy++) {
+                    for (serial_size_t wx = 0; wx < 5 /* weight.width_ */; wx++) {
                         const float* prevo = &prev_out[in_padded.get_index(wx, wy, inc)];
 
                         if (w_stride > 1) {
                             float_t dst = float_t(0);
 
-                            for (cnn_size_t y = 0; y < params.out.height_; y++) {
-                                cnn_size_t prevo_idx = y * params.in_padded.width_ * params.h_stride;
-                                cnn_size_t delta_idx = y * params.out.width_;
+                            for (serial_size_t y = 0; y < params.out.height_; y++) {
+                                serial_size_t prevo_idx = y * params.in_padded.width_ * params.h_stride;
+                                serial_size_t delta_idx = y * params.out.width_;
 
-                                for (cnn_size_t x = 0; x < params.out.width_; x++) {
+                                for (serial_size_t x = 0; x < params.out.width_; x++) {
                                     dst += prevo[prevo_idx + x * params.w_stride] * delta[delta_idx + x];
                                 }
                             }
@@ -411,7 +411,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                             __m128 prev_sum = _mm_load_ss(&dW[widx]);
                             __m256 sum0 = _mm256_setzero_ps();
                             __m256 sum1 = _mm256_setzero_ps();
-                            for (cnn_size_t y = 0; y < out.height_; y++) {
+                            for (serial_size_t y = 0; y < out.height_; y++) {
                                 // vectorize::dot
                                 const float* pa = prevo + y * in_padded.width_ * params.h_stride;
                                 const float* pb = delta + y * out.width_;
@@ -442,11 +442,11 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
         //fvec_t& db = *in_grad[2];
         
         if (out.width_ == 1 && out.height_ == 1) {
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 db[outc] += curr_delta[outc];
             }
         } else {
-            for (cnn_size_t outc = 0; outc < out.depth_; outc++) {
+            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 const float *delta = &curr_delta[out.get_index(0, 0, outc)];
                 db[outc] += std::accumulate(delta, delta + out.width_ * out.height_, float(0));
             }

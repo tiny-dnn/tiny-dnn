@@ -44,13 +44,13 @@ public:
 #endif
     virtual ~function() = default;
 
-    virtual float_t f(const vec_t& v, cnn_size_t index) const = 0;
+    virtual float_t f(const vec_t& v, serial_size_t index) const = 0;
 
     // dfi/dyi
     virtual float_t df(float_t y) const = 0;
 
     // dfi/dyk (k=0,1,..n)
-    virtual vec_t df(const vec_t& y, cnn_size_t i) const { vec_t v(y.size(), 0); v[i] = df(y[i]); return v; }
+    virtual vec_t df(const vec_t& y, serial_size_t i) const { vec_t v(y.size(), 0); v[i] = df(y[i]); return v; }
 
     // return if dfi/dyk is one-hot vector
     virtual bool one_hot() const { return true; }
@@ -62,7 +62,7 @@ public:
 class identity : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return v[i]; }
+    float_t f(const vec_t& v, serial_size_t i) const override { return v[i]; }
     float_t df(float_t /*y*/) const override { return float_t(1); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
@@ -70,7 +70,7 @@ public:
 class sigmoid : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
+    float_t f(const vec_t& v, serial_size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
     float_t df(float_t y) const override { return y * (float_t(1) - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
@@ -78,7 +78,7 @@ public:
 class relu : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return std::max(float_t(0), v[i]); }
+    float_t f(const vec_t& v, serial_size_t i) const override { return std::max(float_t(0), v[i]); }
     float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
@@ -88,7 +88,7 @@ typedef relu rectified_linear; // for compatibility
 class leaky_relu : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
+    float_t f(const vec_t& v, serial_size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
     float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0.01); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
@@ -96,14 +96,14 @@ public:
 class elu : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
+    float_t f(const vec_t& v, serial_size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
     float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1)+y)); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class softmax : public function {
 public:
-    float_t f(const vec_t& v, cnn_size_t i) const override {
+    float_t f(const vec_t& v, serial_size_t i) const override {
         float_t alpha = *std::max_element(v.begin(), v.end());
         float_t numer = std::exp(v[i] - alpha);
         float_t denom = float_t(0);
@@ -116,9 +116,9 @@ public:
         return y * (float_t(1) - y);
     }
 
-    virtual vec_t df(const vec_t& y, cnn_size_t index) const override {
+    virtual vec_t df(const vec_t& y, serial_size_t index) const override {
         vec_t v(y.size(), 0);
-        for (cnn_size_t i = 0; i < y.size(); i++)
+        for (serial_size_t i = 0; i < y.size(); i++)
             v[i] = (i == index) ? df(y[index]) : -y[i] * y[index];
 
         return v;
@@ -132,7 +132,7 @@ public:
 class tan_h : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override {
+    float_t f(const vec_t& v, serial_size_t i) const override {
         return std::tanh(v[i]);
     }
 
@@ -162,7 +162,7 @@ private:
 class tan_hp1m2 : public function {
 public:
     using function::df;
-    float_t f(const vec_t& v, cnn_size_t i) const override {
+    float_t f(const vec_t& v, serial_size_t i) const override {
         const float_t ep = std::exp(v[i]);
         return ep / (ep + std::exp(-v[i]));
     }

@@ -43,7 +43,7 @@ public:
 
 public:
     void forward_activation(tensor_t& a_tensor, tensor_t& out_tensor) {
-        cnn_size_t out_dim = out_shape()[0].size();
+        serial_size_t out_dim = out_shape()[0].size();
 
         for_i(a_tensor.size(), [&](int sample) {
             vec_t& out = a_tensor[sample];
@@ -51,7 +51,7 @@ public:
             out.resize(out_dim);
             a.resize(out_dim);
 
-            for (cnn_size_t i = 0; i < out_dim; i++) {
+            for (serial_size_t i = 0; i < out_dim; i++) {
                 out[i] = this->h_.f(a, i);
             }
         });
@@ -60,20 +60,20 @@ public:
     void backward_activation(const tensor_t& prev_delta, const tensor_t& this_out, tensor_t& curr_delta) {
 
         // @todo consider parallelism
-        for_i(this_out.size(), [&](cnn_size_t sample) {
+        for_i(this_out.size(), [&](serial_size_t sample) {
             const vec_t& out_vec = this_out[sample];
             const vec_t& prev_delta_vec = prev_delta[sample];
             vec_t& curr_delta_vec = curr_delta[sample];
 
-            const cnn_size_t len = static_cast<cnn_size_t>(prev_delta_vec.size());
+            const serial_size_t len = static_cast<serial_size_t>(prev_delta_vec.size());
             
             if (h_.one_hot()) {
-                for (cnn_size_t c = 0; c < len; c++) {
+                for (serial_size_t c = 0; c < len; c++) {
                     curr_delta_vec[c] = prev_delta_vec[c] * h_.df(out_vec[c]);
                 }
             }
             else {
-                for (cnn_size_t c = 0; c < len; c++) {
+                for (serial_size_t c = 0; c < len; c++) {
                     vec_t df = h_.df(out_vec, c);
                     curr_delta_vec[c] = vectorize::dot(&prev_delta_vec[0], &df[0], len);
                 }

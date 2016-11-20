@@ -59,8 +59,8 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     const auto algorithm = nnp_algorithm();
     const auto kernel_transform_strategy = nnp_kts();
 
-    const cnn_size_t input_channels = params.in.depth_;
-    const cnn_size_t output_channels = params.out.depth_;
+    const serial_size_t input_channels = params.in.depth_;
+    const serial_size_t output_channels = params.out.depth_;
 
     //input data passed by convolution layer has been padded already
     //set input_size to padded size

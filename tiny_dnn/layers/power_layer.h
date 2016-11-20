@@ -76,7 +76,7 @@ public:
         const tensor_t& x = *in_data[0];
         tensor_t&       y = *out_data[0];
 
-        for (cnn_size_t i = 0; i < x.size(); i++) {
+        for (serial_size_t i = 0; i < x.size(); i++) {
             std::transform(x[i].begin(), x[i].end(), y[i].begin(), [=](float_t x) {
                 return scale_*std::pow(x, factor_);
             });
@@ -92,8 +92,8 @@ public:
         const tensor_t& x  = *in_data[0];
         const tensor_t& y = *out_data[0];
 
-        for (cnn_size_t i = 0; i < x.size(); i++) {
-            for (cnn_size_t j = 0; j < x[i].size(); j++) {
+        for (serial_size_t i = 0; i < x.size(); i++) {
+            for (serial_size_t j = 0; j < x[i].size(); j++) {
                 // f(x) = (scale*x)^factor
                 // ->
                 //   dx = dy * df(x)

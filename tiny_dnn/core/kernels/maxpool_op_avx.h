@@ -34,8 +34,8 @@ namespace kernels {
 inline void
 maxpool_op_avx(const tensor_t& in_data,
                tensor_t&       out_data,
-               std::vector<std::vector<cnn_size_t>>& max_idx,
-               const std::vector<std::vector<cnn_size_t>>& out2in,
+               std::vector<std::vector<serial_size_t>>& max_idx,
+               const std::vector<std::vector<serial_size_t>>& out2in,
                const bool layer_parallelize) {
     maxpool_op_internal(in_data, out_data, max_idx, out2in, layer_parallelize);
 }
@@ -43,8 +43,8 @@ maxpool_op_avx(const tensor_t& in_data,
 inline void
 maxpool_grad_op_avx(tensor_t& prev_delta,
                     const tensor_t&  curr_delta,
-                    std::vector<std::vector<cnn_size_t>>& max_idx,
-                    const std::vector<cnn_size_t>& in2out,
+                    std::vector<std::vector<serial_size_t>>& max_idx,
+                    const std::vector<serial_size_t>& in2out,
                     const bool layer_parallelize) {
     maxpool_grad_op_internal(prev_delta, curr_delta, max_idx, in2out,
                              layer_parallelize);
