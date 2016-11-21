@@ -54,8 +54,6 @@ inline std::ostream& operator << (std::ostream& os, backend_t type) {
     return os;
 }
 
-/*enum class Engine { OpenCL };*/
-
 inline backend_t default_engine() {
 #ifdef CNN_USE_AVX
 #if defined(__AVX__) || defined(__AVX2__)
@@ -64,6 +62,20 @@ inline backend_t default_engine() {
 #endif // CNN_USE_AVX
     return backend_t::internal;
 }
+
+class NNPackInitializer {
+ public:
+    static NNPackInitializer& getInstance() {
+        static NNPackInitializer instance;
+        return instance;
+    }
+
+    void initialize() {
+    }
+
+ private:
+    bool initialized_ = false;
+};
 
 class backend {
  public:
