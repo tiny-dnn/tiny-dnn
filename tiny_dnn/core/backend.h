@@ -32,6 +32,10 @@
 #include "tiny_dnn/core/params/maxpool_params.h"
 #include "tiny_dnn/core/params/fully_params.h"
 
+#ifdef CNN_USE_NNPACK
+#include "nnpack.h"
+#endif
+
 namespace tiny_dnn {
 namespace core {
 
@@ -63,6 +67,7 @@ inline backend_t default_engine() {
     return backend_t::internal;
 }
 
+#ifdef CNN_USE_NNPACK
 class NNPackInitializer {
  public:
     static NNPackInitializer& getInstance() {
@@ -71,11 +76,28 @@ class NNPackInitializer {
     }
 
     void initialize() {
+        if (initialized_) return;
+        nnp_status init_status = nnp_initialize();
+        if (init_status != nnp_status_success) {
+            throw nn_error("Cannot initialize NNPACK.");
+        }
+        initialized_ = true;
     }
 
  private:
+    /* Stores if the NNPACK is initialized */
     bool initialized_ = false;
 };
+
+inline nnp_convolution_algorithm nnp_algorithm() {
+    return nnp_convolution_algorithm_auto;
+}
+
+inline nnp_convolution_transform_strategy nnp_kts() {
+    //some algorithm accept tuple based only
+    return nnp_convolution_transform_strategy_tuple_based;
+}
+#endif
 
 class backend {
  public:

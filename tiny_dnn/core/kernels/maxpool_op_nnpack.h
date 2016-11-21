@@ -26,18 +26,20 @@
 */
 #pragma once
 
-#ifdef CNN_USE_NNPACK
-#include "nnpack.h"
-#endif
+#include "tiny_dnn/core/backend.h"
+#include "tiny_dnn/core/params/maxpool_params.h"
 
 namespace tiny_dnn {
 namespace kernels {
 
-inline void maxpool_op_nnpack(const tensor_t&          in_data,
-                              tensor_t&                out_data,
-			      const maxpool_params& params) {
+inline void maxpool_op_nnpack(const tensor_t&      in_data,
+                              tensor_t&           out_data,
+                              const maxpool_params& params) {
 #ifdef CNN_USE_NNPACK
-    const serial_size_t input_channels  = params.in.depth_;
+    // call singleton to initialize NNPACK
+    NNPackInitializer::getInstance().initialize();
+
+    const serial_size_t input_channels = params.in.depth_;
 
     const nnp_size input_size = {
         static_cast<size_t>(params.in.width_),

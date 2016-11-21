@@ -187,7 +187,7 @@ TEST(max_pool, forward_stride_y) {
 TEST(max_pool, forward_stride_nnp) {
     nnp_initialize();
     max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-		                  core::backend_t::nnpack);
+                                  core::backend_t::nnpack);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,

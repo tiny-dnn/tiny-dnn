@@ -123,7 +123,7 @@ TEST(quantized_convolutional, fprop) {
     }
 }
 
-#ifdef CNN_USE_NNPACK
+/*#ifdef CNN_USE_NNPACK
 TEST(quantized_convolutional, fprop_npp) {
     typedef network<sequential> CNN;
     CNN nn;
@@ -194,7 +194,7 @@ TEST(quantized_convolutional, fprop_npp) {
         EXPECT_NEAR(0.6899745, out[8], 2E-2);
     }
 }
-#endif
+#endif*/
 
 /*
 TEST(quantized_convolutional, gradient_check) { // tanh - mse

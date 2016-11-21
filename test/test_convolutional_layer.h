@@ -513,7 +513,7 @@ TEST(convolutional, fprop_nnp) {
         , &out    = out_tensor[0]
         , &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 

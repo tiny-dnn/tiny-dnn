@@ -146,7 +146,7 @@ TEST(fully_connected, forward_nnp)
 {
     nnp_initialize();
     fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
-    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+    EXPECT_EQ(l.in_channels(), size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));

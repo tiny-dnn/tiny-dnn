@@ -26,19 +26,8 @@
 */
 #pragma once
 
+#include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/params/conv_params.h"
-
-#ifdef CNN_USE_NNPACK
-#include "nnpack.h"
-
-inline nnp_convolution_algorithm nnp_algorithm() {
-    return nnp_convolution_algorithm_auto;
-}
-
-inline nnp_convolution_transform_strategy nnp_kts() {
-    return nnp_convolution_transform_strategy_tuple_based;//some algorithm accept tuple based only
-}
-#endif
 
 namespace tiny_dnn {
 namespace kernels {
@@ -50,20 +39,18 @@ conv2d_op_nnpack(const tensor_t&         in_data,
                  tensor_t&              out_data,
                  const core::conv_params& params) {
 #ifdef CNN_USE_NNPACK
-    nnp_status init_status = nnp_initialize();
-    if (init_status != nnp_status_success) {
-        throw nn_error("Cannot initialize NNPACK.");
-    }
+    // call singleton to initialize NNPACK
+    core::NNPackInitializer::getInstance().initialize();
 
-    // TOOD: use input config
-    const auto algorithm = nnp_algorithm();
-    const auto kernel_transform_strategy = nnp_kts();
+    const auto algorithm = core::nnp_algorithm();
+    // TODO(azsane): enable once inference/output issue is fixed
+    //const auto kernel_transform_strategy = core::nnp_kts();
 
     const serial_size_t input_channels = params.in.depth_;
     const serial_size_t output_channels = params.out.depth_;
 
-    //input data passed by convolution layer has been padded already
-    //set input_size to padded size
+    // input data passed by convolution layer has been padded already
+    // set input_size to padded size
     const nnp_size input_size = {
         static_cast<size_t>(params.in_padded.width_),
         static_cast<size_t>(params.in_padded.height_)
@@ -75,8 +62,8 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     };
 
     // input padded ,so no need to do padding
-    const float_t dx =0;// params.in_padded.width_  - params.in.width_;
-    const float_t dy =0;// params.in_padded.height_ - params.in.height_;
+    const float_t dx = float_t(0.0); // params.in_padded.width_  - params.in.width_;
+    const float_t dy = float_t(0.0); // params.in_padded.height_ - params.in.height_;
 
     // we'll assume that padding is symmetric
 
@@ -87,13 +74,15 @@ conv2d_op_nnpack(const tensor_t&         in_data,
         static_cast<size_t>(dx/2)   // left
     };
 
-    const float* input_ptr  = reinterpret_cast<const float*>(in_data[0].data());
-    const float* kernel_ptr = reinterpret_cast<const float*>(W.data());
-    const float* bias_ptr   = reinterpret_cast<const float*>(bias.data());
-    const nnp_size stride= {
+    // TODO(azsane): enable once inference/output issue is fixed
+    /*const nnp_size stride = {
         static_cast<size_t>(params.w_stride),
         static_cast<size_t>(params.h_stride)
-    };
+    };*/
+    
+    const float* input_ptr  = in_data[0].data();
+    const float* kernel_ptr = W.data();
+    const float* bias_ptr   = bias.data();
 
     float* output_ptr = out_data[0].data();
 
@@ -101,9 +90,28 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     const size_t num_mkl_threads = 1;
     pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
+    const size_t batch_size = 1;
     nnp_profile* profile = nullptr;
-
+   
+    // TODO(azsane): check output/inference since with inference tests are broken
+    // https://github.com/Maratyszcza/NNPACK/blob/master/bench/convolution.c
     nnp_status status =
+        nnp_convolution_output(
+            algorithm,
+            batch_size,
+            input_channels,
+            output_channels,
+            input_size,
+            padding,
+            kernel_size,
+            input_ptr,
+            kernel_ptr,
+            bias_ptr,
+            output_ptr,
+            threadpool,
+            profile);
+
+    /*nnp_status status =
         nnp_convolution_inference(
             algorithm,
             kernel_transform_strategy,
@@ -118,7 +126,7 @@ conv2d_op_nnpack(const tensor_t&         in_data,
             bias_ptr,
             output_ptr,
             threadpool,
-            profile);
+            profile);*/
 
     if (status != nnp_status_success) {
         throw nn_error("Could not succeed with nnp_convolution_inference");

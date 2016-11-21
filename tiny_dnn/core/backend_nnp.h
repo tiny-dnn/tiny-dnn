@@ -222,7 +222,7 @@ class nnp_backend : public backend {
     std::function<void(const tensor_t&, tensor_t&)> copy_and_pad_delta;
 
     void init_nnp_engine() {
-#ifdef CNN_USE_NNPACK
+/*#ifdef CNN_USE_NNPACK
         nnp_status init_status = nnp_initialize();
         check_nnp_status(init_status);
 
@@ -231,12 +231,12 @@ class nnp_backend : public backend {
         }
 #else
         throw nn_error("Tiny-cnn has not been compiled with NNPACK support.");
-#endif
+#endif*/
     }
 
 #ifdef CNN_USE_NNPACK
     void check_nnp_status(nnp_status status) {
-        switch (status) {
+        /*switch (status) {
             case nnp_status_success:
                 break;
             case nnp_status_invalid_batch_size:
@@ -302,7 +302,7 @@ class nnp_backend : public backend {
             case nnp_status_out_of_memory:
                 nn_warn("NNPACK failed to allocate memory for temporary buffers.");
                 break;
-        }
+        }*/
     }
 #endif
 };
