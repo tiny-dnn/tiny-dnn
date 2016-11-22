@@ -63,37 +63,37 @@ namespace tiny_dnn {
 
 template<typename U = float_t>
 class Tensor {
- public:
+public:
     /*
-     * Initializes an empty tensor.
-     */
+        * Initializes an empty tensor.
+        */
     Tensor() : shape_{ 0,0,0,0 } {}
 
     /*
-     * Create a tensor of the given dimension.
-     * It is assumed that a tensor will hold data in NxWxHxD order,
-     * where:
-     *  N the batch axis
-     *  W the width axis
-     *  H the heigth axis
-     *  D the depth axis
-     *
-     *  Data will be hold by a std::vector with 64bytes alignment.
-     */
+        * Create a tensor of the given dimension.
+        * It is assumed that a tensor will hold data in NxWxHxD order,
+        * where:
+        *  N the batch axis
+        *  W the width axis
+        *  H the heigth axis
+        *  D the depth axis
+        *
+        *  Data will be hold by a std::vector with 64bytes alignment.
+        */
     explicit Tensor(const cnn_size_t d0,
-                    const cnn_size_t d1,
-                    const cnn_size_t d2,
-                    const cnn_size_t d3) {
-        resize(d0, d1, d2, d3);
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) {
+        reshape(d0, d1, d2, d3);
     }
 
     explicit Tensor(const std::array<cnn_size_t, 4>& shape) {
-        resize(shape[0], shape[1], shape[2], shape[3]);
+        reshape(shape[0], shape[1], shape[2], shape[3]);
     }
 
     explicit Tensor(const std::vector<cnn_size_t>& shape) {
         assert(shape.size() == 4);
-        resize(shape[0], shape[1], shape[2], shape[3]);
+        reshape(shape[0], shape[1], shape[2], shape[3]);
     }
 
     ~Tensor() = default;
@@ -103,7 +103,7 @@ class Tensor {
         shape_ = other.shape_;
         host_data_ = other.host_data_;
         data_is_on_host_ = true;
-        data_dirty_ = true;       
+        data_dirty_ = true;
         //device_data_ is intentionally left uninitialized.
     }
 
@@ -136,25 +136,25 @@ class Tensor {
         device_data_ = std::move(other.device_data_);
         data_is_on_host_ = other.data_is_on_host_;
         data_dirty_ = other.data_dirty_;
-}
+    }
 #endif
 
     // Returns the tensor shape
     const std::array<cnn_size_t, 4>& shape() const { return shape_; }
-    
+
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
     U& host_at(const cnn_size_t d0,
-          const cnn_size_t d1,
-          const cnn_size_t d2,
-          const cnn_size_t d3) {
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) {
         return *host_ptr(d0, d1, d2, d3);
     }
 
     U host_at(const cnn_size_t d0,
-                const cnn_size_t d1,
-                const cnn_size_t d2,
-                const cnn_size_t d3) const {
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) const {
         return *host_ptr(d0, d1, d2, d3);
     }
 
@@ -194,42 +194,24 @@ class Tensor {
             );
     }
 
-    // zero-overhead version (same performance to raw pointer access.
-    // have an assertion for out-of-range error)
-    U& operator[] (const size_t index) {
-        return mutable_host_data()[index];
-    }
-
-    U operator[] (const size_t index) const {
-        return host_data()[index];
-    }
-
     const U* host_data() const {
-        if (!data_is_on_host_ && data_dirty_) {
-            fromDevice();
-        }
+        fromDevice();
         return host_data_.data();
     }
-    
+
     U* mutable_host_data() {
-        if (!data_is_on_host_ && data_dirty_) {
-            fromDevice();
-        }
+        fromDevice();
         data_dirty_ = true;
         return host_data_.data();
     }
 
     const void *device_data() const {
-        if (data_is_on_host_ && data_dirty_) const {
-            toDevice();
-        }
+        toDevice();
         return (*device_data_)();
     }
 
     void *mutable_device_data() {
-        if (data_is_on_host_ && data_dirty_) {
-            toDevice();
-        }
+        toDevice();
         data_dirty_ = true;
         return (*device_data_)();
     }
@@ -238,205 +220,71 @@ class Tensor {
         return host_data_.size();
     }
 
-    /* @brief Fills all the tensor values with a given value
-     *
-     * @param value The value to fill the tensor
-     */
-    void fill(const U value) {
+    void fill(U value) {
         data_is_on_host_ = true;
         data_dirty_ = true;
-        std::fill(host_data_.begin(), host_data_.end(), value);
+        std::fill(std::begin(host_data_), std::end(host_data_), value);
     }
 
-    // /* @brief Fills the tensor with evenly-spaced values in the interval
-    //  *
-    //  * @param from The lower bound of the interval
-    //  * @param to The upper bound of the interval
-    //  */
-    // void linspace(const U from, const U to) {
-    //     U start = from,
-    //         step = (to - from) / (host_data_->end() - host_data_->begin() - 1);
-    //     std::generate(host_data_->begin(),
-    //                   host_data_->end(),
-    //                   [&start, &step]() {
-    //                     U tmp = start;
-    //                     start += step;
-    //                     return tmp;
-    //                   });
-    // }
-
-    /* @brief Element-wise addition
-     */
-    Tensor add(const Tensor& src) const {
-        return binary_element_wise_operation(src, std::plus<U>());
+    void reshape(const cnn_size_t d0,
+        const cnn_size_t d1,
+        const cnn_size_t d2,
+        const cnn_size_t d3) {
+        shape_[0] = d0;
+        shape_[1] = d1;
+        shape_[2] = d2;
+        shape_[3] = d3;
+        host_data_.resize(calcSize(), U(0));
     }
 
-    /* @brief Element-wise addition
-     */
-    Tensor add(const U scalar) const {
-        return binary_scalar_operation(scalar, std::plus<U>());
+    void reshape(const std::array<cnn_size_t, 4> &sz)
+    {
+        shape_ = sz;
+        host_data_.resize(calcSize(), U(0));
     }
 
-    /* @brief Element-wise subtraction
-     */
-    Tensor sub(const Tensor& src) const {
-        return binary_element_wise_operation(src, std::minus<U>());
+private:
+    size_t calcSize() const {
+        return std::accumulate(std::begin(shape_), std::end(shape_), size_t(1), std::multiplies<size_t>());
     }
 
-    /* @brief Element-wise subtraction
-     */
-    Tensor sub(const U scalar) const {
-        return add(-scalar);
-    }
-
-    /* @brief Element-wise multiplication
-     */
-    Tensor mul(const Tensor& src) const {
-        return binary_element_wise_operation(src, std::multiplies<U>());
-    }
-
-    /* @brief Element-wise multiplication
-     */
-    Tensor mul(const U scalar) const {
-        return binary_scalar_operation(scalar, std::multiplies<U>());
-    }
-
-    /* @brief Element-wise division
-     */
-    Tensor div(const Tensor& src) const {
-        return binary_element_wise_operation(src, [](U a, U b)
-        {
-            return (b == U(0.0)) ? std::numeric_limits<U>::quiet_NaN() :
-                a / b;
-
-        });
-    }
-
-    /* @brief Element-wise division
-     */
-    Tensor div(const U scalar) const {
-        if (scalar == U(0.0)) {
-            Tensor<U> res(this->shape());
-            res.fill(std::numeric_limits<U>::quiet_NaN());
-            return std::move(res);
-        } else {
-            return binary_scalar_operation(src, std::divides<U>());
-        }
-
-    }
-
-    /* @brief Element-wise square root
-     */
-    Tensor sqrt() const {
-        return unary_element_wise_operation([](U v) {return std::sqrt(v); }); // lambda used because types cannot be deduced by simply specifying std::sqrt 
-    }
-
-    /* @brief Element-wise exponential
-     */
-    Tensor exp() const {
-        return unary_element_wise_operation([](U v) {return std::exp(v); }); // lambda used because types cannot be deduced by simply specifying std::exp
-    }
-
- private:
-     void toDevice() const {
+    void toDevice() const {
+        if (data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-         CLCudaAPI::Queue queue = device->queue();
-         if (device_data_ && device_data_->GetSize() >= host_data_.size()) {
-             device_data_->Write(queue, host_data.size(), host_data_.data(), 0);
-         } else {
-             CLCudaAPI::Context ctx = device->context();
-             device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
-                 ctx, queue, host_data_.begin(), host_data_.end());
-         }
-
+            CLCudaAPI::Queue queue = device->queue();
+            if (device_data_ && device_data_->GetSize() >= host_data_.size()) {
+                device_data_->Write(queue, host_data.size(), host_data_.data(), 0);
+            }
+            else {
+                CLCudaAPI::Context ctx = device->context();
+                device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
+                    ctx, queue, host_data_.begin(), host_data_.end());
+            }
 #endif
-         data_is_on_host_ = false;
-         data_dirty_ = false;
-     }
+            data_is_on_host_ = false;
+            data_dirty_ = false;
+        }
+    }
 
-     void fromDevice() const {
+    void fromDevice() const {
+        if (!data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-         assert(device_);
-         assert(device_data_);
-         device_data_->Read(device_->queue(), host_data_.size(), const_cast<U*>(host_data_.data())); // using const_cast<> to avoid making host_data_ entirely mutable
+            assert(device_);
+            assert(device_data_);
+            device_data_->Read(device_->queue(), host_data_.size(), const_cast<U*>(host_data_.data())); // using const_cast<> to avoid making host_data_ entirely mutable
 #endif
-         data_is_on_host_ = true;
-         data_dirty_ = false;
-     }
-
-    // Initializes the shape vector
-    void resize(const cnn_size_t d0,
-                 const cnn_size_t d1,
-                 const cnn_size_t d2,
-                 const cnn_size_t d3) {
-	    shape_[0] = d0;
-	    shape_[1] = d1;
-	    shape_[2] = d2;
-	    shape_[3] = d3;
-        host_data_.resize(std::accumulate(std::begin(shape_), std::end(shape_), size_t(1), std::multiplies<size_t>()), U(0));
-    }
-
-    template<typename F> Tensor binary_element_wise_operation(const Tensor &src, F f) const
-    {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
+            data_is_on_host_ = true;
+            data_dirty_ = false;
         }
-
-        Tensor<U> res(src.shape());
-
-        const U* dst = res.mutable_host_data();
-        const U* src1 = host_data();
-        const U* src2 = src.host_data();
-
-        for_i(true, res.size(), [dst, src1, src2, &f](size_t i) {
-            dst[i] = f(src1[i], src2[i]);
-        });
-
-        return std::move(res);
     }
 
-    template<typename F> Tensor unary_element_wise_operation(F f) const
-    {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
-        }
-
-        Tensor<U> res(src.shape());
-
-        const U* dst = res.mutable_host_data();
-        const U* src1 = host_data();
-
-        for_i(true, res.size(), [dst, src1, &f](size_t i) {
-            dst[i] = f(src1[i]);
-        });
-
-        return std::move(res);
-    }
-
-    template<typename F> Tensor binary_scalar_operation(U scalar, F f) const
-    {
-        if (this->shape() != src.shape()) {
-            throw nn_error("Tensor must have same shape");
-        }
-
-        Tensor<U> res(src.shape());
-
-        const U* dst = res.mutable_host_data();
-        const U* src1 = host_data();
-
-        for_i(true, res.size(), [dst, src1, scalar, &f](size_t i) {
-            dst[i] = f(src1[i], scalar);
-        });
-
-        return std::move(res);
-    }
 private:
     /* Vector with the size of the tensor
-     * shape_[0]: batch
-     * shape_[1]: width
-     * shape_[2]: height
-     * shape_[3]: depth
-     */
+        * shape_[0]: batch
+        * shape_[1]: width
+        * shape_[2]: height
+        * shape_[3]: depth
+        */
     std::array<cnn_size_t, 4> shape_;
 
     /* Pointer to the Tensor data in pure in the host device */
@@ -456,7 +304,7 @@ private:
 // Overloaded method to print the Tensor class to the standard output
 template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
-                                 const Tensor<T>& tensor) {
+    const Tensor<T>& tensor) {
     const std::vector<cnn_size_t>& shape = tensor.shape();
     for (cnn_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
@@ -465,17 +313,157 @@ inline std::ostream& operator<< (std::ostream &os,
             os << "-- Data:\n";
             for (cnn_size_t k = 0; k < shape[1]; ++k) {
                 for (cnn_size_t l = 0; l < shape[2]; ++l) {
-                    os << "   " << tensor.at(i,k,l,j) << " ";
+                    os << "   " << tensor.at(i, k, l, j) << " ";
                 }
                 os << ";\n";
             }
         }
     }
-    os << "----------------\n" 
-       << "--> Tensor size: [ " 
-       << shape[0] << " x " << shape[1] << " x "
-       << shape[2] << " x " << shape[3] << " ]\n";
+    os << "----------------\n"
+        << "--> Tensor size: [ "
+        << shape[0] << " x " << shape[1] << " x "
+        << shape[2] << " x " << shape[3] << " ]\n";
     return os;
+}
+
+// utilities for element-wise and tensor-scalar/scalar-tensor operations
+
+template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor_tensor_elementwise_operation(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2, F f) {
+    if (src1.shape() != src2.shape()) {
+        throw nn_error("Tensor must have same shape");
+    }
+
+    dst.reshape(src1.shape());
+
+    TD* pdst = dst.mutable_host_data();
+    const TS1* psrc1 = src1.host_data();
+    const TS2* psrc2 = src2.host_data();
+
+    for_i(true, dst.size(), [pdst, psrc1, psrc2, &f](size_t i) {
+        pdst[i] = f(psrc1[i], psrc2[i]);
+    });
+}
+
+template<typename TD, typename TS, typename F> void unary_tensor_elementwise_operation(Tensor<TD> &dst, const Tensor<TS> &src, F f) {
+    dst.reshape(src.shape());
+
+    TD* pdst = dst.mutable_host_data();
+    const TS* psrc = src.host_data();
+
+    for_i(true, dst.size(), [pdst, psrc, &f](size_t i) {
+        pdst[i] = f(psrc[i]);
+    });
+}
+
+template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor_scalar_operation(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2, F f) {
+    dst.reshape(src1.shape());
+
+    TD* pdst = dst.mutable_host_data();
+    const TS1* psrc1 = src1.host_data();
+
+    for_i(true, dst.size(), [pdst, psrc1, src2, &f](size_t i) {
+        pdst[i] = f(psrc1[i], src2);
+    });
+}
+
+template<typename TD, typename TS1, typename TS2, typename F> void binary_scalar_tensor_operation(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2, F f) {
+    dst.reshape(src2.shape());
+
+    TD* pdst = dst.mutable_host_data();
+    const TS2* psrc2 = src2.host_data();
+
+    for_i(true, dst.size(), [pdst, src1, psrc2, &f](size_t i) {
+        pdst[i] = f(src1, psrc2[i]);
+    });
+}
+
+// implementation of 
+
+namespace details {
+    template<typename TS1, typename TS2> auto plus(TS1 s1, TS2 s2) -> decltype(s1 + s2) { return s1 + s2; }
+
+    template<typename TS1, typename TS2> auto minus(TS1 s1, TS2 s2) -> decltype(s1 - s2) { return s1 - s2; }
+
+    template<typename TS1, typename TS2> auto multiplies(TS1 s1, TS2 s2) -> decltype(s1 * s2) { return s1 * s2; }
+
+    template<typename TS1, typename TS2> auto divides_checked(TS1 s1, TS2 s2) -> decltype(s1 / s2) {
+        typedef decltype(s1 / s2) result_type;
+        return (s2 == result_type{}) ? std::numeric_limits<result_type>::quiet_NaN() : s1 / s2;
+    }
+
+    template<typename TS1, typename TS2> auto divides_unchecked(TS1 s1, TS2 s2) -> decltype(s1 / s2) {
+        return s1 / s2;
+    }
+
+    template<typename T> T sqrt_checked(T s1) {
+        return (s1 <= T{}) ? std::numeric_limits<T>::quiet_NaN() : sqrt(s1);
+    }
+
+    // do not inline - this function converts the std::exp overloadeds in a single templated function.
+    template<typename T> T exp(T s1) {
+        return std::exp(s1);
+    }
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_add(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+    binary_scalar_tensor_operation(dst, src1, src2, details::plus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_add(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+    binary_tensor_scalar_operation(dst, src1, src2, details::plus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_add(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2) {
+    binary_tensor_tensor_elementwise_operation(dst, src1, src2, details::plus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_sub(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+    binary_scalar_tensor_operation(dst, src1, src2, details::minus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_sub(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+    binary_tensor_scalar_operation(dst, src1, src2, details::minus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_sub(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2) {
+    binary_tensor_tensor_elementwise_operation(dst, src1, src2, details::minus<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_mul(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+    binary_scalar_tensor_operation(dst, src1, src2, details::multiplies<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_mul(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+    binary_tensor_scalar_operation(dst, src1, src2, details::multiplies<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_mul(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2) {
+    binary_tensor_tensor_elementwise_operation(dst, src1, src2, details::multiplies<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_div(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+    binary_scalar_tensor_operation(dst, src1, src2, details::divides_checked<TS1, TS2>);
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_div(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+    if (src2 == TS2(0.0)) {
+        dst.reshape(src1.shape());
+        dst.fill(std::numeric_limits<TD>::quiet_NaN());
+    } else {
+        binary_tensor_scalar_operation(dst, src1, src2, details::divides_unchecked<TS1, TS2>);
+    }
+}
+
+template<typename TD, typename TS1, typename TS2> void layer_div(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2) {
+    binary_tensor_tensor_elementwise_operation(dst, src1, src2, details::divides_checked<TS1, TS2>);
+}
+
+template<typename TD, typename TS> void layer_sqrt(Tensor<TD> &dst, const Tensor<TS> &src1) {
+    return unary_tensor_elementwise_operation(dst, src1, details::sqrt_checked<TS>);
+}
+
+template<typename TD, typename TS> void layer_exp(Tensor<TD> &dst, const Tensor<TS> &src1) {
+    return unary_tensor_elementwise_operation(dst, src1, details::exp<TS>);
 }
 
 }  // namespace tiny_dnn
