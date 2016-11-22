@@ -67,7 +67,10 @@ public:
     /*
      * Initializes an empty tensor.
      */
-    Tensor() : shape_{ 0,0,0,0 } {}
+    Tensor()
+    {
+        reshape(0, 0, 0, 0);
+    }
 
     /*
      * Create a tensor of the given dimension.
