@@ -98,7 +98,7 @@ public:
 
     ~Tensor() = default;
 
-    Tensor(const Tensor&) {
+    Tensor(const Tensor&other) {
         other.fromDevice();
         shape_ = other.shape_;
         host_data_ = other.host_data_;
@@ -125,7 +125,9 @@ public:
     Tensor(Tensor&& other) { // for VS2013 we need to manually implement these if we want to have move semantics
         shape_ = std::move(other.shape_);
         host_data_ = std::move(other.host_data_);
+#if defined(USE_OPENCL) || defined(USE_CUDA)
         device_data_ = std::move(other.device_data_);
+#endif
         data_is_on_host_ = other.data_is_on_host_;
         data_dirty_ = other.data_dirty_;
         return *this;
@@ -133,7 +135,9 @@ public:
     Tensor &operator = (Tensor&& other) {
         shape_ = std::move(other.shape_);
         host_data_ = std::move(other.host_data_);
+#if defined(USE_OPENCL) || defined(USE_CUDA)
         device_data_ = std::move(other.device_data_);
+#endif
         data_is_on_host_ = other.data_is_on_host_;
         data_dirty_ = other.data_dirty_;
     }
@@ -205,6 +209,7 @@ public:
         return host_data_.data();
     }
 
+#if defined(USE_OPENCL) || defined(USE_CUDA)
     const void *device_data() const {
         toDevice();
         return (*device_data_)();
@@ -215,6 +220,7 @@ public:
         data_dirty_ = true;
         return (*device_data_)();
     }
+#endif
 
     size_t size() const {
         return host_data_.size();
