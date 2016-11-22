@@ -130,8 +130,8 @@ public:
 #endif
         data_is_on_host_ = other.data_is_on_host_;
         data_dirty_ = other.data_dirty_;
-        return *this;
     }
+
     Tensor &operator = (Tensor&& other) {
         shape_ = std::move(other.shape_);
         host_data_ = std::move(other.host_data_);
@@ -140,6 +140,7 @@ public:
 #endif
         data_is_on_host_ = other.data_is_on_host_;
         data_dirty_ = other.data_dirty_;
+        return *this;
     }
 #endif
 
