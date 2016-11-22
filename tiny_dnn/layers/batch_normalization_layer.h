@@ -71,8 +71,8 @@ public:
     * @param momentum        [in] momentum in the computation of the exponential average of the mean/stddev of the data
     * @param phase           [in] specify the current context (train/test)
     **/
-    batch_normalization_layer(cnn_size_t in_spatial_size, 
-                              cnn_size_t in_channels,                        
+    batch_normalization_layer(serial_size_t in_spatial_size,
+                              serial_size_t in_channels,
                               float_t epsilon = 1e-5,
                               float_t momentum = 0.999,
                               net_phase phase = net_phase::train)
@@ -90,21 +90,21 @@ public:
     virtual ~batch_normalization_layer(){}
 
     ///< number of incoming connections for each output unit
-    cnn_size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return 1;
     }
 
     ///< number of outgoing connections for each input unit
-    cnn_size_t fan_out_size() const override {
+    serial_size_t fan_out_size() const override {
         return 1;
     }
 
-    std::vector<index3d<cnn_size_t>> in_shape() const override {
-        return{ index3d<cnn_size_t>(in_spatial_size_, 1, in_channels_) };
+    std::vector<index3d<serial_size_t>> in_shape() const override {
+        return{ index3d<serial_size_t>(in_spatial_size_, 1, in_channels_) };
     }
 
-    std::vector<index3d<cnn_size_t>> out_shape() const override {
-        return{ index3d<cnn_size_t>(in_spatial_size_, 1, in_channels_) };
+    std::vector<index3d<serial_size_t>> out_shape() const override {
+        return{ index3d<serial_size_t>(in_spatial_size_, 1, in_channels_) };
     }
 
     void back_propagation(const std::vector<tensor_t*>& in_data,
@@ -114,15 +114,15 @@ public:
         tensor_t& prev_delta     = *in_grad[0];
         tensor_t& curr_delta     = *out_grad[0];
         const tensor_t& curr_out = *out_data[0];
-        cnn_size_t num_samples   = static_cast<cnn_size_t>(curr_out.size());
+        serial_size_t num_samples   = static_cast<serial_size_t>(curr_out.size());
 
         CNN_UNREFERENCED_PARAMETER(in_data);
 
         tensor_t delta_dot_y = curr_out;
         vec_t mean_delta_dot_y, mean_delta, mean_Y;
 
-        for (cnn_size_t i = 0; i < num_samples; i++) {
-            for (cnn_size_t j = 0; j < curr_out[0].size(); j++) {
+        for (serial_size_t i = 0; i < num_samples; i++) {
+            for (serial_size_t j = 0; j < curr_out[0].size(); j++) {
                 delta_dot_y[i][j] *= curr_delta[i][j];
             }
         }
@@ -136,9 +136,9 @@ public:
         //     ./ sqrt(var(X) + eps)
         //
         for_i(num_samples, [&](int i) {
-            for (cnn_size_t j = 0; j < in_channels_; j++) {
-                for (cnn_size_t k = 0; k < in_spatial_size_; k++) {
-                    cnn_size_t index = j*in_spatial_size_ + k;
+            for (serial_size_t j = 0; j < in_channels_; j++) {
+                for (serial_size_t k = 0; k < in_spatial_size_; k++) {
+                    serial_size_t index = j*in_spatial_size_ + k;
 
                     prev_delta[i][index]
                         = curr_delta[i][index] - mean_delta[j] - mean_delta_dot_y[j] * curr_out[i][index];
@@ -176,10 +176,10 @@ public:
             const float_t* inptr  = &in[i][0];
             float_t*       outptr = &out[i][0];
 
-            for (cnn_size_t j = 0; j < in_channels_; j++) {
+            for (serial_size_t j = 0; j < in_channels_; j++) {
                 float_t m = (*mean)[j];
 
-                for (cnn_size_t k = 0; k < in_spatial_size_; k++) {
+                for (serial_size_t k = 0; k < in_spatial_size_; k++) {
                     *outptr++ = (*inptr++ - m) / stddev_[j];
                 }
             }
@@ -199,7 +199,7 @@ public:
     std::string layer_type() const override { return "batch-norm"; }
 
     virtual void post_update() override {
-        for (cnn_size_t i = 0; i < mean_.size(); i++) {
+        for (serial_size_t i = 0; i < mean_.size(); i++) {
             mean_[i] = momentum_ * mean_[i] + (1 - momentum_) * mean_current_[i];
             variance_[i] = momentum_ * variance_[i] + (1 - momentum_) * variance_current_[i];
         }
@@ -243,7 +243,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<batch_normalization_layer> & construct) {
         shape3d in;
-        cnn_size_t in_spatial_size, in_channels;
+        serial_size_t in_spatial_size, in_channels;
         float_t eps, momentum;
         net_phase phase;
         vec_t mean, variance;
@@ -272,6 +272,14 @@ public:
            cereal::make_nvp("variance", variance_));
     }
 
+    float_t epsilon() const {
+        return eps_;
+    }
+
+    float_t momentum() const {
+        return momentum_;
+    }
+
 private:
     void calc_stddev(const vec_t& variance) {
         for (size_t i = 0; i < in_channels_; i++) {
@@ -288,8 +296,8 @@ private:
         stddev_.resize(in_channels_);
     }
 
-    cnn_size_t in_channels_;
-    cnn_size_t in_spatial_size_;
+    serial_size_t in_channels_;
+    serial_size_t in_spatial_size_;
 
     net_phase phase_;
     float_t momentum_;

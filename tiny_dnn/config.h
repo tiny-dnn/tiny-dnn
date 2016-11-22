@@ -96,6 +96,6 @@ typedef float float_t;
  * size of layer, model, data etc.
  * change to smaller type if memory footprint is severe
  **/
-typedef std::uint32_t cnn_size_t;
+typedef std::uint32_t serial_size_t;
 
 }

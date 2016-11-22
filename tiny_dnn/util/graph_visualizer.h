@@ -88,8 +88,8 @@ private:
         auto prev = e.prev();
 
         for (auto n : next) {
-            cnn_size_t dst_port = n->prev_port(e);
-            cnn_size_t src_port = prev->next_port(e);
+            serial_size_t dst_port = n->prev_port(e);
+            serial_size_t src_port = prev->next_port(e);
             stream << "  " << node2name[prev] << ":out" << src_port <<
                     " -> " << node2name[n] << ":in" << dst_port << ";" << std::endl;
         }

@@ -32,16 +32,31 @@ namespace tiny_dnn {
 
 /**
  * concat N layers along depth
+ *
+ * @code
+ * // in: [3,1,1],[3,1,1] out: [3,1,2] (in W,H,K order)
+ * concat_layer l1(2,3); 
+ *
+ * // in: [3,2,2],[3,2,5] out: [3,2,7] (in W,H,K order)
+ * concat_layer l2({shape3d(3,2,2),shape3d(3,2,5)});
+ * @endcode
  **/
 class concat_layer : public layer {
 public:
+    /**
+     * @param in_shapes [in] shapes of input tensors
+     */
     concat_layer(const std::vector<shape3d>& in_shapes)
     : layer(std::vector<vector_type>(in_shapes.size(), vector_type::data), {vector_type::data}),
       in_shapes_(in_shapes) {
         set_outshape();
     }
 
-    concat_layer(cnn_size_t num_args, cnn_size_t ndim)
+    /**
+     * @param num_args [in] number of input tensors
+     * @param ndim     [in] number of elements for each input
+     */
+    concat_layer(serial_size_t num_args, serial_size_t ndim)
         : layer(std::vector<vector_type>(num_args, vector_type::data), { vector_type::data }),
         in_shapes_(std::vector<shape3d>(num_args, shape3d(ndim,1,1))) {
         set_outshape();
@@ -70,14 +85,14 @@ public:
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
-        cnn_size_t num_samples = static_cast<cnn_size_t>((*out_data[0]).size());
+        serial_size_t num_samples = static_cast<serial_size_t>((*out_data[0]).size());
         
-        for (cnn_size_t s = 0; s < num_samples; s++) {
+        for (serial_size_t s = 0; s < num_samples; s++) {
             float_t* outs = &(*out_data[0])[s][0];
             
-            for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {
+            for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
                 const float_t* ins = &(*in_data[i])[s][0];
-                cnn_size_t dim = in_shapes_[i].size();
+                serial_size_t dim = in_shapes_[i].size();
                 outs = std::copy(ins, ins + dim, outs);
             }
         }
@@ -95,8 +110,8 @@ public:
         for (size_t s = 0; s < num_samples; s++) {
             const float_t* outs = &(*out_grad[0])[s][0];
             
-            for (cnn_size_t i = 0; i < in_shapes_.size(); i++) {
-                cnn_size_t dim = in_shapes_[i].size();
+            for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
+                serial_size_t dim = in_shapes_[i].size();
                 float_t* ins = &(*in_grad[i])[s][0];
                 std::copy(outs, outs + dim, ins);
                 outs += dim;
@@ -108,7 +123,7 @@ public:
     static void load_and_construct(Archive & ar, cereal::construct<concat_layer> & construct) {
         std::vector<shape3d> in_shapes;
 
-        ar(in_shapes);
+        ar(cereal::make_nvp("in_size", in_shapes));
         construct(in_shapes);
     }
 

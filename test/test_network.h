@@ -140,7 +140,7 @@ TEST(network, add) {
     network<sequential> net;
     net << convolutional_layer<identity>(32, 32, 5, 3, 6, padding::same);
 
-    EXPECT_EQ(net.depth(), static_cast<cnn_size_t>(1));
+    EXPECT_EQ(net.depth(), static_cast<serial_size_t>(1));
 }
 
 TEST(network, manual_init) {
@@ -155,9 +155,9 @@ TEST(network, manual_init) {
     vec_t* c1_b = net[0]->weights()[1];
     vec_t* f1_w = net[1]->weights()[0];
 
-    EXPECT_EQ(c1_w->size(), static_cast<cnn_size_t>(9));
-    EXPECT_EQ(c1_b->size(), static_cast<cnn_size_t>(1));
-    EXPECT_EQ(f1_w->size(), static_cast<cnn_size_t>(2));
+    EXPECT_EQ(c1_w->size(), static_cast<serial_size_t>(9));
+    EXPECT_EQ(c1_b->size(), static_cast<serial_size_t>(1));
+    EXPECT_EQ(f1_w->size(), static_cast<serial_size_t>(2));
 
     *c1_w = { 0,1,2,3,4,5,6,7,8 };
     *c1_b = { 1 };
@@ -249,13 +249,29 @@ TEST(network, train_predict) {
 
     net.train<mse>(optimizer, data, label, 10, 10);
 
+    std::vector<tensor_t> parallel_input(tnum);
+    std::vector<tensor_t> expected_parallel_output(tnum);
 
     for (size_t i = 0; i < tnum; i++) {
-        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
-        label_t expected = (in[0] ^ in[1]) ? 1 : 0;
-        label_t actual = net.predict_label({ static_cast<float_t>(in[0]),
-                                             static_cast<float_t>(in[1]) });
+        const bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
+        const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+        const vec_t input = { static_cast<float_t>(in[0]),
+                              static_cast<float_t>(in[1]) };
+        const label_t actual = net.predict_label(input);
         EXPECT_EQ(expected, actual);
+
+        const auto actual_vec = net.predict(input);
+        EXPECT_EQ(expected == 1, actual_vec[1] > actual_vec[0]);
+
+        parallel_input[i] = tensor_t{ input };
+        expected_parallel_output[i] = tensor_t{ actual_vec };
+    }
+
+    // test predicting multiple samples in parallel
+    const auto actual_parallel_output = net.predict(parallel_input);
+    for (size_t i = 0; i < tnum; i++) {
+        EXPECT_NEAR(expected_parallel_output[i][0][0], actual_parallel_output[i][0][0], 1e-10);
+        EXPECT_NEAR(expected_parallel_output[i][0][1], actual_parallel_output[i][0][1], 1e-10);
     }
 }
 
@@ -500,6 +516,56 @@ TEST(network, gradient_check6) { // sigmoid - cross-entropy
     EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
                                              test_data.second,
                                              epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(network, gradient_check7) { // leaky-relu - mse
+    typedef mse loss_func;
+    typedef leaky_relu activation;
+
+    auto nn = make_mlp<activation>({ 3, 201, 2 });
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+	// We need to use larger threshold here, because
+	// relu/elu/leaky-relu has non-smooth region of the form
+	// 
+	// @todo improve gradient-checker to ignore non-smooth region like
+	//       caffe's GradientChecker (they have kink/kink-range parameter to handle it)
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
+                                             test_data.second,
+                                             10*epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(network, gradient_check8) { // elu - mse
+    typedef mse loss_func;
+    typedef elu activation;
+
+    auto nn = make_mlp<activation>({3, 201, 2});
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+
+	// We need to use larger threshold here, because
+	// relu/elu/leaky-relu has non-smooth region of the form
+	// 
+	// @todo improve gradient-checker to ignore non-smooth region like
+	//       caffe's GradientChecker (they have kink/kink-range parameter to handle it)
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
+                                             test_data.second,
+                                             10*epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(network, gradient_check9) { // tan_hp1m2 - mse
+    typedef mse loss_func;
+    typedef tan_hp1m2 activation;
+
+    auto nn = make_mlp<activation>({ 3, 201, 2 });
+
+    const auto test_data = generate_gradient_check_data(nn.in_data_size());
+    nn.init_weight();
+    EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first,
+        test_data.second,
+        epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(network, read_write)

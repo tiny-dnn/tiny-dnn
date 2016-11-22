@@ -147,7 +147,7 @@ void sample1_convnet(const string& data_dir) {
 ///////////////////////////////////////////////////////////////////////////////
 // learning 3-Layer Networks
 void sample2_mlp(const string& data_dir) {
-    const cnn_size_t num_hidden_units = 500;
+    const serial_size_t num_hidden_units = 500;
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
     // initializer-list is not supported
@@ -234,9 +234,9 @@ void sample3_dae() {
 void sample4_dropout(const string& data_dir) {
     typedef network<sequential> Network;
     Network nn;
-    cnn_size_t input_dim    = 28*28;
-    cnn_size_t hidden_units = 800;
-    cnn_size_t output_dim   = 10;
+    serial_size_t input_dim    = 28*28;
+    serial_size_t hidden_units = 800;
+    serial_size_t output_dim   = 10;
     gradient_descent optimizer;
 
     fully_connected_layer<tan_h> f1(input_dim, hidden_units);
@@ -303,7 +303,7 @@ void sample4_dropout(const string& data_dir) {
 void sample5_unbalanced_training_data(const string& data_dir) {
     // keep the network relatively simple
     auto nn_standard = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
-    const cnn_size_t num_hidden_units = 20;
+    const serial_size_t num_hidden_units = 20;
     auto nn_balanced = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
     gradient_descent optimizer;
 

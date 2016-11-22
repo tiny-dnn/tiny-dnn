@@ -222,7 +222,7 @@ void quantize_down_and_shrink_range( std::vector<T1>& input, float_t min_input, 
   const int32_t input_highest_quantized = static_cast<int32_t>(highest<T1>());
   T1 actual_min_quantized = input_highest_quantized;
   T1 actual_max_quantized = input_lowest_quantized;
-  for (cnn_size_t i = 0; i < input.size(); ++i) {
+  for (serial_size_t i = 0; i < input.size(); ++i) {
     const T1 value = input[i];
     actual_min_quantized = std::min(actual_min_quantized, value);
     actual_max_quantized = std::max(actual_max_quantized, value);

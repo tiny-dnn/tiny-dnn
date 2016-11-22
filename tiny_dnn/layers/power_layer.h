@@ -33,17 +33,27 @@ namespace tiny_dnn {
 
 
 /**
- * y = x^factor
+ * element-wise pow: ```y = scale*x^factor```
  **/
 class power_layer : public layer {
 public:
     typedef layer Base;
 
+    /**
+     * @param in_shape [in] shape of input tensor
+     * @param factor   [in] floating-point number that specifies a power 
+     * @param scale    [in] scale factor for additional multiply
+     */
     power_layer(const shape3d& in_shape, float_t factor, float_t scale=1.0f)
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(in_shape), factor_(factor), scale_(scale) {
     }
 
+    /**
+     * @param prev_layer [in] previous layer to be connected
+     * @param factor     [in] floating-point number that specifies a power 
+     * @param scale      [in] scale factor for additional multiply
+     */
     power_layer(const layer& prev_layer, float_t factor, float_t scale=1.0f)
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(prev_layer.out_shape()[0]), factor_(factor), scale_(scale) {
@@ -66,7 +76,7 @@ public:
         const tensor_t& x = *in_data[0];
         tensor_t&       y = *out_data[0];
 
-        for (cnn_size_t i = 0; i < x.size(); i++) {
+        for (serial_size_t i = 0; i < x.size(); i++) {
             std::transform(x[i].begin(), x[i].end(), y[i].begin(), [=](float_t x) {
                 return scale_*std::pow(x, factor_);
             });
@@ -82,8 +92,8 @@ public:
         const tensor_t& x  = *in_data[0];
         const tensor_t& y = *out_data[0];
 
-        for (cnn_size_t i = 0; i < x.size(); i++) {
-            for (cnn_size_t j = 0; j < x[i].size(); j++) {
+        for (serial_size_t i = 0; i < x.size(); i++) {
+            for (serial_size_t j = 0; j < x[i].size(); j++) {
                 // f(x) = (scale*x)^factor
                 // ->
                 //   dx = dy * df(x)
@@ -114,6 +124,14 @@ public:
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_), cereal::make_nvp("scale", scale_));
+    }
+
+    float_t factor() const {
+        return factor_;
+    }
+
+    float_t scale() const {
+        return scale_;
     }
 private:
 

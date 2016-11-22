@@ -17,8 +17,10 @@ enable_testing()
 
 # in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
 if(MSVC)
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
+    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT")
 endif()
 
 add_executable(print_device print_device.cpp)
@@ -43,3 +45,17 @@ if(COVERALLS)
 else(COVERALLS)
     message(STATUS "Code coverage: Disabled")
 endif(COVERALLS)
+
+if(PROTO_CPP_AVAILABLE)
+    set_source_files_properties(${proto_file} PROPERTIES GENERATED TRUE)
+    target_sources(tiny_dnn_test PUBLIC ${proto_file})
+    set_source_files_properties(test.cpp PROPERTIES COMPILE_DEFINITIONS
+                                CNN_USE_CAFFE_CONVERTER)
+    target_link_libraries(tiny_dnn_test
+            ${project_library_target_name}
+            ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})   
+endif()
+
+if(PROTO_CPP_GENERATE)
+    add_dependencies(tiny_dnn_test generated_proto)
+endif()

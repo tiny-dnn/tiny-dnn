@@ -36,20 +36,20 @@ TEST(convolutional, setup_internal) {
     convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(),           cnn_size_t(3));  // num of input tensors
-    EXPECT_EQ(l.out_channels(),          cnn_size_t(2));  // num of output tensors
-    EXPECT_EQ(l.in_data_size(),          cnn_size_t(25)); // size of input tensors
-    EXPECT_EQ(l.out_data_size(),         cnn_size_t(18)); // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(),  cnn_size_t(1));  // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), cnn_size_t(1));  // num of output shapes
-    EXPECT_EQ(l.weights().size(),        cnn_size_t(2));  // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(),  cnn_size_t(2));  // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(),         cnn_size_t(3));  // num of input edges
-    EXPECT_EQ(l.outputs().size(),        cnn_size_t(2));  // num of outpus edges
-    EXPECT_EQ(l.in_types().size(),       cnn_size_t(3));  // num of input data types
-    EXPECT_EQ(l.out_types().size(),      cnn_size_t(2));  // num of output data types
-    EXPECT_EQ(l.fan_in_size(),           cnn_size_t(9));  // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(),          cnn_size_t(18)); // num of outgoing connections
+    EXPECT_EQ(l.in_channels(),           serial_size_t(3));  // num of input tensors
+    EXPECT_EQ(l.out_channels(),          serial_size_t(2));  // num of output tensors
+    EXPECT_EQ(l.in_data_size(),          serial_size_t(25)); // size of input tensors
+    EXPECT_EQ(l.out_data_size(),         serial_size_t(18)); // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(),  serial_size_t(1));  // number of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), serial_size_t(1));  // num of output shapes
+    EXPECT_EQ(l.weights().size(),        serial_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.weights_grads().size(),  serial_size_t(2));  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(),         serial_size_t(3));  // num of input edges
+    EXPECT_EQ(l.outputs().size(),        serial_size_t(2));  // num of outpus edges
+    EXPECT_EQ(l.in_types().size(),       serial_size_t(3));  // num of input data types
+    EXPECT_EQ(l.out_types().size(),      serial_size_t(2));  // num of output data types
+    EXPECT_EQ(l.fan_in_size(),           serial_size_t(9));  // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(),          serial_size_t(18)); // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "conv");         // string with layer type
 }
 
@@ -111,7 +111,7 @@ TEST(convolutional, fprop) {
         , &out    = buf.out_at(0)[0]
         , &weight = buf.in_at(1)[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), cnn_size_t(18)); // weight
+    ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18)); // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -702,6 +702,20 @@ TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has co
         epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+TEST(convolutional, gradient_check12_pad_same) { // sigmoid - mse - padding same
+	network<sequential> nn;
+
+	nn << fully_connected_layer<identity>(10, 5*5) <<
+		convolutional_layer<sigmoid>(5, 5, 3, 1, 1, padding::same,
+		true, 1, 1, core::backend_t::internal);
+
+	const auto test_data = generate_gradient_check_data(nn.in_data_size());
+	nn.init_weight();
+	EXPECT_TRUE(nn.gradient_check<mse>(test_data.first,
+		test_data.second,
+		epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
 TEST(convolutional, read_write)
 {
     convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
@@ -744,8 +758,8 @@ TEST(convolutional, copy_and_pad_input_same) {
 
     Conv2dPadding conv2d_padding(params);
 
-    auto create_tensor = [](cnn_size_t batch_size,
-                            cnn_size_t vector_size) {
+    auto create_tensor = [](serial_size_t batch_size,
+                            serial_size_t vector_size) {
         return tensor_t(batch_size, vec_t(vector_size));
     };
 
@@ -786,8 +800,8 @@ TEST(convolutional, copy_and_unpad_delta_same) {
 
     Conv2dPadding conv2d_padding(params);
 
-    auto create_tensor = [](cnn_size_t batch_size,
-                            cnn_size_t vector_size) {
+    auto create_tensor = [](serial_size_t batch_size,
+                            serial_size_t vector_size) {
         return tensor_t(batch_size, vec_t(vector_size));
     };
 
@@ -814,7 +828,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
 
     conv2d_padding.copy_and_unpad_delta(in_tensor, out_tensor);
 
-    for (cnn_size_t i = 0; i < out_tensor[0].size(); ++i) {
+    for (serial_size_t i = 0; i < out_tensor[0].size(); ++i) {
         EXPECT_EQ(out_tensor[0][i], float_t(1));
     }
 }

@@ -45,17 +45,27 @@ void construct_net(network<sequential>& nn) {
 #undef O
 #undef X
 
+    core::backend_t backend_type = core::backend_t::internal;
     // construct nets
-    nn << quantized_convolutional_layer<tan_h>(32, 32, 5, 1, 6)  // C1, 1@32x32-in, 6@28x28-out
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << quantized_convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-            connection_table(tbl, 6, 16))              // C3, 6@14x14-in, 16@10x10-in
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << quantized_convolutional_layer<tan_h>(5, 5, 5, 16, 120) // C5, 16@5x5-in, 120@1x1-out
-       << quantized_fully_connected_layer<tan_h>(120, 10);       // F6, 120-in, 10-out
+    //
+    // C : convolution
+    // S : sub-sampling
+    // F : fully connected
+    nn << quantized_convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
+            padding::valid, true, 1, 1, backend_type)
+       << average_pooling_layer<tan_h>(28, 28, 6, 2)             // S2, 6@28x28-in, 6@14x14-out
+       << quantized_convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-in
+            connection_table(tbl, 6, 16),
+            padding::valid, true, 1, 1, backend_type)
+       << average_pooling_layer<tan_h>(10, 10, 16, 2)            // S4, 16@10x10-in, 16@5x5-out
+       << quantized_convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
+            padding::valid, true, 1, 1, backend_type)
+       << quantized_fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
+            true, backend_type)
+    ;
 }
 
-void train_lenet(std::string data_dir_path) {
+static void train_lenet(const std::string& data_dir_path) {
     // specify loss-function and learning strategy
     network<sequential> nn;
     adagrad optimizer;
@@ -68,23 +78,23 @@ void train_lenet(std::string data_dir_path) {
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte",
+    parse_mnist_labels(data_dir_path + "/train-labels.idx1-ubyte",
                        &train_labels);
-    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte",
+    parse_mnist_images(data_dir_path + "/train-images.idx3-ubyte",
                        &train_images, -1.0, 1.0, 2, 2);
-    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte",
+    parse_mnist_labels(data_dir_path + "/t10k-labels.idx1-ubyte",
                        &test_labels);
-    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte",
+    parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
                        &test_images, -1.0, 1.0, 2, 2);
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp(train_images.size());
+    progress_display disp(static_cast<unsigned long>(train_images.size()));
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
 
-    optimizer.alpha *= std::sqrt(minibatch_size);
+    optimizer.alpha *= static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
 
     // create callback
     auto on_enumerate_epoch = [&](){
@@ -92,7 +102,7 @@ void train_lenet(std::string data_dir_path) {
         tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart(train_images.size());
+        disp.restart(static_cast<unsigned long>(train_images.size()));
         t.restart();
     };
 
@@ -109,9 +119,8 @@ void train_lenet(std::string data_dir_path) {
     // test and show results
     nn.test(test_images, test_labels).print_detail(std::cout);
 
-    // save networks
-    std::ofstream ofs("LeNet-weights");
-    ofs << nn;
+    // save network model & trained weights
+    nn.save("LeNet-model");
 }
 
 int main(int argc, char **argv) {
@@ -121,4 +130,5 @@ int main(int argc, char **argv) {
         return -1;
     }
     train_lenet(argv[1]);
+    return 0;
 }

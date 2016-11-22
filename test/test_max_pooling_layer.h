@@ -70,20 +70,20 @@ TEST(max_pool, setup_internal) {
 		                  core::backend_t::internal);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(),           cnn_size_t(1));  // num of input tensors
-    EXPECT_EQ(l.out_channels(),          cnn_size_t(2));  // num of output tensors
-    EXPECT_EQ(l.in_data_size(),          cnn_size_t(16)); // size of input tensors
-    EXPECT_EQ(l.out_data_size(),         cnn_size_t(4));  // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(),  cnn_size_t(1));  // num of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), cnn_size_t(1));  // num of output shapes
-    EXPECT_EQ(l.weights().size(),        cnn_size_t(0));  // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(),  cnn_size_t(0));  // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(),         cnn_size_t(1));  // num of input edges
-    EXPECT_EQ(l.outputs().size(),        cnn_size_t(2));  // num of outpus edges
-    EXPECT_EQ(l.in_types().size(),       cnn_size_t(1));  // num of input data types
-    EXPECT_EQ(l.out_types().size(),      cnn_size_t(2));  // num of output data types
-    EXPECT_EQ(l.fan_in_size(),           cnn_size_t(4));  // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(),          cnn_size_t(1));  // num of outgoing connections
+    EXPECT_EQ(l.in_channels(),           serial_size_t(1));  // num of input tensors
+    EXPECT_EQ(l.out_channels(),          serial_size_t(2));  // num of output tensors
+    EXPECT_EQ(l.in_data_size(),          serial_size_t(16)); // size of input tensors
+    EXPECT_EQ(l.out_data_size(),         serial_size_t(4));  // size of output tensors
+    EXPECT_EQ(l.in_data_shape().size(),  serial_size_t(1));  // num of inputs shapes
+    EXPECT_EQ(l.out_data_shape().size(), serial_size_t(1));  // num of output shapes
+    EXPECT_EQ(l.weights().size(),        serial_size_t(0));  // the wieghts vector size
+    EXPECT_EQ(l.weights_grads().size(),  serial_size_t(0));  // the wieghts vector size
+    EXPECT_EQ(l.inputs().size(),         serial_size_t(1));  // num of input edges
+    EXPECT_EQ(l.outputs().size(),        serial_size_t(2));  // num of outpus edges
+    EXPECT_EQ(l.in_types().size(),       serial_size_t(1));  // num of input data types
+    EXPECT_EQ(l.out_types().size(),      serial_size_t(2));  // num of output data types
+    EXPECT_EQ(l.fan_in_size(),           serial_size_t(4));  // num of incoming connections
+    EXPECT_EQ(l.fan_out_size(),          serial_size_t(1));  // num of outgoing connections
     EXPECT_STREQ(l.layer_type().c_str(), "max-pool");     // string with layer type
 }
 
@@ -149,8 +149,8 @@ TEST(max_pool, forward_stride_x) {
         0, -2
     };
     
-    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<cnn_size_t>(2));
-    EXPECT_EQ(l.out_shape()[0].height_, static_cast<cnn_size_t>(4));
+    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<serial_size_t>(2));
+    EXPECT_EQ(l.out_shape()[0].height_, static_cast<serial_size_t>(4));
 
     vec_t res = l.forward({ { in } })[0][0];
 
@@ -173,8 +173,8 @@ TEST(max_pool, forward_stride_y) {
         4, 3, 1, 2
     };
 
-    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<cnn_size_t>(4));
-    EXPECT_EQ(l.out_shape()[0].height_, static_cast<cnn_size_t>(2));
+    EXPECT_EQ(l.out_shape()[0].width_,  static_cast<serial_size_t>(4));
+    EXPECT_EQ(l.out_shape()[0].height_, static_cast<serial_size_t>(2));
 
     vec_t res = l.forward({ { in } })[0][0];
 

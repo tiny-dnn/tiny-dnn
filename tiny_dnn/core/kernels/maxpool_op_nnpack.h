@@ -37,7 +37,7 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
                               tensor_t&                 a,
 			      const maxpool_params& params) {
 #ifdef CNN_USE_NNPACK
-    const cnn_size_t input_channels  = params.in.depth_;
+    const serial_size_t input_channels  = params.in.depth_;
 
     const nnp_size input_size = {
         static_cast<size_t>(params.in.width_),
