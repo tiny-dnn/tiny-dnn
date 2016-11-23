@@ -50,10 +50,7 @@ public:
             vec_t& a   = out_tensor[sample];
             out.resize(out_dim);
             a.resize(out_dim);
-
-            for (serial_size_t i = 0; i < out_dim; i++) {
-                out[i] = this->h_.f(a, i);
-            }
+            h_.itef(out, a, out_dim);
         });
     }
 
