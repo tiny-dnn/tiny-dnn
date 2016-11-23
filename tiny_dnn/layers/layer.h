@@ -538,6 +538,7 @@ class layer : public node {
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
                                   return x * rcp_batch_size; });
+                // parallelize only when target size is big enough to mitigate thread spawning overhead
                 bool parallelize = (target.size() >= 512);
                 o->update(diff, target, parallelize);
             }
