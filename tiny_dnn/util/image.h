@@ -283,7 +283,7 @@ private:
 template <typename T>
 image<float_t> mean_image(const image<T>& src)
 {
-    image<float_t> mean(shape3d(1, 1, src.depth()), src.type());
+    image<float_t> mean(shape3d(1, 1, (serial_size_t)src.depth()), src.type());
 
     for (size_t i = 0; i < src.depth(); i++) {
         float_t sum = 0.0f;

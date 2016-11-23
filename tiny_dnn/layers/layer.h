@@ -530,16 +530,16 @@ class layer : public node {
 
     void update_weight(optimizer *o, serial_size_t batch_size) {
         float_t rcp_batch_size = float_t(1) / float_t(batch_size);
+        vec_t diff;
         for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {
-                vec_t diff;
                 vec_t& target = *get_weight_data(i);
-
                 ith_in_node(i)->merge_grads(&diff);
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
                                   return x * rcp_batch_size; });
-                o->update(diff, target);
+                bool parallelize = (target.size() >= 512);
+                o->update(diff, target, parallelize);
             }
         }
         clear_grads();
