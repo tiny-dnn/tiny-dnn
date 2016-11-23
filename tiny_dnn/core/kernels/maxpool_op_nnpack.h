@@ -33,12 +33,11 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void maxpool_op_nnpack(const tensor_t&          in,
-                              tensor_t&                 a,
+inline void maxpool_op_nnpack(const tensor_t&          in_data,
+                              tensor_t&                out_data,
 			      const maxpool_params& params) {
 #ifdef CNN_USE_NNPACK
     const serial_size_t input_channels  = params.in.depth_;
-    const serial_size_t output_channels = params.out.depth_;
 
     const nnp_size input_size = {
         static_cast<size_t>(params.in.width_),
@@ -62,17 +61,19 @@ inline void maxpool_op_nnpack(const tensor_t&          in,
         static_cast<size_t>(params.stride_y)
     };
 
-    const float* input_ptr = reinterpret_cast<const float*>(&in[0]);
-    float*      output_ptr = reinterpret_cast<float*>(&a[0]);
+    const float* input_ptr = in_data[0].data();
+    float*      output_ptr = out_data[0].data();
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
     pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
+    const size_t batch_size = 1;
+
     const auto status =
         nnp_max_pooling_output(
+            batch_size,
             input_channels,
-            output_channels,
             input_size,
             input_padding,
             pooling_size,
