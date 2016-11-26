@@ -40,23 +40,9 @@ namespace tiny_dnn {
 
 namespace detail {
 
+// fwddecl
 template <typename InputArchive, typename T>
-std::shared_ptr<layer> load_layer_impl(InputArchive& ia) {
-
-    using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
-
-    std::unique_ptr<ST> bn(new ST());
-
-    cereal::memory_detail::LoadAndConstructLoadWrapper<InputArchive, T> wrapper(reinterpret_cast<T*>(bn.get()));
-
-    wrapper.CEREAL_SERIALIZE_FUNCTION_NAME(ia);
-
-    std::shared_ptr<layer> t;
-    t.reset(reinterpret_cast<T*>(bn.get()));
-    bn.release();
-
-    return t;
-}
+std::shared_ptr<layer> load_layer_impl(InputArchive& ia);
 
 } // namespace detail
 
@@ -140,7 +126,29 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATION
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
-};
+}; // class deserialization_helper
+
+namespace detail {
+
+template <typename InputArchive, typename T>
+std::shared_ptr<layer> load_layer_impl(InputArchive& ia) {
+
+    using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
+
+    std::unique_ptr<ST> bn(new ST());
+
+    cereal::memory_detail::LoadAndConstructLoadWrapper<InputArchive, T> wrapper(reinterpret_cast<T*>(bn.get()));
+
+    wrapper.CEREAL_SERIALIZE_FUNCTION_NAME(ia);
+
+    std::shared_ptr<layer> t;
+    t.reset(reinterpret_cast<T*>(bn.get()));
+    bn.release();
+
+    return t;
+}
+
+} // namespace detail
 
 template <typename T>
 void start_loading_layer(T & ar) {}
@@ -151,21 +159,5 @@ void finish_loading_layer(T & ar) {}
 inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
 inline void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
-
-/**
-* generate layer from cereal's Archive
-**/
-template <typename InputArchive>
-std::shared_ptr<layer> layer::load_layer(InputArchive & ia) {
-    start_loading_layer(ia);
-
-    std::string p;
-    ia(cereal::make_nvp("type", p));
-    auto l = deserialization_helper<InputArchive>::get_instance().load(p, ia);
-
-    finish_loading_layer(ia);
-
-    return l;
-}
 
 } // namespace tiny_dnn
