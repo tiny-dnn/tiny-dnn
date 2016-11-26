@@ -83,18 +83,18 @@ public:
      *
      *  Data will be hold by a std::vector with 64bytes alignment.
      */
-    explicit Tensor(const serial_size_t d0,
-                    const serial_size_t d1,
-                    const serial_size_t d2,
-                    const serial_size_t d3) {
+    explicit Tensor(const size_t d0,
+                    const size_t d1,
+                    const size_t d2,
+                    const size_t d3) {
         reshape(d0, d1, d2, d3);
     }
 
-    explicit Tensor(const std::array<serial_size_t, 4>& shape) {
+    explicit Tensor(const std::array<size_t, 4>& shape) {
         reshape(shape[0], shape[1], shape[2], shape[3]);
     }
 
-    explicit Tensor(const std::vector<serial_size_t>& shape) {
+    explicit Tensor(const std::vector<size_t>& shape) {
         assert(shape.size() == 4);
         reshape(shape[0], shape[1], shape[2], shape[3]);
     }
@@ -148,30 +148,30 @@ public:
 #endif
 
     // Returns the tensor shape
-    const std::array<serial_size_t, 4>& shape() const { return shape_; }
+    const std::array<size_t, 4>& shape() const { return shape_; }
 
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
-    U& host_at(const serial_size_t d0,
-               const serial_size_t d1,
-               const serial_size_t d2,
-               const serial_size_t d3) {
+    U& host_at(const size_t d0,
+               const size_t d1,
+               const size_t d2,
+               const size_t d3) {
         return *host_ptr(d0, d1, d2, d3);
     }
 
-    U host_at(const serial_size_t d0,
-              const serial_size_t d1,
-              const serial_size_t d2,
-              const serial_size_t d3) const {
+    U host_at(const size_t d0,
+              const size_t d1,
+              const size_t d2,
+              const size_t d3) const {
         return *host_ptr(d0, d1, d2, d3);
     }
 
     // Returns the pointer to a specified index in the tensor
     // Checked version (throw exceptions for out-of-range error)
-    const U* host_ptr(const serial_size_t d0,
-                      const serial_size_t d1,
-                      const serial_size_t d2,
-                      const serial_size_t d3) const {
+    const U* host_ptr(const size_t d0,
+                      const size_t d1,
+                      const size_t d2,
+                      const size_t d3) const {
         if (d0 >= shape_[0] || d1 >= shape_[1] ||
             d2 >= shape_[2] || d3 >= shape_[3]) {
             throw nn_error("Access tensor out of range.");
@@ -185,10 +185,10 @@ public:
             );
     }
 
-    U* host_ptr(const serial_size_t d0,
-                const serial_size_t d1,
-                const serial_size_t d2,
-                const serial_size_t d3) {
+    U* host_ptr(const size_t d0,
+                const size_t d1,
+                const size_t d2,
+                const size_t d3) {
         if (d0 >= shape_[0] || d1 >= shape_[1] ||
             d2 >= shape_[2] || d3 >= shape_[3]) {
             throw nn_error("Access tensor out of range.");
@@ -236,10 +236,10 @@ public:
         std::fill(std::begin(host_data_), std::end(host_data_), value);
     }
 
-    void reshape(const serial_size_t d0,
-                 const serial_size_t d1,
-                 const serial_size_t d2,
-                 const serial_size_t d3) {
+    void reshape(const size_t d0,
+                 const size_t d1,
+                 const size_t d2,
+                 const size_t d3) {
         shape_[0] = d0;
         shape_[1] = d1;
         shape_[2] = d2;
@@ -247,8 +247,7 @@ public:
         host_data_.resize(calcSize(), U(0));
     }
 
-    void reshape(const std::array<serial_size_t, 4> &sz)
-    {
+    void reshape(const std::array<size_t, 4> &sz) {
         shape_ = sz;
         host_data_.resize(calcSize(), U(0));
     }
@@ -295,7 +294,7 @@ private:
      * shape_[2]: height
      * shape_[3]: depth
      */
-    std::array<serial_size_t, 4> shape_;
+    std::array<size_t, 4> shape_;
 
     /* Pointer to the Tensor data in pure in the host device */
     std::vector<U, aligned_allocator<U, 64> > host_data_;
