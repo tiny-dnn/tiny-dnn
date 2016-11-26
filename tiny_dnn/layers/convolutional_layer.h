@@ -224,11 +224,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // apply padding to the input tensor
         padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
-        std::vector<tensor_t*> in_data_;
-        in_data_.push_back(in_data_padded(in_data));
+        std::vector<tensor_t*> in_data_(in_data.size());
+        in_data_[0] = in_data_padded(in_data);
 
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
-            in_data_.push_back(in_data[i]);
+            in_data_[i] = in_data[i];
         }
 
         // forward convolutional op context

@@ -44,7 +44,7 @@ public:
     typedef layer Base;
 
     /**
-     * @param in_shape �@ [in] size (width * height * channels) of input data
+     * @param in_shape    [in] size (width * height * channels) of input data
      * @param slice_type  [in] target axis of slicing
      * @param num_outputs [in] number of output layers
      *
