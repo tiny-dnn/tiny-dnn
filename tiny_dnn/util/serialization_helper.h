@@ -38,14 +38,6 @@
 
 namespace tiny_dnn {
 
-namespace detail {
-
-// fwddecl
-template <typename OutputArchive, typename T>
-void save_layer_impl(OutputArchive& oa, const layer* layer);
-
-} // namespace detail
-
 template <typename OutputArchive>
 class serialization_helper {
 public:
@@ -97,10 +89,13 @@ private:
     std::map<std::string, std::function<void(void*, const layer*)>> savers_;
 
     std::map<std::type_index, std::string> type_names_;
+    
+    template <typename T>
+    static void save_layer_impl(OutputArchive& oa, const layer* layer);
 
 #define CNN_REGISTER_LAYER_BODY(layer_type, layer_name) \
     register_type<layer_type>(layer_name);\
-    register_saver(layer_name, detail::save_layer_impl<OutputArchive, layer_type>)
+    register_saver(layer_name, save_layer_impl<layer_type>)
 
 #define CNN_REGISTER_LAYER(layer_type, layer_name) CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
 
@@ -128,15 +123,24 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 
 }; // class serialization_helper
 
-namespace detail {
-
-template <typename OutputArchive, typename T>
-void save_layer_impl(OutputArchive& oa, const layer* layer) {
+template <typename OutputArchive>
+template <typename T>
+void serialization_helper<OutputArchive>::save_layer_impl(OutputArchive& oa, const layer* layer) {
     oa (cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
                          *dynamic_cast<const T*>(layer)));
 }
 
-} // namespace detail
+template <typename OutputArchive>
+void layer::save_layer(OutputArchive & oa, const layer& l) {
+    const std::string& name = serialization_helper<OutputArchive>::get_instance().type_name(typeid(l));
+    serialization_helper<OutputArchive>::get_instance().save(name, oa, &l);
+}
+
+template <class Archive>
+void layer::serialize_prolog(Archive & ar) {
+    ar(cereal::make_nvp("type",
+        serialization_helper<Archive>::get_instance().type_name(typeid(*this))));
+}
 
 } // namespace tiny_dnn
 

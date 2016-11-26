@@ -786,37 +786,4 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
     }
 }
 
-#ifndef CNN_NO_SERIALIZATION
-
-/**
-* generate layer from cereal's Archive
-**/
-template <typename InputArchive>
-std::shared_ptr<layer> layer::load_layer(InputArchive & ia) {
-    start_loading_layer(ia);
-
-    std::string p;
-    ia(cereal::make_nvp("type", p));
-    auto l = deserialization_helper<InputArchive>::get_instance().load(p, ia);
-
-    finish_loading_layer(ia);
-
-    return l;
-}
-
-template <typename OutputArchive>
-void layer::save_layer(OutputArchive & oa, const layer& l) {
-    const std::string& name = serialization_helper<OutputArchive>::get_instance().type_name(typeid(l));
-    serialization_helper<OutputArchive>::get_instance().save(name, oa, &l);
-}
-
-template <class Archive>
-void layer::serialize_prolog(Archive & ar) {
-    ar(cereal::make_nvp("type",
-        serialization_helper<Archive>::get_instance().type_name(typeid(*this))));
-}
-
-
-#endif // #ifndef CNN_NO_SERIALIZATION
-
 }  // namespace tiny_dnn

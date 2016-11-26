@@ -38,14 +38,6 @@
 
 namespace tiny_dnn {
 
-namespace detail {
-
-// fwddecl
-template <typename InputArchive, typename T>
-std::shared_ptr<layer> load_layer_impl(InputArchive& ia);
-
-} // namespace detail
-
 template <typename InputArchive>
 class deserialization_helper {
 public:
@@ -98,8 +90,11 @@ private:
 
     std::map<std::type_index, std::string> type_names_;
 
+    template <typename T>
+    static std::shared_ptr<layer> load_layer_impl(InputArchive& ia);
+
 #define CNN_REGISTER_LAYER_BODY(layer_type, layer_name) \
-    register_loader(layer_name, detail::load_layer_impl<InputArchive, layer_type>);\
+    register_loader(layer_name, load_layer_impl<layer_type>);\
     register_type<layer_type>(layer_name);
 
 #define CNN_REGISTER_LAYER(layer_type, layer_name) CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
@@ -128,10 +123,9 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 
 }; // class deserialization_helper
 
-namespace detail {
-
-template <typename InputArchive, typename T>
-std::shared_ptr<layer> load_layer_impl(InputArchive& ia) {
+template <typename InputArchive>
+template <typename T>
+std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(InputArchive& ia) {
 
     using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
 
@@ -148,8 +142,6 @@ std::shared_ptr<layer> load_layer_impl(InputArchive& ia) {
     return t;
 }
 
-} // namespace detail
-
 template <typename T>
 void start_loading_layer(T & ar) {}
 
@@ -159,5 +151,21 @@ void finish_loading_layer(T & ar) {}
 inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
 inline void finish_loading_layer(cereal::JSONInputArchive & ia) { ia.finishNode(); }
+
+/**
+* generate layer from cereal's Archive
+**/
+template <typename InputArchive>
+std::shared_ptr<layer> layer::load_layer(InputArchive & ia) {
+    start_loading_layer(ia);
+
+    std::string p;
+    ia(cereal::make_nvp("type", p));
+    auto l = deserialization_helper<InputArchive>::get_instance().load(p, ia);
+
+    finish_loading_layer(ia);
+
+    return l;
+}
 
 } // namespace tiny_dnn
