@@ -130,7 +130,7 @@ TEST(tensor, check_bounds) {
 TEST(tensor, access_data1) {
     Tensor<float_t> tensor(1,2,2,1);
 
-    const std::array<serial_size_t, 4>& shape = tensor.shape();
+    const std::array<size_t, 4>& shape = tensor.shape();
 
     for (serial_size_t n = 0; n < shape[0]; ++n) {
         for (serial_size_t w = 0; w < shape[1]; ++w) {
