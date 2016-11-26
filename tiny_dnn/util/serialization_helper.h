@@ -38,6 +38,16 @@
 
 namespace tiny_dnn {
 
+namespace detail {
+
+template <typename OutputArchive, typename T>
+void save_layer_impl(OutputArchive& oa, const layer* layer) {
+    oa (cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
+                         *dynamic_cast<const T*>(layer)));
+}
+
+} // namespace detail
+
 template <typename OutputArchive>
 class serialization_helper {
 public:
@@ -119,16 +129,6 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
 };
-
-namespace detail {
-
-template <typename OutputArchive, typename T>
-void save_layer_impl(OutputArchive& oa, const layer* layer) {
-    oa (cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
-                         *dynamic_cast<const T*>(layer)));
-}
-
-} // namespace detail
 
 template <typename OutputArchive>
 void layer::save_layer(OutputArchive & oa, const layer& l) {
