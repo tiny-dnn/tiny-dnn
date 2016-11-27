@@ -159,10 +159,10 @@ TEST(tensor, access_data3) {
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
-    for (serial_size_t i = 0; i < 4; ++i) {
-        ptr1[i] = float_t(1.0);
+    for (serial_size_t i = 0; i < 8; ++i) {
+        ptr1[i] = float_t(i);
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
@@ -172,10 +172,10 @@ TEST(tensor, access_data3) {
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(ptr11[i], float_t(1.0));
+        EXPECT_EQ(ptr11[i], float_t(i));
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {

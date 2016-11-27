@@ -177,8 +177,11 @@ public:
         if (d >= shape_[dim])  {
             throw nn_error("Access tensor out of range.");
         }
+        size_t shift = 1;
+        for (size_t i = dim + 1; i < shape_.size(); ++i)
+            shift *= shape_[i]; //TODO(Randl): optimize
 
-        return (d + shape_[dim+1] * host_pos(args...) );
+        return (d * shift + host_pos(args...) );
     }
 
     // Returns the pointer to a specified index in the tensor
