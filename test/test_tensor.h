@@ -136,8 +136,8 @@ TEST(tensor, access_data1) {
         for (serial_size_t w = 0; w < shape[1]; ++w) {
             for (serial_size_t h = 0; h < shape[2]; ++h) {
                 for (serial_size_t d = 0; d < shape[3]; ++d) {
-                    EXPECT_EQ(tensor.host_at(n,w,h,d),   float_t(0.0));
-                    EXPECT_EQ(*tensor.host_ptr(n,w,h,d), float_t(0.0));
+                    EXPECT_NEAR(tensor.host_at(n,w,h,d),   float_t(0.0), 1e-5);
+                    EXPECT_NEAR(*tensor.host_ptr(n,w,h,d), float_t(0.0), 1e-5);
                 }
             }
         }

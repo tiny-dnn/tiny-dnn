@@ -164,6 +164,9 @@ public:
     }
 
     size_t host_pos(const size_t d) {
+        if (d >= *shape_.rbegin())  {
+            throw nn_error("Access tensor out of range.");
+        }
         return d;
     }
 
