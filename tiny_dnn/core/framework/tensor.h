@@ -90,6 +90,22 @@ public:
         reshape(d0, d1, d2, d3);
     }
 
+    explicit Tensor(const size_t d0,
+                    const size_t d1,
+                    const size_t d2,
+                    const size_t d3,
+		    const tensor_t& data) {
+        reshape(d0, d1, d2, d3);
+	// deep copy tensor data
+	for (size_t i = 0; i < data.size(); ++i) {
+	    std::copy(std::begin(data[i]), std::end(data[i]),
+                      std::begin(host_data_) + i*data[i].size());
+	}
+
+	data_is_on_host_ = true;
+        data_dirty_ = true;
+    }
+
     explicit Tensor(const std::array<size_t, 4>& shape) {
         reshape(shape[0], shape[1], shape[2], shape[3]);
     }
@@ -146,6 +162,18 @@ public:
         return *this;
     }
 #endif
+
+    tensor_t toTensor() const {
+	size_t count = 0;
+	tensor_t tensor(shape_[0]);
+	for (size_t i = 0; i < shape_[0]; ++i) {
+	    tensor[i].resize(shape_[1]);
+	    for (size_t j = 0; j < shape_[1]; ++j) {
+		tensor[i][j] = host_data_[count++];
+	    }
+	}
+	return tensor;
+    }
 
     // Returns the tensor shape
     const std::array<size_t, 4>& shape() const { return shape_; }

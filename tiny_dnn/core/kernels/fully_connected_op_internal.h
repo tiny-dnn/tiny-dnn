@@ -32,24 +32,27 @@ namespace tiny_dnn {
 namespace kernels {
 
 inline void
-fully_connected_op_internal(const tensor_t&     in_data,
-                            const vec_t&        W,
-                            const vec_t&        bias,
-                            tensor_t&           out_data,
-                            const fully_params& params,
-                            const bool          layer_parallelize) {
-    for_i(layer_parallelize, in_data.size(), [&](int sample) {
-        const vec_t& in = in_data[sample];
-        vec_t& out = out_data[sample];
+fully_connected_op_internal(const Tensor<float_t>& in_data,
+                            const Tensor<float_t>& weights,
+                            const Tensor<float_t>& bias,
+                            Tensor<float_t>*       out_data,
+                            const bool          parallelize) {
+    const std::array<size_t, 4> in_shape = in_data.shape(),
+                               out_shape = out_data->shape();
 
-        for (serial_size_t i = 0; i < params.out_size_; i++) {
-            out[i] = float_t(0);
-            for (serial_size_t c = 0; c < params.in_size_; c++) {
-                out[i] += W[c * params.out_size_ + i] * in[c];
+    for_i(parallelize, in_shape[0], [&](size_t sample) {
+	const float_t* in = in_data.host_ptr(sample,0,0,0);
+	const float_t*  W = weights.host_data();
+	const float_t*  b = bias.host_data();
+	float_t* out = out_data->host_ptr(sample,0,0,0);
+
+        for (size_t i = 0; i < out_shape[1]; i++) {
+            for (size_t c = 0; c < in_shape[1]; c++) {
+                out[i] += W[c * out_shape[1] + i] * in[c];
             }
 
-            if (params.has_bias_) {
-                out[i] += bias[i];
+            if (bias.size() > 0) {
+                out[i] += b[i];
             }
         }
     });
