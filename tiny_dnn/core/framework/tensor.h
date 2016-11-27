@@ -61,7 +61,7 @@
 
 namespace tiny_dnn {
 
-template<typename U = float_t>
+template<typename U = float_t, size_t kDimensions = 4>
 class Tensor {
 public:
     /*
@@ -69,7 +69,7 @@ public:
      */
     Tensor()
     {
-        reshape(0, 0, 0, 0);
+        reshape(std::array<size_t, kDimensions>());
     }
 
     /*
@@ -83,20 +83,22 @@ public:
      *
      *  Data will be hold by a std::vector with 64bytes alignment.
      */
-    explicit Tensor(const size_t d0,
-                    const size_t d1,
-                    const size_t d2,
-                    const size_t d3) {
+    /*explicit Tensor(const size_t d0) {
         reshape(d0, d1, d2, d3);
-    }
+    }*/ //TODO(Randl): variadic template version
 
-    explicit Tensor(const std::array<size_t, 4>& shape) {
-        reshape(shape[0], shape[1], shape[2], shape[3]);
+    explicit Tensor(const std::array<size_t, kDimensions>& shape) {
+        reshape(shape);
     }
 
     explicit Tensor(const std::vector<size_t>& shape) {
-        assert(shape.size() == 4);
-        reshape(shape[0], shape[1], shape[2], shape[3]);
+        reshape(shape);
+    }
+    explicit Tensor(std::initializer_list<size_t> const& shape)  {
+        assert(shape.size() == kDimensions);
+        std::array<size_t, kDimensions> tmp;
+        std::copy(shape.begin(),shape.end(),tmp.begin());
+        reshape(tmp);
     }
 
     ~Tensor() = default;
@@ -148,58 +150,44 @@ public:
 #endif
 
     // Returns the tensor shape
-    const std::array<size_t, 4>& shape() const { return shape_; }
+    const std::array<size_t, kDimensions>& shape() const { return shape_; }
 
     // Returns the value of a specified index in the tensor.
     // Checked version (throw exceptions for out-of-range error)
-    U& host_at(const size_t d0,
-               const size_t d1,
-               const size_t d2,
-               const size_t d3) {
-        return *host_ptr(d0, d1, d2, d3);
+    template<typename... Args>
+    U& host_at(const Args... args) {
+        return *host_ptr(args...);
+    }
+    template<typename... Args>
+    U host_at(const Args... args) const {
+        return *host_ptr(args...);
     }
 
-    U host_at(const size_t d0,
-              const size_t d1,
-              const size_t d2,
-              const size_t d3) const {
-        return *host_ptr(d0, d1, d2, d3);
+    size_t host_pos(const size_t d) {
+        return d;
+    }
+
+    template<typename... Args>
+    size_t host_pos(const size_t d,
+                const Args... args) {
+        size_t dim = shape_.size() - sizeof...(args) - 1;
+        if (d >= shape_[dim])  {
+            throw nn_error("Access tensor out of range.");
+        }
+
+        return (d + shape_[dim+1] * host_pos(args...) );
     }
 
     // Returns the pointer to a specified index in the tensor
     // Checked version (throw exceptions for out-of-range error)
-    const U* host_ptr(const size_t d0,
-                      const size_t d1,
-                      const size_t d2,
-                      const size_t d3) const {
-        if (d0 >= shape_[0] || d1 >= shape_[1] ||
-            d2 >= shape_[2] || d3 >= shape_[3]) {
-            throw nn_error("Access tensor out of range.");
-        }
-
-        return host_data() + (
-            shape_[1] * shape_[2] * shape_[3] * d0 +
-            shape_[1] * shape_[2] * d3 +
-            shape_[1] * d2 +
-            d1
-            );
+    template<typename... Args>
+    const U* host_ptr (const Args... args) const {
+        return host_data() + host_pos(args...);
     }
 
-    U* host_ptr(const size_t d0,
-                const size_t d1,
-                const size_t d2,
-                const size_t d3) {
-        if (d0 >= shape_[0] || d1 >= shape_[1] ||
-            d2 >= shape_[2] || d3 >= shape_[3]) {
-            throw nn_error("Access tensor out of range.");
-        }
-
-        return mutable_host_data() + (
-            shape_[1] * shape_[2] * shape_[3] * d0 +
-            shape_[1] * shape_[2] * d3 +
-            shape_[1] * d2 +
-            d1
-            );
+    template<typename... Args>
+    U* host_ptr(const Args... args) {
+        return mutable_host_data() + host_pos(args...);
     }
 
     const U* host_data() const {
@@ -236,7 +224,7 @@ public:
         std::fill(std::begin(host_data_), std::end(host_data_), value);
     }
 
-    void reshape(const size_t d0,
+    /*void reshape(const size_t d0,
                  const size_t d1,
                  const size_t d2,
                  const size_t d3) {
@@ -245,9 +233,9 @@ public:
         shape_[2] = d2;
         shape_[3] = d3;
         host_data_.resize(calcSize(), U(0));
-    }
+    }*/
 
-    void reshape(const std::array<size_t, 4> &sz) {
+    void reshape(const std::array<size_t, kDimensions> &sz) {
         shape_ = sz;
         host_data_.resize(calcSize(), U(0));
     }
@@ -260,12 +248,12 @@ private:
     void toDevice() const {
         if (data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-            CLCudaAPI::Queue queue = device->queue();
+            CLCudaAPI::Queue queue = device_->queue();
             if (device_data_ && device_data_->GetSize() >= host_data_.size()) {
                 device_data_->Write(queue, host_data.size(), host_data_.data(), 0);
             }
             else {
-                CLCudaAPI::Context ctx = device->context();
+                CLCudaAPI::Context ctx = device_->context();
                 device_data_ = make_unique<CLCudaAPI::Buffer<U> >(
                     ctx, queue, host_data_.begin(), host_data_.end());
             }
@@ -294,10 +282,10 @@ private:
      * shape_[2]: height
      * shape_[3]: depth
      */
-    std::array<size_t, 4> shape_;
+    std::array<size_t, kDimensions> shape_;
 
     /* Pointer to the Tensor data in pure in the host device */
-    std::vector<U, aligned_allocator<U, 64> > host_data_;
+    std::vector<U, aligned_allocator<U, 64>> host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in the device */
@@ -314,6 +302,7 @@ private:
 template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
                                  const Tensor<T>& tensor) {
+    //TODO(Randl): N-dimensions
     const std::vector<serial_size_t>& shape = tensor.shape();
     for (serial_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
