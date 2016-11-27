@@ -428,20 +428,21 @@ class layer : public node {
         CNN_UNREFERENCED_PARAMETER(ctx);
     }
 
-    /* @brief Performs layer forward operation given an input tensor and returns
-     * the computed data in tensor form.
+    /* @brief Performs layer forward operation given an input tensor and
+     * returns the computed data in tensor form.
      *
      * @param input Vector of `tensor_t` with incoming data.
      *
-     * Internally, it first allocates data without resetting the weight, forwards
-     * the input data to the computational graph, inside the forward() method the
-     * data from the computational embedded to container to finally be forwarded to
-     * the computational operation kernels.
+     * Internally, it first allocates data without resetting the weights,
+     * forwards the input data to the computational graph, inside the
+     * forward() method the data from the computational embedded to container
+     * to finally be forwarded to the computational operation kernels.
      *
-     * TODO: Probably there's an overhead of moving from/to the computational graph.
-     * Will be this overhead reduced once we have the Tensor class integrated?
+     * TODO: Probably there's an overhead of moving from/to the computational
+     * graph. Will be this overhead reduced once we have the Tensor
+     * class integrated?
      */
-    std::vector<tensor_t> forward(const std::vector<tensor_t>& input) {   // for test
+    std::vector<tensor_t> forward(const std::vector<tensor_t>& input) {  // for test
         // allocate data in the computational graph without
         // resetting the weights.
         setup(false);
@@ -454,7 +455,7 @@ class layer : public node {
         return output();
     }
 
-    std::vector<tensor_t> backward(const std::vector<tensor_t>& out_grads) {   // for test
+    std::vector<tensor_t> backward(const std::vector<tensor_t>& out_grads) {  // for test
         setup(false);
         set_out_grads(out_grads);
         backward();
@@ -463,22 +464,23 @@ class layer : public node {
         });
     }
 
-    /* @brief The purpose of this method is to forward the data from the computational 
-     * graph to the layer interface.
+    /* @brief The purpose of this method is to forward the data from the
+     * computational graph to the layer interface.
      *
-     * This is one of the out of two core (forward/backward) methods that retrieves the
-     * data allocated in the heap by the computational graph and constructs the containers
-     * to handle the computation by batches. Additionally, the sample count a.k.a number
-     * of batches is set.
+     * This is one of the out of two core (forward/backward) methods that
+     * retrieves the data allocated in the heap by the computational graph
+     * and constructs the containers to handle the computation by batches.
+     * Additionally, the sample count a.k.a number of batches is set.
      *
-     * Note: in_data and out_data attempt to contain tensors. However, they are not real
-     * tensors since tensor_t have three dimensions instead of four. For this reason they are
-     * embedded in to std::vector. Also note that when std::vector<tensor_t*> it's constructed
-     * we cannot assure that data is contiguous.
+     * Note: in_data and out_data attempt to contain tensors. However, they
+     * are not real tensors since tensor_t have three dimensions instead of
+     * four. For this reason they are embedded in to std::vector. Also note
+     * that when std::vector<tensor_t*> it's constructed we cannot assure
+     * that data is contiguous.
      *
-     * After Tensor class integration we should be able to avoid to have in_data and
-     * out_data in vectors since Tensor class itself can handle batches storage in one single
-     * vector with contiguous data.
+     * After Tensor class integration we should be able to avoid to have
+     * in_data and out_data in vectors since Tensor class itself can handle
+     * batches storage in one single vector with contiguous data.
      *
      */
     void forward() {
@@ -486,14 +488,15 @@ class layer : public node {
         std::vector<tensor_t*> in_data, out_data;
 
         // Organize input/output vectors from storage (computational graph).
-        // Internally ith_in_node() will create a connection/edge to the
+        // Internally ith_in_node() will create a connection/edge in the
         // computational graph and will allocate memory in case that it's not
         // done yet.
         for (serial_size_t i = 0; i < in_channels_; i++) {
             in_data.push_back(ith_in_node(i)->get_data());
         }
 
-        // resize outs and stuff to have room for every input sample in the batch
+        // resize outs and stuff to have room for every input sample in
+        // the batch
         set_sample_count(static_cast<serial_size_t>(in_data[0]->size()));
 
         // Internally ith_out_node() will create a connection/edge to the
@@ -505,7 +508,7 @@ class layer : public node {
             ith_out_node(i)->clear_grads();
         }
 
-        // call the computation kernel/routine
+        // call the forward computation kernel/routine
         forward_propagation(in_data, out_data);
     }
 
@@ -555,13 +558,14 @@ class layer : public node {
         for (size_t i = 0; i < out_channels_; i++) {
             if (!next_[i]) {
                 // connection edge doesn't exist, so we proceed to allocate the
-                // needed memory.
+                // necessary memory.
                 next_[i] = std::make_shared<edge>(
                     this, out_shape()[i], out_type_[i]);
             }
         }
 
-	// reset the weights if needed, or the data is not initialized
+        // reset the weights if necessary, or in case that the data is
+        // still not initialized.
         if (reset_weight || !initialized_) {
             init_weight();
         }
@@ -686,51 +690,111 @@ class layer : public node {
     void serialize_prolog(Archive & ar);
 
  protected:
+    /** Flag indication whether the layer/node is initialized */
     bool initialized_;
+    /** Flag indicating whether the layer/node operations ara paralellized */
     bool parallelize_;
-    serial_size_t in_channels_;   // number of input vectors
-    serial_size_t out_channels_;  // number of output vectors
+    /** The number of input vectors/edges */
+    serial_size_t in_channels_;
+    /** The number of output vectors/edges */
+    serial_size_t out_channels_;
+    /** Vector containing the type of data for inputs */
     std::vector<vector_type> in_type_;
+    /** Vector containing the type of data for outputs */
     std::vector<vector_type> out_type_;
-    
+    /** The current backend type for operations */
     core::backend_t backend_type_;
+    /** The backend instance (deprecated) */
     std::shared_ptr<core::backend> backend_;
-
+    /** Pointer to the device on which the layer/node will run */
     Device* device_ptr_ = nullptr;
 
  private:
+    /** Flag indicating whether the layer/node parameters are trainable */
     bool trainable_;
+    /** Pointer to the function for weights initialization */
     std::shared_ptr<weight_init::function> weight_init_;
+    /** Pointer to the function for biases initialization */
     std::shared_ptr<weight_init::function> bias_init_;
 
+    /* @brief Allocates the necessary edge memory in a specific
+     * incoming connection.
+     *
+     * @param i The position to store the previous edge.
+     *
+     * Graphical explanation:
+     *
+     *     nullptr -- |edge| -- prev(i) ---- |layer|
+     *               nullptr -- prev(i+1) -´
+     */
     void alloc_input(serial_size_t i) const {
-        // TODO(nyanp): refactoring
-        // which type of refactoring do you have in mind for that?
+        // the created incoming edge won't have a previous connection,
+        // for this reason first parameter is a nullptr.
         prev_[i] = std::make_shared<edge>(nullptr, in_shape()[i], in_type_[i]);
     }
 
+    /* @brief Allocates the necessary edge memory in a specific
+     * outcoming connection.
+     *
+     * @param i The position to store the next edge.
+     *
+     * Graphical explanation:
+     *
+     *     |layer| -- next(i) ---- |edge|
+     *             `- next(i+1) -- nullptr
+     */
     void alloc_output(serial_size_t i) const {
-        // TODO(nyanp): refactoring
-        // which type of refactoring do you have in mind for that?
-        next_[i] = std::make_shared<edge>((layer*)this,
+        // the created outcoming will have the current layer as the
+        // previous node.
+	next_[i] = std::make_shared<edge>((layer*)this,
             out_shape()[i], out_type_[i]);
     }
 
+    /* @brief Creates an edge between the current node and one incoming
+     * or previous node.
+     *
+     * @param i The position to store the previous edge.
+     *
+     * The method checks if the edge already exists, otherwise we create it
+     * and the necessary memory it's allocated. The method returns the pointer
+     * to the previous edge.
+     */
     edgeptr_t ith_in_node(serial_size_t i) {
+        // in case that the  edge doesn't exist, we create it
         if (!prev_[i]) alloc_input(i);
         return prev()[i];
     }
 
+    /* @brief Creates an edge between the current node and one outcoming
+     * or next node.
+     *
+     * @param i The position to store the next edge.
+     *
+     * The method checks if the edge already exists, otherwise we create it
+     * and the necessary memory it's allocated. The method returns the pointer
+     * to the next edge.
+     */
     edgeptr_t ith_out_node(serial_size_t i) {
+        // in case that the  edge doesn't exist, we create it
         if (!next_[i]) alloc_output(i);
         return next()[i];
     }
 
+    /* @brief Retrieves weight vector from incoming edge
+     * @param i The position of incoming edge.
+     *
+     * Returns the mutable pointer to the edge raw data.
+     */
     vec_t* get_weight_data(serial_size_t i) {
         assert(is_trainable_weight(in_type_[i]));
         return &(*(ith_in_node(i)->get_data()))[0];
     }
 
+    /* @brief Retrieves weight vector from incoming edge
+     * @param i The position of incoming edge.
+     *
+     * Returns the non mutable pointer to the edge raw data.
+     */
     const vec_t* get_weight_data(serial_size_t i) const {
         assert(is_trainable_weight(in_type_[i]));
         return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data()))[0];
