@@ -786,6 +786,4 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
     }
 }
 
-
-
 }  // namespace tiny_dnn
