@@ -67,9 +67,11 @@ class layer : public node {
     virtual ~layer() = default;
 
     /**
-     * construct N-input, M-output layer
+     * @brief Defaul layer constructor that instantiates a N-input, M-output layer
+     *
      * @param in_type[N] type of input vector (data, weight, bias...)
      * @param out_type[M] type of output vector
+     *
      **/
     layer(const std::vector<vector_type>& in_type,
           const std::vector<vector_type>& out_type)
@@ -392,18 +394,18 @@ class layer : public node {
     // fprop/bprop
 
     /**
-     * @param in_data      input vectors of this layer (data, weight, bias)
-     * @param out_data     output vectors
+     * @param in_data  input vectors of this layer (data, weight, bias)
+     * @param out_data output vectors
      **/
     virtual void forward_propagation(const std::vector<tensor_t*>& in_data,
                                      std::vector<tensor_t*>& out_data) = 0;
 
     /**
      * return delta of previous layer (delta=\frac{dE}{da}, a=wx in fully-connected layer)
-     * @param in_data      input vectors (same vectors as forward_propagation)
-     * @param out_data     output vectors (same vectors as forward_propagation)
-     * @param out_grad     gradient of output vectors (i-th vector correspond with out_data[i])
-     * @param in_grad      gradient of input vectors (i-th vector correspond with in_data[i])
+     * @param in_data  input vectors (same vectors as forward_propagation)
+     * @param out_data output vectors (same vectors as forward_propagation)
+     * @param out_grad gradient of output vectors (i-th vector correspond with out_data[i])
+     * @param in_grad  gradient of input vectors (i-th vector correspond with in_data[i])
      **/
     virtual void back_propagation(const std::vector<tensor_t*>& in_data,
                                   const std::vector<tensor_t*>& out_data,
@@ -426,10 +428,29 @@ class layer : public node {
         CNN_UNREFERENCED_PARAMETER(ctx);
     }
 
+    /* @brief Performs layer forward operation given an input tensor and returns
+     * the computed data in tensor form.
+     *
+     * @param input Vector of `tensor_t` with incoming data.
+     *
+     * Internally, it first allocates data without resetting the weight, forwards
+     * the input data to the computational graph, inside the forward() method the
+     * data from the computational embedded to container to finally be forwarded to
+     * the computational operation kernels.
+     *
+     * TODO: Probably there's an overhead of moving from/to the computational graph.
+     * Will be this overhead reduced once we have the Tensor class integrated?
+     */
     std::vector<tensor_t> forward(const std::vector<tensor_t>& input) {   // for test
+        // allocate data in the computational graph without
+        // resetting the weights.
         setup(false);
+        // the incoming data is forwarded to the computational graph.
         set_in_data(input);
+        // pick up the data from the computational graph and perform
+        // computation.
         forward();
+        // retrieve computed data and return values in form of 4D tensor.
         return output();
     }
 
@@ -442,10 +463,32 @@ class layer : public node {
         });
     }
 
+    /* @brief The purpose of this method is to forward the data from the computational 
+     * graph to the layer interface.
+     *
+     * This is one of the out of two core (forward/backward) methods that retrieves the
+     * data allocated in the heap by the computational graph and constructs the containers
+     * to handle the computation by batches. Additionally, the sample count a.k.a number
+     * of batches is set.
+     *
+     * Note: in_data and out_data attempt to contain tensors. However, they are not real
+     * tensors since tensor_t have three dimensions instead of four. For this reason they are
+     * embedded in to std::vector. Also note that when std::vector<tensor_t*> it's constructed
+     * we cannot assure that data is contiguous.
+     *
+     * After Tensor class integration we should be able to avoid to have in_data and
+     * out_data in vectors since Tensor class itself can handle batches storage in one single
+     * vector with contiguous data.
+     *
+     */
     void forward() {
+        // the computational graph
         std::vector<tensor_t*> in_data, out_data;
 
-        // organize input/output vectors from storage
+        // Organize input/output vectors from storage (computational graph).
+        // Internally ith_in_node() will create a connection/edge to the
+        // computational graph and will allocate memory in case that it's not
+        // done yet.
         for (serial_size_t i = 0; i < in_channels_; i++) {
             in_data.push_back(ith_in_node(i)->get_data());
         }
@@ -453,11 +496,16 @@ class layer : public node {
         // resize outs and stuff to have room for every input sample in the batch
         set_sample_count(static_cast<serial_size_t>(in_data[0]->size()));
 
+        // Internally ith_out_node() will create a connection/edge to the
+        // computational graph and will allocate memory in case that it's not
+        // done yet. In addition, gradient vector are initialized to default
+        // values.
         for (serial_size_t i = 0; i < out_channels_; i++) {
             out_data.push_back(ith_out_node(i)->get_data());
             ith_out_node(i)->clear_grads();
         }
 
+        // call the computation kernel/routine
         forward_propagation(in_data, out_data);
     }
 
@@ -480,37 +528,75 @@ class layer : public node {
         back_propagation(in_data, out_data, out_grad, in_grad);
     }
 
-    // allocate & reset weight
+    /* @brief Allocates data in the computational graph and reset weights if
+     * it's needed or the data is not already initialized.
+     *
+     * @param reset_weight Boolean value to force to reset the weights.
+     * Weights will be automatically reset if the are not initialized.
+     *
+     */
     void setup(bool reset_weight) {
+        // The input shape (width x height x depth) must be equal to the number
+        // of input channels a.k.a the number of incoming vectors or 'edges' in
+        // the computational nomenclature. Same is applied to output shape and
+        // numbers of output edges.
         if (in_shape().size() != in_channels_ ||
             out_shape().size() != out_channels_) {
                 throw nn_error("Connection mismatch at setup layer");
         }
 
+        // An 'edge' is created in the computational graph from the current
+        // layer/node to each output node and allocates the needed memory.
+        // The number of output nodes is determined by the layer interface.
+        // In order to handle graph based networks, which a layer/node might
+        // have multiple input/output connections, we need to check that the
+        // connection edge does not already exists if we don't want duplicated
+        // memory allocation.
         for (size_t i = 0; i < out_channels_; i++) {
             if (!next_[i]) {
+                // connection edge doesn't exist, so we proceed to allocate the
+                // needed memory.
                 next_[i] = std::make_shared<edge>(
                     this, out_shape()[i], out_type_[i]);
             }
         }
 
+	// reset the weights if needed, or the data is not initialized
         if (reset_weight || !initialized_) {
             init_weight();
         }
     }
 
+    /* @brief Initializes the vectors containing the trainable data.
+     *
+     * In case that a layer/node is set to be not trainable, it does
+     * nothing and returns a void. Otherwise, for each input connection
+     * and depending of the data nature (weight or bias) calls their
+     * pertinent initialization function and fill the vectors with the
+     * data generated by the mentioned functions.
+     *
+     */
     void init_weight() {
+        // layer/node is not trainable, do nothing and mark the layer/node
+        // as initialized.
         if (!trainable_) {
             initialized_ = true;
             return;
         }
 
+        // Fill vector values with data generated by the initialization
+        // function. The pointer to the data is obtained from the
+        // computational graph and the methods fan_in_size() and fan_out_size()
+        // return the number of incoming/outcoming connections for each
+        // input/output unit.
         for (serial_size_t i = 0; i < in_channels_; i++) {
             switch (in_type_[i]) {
+                // fill vectors of weight type
                 case vector_type::weight:
                     weight_init_->fill(get_weight_data(i),
                                        fan_in_size(), fan_out_size());
                     break;
+                // fill vector of bias type
                 case vector_type::bias:
                     bias_init_->fill(get_weight_data(i),
                                      fan_in_size(), fan_out_size());
@@ -519,6 +605,8 @@ class layer : public node {
                     break;
             }
         }
+        // in case we succeed with data initialization, we mark the
+        // layer/node as initialized.
         initialized_ = true;
     }
 
@@ -538,7 +626,8 @@ class layer : public node {
                 std::transform(diff.begin(), diff.end(),
                                diff.begin(), [&](float_t x) { // NOLINT
                                   return x * rcp_batch_size; });
-                // parallelize only when target size is big enough to mitigate thread spawning overhead
+                // parallelize only when target size is big enough to mitigate
+                // thread spawning overhead.
                 bool parallelize = (target.size() >= 512);
                 o->update(diff, target, parallelize);
             }
@@ -785,7 +874,5 @@ void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
         }
     }
 }
-
-
 
 }  // namespace tiny_dnn
