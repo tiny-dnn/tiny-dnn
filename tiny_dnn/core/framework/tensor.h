@@ -125,8 +125,8 @@ class Tensor {
         size_ = product(shape);
         storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
-
-    /**
+    
+   /**
      * Constructor that assepts an initializer list of shape and create a
      * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
      * will be of size 2x3x4x5x6
@@ -138,6 +138,23 @@ class Tensor {
         size_ = product(shape);
         std::copy(shape.begin(), shape.end(), shape_.begin());
         storage_ptr_ = std::make_shared<TensorStorageType>(shape);
+    }
+
+    /*
+     * Temporal method to create a new Tensor from old tensor_t
+     */
+    explicit Tensor(std::initializer_list<size_t> const &shape,
+		    const tensor_t& data) {
+	offset_ = size_t(0);
+        size_ = product(shape);
+        std::copy(shape.begin(), shape.end(), shape_.begin());
+        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
+
+	// deep copy tensor data
+	for (size_t i = 0; i < data.size(); ++i) {
+	    std::copy(std::begin(data[i]), std::end(data[i]),
+                      host_begin() + i*data[i].size());
+	}
     }
 
     ~Tensor() = default;
@@ -367,6 +384,21 @@ class Tensor {
      */
     bool isSubView() const {
         return size_ != storage_ptr_->size();
+    }
+
+    /*
+     * Temporal method to convert new Tensor to tensor_t
+     */
+    tensor_t toTensor() const {
+	size_t count = 0;
+	tensor_t tensor(shape_[0]);
+	for (size_t i = 0; i < shape_[0]; ++i) {
+	    tensor[i].resize(shape_[1]);
+	    for (size_t j = 0; j < shape_[1]; ++j) {
+		tensor[i][j] = host_data()[count++];
+	    }
+	}
+	return tensor;
     }
 
 private:
