@@ -114,7 +114,7 @@ private:
 #elif defined (__ANDROID__)
         return ::memalign(align, size);
 #elif defined (__MINGW32__)
-        return _mm_malloc(size, align);
+        return ::_mm_malloc(size, align);
 #else // posix assumed
         void* p;
         if (::posix_memalign(&p, align, size) != 0) {
@@ -128,7 +128,7 @@ private:
 #if defined(_MSC_VER)
         ::_aligned_free(ptr);
 #elif defined(__MINGW32__)
-        ::free(ptr);
+        ::_mm_free(ptr);
 #else
         ::free(ptr);
 #endif
