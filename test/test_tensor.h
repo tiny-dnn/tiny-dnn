@@ -189,27 +189,27 @@ TEST(tensor, access_data4) {
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        ptr1[i] = float_t(1.0);
+        ptr1[i] = float_t(i*1.0);
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        ptr2[i] = float_t(2.0);
+        ptr2[i] = float_t(i*3.0);
     }
 
     // check data using .at() accessor
-
+    const std::array<float_t, 4> vals1 = {0,2,0,6}, vals2 = {1,3,3,9};
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
+            EXPECT_EQ(tensor.host_at(0,i,j,0), vals1[i*2+j]);
         }
     }
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
+            EXPECT_EQ(tensor.host_at(0,i,j,1), vals2[i*2+j]);
         }
     }
 }
@@ -220,7 +220,7 @@ TEST(tensor, access_data5) {
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         ptr1[i] = float_t(1.0);
@@ -277,19 +277,19 @@ TEST(tensor, access_data7) {
     // modify data using .at() accessor
 
     tensor.host_at(0,0,0,0) = float_t(1.0);
+    tensor.host_at(0,0,0,1) = float_t(1.0);
     tensor.host_at(0,0,1,0) = float_t(1.0);
-    tensor.host_at(0,1,0,0) = float_t(1.0);
-    tensor.host_at(0,1,1,0) = float_t(1.0);
+    tensor.host_at(0,0,1,1) = float_t(1.0);
 
-    tensor.host_at(0,0,0,1) = float_t(2.0);
-    tensor.host_at(0,0,1,1) = float_t(2.0);
+    tensor.host_at(0,1,0,0) = float_t(2.0);
     tensor.host_at(0,1,0,1) = float_t(2.0);
+    tensor.host_at(0,1,1,0) = float_t(2.0);
     tensor.host_at(0,1,1,1) = float_t(2.0);
 
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
@@ -306,13 +306,13 @@ TEST(tensor, access_data8) {
     // modify data using .at() accessor
 
     tensor.host_at(0,0,0,0) = float_t(1.0);
+    tensor.host_at(0,0,0,1) = float_t(1.0);
     tensor.host_at(0,0,1,0) = float_t(1.0);
-    tensor.host_at(0,1,0,0) = float_t(1.0);
-    tensor.host_at(0,1,1,0) = float_t(1.0);
+    tensor.host_at(0,0,1,1) = float_t(1.0);
 
-    tensor.host_at(0,0,0,1) = float_t(2.0);
-    tensor.host_at(0,0,1,1) = float_t(2.0);
+    tensor.host_at(0,1,0,0) = float_t(2.0);
     tensor.host_at(0,1,0,1) = float_t(2.0);
+    tensor.host_at(0,1,1,0) = float_t(2.0);
     tensor.host_at(0,1,1,1) = float_t(2.0);
 
     // check data using operator[] accessor
@@ -367,13 +367,13 @@ TEST(tensor, access_data10) {
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
+            EXPECT_EQ(tensor.host_at(0,0,i,j), float_t(1.0));
         }
     }
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
+            EXPECT_EQ(tensor.host_at(0,1,i,j), float_t(2.0));
         }
     }
 }
@@ -394,7 +394,7 @@ TEST(tensor, access_data11) {
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
