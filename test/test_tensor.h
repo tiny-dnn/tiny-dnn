@@ -184,7 +184,7 @@ TEST(tensor, access_data3) {
 }
 
 TEST(tensor, access_data4) {
-    Tensor<float_t> tensor({1,2,2,2});2, 2, 2, 2
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .ptr() accessor
 
@@ -825,15 +825,15 @@ TEST(tensor, sqrt2) {
 }
 
 TEST(tensor, nd1) {
-    Tensor<float_t> t({3,3,3});
+    Tensor<float_t,3> t({3,3,3});
 
-    EXPECT_THROW(tensor.host_at(0,1,1,0));
-    EXPECT_THROW(tensor.host_at(4,1,1));
-    EXPECT_THROW(tensor.host_at(1,2));
-    EXPECT_NO_THROW(tensor.host_at(2,2,2));
+    EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
+    EXPECT_THROW(t.host_at(4,1,1), nn_error);
+    EXPECT_THROW(t.host_at(1,2), nn_error);
+    EXPECT_NO_THROW(t.host_at(2,2,2));
 
-    for (size_t i = 0; i < t2.size(); ++i) {
-        t.host_data()[i] = float_t(i*0.5);
+    for (size_t i = 0; i < 3; ++i) {
+        t.host_at(i,i,i) = float_t(i*0.5);
     }
 
 }

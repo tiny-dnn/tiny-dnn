@@ -197,6 +197,9 @@ public:
 
     template<typename... Args>
     U* host_ptr(const Args... args) {
+        if (sizeof...(args) != shape_.size())  {
+            throw nn_error("Wrong number of dimensions");
+        }
         return mutable_host_data() + host_pos(args...);
     }
 
