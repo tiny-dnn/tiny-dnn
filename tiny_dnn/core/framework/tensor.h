@@ -188,6 +188,10 @@ public:
     // Checked version (throw exceptions for out-of-range error)
     template<typename... Args>
     const U* host_ptr (const Args... args) const {
+        //  TODO(Randl): Should we throw here if lower number of arguments?
+        if (sizeof...(args) != shape_.size())  {
+            throw nn_error("Wrong number of dimensions");
+        }
         return host_data() + host_pos(args...);
     }
 
