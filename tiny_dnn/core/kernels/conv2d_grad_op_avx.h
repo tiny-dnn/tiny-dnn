@@ -41,6 +41,52 @@ namespace kernels {
 
 // float ver
 template <typename Allocator>
+inline void accumulate_db(const index3d<serial_size_t>&        out,
+                          const std::vector<float, Allocator>& curr_delta,
+                          std::vector<float, Allocator>&       db) {
+    if (out.width_ == 1 && out.height_ == 1) {
+        size_t nblocks = out.depth_ / 8;
+        size_t remainder = out.depth_ & 7;
+        for (size_t i = 0; i < nblocks; ++i) {
+            _mm256_storeu_ps(&db[i*8], _mm256_add_ps(_mm256_loadu_ps(&db[i*8]), _mm256_loadu_ps(&curr_delta[i*8])));
+        }
+        for (size_t outc = nblocks * 8; outc < out.depth_; outc++) {
+            db[outc] += curr_delta[outc];
+        }
+    } else {
+        auto area = out.area();
+        size_t nblocks = area / 8;
+        size_t remainder = area & 7;
+        // prepare load-mask beforehand
+        static const int32_t masks[] = {
+            -1, -1, -1, -1,
+            -1, -1, -1, -1,
+            0, 0, 0, 0,
+            0, 0, 0, 0,
+        };
+        __m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
+        for (size_t outc = 0; outc < out.depth_; outc++) {
+            const float *delta = &curr_delta[out.get_index(0, 0, (serial_size_t)outc)];
+            __m256 sum0 = _mm256_setzero_ps();
+            __m256 sum1 = _mm256_setzero_ps();
+            for (size_t i=0; i<nblocks/2; ++i) {
+                sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + i*16));
+                sum1 = _mm256_add_ps(sum1, _mm256_loadu_ps(delta + i*16+8));
+            }
+            if (nblocks & 1) {
+                sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + (nblocks - 1)*8));
+            }
+            sum0 = _mm256_add_ps(sum0, sum1);
+            sum1 = _mm256_loadu_ps(delta + nblocks*8);
+            sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
+            sum0 = _mm256_add_ps(sum0, sum1);
+            db[outc] += _mm_cvtss_f32(hsum256_ps(sum0));
+        }
+    }
+}
+
+// float ver
+template <typename Allocator>
 void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                                     const std::vector<float, Allocator>& prev_out,
                                     const std::vector<float, Allocator>& W,
@@ -439,8 +485,9 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
 
     // accumulate db
     if (params.has_bias) {
-        //fvec_t& db = *in_grad[2];
-        
+#if 1
+        accumulate_db(out, curr_delta, db);
+#else
         if (out.width_ == 1 && out.height_ == 1) {
             for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 db[outc] += curr_delta[outc];
@@ -451,6 +498,7 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 db[outc] += std::accumulate(delta, delta + out.width_ * out.height_, float(0));
             }
         }
+#endif
     }
 } // avx_conv2d_5x5_back_kernel float ver
 
@@ -463,7 +511,7 @@ void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
                                 std::vector<std::vector<double, Allocator>>&       db,
                                 std::vector<std::vector<double, Allocator>>&       curr_delta,
                                 std::vector<std::vector<double, Allocator>>&       prev_delta) {
-    // backward-pass fallbacks to tiny-backend at float_t == double
+    // backward-pass fallbacks to tiny-backend when float_t is double
     conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
 }
 
