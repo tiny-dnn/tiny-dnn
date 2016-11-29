@@ -235,8 +235,8 @@ class nnp_backend : public backend {
     }
 
 #ifdef CNN_USE_NNPACK
-    void check_nnp_status(nnp_status status) {
-        /*switch (status) {
+    /*void check_nnp_status(nnp_status status) {
+        switch (status) {
             case nnp_status_success:
                 break;
             case nnp_status_invalid_batch_size:
@@ -302,8 +302,8 @@ class nnp_backend : public backend {
             case nnp_status_out_of_memory:
                 nn_warn("NNPACK failed to allocate memory for temporary buffers.");
                 break;
-        }*/
-    }
+        }
+    }*/
 #endif
 };
 

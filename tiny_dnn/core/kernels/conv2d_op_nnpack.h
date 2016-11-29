@@ -43,8 +43,7 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     core::NNPackInitializer::getInstance().initialize();
 
     const auto algorithm = core::nnp_algorithm();
-    // TODO(azsane): enable once inference/output issue is fixed
-    //const auto kernel_transform_strategy = core::nnp_kts();
+    const auto kernel_transform_strategy = core::nnp_kts();
 
     const serial_size_t input_channels = params.in.depth_;
     const serial_size_t output_channels = params.out.depth_;
@@ -75,10 +74,10 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     };
 
     // TODO(azsane): enable once inference/output issue is fixed
-    /*const nnp_size stride = {
+    const nnp_size stride = {
         static_cast<size_t>(params.w_stride),
         static_cast<size_t>(params.h_stride)
-    };*/
+    };
     
     const float* input_ptr  = in_data[0].data();
     const float* kernel_ptr = W.data();
@@ -90,28 +89,9 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     const size_t num_mkl_threads = 1;
     pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
-    const size_t batch_size = 1;
     nnp_profile* profile = nullptr;
    
-    // TODO(azsane): check output/inference since with inference tests are broken
-    // https://github.com/Maratyszcza/NNPACK/blob/master/bench/convolution.c
     nnp_status status =
-        nnp_convolution_output(
-            algorithm,
-            batch_size,
-            input_channels,
-            output_channels,
-            input_size,
-            padding,
-            kernel_size,
-            input_ptr,
-            kernel_ptr,
-            bias_ptr,
-            output_ptr,
-            threadpool,
-            profile);
-
-    /*nnp_status status =
         nnp_convolution_inference(
             algorithm,
             kernel_transform_strategy,
@@ -126,7 +106,7 @@ conv2d_op_nnpack(const tensor_t&         in_data,
             bias_ptr,
             output_ptr,
             threadpool,
-            profile);*/
+            profile);
 
     if (status != nnp_status_success) {
         throw nn_error("Could not succeed with nnp_convolution_inference");
