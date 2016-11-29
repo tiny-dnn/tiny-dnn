@@ -73,7 +73,6 @@ conv2d_op_nnpack(const tensor_t&         in_data,
         static_cast<size_t>(dx/2)   // left
     };
 
-    // TODO(azsane): enable once inference/output issue is fixed
     const nnp_size stride = {
         static_cast<size_t>(params.w_stride),
         static_cast<size_t>(params.h_stride)
@@ -90,7 +89,7 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
     nnp_profile* profile = nullptr;
-   
+
     nnp_status status =
         nnp_convolution_inference(
             algorithm,
