@@ -27,6 +27,7 @@
 Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## What's New
+- 2016/11/30 [v1.0.0a3 is released!](https://github.com/tiny-dnn/tiny-dnn/tree/v1.0.0a3)
 - 2016/9/14 [tiny-dnn v1.0.0alpha is released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v1.0.0a)
 - 2016/8/7  tiny-dnn is now moved to organization account, and rename into tiny-dnn :)
 - 2016/7/27 [tiny-dnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
