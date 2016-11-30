@@ -199,6 +199,9 @@ public:
     template<typename... Args>
     size_t host_pos(const size_t  d,
                     const Args... args) const {
+        if (sizeof...(args) >= kDimensions)  {
+            throw nn_error("Too much dimensions");
+        }
         size_t dim = kDimensions - sizeof...(args) - 1;
         if (d >= shape_[dim])  {
             throw nn_error("Access tensor out of range.");
