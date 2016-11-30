@@ -827,9 +827,10 @@ TEST(tensor, sqrt2) {
 TEST(tensor, nd1) {
     Tensor<float_t,3> t({3,3,3});
 
-    EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
+    //TODO(Randl): static assert tests
+    /*EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
+    EXPECT_THROW(t.host_at(1,2), nn_error);*/
     EXPECT_THROW(t.host_at(4,1,1), nn_error);
-    EXPECT_THROW(t.host_at(1,2), nn_error);
     EXPECT_NO_THROW(t.host_at(2,2,2));
 
     for (size_t i = 0; i < 3; ++i) {

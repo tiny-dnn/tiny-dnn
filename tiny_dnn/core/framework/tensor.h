@@ -79,18 +79,35 @@ public:
      *
      *  Data will be hold by a std::vector with 64bytes alignment.
      */
-    /*explicit Tensor(const size_t d0) {
-        reshape(d0, d1, d2, d3);
-    }*/ //TODO(Randl): variadic template version
 
+    //TODO(Randl): variadic template version of reshape
+
+    /**
+     * Constructor that assepts an array of shape and create a Tensor with that
+     * shape
+     * @param shape array containing N integers, sizes of dimensions
+     * @return
+     */
     explicit Tensor(const std::array<size_t, kDimensions>& shape) {
         reshape(shape);
     }
 
+    /**
+     * Constructor that assepts a vector of shape and create a Tensor with that
+     * shape
+     * @param shape array containing N integers, sizes of dimensions
+     * @return
+     */
     explicit Tensor(const std::vector<size_t>& shape) {
         reshape(shape);
     }
 
+    /**
+     * Constructor that assepts an initializer list of shape and create a
+     * Tensor with that shape
+     * @param shape array containing N integers, sizes of dimensions
+     * @return
+     */
     explicit Tensor(std::initializer_list<size_t> const& shape)  {
         assert(shape.size() == kDimensions);
         std::array<size_t, kDimensions> tmp;
@@ -161,7 +178,7 @@ public:
      */
     template<typename... Args>
     U& host_at(const Args... args) {
-        return *host_ptr(args...); //TODO(Randl) Do we need non-const version?
+        return *host_ptr(args...);
     }
 
     /**
@@ -180,7 +197,7 @@ public:
      * @param d an index of last dimension
      * @return offest from the beginning of the dimesion
      */
-    size_t host_pos(const size_t d) const {
+    size_t host_pos(const size_t d) const { //TODO(Randl): unchecked version
         if (d >= shape_.back())  {
             throw nn_error("Access tensor out of range.");
         }
@@ -199,9 +216,7 @@ public:
     template<typename... Args>
     size_t host_pos(const size_t  d,
                     const Args... args) const {
-        if (sizeof...(args) >= kDimensions)  {
-            throw nn_error("Too much dimensions");
-        }
+        static_assert(sizeof...(args) < kDimensions, "Wrong number of dimensions");
         size_t dim = kDimensions - sizeof...(args) - 1;
         if (d >= shape_[dim])  {
             throw nn_error("Access tensor out of range.");
@@ -220,17 +235,13 @@ public:
      */
     template<typename... Args>
     const U* host_ptr (const Args... args) const {
-        if (sizeof...(args) != kDimensions)  {
-            throw nn_error("Wrong number of dimensions");
-        }
+        static_assert(sizeof...(args) == kDimensions, "Wrong number of dimensions");
         return host_data() + host_pos(args...);
     }
 
     template<typename... Args>
     U* host_ptr(const Args... args) {
-        if (sizeof...(args) != kDimensions)  {
-            throw nn_error("Wrong number of dimensions");
-        }
+        static_assert(sizeof...(args) == kDimensions, "Wrong number of dimensions");
         return mutable_host_data() + host_pos(args...);
     }
 
@@ -267,17 +278,6 @@ public:
         data_dirty_ = true;
         std::fill(std::begin(host_data_), std::end(host_data_), value);
     }
-
-    /*void reshape(const size_t d0,
-                 const size_t d1,
-                 const size_t d2,
-                 const size_t d3) {
-        shape_[0] = d0;
-        shape_[1] = d1;
-        shape_[2] = d2;
-        shape_[3] = d3;
-        host_data_.resize(calcSize(), U(0));
-    }*/
 
     void reshape(const std::array<size_t, kDimensions> &sz) {
         shape_ = sz;
@@ -320,11 +320,9 @@ private:
     }
 
 private:
-    /* Vector with the size of the tensor
-     * shape_[0]: batch
-     * shape_[1]: width
-     * shape_[2]: height
-     * shape_[3]: depth
+    /**
+     * A tensor holds data in C-style nD array, i.e row-major order:
+     * the rightmost index “varies the fastest”.
      */
     std::array<size_t, kDimensions> shape_;
 
@@ -335,8 +333,8 @@ private:
     /* Pointer to the Tensor data in the device */
     std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
 #endif
-    mutable bool data_is_on_host_;      //< current data is on host if true, on device if false.
-    mutable bool data_dirty_;           //< set to true if current data might have been modified
+    mutable bool data_is_on_host_;    //< current data is on host if true, on device if false.
+    mutable bool data_dirty_;         //< set to true if current data might have been modified
 
     /* Pointer to the current device where the data resides */
     Device* device_;
