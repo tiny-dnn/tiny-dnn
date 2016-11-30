@@ -404,7 +404,7 @@ inline std::ostream& operator<< (std::ostream &os,
 
 // utilities for element-wise and tensor-scalar/scalar-tensor operations
 
-template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor_tensor_elementwise_operation(Tensor<TD> &dst, const Tensor<TS1> &src1, const Tensor<TS2> &src2, F f) {
+template<typename TD, typename TS1, typename TS2, typename F, size_t kDim> void binary_tensor_tensor_elementwise_operation(Tensor<TD, kDim> &dst, const Tensor<TS1, kDim> &src1, const Tensor<TS2, kDim> &src2, F f) {
     if (src1.shape() != src2.shape()) {
         throw nn_error("Tensor must have same shape");
     }
@@ -420,7 +420,7 @@ template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor
     });
 }
 
-template<typename TD, typename TS, typename F> void unary_tensor_elementwise_operation(Tensor<TD> &dst, const Tensor<TS> &src, F f) {
+template<typename TD, typename TS, typename F, size_t kDim> void unary_tensor_elementwise_operation(Tensor<TD, kDim> &dst, const Tensor<TS, kDim> &src, F f) {
     dst.reshape(src.shape());
 
     TD* pdst = dst.mutable_host_data();
@@ -431,7 +431,7 @@ template<typename TD, typename TS, typename F> void unary_tensor_elementwise_ope
     });
 }
 
-template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor_scalar_operation(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2, F f) {
+template<typename TD, typename TS1, typename TS2, typename F, size_t kDim> void binary_tensor_scalar_operation(Tensor<TD, kDim> &dst, const Tensor<TS1, kDim> &src1, TS2 src2, F f) {
     dst.reshape(src1.shape());
 
     TD* pdst = dst.mutable_host_data();
@@ -442,7 +442,7 @@ template<typename TD, typename TS1, typename TS2, typename F> void binary_tensor
     });
 }
 
-template<typename TD, typename TS1, typename TS2, typename F> void binary_scalar_tensor_operation(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2, F f) {
+template<typename TD, typename TS1, typename TS2, typename F, size_t kDim> void binary_scalar_tensor_operation(Tensor<TD, kDim> &dst, TS1 src1, const Tensor<TS2, kDim> &src2, F f) {
     dst.reshape(src2.shape());
 
     TD* pdst = dst.mutable_host_data();
