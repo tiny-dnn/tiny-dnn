@@ -147,15 +147,29 @@ public:
     }
 #endif
 
-    // Returns the tensor shape
+    /**
+     *
+     * @return the tensor shape
+     */
     const std::array<size_t, kDimensions>& shape() const { return shape_; }
 
-    // Returns the value of a specified index in the tensor.
-    // Checked version (throw exceptions for out-of-range error)
+    /**
+     * Checked version of access to indexes in tensor (throw exceptions
+     * for out-of-range error)
+     * @param args indexes in tensor
+     * @return the value of a specified index in the tensor
+     */
     template<typename... Args>
     U& host_at(const Args... args) {
-        return *host_ptr(args...);
+        return *host_ptr(args...); //TODO(Randl) Do we need non-const version?
     }
+
+    /**
+     * Checked version of access to indexes in tensor (throw exceptions
+     * for out-of-range error)
+     * @param args indexes in tensor
+     * @return the value of a specified index in the tensor
+     */
     template<typename... Args>
     U host_at(const Args... args) const {
         return *host_ptr(args...);
@@ -163,7 +177,7 @@ public:
 
     /**
      * Calculate an offset for last dimension.
-     * @param d an index of last di the rightmost index “varies the fastest”mension
+     * @param d an index of last dimension
      * @return offest from the beginning of the dimesion
      */
     size_t host_pos(const size_t d) {
@@ -196,8 +210,11 @@ public:
         return (d * shift + host_pos(args...) );
     }
 
-    // Returns the pointer to a specified index in the tensor
-    // Checked version (throw exceptions for out-of-range error)
+    /**
+     * Checked version (throw exceptions for out-of-range error)
+     * @param args index of rest (k-1) dimensions.
+     * @return the pointer to a specified index in the tensor
+     */
     template<typename... Args>
     const U* host_ptr (const Args... args) const {
         if (sizeof...(args) != kDimensions)  {
