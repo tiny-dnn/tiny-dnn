@@ -74,12 +74,8 @@ public:
 
     /*
      * Create a tensor of the given dimension.
-     * It is assumed that a tensor will hold data in NxWxHxD order,
-     * where:
-     *  N the batch axis
-     *  W the width axis
-     *  H the heigth axis
-     *  D the depth axis
+     * It is assumed that a tensor will hold data in C-style nD array, i.e
+     * row-major order:  the rightmost index “varies the fastest”.
      *
      *  Data will be hold by a std::vector with 64bytes alignment.
      */
@@ -94,6 +90,7 @@ public:
     explicit Tensor(const std::vector<size_t>& shape) {
         reshape(shape);
     }
+
     explicit Tensor(std::initializer_list<size_t> const& shape)  {
         assert(shape.size() == kDimensions);
         std::array<size_t, kDimensions> tmp;
@@ -119,7 +116,8 @@ public:
         data_dirty_ = true;
         host_data_ = other.host_data_;
 
-        //device_data_ is intentionally left as-is. It will be erased only if new tensor won't fit, and only when data gets moved to the GPU.
+        //device_data_ is intentionally left as-is. It will be erased only if
+        // new tensor won't fit, and only when data gets moved to the GPU.
         return *this;
     }
 
@@ -163,23 +161,37 @@ public:
         return *host_ptr(args...);
     }
 
+    /**
+     * Calculate an offset for last dimension.
+     * @param d an index of last di the rightmost index “varies the fastest”mension
+     * @return offest from the beginning of the dimesion
+     */
     size_t host_pos(const size_t d) {
-        if (d >= *shape_.rbegin())  {
+        if (d >= shape_.back())  {
             throw nn_error("Access tensor out of range.");
         }
         return d;
     }
 
+    /**
+     * Calculate an offest in 1D representation of nD Tensor. Parameters are
+     * indexes of k last dimensions. If k is less than n, function returns an
+     * offset from the first index of (n-k+1)th dimension. This allows recursive
+     * call to acquire offset for generic number of dimensions
+     * @param d index of (k-n)th dimension. For external call, n=k usually holds
+     * @param args index of rest (k-1) dimensions.
+     * @return offset from the first index of (n-k)th dimension
+     */
     template<typename... Args>
-    size_t host_pos(const size_t d,
-                const Args... args) {
-        size_t dim = shape_.size() - sizeof...(args) - 1;
+    size_t host_pos(const size_t  d,
+                    const Args... args) {
+        size_t dim = kDimensions - sizeof...(args) - 1;
         if (d >= shape_[dim])  {
             throw nn_error("Access tensor out of range.");
         }
         size_t shift = 1;
-        for (size_t i = dim + 1; i < shape_.size(); ++i)
-            shift *= shape_[i]; //TODO(Randl): optimize
+        for (size_t i = dim + 1; i < kDimensions; ++i)
+            shift *= shape_[i]; //TODO(Randl): optimize. Reverse argumets?
 
         return (d * shift + host_pos(args...) );
     }
@@ -188,8 +200,7 @@ public:
     // Checked version (throw exceptions for out-of-range error)
     template<typename... Args>
     const U* host_ptr (const Args... args) const {
-        //  TODO(Randl): Should we throw here if lower number of arguments?
-        if (sizeof...(args) != shape_.size())  {
+        if (sizeof...(args) != kDimensions)  {
             throw nn_error("Wrong number of dimensions");
         }
         return host_data() + host_pos(args...);
@@ -197,7 +208,7 @@ public:
 
     template<typename... Args>
     U* host_ptr(const Args... args) {
-        if (sizeof...(args) != shape_.size())  {
+        if (sizeof...(args) != kDimensions)  {
             throw nn_error("Wrong number of dimensions");
         }
         return mutable_host_data() + host_pos(args...);
@@ -316,7 +327,7 @@ template<typename T>
 inline std::ostream& operator<< (std::ostream &os,
                                  const Tensor<T>& tensor) {
     //TODO(Randl): N-dimensions
-    const std::vector<serial_size_t>& shape = tensor.shape();
+    const std::vector<size_t>& shape = tensor.shape();
     for (serial_size_t i = 0; i < shape[0]; ++i) {
         os << "-- Batch: " << i << "\n";
         for (serial_size_t j = 0; j < shape[3]; ++j) {
