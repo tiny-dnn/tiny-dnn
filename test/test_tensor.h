@@ -837,6 +837,15 @@ TEST(tensor, nd1) {
     }
 
 }
+
+TEST(tensor, print) {
+    Tensor<float_t,4> t({3,2,2,2});
+
+    t.fill(float_t(1.0));
+
+    //std::cout << t;
+
+}
 //TEST(tensor, exp) {
 //    Tensor<float_t> t(2, 2, 2, 2);
 //

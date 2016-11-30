@@ -180,7 +180,7 @@ public:
      * @param d an index of last dimension
      * @return offest from the beginning of the dimesion
      */
-    size_t host_pos(const size_t d) {
+    size_t host_pos(const size_t d) const {
         if (d >= shape_.back())  {
             throw nn_error("Access tensor out of range.");
         }
@@ -198,7 +198,7 @@ public:
      */
     template<typename... Args>
     size_t host_pos(const size_t  d,
-                    const Args... args) {
+                    const Args... args) const {
         size_t dim = kDimensions - sizeof...(args) - 1;
         if (d >= shape_[dim])  {
             throw nn_error("Access tensor out of range.");
@@ -339,29 +339,66 @@ private:
     Device* device_;
 };
 
-// Overloaded method to print the Tensor class to the standard output
 template<typename T>
-inline std::ostream& operator<< (std::ostream &os,
-                                 const Tensor<T>& tensor) {
-    //TODO(Randl): N-dimensions
-    const std::vector<size_t>& shape = tensor.shape();
-    for (serial_size_t i = 0; i < shape[0]; ++i) {
-        os << "-- Batch: " << i << "\n";
-        for (serial_size_t j = 0; j < shape[3]; ++j) {
-            os << "-- Channel: " << j << "\n";
-            os << "-- Data:\n";
-            for (serial_size_t k = 0; k < shape[1]; ++k) {
-                for (serial_size_t l = 0; l < shape[2]; ++l) {
-                    os << "   " << tensor.at(i, k, l, j) << " ";
-                }
-                os << ";\n";
-            }
+void print_pack(std::ostream &out, T t) { //TODO: C++17 allows easier printing
+    out << t;
+}
+
+template<typename T, typename U, typename... Args>
+void print_pack(std::ostream &out, T t, U u, Args... args) {
+    out << t << ',';
+    print_pack(out, u, args...);
+}
+
+template<typename T, size_t kDim, typename... Args>
+inline std::ostream& print_last_two_dimesions (std::ostream     &os,
+                                               const Tensor<T, kDim>& tensor,
+                                               const Args...    args) {
+
+    const std::array<size_t, kDim>& shape = tensor.shape();
+    for (size_t k = 0; k < shape[kDim-1]; ++k) {
+        for (size_t l = 0; l < shape[kDim-2]; ++l) {
+            os << " " << tensor.host_at(args..., l, k) << " ";
         }
+        os << ";\n";
     }
-    os << "----------------\n"
-        << "--> Tensor size: [ "
-        << shape[0] << " x " << shape[1] << " x "
-        << shape[2] << " x " << shape[3] << " ]\n";
+    return os;
+}
+
+template<typename T, size_t kDim, typename... Args>
+inline std::ostream& print_last_n_dimesions (std::ostream &os,
+                                               const Tensor<T, kDim>& tensor,
+                                               const int d,
+                                               const Args... args) {
+    const std::array<size_t, kDim>& shape = tensor.shape();
+    const size_t n_dim = sizeof...(args);
+    if (n_dim == shape.size() - 3) {
+        os << "Tensor(";
+        print_pack(os, d, args...);
+        os << ",:,:):\n";
+        print_last_two_dimesions (os, tensor, d, args...);
+        return os;
+    }
+    for (size_t k = 0; k < shape[n_dim+1]; ++k) {
+        print_last_n_dimesions(os, tensor, d, args..., k);
+    }
+    return os;
+}
+/**
+ * Overloaded method to print the Tensor class to the standard output
+ * @param os
+ * @param tensor
+ * @return
+ */
+//TODO(Randl): make to compile
+template<typename T, size_t kDim>
+inline std::ostream& operator<< (std::ostream &os,
+                                 const Tensor<T, kDim>& tensor) {
+
+    const std::array<size_t, kDim>& shape = tensor.shape();
+
+    for (size_t i = 0 ; i < shape[0]; ++i)
+        print_last_n_dimesions(os, tensor, i);
     return os;
 }
 
