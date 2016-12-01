@@ -38,11 +38,11 @@ using namespace tiny_dnn::layers;
 
 using namespace std;
 
-void sample1_convnet(const string& data_dir = "../../data");
-void sample2_mlp(const string& data_dir = "../../data");
+void sample1_convnet(const string& data_dir = "../data");
+void sample2_mlp(const string& data_dir = "../data");
 void sample3_dae();
-void sample4_dropout(const string& data_dir = "../../data");
-void sample5_unbalanced_training_data(const string& data_dir = "../../data");
+void sample4_dropout(const string& data_dir = "../data");
+void sample5_unbalanced_training_data(const string& data_dir = "../data");
 void sample6_graph();
 
 int main(int argc, char** argv) {
@@ -302,8 +302,8 @@ void sample4_dropout(const string& data_dir) {
 
 void sample5_unbalanced_training_data(const string& data_dir) {
     // keep the network relatively simple
-    auto nn_standard = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
     const serial_size_t num_hidden_units = 20;
+    auto nn_standard = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
     auto nn_balanced = make_mlp<tan_h>({ 28 * 28, num_hidden_units, 10 });
     gradient_descent optimizer;
 
