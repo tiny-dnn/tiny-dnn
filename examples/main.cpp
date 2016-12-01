@@ -38,11 +38,11 @@ using namespace tiny_dnn::layers;
 
 using namespace std;
 
-void sample1_convnet(const string& data_dir = "../../data");
-void sample2_mlp(const string& data_dir = "../../data");
+void sample1_convnet(const string& data_dir = "../data");
+void sample2_mlp(const string& data_dir = "../data");
 void sample3_dae();
-void sample4_dropout(const string& data_dir = "../../data");
-void sample5_unbalanced_training_data(const string& data_dir = "../../data");
+void sample4_dropout(const string& data_dir = "../data");
+void sample5_unbalanced_training_data(const string& data_dir = "../data");
 void sample6_graph();
 
 int main(int argc, char** argv) {
