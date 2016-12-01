@@ -23,7 +23,7 @@ These are just guidelines, not rules, and feel free to propose changes to this d
 - Keep header-only
 - Keep dependency-free
     - If your change requires 3rd party libraries, this should be __optional__ in tiny-dnn.
-    Please guard your 3rd party dependent code by ```#ifdef - #endif``` block, and white CMakelist option to enable the block - 
+    Please guard your 3rd party dependent code by ```#ifdef - #endif``` block, and write CMakelist option to enable the block - 
     but lesser these switches, the better.
 - Keep platform-independent
     - Use C++ standard library instead of Windows/POSIX dependent API
