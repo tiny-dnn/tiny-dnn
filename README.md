@@ -55,7 +55,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 |Modeling By|C++ code|Config File|Python Code|Python Code|
 |GPU Support|No|Yes|Yes|Yes|
 |Installing|Unnecessary|Necessary|Necessary|Necessary|
-|Windows Support|Yes|No*|Yes|No*|
+|Windows Support|Yes|No*|Yes|Yes|
 |Pre-Trained Model|Yes(via caffe-converter)|Yes|No*|No*|
 
 *unofficial version is available
