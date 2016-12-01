@@ -49,16 +49,21 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## Comparison with other libraries
 
-||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
-|---|---|---|---|---|
-|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|
-|Modeling By|C++ code|Config File|Python Code|Python Code|
-|GPU Support|No|Yes|Yes|Yes|
-|Installing|Unnecessary|Necessary|Necessary|Necessary|
-|Windows Support|Yes|No*|Yes|Yes|
-|Pre-Trained Model|Yes(via caffe-converter)|Yes|No*|No*|
+||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|[Mxnet](http://mxnet.io/)|
+|---|---|---|---|---|---|
+|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|BLAS(optional:CUDA)|
+|Modeling By|C++ code|Config File|Python Code|Python Code|C++, Python, R, Julia ...|
+|Training|C++|C++, Python|Python|Python|C++, Python, R, Julia ...|
+|Execution|C++|C++, Python|Python|Python, C++*2|C++*4, Python, R, Julia ...|
+|GPU Support|No|Yes|Yes|Yes|Yes|
+|Installing|Unnecessary|Necessary|Necessary|Necessary|Necessary*3|
+|Windows Support|Yes|No*|Yes|Yes|Yes|
+|Pre-Trained Model|Yes(via caffe-converter)|Yes|No*|No*|Yes(via caffe-converter)|
 
-*unofficial version is available
+*unofficial version is available  
+*2 limited C++ API  
+*3 It is rumoured installation is unnecessary with the Mxnet amalgamation Api  
+*4 both full API and limited api via amalgamation  
 
 ## Supported networks
 ### layer-types
