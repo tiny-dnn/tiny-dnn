@@ -73,14 +73,32 @@ class FullyConnectedOp : public core::OpKernel {
 
         const core::backend_t engine = context.engine();
 
+	// tensor_t data converted to Tensor class
+	// NOTE: this hack is temporal
+	// TODO: Remove once layers forward and backward by themself.
+	const Tensor<float_t> in_data_t(in_data.size(), params.in_size_, 1, 1,
+			                in_data);
+	const Tensor<float_t> weights_t(W.size(), W[0].size(), 1, 1, W);
+	const Tensor<float_t> bias_t(params.has_bias_ ? bias->size() : 0,
+			             params.has_bias_ ? (*bias)[0].size() : 0,
+				     params.has_bias_ ? 1 : 0,
+				     params.has_bias_ ? 1 : 0,
+				     params.has_bias_ ? *bias : tensor_t());
+        Tensor<float_t> out_data_t(out_data.size(), params.out_size_, 1, 1,
+			           out_data);
+
         if (engine == core::backend_t::internal) {
             kernels::fully_connected_op_internal(
-                in_data,
-                W[0],
-                params.has_bias_ ? (*bias)[0] : vec_t(),
-                out_data,
-                params,
+                in_data_t,
+                weights_t,
+                bias_t,
+                &out_data_t,
                 context.parallelize());
+
+                // convert Tensor class to tensor_t
+		// NOTE: this hack is temporal
+		// TODO: Remove once layers forward and backward by themself.
+                out_data = out_data_t.toTensor();
         }
         else if (engine == core::backend_t::nnpack) {
             kernels::fully_connected_op_nnpack(
