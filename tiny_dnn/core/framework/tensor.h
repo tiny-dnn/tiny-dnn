@@ -61,30 +61,29 @@
 
 namespace tiny_dnn {
 
+/**
+ * A tensor of the given dimension.
+ * A tensor holds data in C-style nD array, i.e row-major order:
+ * the rightmost index “varies the fastest”.
+ *
+ *  Data is held by a std::vector with 64 bytes alignment.
+ */
 template<typename U = float_t, size_t kDimensions = 4>
 class Tensor {
 public:
-    /*
+
+    /**
      * Initializes an empty tensor.
+     * @return
      */
-    Tensor()
-    {
+    Tensor() {
         reshape(std::array<size_t, kDimensions>());
     }
 
-    /*
-     * Create a tensor of the given dimension.
-     * It is assumed that a tensor will hold data in C-style nD array, i.e
-     * row-major order:  the rightmost index “varies the fastest”.
-     *
-     *  Data will be hold by a std::vector with 64bytes alignment.
-     */
-
-    //TODO(Randl): variadic template version of reshape
-
     /**
      * Constructor that assepts an array of shape and create a Tensor with that
-     * shape
+     * shape. For example, given shape = {2,3,4,5,6}, tensor will be of size
+     * 2x3x4x5x6
      * @param shape array containing N integers, sizes of dimensions
      * @return
      */
@@ -94,7 +93,8 @@ public:
 
     /**
      * Constructor that assepts a vector of shape and create a Tensor with that
-     * shape
+     * shape. For example, given shape = {2,3,4,5,6}, tensor will be of size
+     * 2x3x4x5x6
      * @param shape array containing N integers, sizes of dimensions
      * @return
      */
@@ -104,7 +104,8 @@ public:
 
     /**
      * Constructor that assepts an initializer list of shape and create a
-     * Tensor with that shape
+     * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
+     * will be of size 2x3x4x5x6
      * @param shape array containing N integers, sizes of dimensions
      * @return
      */
@@ -279,6 +280,8 @@ public:
         std::fill(std::begin(host_data_), std::end(host_data_), value);
     }
 
+
+    //TODO(Randl): variadic template version of reshape
     void reshape(const std::array<size_t, kDimensions> &sz) {
         shape_ = sz;
         host_data_.resize(calcSize(), U(0));
