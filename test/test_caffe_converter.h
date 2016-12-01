@@ -81,7 +81,7 @@ TEST(caffe_converter, rectangle_input) {
     auto model = create_net_from_json(json);
 
     // conv->pool->conv->pool->fc->relu->fc->softmax
-    ASSERT_EQ(model->depth(), 2);
+    ASSERT_EQ(model->depth(), size_t(2));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 1));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(22, 38, 96));
@@ -270,7 +270,7 @@ TEST(caffe_converter, lenet) {
     auto model = create_net_from_json(json, shape3d(28, 28, 1));
 
     // conv->pool->conv->pool->fc->relu->fc->softmax
-    ASSERT_EQ(model->depth(), 8);
+    ASSERT_EQ(model->depth(), size_t(8));
 
     // conv1 28x28x1 -> 24x24x20
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));   // in: 28x28x1
@@ -442,7 +442,7 @@ TEST(caffe_converter, lenet_v1) {
     auto model = create_net_from_json(json, shape3d(28, 28, 1));
 
     // conv->pool->conv->pool->fc->relu->fc->softmax
-    ASSERT_EQ(model->depth(), 8);
+    ASSERT_EQ(model->depth(), size_t(8));
 
     // conv1 28x28x1 -> 24x24x20
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));   // in: 28x28x1
@@ -512,7 +512,7 @@ TEST(caffe_converter, dropout) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     // tiny-dnn dropout doesn't hold spatial shape of input
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24*40, 1, 1));
@@ -549,10 +549,10 @@ TEST(caffe_converter, conv_with_stride) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 2));
-    EXPECT_EQ((*model)[0]->in_shape().size(), 2); // doesn't have bias
+    EXPECT_EQ((*model)[0]->in_shape().size(), size_t(2)); // doesn't have bias
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(8, 20, 3));
 }
 
@@ -580,7 +580,7 @@ TEST(caffe_converter, batchnorm) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     // tiny-dnn bn doesn't hold spatial shape of input
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24*40, 1, 1));
@@ -615,7 +615,7 @@ TEST(caffe_converter, ave_pool) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(),size_t(1));
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 2));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(12, 20, 2));
     EXPECT_EQ((*model)[0]->layer_type(), "ave-pool");
@@ -647,7 +647,7 @@ TEST(caffe_converter, deconv) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 4));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 40, 10));
 }
@@ -678,7 +678,7 @@ TEST(caffe_converter, lrn) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 5));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 40, 5));
@@ -704,7 +704,7 @@ TEST(caffe_converter, sigmoid) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(5, 1, 1));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(5, 1, 1));
@@ -741,7 +741,7 @@ TEST(caffe_converter, tanh) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(5, 1, 1));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(5, 1, 1));
@@ -782,7 +782,7 @@ TEST(caffe_converter, power) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(1, 1, 1));
     EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(1, 1, 1));
@@ -841,16 +841,16 @@ TEST(caffe_converter, conv_with_weights) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
 
     const vec_t* W = (*model)[0]->weights()[0];
     const vec_t* b = (*model)[0]->weights()[1];
 
-    EXPECT_EQ(W->size(), 9);
+    EXPECT_EQ(W->size(), size_t(9));
     for (int i = 0; i < 9; i++) {
         EXPECT_FLOAT_EQ(W->at(i), (float_t)i);
     }
-    EXPECT_EQ(b->size(), 1);
+    EXPECT_EQ(b->size(), size_t(1));
     EXPECT_FLOAT_EQ(b->at(0), 9.0f);
 }
 
@@ -906,7 +906,7 @@ TEST(caffe_converter, fully_with_weights) {
 
     auto model = create_net_from_json(json);
 
-    ASSERT_EQ(model->depth(), 1);
+    ASSERT_EQ(model->depth(), size_t(1));
     /*
      caffe:
      0 1 2 3
@@ -922,7 +922,7 @@ TEST(caffe_converter, fully_with_weights) {
     const vec_t* W = (*model)[0]->weights()[0];
     const vec_t* b = (*model)[0]->weights()[1];
 
-    EXPECT_EQ(W->size(), 8);
+    EXPECT_EQ(W->size(), size_t(8));
     EXPECT_FLOAT_EQ(W->at(0), 0.0f);
     EXPECT_FLOAT_EQ(W->at(1), 4.0f);
     EXPECT_FLOAT_EQ(W->at(2), 1.0f);
@@ -932,7 +932,7 @@ TEST(caffe_converter, fully_with_weights) {
     EXPECT_FLOAT_EQ(W->at(6), 3.0f);
     EXPECT_FLOAT_EQ(W->at(7), 7.0f);
 
-    EXPECT_EQ(b->size(), 2);
+    EXPECT_EQ(b->size(), size_t(2));
     EXPECT_FLOAT_EQ(b->at(0), 8.0f);
     EXPECT_FLOAT_EQ(b->at(1), 9.0f);
 }

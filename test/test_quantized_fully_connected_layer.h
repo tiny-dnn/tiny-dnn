@@ -145,7 +145,7 @@ TEST(quantized_fully_connected, forward)
     }
 }
 
-#ifdef CNN_USE_NNPACK
+/*#ifdef CNN_USE_NNPACK
 TEST(quantized_fully_connected, forward_nnp)
 {
     quantized_fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
@@ -162,7 +162,7 @@ TEST(quantized_fully_connected, forward_nnp)
         EXPECT_NEAR(out_expected[i], out[i], 1E-2);
     }
 }
-#endif
+#endif*/
 
 TEST(quantized_fully_connected, forward_nobias)
 {
