@@ -128,16 +128,22 @@ class TensorStorage {
  */
 template<typename U = float_t, size_t kDimensions = 4, bool kConst = false>
 class Tensor {
-public:
+    typedef typename std::conditional<kConst,
+                                      std::shared_ptr<const TensorStorage>,
+                                      std::shared_ptr<TensorStorage>>::type
+        TensorStoragePointer;
+
+
+ public:
 
     /**
      * Initializes an empty tensor.
      * @return
      */
     Tensor() {
-        host_data_ =
+        storage_pointer_ =
             std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        host_data_iter_ = host_data_->begin();
+        storage_pointer_iter_ = host_data_->begin();
         reshape(std::array<size_t, kDimensions>());
     }   
 
@@ -151,7 +157,7 @@ public:
     explicit Tensor(const std::array<size_t, kDimensions> &shape) {
         host_data_ =
             std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        host_data_iter_ = host_data_->begin();
+        host_data_iter_ = storage_pointer_->begin();
         reshape(shape);
     }
 
@@ -163,9 +169,9 @@ public:
      * @return
      */
     explicit Tensor(const std::vector<size_t> &shape) {
-        host_data_ =
+        storage_pointer_ =
             std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        host_data_iter_ = host_data_->begin();
+        storage_pointer_iter_ = host_data_->begin();
         reshape(shape);
     }
 
@@ -177,7 +183,7 @@ public:
      * @return
      */
     explicit Tensor(std::initializer_list<size_t> const &shape) {
-        host_data_ =
+        storage_pointer_ =
             std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
         host_data_iter_ = host_data_->begin();
         assert(shape.size() == kDimensions);
@@ -191,7 +197,7 @@ public:
     Tensor(const Tensor&other) { //TODO(Randl):deep copy
         other.fromDevice();
         shape_ = other.shape_;
-        host_data_ = other.host_data_;
+        storage_pointer_ = other.storage_pointer_;
         data_is_on_host_ = true;
         data_dirty_ = true;
         //device_data_ is intentionally left uninitialized.
@@ -202,7 +208,7 @@ public:
         shape_ = other.shape_;
         data_is_on_host_ = true;
         data_dirty_ = true;
-        host_data_ = other.host_data_;
+        storage_pointer_ = other.storage_pointer_;
 
         //device_data_ is intentionally left as-is. It will be erased only if
         // new tensor won't fit, and only when data gets moved to the GPU.
@@ -216,7 +222,7 @@ public:
     Tensor(Tensor&& other) { // for VS2013 we need to manually implement these 
                              // if we want to have move semantics
         shape_ = std::move(other.shape_);
-        host_data_ = std::move(other.host_data_);
+        storage_pointer_ = std::move(other.storage_pointer_);
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         device_data_ = std::move(other.device_data_);
 #endif
@@ -226,7 +232,7 @@ public:
 
     Tensor &operator = (Tensor&& other) {
         shape_ = std::move(other.shape_);
-        host_data_ = std::move(other.host_data_);
+        storage_pointer_ = std::move(other.storage_pointer_);
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         device_data_ = std::move(other.device_data_);
 #endif
@@ -250,6 +256,7 @@ public:
      */
     template<typename... Args>
     U& host_at(const Args... args) {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         return *host_ptr(args...);
     }
 
@@ -315,6 +322,7 @@ public:
 
     template<typename... Args>
     U* host_ptr(const Args... args) {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         static_assert(sizeof...(args) == kDimensions,
                       "Wrong number of dimensions");
         return mutable_host_data() + host_pos(args...);
@@ -322,13 +330,14 @@ public:
 
     const U* host_data() const {
         fromDevice();
-        return host_data_->data();
+        return storage_pointer_->data();
     }
 
     U* mutable_host_data() {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         fromDevice();
         data_dirty_ = true;
-        return host_data_->data();
+        return storage_pointer_->data();
     }
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -338,6 +347,7 @@ public:
     }
 
     void *mutable_device_data() {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         toDevice();
         data_dirty_ = true;
         return (*device_data_)();
@@ -345,19 +355,21 @@ public:
 #endif
 
     size_t size() const {
-        return host_data_->size();
+        return storage_pointer_->size();
     }
 
     void fill(U value) {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         data_is_on_host_ = true;
         data_dirty_ = true;
-        std::fill(std::begin(*host_data_), std::end(*host_data_), value);
+        std::fill(std::begin(*storage_pointer_), std::end(*storage_pointer_), value);
     }
 
     //TODO(Randl): variadic template version of reshape
     void reshape(const std::array<size_t, kDimensions> &sz) {
+        static_assert(!kConst, "Non-constant operation on constant Tensor");
         shape_ = sz;
-        host_data_->resize(calcSize(), U(0));
+        storage_pointer_->resize(calcSize(), U(0));
     }
 
 private:
@@ -368,7 +380,6 @@ private:
                                std::multiplies<size_t>());
     }
 
-private:
     /**
      * A tensor holds data in C-style nD array, i.e row-major order:
      * the rightmost index “varies the fastest”.
@@ -377,7 +388,7 @@ private:
 
     /* Offset from the beginningng of TensorStorage */
     size_t offset;
-    std::shared_ptr<TensorStorage> host_data_;
+    TensorStoragePointer storage_pointer_;
 
 };
 
