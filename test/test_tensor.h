@@ -55,7 +55,7 @@ namespace tiny_dnn {
 TEST(tensor, constructors) {
 
     Tensor<float_t> t1;
-    Tensor<float_t> t2(2,2,2,2); t2.fill(float_t(2.0));
+    Tensor<float_t> t2({2,2,2,2}); t2.fill(float_t(2.0));
 
     t1 = t2;  // invoke assign copy ctor
 
@@ -64,7 +64,7 @@ TEST(tensor, constructors) {
         EXPECT_EQ(t1.host_data()[i], float_t(2.0));
     }
 
-    t1 = Tensor<float_t>(1,1,1,1); // invoke copy ctor
+    t1 = Tensor<float_t>({1,1,1,1}); // invoke copy ctor
 
     // check that t1 have default values
     for (size_t i = 0; i < t1.size(); ++i) {
@@ -87,7 +87,7 @@ TEST(tensor, constructors) {
 }
 
 TEST(tensor, shape) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     EXPECT_EQ(tensor.shape()[0], serial_size_t(1));
     EXPECT_EQ(tensor.shape()[1], serial_size_t(2));
@@ -96,13 +96,13 @@ TEST(tensor, shape) {
 }
 
 TEST(tensor, size) {
-    Tensor<float_t> tensor(2,2,2,2);
+    Tensor<float_t> tensor({2,2,2,2});
 
     EXPECT_EQ(tensor.size(), size_t(2*2*2*2));
 }
 
 TEST(tensor, check_bounds) {
-    Tensor<float_t> tensor(1,2,2,1);
+    Tensor<float_t> tensor({1,2,2,1});
 
     // check bounds with .at() accessor
 
@@ -128,7 +128,7 @@ TEST(tensor, check_bounds) {
 }
 
 TEST(tensor, access_data1) {
-    Tensor<float_t> tensor(1,2,2,1);
+    Tensor<float_t> tensor({1,2,2,1});
 
     const std::array<size_t, 4>& shape = tensor.shape();
 
@@ -136,8 +136,8 @@ TEST(tensor, access_data1) {
         for (serial_size_t w = 0; w < shape[1]; ++w) {
             for (serial_size_t h = 0; h < shape[2]; ++h) {
                 for (serial_size_t d = 0; d < shape[3]; ++d) {
-                    EXPECT_EQ(tensor.host_at(n,w,h,d),   float_t(0.0));
-                    EXPECT_EQ(*tensor.host_ptr(n,w,h,d), float_t(0.0));
+                    EXPECT_NEAR(tensor.host_at(n,w,h,d),   float_t(0.0), 1e-5);
+                    EXPECT_NEAR(*tensor.host_ptr(n,w,h,d), float_t(0.0), 1e-5);
                 }
             }
         }
@@ -145,7 +145,7 @@ TEST(tensor, access_data1) {
 }
 
 TEST(tensor, access_data2) {
-    Tensor<float_t> tensor(1,2,2,1);
+    Tensor<float_t> tensor({1,2,2,1});
 
     for (size_t i = 0; i < tensor.size(); ++i) {
         EXPECT_EQ(tensor.host_data()[i], float_t(0.0));
@@ -154,15 +154,15 @@ TEST(tensor, access_data2) {
 
 
 TEST(tensor, access_data3) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
-    for (serial_size_t i = 0; i < 4; ++i) {
-        ptr1[i] = float_t(1.0);
+    for (serial_size_t i = 0; i < 8; ++i) {
+        ptr1[i] = float_t(i);
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
@@ -172,10 +172,10 @@ TEST(tensor, access_data3) {
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(ptr11[i], float_t(1.0));
+        EXPECT_EQ(ptr11[i], float_t(i));
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
@@ -184,43 +184,43 @@ TEST(tensor, access_data3) {
 }
 
 TEST(tensor, access_data4) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        ptr1[i] = float_t(1.0);
+        ptr1[i] = float_t(i*1.0);
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        ptr2[i] = float_t(2.0);
+        ptr2[i] = float_t(i*3.0);
     }
 
     // check data using .at() accessor
-
+    const std::array<float_t, 4> vals1 = {0,2,0,6}, vals2 = {1,3,3,9};
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
+            EXPECT_EQ(tensor.host_at(0,i,j,0), vals1[i*2+j]);
         }
     }
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
+            EXPECT_EQ(tensor.host_at(0,i,j,1), vals2[i*2+j]);
         }
     }
 }
 
 TEST(tensor, access_data5) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .ptr() accessor
 
     float_t* ptr1 = tensor.host_ptr(0,0,0,0);
-    float_t* ptr2 = tensor.host_ptr(0,0,0,1);
+    float_t* ptr2 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         ptr1[i] = float_t(1.0);
@@ -242,7 +242,7 @@ TEST(tensor, access_data5) {
 }
 
 TEST(tensor, access_data6) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .at() accessor
 
@@ -272,24 +272,24 @@ TEST(tensor, access_data6) {
 }
 
 TEST(tensor, access_data7) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .at() accessor
 
     tensor.host_at(0,0,0,0) = float_t(1.0);
+    tensor.host_at(0,0,0,1) = float_t(1.0);
     tensor.host_at(0,0,1,0) = float_t(1.0);
-    tensor.host_at(0,1,0,0) = float_t(1.0);
-    tensor.host_at(0,1,1,0) = float_t(1.0);
+    tensor.host_at(0,0,1,1) = float_t(1.0);
 
-    tensor.host_at(0,0,0,1) = float_t(2.0);
-    tensor.host_at(0,0,1,1) = float_t(2.0);
+    tensor.host_at(0,1,0,0) = float_t(2.0);
     tensor.host_at(0,1,0,1) = float_t(2.0);
+    tensor.host_at(0,1,1,0) = float_t(2.0);
     tensor.host_at(0,1,1,1) = float_t(2.0);
 
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
@@ -301,18 +301,18 @@ TEST(tensor, access_data7) {
 }
 
 TEST(tensor, access_data8) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using .at() accessor
 
     tensor.host_at(0,0,0,0) = float_t(1.0);
+    tensor.host_at(0,0,0,1) = float_t(1.0);
     tensor.host_at(0,0,1,0) = float_t(1.0);
-    tensor.host_at(0,1,0,0) = float_t(1.0);
-    tensor.host_at(0,1,1,0) = float_t(1.0);
+    tensor.host_at(0,0,1,1) = float_t(1.0);
 
-    tensor.host_at(0,0,0,1) = float_t(2.0);
-    tensor.host_at(0,0,1,1) = float_t(2.0);
+    tensor.host_at(0,1,0,0) = float_t(2.0);
     tensor.host_at(0,1,0,1) = float_t(2.0);
+    tensor.host_at(0,1,1,0) = float_t(2.0);
     tensor.host_at(0,1,1,1) = float_t(2.0);
 
     // check data using operator[] accessor
@@ -327,7 +327,7 @@ TEST(tensor, access_data8) {
 }
 
 TEST(tensor, access_data9) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
 
@@ -351,7 +351,7 @@ TEST(tensor, access_data9) {
 }
 
 TEST(tensor, access_data10) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
 
@@ -367,19 +367,19 @@ TEST(tensor, access_data10) {
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,0), float_t(1.0));
+            EXPECT_EQ(tensor.host_at(0,0,i,j), float_t(1.0));
         }
     }
 
     for (serial_size_t i = 0; i < 2; ++i) {
         for (serial_size_t j = 0; j < 2; ++j) {
-            EXPECT_EQ(tensor.host_at(0,i,j,1), float_t(2.0));
+            EXPECT_EQ(tensor.host_at(0,1,i,j), float_t(2.0));
         }
     }
 }
 
 TEST(tensor, access_data11) {
-    Tensor<float_t> tensor(1,2,2,2);
+    Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
 
@@ -394,7 +394,7 @@ TEST(tensor, access_data11) {
     // check data using .ptr() accessor
 
     const float_t* ptr11 = tensor.host_ptr(0,0,0,0);
-    const float_t* ptr22 = tensor.host_ptr(0,0,0,1);
+    const float_t* ptr22 = tensor.host_ptr(0,1,0,0);
 
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr11[i], float_t(1.0));
@@ -406,7 +406,7 @@ TEST(tensor, access_data11) {
 }
 
 TEST(tensor, fill) {
-    Tensor<float_t> tensor(2,2,2,2);
+    Tensor<float_t> tensor({2,2,2,2});
 
     // fill all tensor values with ones
 
@@ -448,8 +448,8 @@ TEST(tensor, fill) {
 //}
 
 TEST(tensor, add1) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(2,2,2,2);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -470,7 +470,7 @@ TEST(tensor, add1) {
 }
 
 TEST(tensor, add2a) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -490,7 +490,7 @@ TEST(tensor, add2a) {
 }
 
 TEST(tensor, add2b) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -510,8 +510,8 @@ TEST(tensor, add2b) {
 }
 
 TEST(tensor, add3) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(4,4,4,4);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({4,4,4,4});
 
     // compute element-wise sum along all tensor values.
     // Expect a throw since shapes are different
@@ -522,8 +522,8 @@ TEST(tensor, add3) {
 }
 
 TEST(tensor, sub1) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(2,2,2,2);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -543,7 +543,7 @@ TEST(tensor, sub1) {
 }
 
 TEST(tensor, sub2a) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -563,7 +563,7 @@ TEST(tensor, sub2a) {
 }
 
 TEST(tensor, sub2b) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -583,8 +583,8 @@ TEST(tensor, sub2b) {
 }
 
 TEST(tensor, sub3) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(4,4,4,4);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({4,4,4,4});
 
     // compute element-wise subtraction along all tensor values.
     // Expect a throw since shapes are different
@@ -595,8 +595,8 @@ TEST(tensor, sub3) {
 }
 
 TEST(tensor, mul1) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(2,2,2,2);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -617,7 +617,7 @@ TEST(tensor, mul1) {
 }
 
 TEST(tensor, mul2a) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -638,7 +638,7 @@ TEST(tensor, mul2a) {
 }
 
 TEST(tensor, mul2b) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -659,8 +659,8 @@ TEST(tensor, mul2b) {
 }
 
 TEST(tensor, mul3) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(4,4,4,4);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({4,4,4,4});
 
     // compute element-wise multiplication along all tensor values.
     // Expect a throw since shapes are different
@@ -671,8 +671,8 @@ TEST(tensor, mul3) {
 }
 
 TEST(tensor, div1) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(2,2,2,2);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -693,7 +693,7 @@ TEST(tensor, div1) {
 }
 
 TEST(tensor, div2a) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -713,7 +713,7 @@ TEST(tensor, div2a) {
 }
 
 TEST(tensor, div2b) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
 
@@ -733,8 +733,8 @@ TEST(tensor, div2b) {
 }
 
 TEST(tensor, div3) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(4,4,4,4);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({4,4,4,4});
 
     // compute element-wise division along all tensor values.
     // Expect a throw since shapes are different
@@ -745,8 +745,8 @@ TEST(tensor, div3) {
 }
 
 TEST(tensor, div4) {
-    Tensor<float_t> t1(2,2,2,2);
-    Tensor<float_t> t2(2,2,2,2);
+    Tensor<float_t> t1({2,2,2,2});
+    Tensor<float_t> t2({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -767,7 +767,7 @@ TEST(tensor, div4) {
 }
 
 TEST(tensor, div5) {
-    Tensor<float_t> t(2,2,2,2);
+    Tensor<float_t> t({2,2,2,2});
 
     // fill tensor with initial values
 
@@ -787,7 +787,7 @@ TEST(tensor, div5) {
 }
 
 TEST(tensor, sqrt1) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
     t.fill(float_t(4.0));
@@ -806,7 +806,7 @@ TEST(tensor, sqrt1) {
 }
 
 TEST(tensor, sqrt2) {
-    Tensor<float_t> t(2, 2, 2, 2);
+    Tensor<float_t> t({2, 2, 2, 2});
 
     // fill tensor with initial values
     t.fill(float_t(-1.0));
@@ -824,6 +824,29 @@ TEST(tensor, sqrt2) {
     }
 }
 
+TEST(tensor, nd1) {
+    Tensor<float_t,3> t({3,3,3});
+
+    //TODO(Randl): static assert tests
+    /*EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
+    EXPECT_THROW(t.host_at(1,2), nn_error);*/
+    EXPECT_THROW(t.host_at(4,1,1), nn_error);
+    EXPECT_NO_THROW(t.host_at(2,2,2));
+
+    for (size_t i = 0; i < 3; ++i) {
+        t.host_at(i,i,i) = float_t(i*0.5);
+    }
+
+}
+
+TEST(tensor, print) {
+    Tensor<float_t,4> t({3,2,2,2});
+
+    t.fill(float_t(1.0));
+
+    //std::cout << t;
+
+}
 //TEST(tensor, exp) {
 //    Tensor<float_t> t(2, 2, 2, 2);
 //
