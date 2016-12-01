@@ -46,6 +46,7 @@
 
 #include <cmath>     // sqrt
 #include <algorithm> // std::fill, std::generate
+#include <memory>
 #include <numeric>   // std::accumulate
 #include <type_traits>
 #include <vector>
@@ -62,6 +63,61 @@
 
 namespace tiny_dnn {
 
+
+template<typename U = float_t>
+class TensorStorage {
+ public:
+    void toDevice() const {
+        if (data_is_on_host_ && data_dirty_) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+            CLCudaAPI::Queue queue = device_->queue();
+            if (device_data_ && device_data_->GetSize() >= host_data_->size()) {
+                device_data_->Write(queue,
+                                    host_data.size(),
+                                    host_data_->data(),
+                                    0);
+            } else {
+                CLCudaAPI::Context ctx = device_->context();
+                device_data_ = make_unique<CLCudaAPI::Buffer < U> > (
+                    ctx, queue, host_data_->begin(), host_data_->end());
+            }
+#endif
+
+            data_is_on_host_ = false;
+            data_dirty_ = false;
+        }
+    }
+
+    void fromDevice() const {
+        if (!data_is_on_host_ && data_dirty_) {
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+            assert(device_);
+            assert(device_data_);
+            device_data_->Read(device_->queue(),
+                               host_data_->size(),
+                               // using const_cast<> to avoid making host_data_
+                               // entirely mutable
+                               const_cast<U *>(host_data_->data()));
+#endif
+            data_is_on_host_ = true;
+            data_dirty_ = false;
+        }
+    }
+
+ private:
+    std::vector<U, aligned_allocator<U, 64>> host_data_;
+
+#if defined(USE_OPENCL) || defined(USE_CUDA)
+    /* Pointer to the Tensor data in the device */
+    std::unique_ptr<CLCudaAPI::Buffer<U>> device_data_;
+#endif
+    mutable bool data_is_on_host_; // is current data is on host?
+    mutable bool data_dirty_;      // have current data might been modified?
+    mutable size_t dirty_from, dirty_to; // range of indexes that can be modified
+
+    /* Pointer to the current device where the data resides */
+    Device* device_;
+};
 /**
  * A tensor of the given dimension.
  * A tensor holds data in C-style nD array, i.e row-major order:
@@ -73,10 +129,6 @@ namespace tiny_dnn {
 template<typename U = float_t, size_t kDimensions = 4, bool kConst = false>
 class Tensor {
 public:
-
-    typedef typename std::conditional<kConst,
-                                      typename std::vector<U, aligned_allocator<U, 64>>::const_iterator,
-                                      typename std::vector<U, aligned_allocator<U, 64>>::iterator>::type TensorIter;
 
     /**
      * Initializes an empty tensor.
@@ -316,41 +368,6 @@ private:
                                std::multiplies<size_t>());
     }
 
-    void toDevice() const {
-        if (data_is_on_host_ && data_dirty_) {
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-            CLCudaAPI::Queue queue = device_->queue();
-            if (device_data_ && device_data_->GetSize() >= host_data_->size()) {
-                device_data_->Write(queue,
-                                    host_data.size(),
-                                    host_data_->data(),
-                                    0);
-            } else {
-                CLCudaAPI::Context ctx = device_->context();
-                device_data_ = make_unique<CLCudaAPI::Buffer < U> > (
-                    ctx, queue, host_data_->begin(), host_data_->end());
-            }
-#endif
-
-            data_is_on_host_ = false;
-            data_dirty_ = false;
-        }
-    }
-
-    void fromDevice() const {
-        if (!data_is_on_host_ && data_dirty_) {
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-            assert(device_);
-            assert(device_data_);
-            device_data_->Read(device_->queue(),
-                               host_data_->size(),
-                               const_cast<U *>(host_data_->data())); // using const_cast<> to avoid making host_data_ entirely mutable
-#endif
-            data_is_on_host_ = true;
-            data_dirty_ = false;
-        }
-    }
-
 private:
     /**
      * A tensor holds data in C-style nD array, i.e row-major order:
@@ -358,19 +375,10 @@ private:
      */
     std::array<size_t, kDimensions> shape_;
 
-    /* Pointer to the Tensor data in pure in the host device */
-    TensorIter host_data_iter_;
-    std::shared_ptr<std::vector<U, aligned_allocator<U, 64>>> host_data_;
+    /* Offset from the beginningng of TensorStorage */
+    size_t offset;
+    std::shared_ptr<TensorStorage> host_data_;
 
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-    /* Pointer to the Tensor data in the device */
-    std::unique_ptr<CLCudaAPI::Buffer<U> > device_data_;
-#endif
-    mutable bool data_is_on_host_; //< current data is on host if true, on device if false.
-    mutable bool data_dirty_;      //< set to true if current data might have been modified
-
-    /* Pointer to the current device where the data resides */
-    Device* device_;
 };
 
 template<typename T>
