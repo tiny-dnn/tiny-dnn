@@ -107,6 +107,11 @@ class TensorStorage {
         return host_data_.begin() + offset;
     }
 
+    typename std::vector<U, aligned_allocator < U, 64>>::
+    const_iterator host_data(size_t offset) const {
+        return host_data_.begin() + offset;
+    }
+
     void resize(const std::vector<size_t> &sz) {
         host_data_->resize(std::accumulate(std::begin(sz),
                                            std::end(sz),
@@ -114,6 +119,7 @@ class TensorStorage {
                                            std::multiplies<size_t>()), U(0));
         //TODO(Randl): device data
     }
+
  private:
 
     void toDevice() const {
@@ -179,8 +185,15 @@ class Tensor {
     typedef typename std::conditional<kConst,
                                       const TensorStorage<U>,
                                       TensorStorage<U>>::type TensorStorageType;
+    typedef typename std::conditional<kConst, const U *, U *>::type
+        UPtr;
     typedef typename std::shared_ptr<TensorStorageType> TensorStoragePointer;
-
+    typedef typename std::conditional<kConst,
+                              typename std::vector<U, aligned_allocator<U, 64>>
+                                       ::const_iterator,
+                              typename std::vector<U, aligned_allocator<U, 64>>
+                                       ::iterator>
+                     ::type StorageIterator;
 
  public:
 
@@ -245,20 +258,22 @@ class Tensor {
     ~Tensor() = default;
 
     Tensor(const Tensor&other) { //TODO(Randl):deep copy
-        other.fromDevice();
+        //TODO(Randl)
+        /*other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
-        //data_is_on_host_ = true;
-        //data_dirty_ = true;
+        data_is_on_host_ = true;
+        data_dirty_ = true; */
         //device_data_ is intentionally left uninitialized.
     }
 
     Tensor &operator = (const Tensor& other) {
-        other.fromDevice();
+        //TODO(Randl)
+        /*(other.fromDevice();
         shape_ = other.shape_;
-        //data_is_on_host_ = true;
-        //data_dirty_ = true;
-        storage_pointer_ = other.storage_pointer_;
+        data_is_on_host_ = true;
+        data_dirty_ = true;
+        storage_pointer_ = other.storage_pointer_;*/
 
         //device_data_ is intentionally left as-is. It will be erased only if
         // new tensor won't fit, and only when data gets moved to the GPU.
@@ -358,37 +373,30 @@ class Tensor {
         return (d * shift + host_pos(args...));
     }
 
-    /**
-     * Checked version (throw exceptions for out-of-range error)
-     * @param args index of rest (k-1) dimensions.
-     * @return the pointer to a specified index in the tensor
-     */
     template<typename... Args>
-    const U* host_ptr (const Args... args) const {
-        static_assert(sizeof...(args) == kDimensions,
-                      "Wrong number of dimensions");
-        return host_data() + host_pos(args...);
+    UPtr host_ptr(const Args... args) const {
+    return &(*host_iter(args...));
     }
 
     template<typename... Args>
-    U* host_ptr(const Args... args) {
+    StorageIterator host_iter (const Args... args) const {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         static_assert(sizeof...(args) == kDimensions,
                       "Wrong number of dimensions");
-        return mutable_host_data() + host_pos(args...);
+        return storage_pointer_->host_data(offset) + host_pos(args...);
     }
 
-    const U* host_data() const {
-        fromDevice();
-        return storage_pointer_->data();
+    StorageIterator host_data() const {
+        //fromDevice();
+        return storage_pointer_->host_data(offset);
     }
 
-    U* mutable_host_data() {
+    /*U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        fromDevice();
-        data_dirty_ = true;
-        return storage_pointer_->data();
-    }
+        //fromDevice();
+        //data_dirty_ = true;
+        return storage_pointer_->data(offset);
+    }*/
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     const void *device_data() const {
@@ -405,15 +413,15 @@ class Tensor {
 #endif
 
     size_t size() const {
-        return storage_pointer_->size();
+        return calcSize();
     }
 
     void fill(U value) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        data_is_on_host_ = true;
-        data_dirty_ = true;
-        std::fill(std::begin(*storage_pointer_),
-                  std::end(*storage_pointer_),
+        //data_is_on_host_ = true;
+        //data_dirty_ = true;
+        std::fill(storage_pointer_->host_data(offset),
+                  storage_pointer_->host_data(offset)+calcSize(),
                   value);
     }
 
@@ -447,6 +455,7 @@ private:
 
     /* Offset from the beginning of TensorStorage */
     size_t offset;
+    //size_t size; //TODO(Randl)
 
     /* pointer to TensorStorage */
     TensorStoragePointer storage_pointer_;

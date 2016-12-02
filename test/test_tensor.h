@@ -326,7 +326,7 @@ TEST(tensor, access_data8) {
     }
 }
 
-TEST(tensor, access_data9) {
+/*TEST(tensor, access_data9) {
     Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
@@ -348,9 +348,9 @@ TEST(tensor, access_data9) {
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
     }
-}
+}*/
 
-TEST(tensor, access_data10) {
+/*TEST(tensor, access_data10) {
     Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
@@ -376,9 +376,9 @@ TEST(tensor, access_data10) {
             EXPECT_EQ(tensor.host_at(0,1,i,j), float_t(2.0));
         }
     }
-}
+}*/
 
-TEST(tensor, access_data11) {
+/*TEST(tensor, access_data11) {
     Tensor<float_t> tensor({1,2,2,2});
 
     // modify data using operator[] accessor
@@ -403,7 +403,7 @@ TEST(tensor, access_data11) {
     for (serial_size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(ptr22[i], float_t(2.0));
     }
-}
+}*/
 
 TEST(tensor, fill) {
     Tensor<float_t> tensor({2,2,2,2});
