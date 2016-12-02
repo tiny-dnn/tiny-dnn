@@ -63,10 +63,59 @@
 
 namespace tiny_dnn {
 
-
 template<typename U = float_t>
 class TensorStorage {
  public:
+    /**
+     * Initializes an empty tensor storage.
+     * @return
+     */
+    TensorStorage() {
+    }
+
+    /**
+     * Constructor that assepts a vector of shape and create a TensorStorage
+     * with a size equivalent to that shape.
+     * @param shape array containing N integers, sizes of dimensions
+     * @return
+     */
+    explicit TensorStorage(const std::vector<size_t> &shape) {
+        resize(shape);
+    }
+
+    /**
+     * Constructor that assepts an initializer list  of shape and create a
+     * TensorStorage with a size equivalent to that shape.
+     * @param shape array containing N integers, sizes of dimensions
+     * @return
+     */
+    explicit TensorStorage(std::initializer_list<size_t> const &shape) {
+        std::vector<size_t> tmp(shape.size());
+        std::copy(shape.begin(), shape.end(), tmp.begin());
+        resize(tmp);
+    }
+
+    void sync() {
+        if (data_is_on_host_)
+            toDevice();
+        else
+            fromDevice();
+    }
+
+    typename std::vector<U, aligned_allocator < U, 64>>::
+    iterator host_data(size_t offset) {
+        return host_data_.begin() + offset;
+    }
+
+    void resize(const std::vector<size_t> &sz) {
+        host_data_->resize(std::accumulate(std::begin(sz),
+                                           std::end(sz),
+                                           size_t(1),
+                                           std::multiplies<size_t>()), U(0));
+        //TODO(Randl): device data
+    }
+ private:
+
     void toDevice() const {
         if (data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -104,7 +153,6 @@ class TensorStorage {
         }
     }
 
- private:
     std::vector<U, aligned_allocator<U, 64>> host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -129,9 +177,9 @@ class TensorStorage {
 template<typename U = float_t, size_t kDimensions = 4, bool kConst = false>
 class Tensor {
     typedef typename std::conditional<kConst,
-                                      std::shared_ptr<const TensorStorage>,
-                                      std::shared_ptr<TensorStorage>>::type
-        TensorStoragePointer;
+                                      const TensorStorage<U>,
+                                      TensorStorage<U>>::type TensorStorageType;
+    typedef typename std::shared_ptr<TensorStorageType> TensorStoragePointer;
 
 
  public:
@@ -141,10 +189,8 @@ class Tensor {
      * @return
      */
     Tensor() {
-        storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        storage_pointer_iter_ = host_data_->begin();
-        reshape(std::array<size_t, kDimensions>());
+        storage_pointer_ = std::make_shared<TensorStorageType>();
+        offset = 0;
     }   
 
     /**
@@ -155,10 +201,9 @@ class Tensor {
      * @return
      */
     explicit Tensor(const std::array<size_t, kDimensions> &shape) {
-        host_data_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        host_data_iter_ = storage_pointer_->begin();
-        reshape(shape);
+        storage_pointer_ =
+            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
+        offset = 0;
     }
 
     /**
@@ -170,9 +215,8 @@ class Tensor {
      */
     explicit Tensor(const std::vector<size_t> &shape) {
         storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        storage_pointer_iter_ = host_data_->begin();
-        reshape(shape);
+            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
+        offset = 0;
     }
 
     /**
@@ -183,13 +227,19 @@ class Tensor {
      * @return
      */
     explicit Tensor(std::initializer_list<size_t> const &shape) {
+
+        storage_pointer_ =
+            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
+        offset = 0;
+        /*
         storage_pointer_ =
             std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        host_data_iter_ = host_data_->begin();
+        offset = 0;
+
         assert(shape.size() == kDimensions);
         std::array<size_t, kDimensions> tmp;
         std::copy(shape.begin(), shape.end(), tmp.begin());
-        reshape(tmp);
+        reshape(tmp);*/
     }
 
     ~Tensor() = default;
@@ -198,16 +248,16 @@ class Tensor {
         other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
-        data_is_on_host_ = true;
-        data_dirty_ = true;
+        //data_is_on_host_ = true;
+        //data_dirty_ = true;
         //device_data_ is intentionally left uninitialized.
     }
 
     Tensor &operator = (const Tensor& other) {
         other.fromDevice();
         shape_ = other.shape_;
-        data_is_on_host_ = true;
-        data_dirty_ = true;
+        //data_is_on_host_ = true;
+        //data_dirty_ = true;
         storage_pointer_ = other.storage_pointer_;
 
         //device_data_ is intentionally left as-is. It will be erased only if
@@ -362,14 +412,23 @@ class Tensor {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         data_is_on_host_ = true;
         data_dirty_ = true;
-        std::fill(std::begin(*storage_pointer_), std::end(*storage_pointer_), value);
+        std::fill(std::begin(*storage_pointer_),
+                  std::end(*storage_pointer_),
+                  value);
     }
 
     //TODO(Randl): variadic template version of reshape
+    //TODO(Randl): non-checked version
     void reshape(const std::array<size_t, kDimensions> &sz) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
+        //No size change for reshape
+        if (calcSize() != std::accumulate(std::begin(sz),
+                                          std::end(sz),
+                                          size_t(1),
+                                          std::multiplies<size_t>()))
+            throw nn_error("Reshape to Tensor of different size.");
         shape_ = sz;
-        storage_pointer_->resize(calcSize(), U(0));
+
     }
 
 private:
@@ -386,8 +445,10 @@ private:
      */
     std::array<size_t, kDimensions> shape_;
 
-    /* Offset from the beginningng of TensorStorage */
+    /* Offset from the beginning of TensorStorage */
     size_t offset;
+
+    /* pointer to TensorStorage */
     TensorStoragePointer storage_pointer_;
 
 };
