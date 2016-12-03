@@ -61,6 +61,14 @@
 #endif
 #endif
 
+template <typename Container>
+static inline size_t product(Container &c) {
+    return std::accumulate(std::begin(c),
+                           std::end(c),
+                           size_t(1),
+                           std::multiplies<size_t>());
+}
+
 namespace tiny_dnn {
 
 template<typename U = float_t, typename Allocator = aligned_allocator<U, 64>>
@@ -97,6 +105,9 @@ class TensorStorage {
         resize(shape);
     }
 
+    /**
+     * Sychronizes data on host and device
+     */
     void sync() {
         if (data_dirty_) {
             if (data_is_on_host_)
@@ -106,26 +117,30 @@ class TensorStorage {
         }
     }
 
+    /**
+     *
+     * @param offset
+     * @return iterator to an element at offset position
+     */
     DataIter host_data(size_t offset) {
         return host_data_.begin() + offset;
     }
 
+    /**
+     *
+     * @param offset
+     * @return  constant iterator to an element at offset position
+     */
     ConstDataIter host_data(size_t offset) const {
         return host_data_.begin() + offset;
     }
 
     void resize(const std::vector<size_t> &sz) {
-        host_data_.resize(std::accumulate(std::begin(sz),
-                                           std::end(sz),
-                                           size_t(1),
-                                           std::multiplies<size_t>()), U(0));
+        host_data_.resize(product(sz));
     }
     
-    void resize(std::initializer_list<size_t> const &shape) {
-        host_data_.resize(std::accumulate(std::begin(shape),
-                                           std::end(shape),
-                                           size_t(1),
-                                           std::multiplies<size_t>()), U(0));
+    void resize(std::initializer_list<size_t> const &sz) {
+        host_data_.resize(product(sz), U(0));
     }
 
  private:
@@ -221,13 +236,9 @@ class Tensor {
      * @return
      */
     explicit Tensor(const std::array<size_t, kDimensions> &shape) {
-        storage_pointer_ =
-            std::make_shared<TensorStorageType>(shape);
+        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
-        size_ = std::accumulate(std::begin(shape),
-                                std::end(shape),
-                                size_t(1),
-                                std::multiplies<size_t>());
+        size_ = product(shape);
     }
 
     /**
@@ -238,13 +249,9 @@ class Tensor {
      * @return
      */
     explicit Tensor(const std::vector<size_t> &shape) {
-        storage_pointer_ =
-            std::make_shared<TensorStorageType>(shape);
+        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
-        size_ = std::accumulate(std::begin(shape),
-                                std::end(shape),
-                                size_t(1),
-                                std::multiplies<size_t>());
+        size_ = product(shape);
     }
 
     /**
@@ -256,13 +263,9 @@ class Tensor {
      */
     explicit Tensor(std::initializer_list<size_t> const &shape) {
 
-        storage_pointer_ =
-            std::make_shared<TensorStorageType>(shape);
+        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
-        size_ = std::accumulate(std::begin(shape),
-                                std::end(shape),
-                                size_t(1),
-                                std::multiplies<size_t>());
+        size_ = product(shape);
     }
 
     ~Tensor() = default;
@@ -440,10 +443,7 @@ class Tensor {
     void reshape(const std::array<size_t, kDimensions> &sz) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //No size change for reshape
-        if (calcSize() != std::accumulate(std::begin(sz),
-                                          std::end(sz),
-                                          size_t(1),
-                                          std::multiplies<size_t>()))
+        if (calcSize() != product(sz))
             throw nn_error("Reshape to Tensor of different size.");
         shape_ = sz;
 
@@ -452,12 +452,11 @@ class Tensor {
     size_t size() const {
         return size_;
     }
+
+    //TODO(Randl): [] operator
 private:
     size_t calcSize() const {
-        return std::accumulate(std::begin(shape_),
-                               std::end(shape_),
-                               size_t(1),
-                               std::multiplies<size_t>());
+        return product(shape_);
     }
 
     /**
