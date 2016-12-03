@@ -143,6 +143,9 @@ class TensorStorage {
         host_data_.resize(product(sz), U(0));
     }
 
+    size_t size() const {
+        return host_data_.size();
+    }
  private:
 
     void toDevice() const {
@@ -469,6 +472,13 @@ class Tensor {
 
     }
 
+    void resize(const std::array<size_t, kDimensions> &sz) {
+        if (offset_ != 0 || size_ != storage_pointer_->size())
+            throw nn_error("Resize of partial view is impossible.");
+        storage_pointer_->resize(std::vector<size_t>(sz.begin(), sz.end()));
+        shape_=sz;
+    }
+    
     size_t size() const {
         return size_;
     }
@@ -574,7 +584,7 @@ void binary_tensor_tensor_elementwise_operation(Tensor<TD, kDim>        &dst,
         throw nn_error("Tensor must have same shape");
     }
 
-    dst.reshape(src1.shape());
+    dst.resize(src1.shape());
 
     auto pdst = dst.host_begin();
     auto psrc1 = src1.host_begin();
@@ -589,7 +599,7 @@ template<typename TD, typename TS, typename F, size_t kDim>
 void unary_tensor_elementwise_operation(Tensor<TD, kDim>       &dst,
                                         const Tensor<TS, kDim> &src,
                                         F                      f) {
-    dst.reshape(src.shape());
+    dst.resize(src.shape());
 
     auto pdst = dst.host_begin();
     auto psrc = src.host_begin();
@@ -604,7 +614,7 @@ void binary_tensor_scalar_operation(Tensor<TD, kDim>        &dst,
                                     const Tensor<TS1, kDim> &src1,
                                     TS2                     src2,
                                     F                       f) {
-    dst.reshape(src1.shape());
+    dst.resize(src1.shape());
 
     auto pdst = dst.host_begin();
     auto psrc1 = src1.host_begin();
@@ -619,7 +629,7 @@ void binary_scalar_tensor_operation(Tensor<TD, kDim>        &dst,
                                     TS1                     src1,
                                     const Tensor<TS2, kDim> &src2,
                                     F                       f) {
-    dst.reshape(src2.shape());
+    dst.resize(src2.shape());
 
     auto pdst = dst.host_begin();
     auto psrc2 = src2.host_begin();
@@ -743,7 +753,7 @@ void layer_div(Tensor<TD, kDim> &dst, TS1 src1, const Tensor<TS2, kDim> &src2) {
 template<typename TD, typename TS1, typename TS2, size_t kDim>
 void layer_div(Tensor<TD, kDim> &dst, const Tensor<TS1, kDim> &src1, TS2 src2) {
     if (src2 == TS2(0.0)) {
-        dst.reshape(src1.shape());
+        dst.resize(src1.shape());
         dst.fill(std::numeric_limits<TD>::quiet_NaN());
     } else {
         binary_tensor_scalar_operation(dst,
