@@ -63,8 +63,12 @@
 
 namespace tiny_dnn {
 
-template<typename U = float_t>
+template<typename U = float_t, typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {
+    typedef typename std::vector<U, aligned_allocator < U, 64>>::
+    const_iterator ConstDataIter;
+    typedef typename std::vector<U, aligned_allocator < U, 64>>::
+    iterator DataIter;
  public:
     /**
      * Initializes an empty tensor storage.
@@ -90,40 +94,43 @@ class TensorStorage {
      * @return
      */
     explicit TensorStorage(std::initializer_list<size_t> const &shape) {
-        std::vector<size_t> tmp(shape.size());
-        std::copy(shape.begin(), shape.end(), tmp.begin());
-        resize(tmp);
+        resize(shape);
     }
 
     void sync() {
-        if (data_is_on_host_)
-            toDevice();
-        else
-            fromDevice();
+        if (data_dirty_) {
+            if (data_is_on_host_)
+                toDevice();
+            else
+                fromDevice();
+        }
     }
 
-    typename std::vector<U, aligned_allocator < U, 64>>::
-    iterator host_data(size_t offset) {
+    DataIter host_data(size_t offset) {
         return host_data_.begin() + offset;
     }
 
-    typename std::vector<U, aligned_allocator < U, 64>>::
-    const_iterator host_data(size_t offset) const {
+    ConstDataIter host_data(size_t offset) const {
         return host_data_.begin() + offset;
     }
 
     void resize(const std::vector<size_t> &sz) {
-        host_data_->resize(std::accumulate(std::begin(sz),
+        host_data_.resize(std::accumulate(std::begin(sz),
                                            std::end(sz),
                                            size_t(1),
                                            std::multiplies<size_t>()), U(0));
-        //TODO(Randl): device data
+    }
+    
+    void resize(std::initializer_list<size_t> const &shape) {
+        host_data_.resize(std::accumulate(std::begin(shape),
+                                           std::end(shape),
+                                           size_t(1),
+                                           std::multiplies<size_t>()), U(0));
     }
 
  private:
 
     void toDevice() const {
-        if (data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
             CLCudaAPI::Queue queue = device_->queue();
             if (device_data_ && device_data_->GetSize() >= host_data_->size()) {
@@ -140,11 +147,9 @@ class TensorStorage {
 
             data_is_on_host_ = false;
             data_dirty_ = false;
-        }
     }
 
     void fromDevice() const {
-        if (!data_is_on_host_ && data_dirty_) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
             assert(device_);
             assert(device_data_);
@@ -156,10 +161,9 @@ class TensorStorage {
 #endif
             data_is_on_host_ = true;
             data_dirty_ = false;
-        }
     }
 
-    std::vector<U, aligned_allocator<U, 64>> host_data_;
+    std::vector<U, Allocator> host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     /* Pointer to the Tensor data in the device */
@@ -180,18 +184,20 @@ class TensorStorage {
  * Data is held by a std::vector with 64 bytes alignment.
  * Unmutable if kConst == true
  */
-template<typename U = float_t, size_t kDimensions = 4, bool kConst = false>
+template<typename U = float_t, size_t kDimensions = 4, bool kConst = false, typename Allocator = aligned_allocator<U, 64>>
 class Tensor {
+    // Define constant types for constant Tensor,
+    // and mutable ones for mutable Tensor
     typedef typename std::conditional<kConst,
-                                      const TensorStorage<U>,
-                                      TensorStorage<U>>::type TensorStorageType;
+                                      const TensorStorage<U, Allocator>,
+                                      TensorStorage<U, Allocator>>::type TensorStorageType;
     typedef typename std::conditional<kConst, const U *, U *>::type
         UPtr;
     typedef typename std::shared_ptr<TensorStorageType> TensorStoragePointer;
     typedef typename std::conditional<kConst,
-                              typename std::vector<U, aligned_allocator<U, 64>>
+                              typename std::vector<U, Allocator>
                                        ::const_iterator,
-                              typename std::vector<U, aligned_allocator<U, 64>>
+                              typename std::vector<U, Allocator>
                                        ::iterator>
                      ::type StorageIterator;
 
@@ -203,7 +209,8 @@ class Tensor {
      */
     Tensor() {
         storage_pointer_ = std::make_shared<TensorStorageType>();
-        offset = 0;
+        offset_ = 0;
+        size_ = 0;
     }   
 
     /**
@@ -215,8 +222,12 @@ class Tensor {
      */
     explicit Tensor(const std::array<size_t, kDimensions> &shape) {
         storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
-        offset = 0;
+            std::make_shared<TensorStorageType>(shape);
+        offset_ = 0;
+        size_ = std::accumulate(std::begin(shape),
+                                std::end(shape),
+                                size_t(1),
+                                std::multiplies<size_t>());
     }
 
     /**
@@ -228,8 +239,12 @@ class Tensor {
      */
     explicit Tensor(const std::vector<size_t> &shape) {
         storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
-        offset = 0;
+            std::make_shared<TensorStorageType>(shape);
+        offset_ = 0;
+        size_ = std::accumulate(std::begin(shape),
+                                std::end(shape),
+                                size_t(1),
+                                std::multiplies<size_t>());
     }
 
     /**
@@ -242,17 +257,12 @@ class Tensor {
     explicit Tensor(std::initializer_list<size_t> const &shape) {
 
         storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>(shape);
-        offset = 0;
-        /*
-        storage_pointer_ =
-            std::make_shared<std::vector<U, aligned_allocator<U, 64>>>();
-        offset = 0;
-
-        assert(shape.size() == kDimensions);
-        std::array<size_t, kDimensions> tmp;
-        std::copy(shape.begin(), shape.end(), tmp.begin());
-        reshape(tmp);*/
+            std::make_shared<TensorStorageType>(shape);
+        offset_ = 0;
+        size_ = std::accumulate(std::begin(shape),
+                                std::end(shape),
+                                size_t(1),
+                                std::multiplies<size_t>());
     }
 
     ~Tensor() = default;
@@ -383,12 +393,16 @@ class Tensor {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         static_assert(sizeof...(args) == kDimensions,
                       "Wrong number of dimensions");
-        return storage_pointer_->host_data(offset) + host_pos(args...);
+        return storage_pointer_->host_data(offset_) + host_pos(args...);
+    }
+
+    StorageIterator host_begin() const {
+        return storage_pointer_->host_data(offset_);
     }
 
     StorageIterator host_data() const {
         //fromDevice();
-        return storage_pointer_->host_data(offset);
+        return storage_pointer_->host_data(offset_);
     }
 
     /*U* mutable_host_data() {
@@ -412,16 +426,12 @@ class Tensor {
     }
 #endif
 
-    size_t size() const {
-        return calcSize();
-    }
-
     void fill(U value) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //data_is_on_host_ = true;
         //data_dirty_ = true;
-        std::fill(storage_pointer_->host_data(offset),
-                  storage_pointer_->host_data(offset)+calcSize(),
+        std::fill(storage_pointer_->host_data(offset_),
+                  storage_pointer_->host_data(offset_)+calcSize(),
                   value);
     }
 
@@ -439,6 +449,9 @@ class Tensor {
 
     }
 
+    size_t size() const {
+        return size_;
+    }
 private:
     size_t calcSize() const {
         return std::accumulate(std::begin(shape_),
@@ -454,8 +467,8 @@ private:
     std::array<size_t, kDimensions> shape_;
 
     /* Offset from the beginning of TensorStorage */
-    size_t offset;
-    //size_t size; //TODO(Randl)
+    size_t offset_;
+    size_t size_;
 
     /* pointer to TensorStorage */
     TensorStoragePointer storage_pointer_;
@@ -538,9 +551,9 @@ void binary_tensor_tensor_elementwise_operation(Tensor<TD, kDim>        &dst,
 
     dst.reshape(src1.shape());
 
-    TD *pdst = dst.mutable_host_data();
-    const TS1 *psrc1 = src1.host_data();
-    const TS2 *psrc2 = src2.host_data();
+    auto pdst = dst.host_begin();
+    auto psrc1 = src1.host_begin();
+    auto psrc2 = src2.host_begin();
 
     for_i(true, dst.size(), [pdst, psrc1, psrc2, &f](size_t i) {
       pdst[i] = f(psrc1[i], psrc2[i]);
@@ -553,8 +566,8 @@ void unary_tensor_elementwise_operation(Tensor<TD, kDim>       &dst,
                                         F                      f) {
     dst.reshape(src.shape());
 
-    TD *pdst = dst.mutable_host_data();
-    const TS *psrc = src.host_data();
+    auto pdst = dst.host_begin();
+    auto psrc = src.host_begin();
 
     for_i(true, dst.size(), [pdst, psrc, &f](size_t i) {
       pdst[i] = f(psrc[i]);
@@ -568,8 +581,8 @@ void binary_tensor_scalar_operation(Tensor<TD, kDim>        &dst,
                                     F                       f) {
     dst.reshape(src1.shape());
 
-    TD *pdst = dst.mutable_host_data();
-    const TS1 *psrc1 = src1.host_data();
+    auto pdst = dst.host_begin();
+    auto psrc1 = src1.host_begin();
 
     for_i(true, dst.size(), [pdst, psrc1, src2, &f](size_t i) {
       pdst[i] = f(psrc1[i], src2);
@@ -583,8 +596,8 @@ void binary_scalar_tensor_operation(Tensor<TD, kDim>        &dst,
                                     F                       f) {
     dst.reshape(src2.shape());
 
-    TD *pdst = dst.mutable_host_data();
-    const TS2 *psrc2 = src2.host_data();
+    auto pdst = dst.host_begin();
+    auto psrc2 = src2.host_begin();
 
     for_i(true, dst.size(), [pdst, src1, psrc2, &f](size_t i) {
       pdst[i] = f(src1, psrc2[i]);
