@@ -226,7 +226,7 @@ class Tensor {
         storage_pointer_ = std::make_shared<TensorStorageType>();
         offset_ = 0;
         size_ = 0;
-    }   
+    }
 
     /**
      * Constructor that assepts an array of shape and create a Tensor with that
@@ -239,6 +239,7 @@ class Tensor {
         storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
         size_ = product(shape);
+        shape_ = shape;
     }
 
     /**
@@ -252,6 +253,7 @@ class Tensor {
         storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
         size_ = product(shape);
+        shape_ = shape;
     }
 
     /**
@@ -266,6 +268,24 @@ class Tensor {
         storage_pointer_ = std::make_shared<TensorStorageType>(shape);
         offset_ = 0;
         size_ = product(shape);
+        std::copy(shape.begin(), shape.end(), shape_.begin());
+    }
+
+    /**
+     * Constructor that accepts a pointer to existing TensorStorage, together
+     * with shape and offset.
+     * @param storage pointer to TensorStorage
+     * @param offset offset from first element of storage
+     * @param shape shape of the Tensor
+     * @return
+     */
+    explicit Tensor(const TensorStoragePointer storage,
+                    const size_t offset,
+                    const std::array<size_t, kDimensions> &shape) {
+        storage_pointer_ = storage;
+        offset_ = offset;
+        size_ = product(shape);
+        shape_ = shape;
     }
 
     ~Tensor() = default;
@@ -453,7 +473,13 @@ class Tensor {
         return size_;
     }
 
-    //TODO(Randl): [] operator
+    Tensor operator[](size_t index) {
+        return Tensor(storage_pointer_,
+                      offset_ + index * size_ / shape_[0],
+                      std::array<size_t, kDimensions - 1>(shape_.begin() + 1,
+                                                          shape_.end()));
+    }
+
 private:
     size_t calcSize() const {
         return product(shape_);
