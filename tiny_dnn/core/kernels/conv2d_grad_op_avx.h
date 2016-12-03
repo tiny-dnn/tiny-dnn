@@ -1,29 +1,7 @@
-/*
-    Copyright (c) 2016, Taiga Nomi, Edgar Riba
-    All rights reserved.
+// Copyright (c) 2013-2016, Taiga Nomi. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
 #pragma once
 
 #include <vector>
@@ -41,14 +19,18 @@ namespace kernels {
 
 // float ver
 template <typename Allocator>
-inline void accumulate_db(const index3d<serial_size_t>&        out,
-                          const std::vector<float, Allocator>& curr_delta,
-                          std::vector<float, Allocator>&       db) {
+inline void accumulate_db(
+    const index3d<serial_size_t>&        out,
+    const std::vector<float, Allocator>& curr_delta,
+    std::vector<float, Allocator>&       db
+) {
     if (out.width_ == 1 && out.height_ == 1) {
         size_t nblocks = out.depth_ / 8;
         size_t remainder = out.depth_ & 7;
         for (size_t i = 0; i < nblocks; ++i) {
-            _mm256_storeu_ps(&db[i*8], _mm256_add_ps(_mm256_loadu_ps(&db[i*8]), _mm256_loadu_ps(&curr_delta[i*8])));
+            _mm256_storeu_ps(&db[i*8],
+                             _mm256_add_ps(_mm256_loadu_ps(&db[i*8]),
+                                           _mm256_loadu_ps(&curr_delta[i*8])));
         }
         for (size_t outc = nblocks * 8; outc < out.depth_; outc++) {
             db[outc] += curr_delta[outc];
@@ -64,9 +46,14 @@ inline void accumulate_db(const index3d<serial_size_t>&        out,
             0, 0, 0, 0,
             0, 0, 0, 0,
         };
-        __m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
+        __m256i mask = _mm256_loadu_si256((const __m256i*)
+                                          (masks + 8 - remainder));
         for (size_t outc = 0; outc < out.depth_; outc++) {
-            const float *delta = &curr_delta[out.get_index(0, 0, (serial_size_t)outc)];
+            const float *delta = &curr_delta[out.get_index(
+                                                0,
+                                                0,
+                                                (serial_size_t)outc
+                                            )];
             __m256 sum0 = _mm256_setzero_ps();
             __m256 sum1 = _mm256_setzero_ps();
             for (size_t i=0; i<nblocks/2; ++i) {
@@ -74,7 +61,8 @@ inline void accumulate_db(const index3d<serial_size_t>&        out,
                 sum1 = _mm256_add_ps(sum1, _mm256_loadu_ps(delta + i*16+8));
             }
             if (nblocks & 1) {
-                sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + (nblocks - 1)*8));
+                sum0 = _mm256_add_ps(sum0,
+                                     _mm256_loadu_ps(delta + (nblocks - 1)*8));
             }
             sum0 = _mm256_add_ps(sum0, sum1);
             sum1 = _mm256_loadu_ps(delta + nblocks*8);
@@ -87,13 +75,15 @@ inline void accumulate_db(const index3d<serial_size_t>&        out,
 
 // float ver
 template <typename Allocator>
-void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
-                                    const std::vector<float, Allocator>& prev_out,
-                                    const std::vector<float, Allocator>& W,
-                                    std::vector<float, Allocator>&       dW,
-                                    std::vector<float, Allocator>&       db,
-                                    std::vector<float, Allocator>&       curr_delta,
-                                    std::vector<float, Allocator>*       prev_delta) {
+void avx_conv2d_5x5_back_kernel_one(
+    const core::conv_params& params,
+    const std::vector<float, Allocator>& prev_out,
+    const std::vector<float, Allocator>& W,
+    std::vector<float, Allocator>&       dW,
+    std::vector<float, Allocator>&       db,
+    std::vector<float, Allocator>&       curr_delta,
+    std::vector<float, Allocator>*       prev_delta
+) {
     auto& in        = params.in;
     auto& out       = params.out;
     auto& in_padded = params.in_padded;
@@ -102,16 +92,25 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     const size_t in_padded_area = in_padded.area();
     float* pdelta_dst_org = &(*prev_delta)[0];
     const size_t  h_stride2 = params.h_stride * in_padded.width_;
-    static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
-    static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
+    static const __m256i imask = _mm256_setr_epi32(
+        -1, -1, -1, -1, -1, 0, 0, 0);
+    static const __m256 mask = _mm256_castsi256_ps(
+        _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
     // propagate delta to previous layer
     if (w_stride == 1 && out.width_ >= 4) {
         const serial_size_t nblocks = out.width_ / 4;
-        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t inc = 0;
+            inc < in.depth_;
+            ++inc, pdelta_dst_org += in_padded_area
+        ) {
             for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
-                const float* pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
+                const float* pdelta_src = &curr_delta[out.get_index(
+                                                         0,
+                                                         0,
+                                                         outc
+                                                     )];
                 float* pdelta_dst = pdelta_dst_org;
                 __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
                 __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
@@ -141,16 +140,21 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                     float* delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
                     float* delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
                     for (serial_size_t n = 0; n < nblocks; ++n) {
-                        __m256 delta_src = _mm256_broadcast_ps((const __m128*)pdelta_src2);
+                        __m256 delta_src =
+                            _mm256_broadcast_ps((const __m128*)pdelta_src2);
                         __m256 dst0 = _mm256_loadu_ps(delta_dst0 + 4 * n);
                         __m256 dst1 = _mm256_loadu_ps(delta_dst1 + 4 * n);
                         __m256 dst2 = _mm256_loadu_ps(delta_dst2 + 4 * n);
                         __m256 dst3 = _mm256_loadu_ps(delta_dst3 + 4 * n);
                         __m256 dst4 = _mm256_loadu_ps(delta_dst4 + 4 * n);
-                        __m256 delta_src0 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
-                        __m256 delta_src1 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
-                        __m256 delta_src2 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
-                        __m256 delta_src3 = _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
+                        __m256 delta_src0 = _mm256_permute_ps(
+                            delta_src, _MM_SHUFFLE(0, 0, 0, 0));
+                        __m256 delta_src1 = _mm256_permute_ps(
+                            delta_src, _MM_SHUFFLE(1, 1, 1, 1));
+                        __m256 delta_src2 = _mm256_permute_ps(
+                            delta_src, _MM_SHUFFLE(2, 2, 2, 2));
+                        __m256 delta_src3 = _mm256_permute_ps(
+                            delta_src, _MM_SHUFFLE(3, 3, 3, 3));
                         dst0 = madd256_ps(w0a, delta_src0, dst0);
                         dst1 = madd256_ps(w1a, delta_src0, dst1);
                         dst2 = madd256_ps(w2a, delta_src0, dst2);
@@ -202,7 +206,10 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             }
         }
     } else if (out.height_ == 1 && out.width_ == 1) {
-        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t inc = 0;
+            inc < in.depth_;
+            ++inc, pdelta_dst_org += in_padded_area
+        ) {
             float* delta_dst0 = pdelta_dst_org;
             float* delta_dst1 = &pdelta_dst_org[in_padded.width_ * 1];
             float* delta_dst2 = &pdelta_dst_org[in_padded.width_ * 2];
@@ -233,7 +240,9 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             );
             __m256 sum1 = _mm256_blend_ps(
                 leftShift<28>(dst3),
-                _mm256_blend_ps(leftShift<8>(dst2), rightShift<12>(dst1), 0x03 /* 0b00000011 */),
+                _mm256_blend_ps(leftShift<8>(dst2),
+                                rightShift<12>(dst1),
+                                0x03 /* 0b00000011 */),
                 0x7F /* 0b01111111 */
             );
             __m256 sum2 = _mm256_blend_ps(
@@ -247,8 +256,12 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             size_t wstep = 25 * in.depth_;
 
             if (tbl.is_empty()) {
-                for (serial_size_t outc = 0; outc < out.depth_; outc++, widx+=wstep) {
-                    __m256 delta_src = _mm256_broadcast_ss(&curr_delta[outc]);
+                for (serial_size_t outc = 0;
+                    outc < out.depth_;
+                    outc++, widx+=wstep
+                ) {
+                    __m256 delta_src =
+                        _mm256_broadcast_ss(&curr_delta[outc]);
                     const float* pw = (const float*)&W[widx];
                     __m256 w0 = _mm256_loadu_ps(pw+0);
                     __m256 w1 = _mm256_loadu_ps(pw + 8);
@@ -257,11 +270,16 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                     sum0 = madd256_ps(w0, delta_src, sum0);
                     sum1 = madd256_ps(w1, delta_src, sum1);
                     sum2 = madd256_ps(w2, delta_src, sum2);
-                    sum3 = madd128_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+                    sum3 = madd128_ss(w3,
+                                      _mm256_castps256_ps128(delta_src),
+                                      sum3);
                 }
             }
             else {
-                for (serial_size_t outc = 0; outc < out.depth_; outc++, widx += wstep) {
+                for (serial_size_t outc = 0;
+                    outc < out.depth_;
+                    outc++, widx += wstep
+                ) {
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
@@ -274,7 +292,9 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                     sum0 = madd256_ps(w0, delta_src, sum0);
                     sum1 = madd256_ps(w1, delta_src, sum1);
                     sum2 = madd256_ps(w2, delta_src, sum2);
-                    sum3 = madd128_ss(w3, _mm256_castps256_ps128(delta_src), sum3);
+                    sum3 = madd128_ss(w3,
+                                      _mm256_castps256_ps128(delta_src),
+                                      sum3);
                 }
             }
 
@@ -332,12 +352,16 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             _mm256_maskstore_ps(delta_dst4, imask, dst4);
         } // for
     } else {
-        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t inc = 0;
+            inc < in.depth_;
+            ++inc, pdelta_dst_org += in_padded_area
+        ) {
             for (serial_size_t outc = 0; outc < out.depth_; outc++) {
                 if (!tbl.is_connected(outc, inc)) continue;
 
                 const float* pw = &W[25 * (in.depth_ * outc + inc)];
-                const float* pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
+                const float* pdelta_src =
+                    &curr_delta[out.get_index(0, 0, outc)];
                 float* pdelta_dst = pdelta_dst_org;
                 __m256 w0a = _mm256_maskload_ps(pw+0, imask);
                 __m256 w1a = _mm256_maskload_ps(pw+5, imask);
@@ -383,14 +407,24 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
     // accumulate dw
     if (out.width_ == 1 && out.height_ == 1) {
         const float* pprev_out = &prev_out[0];
-        for (serial_size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
+        for (serial_size_t inc = 0;
+            inc < in.depth_;
+            ++inc, pprev_out += in_padded_area
+        ) {
             VECTORIZE_ALIGN(32) float floats[28];
             size_t in_padded_width = in_padded.width_;
-            _mm256_store_ps(&floats[0], _mm256_loadu_ps(pprev_out + in_padded_width * 0));
-            _mm256_storeu_ps(&floats[5], _mm256_loadu_ps(pprev_out + in_padded_width * 1));
-            _mm256_storeu_ps(&floats[10], _mm256_loadu_ps(pprev_out + in_padded_width * 2));
-            _mm256_storeu_ps(&floats[15], _mm256_loadu_ps(pprev_out + in_padded_width * 3));
-            _mm256_storeu_ps(&floats[20], _mm256_maskload_ps(pprev_out + in_padded_width * 4, imask));
+            _mm256_store_ps(&floats[0],
+                            _mm256_loadu_ps(pprev_out + in_padded_width * 0));
+            _mm256_storeu_ps(&floats[5],
+                             _mm256_loadu_ps(pprev_out + in_padded_width * 1));
+            _mm256_storeu_ps(&floats[10],
+                             _mm256_loadu_ps(pprev_out + in_padded_width * 2));
+            _mm256_storeu_ps(&floats[15],
+                             _mm256_loadu_ps(pprev_out + in_padded_width * 3));
+            _mm256_storeu_ps(&floats[20],
+                             _mm256_maskload_ps(
+                                pprev_out + in_padded_width * 4,
+                                imask));
             __m256 prevos0 = _mm256_load_ps(&floats[0]);
             __m256 prevos1 = _mm256_load_ps(&floats[8]);
             __m256 prevos2 = _mm256_load_ps(&floats[16]);
@@ -398,7 +432,10 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             serial_size_t widx = 25 * inc;
             serial_size_t widx_delta = 25 * in.depth_;
             float* pdW = &dW[widx];
-            for (serial_size_t outc = 0; outc < out.depth_; outc++, pdW += widx_delta) {
+            for (serial_size_t outc = 0;
+                outc < out.depth_;
+                outc++, pdW += widx_delta
+            ) {
                 if (!tbl.is_connected(outc, inc)) {
                     continue;
                 }
@@ -427,7 +464,8 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
             0, 0, 0, 0,
         };
         const size_t remainder = out.width_ & 7;
-        __m256i mask = _mm256_loadu_si256((const __m256i*)(masks + 8 - remainder));
+        __m256i mask = _mm256_loadu_si256(
+            (const __m256i*)(masks + 8 - remainder));
         auto& weight = params.weight;
         for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
             for (serial_size_t outc = 0; outc < out.depth_; outc++) {
@@ -435,20 +473,37 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                 if (!tbl.is_connected(outc, inc)) continue;
                 const float* delta = &curr_delta[out.get_index(0, 0, outc)];
 
-                serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+                serial_size_t widx = weight.get_index(0,
+                                                      0,
+                                                      in.depth_ * outc + inc);
                 for (serial_size_t wy = 0; wy < 5 /* weight.height_ */; wy++) {
-                    for (serial_size_t wx = 0; wx < 5 /* weight.width_ */; wx++) {
-                        const float* prevo = &prev_out[in_padded.get_index(wx, wy, inc)];
+                    for (serial_size_t wx = 0;
+                        wx < 5 /* weight.width_ */;
+                        wx++
+                    ) {
+                        const float* prevo =
+                            &prev_out[in_padded.get_index(wx, wy, inc)];
 
                         if (w_stride > 1) {
                             float_t dst = float_t(0);
 
-                            for (serial_size_t y = 0; y < params.out.height_; y++) {
-                                serial_size_t prevo_idx = y * params.in_padded.width_ * params.h_stride;
-                                serial_size_t delta_idx = y * params.out.width_;
-
-                                for (serial_size_t x = 0; x < params.out.width_; x++) {
-                                    dst += prevo[prevo_idx + x * params.w_stride] * delta[delta_idx + x];
+                            for (serial_size_t y = 0;
+                                y < params.out.height_;
+                                y++
+                            ) {
+                                serial_size_t prevo_idx =
+                                    y
+                                    * params.in_padded.width_
+                                    * params.h_stride;
+                                serial_size_t delta_idx =
+                                    y * params.out.width_;
+                                for (serial_size_t x = 0;
+                                    x < params.out.width_;
+                                    x++
+                                ) {
+                                    dst +=
+                                        prevo[prevo_idx + x * params.w_stride]
+                                        * delta[delta_idx + x];
                                 }
                             }
                             dW[widx] += dst;
@@ -459,7 +514,9 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                             __m256 sum1 = _mm256_setzero_ps();
                             for (serial_size_t y = 0; y < out.height_; y++) {
                                 // vectorize::dot
-                                const float* pa = prevo + y * in_padded.width_ * params.h_stride;
+                                const float* pa =
+                                    prevo
+                                    + y * in_padded.width_ * params.h_stride;
                                 const float* pb = delta + y * out.width_;
                                 for (size_t i = 0; i < nblocks; ++i) {
                                     __m256 a = _mm256_loadu_ps(pa + 8 * i);
@@ -467,14 +524,18 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
                                     sum0 = madd256_ps(a, b, sum0);
                                 }
                                 if (remainder) {
-                                    __m256 a = _mm256_maskload_ps(pa + 8 * nblocks, mask);
-                                    __m256 b = _mm256_maskload_ps(pb + 8 * nblocks, mask);
+                                    __m256 a = _mm256_maskload_ps(
+                                        pa + 8 * nblocks, mask);
+                                    __m256 b = _mm256_maskload_ps(
+                                        pb + 8 * nblocks, mask);
                                     sum1 = madd256_ps(a, b, sum1);
                                 }
                             }
-                            sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
+                            sum1 = _mm256_and_ps(sum1,
+                                                 _mm256_castsi256_ps(mask));
                             __m256 sum = _mm256_add_ps(sum0, sum1);
-                            _mm_store_ss(&dW[widx], _mm_add_ps(prev_sum, hsum256_ps(sum)));
+                            _mm_store_ss(&dW[widx],
+                                         _mm_add_ps(prev_sum, hsum256_ps(sum)));
                         }
                         ++widx;
                     }
@@ -485,47 +546,40 @@ void avx_conv2d_5x5_back_kernel_one(const core::conv_params& params,
 
     // accumulate db
     if (params.has_bias) {
-#if 1
         accumulate_db(out, curr_delta, db);
-#else
-        if (out.width_ == 1 && out.height_ == 1) {
-            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
-                db[outc] += curr_delta[outc];
-            }
-        } else {
-            for (serial_size_t outc = 0; outc < out.depth_; outc++) {
-                const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-                db[outc] += std::accumulate(delta, delta + out.width_ * out.height_, float(0));
-            }
-        }
-#endif
     }
 } // avx_conv2d_5x5_back_kernel float ver
 
 // double ver
 template <typename Allocator>
-void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
-                                const std::vector<std::vector<double, Allocator>>& prev_out,
-                                const std::vector<double, Allocator>& W,
-                                std::vector<std::vector<double, Allocator>>&       dW,
-                                std::vector<std::vector<double, Allocator>>&       db,
-                                std::vector<std::vector<double, Allocator>>&       curr_delta,
-                                std::vector<std::vector<double, Allocator>>&       prev_delta) {
+void avx_conv2d_5x5_back_kernel(
+    const core::conv_params& params,
+    const std::vector<std::vector<double, Allocator>>& prev_out,
+    const std::vector<double, Allocator>& W,
+    std::vector<std::vector<double, Allocator>>&       dW,
+    std::vector<std::vector<double, Allocator>>&       db,
+    std::vector<std::vector<double, Allocator>>&       curr_delta,
+    std::vector<std::vector<double, Allocator>>&       prev_delta
+) {
     // backward-pass fallbacks to tiny-backend when float_t is double
-    conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
+    conv2d_op_internal(prev_out, W, dW, db,
+                       curr_delta, prev_delta, params, true);
 }
 
 // float ver
 template <typename Allocator>
-void avx_conv2d_5x5_back_kernel(const core::conv_params& params,
-                                const std::vector<std::vector<float, Allocator>>& prev_out,
-                                const std::vector<float, Allocator>& W,
-                                std::vector<std::vector<float, Allocator>>&       dW,
-                                std::vector<std::vector<float, Allocator>>&       db,
-                                std::vector<std::vector<float, Allocator>>&       curr_delta,
-                                std::vector<std::vector<float, Allocator>>&       prev_delta) {
+void avx_conv2d_5x5_back_kernel(
+    const core::conv_params& params,
+    const std::vector<std::vector<float, Allocator>>& prev_out,
+    const std::vector<float, Allocator>& W,
+    std::vector<std::vector<float, Allocator>>&       dW,
+    std::vector<std::vector<float, Allocator>>&       db,
+    std::vector<std::vector<float, Allocator>>&       curr_delta,
+    std::vector<std::vector<float, Allocator>>&       prev_delta
+) {
     for_i(prev_out.size(), [&](int sample) {
-        avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample], db[sample],
+        avx_conv2d_5x5_back_kernel_one(
+            params, prev_out[sample], W, dW[sample], db[sample],
             curr_delta[sample], &prev_delta[sample]);
     });
 } 
@@ -544,7 +598,8 @@ conv2d_grad_op_avx(const tensor_t&        prev_out,
                    const bool    layer_parallelize) {
 #ifdef CNN_USE_AVX
     if (params.weight.height_ == 5 && params.weight.width_ == 5) {
-        avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db, curr_delta, prev_delta);
+        avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db,
+                                   curr_delta, prev_delta);
         return;
     }
 #endif
