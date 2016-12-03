@@ -49,11 +49,12 @@ inline void accumulate_db(
         __m256i mask = _mm256_loadu_si256((const __m256i*)
                                           (masks + 8 - remainder));
         for (size_t outc = 0; outc < out.depth_; outc++) {
-            const float *delta = &curr_delta[out.get_index(
-                                                0,
-                                                0,
-                                                (serial_size_t)outc
-                                            )];
+            serial_size_t idx = out.get_index(
+                0,
+                0,
+                static_cast<serial_size_t>(outc)
+            );
+            const float *delta = &curr_delta[idx];
             __m256 sum0 = _mm256_setzero_ps();
             __m256 sum1 = _mm256_setzero_ps();
             for (size_t i=0; i<nblocks/2; ++i) {
