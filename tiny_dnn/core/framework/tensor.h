@@ -302,7 +302,9 @@ class Tensor {
         data_dirty_ = true; */
         //device_data_ is intentionally left uninitialized.
     }
-
+/*
+ *
+ * TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {
         //TODO(Randl)
         /*(other.fromDevice();
@@ -342,7 +344,7 @@ class Tensor {
         return *this;
     }
 #endif
-
+*/
     /**
      *
      * @return the tensor shape
