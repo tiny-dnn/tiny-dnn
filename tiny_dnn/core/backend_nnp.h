@@ -63,8 +63,10 @@ class nnp_backend : public backend {
 
     void conv2d(const std::vector<tensor_t*>& in_data,
                 std::vector<tensor_t*>&       out_data) override {
-	if (params_c_) return;  // workaround to fix warnings
-	if (params_f_) return;  // workaround to fix warnings
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        if (params_c_) return;  // workaround to fix warnings
+        if (params_f_) return;  // workaround to fix warnings
 	if (params_d_) return;  // workaround to fix warnings
 	if (conv_layer_worker_storage_) return;    // workaround to fix warnings
 	if (deconv_layer_worker_storage_) return;  // workaround to fix warnings
@@ -93,11 +95,15 @@ class nnp_backend : public backend {
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
                   std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
     void conv2d_eq(const std::vector<tensor_t*>& in_data,
                    std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
@@ -105,6 +111,10 @@ class nnp_backend : public backend {
                 const std::vector<tensor_t*>& out_data,
                 std::vector<tensor_t*>&       out_grad,
                 std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -112,20 +122,30 @@ class nnp_backend : public backend {
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
                   std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
     void deconv2d(const std::vector<tensor_t*>& in_data,
                   std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
     }
 
     void deconv2d_q(const std::vector<tensor_t*>& in_data,
                     std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
     void deconv2d_eq(const std::vector<tensor_t*>& in_data,
                      std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
@@ -133,6 +153,10 @@ class nnp_backend : public backend {
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
                   std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -140,11 +164,17 @@ class nnp_backend : public backend {
                     const std::vector<tensor_t*>& out_data,
                     std::vector<tensor_t*>&       out_grad,
                     std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         // just to fix warning: remove in future
         if (params_m_) {}
 
@@ -166,11 +196,17 @@ class nnp_backend : public backend {
                  const std::vector<tensor_t*>& out_data,
                  std::vector<tensor_t*>&       out_grad,
                  std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
     void fully(const std::vector<tensor_t*>& in_data,
                std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         /*const tensor_t& in = *in_data[0];
         const vec_t&    W = (*in_data[1])[0];
         vec_t&          b = (*in_data[2])[0];
@@ -182,11 +218,15 @@ class nnp_backend : public backend {
 
     void fully_q(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
     void fully_eq(const std::vector<tensor_t*>& in_data,
                   std::vector<tensor_t*>&       out_data) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_error("not implemented yet.");
     }
 
@@ -194,6 +234,10 @@ class nnp_backend : public backend {
                const std::vector<tensor_t*>& out_data,
                std::vector<tensor_t*>&       out_grad,
                std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 
@@ -201,6 +245,10 @@ class nnp_backend : public backend {
                  const std::vector<tensor_t*>& out_data,
                  std::vector<tensor_t*>&       out_grad,
                  std::vector<tensor_t*>&       in_grad) override {
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("NNPACK does not support back propagation.");
     }
 

@@ -145,7 +145,10 @@ class ProgramManager {
         // Kernel compilation succeed: Register program.
         programs_.insert({ key_program, program });
 */
-#endif  // USE_OPENCL OR USE_CUDA
+#else  // USE_OPENCL OR USE_CUDA
+    CNN_UNREFERENCED_PARAMETER(device);
+    CNN_UNREFERENCED_PARAMETER(layer);
+#endif
     }
 
     // Returns the number of registered programs

@@ -114,6 +114,11 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
 #else
+    CNN_UNREFERENCED_PARAMETER(in_data);
+    CNN_UNREFERENCED_PARAMETER(W);
+    CNN_UNREFERENCED_PARAMETER(bias);
+    CNN_UNREFERENCED_PARAMETER(out_data);
+    CNN_UNREFERENCED_PARAMETER(params);
     throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }

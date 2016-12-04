@@ -180,6 +180,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
         }
 
 #else
+        CNN_UNREFERENCED_PARAMETER(context);
         throw nn_error("TinyDNN was not compiled with LibDNN support.");
 #endif
     }
@@ -291,6 +292,9 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
         // generate sources and compile kernel
         kernel_.reset(new greentea::LibDNNConv<float_t>(config));
+#else
+    CNN_UNREFERENCED_PARAMETER(device);
+    CNN_UNREFERENCED_PARAMETER(params);
 #endif
     }
 
@@ -308,6 +312,7 @@ class Conv2dLibDNNBackwardOp : public core::OpKernel {
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
+        CNN_UNREFERENCED_PARAMETER(context);
         throw nn_error("Not implemented yet.");
     }
 };

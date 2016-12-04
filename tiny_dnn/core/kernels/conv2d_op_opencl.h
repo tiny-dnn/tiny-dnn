@@ -148,6 +148,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
             std::copy(std::begin(out), std::end(out), std::back_inserter(out_data[i]));
         }
 #else
+        CNN_UNREFERENCED_PARAMETER(context);
         throw nn_error("Not compiled with OpenCL");
 #endif
     }
@@ -159,6 +160,7 @@ class Conv2dOpenCLBackwardOp : public core::OpKernel {
         : core::OpKernel(context) {}
 
     void compute(const core::OpKernelContext& context) override {
+        CNN_UNREFERENCED_PARAMETER(context);
         nn_error("Not implemented yet.");
     }
 };
