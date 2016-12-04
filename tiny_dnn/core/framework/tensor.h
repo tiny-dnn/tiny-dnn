@@ -306,42 +306,17 @@ class Tensor {
  *
  * TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {
-        //TODO(Randl)
-        /*(other.fromDevice();
-        shape_ = other.shape_;
-        data_is_on_host_ = true;
-        data_dirty_ = true;
-        storage_pointer_ = other.storage_pointer_;*/
-
-        //device_data_ is intentionally left as-is. It will be erased only if
-        // new tensor won't fit, and only when data gets moved to the GPU.
-        return *this;
     }
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     Tensor(Tensor&& other) = default;        // move ctor
     Tensor &operator = (Tensor&&) = default; // move assign
 #else
-    Tensor(Tensor&& other) { // for VS2013 we need to manually implement these 
-                             // if we want to have move semantics
-        shape_ = std::move(other.shape_);
-        storage_pointer_ = std::move(other.storage_pointer_);
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-        device_data_ = std::move(other.device_data_);
-#endif
-        data_is_on_host_ = other.data_is_on_host_;
-        data_dirty_ = other.data_dirty_;
+
+    Tensor(Tensor&& other) {
     }
 
     Tensor &operator = (Tensor&& other) {
-        shape_ = std::move(other.shape_);
-        storage_pointer_ = std::move(other.storage_pointer_);
-#if defined(USE_OPENCL) || defined(USE_CUDA)
-        device_data_ = std::move(other.device_data_);
-#endif
-        data_is_on_host_ = other.data_is_on_host_;
-        data_dirty_ = other.data_dirty_;
-        return *this;
     }
 #endif
 */
