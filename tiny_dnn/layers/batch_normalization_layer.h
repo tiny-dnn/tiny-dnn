@@ -127,8 +127,8 @@ public:
             }
         }
  
-        moments(delta_dot_y, in_spatial_size_, in_channels_, mean_delta_dot_y, nullptr);
-        moments(curr_delta, in_spatial_size_, in_channels_, mean_delta, nullptr);
+        moments(delta_dot_y, in_spatial_size_, in_channels_, mean_delta_dot_y);
+        moments(curr_delta, in_spatial_size_, in_channels_, mean_delta);
         // if Y = (X-mean(X))/(sqrt(var(X)+eps)), then
         //
         // dE(Y)/dX =
@@ -159,7 +159,7 @@ public:
 
         if (phase_ == net_phase::train) {
             // calculate mean/variance from this batch in train phase
-            moments(*in_data[0], in_spatial_size_, in_channels_, mean, &variance);
+            moments(*in_data[0], in_spatial_size_, in_channels_, mean, variance);
         }
 
         // y = (x - mean) ./ sqrt(variance + eps)
