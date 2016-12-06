@@ -39,13 +39,13 @@ inline void vector_div(vec_t& x, float_t denom) {
 /** 
  * calculate mean/variance across channels
  */
-inline void moments(const tensor_t& in, serial_size_t spatial_dim, serial_size_t channels, vec_t *mean, vec_t *variance) {
+inline void moments(const tensor_t& in, serial_size_t spatial_dim, serial_size_t channels, vec_t& mean, vec_t *variance) {
     serial_size_t num_examples = static_cast<serial_size_t>(in.size());
 
     assert(in[0].size() == spatial_dim * channels);
 
-    mean->resize(channels);
-    std::fill(mean->begin(), mean->end(), (float_t)0.0);
+    mean.resize(channels);
+    std::fill(mean.begin(), mean.end(), (float_t)0.0);
 
     if (variance != nullptr) {
         variance->resize(channels);
@@ -55,27 +55,27 @@ inline void moments(const tensor_t& in, serial_size_t spatial_dim, serial_size_t
     // calculate mean
     for (serial_size_t i = 0; i < num_examples; i++) {
         for (serial_size_t j = 0; j < channels; j++) {
-            float_t*       pmean = &mean->at(j);
+            float_t&       rmean = mean.at(j);
             const float_t* X = &in[i][j*spatial_dim];
 
             for (serial_size_t k = 0; k < spatial_dim; k++) {
-                *pmean += *X++;
+                rmean += *X++;
             }
         }
     }
 
-    vector_div(*mean, (float_t)num_examples*spatial_dim);
+    vector_div(mean, (float_t)num_examples*spatial_dim);
 
     // calculate variance
     if (variance != nullptr) {
         for (serial_size_t i = 0; i < num_examples; i++) {
             for (serial_size_t j = 0; j < channels; j++) {
-                float_t* pvar = &variance->at(j);
+                float_t& rvar = variance->at(j);
                 const float_t* X = &in[i][j*spatial_dim];
-                float_t        EX = (*mean)[j];
+                float_t        EX = mean[j];
 
                 for (serial_size_t k = 0; k < spatial_dim; k++) {
-                    *pvar += pow(*X++ - EX, (float_t)2.0);
+                    rvar += pow(*X++ - EX, (float_t)2.0);
                 }
             }
         }
