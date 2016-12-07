@@ -251,6 +251,78 @@ void quantize_down_and_shrink_range(std::vector<T1>& input,
 }
 
 template <class T>
+void get_output_min_and_max_for_quantized_add(float input_min, float input_max,
+                                              float smaller_input_min,
+                                              float smaller_input_max,
+                                       float* output_min, float* output_max) {
+  // We need to have a good range to add our two arguments together in. This
+  // is surprisingly tricky, since it has to satisfy a few different needs:
+  //  - Must be symmetrical around zero, so that 0 + 0 = 0.
+  //  - Must hold the largest of the argument ranges.
+  //  - Should have enough range that the bits of the lowest and highest
+  //    arguments overlap if possible without the lower getting truncated.
+  //  - Should have some headroom so that there's no overflow.
+  //  - Needs to be signed.
+  // This leads us to use a scheme where we (assuming the inputs are eight bit
+  // and the output is 32-bit) use the bottom 32 - 17 = 15 bits to store the
+  // accumulated results. This gives us all the properties we need.
+  *output_max =
+      std::max(input_max, std::max(-input_min, std::max(smaller_input_max,
+                                                        -smaller_input_min))) *
+      (1 << 17);
+  *output_min = -(*output_max);
+}
+
+template <typename T1, typename T2, typename T3>
+void quantized_add(const std::vector<T1>& input,
+                  float input_min, float input_max,
+                  const std::vector<T2>& smaller_input,
+                  float smaller_input_min, float smaller_input_max,
+                  std::vector<T3>* output,
+                  float* output_min, float* output_max) {
+
+  get_output_min_and_max_for_quantized_add<float>(input_min, input_max,
+                                           smaller_input_min, smaller_input_max,
+                                           output_min, output_max);
+  // To do addition properly, we need to compensate for a possibly unbalanced
+  // zero point in the total representation. The quantized value that
+  // represents the real number zero needs to be subtracted before addition to
+  // make sure that the identity of zero + zero = zero holds.
+  const T3 zero_in_total_space =
+      float_to_quantized<T3>(0.0f, *output_min, *output_max);
+
+  const int64_t input_element_count = input.size();
+  const int64_t smaller_input_element_count = smaller_input.size();
+
+  float total_min = *output_min;
+  float total_max = *output_max;
+  const size_t how_many_iterations =
+      (input_element_count / smaller_input_element_count);
+  for (size_t iteration = 0; iteration < how_many_iterations; ++iteration) {
+    const size_t offset = iteration * smaller_input_element_count;
+    for (int c = 0; c < smaller_input_element_count; ++c) {
+      const int index = (offset + c);
+      // The two numbers we're going to add can each be in very different
+      // ranges (e.g. the quantized value '127' may represent very different
+      // real numbers in both) so we need to convert them to a common range
+      // before we sum them.
+      const T1 input_value = input(index);
+      const T3 input_in_total_space = requantize_in_new_range<T1, T3>(
+          input_value, input_min, input_max, total_min, total_max);
+      const T2 smaller_input_value = smaller_input(c);
+      const T3 smaller_input_in_total_space =
+          requantize_in_new_range<T2, T3>(smaller_input_value, smaller_input_min,
+                                       smaller_input_max, total_min, total_max);
+      const T3 total_pre = input_in_total_space + smaller_input_in_total_space;
+      // As noted above, we need to compensate for the offset of the actual
+      // zero point in the space we're operating in.
+      const T3 total = total_pre + zero_in_total_space;
+      output(index) = total;
+    }
+  }
+}
+
+template <class T>
 vec_t tensor_range(const vec_t& input, float_t margin = 1e-3f) {
   vec_t result(2, static_cast<float_t>(input[0]));
   for (serial_size_t c = 0; c < input.size(); c++) {
