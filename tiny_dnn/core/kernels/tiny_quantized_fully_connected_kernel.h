@@ -1,4 +1,4 @@
-/*
+ /*
     Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
@@ -63,7 +63,6 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
         b_quantized =
             float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
     }
-    min_output_value += range_b[0];
     max_output_value += range_b[1];
 
     std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
