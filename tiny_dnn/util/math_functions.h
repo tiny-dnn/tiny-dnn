@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include <algorithm>
+#include <numeric>
 
 #include "tiny_dnn/util/util.h"
 
@@ -42,11 +43,8 @@ namespace detail {
         for (serial_size_t i = 0; i < num_examples; i++) {
             for (serial_size_t j = 0; j < channels; j++) {
                 float_t& rmean = mean.at(j);
-                const float_t* const X = &in[i][j*spatial_dim];
-
-                for (serial_size_t k = 0; k < spatial_dim; k++) {
-                    rmean += X[k];
-                }
+                const auto it = in[i].begin() + (j * spatial_dim);
+                rmean = std::accumulate(it, it + spatial_dim, rmean);
             }
         }
     }
@@ -56,12 +54,11 @@ namespace detail {
         for (serial_size_t i = 0; i < num_examples; i++) {
             for (serial_size_t j = 0; j < channels; j++) {
                 float_t& rvar = variance.at(j);
-                const float_t* const X = &in[i][j*spatial_dim];
-                const float_t       EX = mean[j];
-
-                for (serial_size_t k = 0; k < spatial_dim; k++) {
-                    rvar += pow(X[k] - EX, (float_t)2.0);
-                }
+                const auto it = in[i].begin() + (j * spatial_dim);
+                const float_t ex = mean[j];
+                rvar = std::accumulate(it, it + spatial_dim, rvar, [ex](float_t current, float_t x) {
+                    return current + pow(x - ex, (float_t)2.0);
+                });
             }
         }
         vector_div(variance, std::max(1.0f, num_examples*spatial_dim-1.0f));
