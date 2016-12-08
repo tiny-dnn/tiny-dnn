@@ -67,7 +67,6 @@ template<typename T, size_t kDim, typename... Args>
 inline std::ostream& print_last_two_dimesions (std::ostream           &os,
                                                const Tensor<T, kDim>& tensor,
                                                const Args...          args) {
-
     const std::array<size_t, kDim>& shape = tensor.shape();
     for (size_t k = 0; k < shape[kDim-1]; ++k) {
         for (size_t l = 0; l < shape[kDim-2]; ++l) {
@@ -108,7 +107,6 @@ inline std::ostream& print_last_n_dimesions (std::ostream &os,
 template<typename T, size_t kDim>
 inline std::ostream& operator<< (std::ostream &os,
                                  const Tensor<T, kDim>& tensor) {
-
     const std::array<size_t, kDim>& shape = tensor.shape();
 
     for (size_t i = 0 ; i < shape[0]; ++i)

@@ -69,7 +69,7 @@ static inline size_t product(Container &c) {
 }
 
 template<typename U = float_t,
-	 typename Allocator = aligned_allocator<U, 64>>
+         typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {
     typedef typename std::vector<U, Allocator>::iterator DataIter;
     typedef typename std::vector<U, Allocator>::const_iterator ConstDataIter;
@@ -106,7 +106,7 @@ class TensorStorage {
     void sync() {
         if (data_dirty_ && data_is_on_host_) {
             toDevice();
-	} else {
+        } else {
             fromDevice();
         }
     }
