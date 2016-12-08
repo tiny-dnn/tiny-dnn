@@ -52,21 +52,6 @@
 
 namespace tiny_dnn {
 
-// forward class declaration
-template<typename U = float_t,
-	          size_t kDimensions = 4,
-		  bool kConst = false,
-		  typename Allocator = aligned_allocator<U, 64> >
-class Tensor;
-
-template <typename Container>
-static inline size_t product(Container &c) {
-    return std::accumulate(std::begin(c),
-                           std::end(c),
-                           size_t(1),
-                           std::multiplies<size_t>());
-}
-
 template<typename T>
 void print_pack(std::ostream &out, T t) { //TODO: C++17 allows easier printing
     out << t;

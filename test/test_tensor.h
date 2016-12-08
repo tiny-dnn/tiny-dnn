@@ -47,6 +47,7 @@
 #include "testhelper.h"
 
 #include "tiny_dnn/tiny_dnn.h"
+#include "tiny_dnn/core/framework/tensor_utils.h"
 
 using namespace tiny_dnn;
 
