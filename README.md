@@ -49,16 +49,13 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## Comparison with other libraries
 
-||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|[Mxnet](http://mxnet.io/)|
-|---|---|---|---|---|---|
-|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|BLAS(optional:CUDA)|
-|Modeling By|C++ code|Config File|Python Code|Python Code|C++, Python, R, Julia ...|
-|Training|C++|C++, Python|Python|Python|C++, Python, R, Julia ...|
-|Execution|C++|C++, Python|Python|Python, C++<sup>2</sup>|C++<sup>4</sup>, Python, R, Julia ...|
-|GPU Support|No|Yes|Yes|Yes|Yes|
-|Installing|Unnecessary|Necessary|Necessary|Necessary|Necessary<sup>3</sup>|
-|Windows Support|Yes|No|Yes|Yes|Yes|
-|Pre-Trained Model|Yes(via caffe-converter)|Yes|No<sup>1</sup>|No<sup>1</sup>|Yes(via caffe-converter)|
+|  | Prerequisites | Modeling | Training | Execution | GPU Support | Installing | Windows Support | Pre-Trained Model |
+|------------|-----------------------------------------------------------------------------|---------------------------|---------------------------|----------------------------|-------------|-------------|-----------------|--------------------------|
+| tiny-dnn | __Nothing__(Optional:TBB,OpenMP) | C++ | C++ | C++ | No | Unnecessary | Yes | Yes(via caffe-converter) |
+| [caffe](https://github.com/BVLC/caffe) | BLAS,Boost,protobuf,glog,gflags,hdf5,(Optional:CUDA,OpenCV,lmdb,leveldbetc) | Config File | C++, Python | C++, Python | Yes | Necessary | No | Yes |
+| [Theano](https://github.com/Theano/Theano) | Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDAetc) | Python Code | Python | Python | Yes | Necessary | Yes | No<sup>1</sup> |
+| [TensorFlow](https://www.tensorflow.org/) | numpy,six,protobuf,(optional:CUDA,Bazel) | Python Code | Python | Python, C++<sup>2</sup> | Yes | Necessary | Yes | No<sup>1</sup> |
+| [Mxnet](http://mxnet.io/) | BLAS(optional:CUDA) | C++, Python, R, Julia ... | C++, Python, R, Julia ... | C++<sup>4</sup>, Python, R, Julia ... | Yes | Necessary<sup>3</sup> | Yes | Yes(via caffe-converter) |
 
 <sup>1</sup> unofficial version is available  
 <sup>2</sup> limited C++ API  
