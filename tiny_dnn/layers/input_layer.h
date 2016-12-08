@@ -34,7 +34,7 @@ public:
     explicit input_layer(const shape3d& shape)
     : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
 
-    explicit input_layer(cnn_size_t in_dim)
+    explicit input_layer(serial_size_t in_dim)
     : layer({ vector_type::data }, { vector_type::data }), shape_(shape3d(in_dim,1,1)) {}
 
     std::vector<shape3d> in_shape() const override { return { shape_ }; }

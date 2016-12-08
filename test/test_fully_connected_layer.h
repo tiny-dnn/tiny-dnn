@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -127,7 +127,7 @@ TEST(fully_connected, read_write)
 TEST(fully_connected, forward)
 {
     fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+    EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
@@ -144,8 +144,9 @@ TEST(fully_connected, forward)
 #ifdef CNN_USE_NNPACK
 TEST(fully_connected, forward_nnp)
 {
+    nnp_initialize();
     fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
-    EXPECT_EQ(l.in_channels(), 3); // in, W and b
+    EXPECT_EQ(l.in_channels(), size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
@@ -163,7 +164,7 @@ TEST(fully_connected, forward_nnp)
 TEST(fully_connected, forward_nobias)
 {
     fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(2));// in and W
+    EXPECT_EQ(l.in_channels(), serial_size_t(2));// in and W
 
     l.weight_init(weight_init::constant(1.0));
 

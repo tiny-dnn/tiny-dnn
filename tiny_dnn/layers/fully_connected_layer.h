@@ -46,10 +46,10 @@ public:
      * @param out_dim [in] number of elements of the output
      * @param has_bias [in] whether to include additional bias to the layer
      **/
-    fully_connected_layer(cnn_size_t     in_dim,
-                          cnn_size_t     out_dim,
-                          bool           has_bias = true,
-                          backend_t      backend_type = core::default_engine())
+    fully_connected_layer(serial_size_t in_dim,
+                          serial_size_t out_dim,
+                          bool       has_bias = true,
+                          backend_t  backend_type = core::default_engine())
             : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
@@ -65,30 +65,30 @@ public:
         init_backend(std::move(other.engine()));
     }
 
-    size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return params_.in_size_;
     }
 
-    size_t fan_out_size() const override {
+    serial_size_t fan_out_size() const override {
         return params_.out_size_;
     }
 
-    std::vector<index3d<cnn_size_t>> in_shape() const override {
+    std::vector<index3d<serial_size_t>> in_shape() const override {
         if (params_.has_bias_) {
-            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
-                     index3d<cnn_size_t>(params_.in_size_,
+            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
+                     index3d<serial_size_t>(params_.in_size_,
                                          params_.out_size_, 1),
-                     index3d<cnn_size_t>(params_.out_size_, 1, 1) };
+                     index3d<serial_size_t>(params_.out_size_, 1, 1) };
         } else {
-            return { index3d<cnn_size_t>(params_.in_size_, 1, 1),
-                     index3d<cnn_size_t>(params_.in_size_,
+            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
+                     index3d<serial_size_t>(params_.in_size_,
                                          params_.out_size_, 1) };
         }
     }
 
-    std::vector<index3d<cnn_size_t>> out_shape() const override {
-        return { index3d<cnn_size_t>(params_.out_size_, 1, 1),
-                 index3d<cnn_size_t>(params_.out_size_, 1, 1) };
+    std::vector<index3d<serial_size_t>> out_shape() const override {
+        return { index3d<serial_size_t>(params_.out_size_, 1, 1),
+                 index3d<serial_size_t>(params_.out_size_, 1, 1) };
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
@@ -126,7 +126,7 @@ public:
 
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
-        size_t in_dim, out_dim;
+        serial_size_t in_dim, out_dim;
         bool has_bias;
 
         ar(cereal::make_nvp("in_size", in_dim),
@@ -145,8 +145,8 @@ public:
 
 protected:
 
-    void set_params(const cnn_size_t in_size,
-                    const cnn_size_t out_size,
+    void set_params(const serial_size_t in_size,
+                    const serial_size_t out_size,
                     bool             has_bias) {
         params_.in_size_  = in_size;
         params_.out_size_ = out_size;
@@ -157,12 +157,12 @@ protected:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::tiny_dnn ||
-            backend_type == backend_t::avx) {
+        if (backend_type == backend_t::internal ||
+            backend_type == backend_t::avx ||
+            backend_type == backend_t::nnpack) {
 
             kernel_fwd_.reset(new FullyConnectedOp(ctx));
             kernel_back_.reset(new FullyConnectedGradOp(ctx));
-
             return;
         }
         else {

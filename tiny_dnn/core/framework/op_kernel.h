@@ -87,7 +87,7 @@ class OpKernelContext {
         // parallelize operation
         bool parallelize = false;
 
-        backend_t engine = backend_t::tiny_dnn;
+        backend_t engine = default_engine();
     };
 
     explicit OpKernelContext(const std::vector<tensor_t*>& in_data,

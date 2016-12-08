@@ -27,6 +27,7 @@
 Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## What's New
+- 2016/11/30 [v1.0.0a3 is released!](https://github.com/tiny-dnn/tiny-dnn/tree/v1.0.0a3)
 - 2016/9/14 [tiny-dnn v1.0.0alpha is released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v1.0.0a)
 - 2016/8/7  tiny-dnn is now moved to organization account, and rename into tiny-dnn :)
 - 2016/7/27 [tiny-dnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
@@ -48,16 +49,21 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## Comparison with other libraries
 
-||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|
-|---|---|---|---|---|
-|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|
-|Modeling By|C++ code|Config File|Python Code|Python Code|
-|GPU Support|No|Yes|Yes|Yes|
-|Installing|Unnecessary|Necessary|Necessary|Necessary|
-|Windows Support|Yes|No*|Yes|No*|
-|Pre-Trained Model|Yes(via caffe-converter)|Yes|No*|No*|
+||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|[Mxnet](http://mxnet.io/)|
+|---|---|---|---|---|---|
+|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|BLAS(optional:CUDA)|
+|Modeling By|C++ code|Config File|Python Code|Python Code|C++, Python, R, Julia ...|
+|Training|C++|C++, Python|Python|Python|C++, Python, R, Julia ...|
+|Execution|C++|C++, Python|Python|Python, C++<sup>2</sup>|C++<sup>4</sup>, Python, R, Julia ...|
+|GPU Support|No|Yes|Yes|Yes|Yes|
+|Installing|Unnecessary|Necessary|Necessary|Necessary|Necessary<sup>3</sup>|
+|Windows Support|Yes|No|Yes|Yes|Yes|
+|Pre-Trained Model|Yes(via caffe-converter)|Yes|No<sup>1</sup>|No<sup>1</sup>|Yes(via caffe-converter)|
 
-*unofficial version is available
+<sup>1</sup> unofficial version is available  
+<sup>2</sup> limited C++ API  
+<sup>3</sup> It is rumoured installation is unnecessary with the Mxnet amalgamation Api  
+<sup>4</sup> both full API and limited api via amalgamation  
 
 ## Supported networks
 ### layer-types
@@ -103,11 +109,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 * adam
 
 ## Dependencies
-##### Minimum requirements
 Nothing. All you need is a C++11 compiler.
-
-##### Requirements to build sample/test programs
-[OpenCV](http://opencv.org/)
 
 ## Build
 tiny-dnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
@@ -126,7 +128,6 @@ Some cmake options are available:
 |USE_OMP|Use OpenMP for parallelization|OFF<sup>1</sup>|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
-|USE_OPENCV|Use OpenCV for sample/test programs|OFF|[Open Source Computer Vision Library](http://opencv.org/)|
 |USE_NNPACK|Use NNPACK for convolution operation|OFF|[Acceleration package for neural networks on multi-core CPUs](https://github.com/Maratyszcza/NNPACK)|
 |USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
 |USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
@@ -139,7 +140,7 @@ Some cmake options are available:
 
 <sup>2</sup> If you don't use serialization, you can switch off to speedup compilation time.
 
-<sup>3</sup> tiny-dnn requires picotest as submodule. You need to use ```git submodule update --init``` command to run unit tests
+<sup>3</sup> tiny-dnn uses [Google Test](https://github.com/google/googletest) as default framework to run unit tests. No pre-installation required, it's  automatically downloaded during CMake configuration.
 
 For example, type the following commands if you want to use intel TBB and build tests:
 ```bash

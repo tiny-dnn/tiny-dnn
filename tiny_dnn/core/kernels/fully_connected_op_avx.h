@@ -26,7 +26,7 @@
 */
 #pragma once
 
-#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_internal.h"
 
 namespace tiny_dnn {
 namespace kernels {
@@ -40,7 +40,7 @@ fully_connected_op_avx(const tensor_t& in_data,
                        const bool      layer_parallelize) {
 #ifdef CNN_USE_AVX
     // TODO(nyanp/beru): is this really AVX ??
-    fully_connected_op_custom(
+    fully_connected_op_internal(
         in_data,
         W,
         bias,
@@ -63,7 +63,7 @@ fully_connected_op_avx(const tensor_t& prev_out,
                        const bool      layer_parallelize) {
 #ifdef CNN_USE_AVX
     // TODO(nyanp/beru): is this really AVX ??
-    fully_connected_op_custom(
+    fully_connected_op_internal(
         prev_out,
         W,
         dW,

@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -37,7 +37,7 @@ TEST(models, alexnet) {
     models::alexnet nn("alexnet");
  
     ASSERT_EQ(nn.name(), "alexnet");
-    EXPECT_EQ(nn.in_data_size(), cnn_size_t(224 * 224 * 3));
+    EXPECT_EQ(nn.in_data_size(), serial_size_t(224 * 224 * 3));
 
     vec_t in(nn.in_data_size());
 

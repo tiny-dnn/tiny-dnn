@@ -44,7 +44,6 @@
 */
 #pragma once
 
-#include "tiny_dnn/core/kernels/conv2d.h"
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #ifdef CNN_USE_LIBDNN
@@ -53,16 +52,19 @@
 
 namespace tiny_dnn {
 
-class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
+class Conv2dLibDNNForwardOp : public core::OpKernel {
  public:
     explicit Conv2dLibDNNForwardOp(const core::OpKernelConstruction& context)
             : core::OpKernel(context)
-            , initialized_(false) {
-        Conv2d::setParams(OpKernel::params_);
+#ifdef CNN_USE_LIBDNN
+            , initialized_(false)
+#endif
+    	{
         // TODO(edgar): remove this if statement when refactor
         // the init_backend() routine at layer level.
         if (OpKernel::device_ != nullptr) {
-            init_libdnn(OpKernel::device_, Conv2d::params());
+            auto params = OpKernel::params_->conv();
+            init_libdnn(OpKernel::device_, params);
         }
     }
 
@@ -70,8 +72,8 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 #ifdef CNN_USE_LIBDNN
         // incoming/outcoming datm
         const tensor_t& in_data = context.input(0);
-        const vec_t&          W = context.input(1)[0];
-        const vec_t&       bias = context.input(2)[0];
+        const tensor_t&       W = context.input(1);
+        const tensor_t&    bias = context.input(2);
         tensor_t&      out_data = context.output(1);
 
         // retrieve the convolutional parameters and pad input
@@ -80,27 +82,23 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
         // initialize outputs
         fill_tensor(out_data, float_t(0));
 
-        // pad input data
-        tensor_t in_data_padded;
-        Conv2d::copy_and_pad_input(in_data, in_data_padded);
-
         // retrive device context and queue
 
         CLCudaAPI::Context ctx = OpKernel::device_->context();
         CLCudaAPI::Queue queue = OpKernel::device_->queue();
 
-        for (cnn_size_t i = 0; i < in_data_padded.size(); ++i) {
+        for (serial_size_t i = 0; i < in_data.size(); ++i) {
 
             // allocate data to GPU
 
             auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue,
-                in_data_padded[i].begin(), in_data_padded[i].end());
+                in_data[i].begin(), in_data[i].end());
 
             auto dev_W = CLCudaAPI::Buffer<float_t>(ctx, queue,
-                W.begin(), W.end());
+                W[0].begin(), W[0].end());
 
             auto dev_bias = CLCudaAPI::Buffer<float_t>(ctx, queue,
-                bias.begin(), bias.end());
+                bias[0].begin(), bias[0].end());
 
             auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue,
                 out_data[i].begin(), out_data[i].end());
@@ -122,14 +120,14 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             // TODO(edgar/naibaf): enable when second generation
             // kernel are available
 
-            /*if (!initialized_) {
-                kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
+            if (!initialized_) {
+                /*kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
                               const_cast<float_t*>(weights_ptr), nullptr,
                               const_cast<float_t*>(bias_ptr), nullptr,
                               const_cast<float_t*>(input_ptr), nullptr,
                               batch_size);
-                initialized_ = true;
-            }*/
+                initialized_ = true;*/
+            }
 
             // call libdnn forward
 
@@ -139,14 +137,14 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
                              output_ptr,
                              batch_size);
 
-            
+
             // Upload data GPU -> CPU
             /*std::vector<float_t> dev_W_shadow(W.size(), 0);
             dev_W.Read(queue, W.size(), dev_W_shadow);
 
             // FOR DEBUG ONLY
             nn_warn("W kernel");
-            for (cnn_size_t j = 0; j < W.size(); ++j) {
+            for (serial_size_t j = 0; j < W.size(); ++j) {
                 std::cout << dev_W_shadow[j] << " ";
             }
             std::cout << std::endl;
@@ -157,7 +155,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 
             // FOR DEBUG ONLY
             nn_warn("input kernel");
-            for (cnn_size_t j = 0; j < in_data_padded[i].size(); ++j) {
+            for (serial_size_t j = 0; j < in_data_padded[i].size(); ++j) {
                 std::cout << dev_in_shadow[j] << " ";
             }
             std::cout << std::endl;*/
@@ -171,7 +169,7 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
             /*
             // FOR DEBUG ONLY
             nn_warn("output kernel");
-            for (cnn_size_t j = 0; j < out.size(); ++j) {
+            for (serial_size_t j = 0; j < out.size(); ++j) {
                 std::cout << out[j] << " ";
             }
             std::cout << std::endl;
@@ -300,11 +298,11 @@ class Conv2dLibDNNForwardOp : private Conv2d, public core::OpKernel {
 #ifdef CNN_USE_LIBDNN
     std::shared_ptr<greentea::device> dev_ptr_;
     std::shared_ptr<greentea::LibDNNConv<float_t> > kernel_;
-#endif
     bool initialized_;
+#endif
 };
 
-class Conv2dLibDNNBackwardOp : private Conv2d, public core::OpKernel {
+class Conv2dLibDNNBackwardOp : public core::OpKernel {
  public:
     explicit Conv2dLibDNNBackwardOp(const core::OpKernelConstruction& context)
         : core::OpKernel(context) {}

@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -131,7 +131,7 @@ TEST(quantized_fully_connected, read_write)
 TEST(quantized_fully_connected, forward)
 {
     quantized_fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+    EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
@@ -145,11 +145,11 @@ TEST(quantized_fully_connected, forward)
     }
 }
 
-#ifdef CNN_USE_NNPACK
+/*#ifdef CNN_USE_NNPACK
 TEST(quantized_fully_connected, forward_nnp)
 {
     quantized_fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(3)); // in, W and b
+    EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
     l.bias_init(weight_init::constant(0.5));
@@ -162,12 +162,12 @@ TEST(quantized_fully_connected, forward_nnp)
         EXPECT_NEAR(out_expected[i], out[i], 1E-2);
     }
 }
-#endif
+#endif*/
 
 TEST(quantized_fully_connected, forward_nobias)
 {
     quantized_fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), cnn_size_t(2));// in and W
+    EXPECT_EQ(l.in_channels(), serial_size_t(2));// in and W
 
     l.weight_init(weight_init::constant(1.0));
 

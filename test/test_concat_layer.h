@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "picotest/picotest.h"
+ #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -68,8 +68,8 @@ TEST(concat, forward_data) {
         
     auto out = cl.forward({in0, in1, in2});
     
-    for (cnn_size_t i = 0; i < 4; i++) {
-        for (cnn_size_t j = 0; j < 2; j++) {
+    for (serial_size_t i = 0; i < 4; i++) {
+        for (serial_size_t j = 0; j < 2; j++) {
             EXPECT_FLOAT_EQ(out_expected[i][j], out[0][i][j]);
         }
     }
@@ -77,8 +77,8 @@ TEST(concat, forward_data) {
     
     out = cl.backward({out_expected});
 
-    for (cnn_size_t i = 0; i < 4; i++) {
-        for (cnn_size_t j = 0; j < 2; j++) {
+    for (serial_size_t i = 0; i < 4; i++) {
+        for (serial_size_t j = 0; j < 2; j++) {
             EXPECT_FLOAT_EQ(in0[i][j], out[0][i][j]);
             EXPECT_FLOAT_EQ(in1[i][j], out[1][i][j]);
             EXPECT_FLOAT_EQ(in2[i][j], out[2][i][j]);

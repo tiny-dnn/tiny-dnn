@@ -61,10 +61,10 @@
 namespace tiny_dnn {
 
 ///< output label(class-index) for classification
-///< must be equal to cnn_size_t, because size of last layer is equal to num. of classes
-typedef cnn_size_t label_t;
+///< must be equal to serial_size_t, because size of last layer is equal to num. of classes
+typedef serial_size_t label_t;
 
-typedef cnn_size_t layer_size_t; // for backward compatibility
+typedef serial_size_t layer_size_t; // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
@@ -73,6 +73,11 @@ typedef std::vector<vec_t> tensor_t;
 enum class net_phase {
     train,
     test
+};
+
+enum class padding {
+    valid,  ///< use valid pixels of input
+    same    ///< add zero-padding around input so as to keep image size
 };
 
 template<typename T>
@@ -117,10 +122,12 @@ template <typename Container> inline bool has_infinite(const Container& c) {
 }
 
 template <typename Container>
-size_t max_size(const Container& c) {
+serial_size_t max_size(const Container& c) {
     typedef typename Container::value_type value_t;
-    return std::max_element(c.begin(), c.end(),
+    const auto max_size = std::max_element(c.begin(), c.end(),
         [](const value_t& left, const value_t& right) { return left.size() < right.size(); })->size();
+    assert(max_size <= std::numeric_limits<serial_size_t>::max());
+    return static_cast<serial_size_t>(max_size);
 }
 
 inline std::string format_str(const char *fmt, ...) {
@@ -185,7 +192,7 @@ struct index3d {
     T depth_;
 };
 
-typedef index3d<cnn_size_t> shape3d;
+typedef index3d<serial_size_t> shape3d;
 
 template <typename T>
 bool operator == (const index3d<T>& lhs, const index3d<T>& rhs) {
@@ -203,10 +210,16 @@ Stream& operator << (Stream& s, const index3d<T>& d) {
     return s;
 }
 
+template <typename T>
+std::ostream& operator << (std::ostream& s, const index3d<T>& d) {
+    s << d.width_ << "x" << d.height_ << "x" << d.depth_;
+    return s;
+}
+
 template <typename Stream, typename T>
 Stream& operator << (Stream& s, const std::vector<index3d<T>>& d) {
     s << "[";
-    for (cnn_size_t i = 0; i < d.size(); i++) {
+    for (serial_size_t i = 0; i < d.size(); i++) {
         if (i) s << ",";
         s << "[" << d[i] << "]";
     }
@@ -247,9 +260,9 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 
 
 template <typename T, typename Pred, typename Sum>
-cnn_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
-    size_t sum = 0;
-    for (size_t i = 0; i < vec.size(); i++) {
+serial_size_t sumif(const std::vector<T>& vec, Pred p, Sum s) {
+    serial_size_t sum = 0;
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(vec.size()); i++) {
         if (p(i)) sum += s(vec[i]);
     }
     return sum;
@@ -340,17 +353,35 @@ inline void fill_tensor(tensor_t& tensor, float_t value) {
     }
 }
 
-inline void fill_tensor(tensor_t& tensor, float_t value, cnn_size_t size) {
+inline void fill_tensor(tensor_t& tensor, float_t value, serial_size_t size) {
     for (auto& t : tensor) {
         t.resize(size, value);
     }
 }
 
+inline serial_size_t conv_out_length(serial_size_t in_length,
+                                  serial_size_t window_size,
+                                  serial_size_t stride,
+                                  padding pad_type) {
+    serial_size_t output_length;
+
+    if (pad_type == padding::same) {
+        output_length = in_length;
+    }
+    else if (pad_type == padding::valid) {
+        output_length = in_length - window_size + 1;
+    }
+    else {
+        throw nn_error("Not recognized pad_type.");
+    }
+    return (output_length + stride - 1) / stride;
+}
+
 // get all platforms (drivers), e.g. NVIDIA
 // https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 
-inline void printAvailableDevice(const cnn_size_t platform_id,
-                                 const cnn_size_t device_id) {
+inline void printAvailableDevice(const serial_size_t platform_id,
+                                 const serial_size_t device_id) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     // Initializes the CLCudaAPI platform and device. This initializes the OpenCL/CUDA back-end and
     // selects a specific device on the platform.
@@ -383,6 +414,12 @@ inline void printAvailableDevice(const cnn_size_t platform_id,
 #else
     nn_warn("TinyDNN was not build with OpenCL or CUDA support.");
 #endif
+}
+
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args)
+{
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
 } // namespace tiny_dnn

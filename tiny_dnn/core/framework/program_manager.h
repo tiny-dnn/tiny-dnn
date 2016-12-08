@@ -149,11 +149,11 @@ class ProgramManager {
     }
 
     // Returns the number of registered programs
-    cnn_size_t num_programs() const {
+    serial_size_t num_programs() const {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
         return programs_.size();
 #else
-        return cnn_size_t(0);
+        return serial_size_t(0);
 #endif
     }
 

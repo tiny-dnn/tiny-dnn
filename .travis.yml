@@ -32,6 +32,9 @@ addons:
       # coveralls dependencies
       - gem
       - lcov
+      # caffe-importer dependencies
+      - libprotobuf-dev
+      - protobuf-compiler
 
 branches:
   only:
@@ -44,8 +47,9 @@ env:
     - COVERALLS=ON
 
   matrix:
-    - USE_SSE=OFF USE_AVX=OFF
-    - USE_SSE=ON  USE_AVX=ON
+    - USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
+    - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=OFF
+    - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=ON
 
 matrix:
   exclude: # On OSX g++ is a symlink to clang++ by default
@@ -70,6 +74,7 @@ before_script:
       cmake -DUSE_TBB=$USE_TBB
             -DUSE_SSE=$USE_SSE
             -DUSE_AVX=$USE_AVX
+            -DUSE_DOUBLE=$USE_DOUBLE
             -DBUILD_TESTS=$BUILD_TESTS
             -DCOVERALLS=$COVERALLS
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
@@ -93,7 +98,7 @@ script:
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --capture --output-file coverage.info;
-      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' --output-file coverage.info;
+      lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' 'tiny_dnn/io/caffe/caffe.pb.*' --output-file coverage.info;
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi

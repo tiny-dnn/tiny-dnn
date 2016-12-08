@@ -29,14 +29,10 @@
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/core/backend.h"
 
-#include "tiny_dnn/core/kernels/tiny_conv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_conv2d_kernel.h"
-#include "tiny_dnn/core/kernels/tiny_conv2d_back_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_deconv2d_back_kernel.h"
-#include "tiny_dnn/core/kernels/tiny_maxpool_kernel.h"
-#include "tiny_dnn/core/kernels/tiny_fully_connected_kernel.h"
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/core/kernels/tiny_quantized_fully_connected_kernel.h"
 #endif
@@ -74,8 +70,8 @@ class tiny_backend : public backend {
       , backward_activation(f3) {}
 
     // maxpooling
-    tiny_backend(std::vector<std::vector<cnn_size_t>>* out2in,
-                 std::vector<cnn_size_t>* in2out,
+    tiny_backend(std::vector<std::vector<serial_size_t>>* out2in,
+                 std::vector<serial_size_t>* in2out,
                  std::function<void(const tensor_t&, const tensor_t&, tensor_t&)> f,
                  max_pooling_layer_worker_specific_storage* ptr)
       : max_pooling_layer_worker_storage_(ptr)
@@ -93,7 +89,7 @@ class tiny_backend : public backend {
 
     void conv2d(const std::vector<tensor_t*>& in_data,
                 std::vector<tensor_t*>&       out_data) override {
-        copy_and_pad_input(*in_data[0]);
+        /*copy_and_pad_input(*in_data[0]);
         const vec_t& W     = (*in_data[1])[0];
         const vec_t& bias  = (*in_data[2])[0];
         tensor_t&    a     = *out_data[1];
@@ -102,7 +98,7 @@ class tiny_backend : public backend {
         fill_tensor(a, float_t(0));
 
         kernels::tiny_conv2d_kernel(*params_c_,
-            in, W, bias, a, layer_->parallelize());
+            in, W, bias, a, layer_->parallelize());*/
     }
 
     // quantized convolution
@@ -116,7 +112,7 @@ class tiny_backend : public backend {
 
         fill_tensor(a, float_t(0));
 
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_conv2d_kernel(*params_c_,
                 *in[i], W, bias, a[i], layer_->parallelize());
         }
@@ -137,7 +133,7 @@ class tiny_backend : public backend {
         const std::vector<const vec_t*> &in = (*conv_layer_worker_storage_).prev_out_padded_; // input // NOLINT
 
         fill_tensor(a, float_t(0));
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_conv2d_kernel(*params_c_,
                 *in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
@@ -147,7 +143,7 @@ class tiny_backend : public backend {
                 const std::vector<tensor_t*>& out_data,
                 std::vector<tensor_t*>&       out_grad,
                 std::vector<tensor_t*>&       in_grad) override {
-        conv_layer_worker_specific_storage& cws = (*conv_layer_worker_storage_);
+        /*conv_layer_worker_specific_storage& cws = (*conv_layer_worker_storage_);
 
         std::vector<const vec_t*>& prev_out = cws.prev_out_padded_;
         const vec_t& W  = (*in_data[1])[0];
@@ -170,7 +166,7 @@ class tiny_backend : public backend {
 
         if (params_c_->pad_type == padding::same) {
             copy_and_unpad_delta(cws.prev_delta_padded_, *in_grad[0]);
-        }
+        }*/
     }
 
     void conv2d_q(const std::vector<tensor_t*>& in_data,
@@ -195,7 +191,7 @@ class tiny_backend : public backend {
 
         fill_tensor(*prev_delta, float_t(0));
 
-        for (cnn_size_t i = 0; i < prev_out.size(); i++) {
+        for (serial_size_t i = 0; i < prev_out.size(); i++) {
             kernels::tiny_quantized_conv2d_back_kernel(*params_c_,
                 *prev_out[i], W, dW[i], db[i], curr_delta[i], &(*prev_delta)[i]);
         }
@@ -211,7 +207,7 @@ class tiny_backend : public backend {
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         tensor_t&       a    = *out_data[1];
-        const tensor_t &in   = *in_data[0]; // input
+        const tensor_t& in   = *in_data[0]; // input
 
         fill_tensor(a, float_t(0), params_d_->out.size()); // deconv2d-kernel requires padded size buffer
 
@@ -226,14 +222,14 @@ class tiny_backend : public backend {
     void deconv2d_q(const std::vector<tensor_t*>&  in_data,
                     std::vector<tensor_t*>&        out_data) override {
         (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
-        const tensor_t &in   =  *in_data[0]; // input
+        const tensor_t& in   =  *in_data[0]; // input
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         tensor_t&       a    =  *out_data[1];
 
         fill_tensor(a, float_t(0), params_d_->out.size()); // deconv2d-kernel requires padded size buffer
 
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_deconv2d_kernel(*params_d_,
                 in[i], W, bias, a[i], layer_->parallelize());
         }
@@ -246,7 +242,7 @@ class tiny_backend : public backend {
     void deconv2d_eq(const std::vector<tensor_t*>&  in_data,
                      std::vector<tensor_t*>&        out_data) override {
         (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
-        const tensor_t &in   =  *in_data[0]; // input
+        const tensor_t& in   =  *in_data[0]; // input
         const vec_t&    W    = (*in_data[1])[0];
         const vec_t&    bias = (*in_data[2])[0];
         const tensor_t& in_r =  *in_data[3];
@@ -257,7 +253,7 @@ class tiny_backend : public backend {
 
         fill_tensor(a, float_t(0), params_d_->out.size()); // deconv2d-kernel requires padded size buffer
 
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_deconv2d_kernel(*params_d_,
                 in[i], W, bias, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
@@ -318,7 +314,7 @@ class tiny_backend : public backend {
 
         fill_tensor(*prev_delta, float_t(0));
 
-        for (cnn_size_t i = 0; i < prev_out.size(); i++) {
+        for (serial_size_t i = 0; i < prev_out.size(); i++) {
             kernels::tiny_quantized_deconv2d_back_kernel(*params_d_,
                 prev_out[i], W, dW[i], db[i], curr_delta[i], &(*prev_delta)[i]);
         }
@@ -326,39 +322,44 @@ class tiny_backend : public backend {
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
-        const tensor_t& in  = *in_data[0];
+        // just to fix warning. Remove in a future
+        if (max_pooling_layer_worker_storage_) {}
+        if (out2in_) {}
+        if (in2out_) {}
+
+        /*const tensor_t& in  = *in_data[0];
         tensor_t&       a   = *out_data[1];
-        std::vector<std::vector<cnn_size_t>>& max_idx =
+        std::vector<std::vector<serial_size_t>>& max_idx =
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         kernels::tiny_maxpool_kernel(in, a,
-            max_idx, *out2in_, layer_->parallelize());
+            max_idx, *out2in_, layer_->parallelize());*/
     }
 
     void maxpool(const std::vector<tensor_t*>& in_data,
                  const std::vector<tensor_t*>& out_data,
                  std::vector<tensor_t*>&       out_grad,
                  std::vector<tensor_t*>&       in_grad) override {
-        tensor_t&       prev_delta = *in_grad[0];
+        /*tensor_t&       prev_delta = *in_grad[0];
         tensor_t&       curr_delta = *out_grad[1];
-        std::vector<std::vector<cnn_size_t>>& max_idx =
+        std::vector<std::vector<serial_size_t>>& max_idx =
             (*max_pooling_layer_worker_storage_).out2inmax_;
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::tiny_maxpool_back_kernel(prev_delta, curr_delta,
-            max_idx, *in2out_,  layer_->parallelize());
+            max_idx, *in2out_,  layer_->parallelize());*/
     }
 
     void fully(const std::vector<tensor_t*>& in_data,
                std::vector<tensor_t*>&       out_data) override {
-        const tensor_t& in  = *in_data[0];
+        /*const tensor_t& in  = *in_data[0];
         const vec_t&    W   = (*in_data[1])[0];
         tensor_t&       a   = *out_data[1];
 
         kernels::tiny_fully_connected_kernel(*params_f_,
             in, W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-            a, layer_->parallelize());
+            a, layer_->parallelize());*/
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -368,7 +369,7 @@ class tiny_backend : public backend {
         const vec_t&    W  = (*in_data[1])[0];
         tensor_t&       a  = *out_data[1];
 
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_fully_connected_kernel(*params_f_,
                 in[i], W,  params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
                 a[i], layer_->parallelize());
@@ -390,7 +391,7 @@ class tiny_backend : public backend {
         tensor_t&       a    =  *out_data[1];
         tensor_t&       a_r  =  *out_data[2];
 
-        for (cnn_size_t i = 0; i < in.size(); i++) {
+        for (serial_size_t i = 0; i < in.size(); i++) {
             kernels::tiny_quantized_fully_connected_kernel(*params_f_,
                 in[i], W, b, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
@@ -403,7 +404,7 @@ class tiny_backend : public backend {
                const std::vector<tensor_t*>& out_data,
                std::vector<tensor_t*>&       out_grad,
                std::vector<tensor_t*>&       in_grad) override {
-        const tensor_t& prev_out   =  *in_data[0];
+        /*const tensor_t& prev_out   =  *in_data[0];
         const vec_t&    W          = (*in_data[1])[0];
         tensor_t&       dW         =  *in_grad[1];
         tensor_t&       db         =  *in_grad[2];
@@ -413,7 +414,7 @@ class tiny_backend : public backend {
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
         kernels::tiny_fully_connected_back_kernel(*params_f_, prev_out,
-            W, dW, prev_delta, curr_delta, db, layer_->parallelize());
+            W, dW, prev_delta, curr_delta, db, layer_->parallelize());*/
     }
 
     void fully_q(const std::vector<tensor_t*>& in_data,
@@ -430,7 +431,7 @@ class tiny_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        for (cnn_size_t i = 0; i < prev_out.size(); i++) {
+        for (serial_size_t i = 0; i < prev_out.size(); i++) {
             kernels::tiny_quantized_fully_connected_back_kernel(*params_f_, prev_out[i],
                 W, dW[i], prev_delta[i], curr_delta[i], db[i], layer_->parallelize());
         }
@@ -439,7 +440,7 @@ class tiny_backend : public backend {
 #endif
     }
 
-    backend_t type() const override { return backend_t::tiny_dnn; }
+    backend_t type() const override { return default_engine(); }
 
  private:
     /* Pointer to the convolution parameters */
@@ -451,8 +452,8 @@ class tiny_backend : public backend {
     conv_layer_worker_specific_storage* conv_layer_worker_storage_;
     deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
     max_pooling_layer_worker_specific_storage* max_pooling_layer_worker_storage_;
-    std::vector<std::vector<cnn_size_t>>* out2in_;
-    std::vector<cnn_size_t>* in2out_;
+    std::vector<std::vector<serial_size_t>>* out2in_;
+    std::vector<serial_size_t>* in2out_;
 
     /* Pointers to parent class functions */
     std::function<void(const tensor_t&)> copy_and_pad_input;

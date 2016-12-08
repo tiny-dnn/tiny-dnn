@@ -37,9 +37,9 @@ void construct_net(N& nn) {
     typedef convolutional_layer<activation::identity> conv;
     typedef max_pooling_layer<relu> pool;
 
-    const cnn_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
-    const cnn_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
-    const cnn_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
+    const serial_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
+    const serial_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
+    const serial_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
 
     nn << conv(32, 32, 5, 3, n_fmaps, padding::same)
        << pool(32, 32, n_fmaps, 2)
@@ -76,7 +76,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
 
     cout << "start learning" << endl;
 
-    progress_display disp((unsigned long)train_images.size());
+    progress_display disp(train_images.size());
     timer t;
     const int n_minibatch = 10;     ///< minibatch size
     const int n_train_epochs = 30;  ///< training duration
@@ -89,7 +89,7 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
         tiny_dnn::result res = nn.test(test_images, test_labels);
         log << res.num_success << "/" << res.num_total << endl;
 
-        disp.restart((unsigned long)train_images.size());
+        disp.restart(train_images.size());
         t.restart();
     };
 

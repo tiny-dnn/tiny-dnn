@@ -47,7 +47,7 @@
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
-#include "tiny_dnn/core/kernels/fully_connected_op_custom.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_internal.h"
 
 namespace tiny_dnn {
 
@@ -68,20 +68,15 @@ class FullyConnectedGradOp : public core::OpKernel {
         tensor_t& curr_delta = context.output_grad(1);
         tensor_t dummy; // need lvalue for non-const reference
 
-        // TODO(nyanp): Why we only need to initialize prev_delta ?
-
         // initialize outputs
-        //fill_tensor(dW, float_t(0));
-        //fill_tensor(db, float_t(0));
         fill_tensor(prev_delta, float_t(0));
-        //fill_tensor(curr_delta, float_t(0));
 
         // call the algorithm depending on the selected engine type
 
         const core::backend_t engine = context.engine();
 
-        if (engine == core::backend_t::tiny_dnn) {
-            kernels::fully_connected_op_custom(
+        if (engine == core::backend_t::internal) {
+            kernels::fully_connected_op_internal(
                 prev_out,
                 W[0],
                 dW,

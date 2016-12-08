@@ -27,7 +27,7 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#include "picotest/picotest.h"
+#include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn::activation;
@@ -49,8 +49,7 @@ using namespace tiny_dnn::activation;
 #include "test_lrn_layer.h"
 #include "test_batch_norm_layer.h"
 #include "test_nodes.h"
-// TODO(edgar): build apart GPU tests
-//#include "test_core.h"
+#include "test_core.h"
 #include "test_models.h"
 #include "test_slice_layer.h"
 #include "test_concat_layer.h"
@@ -66,8 +65,10 @@ using namespace tiny_dnn::activation;
 #include "test_caffe_converter.h"
 #endif
 
+#include "test_tensor.h"
 #include "test_image.h"
 
-int main(void) {
+int main(int argc, char **argv) {
+    ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

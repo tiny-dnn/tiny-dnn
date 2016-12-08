@@ -96,51 +96,28 @@ void load_validation_data(const string& validation_file,
   }
 }
 
-void test(const string &mode,
-          const string& model_file,
+void test(const string& model_file,
           const string& trained_file,
           const string& mean_file,
           const string& label_file,
-          const string& mode_file)
+          const string& img_file)
 {
     auto labels = get_label_list(label_file);
     auto net = create_net_from_caffe_prototxt(model_file);
     reload_weight_from_caffe_protobinary(trained_file, net.get());
-    
-    int channels = (*net)[0]->in_data_shape()[0].depth_;
+
+    // int channels = (*net)[0]->in_data_shape()[0].depth_;
     int width = (*net)[0]->in_data_shape()[0].width_;
     int height = (*net)[0]->in_data_shape()[0].height_;
 
+    std::vector<std::pair<std::string, int>> validation(1);
+    load_validation_data(img_file, &validation);
+
     auto mean = compute_mean(mean_file, width, height);
 
-    // archive the full caffe model (network, mean file and labels)
-    if (mode.compare("archive") == 0) {
-        std::ofstream ofs(mode_file, std::ios::binary | std::ios::out);
-        cereal::BinaryOutputArchive bo(ofs);
-        
-        net->to_archive(bo);
-    
-        bo(cereal::make_nvp("width", mean.width()),
-           cereal::make_nvp("height", mean.height()),
-           cereal::make_nvp("depth", mean.depth()),
-           cereal::make_nvp("type", mean.type()),
-           cereal::make_nvp("data", mean.to_rgb<float>()),
-           cereal::make_nvp("labels", labels)
-        );
-        
-        cout << "archive written to " << mode_file << endl;
-        return;
-    } else if (mode.compare("test") != 0) {
-        throw nn_error("Unknown mode '" + mode + "' specified");
-    }
-    
-    std::vector<std::pair<std::string, int>> validation(1);
-    load_validation_data(mode_file, &validation);
-
-    
     for (size_t i = 0; i < validation.size(); ++i) {
 
-      image<float> img(mode_file, image_type::bgr);
+      image<float> img(img_file, image_type::bgr);
 
       vec_t vec;
 
@@ -169,16 +146,14 @@ void test(const string &mode,
 
 int main(int argc, char** argv) {
     int arg_channel = 1;
-    
-    string mode = argv[arg_channel++];
     string model_file = argv[arg_channel++];
     string trained_file = argv[arg_channel++];
     string mean_file = argv[arg_channel++];
     string label_file = argv[arg_channel++];
-    string mode_file = argv[arg_channel++];
-    
+    string img_file = argv[arg_channel++];
+
     try {
-        test(mode, model_file, trained_file, mean_file, label_file, mode_file);
+        test(model_file, trained_file, mean_file, label_file, img_file);
     } catch (const nn_error& e) {
         cout << e.what() << endl;
     }

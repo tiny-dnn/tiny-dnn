@@ -30,6 +30,8 @@
 #include "tiny_dnn/network.h"
 #include "tiny_dnn/nodes.h"
 
+#include "tiny_dnn/core/framework/tensor.h"
+
 #include "tiny_dnn/core/framework/device.h"
 #include "tiny_dnn/core/framework/program_manager.h"
 
@@ -69,6 +71,7 @@
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
 #include "tiny_dnn/util/serialization_helper.h"
+#include "tiny_dnn/util/deserialization_helper.h"
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf

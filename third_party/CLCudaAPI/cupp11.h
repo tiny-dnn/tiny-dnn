@@ -12,7 +12,7 @@
 // Portability here means that a similar header exists for OpenCL with the same classes and
 // interfaces. In other words, moving from the CUDA API to the OpenCL API becomes a one-line change.
 //
-// This is version 6.0 of CLCudaAPI.
+// This is version 8.0 of CLCudaAPI.
 //
 // =================================================================================================
 //
@@ -138,6 +138,12 @@ class Platform {
  private:
   size_t platform_id_;
 };
+
+// Retrieves a vector with all platforms. Note that there is just one platform in CUDA.
+inline std::vector<Platform> GetAllPlatforms() {
+  auto all_platforms = std::vector<Platform>{ Platform(size_t{0}) };
+  return all_platforms;
+}
 
 // =================================================================================================
 
@@ -279,12 +285,22 @@ class Program {
       program_(new nvrtcProgram, [](nvrtcProgram* p) { CheckError(nvrtcDestroyProgram(p));
                                                        delete p; }),
       source_(std::move(source)),
-      source_ptr_(&source_[0]) {
+      source_ptr_(&source_[0]),
+      from_binary_(false) {
     CheckError(nvrtcCreateProgram(program_.get(), source_ptr_, nullptr, 0, nullptr, nullptr));
+  }
+
+  // PTX-based constructor
+  explicit Program(const Device &device, const Context &context, const std::string& binary):
+      program_(nullptr), // not used
+      source_(binary),
+      source_ptr_(&source_[0]), // not used
+      from_binary_(true) {
   }
 
   // Compiles the device program and returns whether or not there where any warnings/errors
   BuildStatus Build(const Device &, std::vector<std::string> &options) {
+    if (from_binary_) { return BuildStatus::kSuccess; }
     auto raw_options = std::vector<const char*>();
     for (const auto &option: options) {
       raw_options.push_back(option.c_str());
@@ -304,6 +320,7 @@ class Program {
 
   // Retrieves the warning/error message from the compiler (if any)
   std::string GetBuildInfo(const Device &) const {
+    if (from_binary_) { return std::string{}; }
     auto bytes = size_t{0};
     CheckError(nvrtcGetProgramLogSize(*program_, &bytes));
     auto result = std::string{};
@@ -314,6 +331,7 @@ class Program {
 
   // Retrieves an intermediate representation of the compiled program (i.e. PTX)
   std::string GetIR() const {
+    if (from_binary_) { return source_; } // holds the PTX
     auto bytes = size_t{0};
     CheckError(nvrtcGetPTXSize(*program_, &bytes));
     auto result = std::string{};
@@ -328,6 +346,7 @@ class Program {
   std::shared_ptr<nvrtcProgram> program_;
   std::string source_;
   const char* source_ptr_;
+  const bool from_binary_;
 };
 
 // =================================================================================================

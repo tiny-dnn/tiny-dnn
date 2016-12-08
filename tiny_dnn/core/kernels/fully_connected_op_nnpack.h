@@ -26,6 +26,7 @@
 */
 #pragma once
 
+#include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/params/fully_params.h"
 
 namespace tiny_dnn {
@@ -39,9 +40,12 @@ fully_connected_op_nnpack(const tensor_t&     in_data,
                           const fully_params& params,
                           const bool          layer_parallelize) {
 #ifdef CNN_USE_NNPACK
-    const float* kernel_ptr = reinterpret_cast<const float*>(&W[0]);
-    const float* input_ptr  = reinterpret_cast<const float*>(&in_data[0]);
-    float*       output_ptr = reinterpret_cast<float*>(&out_data[0]);
+    // call singleton to initialize NNPACK
+    NNPackInitializer::getInstance().initialize();
+
+    const float* kernel_ptr = W.data();
+    const float* input_ptr  = in_data[0].data();
+    float*       output_ptr = out_data[0].data();
 
     // TODO: embed it into a class
     const size_t num_mkl_threads = 1;
@@ -63,11 +67,9 @@ fully_connected_op_nnpack(const tensor_t&     in_data,
     // TODO: embed it into a class
     pthreadpool_destroy(threadpool);
 
-    // TODO: find a proper way to do this
     if (params.has_bias_) {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
-            // TODO(edgar): revise this
-            // a[i] += b[i];
+            output_ptr[i] += bias[i];
         });
     }
 #else

@@ -46,7 +46,7 @@ public:
     typedef feedforward_layer<Activation> Base;
 
     lrn_layer(const shape3d& in_shape,
-              cnn_size_t     local_size,
+              serial_size_t     local_size,
               float_t        alpha  = 1.0,
               float_t        beta   = 5.0,
               norm_region    region = norm_region::across_channels)
@@ -67,7 +67,7 @@ public:
     * @param beta        [in] the scaling parameter (same to caffe's LRN)
     **/
     lrn_layer(layer*      prev,
-              cnn_size_t  local_size,
+              serial_size_t  local_size,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
@@ -81,20 +81,20 @@ public:
      * @param alpha       [in] the scaling parameter (same to caffe's LRN)
      * @param beta        [in] the scaling parameter (same to caffe's LRN)
      **/
-    lrn_layer(cnn_size_t  in_width,
-              cnn_size_t  in_height,
-              cnn_size_t  local_size,
-              cnn_size_t  in_channels,
+    lrn_layer(serial_size_t  in_width,
+              serial_size_t  in_height,
+              serial_size_t  local_size,
+              serial_size_t  in_channels,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
         : lrn_layer(shape3d{in_width, in_height, in_channels}, local_size, alpha, beta, region){}
 
-    size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return size_;
     }
 
-    size_t fan_out_size() const override {
+    serial_size_t fan_out_size() const override {
         return size_;
     }
 
@@ -106,7 +106,7 @@ public:
         return { in_shape_, in_shape_ };
     }
 
-    std::string layer_type() const override { return "norm"; }
+    std::string layer_type() const override { return "lrn"; }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
@@ -144,7 +144,7 @@ public:
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<lrn_layer> & construct) {
         shape3d in_shape;
-        cnn_size_t size;
+        serial_size_t size;
         float_t alpha, beta;
         norm_region region;
 
@@ -170,18 +170,18 @@ private:
     void forward_across(const vec_t& in, vec_t& out) {
         std::fill(in_square_.begin(), in_square_.end(), float_t(0));
 
-        for (cnn_size_t i = 0; i < size_ / 2; i++) {
-            cnn_size_t idx = in_shape_.get_index(0, 0, i);
+        for (serial_size_t i = 0; i < size_ / 2; i++) {
+            serial_size_t idx = in_shape_.get_index(0, 0, i);
             add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
         }
 
-        cnn_size_t head = size_ / 2;
+        serial_size_t head = size_ / 2;
         long tail = static_cast<long>(head) - static_cast<long>(size_);
-        cnn_size_t channels = in_shape_.depth_;
-        const cnn_size_t wxh = in_shape_.area();
+        serial_size_t channels = in_shape_.depth_;
+        const serial_size_t wxh = in_shape_.area();
         const float_t alpha_div_size = alpha_ / size_;
 
-        for (cnn_size_t i = 0; i < channels; i++, head++, tail++) {
+        for (serial_size_t i = 0; i < channels; i++, head++, tail++) {
             if (head < channels)
                 add_square_sum(&in[in_shape_.get_index(0, 0, head)], wxh, &in_square_[0]);
 
@@ -190,7 +190,7 @@ private:
 
             float_t *dst = &out[in_shape_.get_index(0, 0, i)];
             const float_t *src = &in[in_shape_.get_index(0, 0, i)];
-            for (cnn_size_t j = 0; j < wxh; j++)
+            for (serial_size_t j = 0; j < wxh; j++)
                 dst[j] = src[j] * std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
         }
     }
@@ -201,19 +201,19 @@ private:
         throw nn_error("not implemented");
     }
 
-    void add_square_sum(const float_t *src, cnn_size_t size, float_t *dst) {
-        for (cnn_size_t i = 0; i < size; i++)
+    void add_square_sum(const float_t *src, serial_size_t size, float_t *dst) {
+        for (serial_size_t i = 0; i < size; i++)
             dst[i] += src[i] * src[i];
     }
 
-    void sub_square_sum(const float_t *src, cnn_size_t size, float_t *dst) {
-        for (cnn_size_t i = 0; i < size; i++)
+    void sub_square_sum(const float_t *src, serial_size_t size, float_t *dst) {
+        for (serial_size_t i = 0; i < size; i++)
             dst[i] -= src[i] * src[i];
     }
 
     shape3d in_shape_;
 
-    cnn_size_t size_;
+    serial_size_t size_;
     float_t alpha_, beta_;
     norm_region region_;
 

@@ -39,8 +39,8 @@ inline void vector_div(vec_t& x, float_t denom) {
 /** 
  * calculate mean/variance across channels
  */
-inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t channels, vec_t *mean, vec_t *variance) {
-    cnn_size_t num_examples = in.size();
+inline void moments(const tensor_t& in, serial_size_t spatial_dim, serial_size_t channels, vec_t *mean, vec_t *variance) {
+    serial_size_t num_examples = static_cast<serial_size_t>(in.size());
 
     assert(in[0].size() == spatial_dim * channels);
 
@@ -53,12 +53,12 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
     }
 
     // calculate mean
-    for (cnn_size_t i = 0; i < num_examples; i++) {
-        for (cnn_size_t j = 0; j < channels; j++) {
+    for (serial_size_t i = 0; i < num_examples; i++) {
+        for (serial_size_t j = 0; j < channels; j++) {
             float_t*       pmean = &mean->at(j);
             const float_t* X = &in[i][j*spatial_dim];
 
-            for (cnn_size_t k = 0; k < spatial_dim; k++) {
+            for (serial_size_t k = 0; k < spatial_dim; k++) {
                 *pmean += *X++;
             }
         }
@@ -68,13 +68,13 @@ inline void moments(const tensor_t& in, cnn_size_t spatial_dim, cnn_size_t chann
 
     // calculate variance
     if (variance != nullptr) {
-        for (cnn_size_t i = 0; i < num_examples; i++) {
-            for (cnn_size_t j = 0; j < channels; j++) {
+        for (serial_size_t i = 0; i < num_examples; i++) {
+            for (serial_size_t j = 0; j < channels; j++) {
                 float_t* pvar = &variance->at(j);
                 const float_t* X = &in[i][j*spatial_dim];
                 float_t        EX = (*mean)[j];
 
-                for (cnn_size_t k = 0; k < spatial_dim; k++) {
+                for (serial_size_t k = 0; k < spatial_dim; k++) {
                     *pvar += pow(*X++ - EX, (float_t)2.0);
                 }
             }

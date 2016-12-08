@@ -50,10 +50,14 @@ static void construct_net(network<sequential>& nn) {
     core::backend_t backend_type = core::default_engine();
 
     // construct nets
+    //
+    // C : convolution
+    // S : sub-sampling
+    // F : fully connected
     nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
             padding::valid, true, 1, 1, backend_type)
        << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-in
+       << convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-out
             connection_table(tbl, 6, 16),
             padding::valid, true, 1, 1, backend_type)
        << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
@@ -77,18 +81,18 @@ static void train_lenet(const std::string& data_dir_path) {
     std::vector<label_t> train_labels, test_labels;
     std::vector<vec_t> train_images, test_images;
 
-    parse_mnist_labels(data_dir_path+"/train-labels.idx1-ubyte",
+    parse_mnist_labels(data_dir_path + "/train-labels.idx1-ubyte",
                        &train_labels);
-    parse_mnist_images(data_dir_path+"/train-images.idx3-ubyte",
+    parse_mnist_images(data_dir_path + "/train-images.idx3-ubyte",
                        &train_images, -1.0, 1.0, 2, 2);
-    parse_mnist_labels(data_dir_path+"/t10k-labels.idx1-ubyte",
+    parse_mnist_labels(data_dir_path + "/t10k-labels.idx1-ubyte",
                        &test_labels);
-    parse_mnist_images(data_dir_path+"/t10k-images.idx3-ubyte",
+    parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
                        &test_images, -1.0, 1.0, 2, 2);
 
     std::cout << "start training" << std::endl;
 
-    progress_display disp((unsigned long)train_images.size());
+    progress_display disp(static_cast<unsigned long>(train_images.size()));
     timer t;
     int minibatch_size = 10;
     int num_epochs = 30;
@@ -101,7 +105,7 @@ static void train_lenet(const std::string& data_dir_path) {
         tiny_dnn::result res = nn.test(test_images, test_labels);
         std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-        disp.restart((unsigned long)train_images.size());
+        disp.restart(static_cast<unsigned long>(train_images.size()));
         t.restart();
     };
 
