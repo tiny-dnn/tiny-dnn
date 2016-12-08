@@ -48,6 +48,12 @@ fully_connected_op_avx(const tensor_t& in_data,
         params,
         layer_parallelize);
 #else
+    CNN_UNREFERENCED_PARAMETER(in_data);
+    CNN_UNREFERENCED_PARAMETER(W);
+    CNN_UNREFERENCED_PARAMETER(bias);
+    CNN_UNREFERENCED_PARAMETER(out_data);
+    CNN_UNREFERENCED_PARAMETER(params);
+    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
     throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
@@ -73,6 +79,14 @@ fully_connected_op_avx(const tensor_t& prev_out,
         params,
         layer_parallelize);
 #else
+    CNN_UNREFERENCED_PARAMETER(prev_out);
+    CNN_UNREFERENCED_PARAMETER(W);
+    CNN_UNREFERENCED_PARAMETER(dW);
+    CNN_UNREFERENCED_PARAMETER(db);
+    CNN_UNREFERENCED_PARAMETER(curr_delta);
+    CNN_UNREFERENCED_PARAMETER(prev_delta);
+    CNN_UNREFERENCED_PARAMETER(params);
+    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
     throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 

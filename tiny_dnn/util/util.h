@@ -412,6 +412,8 @@ inline void printAvailableDevice(const serial_size_t platform_id,
     printf(" > Memory clock rate            %zu MHz\n", device.MemoryClock());
     printf(" > Memory bus width             %zu bits\n", device.MemoryBusWidth());
 #else
+    CNN_UNREFERENCED_PARAMETER(platform_id);
+    CNN_UNREFERENCED_PARAMETER(device_id);
     nn_warn("TinyDNN was not build with OpenCL or CUDA support.");
 #endif
 }

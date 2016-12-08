@@ -73,6 +73,12 @@ fully_connected_op_nnpack(const tensor_t&     in_data,
         });
     }
 #else
+    CNN_UNREFERENCED_PARAMETER(in_data);
+    CNN_UNREFERENCED_PARAMETER(W);
+    CNN_UNREFERENCED_PARAMETER(bias);
+    CNN_UNREFERENCED_PARAMETER(out_data);
+    CNN_UNREFERENCED_PARAMETER(params);
+    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
     throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
