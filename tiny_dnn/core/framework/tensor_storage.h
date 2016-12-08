@@ -71,10 +71,8 @@ static inline size_t product(Container &c) {
 template<typename U = float_t,
 	 typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {
-    typedef typename std::vector<U, aligned_allocator < U, 64>>::
-    const_iterator ConstDataIter;
-    typedef typename std::vector<U, aligned_allocator < U, 64>>::
-    iterator DataIter;
+    typedef typename std::vector<U, Allocator>::iterator DataIter;
+    typedef typename std::vector<U, Allocator>::const_iterator ConstDataIter;
  public:
     /**
      * Initializes an empty tensor storage.
@@ -106,11 +104,10 @@ class TensorStorage {
      * Sychronizes data on host and device
      */
     void sync() {
-        if (data_dirty_) {
-            if (data_is_on_host_)
-                toDevice();
-            else
-                fromDevice();
+        if (data_dirty_ && data_is_on_host_) {
+            toDevice();
+	} else {
+            fromDevice();
         }
     }
 
@@ -178,6 +175,7 @@ class TensorStorage {
             data_dirty_ = false;
     }
 
+    /** Vector containing the host tensor data in the stack */
     std::vector<U, Allocator> host_data_;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)

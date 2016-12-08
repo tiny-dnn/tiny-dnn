@@ -94,9 +94,8 @@ class Tensor {
      * @return
      */
     Tensor() {
-        storage_pointer_ = std::make_shared<TensorStorageType>();
-        offset_ = 0;
-        size_ = 0;
+        offset_ = size_ = size_t(0);
+        storage_ptr_ = std::make_shared<TensorStorageType>();
     }
 
     /**
@@ -107,10 +106,10 @@ class Tensor {
      * @return
      */
     explicit Tensor(const std::array<size_t, kDimensions> &shape) {
-        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
-        offset_ = 0;
-        size_ = product(shape);
+        offset_ = size_t(0);
         shape_ = shape;
+        size_ = product(shape);
+        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
 
     /**
@@ -121,10 +120,10 @@ class Tensor {
      * @return
      */
     explicit Tensor(const std::vector<size_t> &shape) {
-        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
-        offset_ = 0;
-        size_ = product(shape);
+        offset_ = size_t(0);
         shape_ = shape;
+        size_ = product(shape);
+        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
 
     /**
@@ -135,11 +134,10 @@ class Tensor {
      * @return
      */
     explicit Tensor(std::initializer_list<size_t> const &shape) {
-
-        storage_pointer_ = std::make_shared<TensorStorageType>(shape);
-        offset_ = 0;
+        offset_ = size_t(0);
         size_ = product(shape);
         std::copy(shape.begin(), shape.end(), shape_.begin());
+        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
 
     /**
@@ -153,10 +151,10 @@ class Tensor {
     explicit Tensor(const TensorStoragePointer storage,
                     const size_t offset,
                     const std::array<size_t, kDimensions> &shape) {
-        storage_pointer_ = storage;
         offset_ = offset;
-        size_ = product(shape);
         shape_ = shape;
+        size_ = product(shape);
+        storage_ptr_ = storage;
     }
 
     ~Tensor() = default;
@@ -256,7 +254,7 @@ class Tensor {
 
     template<typename... Args>
     UPtr host_ptr(const Args... args) const {
-    return &(*host_iter(args...));
+        return &(*host_iter(args...));
     }
 
     template<typename... Args>
@@ -264,16 +262,16 @@ class Tensor {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         static_assert(sizeof...(args) == kDimensions,
                       "Wrong number of dimensions");
-        return storage_pointer_->host_data(offset_) + host_pos(args...);
+        return storage_ptr_->host_data(offset_) + host_pos(args...);
     }
 
     StorageIterator host_begin() const {
-        return storage_pointer_->host_data(offset_);
+        return storage_ptr_->host_data(offset_);
     }
 
     StorageIterator host_data() const {
         //fromDevice();
-        return storage_pointer_->host_data(offset_);
+        return storage_ptr_->host_data(offset_);
     }
 
     /*U* mutable_host_data() {
@@ -301,8 +299,8 @@ class Tensor {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //data_is_on_host_ = true;
         //data_dirty_ = true;
-        std::fill(storage_pointer_->host_data(offset_),
-                  storage_pointer_->host_data(offset_)+calcSize(),
+        std::fill(storage_ptr_->host_data(offset_),
+                  storage_ptr_->host_data(offset_) + calcSize(),
                   value);
     }
 
@@ -311,17 +309,19 @@ class Tensor {
     void reshape(const std::array<size_t, kDimensions> &sz) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //No size change for reshape
-        if (calcSize() != product(sz))
+        if (calcSize() != product(sz)) {
             throw nn_error("Reshape to Tensor of different size.");
+	}
         shape_ = sz;
 
     }
 
     void resize(const std::array<size_t, kDimensions> &sz) {
-        if (offset_ != 0 || size_ != storage_pointer_->size())
+        if (offset_ != 0 || size_ != storage_ptr_->size()) {
             throw nn_error("Resize of partial view is impossible.");
-        storage_pointer_->resize(std::vector<size_t>(sz.begin(), sz.end()));
-        shape_=sz;
+	}
+        shape_ = sz;
+        storage_ptr_->resize(std::vector<size_t>(sz.begin(), sz.end()));
     }
     
     size_t size() const {
@@ -329,7 +329,7 @@ class Tensor {
     }
 
     Tensor operator[](size_t index) {
-        return Tensor(storage_pointer_,
+        return Tensor(storage_ptr_,
                       offset_ + index * size_ / shape_[0],
                       std::array<size_t, kDimensions - 1>(shape_.begin() + 1,
                                                           shape_.end()));
@@ -351,8 +351,7 @@ private:
     size_t size_;
 
     /* pointer to TensorStorage */
-    TensorStoragePointer storage_pointer_;
-
+    TensorStoragePointer storage_ptr_;
 };
 
 }  // namespace tiny_dnn
