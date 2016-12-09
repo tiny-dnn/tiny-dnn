@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define NO_STRICT
 #define CNN_USE_CAFFE_CONVERTER
 #include "tiny_dnn/tiny_dnn.h"
+#include "tiny_dnn/models/archive.h"
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
@@ -107,64 +108,34 @@ void test(const string &mode,
     auto net = create_net_from_caffe_prototxt(model_file);
     reload_weight_from_caffe_protobinary(trained_file, net.get());
     
-    int channels = (*net)[0]->in_data_shape()[0].depth_;
-    int width = (*net)[0]->in_data_shape()[0].width_;
-    int height = (*net)[0]->in_data_shape()[0].height_;
+    auto mean = compute_mean(mean_file,
+                             (*net)[0]->in_data_shape()[0].width_,
+                             (*net)[0]->in_data_shape()[0].height_);
 
-    auto mean = compute_mean(mean_file, width, height);
-
+    models::archive archive(*net, mean, labels);
+    
     // archive the full caffe model (network, mean file and labels)
     if (mode.compare("archive") == 0) {
-        std::ofstream ofs(mode_file, std::ios::binary | std::ios::out);
-        cereal::BinaryOutputArchive bo(ofs);
-        
-        net->to_archive(bo);
-    
-        bo(cereal::make_nvp("width", mean.width()),
-           cereal::make_nvp("height", mean.height()),
-           cereal::make_nvp("depth", mean.depth()),
-           cereal::make_nvp("type", mean.type()),
-           cereal::make_nvp("data", mean.to_rgb<float>()),
-           cereal::make_nvp("labels", labels)
-        );
-        
+
+        archive.save(mode_file);
         cout << "archive written to " << mode_file << endl;
         return;
     } else if (mode.compare("test") != 0) {
         throw nn_error("Unknown mode '" + mode + "' specified");
     }
-    
+
     std::vector<std::pair<std::string, int>> validation(1);
     load_validation_data(mode_file, &validation);
-
     
     for (size_t i = 0; i < validation.size(); ++i) {
 
-      image<float> img(mode_file, image_type::bgr);
+        image<float> img(mode_file, image_type::bgr);
+        auto predictions(archive.predict(img));
 
-      vec_t vec;
-
-      preprocess(img, mean, width, height, &vec);
-
-      clock_t begin = clock();
-      
-      auto result = net->predict(vec);
-
-      clock_t end = clock();
-      double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-      cout <<"Elapsed time(s): " << elapsed_secs << endl;
-
-      vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
-
-      int top_n = 5;
-      partial_sort(sorted.begin(), sorted.begin()+top_n, sorted.end(), greater<tiny_dnn::float_t>());
-
-      for (int i = 0; i < top_n; i++) {
-          size_t idx = distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
-          cout << labels[idx] << "," << sorted[i] << endl;
-      }
+        for (auto prediction : predictions) {
+          cout << prediction.label << "," << prediction.confidence << endl;
+        }
     }
-
 }
 
 int main(int argc, char** argv) {
