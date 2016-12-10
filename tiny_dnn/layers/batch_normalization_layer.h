@@ -126,9 +126,9 @@ public:
                 delta_dot_y[i][j] *= curr_delta[i][j];
             }
         }
-        moments(delta_dot_y, in_spatial_size_, in_channels_, &mean_delta_dot_y, nullptr);
-        moments(curr_delta, in_spatial_size_, in_channels_, &mean_delta, nullptr);
  
+        moments(delta_dot_y, in_spatial_size_, in_channels_, mean_delta_dot_y);
+        moments(curr_delta, in_spatial_size_, in_channels_, mean_delta);
         // if Y = (X-mean(X))/(sqrt(var(X)+eps)), then
         //
         // dE(Y)/dX =
@@ -152,32 +152,25 @@ public:
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
         std::vector<tensor_t*>& out_data) override {
-        vec_t* mean = nullptr;
-        vec_t* variance = nullptr;
+        vec_t& mean = (phase_ == net_phase::train) ? mean_current_: mean_;
+        vec_t& variance = (phase_ == net_phase::train) ? variance_current_ : variance_;
         tensor_t& in = *in_data[0];
         tensor_t& out = *out_data[0];
 
         if (phase_ == net_phase::train) {
             // calculate mean/variance from this batch in train phase
-            mean = &mean_current_;
-            variance = &variance_current_;
             moments(*in_data[0], in_spatial_size_, in_channels_, mean, variance);
-        }
-        else {
-            // use stored mean/variance in test phase
-            mean = &mean_;
-            variance = &variance_;
         }
 
         // y = (x - mean) ./ sqrt(variance + eps)
-        calc_stddev(*variance);
+        calc_stddev(variance);
 
         for_i(parallelize_, in_data[0]->size(), [&](int i) {
             const float_t* inptr  = &in[i][0];
             float_t*       outptr = &out[i][0];
 
             for (serial_size_t j = 0; j < in_channels_; j++) {
-                float_t m = (*mean)[j];
+                float_t m = mean[j];
 
                 for (serial_size_t k = 0; k < in_spatial_size_; k++) {
                     *outptr++ = (*inptr++ - m) / stddev_[j];
