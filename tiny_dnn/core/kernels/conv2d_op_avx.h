@@ -254,7 +254,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
 
     if (out.height_ == 1 && out.width_ == 1) {
         const double* pw = &W[0];
-        for (size_t o = 0; o < out.depth_; ++o) {
+        for (serial_size_t o = 0; o < out.depth_; ++o) {
             __m256d sum0 = _mm256_setzero_pd();
             __m256d sum1 = _mm256_setzero_pd();
             __m256d sum2 = _mm256_setzero_pd();

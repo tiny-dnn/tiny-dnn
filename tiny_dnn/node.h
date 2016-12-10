@@ -113,7 +113,8 @@ class edge {
 
     void clear_grads() {
 		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-			std::fill(grad_[sample].begin(), grad_[sample].end(), (float_t)0);
+		    auto& g = grad_[sample];
+		    vectorize::fill(&g[0], g.size(), (float_t)0);
 		}
     }
 

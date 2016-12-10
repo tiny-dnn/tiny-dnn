@@ -108,7 +108,10 @@ inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
 // in c : ( c7, c6, c5, c4, c3, c2, c1, c0 )
 // in d : ( d7, d6, d5, d4, d3, d2, d1, d0 )
 // out  : ( dsum, csum, bsum, asum )
-inline __m128 hsum4x256_ps(__m256 a, __m256 b, __m256 c, __m256 d) {
+inline __m128 hsum4x256_ps(const __m256& a,
+                           const __m256& b,
+                           const __m256& c,
+                           const __m256& d) {
 
     // (b3,b2,b1,b0, a3,a2,a1,a0)
     __m256 w = _mm256_permute2f128_ps(a, b, 0x20);
