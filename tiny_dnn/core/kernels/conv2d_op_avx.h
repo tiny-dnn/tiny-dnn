@@ -168,7 +168,6 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                             __m256 i2 = _mm256_loadu_ps(pi2);
                             __m256 i3 = _mm256_loadu_ps(pi3);
                             __m256 i4 = _mm256_loadu_ps(pi4);
-                            __m128 sum = _mm_loadu_ps(ppa2);
                             dst0 = _mm256_mul_ps(w0a, i0);
                             dst1 = _mm256_mul_ps(w0b, i0);
                             dst2 = _mm256_mul_ps(w0c, i0);
@@ -187,12 +186,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                             dst3 = madd256_ps(w3d, i3, dst3);
                             dst0 = madd256_ps(w4a, i4, dst0);
                             dst1 = madd256_ps(w4b, i4, dst1);
-                            __m128 hsum01 = hsum2x256_ps(dst0, dst1);
                             dst2 = madd256_ps(w4c, i4, dst2);
                             dst3 = madd256_ps(w4d, i4, dst3);
-                            __m128 hsum23 = hsum2x256_ps(dst2, dst3);
-                            __m128 sum2 = _mm_castpd_ps(_mm_unpacklo_pd(_mm_castps_pd(hsum01), _mm_castps_pd(hsum23)));
-                            sum = _mm_add_ps(sum, sum2);
+                            __m128 sum = _mm_loadu_ps(ppa2);
+                            __m128 hsum0123 = hsum4x256_ps(dst0, dst1, dst2, dst3);
+                            sum = _mm_add_ps(sum, hsum0123);
                             _mm_storeu_ps(ppa2, sum);
                             pi0 += 4;
                             pi1 += 4;

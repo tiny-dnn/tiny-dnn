@@ -102,6 +102,92 @@ inline __m128 hsum2x256_ps(__m256 a, __m256 b) {
     return ret;
 }
 
+// Horizontally add elements of each __m256 type arguments at once
+// in a : ( a7, a6, a5, a4, a3, a2, a1, a0 )
+// in b : ( b7, b6, b5, b4, b3, b2, b1, b0 )
+// in c : ( c7, c6, c5, c4, c3, c2, c1, c0 )
+// in d : ( d7, d6, d5, d4, d3, d2, d1, d0 )
+// out  : ( dsum, csum, bsum, asum )
+inline __m128 hsum4x256_ps(__m256 a, __m256 b, __m256 c, __m256 d) {
+
+    // (b3,b2,b1,b0, a3,a2,a1,a0)
+    __m256 w = _mm256_permute2f128_ps(a, b, 0x20);
+    // (b7,b6,b5,b4, a7,a6,a5,a4)
+    __m256 x = _mm256_permute2f128_ps(a, b, 0x31);
+    // (d3,d2,d1,d0, c3,c2,c1,c0)
+    __m256 y = _mm256_permute2f128_ps(c, d, 0x20);
+    // (d7,d6,d5,d4, c7,c6,c5,c4)
+    __m256 z = _mm256_permute2f128_ps(c, d, 0x31);
+    
+    // (b3,b2,b1,b0, a3,a2,a1,a0)
+    // (b7,b6,b5,b4, a7,a6,a5,a4)
+    w = _mm256_add_ps(w, x);
+    // (-,-,b3,b2, -,-,a3,a2)
+    // (-,-,b7,b6, -,-,a7,a6)
+    x = _mm256_permute_ps(w, _MM_SHUFFLE(3, 2, 3, 2));
+    // (-,-,b1,b0, -,-,a1,a0)
+    // (-,-,b5,b4, -,-,a5,a4)
+    // (-,-,b3,b2, -,-,a3,a2)
+    // (-,-,b7,b6, -,-,a7,a6)
+    w = _mm256_add_ps(w, x);
+    
+    // (d3,d2,d1,d0, c3,c2,c1,c0)
+    // (d7,d6,d5,d4, c7,c6,c5,c4)
+    y = _mm256_add_ps(y, z);
+    // (-,-,d3,d2, -,-,c3,c2)
+    // (-,-,d7,d6, -,-,c7,c6)
+    z = _mm256_permute_ps(y, _MM_SHUFFLE(3, 2, 3, 2));
+    // (-,-,d1,d0, -,-,c1,c0)
+    // (-,-,d5,d4, -,-,c5,c4)
+    // (-,-,d3,d2, -,-,c3,c2)
+    // (-,-,d7,d6, -,-,c7,c6)
+    z = _mm256_add_ps(y, z);
+    
+    // d1,d0,b1,b0, c1,c0,a1,a0)
+    // d5,d4,b5,b4, c5,c4,a5,a4)
+    // d3,d2,b3,b2, c3,c2,a3,a2)
+    // d7,d6,b7,b6, c7,c6,a7,a6)
+    w = _mm256_castpd_ps(_mm256_unpacklo_pd(_mm256_castps_pd(w), _mm256_castps_pd(z)));
+    
+    // (d0,d1,b0,b1, c0,c1,a0,a1)
+    // (d4,d5,b4,b5, c4,c5,a4,a5)
+    // (d2,d3,b2,b3, c2,c3,a2,a3)
+    // (d6,d7,b6,b7, c6,c7,a6,a7)
+    x = _mm256_permute_ps(w, _MM_SHUFFLE(2, 3, 0, 1));
+    
+    // (d1,d1,b1,b1, c1,c1,a1,a1)
+    // (d5,d5,b5,b5, c5,c5,a5,a5)
+    // (d3,d3,b3,b3, c3,c3,a3,a3)
+    // (d7,d7,b7,b7, c7,c7,a7,a7)
+    // (d0,d0,b0,b0, c0,c0,a0,a0)
+    // (d4,d4,b4,b4, c4,c4,a4,a4)
+    // (d2,d2,b2,b2, c2,c2,a2,a2)
+    // (d6,d6,b6,b6, c6,c6,a6,a6)
+    w = _mm256_add_ps(w, x);
+
+    // (d1,d1,b1,b1)
+    // (d5,d5,b5,b5)
+    // (d3,d3,b3,b3)
+    // (d7,d7,b7,b7)
+    // (d0,d0,b0,b0)
+    // (d4,d4,b4,b4)
+    // (d2,d2,b2,b2)
+    // (d6,d6,b6,b6)
+    __m128 upper = _mm256_extractf128_ps(w, 1);
+
+    // (d1,c1,b1,a1)
+    // (d5,c5,b5,a5)
+    // (d3,c3,b3,a3)
+    // (d7,c7,b7,a7)
+    // (d0,c0,b0,a0)
+    // (d4,c4,b4,a4)
+    // (d2,c2,b2,a2)
+    // (d6,c6,b6,a6)
+    __m128 ret = _mm_blend_ps(_mm256_castps256_ps128(w), upper, 0x0A /* 0b1010 */);
+    
+    return ret;
+}
+
 inline __m128d hsum256_pd(__m256d x) {
     // hiDual = ( x3, x2 )
     const __m128d hiDual = _mm256_extractf128_pd(x, 1);
