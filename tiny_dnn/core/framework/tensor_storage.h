@@ -68,6 +68,20 @@ static inline size_t product(Container &c) {
                            std::multiplies<size_t>());
 }
 
+template <typename C1, typename C2>
+static inline size_t compute_offset(const C1 &c1, const C2 &c2) {
+    size_t res = 0, count = 1, tmp = 0;
+    for (auto it = std::begin(c1); it != std::end(c1); ++it) {
+	tmp = 1;
+	for (size_t i = count; i < c2.size(); ++i) {
+            tmp *= c2[i];
+	}
+	res += ((*it) * tmp);
+	count++;
+    }
+    return res;
+}
+
 template<typename U = float_t,
          typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {

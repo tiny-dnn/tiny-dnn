@@ -140,23 +140,6 @@ class Tensor {
         storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
 
-    /**
-     * Constructor that accepts a pointer to existing TensorStorage, together
-     * with shape and offset.
-     * @param storage pointer to TensorStorage
-     * @param offset offset from first element of storage
-     * @param shape shape of the Tensor
-     * @return
-     */
-    explicit Tensor(const TensorStoragePointer storage,
-                    const size_t offset,
-                    const std::array<size_t, kDimensions> &shape) {
-        offset_ = offset;
-        shape_ = shape;
-        size_ = product(shape);
-        storage_ptr_ = storage;
-    }
-
     ~Tensor() = default;
 
     Tensor(const Tensor&other) { //TODO(Randl):deep copy
@@ -295,13 +278,14 @@ class Tensor {
     }
 #endif
 
-    void fill(U value) {
+    Tensor& fill(U value) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //data_is_on_host_ = true;
         //data_dirty_ = true;
         std::fill(storage_ptr_->host_data(offset_),
-                  storage_ptr_->host_data(offset_) + calcSize(),
+                  storage_ptr_->host_data(offset_) + size_,
                   value);
+        return *this;
     }
 
     //TODO(Randl): variadic template version of reshape
@@ -313,7 +297,6 @@ class Tensor {
             throw nn_error("Reshape to Tensor of different size.");
 	}
         shape_ = sz;
-
     }
 
     void resize(const std::array<size_t, kDimensions> &sz) {
@@ -335,7 +318,36 @@ class Tensor {
                                                           shape_.end()));
     }
 
+    Tensor view(std::initializer_list<size_t> const &start,
+                std::initializer_list<size_t> const &shape) {
+	if (start.size() > kDimensions || shape.size() > kDimensions) {
+            throw nn_error("Overpassed number of existing dimensions.");
+	}
+        return Tensor(storage_ptr_, compute_offset(start, shape_), shape);
+    }
+
+    bool isView() const {
+        return size_ != storage_ptr_->size();
+    }
+
 private:
+    /**
+     * Constructor that accepts a pointer to existing TensorStorage, together
+     * with shape and offset.
+     * @param storage pointer to TensorStorage
+     * @param offset offset from first element of storage
+     * @param shape shape of the Tensor
+     * @return
+     */
+    explicit Tensor(const TensorStoragePointer storage,
+                    const size_t offset,
+		    std::initializer_list<size_t> const &shape) {
+        offset_ = offset;
+        size_ = product(shape);
+        storage_ptr_ = storage;
+        std::copy(shape.begin(), shape.end(), shape_.begin());
+    }
+
     size_t calcSize() const {
         return product(shape_);
     }
