@@ -49,18 +49,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## Comparison with other libraries
 
-|  | Prerequisites | Modeling | Training | Execution | GPU Support | Installing | Windows Support | Pre-Trained Model |
-|------------|-----------------------------------------------------------------------------|---------------------------|---------------------------|----------------------------|-------------|-------------|-----------------|--------------------------|
-| tiny-dnn | __Nothing__(Optional:TBB,OpenMP) | C++ | C++ | C++ | No | Unnecessary | Yes | Yes(via caffe-converter) |
-| [caffe](https://github.com/BVLC/caffe) | BLAS,Boost,protobuf,glog,gflags,hdf5,(Optional:CUDA,OpenCV,lmdb,leveldbetc) | Config File | C++, Python | C++, Python | Yes | Necessary | No | Yes |
-| [Theano](https://github.com/Theano/Theano) | Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDAetc) | Python Code | Python | Python | Yes | Necessary | Yes | No<sup>1</sup> |
-| [TensorFlow](https://www.tensorflow.org/) | numpy,six,protobuf,(optional:CUDA,Bazel) | Python Code | Python | Python, C++<sup>2</sup> | Yes | Necessary | Yes | No<sup>1</sup> |
-| [Mxnet](http://mxnet.io/) | BLAS(optional:CUDA) | C++, Python, R, Julia ... | C++, Python, R, Julia ... | C++<sup>4</sup>, Python, R, Julia ... | Yes | Necessary<sup>3</sup> | Yes | Yes(via caffe-converter) |
-
-<sup>1</sup> unofficial version is available  
-<sup>2</sup> limited C++ API  
-<sup>3</sup> It is rumoured installation is unnecessary with the Mxnet amalgamation Api  
-<sup>4</sup> both full API and limited api via amalgamation  
+Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with-other-libraries).
 
 ## Supported networks
 ### layer-types
