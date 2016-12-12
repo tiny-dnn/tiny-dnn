@@ -318,10 +318,41 @@ class Tensor {
                                                           shape_.end()));
     }
 
+    /*
+     * @brief Returns a view from the current tensor given a size for the
+     * new tensor. The new tensor will share data with its parent tensor so
+     * that each time that data is modified, it will be updated in both directions.
+     * The offset to shared data is assumed to be 0.
+     *
+     * @param new_shape The size for the new tensor
+     * @return An instance to the new tensor
+     *
+     * Usage:
+     *
+     *  Tensor<float_t, 4> t({2,2,2,2});            // we create a 4D tensor
+     *  Tensor<float_t, 4> t_view = t.view({2,2});  // we create a 2x2 matrix view with offset zero
+     *
+     */
     Tensor view(std::initializer_list<size_t> const &new_shape) {
         return view_impl({}, new_shape);
     }
 
+    /*
+     * @brief Returns a view from the current tensor given the offset from the
+     * parent tensor and the size for the new tensor. The new tensor will
+     * share data with its parent tensor so that each time that data is
+     * modified, it will be updated in both directions.
+     *
+     * @param start The offset from the parent tensor
+     * @param new_shape The size for the new tensor
+     * @return An instance to the new tensor
+     *
+     * Usage:
+     *
+     *  Tensor<float_t, 4> t({2,2,2,2});                   // we create a 4D tensor
+     *  Tensor<float_t, 4> t_view = t.view({2,2}, {2,2});  // we create a 2x2 matrix view from
+     *                                                     // offset 4.
+     */
     Tensor view(std::initializer_list<size_t> const &start,
                 std::initializer_list<size_t> const &new_shape) {
 	return view_impl(start, new_shape);
@@ -353,6 +384,12 @@ private:
         std::copy(shape.begin(), shape.end(), shape_.begin());
     }
 
+    /*
+     * Implementation method to extract a view from a tensor
+     * Raises an exception when sizes of the starting offset and new_shape
+     * are bigger than the current dimensions number. Also raises an exception
+     * when the requested view size is not feasible.
+     */
     Tensor view_impl(std::initializer_list<size_t> const &start,
                      std::initializer_list<size_t> const &new_shape) {
 	if (start.size() > kDimensions || new_shape.size() > kDimensions) {
