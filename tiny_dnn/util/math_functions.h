@@ -39,25 +39,25 @@ inline void vector_div(vec_t& x, float_t denom) {
 }
 
 namespace detail {
-inline void moments_impl_calc_mean(serial_size_t num_examples,
-                                   serial_size_t channels,
-                                   serial_size_t spatial_dim,
+inline void moments_impl_calc_mean(size_t num_examples,
+                                   size_t channels,
+                                   size_t spatial_dim,
                                    const tensor_t& in, vec_t& mean) {
-    for (serial_size_t i = 0; i < num_examples; i++) {
-        for (serial_size_t j = 0; j < channels; j++) {
+    for (size_t i = 0; i < num_examples; i++) {
+        for (size_t j = 0; j < channels; j++) {
             float_t& rmean = mean.at(j);
             const auto it = in[i].begin() + (j * spatial_dim);
             rmean = std::accumulate(it, it + spatial_dim, rmean);
         }
     }
 }
-inline void moments_impl_calc_variance(serial_size_t num_examples,
-                                       serial_size_t channels,
-                                       serial_size_t spatial_dim,
+inline void moments_impl_calc_variance(size_t num_examples,
+                                       size_t channels,
+                                       size_t spatial_dim,
                                        const tensor_t& in, const vec_t& mean,
                                        vec_t& variance) {
-    for (serial_size_t i = 0; i < num_examples; i++) {
-        for (serial_size_t j = 0; j < channels; j++) {
+    for (size_t i = 0; i < num_examples; i++) {
+        for (size_t j = 0; j < channels; j++) {
             float_t& rvar = variance.at(j);
             const auto it = in[i].begin() + (j * spatial_dim);
             const float_t ex = mean[j];
@@ -73,9 +73,9 @@ inline void moments_impl_calc_variance(serial_size_t num_examples,
 /**
  * calculate mean/variance across channels
  */
-inline void moments(const tensor_t& in, serial_size_t spatial_dim,
-                    serial_size_t channels, vec_t& mean) {
-    const serial_size_t num_examples = static_cast<serial_size_t>(in.size());
+inline void moments(const tensor_t& in, size_t spatial_dim,
+                    size_t channels, vec_t& mean) {
+    const size_t num_examples = static_cast<serial_size_t>(in.size());
     assert(in[0].size() == spatial_dim * channels);
 
     mean.resize(channels);
@@ -84,9 +84,9 @@ inline void moments(const tensor_t& in, serial_size_t spatial_dim,
                                    mean);
     vector_div(mean, (float_t)num_examples * spatial_dim);
 }
-inline void moments(const tensor_t& in, serial_size_t spatial_dim,
-                    serial_size_t channels, vec_t& mean, vec_t& variance) {
-    const serial_size_t num_examples = static_cast<serial_size_t>(in.size());
+inline void moments(const tensor_t& in, size_t spatial_dim,
+                    size_t channels, vec_t& mean, vec_t& variance) {
+    const size_t num_examples = static_cast<serial_size_t>(in.size());
     assert(in[0].size() == spatial_dim * channels);
 
     // calc mean
