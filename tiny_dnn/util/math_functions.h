@@ -50,7 +50,7 @@ namespace detail {
     }
     inline void moments_impl_calc_variance(serial_size_t num_examples, serial_size_t channels,
                                            serial_size_t spatial_dim,
-                                           const tensor_t& in, vec_t& mean, vec_t& variance) {
+                                           const tensor_t& in, const vec_t& mean, vec_t& variance) {
         for (serial_size_t i = 0; i < num_examples; i++) {
             for (serial_size_t j = 0; j < channels; j++) {
                 float_t& rvar = variance.at(j);
@@ -80,12 +80,11 @@ inline void moments(const tensor_t& in, serial_size_t spatial_dim, serial_size_t
     const serial_size_t num_examples = static_cast<serial_size_t>(in.size());
     assert(in[0].size() == spatial_dim * channels);
 
-    mean.resize(channels);
-    std::fill(mean.begin(), mean.end(), (float_t)0.0);
+    //calc mean
+    moments(in, spatial_dim, channels, mean);
+
     variance.resize(channels);
     std::fill(variance.begin(), variance.end(), (float_t)0.0);
-    detail::moments_impl_calc_mean(num_examples, channels, spatial_dim, in, mean);
-    vector_div(mean, (float_t)num_examples*spatial_dim);
     detail::moments_impl_calc_variance(num_examples, channels, spatial_dim, in, mean, variance);
 }
 
