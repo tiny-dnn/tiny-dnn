@@ -318,14 +318,19 @@ class Tensor {
                                                           shape_.end()));
     }
 
-    Tensor view(std::initializer_list<size_t> const &start,
-                std::initializer_list<size_t> const &shape) {
-	if (start.size() > kDimensions || shape.size() > kDimensions) {
-            throw nn_error("Overpassed number of existing dimensions.");
-	}
-        return Tensor(storage_ptr_, compute_offset(start, shape_), shape);
+    Tensor view(std::initializer_list<size_t> const &new_shape) {
+        return view_impl({}, new_shape);
     }
 
+    Tensor view(std::initializer_list<size_t> const &start,
+                std::initializer_list<size_t> const &new_shape) {
+	return view_impl(start, new_shape);
+    }
+
+    /*
+     * @brief Returns whether the tensor is a view of another tensor
+     *
+     */
     bool isView() const {
         return size_ != storage_ptr_->size();
     }
@@ -346,6 +351,22 @@ private:
         size_ = product(shape);
         storage_ptr_ = storage;
         std::copy(shape.begin(), shape.end(), shape_.begin());
+    }
+
+    Tensor view_impl(std::initializer_list<size_t> const &start,
+                     std::initializer_list<size_t> const &new_shape) {
+	if (start.size() > kDimensions || new_shape.size() > kDimensions) {
+            throw nn_error("Overpassed number of existing dimensions.");
+	}
+
+	// compute the new offset and check that it's feasible to create
+	// the new view.
+	const size_t new_offset = compute_offset(start, shape_);
+	if (new_offset + product(new_shape) > size_) {
+            throw nn_error("Cannot create a view from this tensor");
+	}
+
+        return Tensor(storage_ptr_, new_offset, new_shape);
     }
 
     size_t calcSize() const {
