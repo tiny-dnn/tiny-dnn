@@ -398,7 +398,8 @@ private:
 
 	// compute the new offset and check that it's feasible to create
 	// the new view.
-	const size_t new_offset = compute_offset(start, shape_);
+	//TODO(edgarriba/randl): add proper tests to this
+	const size_t new_offset = offset_ + compute_offset(start, shape_);
 	if (new_offset + product(new_shape) > size_) {
             throw nn_error("Cannot create a view from this tensor");
 	}
