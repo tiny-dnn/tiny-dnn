@@ -56,9 +56,10 @@ inline void moments_impl_calc_variance(size_t num_examples,
                                        size_t spatial_dim,
                                        const tensor_t& in, const vec_t& mean,
                                        vec_t& variance) {
+    assert(mean.size() >= channels);
     for (size_t i = 0; i < num_examples; i++) {
         for (size_t j = 0; j < channels; j++) {
-            float_t& rvar = variance.at(j);
+            float_t& rvar = variance[j];
             const auto it = in[i].begin() + (j * spatial_dim);
             const float_t ex = mean[j];
             rvar = std::accumulate(
