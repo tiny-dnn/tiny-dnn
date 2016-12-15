@@ -244,7 +244,7 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
   }
 
   if (w_pad != 0) {
-    if (w_pad == pool_size_w - 1) {
+    if (w_pad == pool_size_w - 1 || w_pad == (pool_size_w - 1) / 2) {
       pad_type = padding::same;
     } else {
       throw nn_error("unsupported padding type");
@@ -252,7 +252,7 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
   }
 
   if (h_pad != 0) {
-    if (h_pad == pool_size_h - 1) {
+    if (h_pad == pool_size_h - 1 || h_pad == (pool_size_h - 1) / 2) {
       pad_type = padding::same;
     } else {
       throw nn_error("unsupported padding type");
