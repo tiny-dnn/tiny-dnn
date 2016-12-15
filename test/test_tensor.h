@@ -135,9 +135,9 @@ TEST(tensor, view1) {
     Tensor<float_t, 4> t2 = t1.view({2,4});
     Tensor<float_t, 4> t3 = t1.view({0}, {2,4});
 
-    EXPECT_TRUE(!t1.isView());
-    EXPECT_TRUE( t2.isView());
-    EXPECT_TRUE( t3.isView());
+    EXPECT_TRUE(!t1.isSubView());
+    EXPECT_TRUE( t2.isSubView());
+    EXPECT_TRUE( t3.isSubView());
 
     EXPECT_EQ(t1.size(), size_t(2*2*2*2));
     EXPECT_EQ(t2.size(), size_t(2*4));

@@ -362,7 +362,7 @@ class Tensor {
      * @brief Returns whether the tensor is a view of another tensor
      *
      */
-    bool isView() const {
+    bool isSubView() const {
         return size_ != storage_ptr_->size();
     }
 
