@@ -55,14 +55,6 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
         range_in[0], range_in[1], range_w[0], range_w[1],
         &min_output_value, &max_output_value);
-    // bias quantization
-    vec_t range_b(2, 0);
-    std::vector<uint8_t> b_quantized;
-    if (params.has_bias_) {
-        range_b = tensor_range<float_t>(b);
-        b_quantized =
-            float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
-    }
 
     std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
 
@@ -110,7 +102,13 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
         &min_output_requantized, &max_output_requantized, &a_requantized);
 
     // Adding bias if it is needed
+    // bias quantization
+    vec_t range_b(2, 0);
+    std::vector<uint8_t> b_quantized;
     if (params.has_bias_) {
+      range_b = tensor_range<float_t>(b);
+      b_quantized =
+          float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
       quantized_add<uint8_t, uint8_t, int32_t>(a_requantized,
         min_output_requantized, max_output_requantized,
         b_quantized, range_b[0], range_b[1],
