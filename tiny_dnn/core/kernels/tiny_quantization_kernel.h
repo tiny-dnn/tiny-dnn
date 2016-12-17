@@ -251,10 +251,10 @@ void quantize_down_and_shrink_range(std::vector<T1>& input,
 }
 
 template <class T>
-void get_output_min_and_max_for_quantized_add(float input_min, float input_max,
-                                              float smaller_input_min,
-                                              float smaller_input_max,
-                                       float* output_min, float* output_max) {
+void get_output_min_and_max_for_quantized_add(float_t input_min, float_t input_max,
+                                              float_t smaller_input_min,
+                                              float_t smaller_input_max,
+                                       float_t* output_min, float_t* output_max) {
   // We need to have a good range to add our two arguments together in. This
   // is surprisingly tricky, since it has to satisfy a few different needs:
   //  - Must be symmetrical around zero, so that 0 + 0 = 0.
@@ -275,13 +275,13 @@ void get_output_min_and_max_for_quantized_add(float input_min, float input_max,
 
 template <typename T1, typename T2, typename T3>
 void quantized_add(const std::vector<T1>& input,
-                  float input_min, float input_max,
+                  float_t input_min, float_t input_max,
                   const std::vector<T2>& smaller_input,
-                  float smaller_input_min, float smaller_input_max,
+                  float_t smaller_input_min, float_t smaller_input_max,
                   std::vector<T3>* output,
-                  float* output_min, float* output_max) {
+                  float_t* output_min, float_t* output_max) {
 
-  get_output_min_and_max_for_quantized_add<float>(input_min, input_max,
+  get_output_min_and_max_for_quantized_add<float_t>(input_min, input_max,
                                            smaller_input_min, smaller_input_max,
                                            output_min, output_max);
   // To do addition properly, we need to compensate for a possibly unbalanced
