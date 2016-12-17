@@ -306,10 +306,10 @@ void quantized_add(const std::vector<T1>& input,
       // ranges (e.g. the quantized value '127' may represent very different
       // real numbers in both) so we need to convert them to a common range
       // before we sum them.
-      const T1 input_value = input(index);
+      const T1 input_value = input[index];
       const T3 input_in_total_space = requantize_in_new_range<T1, T3>(
           input_value, input_min, input_max, total_min, total_max);
-      const T2 smaller_input_value = smaller_input(c);
+      const T2 smaller_input_value = smaller_input[c];
       const T3 smaller_input_in_total_space =
           requantize_in_new_range<T2, T3>(smaller_input_value, smaller_input_min,
                                        smaller_input_max, total_min, total_max);
@@ -317,7 +317,7 @@ void quantized_add(const std::vector<T1>& input,
       // As noted above, we need to compensate for the offset of the actual
       // zero point in the space we're operating in.
       const T3 total = total_pre + zero_in_total_space;
-      output(index) = total;
+      (*output)[index] = total;
     }
   }
 }

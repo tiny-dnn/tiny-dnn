@@ -63,7 +63,6 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
         b_quantized =
             float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
     }
-    max_output_value += range_b[1];
 
     std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
 
@@ -91,19 +90,12 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
                               offset_output,
                               mult_output,
                               shift_output);
-        if (params.has_bias_) {
-            for_i(layer_parallelize, params.out_size_, [&](int i) {
-            a[i] += b[i];
-        });
-    }
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
             for (serial_size_t c = 0; c < params.in_size_; c++) {
-                a_quantized[i] += static_cast<int32_t>(w_quantized[c * params.out_size_ + i] - offset_filter) *
-                 static_cast<int32_t>(in_quantized[c] - offset_input);
-            }
-            if (params.has_bias_) {
-                a_quantized[i] += (b_quantized[i] - zero_in_total_space);
+                a_quantized[i] += static_cast<int32_t>(
+                  w_quantized[c * params.out_size_ + i] - offset_filter) *
+                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }
         });
     }
@@ -113,11 +105,26 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
     // Requantize from 32bits to 8 bits for next layer
-    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
-    &min_output_requantized, &max_output_requantized, &a_requantized);
+    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        min_output_value, max_output_value,
+        &min_output_requantized, &max_output_requantized, &a_requantized);
 
-    // dequantize to flaot, this could be removed within concatenated quantized network
-    a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
+    // Adding bias if it is needed
+    if (params.has_bias_) {
+      quantized_add<uint8_t, uint8_t, int32_t>(a_requantized,
+        min_output_requantized, max_output_requantized,
+        b_quantized, range_b[0], range_b[1],
+        &a_quantized, &min_output_value, &max_output_value);
+
+      quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        min_output_value, max_output_value,
+        &min_output_requantized, &max_output_requantized, &a_requantized);
+    }
+
+    // Transforming dequantize data in uint8_t to flaot,
+    // this could be removed within concatenated quantized network
+    a = quantized_tensor_to_float<uint8_t>(a_requantized,
+      min_output_requantized, max_output_requantized);
 }
 
 inline void tiny_quantized_fully_connected_back_kernel(const fully_params& params,
