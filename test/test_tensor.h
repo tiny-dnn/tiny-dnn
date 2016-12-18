@@ -200,20 +200,20 @@ TEST(tensor, view5) {
     }
 
     // check that root tensor has been modified assuming
-    // continous memory-
+    // continous memory. The ideal case would be that the
+    // new sub ºview can handle non continous memory pointing
+    // to the top-left matrix from the root tensor.
     EXPECT_EQ(t1.host_at(0,0), float_t(1.0));
     EXPECT_EQ(t1.host_at(0,1), float_t(2.0));
     EXPECT_EQ(t1.host_at(0,2), float_t(3.0));
-    EXPECT_EQ(t1.host_at(0,3), float_t(4.0));
-   
-    // check that's not the top-left matrix
-    EXPECT_EQ(t1.host_at(0,0), float_t(1.0));
-    EXPECT_EQ(t1.host_at(0,1), float_t(2.0));
-    
-    //TODO(randl): it throws an "Access tensor out of range". 
-    //             Could you fix that?
-    // EXPECT_EQ(t1.host_at(1,0), float_t(0.0));
-    // EXPECT_EQ(t1.host_at(1,1), float_t(0.0));
+    EXPECT_EQ(t1.host_at(1,0), float_t(4.0));
+
+    // check that the new sub view does not assume the ideal
+    // case with non continuous memory.
+    EXPECT_TRUE( t1.host_at(0,0) == float_t(1.0));
+    EXPECT_TRUE( t1.host_at(0,1) == float_t(2.0));
+    EXPECT_FALSE(t1.host_at(1,0) == float_t(3.0));
+    EXPECT_FALSE(t1.host_at(1,1) == float_t(4.0));
 }
 
 TEST(tensor, access_data1) {
