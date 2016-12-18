@@ -261,17 +261,48 @@ TEST(tensor, view4) {
     Tensor<float_t, 4> t1({2,2,2,2});
     Tensor<float_t, 4> t2 = t1.view({2,4});
 
-    for (size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(t1.host_data()[i], float_t(0.0));
-        EXPECT_EQ(t2.host_data()[i], float_t(0.0));
+    // modify sub view tensor
+    for (size_t i = 0; i < t2.size(); ++i) {
+        t2.host_data()[i] = float_t(i+1);
     }
 
-    t2.fill(float_t(2.0));
-
-    for (size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(t1.host_data()[i], float_t(2.0));
-        EXPECT_EQ(t2.host_data()[i], float_t(2.0));
+    // check that root tensor has also been modified
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t1.host_data()[i], float_t(i+1));
+        EXPECT_EQ(t2.host_data()[i], float_t(i+1));
     }
+}
+
+TEST(tensor, view5) {
+
+    Tensor<float_t, 2> t1({3,3});
+
+    // we create a sub view tensor with size @2x2.
+    // Ideally it should represent the top-left matrix.
+    // However, since we assume continous memory, it will
+    // mask the first four elements from the root view.
+    Tensor<float_t, 2> t2 = t1.subView({0}, {2,2});
+
+    // modify sub view tensor
+    for (size_t i = 0; i < t2.size(); ++i) {
+        t2.host_data()[i] = float_t(i+1);
+    }
+
+    // check that root tensor has been modified assuming
+    // continous memory. The ideal case would be that the
+    // new sub ºview can handle non continous memory pointing
+    // to the top-left matrix from the root tensor.
+    EXPECT_EQ(t1.host_at(0,0), float_t(1.0));
+    EXPECT_EQ(t1.host_at(0,1), float_t(2.0));
+    EXPECT_EQ(t1.host_at(0,2), float_t(3.0));
+    EXPECT_EQ(t1.host_at(1,0), float_t(4.0));
+
+    // check that the new sub view does not assume the ideal
+    // case with non continuous memory.
+    EXPECT_TRUE( t1.host_at(0,0) == float_t(1.0));
+    EXPECT_TRUE( t1.host_at(0,1) == float_t(2.0));
+    EXPECT_FALSE(t1.host_at(1,0) == float_t(3.0));
+    EXPECT_FALSE(t1.host_at(1,1) == float_t(4.0));
 }
 
 TEST(tensor, access_data1) {
