@@ -142,33 +142,30 @@ class Tensor {
 
     ~Tensor() = default;
 
-    Tensor(const Tensor&other) { //TODO(Randl):deep copy
-        //TODO(Randl)
-        /*other.fromDevice();
+    //TODO(Randl): implement copy and move constructors
+#if 0
+    //TODO(Randl):deep copy
+    Tensor(const Tensor&other) {
+        other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
         data_is_on_host_ = true;
-        data_dirty_ = true; */
+        data_dirty_ = true;
         //device_data_ is intentionally left uninitialized.
     }
-/*
- *
- * TODO(Randl): Move constructors for Tensor and TensorStorage
-    Tensor &operator = (const Tensor& other) {
-    }
+    //TODO(Randl): Move constructors for Tensor and TensorStorage
+    Tensor &operator = (const Tensor& other) {}
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     Tensor(Tensor&& other) = default;        // move ctor
     Tensor &operator = (Tensor&&) = default; // move assign
 #else
 
-    Tensor(Tensor&& other) {
-    }
-
-    Tensor &operator = (Tensor&& other) {
-    }
+    Tensor(Tensor&& other) {}
+    Tensor &operator = (Tensor&& other) {}
+#endif // CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
 #endif
-*/
+
     /**
      *
      * @return the tensor shape
