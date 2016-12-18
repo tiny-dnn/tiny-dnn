@@ -41,35 +41,32 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
                                                   const vec_t&        b,
                                                   vec_t&              a,
                                                   const bool          layer_parallelize) {
-    // input quantization
+    // Input quantization
     vec_t range_in = tensor_range<float_t>(in);
     std::vector<uint8_t> in_quantized =
         float_tensor_to_quantized<uint8_t>(in, range_in[0], range_in[1]);
-    // filter quantization
+    const int32_t offset_input =
+        float_to_quantized_unclamped<uint8_t>(0.0f, range_in[0], range_in[1]);
+
+    // Filter quantization
     vec_t range_w = tensor_range<float_t>(W);
     std::vector<uint8_t> w_quantized =
         float_tensor_to_quantized<uint8_t>(W, range_w[0], range_w[1]);
-    // output range
-    float_t min_output_value;
-    float_t max_output_value;
-    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
-        range_in[0], range_in[1], range_w[0], range_w[1],
-        &min_output_value, &max_output_value);
-
-    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
-
-    // calculating offset
-    const int32_t offset_input =
-        float_to_quantized_unclamped<uint8_t>(0.0f, range_in[0], range_in[1]);
     const int32_t offset_filter =
         float_to_quantized_unclamped<uint8_t>(0.0f, range_w[0], range_w[1]);
+
+    // Output range
+    vec_t range_output(2, 0);
+    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
+        range_in[0], range_in[1], range_w[0], range_w[1],
+        &(range_output[0]), &(range_output[1]));
+    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
     const int32_t zero_in_total_space =
-        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
+        float_to_quantized<int32_t>(0.0f, range_output[0], range_output[1]);
 
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
+    const int32_t offset_output = 0, mult_output = 1, shift_output = 0;
 
+    // Calculating inner product
     bool use_gemm = false;
     if (use_gemm) {
         std::vector<size_t> shape{params.in_size_, 1, params.out_size_, params.in_size_};
@@ -92,37 +89,38 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
         });
     }
 
-    float_t min_output_requantized;
-    float_t max_output_requantized;
+    vec_t range_output_requantized(2, 0);
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
-    // Requantize from 32bits to 8 bits for next layer
+    // Requantize from 32bits to 8 bits
     quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
-        min_output_value, max_output_value,
-        &min_output_requantized, &max_output_requantized, &a_requantized);
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
 
     // Adding bias if it is needed
-    // bias quantization
     vec_t range_b(2, 0);
     std::vector<uint8_t> b_quantized;
     if (params.has_bias_) {
+      // Bias quantization
       range_b = tensor_range<float_t>(b);
       b_quantized =
           float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
       quantized_add<uint8_t, uint8_t, int32_t>(a_requantized,
-        min_output_requantized, max_output_requantized,
+        range_output_requantized[0], range_output_requantized[1],
         b_quantized, range_b[0], range_b[1],
-        &a_quantized, &min_output_value, &max_output_value);
+        &a_quantized, &(range_output[0]), &(range_output[1]));
 
       quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
-        min_output_value, max_output_value,
-        &min_output_requantized, &max_output_requantized, &a_requantized);
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
     }
 
     // Transforming dequantize data in uint8_t to flaot,
     // this could be removed within concatenated quantized network
     a = quantized_tensor_to_float<uint8_t>(a_requantized,
-      min_output_requantized, max_output_requantized);
+      range_output_requantized[0], range_output_requantized[1]);
 }
 
 inline void tiny_quantized_fully_connected_back_kernel(const fully_params& params,
