@@ -392,9 +392,9 @@ private:
      */
     Tensor view_impl(std::initializer_list<size_t> const &start,
                      std::initializer_list<size_t> const &new_shape) {
-	if (start.size() > kDimensions || new_shape.size() > kDimensions) {
+        if (start.size() > kDimensions || new_shape.size() > kDimensions) {
             throw nn_error("Overpassed number of existing dimensions.");
-	}
+        }
 
 	// compute the new offset and check that it's feasible to create
 	// the new view.
