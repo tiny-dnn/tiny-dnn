@@ -254,12 +254,15 @@ class Tensor {
         return storage_ptr_->host_data(offset_);
     }
 
-    /*U* mutable_host_data() {
+//TODO: should we enable this again?
+#if 0
+    U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //fromDevice();
         //data_dirty_ = true;
         return storage_pointer_->data(offset);
-    }*/
+    }
+#endif
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     const void *device_data() const {
@@ -316,9 +319,11 @@ class Tensor {
     }
 
     /*
-     * @brief Returns a view from the current tensor given a size for the
-     * new tensor. The new tensor will share data with its parent tensor so
-     * that each time that data is modified, it will be updated in both directions.
+     * @brief Returns a sub view from the current tensor with a given size.
+     * The new tensor will share data with its parent tensor so that each time
+     * that data is modified, it will be updated in both directions.
+     *
+     * The new sub view tensor will be extracted assuming continuous data.
      * The offset to shared data is assumed to be 0.
      *
      * @param new_shape The size for the new tensor
@@ -330,15 +335,16 @@ class Tensor {
      *  Tensor<float_t, 4> t_view = t.view({2,2});  // we create a 2x2 matrix view with offset zero
      *
      */
-    Tensor view(std::initializer_list<size_t> const &new_shape) {
-        return view_impl({}, new_shape);
+    Tensor subView(std::initializer_list<size_t> const &new_shape) {
+        return subview_impl({}, new_shape);
     }
 
     /*
-     * @brief Returns a view from the current tensor given the offset from the
-     * parent tensor and the size for the new tensor. The new tensor will
-     * share data with its parent tensor so that each time that data is
-     * modified, it will be updated in both directions.
+     * @brief Returns a sub view from the current tensor with a given size.
+     * The new tensor will share data with its parent tensor so that each time
+     * that data is modified, it will be updated in both directions.
+     *
+     * The new sub view tensor will be extracted assuming continuous data.
      *
      * @param start The offset from the parent tensor
      * @param new_shape The size for the new tensor
@@ -350,9 +356,9 @@ class Tensor {
      *  Tensor<float_t, 4> t_view = t.view({2,2}, {2,2});  // we create a 2x2 matrix view from
      *                                                     // offset 4.
      */
-    Tensor view(std::initializer_list<size_t> const &start,
+    Tensor subView(std::initializer_list<size_t> const &start,
                 std::initializer_list<size_t> const &new_shape) {
-	return view_impl(start, new_shape);
+	return subview_impl(start, new_shape);
     }
 
     /*
@@ -387,8 +393,8 @@ private:
      * are bigger than the current dimensions number. Also raises an exception
      * when the requested view size is not feasible.
      */
-    Tensor view_impl(std::initializer_list<size_t> const &start,
-                     std::initializer_list<size_t> const &new_shape) {
+    Tensor subview_impl(std::initializer_list<size_t> const &start,
+                        std::initializer_list<size_t> const &new_shape) {
         if (start.size() > kDimensions || new_shape.size() > kDimensions) {
             throw nn_error("Overpassed number of existing dimensions.");
         }

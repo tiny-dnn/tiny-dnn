@@ -132,8 +132,8 @@ TEST(tensor, check_bounds) {
 TEST(tensor, view1) {
 
     Tensor<float_t, 4> t1({2,2,2,2});
-    Tensor<float_t, 4> t2 = t1.view({2,4});
-    Tensor<float_t, 4> t3 = t1.view({0}, {2,4});
+    Tensor<float_t, 4> t2 = t1.subView({2,4});
+    Tensor<float_t, 4> t3 = t1.subView({0}, {2,4});
 
     EXPECT_TRUE(!t1.isSubView());
     EXPECT_TRUE( t2.isSubView());
@@ -148,14 +148,14 @@ TEST(tensor, view2) {
 
     Tensor<float_t, 4> t1({2,2,2,2});
 
-    EXPECT_NO_THROW(t1.view({2,4,0,0}));
-    EXPECT_NO_THROW(t1.view({0,0,0,0}, {2,4,0,0}));
+    EXPECT_NO_THROW(t1.subView({2,4,0,0}));
+    EXPECT_NO_THROW(t1.subView({0,0,0,0}, {2,4,0,0}));
 
     // test that num parameters exceed to num of dimensions
-    EXPECT_THROW(t1.view({2,4,0,0,0}), nn_error);
-    EXPECT_THROW(t1.view({0,0,0,0},   {2,4,0,0,0}), nn_error);
-    EXPECT_THROW(t1.view({2,4,0,0,0}, {1,2,0,0}),   nn_error);
-    EXPECT_THROW(t1.view({2,4,0,0,0}, {1,2,0,0,0}), nn_error);
+    EXPECT_THROW(t1.subView({2,4,0,0,0}), nn_error);
+    EXPECT_THROW(t1.subView({0,0,0,0},   {2,4,0,0,0}), nn_error);
+    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0}),   nn_error);
+    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0,0}), nn_error);
 }
 
 TEST(tensor, view3) {
@@ -163,14 +163,14 @@ TEST(tensor, view3) {
     Tensor<float_t, 4> t1({2,2,2,2});
 
     // test that cannot generate view bigger than current tensor
-    EXPECT_THROW(t1.view({4,5}), nn_error);
-    EXPECT_THROW(t1.view({1}, {4,4}), nn_error);
+    EXPECT_THROW(t1.subView({4,5}), nn_error);
+    EXPECT_THROW(t1.subView({1}, {4,4}), nn_error);
 }
 
 TEST(tensor, view4) {
 
     Tensor<float_t, 4> t1({2,2,2,2});
-    Tensor<float_t, 4> t2 = t1.view({2,4});
+    Tensor<float_t, 4> t2 = t1.subView({2,4});
 
     for (size_t i = 0; i < 8; ++i) {
         EXPECT_EQ(t1.host_data()[i], float_t(0.0));
