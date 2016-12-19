@@ -169,10 +169,10 @@ public:
             const float_t* inptr  = &in[i][0];
             float_t*       outptr = &out[i][0];
 
-            for (serial_size_t j = 0; j < in_channels_; j++) {
+            for (size_t j = 0; j < in_channels_; j++) {
                 float_t m = mean[j];
 
-                for (serial_size_t k = 0; k < in_spatial_size_; k++) {
+                for (size_t k = 0; k < in_spatial_size_; k++) {
                     *outptr++ = (*inptr++ - m) / stddev_[j];
                 }
             }
