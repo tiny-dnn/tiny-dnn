@@ -50,7 +50,7 @@ fully_connected_op_avx(const Tensor<float_t, 2>& in_data,
     CNN_UNREFERENCED_PARAMETER(weights);
     CNN_UNREFERENCED_PARAMETER(bias);
     CNN_UNREFERENCED_PARAMETER(out_data);
-    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
+    CNN_UNREFERENCED_PARAMETER(parallelize);
     throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
