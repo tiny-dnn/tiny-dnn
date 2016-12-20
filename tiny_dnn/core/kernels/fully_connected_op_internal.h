@@ -40,7 +40,11 @@ inline void fully_connected_op_internal(const T1&  in_data,
     auto in_shape  = in_data.shape();
     auto out_shape = out_data->shape();
 
-    const float_t* W = &*weights.host_begin();
+    // ideally the tensor should ahave this shape. In a future
+    // make sure that this is done outside. No tensor manipulation
+    // inside the kernels.
+    // We also assume that all batches will have the same shape.
+    const auto w = weights.subView({in_shape[1], out_shape[1]});
     const float_t* b = &*bias.host_begin();
 
     for_i(parallelize, in_shape[0], [&](size_t sample) {
@@ -49,7 +53,11 @@ inline void fully_connected_op_internal(const T1&  in_data,
 
         for (size_t i = 0; i < out_shape[1]; i++) {
             for (size_t c = 0; c < in_shape[1]; c++) {
-                out[i] += W[c * out_shape[1] + i] * in[c];
+                //out[i] += W[c * out_shape[1] + i] * in[c];
+
+                //TODO(edgar): make sure that makes sense to have
+                // this tensor in this way.
+                out[i] += w.host_at(c, i) * in[c];
             }
 
             if (bias.size() > 0) {

@@ -352,7 +352,7 @@ class Tensor {
      *  Tensor<float_t, 4> t_view = t.view({2,2});  // we create a 2x2 matrix view with offset zero
      *
      */
-    Tensor subView(std::initializer_list<size_t> const &new_shape) {
+    Tensor subView(std::initializer_list<size_t> const &new_shape) const {
         return subview_impl({}, new_shape);
     }
 
@@ -374,7 +374,7 @@ class Tensor {
      *                                                     // offset 4.
      */
     Tensor subView(std::initializer_list<size_t> const &start,
-                std::initializer_list<size_t> const &new_shape) {
+                std::initializer_list<size_t> const &new_shape) const {
 	return subview_impl(start, new_shape);
     }
 
@@ -426,7 +426,7 @@ private:
      * when the requested view size is not feasible.
      */
     Tensor subview_impl(std::initializer_list<size_t> const &start,
-                        std::initializer_list<size_t> const &new_shape) {
+                        std::initializer_list<size_t> const &new_shape) const {
         if (start.size() > kDimensions || new_shape.size() > kDimensions) {
             throw nn_error("Overpassed number of existing dimensions.");
         }
