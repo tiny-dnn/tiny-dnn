@@ -622,7 +622,7 @@ class layer : public node {
 
     void update_weight(optimizer *o, serial_size_t batch_size) {
         float_t rcp_batch_size = float_t(1) / float_t(batch_size);
-        vec_t diff;
+        auto& diff = weights_diff_;
         for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t& target = *get_weight_data(i);
@@ -708,6 +708,8 @@ class layer : public node {
     std::shared_ptr<core::backend> backend_;
     /** Pointer to the device on which the layer/node will run */
     Device* device_ptr_ = nullptr;
+    /** Used in update_weight method. Kept as a member variable to reduce frequent memory allocation */
+    vec_t weights_diff_;
 
  private:
     /** Flag indicating whether the layer/node parameters are trainable */
