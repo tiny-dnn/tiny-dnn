@@ -31,21 +31,21 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void
-fully_connected_op_internal(const Tensor<float_t, 2>& in_data,
-                            const Tensor<float_t, 2>& weights,
-                            const Tensor<float_t, 2>& bias,
-                            Tensor<float_t, 2>*       out_data,
-                            const bool             parallelize) {
+template<typename T1, typename T2, typename T3, typename T4>
+inline void fully_connected_op_internal(const T1&  in_data,
+                                        const T2&  weights,
+                                        const T3&  bias,
+                                        T4*        out_data,
+                                        const bool parallelize) {
     auto in_shape  = in_data.shape();
     auto out_shape = out_data->shape();
 
-    const float_t*  W = &*weights.host_begin();
-    const float_t*  b = &*bias.host_begin();
+    const float_t* W = &*weights.host_begin();
+    const float_t* b = &*bias.host_begin();
 
     for_i(parallelize, in_shape[0], [&](size_t sample) {
-	const float_t* in = in_data.host_ptr(sample, 0);
-	float_t* out = out_data->host_ptr(sample, 0);
+        const float_t* in = in_data.host_ptr(sample, 0);
+        float_t* out = out_data->host_ptr(sample, 0);
 
         for (size_t i = 0; i < out_shape[1]; i++) {
             for (size_t c = 0; c < in_shape[1]; c++) {
