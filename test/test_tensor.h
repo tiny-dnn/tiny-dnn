@@ -927,11 +927,11 @@ TEST(tensor, nd1) {
 }
 
 TEST(tensor, print) {
-    Tensor<float_t, 4> t({3,2,2,2});
+    Tensor<float_t, 5> t({3,2,2,2,2});
 
     t.fill(float_t(1.0));
 
-    //std::cout << t;
+    std::cout << t;
 
 }
 //TEST(tensor, exp) {

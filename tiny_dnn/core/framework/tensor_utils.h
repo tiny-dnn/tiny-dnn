@@ -77,26 +77,44 @@ inline std::ostream& print_last_two_dimesions (std::ostream           &os,
     return os;
 }
 
-template<typename T, size_t kDim, typename... Args>
+template<typename T, size_t kDim, typename... Args, typename std::enable_if<sizeof...(Args) == kDim - 3,int>::type = 0>
 inline std::ostream& print_last_n_dimesions (std::ostream &os,
                                                const Tensor<T, kDim>& tensor,
                                                const int              d,
                                                const Args...          args) {
     const std::array<size_t, kDim>& shape = tensor.shape();
     const size_t n_dim = sizeof...(args);
-    if (n_dim == shape.size() - 3) {
         os << "Tensor(";
         print_pack(os, d, args...);
         os << ",:,:):\n";
         print_last_two_dimesions (os, tensor, d, args...);
         return os;
-    }
+
+    return os;
+}
+
+template<typename T, size_t kDim, typename... Args, typename std::enable_if<(sizeof...(Args) < kDim - 3),int>::type = 0 >
+inline std::ostream& print_last_n_dimesions (std::ostream &os,
+                                             const Tensor<T, kDim>& tensor,
+                                             const int              d,
+                                             const Args...          args) {
+    const std::array<size_t, kDim>& shape = tensor.shape();
+    const size_t n_dim = sizeof...(args);
     for (size_t k = 0; k < shape[n_dim+1]; ++k) {
         print_last_n_dimesions(os, tensor, d, args..., k);
     }
     return os;
 }
 
+//TODO(Ranld): static_if (C++17)
+template<typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const Tensor<T, 1> &tensor) {
+    const std::array<size_t, 1> &shape = tensor.shape();
+    for (size_t i = 0; i < shape[0]; ++i)
+        os << tensor.host_at(i) << " ";
+    return os;
+}
 /**
  * Overloaded method to print the Tensor class to the standard output
  * @param os
@@ -108,7 +126,6 @@ template<typename T, size_t kDim>
 inline std::ostream& operator<< (std::ostream &os,
                                  const Tensor<T, kDim>& tensor) {
     const std::array<size_t, kDim>& shape = tensor.shape();
-
     for (size_t i = 0 ; i < shape[0]; ++i)
         print_last_n_dimesions(os, tensor, i);
     return os;

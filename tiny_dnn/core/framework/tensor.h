@@ -318,7 +318,7 @@ class Tensor {
                                                           shape_.end()));
     }
 
-    /*
+    /**
      * @brief Returns a sub view from the current tensor with a given size.
      * The new tensor will share data with its parent tensor so that each time
      * that data is modified, it will be updated in both directions.
@@ -339,7 +339,7 @@ class Tensor {
         return subview_impl({}, new_shape);
     }
 
-    /*
+    /**
      * @brief Returns a sub view from the current tensor with a given size.
      * The new tensor will share data with its parent tensor so that each time
      * that data is modified, it will be updated in both directions.
@@ -361,13 +361,14 @@ class Tensor {
 	return subview_impl(start, new_shape);
     }
 
-    /*
+    /**
      * @brief Returns whether the tensor is a view of another tensor
      *
      */
     bool isSubView() const {
         return size_ != storage_ptr_->size();
     }
+
 
 private:
     /**
