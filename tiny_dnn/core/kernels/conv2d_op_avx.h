@@ -47,6 +47,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                            const std::vector<float, Allocator>& bias,
                            std::vector<float, Allocator>&       a,
                            const bool layer_parallelize) {
+    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
     assert(params.weight.height_ == 5 && params.weight.width_ == 5);
     
     auto& out       = params.out;

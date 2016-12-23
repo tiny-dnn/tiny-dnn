@@ -59,6 +59,8 @@ int main(int argc, char *argv[]) {
 
     printAvailableDevice(platform_id, device_id);
 #else
+    CNN_UNREFERENCED_PARAMETER(argc);
+    CNN_UNREFERENCED_PARAMETER(argv);
     nn_warn("TinyDNN was not compiled with OpenCL or CUDA support.");
 #endif
     return 0;

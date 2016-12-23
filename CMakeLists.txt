@@ -244,7 +244,7 @@ elseif(MSVC)
         /Ox /Oi /Ot /Oy /GL /fp:fast /GS-")
     set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
     set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
-    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /bigobj")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /W4 /bigobj")
     # this is fine
     add_definitions(-D _CRT_SECURE_NO_WARNINGS)
     add_definitions(-D _SCL_SECURE_NO_WARNINGS)

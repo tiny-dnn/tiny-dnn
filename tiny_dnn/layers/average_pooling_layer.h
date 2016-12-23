@@ -46,7 +46,7 @@ void tiny_average_pooling_kernel(bool parallelize,
                                  float_t                       scale_factor,
                                  std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
                                  Activation&                   h) {
- 
+    CNN_UNREFERENCED_PARAMETER(parallelize);
     for_i(in_data[0]->size(), [&](size_t sample) {
         const vec_t& in = (*in_data[0])[sample];
         const vec_t& W = (*in_data[1])[0];
@@ -88,7 +88,7 @@ void tiny_average_pooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                       std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
                                       std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
                                       std::vector<std::vector<serial_size_t>>& bias2out) {
-
+    CNN_UNREFERENCED_PARAMETER(out_data);
     for_i(in_data[0]->size(), [&](size_t sample) {
         const vec_t& prev_out   = (*in_data[0])[sample];
         const vec_t& W          = (*in_data[1])[0];

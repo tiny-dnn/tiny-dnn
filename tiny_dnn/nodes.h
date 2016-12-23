@@ -326,6 +326,7 @@ class sequential : public nodes {
 
     template <typename InputArchive>
     void load_connections(InputArchive& ia) {
+        CNN_UNREFERENCED_PARAMETER(ia);
         for (serial_size_t i = 0; i < nodes_.size() - 1; i++) {
             auto head = nodes_[i];
             auto tail = nodes_[i + 1];
@@ -486,15 +487,21 @@ private:
         }
 
         for (auto l : input_layers_) {
-            graph_traverse(l, [=](layer& l) {}, [&](edge& e) {
-                auto next = e.next();
-                serial_size_t head_index = e.prev()->next_port(e);
+            graph_traverse(
+                l,
+                [=](layer& l) {
+                    CNN_UNREFERENCED_PARAMETER(l);
+                },
+                [&](edge& e) {
+                    auto next = e.next();
+                    serial_size_t head_index = e.prev()->next_port(e);
 
-                for (auto n : next) {
-                    serial_size_t tail_index = n->prev_port(e);
-                    gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                    for (auto n : next) {
+                        serial_size_t tail_index = n->prev_port(e);
+                        gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                    }
                 }
-            });
+            );
         }
 
         oa(cereal::make_nvp("graph", gc));

@@ -122,7 +122,7 @@ public:
             mask_.resize(sample_count, mask_[0]);
         }
 
-        for (size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
+        for (size_t sample = 0; sample < sample_count; ++sample) {
 
             std::vector<uint8_t>& mask = mask_[sample];
 

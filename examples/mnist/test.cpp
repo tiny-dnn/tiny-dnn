@@ -52,14 +52,14 @@ void convert_image(const std::string& imagefilename,
         [=](uint8_t c) { return (255 - c) * (maxv - minv) / 255.0 + minv; });
 }
 
-void recognize(const std::string& dictionary, const std::string& filename) {
+void recognize(const std::string& dictionary, const std::string& src_filename) {
     network<sequential> nn;
 
     nn.load(dictionary);
 
     // convert imagefile to vec_t
     vec_t data;
-    convert_image(filename, -1.0, 1.0, 32, 32, data);
+    convert_image(src_filename, -1.0, 1.0, 32, 32, data);
 
     // recognize
     auto res = nn.predict(data);
