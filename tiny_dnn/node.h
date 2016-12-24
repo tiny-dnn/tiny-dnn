@@ -106,15 +106,16 @@ class edge {
         std::fill(dst->begin(), dst->end(), static_cast<float_t>(0));
 
         // @todo consider adding parallelism
-		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-			vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
-		}
+        for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+            vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
+        }
     }
 
     void clear_grads() {
-		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-			std::fill(grad_[sample].begin(), grad_[sample].end(), (float_t)0);
-		}
+        for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+            auto& g = grad_[sample];
+            vectorize::fill(&g[0], g.size(), float_t{0});
+        }
     }
 
     tensor_t* get_data() {

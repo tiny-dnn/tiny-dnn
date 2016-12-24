@@ -315,4 +315,46 @@ void reduce(const T* src, std::size_t  size, T* dst) {
         return detail::reduce_nonaligned<VECTORIZE_TYPE(T)>(src, size, dst);
 }
 
+inline void fill(float* dst, size_t cnt, float value) {
+#if defined(CNN_USE_AVX)
+    float* p = dst;
+    size_t nite = cnt / 32;
+    size_t remain = cnt % 32;
+    __m256 yvalue = _mm256_set1_ps(value);
+    for (size_t i = 0; i < nite; ++i) {
+        _mm256_storeu_ps(p, yvalue);
+        _mm256_storeu_ps(p+8, yvalue);
+        _mm256_storeu_ps(p+16, yvalue);
+        _mm256_storeu_ps(p+24, yvalue);
+        p += 32;
+    }
+    for (size_t i = 0; i < remain; ++i) {
+        p[i] = value;
+    }
+#else
+    std::fill(dst, dst + cnt, value);
+#endif
+}
+
+inline void fill(double* dst, size_t cnt, double value) {
+#if defined(CNN_USE_AVX)
+    double* p = dst;
+    size_t nite = cnt / 16;
+    size_t remain = cnt % 16;
+    __m256d yvalue = _mm256_set1_pd(value);
+    for (size_t i = 0; i < nite; ++i) {
+        _mm256_storeu_pd(p, yvalue);
+        _mm256_storeu_pd(p+4, yvalue);
+        _mm256_storeu_pd(p+8, yvalue);
+        _mm256_storeu_pd(p+12, yvalue);
+        p += 16;
+    }
+    for (size_t i = 0; i < remain; ++i) {
+        p[i] = value;
+    }
+#else
+    std::fill(dst, dst + cnt, value);
+#endif
+}
+
 } // namespace vectorize
