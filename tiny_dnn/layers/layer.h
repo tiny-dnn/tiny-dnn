@@ -627,9 +627,9 @@ class layer : public node {
             if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t& target = *get_weight_data(i);
                 ith_in_node(i)->merge_grads(&diff);
-                std::transform(diff.begin(), diff.end(),
-                               diff.begin(), [&](float_t x) { // NOLINT
-                                  return x * rcp_batch_size; });
+                for (size_t j=0; j<diff.size(); ++j) {
+                    diff[j] *= rcp_batch_size;
+                }
                 // parallelize only when target size is big enough to mitigate
                 // thread spawning overhead.
                 bool parallelize = (target.size() >= 512);
