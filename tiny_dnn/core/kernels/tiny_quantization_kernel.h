@@ -337,14 +337,6 @@ vec_t tensor_range(const vec_t& input, float_t margin = 1e-3f) {
   return result;
 }
 
-template <class T>
-void quantization_tensor(const vec_t& input, vec_t range,
-    std::vector<T> quantized, int32_t offset) {
-  range = tensor_range<float_t>(input);
-  quantized = float_tensor_to_quantized<T>(input, range[0], range[1]);
-  offset = float_to_quantized_unclamped<T>(0.0f, range[0], range[1]);
-}
-
 }  // namespace kernels
 }  // namespace core
 }  // namespace tiny_dnn
