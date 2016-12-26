@@ -60,6 +60,7 @@ option(BUILD_TESTS    "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
 option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
 option(COVERALLS      "Set to ON to build with code coverage" OFF)
+option(PROFILE        "Set to ON to build with profiling"     OFF)
 
 ####
 # Create the library target
@@ -257,6 +258,10 @@ set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
 
+if(PROFILE AND (CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
+    CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    set(CMAKE_CXX_FLAGS     "${CMAKE_CXX_FLAGS} -pg")
+endif()
 ####
 # Write the config.h
 # TODO: replace for tiny_dnn/config.h
@@ -317,6 +322,7 @@ write_basic_package_version_file(
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
+set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
 # Create *-targets.cmake file for build directory
 install(TARGETS ${project_library_target_name}
         EXPORT  ${targets_export_name}
