@@ -70,9 +70,9 @@ inline std::ostream& print_last_two_dimesions (std::ostream           &os,
     const std::array<size_t, kDim>& shape = tensor.shape();
     for (size_t k = 0; k < shape[kDim-1]; ++k) {
         for (size_t l = 0; l < shape[kDim-2]; ++l) {
-            os << " " << tensor.host_at(args..., l, k) << " ";
+            os << "\t" << tensor.host_at(args..., l, k);
         }
-        os << ";\n";
+        os << "\n";
     }
     return os;
 }
@@ -112,7 +112,16 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const Tensor<T, 1> &tensor) {
     const std::array<size_t, 1> &shape = tensor.shape();
     for (size_t i = 0; i < shape[0]; ++i)
-        os << tensor.host_at(i) << " ";
+        os  << "\t" << tensor.host_at(i);
+    os << "\n";
+    return os;
+}
+
+
+template<typename T>
+inline std::ostream &operator<<(std::ostream &os,
+                                const Tensor<T, 2> &tensor) {
+    print_last_two_dimesions(os, tensor);
     return os;
 }
 /**

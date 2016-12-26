@@ -926,14 +926,25 @@ TEST(tensor, nd1) {
 
 }
 
-TEST(tensor, print) {
-    Tensor<float_t, 5> t({3,2,2,2,2});
+template<size_t T> std::ostream& print_tester(std::ostream &os) {
+    os << "\nPrinting Tensor of size " << T << ":\n\n";
+    std::vector<size_t> tmp(T, 2);
+    tmp.back() = 3;
 
+    Tensor<float_t, T> t(tmp);
     t.fill(float_t(1.0));
-
-    std::cout << t;
-
+    os << t;
+    print_tester<T-1>(os);
 }
+
+template<> std::ostream& print_tester<0>(std::ostream &os) {
+    return os;
+}
+
+TEST(tensor, print) {
+    print_tester<5>(std::cout);
+}
+
 //TEST(tensor, exp) {
 //    Tensor<float_t> t(2, 2, 2, 2);
 //

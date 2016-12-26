@@ -121,8 +121,8 @@ class Tensor {
      */
     explicit Tensor(const std::vector<size_t> &shape) {
         offset_ = size_t(0);
-        shape_ = shape;
         size_ = product(shape);
+        std::copy(shape.begin(), shape.end(), shape_.begin());
         storage_ptr_ = std::make_shared<TensorStorageType>(shape);
     }
 
