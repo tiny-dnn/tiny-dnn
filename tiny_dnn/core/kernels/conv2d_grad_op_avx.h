@@ -526,7 +526,10 @@ inline void accumulate_dw(
                             __m256 a = _mm256_loadu_ps(pa);
                             __m256 b = _mm256_loadu_ps(pb);
                             __m256 sum = _mm256_mul_ps(a, b);
-                            for (size_t i = 1; i < nblocks; ++i) {
+                            a = _mm256_loadu_ps(pa + 8);
+                            b = _mm256_loadu_ps(pb + 8);
+                            sum = madd256_ps(a, b, sum);
+                            for (size_t i = 2; i < nblocks; ++i) {
                                 a = _mm256_loadu_ps(pa + 8 * i);
                                 b = _mm256_loadu_ps(pb + 8 * i);
                                 sum = madd256_ps(a, b, sum);
@@ -538,7 +541,10 @@ inline void accumulate_dw(
                                 a = _mm256_loadu_ps(pa);
                                 b = _mm256_loadu_ps(pb);
                                 sum = madd256_ps(a, b, sum);
-                                for (size_t i = 1; i < nblocks; ++i) {
+                                a = _mm256_loadu_ps(pa + 8);
+                                b = _mm256_loadu_ps(pb + 8);
+                                sum = madd256_ps(a, b, sum);
+                                for (size_t i = 2; i < nblocks; ++i) {
                                     a = _mm256_loadu_ps(pa + 8 * i);
                                     b = _mm256_loadu_ps(pb + 8 * i);
                                     sum = madd256_ps(a, b, sum);
