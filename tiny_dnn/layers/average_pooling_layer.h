@@ -148,7 +148,12 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                           serial_size_t in_height,
                           serial_size_t in_channels,
                           serial_size_t pool_size)
-            : average_pooling_layer(in_width, in_height, in_channels, pool_size, pool_size)
+            : average_pooling_layer(in_width,
+                                    in_height,
+                                    in_channels,
+                                    pool_size,
+                                    (in_height == 1 ? 1 : pool_size)
+                                   )
     {}
 
     average_pooling_layer(const shape3d& in_shape,
@@ -169,7 +174,15 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
                           serial_size_t in_channels,
                           serial_size_t pool_size,
                           serial_size_t stride)
-        : average_pooling_layer(in_width, in_height, in_channels, pool_size, pool_size, stride, stride, padding::valid)
+        : average_pooling_layer(in_width,
+                                in_height,
+                                in_channels,
+                                pool_size,
+                                (in_height == 1 ? 1 : pool_size),
+                                stride,
+                                stride,
+                                padding::valid
+                               )
     {}
 
     /**
