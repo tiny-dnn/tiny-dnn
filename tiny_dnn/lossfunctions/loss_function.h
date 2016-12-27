@@ -179,12 +179,12 @@ vec_t gradient(const vec_t& y, const vec_t& t) {
 
 template <typename E>
 std::vector<vec_t> gradient(const std::vector<vec_t>& y, const std::vector<vec_t>& t) {
-    std::vector<vec_t> grads;
+    std::vector<vec_t> grads(y.size());
  
     assert(y.size() == t.size());
 
     for (serial_size_t i = 0; i < y.size(); i++)
-        grads.push_back(gradient<E>(y[i], t[i]));
+        grads[i] = gradient<E>(y[i], t[i]);
 
     return grads;
 }

@@ -279,9 +279,9 @@ std::vector<T> filter(const std::vector<T>& vec, Pred p) {
 
 template <typename Result, typename T, typename Pred>
 std::vector<Result> map_(const std::vector<T>& vec, Pred p) {
-    std::vector<Result> res;
-    for (auto& v : vec) {
-        res.push_back(p(v));
+    std::vector<Result> res(vec.size());
+    for (size_t i=0; i<vec.size(); ++i) {
+        res[i] = p(vec[i]);
     }
     return res;
 }

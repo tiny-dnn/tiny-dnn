@@ -232,7 +232,7 @@ private:
     void set_shape_channels() {
         serial_size_t channel_per_out = in_shape_.depth_ / num_outputs_;
 
-        out_shapes_.clear();
+        out_shapes_.resize(num_outputs_);
         for (serial_size_t i = 0; i < num_outputs_; i++) {
             serial_size_t ch = channel_per_out;
 
@@ -242,7 +242,7 @@ private:
             }
 
             slice_size_.push_back(ch);
-            out_shapes_.push_back(shape3d(in_shape_.width_, in_shape_.height_, ch));
+            out_shapes_[i] = shape3d(in_shape_.width_, in_shape_.height_, ch);
         }
     }
 
