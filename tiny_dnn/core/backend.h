@@ -133,19 +133,11 @@ class backend {
 
     // core math functions
 
-    virtual void conv2d(const std::vector<tensor_t*>& in_data,
-                        std::vector<tensor_t*>&       out_data) = 0;
-
     virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
                           std::vector<tensor_t*>&       out_data) = 0;
 
     virtual void conv2d_eq(const std::vector<tensor_t*>& in_data,
                            std::vector<tensor_t*>&       out_data) = 0;
-
-    virtual void conv2d(const std::vector<tensor_t*>& in_data,
-                        const std::vector<tensor_t*>& out_data,
-                        std::vector<tensor_t*>&       out_grad,
-                        std::vector<tensor_t*>&       in_grad) = 0;
 
     virtual void conv2d_q(const std::vector<tensor_t*>& in_data,
                           const std::vector<tensor_t*>& out_data,
@@ -171,27 +163,11 @@ class backend {
                             std::vector<tensor_t*>&       out_grad,
                             std::vector<tensor_t*>&       in_grad) = 0;
 
-    virtual void maxpool(const std::vector<tensor_t*>& in_data,
-                         std::vector<tensor_t*>&       out_data) = 0;
-
-    virtual void maxpool(const std::vector<tensor_t*>& in_data,
-                         const std::vector<tensor_t*>& out_data,
-                         std::vector<tensor_t*>&       out_grad,
-                         std::vector<tensor_t*>&       in_grad) = 0;
-
-    virtual void fully(const std::vector<tensor_t*>& in_data,
-                       std::vector<tensor_t*>&       out_data) = 0;
-
     virtual void fully_q(const std::vector<tensor_t*>& in_data,
                          std::vector<tensor_t*>&       out_data) = 0;
 
     virtual void fully_eq(const std::vector<tensor_t*>& in_data,
                           std::vector<tensor_t*>&       out_data) = 0;
-
-    virtual void fully(const std::vector<tensor_t*>& in_data,
-                       const std::vector<tensor_t*>& out_data,
-                       std::vector<tensor_t*>&       out_grad,
-                       std::vector<tensor_t*>&       in_grad) = 0;
 
     virtual void fully_q(const std::vector<tensor_t*>& in_data,
                          const std::vector<tensor_t*>& out_data,

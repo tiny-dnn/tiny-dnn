@@ -39,13 +39,6 @@ class dnn_backend : public backend {
 
     // core math functions
 
-    void conv2d(const std::vector<tensor_t*>& in_data,
-                std::vector<tensor_t*>&       out_data) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        throw nn_error("not implemented yet.");
-    }
-
     void conv2d_q(const std::vector<tensor_t*>& in_data,
                   std::vector<tensor_t*>&       out_data) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
@@ -57,17 +50,6 @@ class dnn_backend : public backend {
                    std::vector<tensor_t*>&       out_data) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
-        throw nn_error("not implemented yet.");
-    }
-
-    void conv2d(const std::vector<tensor_t*>& in_data,
-                const std::vector<tensor_t*>& out_data,
-                std::vector<tensor_t*>&       out_grad,
-                std::vector<tensor_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        CNN_UNREFERENCED_PARAMETER(out_grad);
-        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("not implemented yet.");
     }
 
@@ -125,31 +107,6 @@ class dnn_backend : public backend {
         throw nn_error("not implemented yet.");
     }
 
-    void maxpool(const std::vector<tensor_t*>& in_data,
-                 std::vector<tensor_t*>&       out_data) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        throw nn_error("not implemented yet.");
-    }
-
-    void maxpool(const std::vector<tensor_t*>& in_data,
-                 const std::vector<tensor_t*>& out_data,
-                 std::vector<tensor_t*>&       out_grad,
-                 std::vector<tensor_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        CNN_UNREFERENCED_PARAMETER(out_grad);
-        CNN_UNREFERENCED_PARAMETER(in_grad);
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(const std::vector<tensor_t*>& in_data,
-               std::vector<tensor_t*>&       out_data) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        throw nn_error("not implemented yet.");
-    }
-
     void fully_q(const std::vector<tensor_t*>& in_data,
                  std::vector<tensor_t*>&       out_data) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
@@ -161,17 +118,6 @@ class dnn_backend : public backend {
                   std::vector<tensor_t*>&       out_data) override {
         CNN_UNREFERENCED_PARAMETER(in_data);
         CNN_UNREFERENCED_PARAMETER(out_data);
-        throw nn_error("not implemented yet.");
-    }
-
-    void fully(const std::vector<tensor_t*>& in_data,
-               const std::vector<tensor_t*>& out_data,
-               std::vector<tensor_t*>&       out_grad,
-               std::vector<tensor_t*>&       in_grad) override {
-        CNN_UNREFERENCED_PARAMETER(in_data);
-        CNN_UNREFERENCED_PARAMETER(out_data);
-        CNN_UNREFERENCED_PARAMETER(out_grad);
-        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_error("not implemented yet.");
     }
 

@@ -26,7 +26,6 @@ inline void accumulate_db(
 ) {
     if (out.width_ == 1 && out.height_ == 1) {
         size_t nblocks = out.depth_ / 8;
-        size_t remainder = out.depth_ & 7;
         for (size_t i = 0; i < nblocks; ++i) {
             _mm256_storeu_ps(
                 &db[i*8],
@@ -99,6 +98,7 @@ inline void accumulate_dw(
     std::vector<float, Allocator>&       dW,
     std::vector<float, Allocator>&       db
 ) {
+    CNN_UNREFERENCED_PARAMETER(db);
     auto& in        = params.in;
     auto& out       = params.out;
     auto& in_padded = params.in_padded;
@@ -300,8 +300,8 @@ inline void accumulate_dw(
                                 __m256 b = _mm256_loadu_ps(pb);
                                 sum0 = madd256_ps(a, b, sum0);
                                 for (size_t i = 1; i < nblocks; ++i) {
-                                    __m256 a = _mm256_loadu_ps(pa + 8 * i);
-                                    __m256 b = _mm256_loadu_ps(pb + 8 * i);
+                                    a = _mm256_loadu_ps(pa + 8 * i);
+                                    b = _mm256_loadu_ps(pb + 8 * i);
                                     sum0 = madd256_ps(a, b, sum0);
                                 }
                                 a = _mm256_maskload_ps(
@@ -425,8 +425,8 @@ inline void accumulate_dw(
                                 __m256 b = _mm256_loadu_ps(pb);
                                 sum0 = madd256_ps(a, b, sum0);
                                 for (size_t i = 1; i < nblocks; ++i) {
-                                    __m256 a = _mm256_loadu_ps(pa + 8 * i);
-                                    __m256 b = _mm256_loadu_ps(pb + 8 * i);
+                                    a = _mm256_loadu_ps(pa + 8 * i);
+                                    b = _mm256_loadu_ps(pb + 8 * i);
                                     sum0 = madd256_ps(a, b, sum0);
                                 }
                             }
