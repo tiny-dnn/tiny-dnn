@@ -1,7 +1,7 @@
 
-file(GLOB_RECURSE tiny_dnn_headers "${CMAKE_SOURCE_DIR}/tiny_dnn/*.h")
 
 if(MSVC)
+    file(GLOB_RECURSE tiny_dnn_headers "${CMAKE_SOURCE_DIR}/tiny_dnn/*.h")
     file(RELATIVE_PATH tiny_dnn_relpath ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_SOURCE_DIR}/tiny_dnn")
     string(REPLACE "/" "\\" tiny_dnn_relpath "${tiny_dnn_relpath}")
     foreach(_source IN ITEMS ${tiny_dnn_headers})
