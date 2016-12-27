@@ -521,12 +521,12 @@ class layer : public node {
 
         // organize input/output vectors from storage
         for (serial_size_t i = 0; i < in_channels_; i++) {
-            auto& nd = ith_in_node(i);
+            const auto& nd = ith_in_node(i);
             in_data[i] = nd->get_data();
             in_grad[i] = nd->get_gradient();
         }
         for (serial_size_t i = 0; i < out_channels_; i++) {
-            auto& nd = ith_out_node(i);
+            const auto& nd = ith_out_node(i);
             out_data[i] = nd->get_data();
             out_grad[i] = nd->get_gradient();
         }

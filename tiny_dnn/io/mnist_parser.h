@@ -112,7 +112,7 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
     for (uint32_t i = 0; i < num_items; i++) {
         uint8_t label;
         ifs.read((char*) &label, 1);
-        (*labels)[i] = (label_t) label;
+        (*labels)[i] = static_cast<label_t>(label);
     }
 }
 
