@@ -62,9 +62,12 @@ inline backend_t default_engine() {
 #ifdef CNN_USE_AVX
 #if defined(__AVX__) || defined(__AVX2__)
     return backend_t::avx;
+#else
+#error "your compiler does not support AVX"
 #endif
-#endif // CNN_USE_AVX
+#else
     return backend_t::internal;
+#endif
 }
 
 #ifdef CNN_USE_NNPACK

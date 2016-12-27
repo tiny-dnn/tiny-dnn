@@ -821,6 +821,7 @@ class network {
                         int             batch_size,
                         const int       num_tasks,
                         const tensor_t* t_cost) {
+        CNN_UNREFERENCED_PARAMETER(num_tasks);
         std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
         std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
         std::vector<tensor_t> t_cost_batch = t_cost

@@ -389,6 +389,8 @@ class tiny_backend : public backend {
                 a[i], layer_->parallelize());
         }
 #else
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
 #endif
     }
@@ -410,6 +412,8 @@ class tiny_backend : public backend {
                 in[i], W, b, in_r[i], W_r, b_r, a[i], a_r[i], layer_->parallelize());
         }
 #else
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
 #endif
     }
@@ -454,6 +458,10 @@ class tiny_backend : public backend {
                 W, dW[i], prev_delta[i], curr_delta[i], db[i], layer_->parallelize());
         }
 #else
+        CNN_UNREFERENCED_PARAMETER(in_data);
+        CNN_UNREFERENCED_PARAMETER(out_data);
+        CNN_UNREFERENCED_PARAMETER(out_grad);
+        CNN_UNREFERENCED_PARAMETER(in_grad);
         throw nn_not_implemented_error("quantized fully op requires gemmlowp library. please define CNN_USE_GEMMLOWP");
 #endif
     }
