@@ -59,7 +59,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 #ifdef CNN_USE_LIBDNN
             , initialized_(false)
 #endif
-    	{
+    {
         // TODO(edgar): remove this if statement when refactor
         // the init_backend() routine at layer level.
         if (OpKernel::device_ != nullptr) {

@@ -133,7 +133,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>&       out_data) override {
-	// forward convolutional op context
+        // forward convolutional op context
         auto ctx = OpKernelContext(in_data, out_data);
              ctx.setParallelize(layer::parallelize());
              ctx.setEngine(layer::engine());
@@ -149,7 +149,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                           const std::vector<tensor_t*>& out_data,
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
-	// activations
+        // activations
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
@@ -177,20 +177,20 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
     std::pair<serial_size_t, serial_size_t> pool_size() const {
-	return std::make_pair(params_.pool_size_x, params_.pool_size_y);
+        return std::make_pair(params_.pool_size_x, params_.pool_size_y);
     }
 
     void set_sample_count(serial_size_t sample_count) override {
         Base::set_sample_count(sample_count);
         params_.out2inmax.resize(
-	     sample_count, std::vector<serial_size_t>(params_.out.size()));
+            sample_count, std::vector<serial_size_t>(params_.out.size()));
     }
 
 
     template <class Archive>
     static void
     load_and_construct(Archive & ar,
-		       cereal::construct<max_pooling_layer> & construct) {
+                       cereal::construct<max_pooling_layer> & construct) {
         shape3d in;
         serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
         padding pad_type;
@@ -202,7 +202,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
            cereal::make_nvp("stride_y", stride_y),
            cereal::make_nvp("pad_type", pad_type));
         construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-		  stride_x, stride_y, pad_type);
+                  stride_x, stride_y, pad_type);
     }
 
     template <class Archive>
@@ -272,11 +272,11 @@ private:
     }
 
     void init_backend(backend_t backend_type) {
-	core::OpKernelConstruction ctx =
-        core::OpKernelConstruction(layer::device(), &params_);
+        core::OpKernelConstruction ctx =
+            core::OpKernelConstruction(layer::device(), &params_);
 
         if (backend_type == backend_t::internal ||
-	    backend_type == backend_t::nnpack   ||
+            backend_type == backend_t::nnpack   ||
             backend_type == backend_t::avx) {
 
             kernel_fwd_.reset(new MaxPoolOp(ctx));

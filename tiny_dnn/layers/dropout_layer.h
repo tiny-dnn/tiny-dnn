@@ -51,7 +51,7 @@ public:
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           in_size_(in_dim)
     {
-		mask_.resize(1, std::vector<uint8_t>(in_dim));
+        mask_.resize(1, std::vector<uint8_t>(in_dim));
         clear_mask();
     }
 
@@ -160,8 +160,8 @@ public:
 
     void clear_mask() {
         for (auto& sample : mask_) {
-			std::fill(sample.begin(), sample.end(), 0);
-		}
+            std::fill(sample.begin(), sample.end(), 0);
+        }
     }
 
     template <class Archive>
@@ -185,7 +185,7 @@ private:
     float_t dropout_rate_;
     float_t scale_;
     serial_size_t in_size_;
-	std::vector<std::vector<uint8_t>> mask_;
+    std::vector<std::vector<uint8_t>> mask_;
 };
 
 } // namespace tiny_dnn

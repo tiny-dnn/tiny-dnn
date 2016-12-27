@@ -750,8 +750,8 @@ class layer : public node {
     void alloc_output(serial_size_t i) const {
         // the created outcoming will have the current layer as the
         // previous node.
-	next_[i] = std::make_shared<edge>((layer*)this,
-            out_shape()[i], out_type_[i]);
+        next_[i] = std::make_shared<edge>((layer*)this,
+                                          out_shape()[i], out_type_[i]);
     }
 
     /* @brief Creates an edge between the current node and one incoming
