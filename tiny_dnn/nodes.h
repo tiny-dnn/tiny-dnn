@@ -183,15 +183,21 @@ class nodes {
         }
     }
 
-    void label2vec(const label_t* t, serial_size_t num, std::vector<vec_t> *vec) const {
+    void label2vec(const label_t* t, serial_size_t num, std::vector<vec_t>& vec) const {
         serial_size_t outdim = out_data_size();
 
-        vec->reserve(num);
+        vec.reserve(num);
         for (serial_size_t i = 0; i < num; i++) {
             assert(t[i] < outdim);
-            vec->emplace_back(outdim, target_value_min());
-            vec->back()[t[i]] = target_value_max();
+            vec.emplace_back(outdim, target_value_min());
+            vec.back()[t[i]] = target_value_max();
         }
+    }
+
+    void label2vec(const std::vector<label_t>& labels, std::vector<vec_t>& vec) const {
+        return label2vec(&labels[0],
+                         static_cast<serial_size_t>(labels.size()),
+                         vec);
     }
 
     template <typename OutputArchive>
