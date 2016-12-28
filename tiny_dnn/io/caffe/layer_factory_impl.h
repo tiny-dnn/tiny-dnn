@@ -150,7 +150,7 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
                                               const shape_t& bottom_shape,
                                               shape_t *top_shape) {
     using max_pool = max_pooling_layer;
-    activation::identity identity;
+    static activation::identity identity;
     auto mp = std::make_shared<max_pool>(identity,
                                          bottom_shape.width_,
                                          bottom_shape.height_,
@@ -171,7 +171,7 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
                                               const shape_t& bottom_shape,
                                               shape_t *top_shape) {
     using ave_pool = average_pooling_layer;
-    activation::identity identity;
+    static activation::identity identity;
     auto ap = std::make_shared<ave_pool>(identity,
                                          bottom_shape.width_,
                                          bottom_shape.height_,
@@ -197,7 +197,7 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
 inline
 std::shared_ptr<layer> create_softmax(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape, shape_t *) {
-    activation::softmax softmax;
+    static activation::softmax softmax;
     auto sm = std::make_shared<linear_layer>(
         softmax,
         bottom_shape.size());
@@ -208,7 +208,7 @@ std::shared_ptr<layer> create_softmax(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_sigmoid(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape, shape_t *) {
-    activation::sigmoid sigmoid;
+    static activation::sigmoid sigmoid;
     auto ce = std::make_shared<linear_layer>(
         sigmoid,
         bottom_shape.size());
@@ -218,7 +218,7 @@ std::shared_ptr<layer> create_sigmoid(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_tanh(const caffe::LayerParameter& layer,
                                    const shape_t& bottom_shape, shape_t *) {
-    activation::tan_h activation_fn;
+    static activation::tan_h activation_fn;
     auto tanh = std::make_shared<linear_layer>(
         activation_fn,
         bottom_shape.size());
@@ -315,7 +315,7 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_relu(const caffe::LayerParameter& layer,
                                    const shape_t& bottom_shape, shape_t *) {
-    activation::relu activation_fn;
+    static activation::relu activation_fn;
     auto relu = std::make_shared<linear_layer>(
         activation_fn,
         bottom_shape.size());
@@ -409,7 +409,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
 inline std::shared_ptr<layer> create_fullyconnected(
         const caffe::LayerParameter& layer,
         const shape_t& bottom_shape, shape_t *top_shape) {
-    activation::identity activation_fn;
+    static activation::identity activation_fn;
     using fc_layer = fully_connected_layer;
 
     if (!layer.has_inner_product_param()) {
@@ -537,7 +537,7 @@ inline
 std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
                                   const shape_t& bottom_shape,
                                   shape_t *top_shape) {
-    activation::identity identity;
+    static activation::identity identity;
     using lrn_layer = lrn_layer;
 
     if (!layer.has_lrn_param()) {
@@ -591,7 +591,7 @@ inline
 std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
                                         const shape_t& bottom_shape,
                                         shape_t *top_shape) {
-    activation::identity identity;
+    static activation::identity identity;
     using conv_layer = convolutional_layer;
 
     if (!layer.has_convolution_param()) {
@@ -685,7 +685,7 @@ inline
 std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
                                         const shape_t& bottom_shape,
                                         shape_t *top_shape) {
-    activation::identity identity;
+    static activation::identity identity;
     using deconv_layer = deconvolutional_layer;
 
     if (!layer.has_convolution_param()) {
