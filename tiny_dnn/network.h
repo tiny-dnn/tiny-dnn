@@ -654,11 +654,11 @@ class network {
     /**
      * save the network architecture as json string
      **/
-    std::string to_json() const {
+    std::string to_json(content_type what = content_type::model) const {
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
-            to_archive(oa, content_type::model);
+            to_archive(oa, what);
         }
         return ss.str();
     }
@@ -666,11 +666,11 @@ class network {
     /**
      * load the network architecture from json string
      **/
-    void from_json(const std::string& json_string) {
+    void from_json(const std::string& json_string, content_type what = content_type::model) {
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
-        from_archive(ia, content_type::model);
+        from_archive(ia, what);
     }
 
     ///< @deprecated use save(filename,target,format) instead.
