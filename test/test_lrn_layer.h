@@ -32,7 +32,9 @@
 namespace tiny_dnn {
 
 TEST(lrn, cross) {
-    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
+    static identity identity;
+    lrn_layer lrn(identity,
+                  1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
 
     tiny_dnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
     tiny_dnn::float_t expected[4] =
@@ -52,8 +54,9 @@ TEST(lrn, cross) {
 }
 
 TEST(lrn, read_write) {
-    lrn_layer<identity> l1(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
-    lrn_layer<identity> l2(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
+    static identity identity;
+    lrn_layer l1(identity, 10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
+    lrn_layer l2(identity, 10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
 
     l1.init_weight();
     l2.init_weight();

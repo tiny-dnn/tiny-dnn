@@ -84,17 +84,22 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<elementwise_add_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<elementwise_add_layer> & construct
+    ) {
         serial_size_t num_args, dim;
 
-        ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
+        ar(cereal::make_nvp("num_args", num_args),
+           cereal::make_nvp("dim", dim));
         construct(num_args, dim);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
+        ar(cereal::make_nvp("num_args", num_args_),
+           cereal::make_nvp("dim", dim_));
     }
 private:
     serial_size_t num_args_;

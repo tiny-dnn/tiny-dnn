@@ -54,13 +54,14 @@ void deconv_lanet(network<graph>& nn,
     #undef X
 
     // declare nodes
+    static tan_h tan_h;
     input_layer i1(shape3d(32,32,1));
-    convolutional_layer<tan_h> c1(32, 32, 5, 1, 6);
-    average_pooling_layer<tan_h> p1(28, 28, 6, 2);
-    deconvolutional_layer<tan_h> d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
-    average_pooling_layer<tan_h> p2(18, 18, 16, 2);
-    convolutional_layer<tan_h> c2(9, 9, 9, 16, 120);
-    fully_connected_layer<tan_h> f1(120, 10);
+    convolutional_layer c1(tan_h, 32, 32, 5, 1, 6);
+    average_pooling_layer p1(tan_h, 28, 28, 6, 2);
+    deconvolutional_layer d1(tan_h, 14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
+    average_pooling_layer p2(tan_h, 18, 18, 16, 2);
+    convolutional_layer c2(tan_h, 9, 9, 9, 16, 120);
+    fully_connected_layer f1(tan_h, 120, 10);
 
     // connect them to graph
     i1 << c1 << p1 << d1 << p2 << c2 << f1;
@@ -113,12 +114,13 @@ void deconv_ae(network<sequential>& nn,
     std::vector<vec_t> test_images) {
 
     // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)
-       << convolutional_layer<tan_h>(14, 14, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(12, 12, 3, 16, 6)
-       << average_unpooling_layer<tan_h>(14, 14, 6, 2)
-       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+    static tan_h tan_h;
+    nn << convolutional_layer(tan_h, 32, 32, 5, 1, 6)
+       << average_pooling_layer(tan_h, 28, 28, 6, 2)
+       << convolutional_layer(tan_h, 14, 14, 3, 6, 16)
+       << deconvolutional_layer(tan_h, 12, 12, 3, 16, 6)
+       << average_unpooling_layer(tan_h, 14, 14, 6, 2)
+       << deconvolutional_layer(tan_h, 28, 28, 5, 6, 1);
 
     // load train-data and make corruption
 
@@ -150,9 +152,10 @@ void enet(network<graph>& nn,
 
     // initial module
     input_layer ii0(shape3d(32,32,1));
-    convolutional_layer<tan_h> ic1(32, 32, 3, 1, 8, padding::same, true, 2, 2);
-    max_pooling_layer<tan_h> ip1(32, 32, 1, 2);
-    convolutional_layer<tan_h> ic2(16, 16, 1, 1, 8, padding::same);
+    static tan_h tan_h;
+    convolutional_layer ic1(tan_h, 32, 32, 3, 1, 8, padding::same, true, 2, 2);
+    max_pooling_layer ip1(tan_h, 32, 32, 1, 2);
+    convolutional_layer ic2(tan_h, 16, 16, 1, 1, 8, padding::same);
     concat_layer icc1(2, 16*16*8);
 
     ii0 << ip1 << ic2;
@@ -160,11 +163,11 @@ void enet(network<graph>& nn,
     (ic2, ic1) << icc1;
 
     // bottle neck module 1
-    max_pooling_layer<tan_h> b1p1(16, 16, 16, 2);
-    convolutional_layer<tan_h> b1c2(8, 8, 1, 16, 32, padding::same);
-    convolutional_layer<tan_h> b1c1(16, 16, 1, 16, 32, padding::same);
-    convolutional_layer<tan_h> b1c3(16, 16, 2, 32, 32, padding::same, true, 2, 2);
-    convolutional_layer<tan_h> b1c4(8, 8, 1, 32, 32, padding::same);
+    max_pooling_layer b1p1(tan_h, 16, 16, 16, 2);
+    convolutional_layer b1c2(tan_h, 8, 8, 1, 16, 32, padding::same);
+    convolutional_layer b1c1(tan_h, 16, 16, 1, 16, 32, padding::same);
+    convolutional_layer b1c3(tan_h, 16, 16, 2, 32, 32, padding::same, true, 2, 2);
+    convolutional_layer b1c4(tan_h, 8, 8, 1, 32, 32, padding::same);
     concat_layer b1cc1(2, 8*8*32);
 
     icc1 << b1p1 << b1c2;
@@ -172,9 +175,9 @@ void enet(network<graph>& nn,
     (b1c2, b1c4) << b1cc1;
 
     // bottle neck module 2
-    deconvolutional_layer<tan_h> b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
-    deconvolutional_layer<tan_h> b2d2(16, 16, 1, 16, 1, padding::same, true, 2, 2);
-    fully_connected_layer<tan_h> f1(32*32, 10);
+    deconvolutional_layer b2d1(tan_h, 8, 8, 1, 64, 16, padding::same, true, 2, 2);
+    deconvolutional_layer b2d2(tan_h, 16, 16, 1, 16, 1, padding::same, true, 2, 2);
+    fully_connected_layer f1(tan_h, 32*32, 10);
     b1cc1 << b2d1 << b2d2 << f1;
 
     // construct whole network

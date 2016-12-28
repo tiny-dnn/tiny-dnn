@@ -56,9 +56,10 @@ TEST(power, forward) {
 TEST(power, gradient_check) {
     network<sequential> nn;
 
-    nn << fully_connected_layer<tan_h>(10, 20)
+    static tan_h tan_h;
+    nn << fully_connected_layer(tan_h, 10, 20)
        << power_layer(shape3d(20, 1, 1), 3.0, 1.5)
-       << fully_connected_layer<tan_h>(20, 10);
+       << fully_connected_layer(tan_h, 20, 10);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();

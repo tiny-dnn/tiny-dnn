@@ -38,14 +38,14 @@
 namespace tiny_dnn {
 
 // forward_propagation
-template <typename Activation>
+inline
 void tiny_average_unpooling_kernel(bool parallelize,
                                    const std::vector<tensor_t*>& in_data,
                                    std::vector<tensor_t*>&       out_data,
                                    const shape3d&                out_dim,
                                    float_t                       scale_factor,
-                                   std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
-                                   Activation&                   h) {
+                                   std::vector<typename partial_connected_layer::wi_connections>& out2wi,
+                                   const activation::function&   h) {
     CNN_UNREFERENCED_PARAMETER(scale_factor);
     for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
         const vec_t& in  = (*in_data[0])[sample];
@@ -78,15 +78,15 @@ void tiny_average_unpooling_kernel(bool parallelize,
 }
 
 // back_propagation
-template<typename Activation>
+inline
 void tiny_average_unpooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                         const std::vector<tensor_t*>&   out_data,
                                         std::vector<tensor_t*>&         out_grad,
                                         std::vector<tensor_t*>&         in_grad,
                                         const shape3d&                  in_dim,
                                         float_t                         scale_factor,
-                                        std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
-                                        std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
+                                        std::vector<typename partial_connected_layer::io_connections>& weight2io,
+                                        std::vector<typename partial_connected_layer::wo_connections>& in2wo,
                                         std::vector<std::vector<serial_size_t>>& bias2out) {
     CNN_UNREFERENCED_PARAMETER(out_data);
     CNN_UNREFERENCED_PARAMETER(scale_factor);
@@ -132,11 +132,9 @@ void tiny_average_unpooling_back_kernel(const std::vector<tensor_t*>&   in_data,
 /**
  * average pooling with trainable weights
  **/
-template<typename Activation = activation::identity>
-class average_unpooling_layer : public partial_connected_layer<Activation> {
+class average_unpooling_layer : public partial_connected_layer {
  public:
-    typedef partial_connected_layer<Activation> Base;
-    CNN_USE_LAYER_MEMBERS;
+    typedef partial_connected_layer Base;
 
     /**
      * @param in_width     [in] width of input image
@@ -144,11 +142,13 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
      * @param in_channels  [in] the number of input image channels(depth)
      * @param pooling_size [in] factor by which to upscale
      **/
-    average_unpooling_layer(serial_size_t in_width,
+    average_unpooling_layer(const activation::function& activation_fn,
+                            serial_size_t in_width,
                             serial_size_t in_height,
                             serial_size_t in_channels,
                             serial_size_t pooling_size)
-            : Base(in_width * in_height * in_channels,
+            : Base(activation_fn,
+                   in_width * in_height * in_channels,
                    in_width * in_height * in_channels * sqr(pooling_size),
                    in_channels, in_channels, float_t(1) * sqr(pooling_size)),
               stride_(pooling_size),
@@ -166,12 +166,14 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
      * @param pooling_size [in] factor by which to upscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    average_unpooling_layer(serial_size_t in_width,
+    average_unpooling_layer(const activation::function& activation_fn,
+                            serial_size_t in_width,
                             serial_size_t in_height,
                             serial_size_t in_channels,
                             serial_size_t pooling_size,
                             serial_size_t stride)
-        : Base(in_width * in_height * in_channels,
+        : Base(activation_fn,
+               in_width * in_height * in_channels,
                unpool_out_dim(in_width, pooling_size, stride) *
                unpool_out_dim(in_height, pooling_size, stride) * in_channels,
                in_channels, in_channels, float_t(1) * sqr(pooling_size)),
@@ -197,7 +199,7 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
 
-        tiny_average_unpooling_kernel<Activation>(
+        tiny_average_unpooling_kernel(
             parallelize_,
             in_data,
             out_data,
@@ -215,7 +217,7 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
         tensor_t& curr_delta = *out_grad[0];
         this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        tiny_average_unpooling_back_kernel<Activation>(
+        tiny_average_unpooling_back_kernel(
             in_data,
             out_data,
             out_grad,

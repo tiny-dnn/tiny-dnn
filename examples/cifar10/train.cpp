@@ -34,21 +34,24 @@ using namespace std;
 
 template <typename N>
 void construct_net(N& nn) {
-    typedef convolutional_layer<activation::identity> conv;
-    typedef max_pooling_layer<relu> pool;
+    typedef convolutional_layer conv;
+    typedef max_pooling_layer pool;
 
     const serial_size_t n_fmaps = 32;   ///< number of feature maps for upper layer
     const serial_size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
     const serial_size_t n_fc = 64;      ///< number of hidden units in fully-connected layer
 
-    nn << conv(32, 32, 5, 3, n_fmaps, padding::same)
-       << pool(32, 32, n_fmaps, 2)
-       << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
-       << pool(16, 16, n_fmaps, 2)
-       << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
-       << pool(8, 8, n_fmaps2, 2)
-       << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-       << fully_connected_layer<softmax>(n_fc, 10);
+    static activation::identity identify;
+    static activation::relu relu;
+    static activation::softmax softmax;
+    nn << conv(identify, 32, 32, 5, 3, n_fmaps, padding::same)
+       << pool(relu, 32, 32, n_fmaps, 2)
+       << conv(identify, 16, 16, 5, n_fmaps, n_fmaps, padding::same)
+       << pool(relu, 16, 16, n_fmaps, 2)
+       << conv(identify, 8, 8, 5, n_fmaps, n_fmaps2, padding::same)
+       << pool(relu, 8, 8, n_fmaps2, 2)
+       << fully_connected_layer(identify, 4 * 4 * n_fmaps2, n_fc)
+       << fully_connected_layer(softmax, n_fc, 10);
 }
 
 void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {

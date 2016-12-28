@@ -36,7 +36,6 @@ namespace tiny_dnn {
  **/
 class dropout_layer : public layer {
 public:
-    typedef activation::identity Activation;
     typedef layer Base;
 
     /**
@@ -165,19 +164,26 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<dropout_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<dropout_layer> & construct
+    ) {
         net_phase phase;
         float_t dropout_rate;
         serial_size_t in_size;
 
-        ar(cereal::make_nvp("in_size", in_size), cereal::make_nvp("dropout_rate", dropout_rate), cereal::make_nvp("phase", phase));
+        ar(cereal::make_nvp("in_size", in_size),
+           cereal::make_nvp("dropout_rate", dropout_rate),
+           cereal::make_nvp("phase", phase));
         construct(in_size, dropout_rate, phase);
     }
     
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_size_), cereal::make_nvp("dropout_rate", dropout_rate_), cereal::make_nvp("phase", phase_));
+        ar(cereal::make_nvp("in_size", in_size_),
+           cereal::make_nvp("dropout_rate", dropout_rate_),
+           cereal::make_nvp("phase", phase_));
     }
 
 private:

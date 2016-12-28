@@ -35,8 +35,9 @@
 namespace tiny_dnn {
 
 TEST(max_pool, read_write) {
-    max_pooling_layer<tan_h> l1(100, 100, 5, 2);
-    max_pooling_layer<tan_h> l2(100, 100, 5, 2);
+    static tan_h tan_h;
+    max_pooling_layer l1(tan_h, 100, 100, 5, 2);
+    max_pooling_layer l2(tan_h, 100, 100, 5, 2);
 
     l1.init_weight();
     l2.init_weight();
@@ -45,7 +46,8 @@ TEST(max_pool, read_write) {
 }
 
 TEST(max_pool, forward) {
-    max_pooling_layer<identity> l(4, 4, 1, 2);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -66,8 +68,9 @@ TEST(max_pool, forward) {
 }
 
 TEST(max_pool, setup_internal) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-		                  core::backend_t::internal);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2, 2,
+                        core::backend_t::internal);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           serial_size_t(1));  // num of input tensors
@@ -88,8 +91,9 @@ TEST(max_pool, setup_internal) {
 }
 
 TEST(max_pool, forward_stride_internal) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-		                  core::backend_t::internal);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2, 2,
+                        core::backend_t::internal);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -110,8 +114,9 @@ TEST(max_pool, forward_stride_internal) {
 }
 
 TEST(max_pool, forward_padding_same) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2, 1, 1,
-		                  padding::same, core::backend_t::internal);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2, 2, 1, 1,
+                        padding::same, core::backend_t::internal);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -134,7 +139,9 @@ TEST(max_pool, forward_padding_same) {
 }
 
 TEST(max_pool, forward_stride_x) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 1, 2, 1, padding::valid);
+    static identity identity;
+    max_pooling_layer l(identity,
+                        4, 4, 1, 2, 1, 2, 1, padding::valid);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -160,7 +167,9 @@ TEST(max_pool, forward_stride_x) {
 }
 
 TEST(max_pool, forward_stride_y) {
-    max_pooling_layer<identity> l(4, 4, 1, 1, 2, 1, 2, padding::valid);
+    static identity identity;
+    max_pooling_layer l(identity,
+                        4, 4, 1, 1, 2, 1, 2, padding::valid);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -186,8 +195,10 @@ TEST(max_pool, forward_stride_y) {
 #ifdef CNN_USE_NNPACK
 TEST(max_pool, forward_stride_nnp) {
     nnp_initialize();
-    max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-                                  core::backend_t::nnpack);
+    static identity identity;
+    max_pooling_layer l(identity,
+                        4, 4, 1, 2, 2,
+                        core::backend_t::nnpack);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -210,8 +221,10 @@ TEST(max_pool, forward_stride_nnp) {
 
 TEST(max_pool, forward_stride_nnp_not_2x2) {
     nnp_initialize();
-    max_pooling_layer<identity> l(4, 4, 1, 3, 1,
-		                  core::backend_t::nnpack);
+    static identity identity;
+    max_pooling_layer l(identity,
+                        4, 4, 1, 3, 1,
+                        core::backend_t::nnpack);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -233,7 +246,8 @@ TEST(max_pool, forward_stride_nnp_not_2x2) {
 #endif
 
 TEST(max_pool, forward_stride) {
-    max_pooling_layer<identity> l(4, 4, 1, 2, 1);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2, 1);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -255,7 +269,8 @@ TEST(max_pool, forward_stride) {
 }
 
 TEST(max_pool, backward) {
-    max_pooling_layer<identity> l(4, 4, 1, 2);
+    static identity identity;
+    max_pooling_layer l(identity, 4, 4, 1, 2);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -285,7 +300,8 @@ TEST(max_pool, backward) {
 
 #ifndef CNN_NO_SERIALIZATION
 TEST(max_pool, serialization) {
-    max_pooling_layer<identity> src(4, 4, 1, 2);
+    static identity identity;
+    max_pooling_layer src(identity, 4, 4, 1, 2);
 
     std::string str = layer_to_json(src);
 
@@ -310,7 +326,9 @@ TEST(max_pool, serialization) {
 }
 
 TEST(max_pool, serialization_stride) {
-    max_pooling_layer<identity> src(4, 4, 1, 2, 1, 1, 2, padding::valid);
+    static identity identity;
+    max_pooling_layer src(identity,
+                          4, 4, 1, 2, 1, 1, 2, padding::valid);
 
     std::string str = layer_to_json(src);
 
@@ -335,7 +353,9 @@ TEST(max_pool, serialization_stride) {
 }
 
 TEST(max_pool, serialization_padding) {
-    max_pooling_layer<identity> src(4, 4, 1, 2, 2, 1, 1, padding::same);
+    static identity identity;
+    max_pooling_layer src(identity,
+                          4, 4, 1, 2, 2, 1, 1, padding::same);
 
     std::string str = layer_to_json(src);
 

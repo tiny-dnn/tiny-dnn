@@ -216,9 +216,17 @@ inline U& operator << (const node_tuple<T>& lhs, U& rhs) {
 }
 
 template <typename T, typename U>
-inline node_tuple<T>& operator << (U& lhs, const node_tuple<T>& rhs) {
+inline node_tuple<T>& operator << (U& lhs, node_tuple<T>& rhs) {
     for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size()); i++) {
         connect(&*lhs, &*rhs.nodes_[i], i, 0);
+    }
+    return rhs;
+}
+
+template <typename T, typename U>
+inline const node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
+    for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size()); i++) {
+        connect(&lhs, rhs.nodes_[i], i, 0);
     }
     return rhs;
 }
@@ -230,14 +238,5 @@ inline U& operator << (const node_tuple<T*>& lhs, U& rhs) {
     }
     return rhs;
 }
-
-template <typename T, typename U>
-inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
-    for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size()); i++) {
-        connect(&lhs, rhs.nodes_[i], i, 0);
-    }
-    return rhs;
-}
-
 
 }   // namespace tiny_dnn

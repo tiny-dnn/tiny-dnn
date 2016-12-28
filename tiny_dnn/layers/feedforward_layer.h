@@ -33,12 +33,15 @@ namespace tiny_dnn {
 /**
  * single-input, single-output network with activation function
  **/
-template<typename Activation>
 class feedforward_layer : public layer {
 public:
-    explicit feedforward_layer(const std::vector<vector_type>& in_data_type)
-        : layer(in_data_type, std_output_order(true)) {}
-    activation::function& activation_function() { return h_; }
+    explicit
+    feedforward_layer(const activation::function& activation_fn,
+                      const std::vector<vector_type>& in_data_type)
+        : h_(activation_fn),
+        layer(in_data_type, std_output_order(true)) {}
+    
+    const activation::function& activation_function() { return h_; }
     std::pair<float_t, float_t> out_value_range() const override { return h_.scale(); }
 
 public:
@@ -78,7 +81,8 @@ public:
         });
     }
 
-    Activation h_;
+protected:
+    const activation::function& h_;
 };
 
 } // namespace tiny_dnn

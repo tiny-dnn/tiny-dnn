@@ -33,23 +33,26 @@ namespace tiny_dnn {
 /**
 * create multi-layer perceptron
 */
-template<typename activation, typename Iter>
-network<sequential> make_mlp(Iter first, Iter last) {
+template<typename Iter>
+static inline
+network<sequential> make_mlp(activation::function& activation_fn,
+                             Iter first, Iter last) {
     typedef network<sequential> net_t;
     net_t n;
 
     Iter next = first + 1;
     for (; next != last; ++first, ++next)
-        n << fully_connected_layer<activation>(*first, *next);
+        n << fully_connected_layer(activation_fn, *first, *next);
     return n;
 }
 
 /**
  * create multi-layer perceptron
  */
-template<typename activation>
-network<sequential> make_mlp(const std::vector<serial_size_t>& units) {
-    return make_mlp<activation>(units.begin(), units.end());
+static inline
+network<sequential> make_mlp(activation::function& activation_fn,
+                             const std::vector<serial_size_t>& units) {
+    return make_mlp(activation_fn, units.begin(), units.end());
 }
 
 

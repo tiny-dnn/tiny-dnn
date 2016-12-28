@@ -83,23 +83,17 @@
 namespace tiny_dnn {
 namespace layers {
 
-template <class T>
-using conv = tiny_dnn::convolutional_layer<T>;
+using conv = tiny_dnn::convolutional_layer;
 
-template <class T>
-using q_conv = tiny_dnn::quantized_convolutional_layer<T>;
+using q_conv = tiny_dnn::quantized_convolutional_layer;
 
-template <class T>
-using max_pool = tiny_dnn::max_pooling_layer<T>;
+using max_pool = tiny_dnn::max_pooling_layer;
 
-template <class T>
-using ave_pool = tiny_dnn::average_pooling_layer<T>;
+using ave_pool = tiny_dnn::average_pooling_layer;
 
-template <class T>
-using fc = tiny_dnn::fully_connected_layer<T>;
+using fc = tiny_dnn::fully_connected_layer;
 
-template <class T>
-using dense = tiny_dnn::fully_connected_layer<T>;
+using dense = tiny_dnn::fully_connected_layer;
 
 using add = tiny_dnn::elementwise_add_layer;
 
@@ -107,21 +101,17 @@ using dropout = tiny_dnn::dropout_layer;
 
 using input = tiny_dnn::input_layer;
 
-template <class T>
-using lrn = tiny_dnn::lrn_layer<T>;
+using lrn = tiny_dnn::lrn_layer;
 
 using input = tiny_dnn::input_layer;
 
 using concat = tiny_dnn::concat_layer;
 
-template <class T>
-using deconv = tiny_dnn::deconvolutional_layer<T>;
+using deconv = tiny_dnn::deconvolutional_layer;
 
-template <class T>
-using max_unpool = tiny_dnn::max_unpooling_layer<T>;
+using max_unpool = tiny_dnn::max_unpooling_layer;
 
-template <class T>
-using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
+using ave_unpool = tiny_dnn::average_unpooling_layer;
 
 }
 

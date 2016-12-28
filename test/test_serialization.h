@@ -39,7 +39,8 @@ TEST(serialization, serialize_conv) {
     {
         "nodes": [
             {
-                "type": "conv<sigmoid>",
+                "type": "conv",
+                "activation_fn": "sigmoid",
                 "in_size" : {
                     "width": 20,
                     "height" : 20,
@@ -78,7 +79,8 @@ TEST(serialization, serialize_maxpool) {
     {
         "nodes": [
             {
-                "type": "maxpool<softmax>",
+                "type": "maxpool",
+                "activation_fn": "softmax",
                 "in_size": {
                     "width": 10,
                     "height": 10,
@@ -109,7 +111,8 @@ TEST(serialization, serialize_avepool) {
     {
         "nodes": [
             {
-                "type": "avepool<relu>",
+                "type": "avepool",
+                "activation_fn": "relu",
                 "in_size": {
                     "width": 10,
                     "height": 10,
@@ -237,7 +240,8 @@ TEST(serialization, serialize_fully) {
     {
         "nodes": [
             {
-                "type": "fully_connected<elu>",
+                "type": "fully_connected",
+                "activation_fn": "elu",
                 "in_size": 100,
                 "out_size": 20,
                 "has_bias": false
@@ -260,7 +264,8 @@ TEST(serialization, serialize_lrn) {
     {
         "nodes": [
             {
-                "type": "lrn<elu>",
+                "type": "lrn",
+                "activation_fn": "elu",
                 "in_shape": {
                     "width": 5,
                     "height": 4,
@@ -342,10 +347,12 @@ TEST(serialization, serialize_slice) {
 TEST(serialization, sequential_to_json) {
     network<sequential> net1, net2;
 
-    net1 << fully_connected_layer<tan_h>(10, 100)
+    activation::tan_h tan_h;
+    activation::softmax softmax;
+    net1 << fully_connected_layer(tan_h, 10, 100)
          << dropout_layer(100, 0.3f, net_phase::test)
-         << fully_connected_layer<softmax>(100, 9)
-         << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
+         << fully_connected_layer(softmax, 100, 9)
+         << convolutional_layer(tan_h, 3, 3, 3, 1, 1);
 
     auto json = net1.to_json();
 
@@ -369,9 +376,10 @@ TEST(serialization, sequential_to_json) {
 
 TEST(serialization, sequential_model) {
     network<sequential> net1, net2;
-
-    net1 << fully_connected_layer<tan_h>(10, 16)
-         << average_pooling_layer<relu>(4, 4, 1, 2)
+    activation::tan_h tan_h;
+    activation::relu relu;
+    net1 << fully_connected_layer(tan_h, 10, 16)
+         << average_pooling_layer(relu, 4, 4, 1, 2)
          << power_layer(shape3d(2,2,1),  0.5f);
 
     net1.init_weight();
@@ -393,8 +401,9 @@ TEST(serialization, sequential_weights) {
     network<sequential> net1, net2;
     vec_t data = {1,2,3,4,5,0};
 
+    static elu elu;
     net1 << batch_normalization_layer(3,2,0.01f,0.99f,net_phase::train)
-         << linear_layer<elu>(3*2, 2.0f, 0.5f);
+         << linear_layer(elu, 3*2, 2.0f, 0.5f);
 
     net1.init_weight();
     net1.at<batch_normalization_layer>(0).update_immidiately(true);
@@ -420,10 +429,13 @@ TEST(serialization, graph_model_and_weights) {
     network<graph> net1, net2;
     vec_t in = {1, 2, 3};
 
-    fully_connected_layer<tan_h> f1(3, 4);
+    activation::tan_h tan_h;
+    activation::softmax softmax;
+    activation::elu elu;
+    fully_connected_layer f1(tan_h, 3, 4);
     slice_layer s1(shape3d(2,1,2), slice_type::slice_channels, 2);
-    fully_connected_layer<softmax> f2(2, 2);
-    fully_connected_layer<elu> f3(2, 2);
+    fully_connected_layer f2(softmax, 2, 2);
+    fully_connected_layer f3(elu, 2, 2);
     elementwise_add_layer c4(2, 2);
 
     f1 << s1;

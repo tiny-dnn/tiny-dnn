@@ -49,11 +49,9 @@ namespace tiny_dnn {
 /**
  * applies max-pooing operaton to the spatial data
  **/
-template <typename Activation = activation::identity>
-class max_pooling_layer : public feedforward_layer<Activation> {
+class max_pooling_layer : public feedforward_layer {
  public:
-    CNN_USE_LAYER_MEMBERS;
-    typedef feedforward_layer<Activation> Base;
+    typedef feedforward_layer Base;
 
     /**
      * @param in_width     [in] width of input image
@@ -61,28 +59,34 @@ class max_pooling_layer : public feedforward_layer<Activation> {
      * @param in_channels  [in] the number of input image channels(depth)
      * @param pooling_size [in] factor by which to downscale
      **/
-    max_pooling_layer(serial_size_t in_width,
+    max_pooling_layer(const activation::function& activation_fn,
+                      serial_size_t in_width,
                       serial_size_t in_height,
                       serial_size_t in_channels,
                       serial_size_t pooling_size,
-                      backend_t  backend_type = core::default_engine())
-        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
+                      backend_t     backend_type = core::default_engine())
+        : max_pooling_layer(activation_fn,
+                            in_width, in_height, in_channels, pooling_size,
                             pooling_size, backend_type) {}
 
-    max_pooling_layer(const shape3d& in_shape,
-                      serial_size_t     pooling_size,
-                      serial_size_t     stride,
+    max_pooling_layer(const activation::function& activation_fn,
+                      const shape3d& in_shape,
+                      serial_size_t  pooling_size,
+                      serial_size_t  stride,
                       backend_t      backend_type = core::default_engine())
-        : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_,
+        : max_pooling_layer(activation_fn,
+                            in_shape.width_, in_shape.height_, in_shape.depth_,
                             pooling_size, stride, backend_type) {}
 
-    max_pooling_layer(serial_size_t in_width,
+    max_pooling_layer(const activation::function& activation_fn,
+                      serial_size_t in_width,
                       serial_size_t in_height,
                       serial_size_t in_channels,
                       serial_size_t pooling_size,
                       serial_size_t stride,
-                      backend_t  backend_type = core::default_engine())
-        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
+                      backend_t     backend_type = core::default_engine())
+        : max_pooling_layer(activation_fn,
+                            in_width, in_height, in_channels, pooling_size,
                             pooling_size, stride, stride, padding::valid,
                             backend_type) {}
 
@@ -93,16 +97,18 @@ class max_pooling_layer : public feedforward_layer<Activation> {
      * @param pooling_size [in] factor by which to downscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    max_pooling_layer(serial_size_t in_width,
+    max_pooling_layer(const activation::function& activation_fn,
+                      serial_size_t in_width,
                       serial_size_t in_height,
                       serial_size_t in_channels,
                       serial_size_t pooling_size_x,
                       serial_size_t pooling_size_y,
                       serial_size_t stride_x,
                       serial_size_t stride_y,
-                      padding    pad_type = padding::valid,
-                      backend_t  backend_type = core::default_engine())
-            : Base({ vector_type::data }) {
+                      padding       pad_type = padding::valid,
+                      backend_t     backend_type = core::default_engine())
+            : Base(activation_fn, {vector_type::data})
+    {
         set_maxpool_params(
             shape3d(in_width, in_height, in_channels),
             shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
@@ -189,31 +195,38 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     template <class Archive>
     static void
-    load_and_construct(Archive & ar,
-		       cereal::construct<max_pooling_layer> & construct) {
+    load_and_construct(
+        Archive & ar,
+        cereal::construct<max_pooling_layer> & construct
+    ) {
+        std::string activation_fn_name;
         shape3d in;
         serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
         padding pad_type;
 
-        ar(cereal::make_nvp("in_size", in),
+        ar(cereal::make_nvp("activation_fn", activation_fn_name),
+           cereal::make_nvp("in_size", in),
            cereal::make_nvp("pool_size_x", pool_size_x),
            cereal::make_nvp("pool_size_y", pool_size_y),
            cereal::make_nvp("stride_x", stride_x),
            cereal::make_nvp("stride_y", stride_y),
            cereal::make_nvp("pad_type", pad_type));
-        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-		  stride_x, stride_y, pad_type);
+        construct(activation::get_function(activation_fn_name),
+                  in.width_, in.height_, in.depth_,
+                  pool_size_x, pool_size_y,
+                  stride_x, stride_y, pad_type);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in),
-            cereal::make_nvp("pool_size_x", params_.pool_size_x),
-            cereal::make_nvp("pool_size_y", params_.pool_size_y),
-            cereal::make_nvp("stride_x", params_.stride_x),
-            cereal::make_nvp("stride_y", params_.stride_y),
-            cereal::make_nvp("pad_type", params_.pad_type));
+        ar(cereal::make_nvp("activation_fn", std::string{h_.name()}),
+           cereal::make_nvp("in_size", params_.in),
+           cereal::make_nvp("pool_size_x", params_.pool_size_x),
+           cereal::make_nvp("pool_size_y", params_.pool_size_y),
+           cereal::make_nvp("stride_x", params_.stride_x),
+           cereal::make_nvp("stride_y", params_.stride_y),
+           cereal::make_nvp("pad_type", params_.pad_type));
     }
 
 private:

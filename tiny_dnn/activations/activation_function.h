@@ -62,6 +62,8 @@ public:
 
     // target value range for learning
     virtual std::pair<float_t, float_t> scale() const = 0;
+    
+    virtual const char* name() const = 0;
 };
 
 class identity : public function {
@@ -70,6 +72,7 @@ public:
     float_t f(const vec_t& v, size_t i) const override { return v[i]; }
     float_t df(float_t /*y*/) const override { return float_t(1); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "identity"; }
 };
 
 class sigmoid : public function {
@@ -78,6 +81,7 @@ public:
     float_t f(const vec_t& v, size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
     float_t df(float_t y) const override { return y * (float_t(1) - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "sigmoid"; }
 };
 
 class relu : public function {
@@ -86,6 +90,7 @@ public:
     float_t f(const vec_t& v, size_t i) const override { return std::max(float_t(0), v[i]); }
     float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "relu"; }
 };
 
 typedef relu rectified_linear; // for compatibility
@@ -96,6 +101,7 @@ public:
     float_t f(const vec_t& v, size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
     float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0.01); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "leaky_relu"; }
 };
 
 class elu : public function {
@@ -104,6 +110,7 @@ public:
     float_t f(const vec_t& v, size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
     float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1)+y)); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "elu"; }
 };
 
 class softmax : public function {
@@ -132,6 +139,7 @@ public:
     virtual bool one_hot() const override { return false; }
 
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0), float_t(1)); }
+    const char* name() const override { return "softmax"; }
 };
 
 class tan_h : public function {
@@ -157,6 +165,7 @@ public:
 
     float_t df(float_t y) const override { return float_t(1) - sqr(y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(-0.8), float_t(0.8)); }
+    const char* name() const override { return "tan_h"; }
 
 private:
     /*float invsqrt(float x) const {
@@ -181,7 +190,37 @@ public:
 
     float_t df(float_t y) const override { return 2 * y *(float_t(1) - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
+    const char* name() const override { return "tan_hp1m2"; }
 };
+
+static inline
+const function& get_function(const char* name) {
+    if (strcmp(name, "identity") == 0) {
+        static identity fn; return fn;
+    }else if (strcmp(name, "sigmoid") == 0) {
+        static sigmoid fn; return fn;
+    }else if (strcmp(name, "relu") == 0
+           || strcmp(name, "rectified_linear") == 0) {
+        static relu fn; return fn;
+    }else if (strcmp(name, "leaky_relu") == 0) {
+        static leaky_relu fn; return fn;
+    }else if (strcmp(name, "elu") == 0) {
+        static elu fn; return fn;
+    }else if (strcmp(name, "softmax") == 0) {
+        static softmax fn; return fn;
+    }else if (strcmp(name, "tan_h") == 0) {
+        static tan_h fn; return fn;
+    }else if (strcmp(name, "tan_hp1m2") == 0) {
+        static tan_hp1m2 fn; return fn;
+    }else {
+        throw "unknown activation function";
+    }
+}
+
+static inline
+const function& get_function(const std::string& name) {
+    return get_function(name.c_str());
+}
 
 } // namespace activation
 } // namespace tiny_dnn

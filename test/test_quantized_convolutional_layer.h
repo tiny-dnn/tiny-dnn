@@ -32,8 +32,10 @@
 namespace tiny_dnn {
 
 TEST(quantized_convolutional, setup_internal) {
-    quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::internal);
+    static sigmoid sigmoid;
+    q_conv l(sigmoid,
+             5, 5, 3, 1, 2,
+             padding::valid, true, 1, 1, backend_t::internal);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           serial_size_t(3));  // num of input tensors
@@ -57,7 +59,8 @@ TEST(quantized_convolutional, fprop) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
+    static sigmoid sigmoid;
+    quantized_convolutional_layer l(sigmoid, 5, 5, 3, 1, 2);
 
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
     auto create_simple_tensor = [](size_t vector_size) {

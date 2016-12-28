@@ -35,22 +35,21 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-template<typename Activation>
-class fully_connected_layer : public feedforward_layer<Activation> {
+class fully_connected_layer : public feedforward_layer {
 public:
-    typedef feedforward_layer<Activation> Base;
-    CNN_USE_LAYER_MEMBERS;
+    typedef feedforward_layer Base;
 
     /**
      * @param in_dim [in] number of elements of the input
      * @param out_dim [in] number of elements of the output
      * @param has_bias [in] whether to include additional bias to the layer
      **/
-    fully_connected_layer(serial_size_t in_dim,
+    fully_connected_layer(const activation::function& activation_fn,
+                          serial_size_t in_dim,
                           serial_size_t out_dim,
                           bool       has_bias = true,
                           backend_t  backend_type = core::default_engine())
-            : Base(std_input_order(has_bias)) {
+            : Base(activation_fn, std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
         Base::set_backend_type(backend_type);
@@ -125,20 +124,27 @@ public:
     std::string layer_type() const override { return "fully-connected"; }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<fully_connected_layer> & construct
+    ) {
+        std::string activation_fn_name;
         serial_size_t in_dim, out_dim;
         bool has_bias;
 
-        ar(cereal::make_nvp("in_size", in_dim),
+        ar(cereal::make_nvp("activation_fn", activation_fn_name),
+           cereal::make_nvp("in_size", in_dim),
            cereal::make_nvp("out_size", out_dim),
            cereal::make_nvp("has_bias", has_bias));
-        construct(in_dim, out_dim, has_bias);
+        construct(activation::get_function(activation_fn_name),
+                  in_dim, out_dim, has_bias);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in_size_),
+        ar(cereal::make_nvp("activation_fn", std::string{h_.name()}),
+           cereal::make_nvp("in_size", params_.in_size_),
            cereal::make_nvp("out_size", params_.out_size_),
            cereal::make_nvp("has_bias", params_.has_bias_));
     }
