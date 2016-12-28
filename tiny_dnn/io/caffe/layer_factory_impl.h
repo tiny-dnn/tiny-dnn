@@ -315,9 +315,9 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_relu(const caffe::LayerParameter& layer,
                                    const shape_t& bottom_shape, shape_t *) {
-    activation::relu relu;
+    activation::relu activation_fn;
     auto relu = std::make_shared<linear_layer>(
-        relu,
+        activation_fn,
         bottom_shape.size());
     return relu;
 }
@@ -409,7 +409,8 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
 inline std::shared_ptr<layer> create_fullyconnected(
         const caffe::LayerParameter& layer,
         const shape_t& bottom_shape, shape_t *top_shape) {
-    using fc_layer = fully_connected_layer<activation::identity>;
+    activation::identity activation_fn;
+    using fc_layer = fully_connected_layer;
 
     if (!layer.has_inner_product_param()) {
         throw nn_error("inner-product param missing");
@@ -424,7 +425,8 @@ inline std::shared_ptr<layer> create_fullyconnected(
     dim_output = ip_param.num_output();
     dim_input = bottom_shape.size();
 
-    auto ip = std::make_shared<fc_layer>(dim_input, dim_output, has_bias);
+    auto ip = std::make_shared<fc_layer>(activation_fn,
+                                         dim_input, dim_output, has_bias);
 
     // filler
     if (ip_param.has_weight_filler()) {
@@ -535,7 +537,8 @@ inline
 std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
                                   const shape_t& bottom_shape,
                                   shape_t *top_shape) {
-    using lrn_layer = lrn_layer<activation::identity>;
+    activation::identity identity;
+    using lrn_layer = lrn_layer;
 
     if (!layer.has_lrn_param()) {
         throw nn_error("lrn param missing");
@@ -555,7 +558,8 @@ std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
             region = norm_region::within_channels;
     }
 
-    auto lrn = std::make_shared<lrn_layer>(bottom_shape.width_,
+    auto lrn = std::make_shared<lrn_layer>(identity,
+                                           bottom_shape.width_,
                                            bottom_shape.height_,
                                            local_size,
                                            bottom_shape.depth_,
