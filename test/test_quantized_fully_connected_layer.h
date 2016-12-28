@@ -72,8 +72,9 @@ TEST(quantized_fully_connected, train2) {
     network<sequential> nn;
     gradient_descent optimizer;
 
-    nn << quantized_fully_connected_layer<tan_h>(4, 6)
-       << quantized_fully_connected_layer<tan_h>(6, 3);
+	static tan_h tan_h;
+    nn << quantized_fully_connected_layer(tan_h, 4, 6)
+       << quantized_fully_connected_layer(tan_h, 6, 3);
 
     vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -107,7 +108,8 @@ TEST(quantized_fully_connected, train2) {
 
 TEST(quantized_fully_connected, gradient_check) {
     network<sequential> nn;
-    nn << quantized_fully_connected_layer<tan_h>(50, 10);
+	static tan_h tan_h;
+    nn << quantized_fully_connected_layer(tan_h, 50, 10);
 
     vec_t a(50, 0.0);
     label_t t = 9;
@@ -119,8 +121,9 @@ TEST(quantized_fully_connected, gradient_check) {
 
 TEST(quantized_fully_connected, read_write)
 {
-    quantized_fully_connected_layer<tan_h> l1(100, 100);
-    quantized_fully_connected_layer<tan_h> l2(100, 100);
+	static tan_h tan_h;
+    quantized_fully_connected_layer l1(tan_h, 100, 100);
+    quantized_fully_connected_layer l2(tan_h, 100, 100);
 
     l1.setup(true);
     l2.setup(true);
@@ -130,7 +133,8 @@ TEST(quantized_fully_connected, read_write)
 
 TEST(quantized_fully_connected, forward)
 {
-    quantized_fully_connected_layer<identity> l(4, 2);
+	static identity identity;
+    quantized_fully_connected_layer l(identity, 4, 2);
     EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
@@ -148,7 +152,8 @@ TEST(quantized_fully_connected, forward)
 /*#ifdef CNN_USE_NNPACK
 TEST(quantized_fully_connected, forward_nnp)
 {
-    quantized_fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
+	static identity identity;
+    quantized_fully_connected_layer l(identity, 4, 2, true, core::backend_t::nnpack);
     EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
 
     l.weight_init(weight_init::constant(1.0));
@@ -166,7 +171,8 @@ TEST(quantized_fully_connected, forward_nnp)
 
 TEST(quantized_fully_connected, forward_nobias)
 {
-    quantized_fully_connected_layer<identity> l(4, 2, false);
+	static identity identity;
+    quantized_fully_connected_layer l(identity, 4, 2, false);
     EXPECT_EQ(l.in_channels(), serial_size_t(2));// in and W
 
     l.weight_init(weight_init::constant(1.0));
