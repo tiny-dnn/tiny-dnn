@@ -32,28 +32,25 @@ namespace tiny_dnn {
 namespace kernels {
 
 inline void
-fully_connected_op_avx(const tensor_t& in_data,
-                       const vec_t&    W,
-                       const vec_t&    bias,
-                       tensor_t&       out_data,
-                       const fully_params& params,
-                       const bool      layer_parallelize) {
+fully_connected_op_avx(const Tensor<float_t, 2>& in_data,
+                       const Tensor<float_t, 2>& weights,
+                       const Tensor<float_t, 2>& bias,
+                       Tensor<float_t, 2>*       out_data,
+                       const bool             parallelize) {
 #ifdef CNN_USE_AVX
     // TODO(nyanp/beru): is this really AVX ??
     fully_connected_op_internal(
         in_data,
-        W,
+        weights,
         bias,
         out_data,
-        params,
-        layer_parallelize);
+        parallelize);
 #else
     CNN_UNREFERENCED_PARAMETER(in_data);
-    CNN_UNREFERENCED_PARAMETER(W);
+    CNN_UNREFERENCED_PARAMETER(weights);
     CNN_UNREFERENCED_PARAMETER(bias);
     CNN_UNREFERENCED_PARAMETER(out_data);
-    CNN_UNREFERENCED_PARAMETER(params);
-    CNN_UNREFERENCED_PARAMETER(layer_parallelize);
+    CNN_UNREFERENCED_PARAMETER(parallelize);
     throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
