@@ -141,6 +141,7 @@ public:
         throw nn_error("not implemented");
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<lrn_layer> & construct) {
         shape3d in_shape;
@@ -165,6 +166,7 @@ public:
            cereal::make_nvp("beta", beta_),
            cereal::make_nvp("region", region_));
     }
+#endif
 
 private:
     void forward_across(const vec_t& in, vec_t& out) {

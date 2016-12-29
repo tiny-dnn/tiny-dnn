@@ -233,6 +233,7 @@ public:
         calc_stddev(variance);
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<batch_normalization_layer> & construct) {
         shape3d in;
@@ -264,6 +265,7 @@ public:
            cereal::make_nvp("mean", mean_),
            cereal::make_nvp("variance", variance_));
     }
+#endif
 
     float_t epsilon() const {
         return eps_;

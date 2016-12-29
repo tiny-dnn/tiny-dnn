@@ -36,12 +36,14 @@
 #include <string>
 #include <sstream>
 
+#ifndef CNN_NO_SERIALIZATION
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/deque.hpp>
+#endif
 
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/macro.h"

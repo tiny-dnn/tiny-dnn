@@ -119,6 +119,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<concat_layer> & construct) {
         std::vector<shape3d> in_shapes;
@@ -132,6 +133,7 @@ public:
         layer::serialize_prolog(ar);
         ar(in_shapes_);
     }
+#endif
 
 private:
     std::vector<shape3d> in_shapes_;
