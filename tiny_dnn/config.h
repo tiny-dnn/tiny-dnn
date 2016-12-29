@@ -62,7 +62,7 @@
 
 /**
  * disable serialization/deserialization function
- * You can uncomment this to speedup compilation&linking time,
+ * You can uncomment this to speedup compilation & linking time,
  * if you don't use network::save / network::load functions.
  **/
 //#define CNN_NO_SERIALIZATION

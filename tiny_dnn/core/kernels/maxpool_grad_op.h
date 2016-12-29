@@ -78,7 +78,7 @@ class MaxPoolGradOp : public core::OpKernel {
                 params.in2out,
                 context.parallelize());
         } else if (engine == core::backend_t::avx) {
-	    kernels::maxpool_grad_op_avx(
+           kernels::maxpool_grad_op_avx(
                 prev_delta,
                 curr_delta,
                 params.out2inmax,

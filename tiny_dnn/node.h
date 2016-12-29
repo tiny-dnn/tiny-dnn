@@ -102,12 +102,17 @@ class edge {
           prev_(prev) {}
 
     void merge_grads(vec_t *dst) {
-        dst->resize(grad_[0].size());
-        std::fill(dst->begin(), dst->end(), static_cast<float_t>(0));
-
+        assert(!grad_.empty());
+        const auto& grad_head = grad_[0];
+        size_t sz = grad_head.size();
+        dst->resize(sz);
+        float_t* pdst = &(*dst)[0];
+        // dst = grad_[0]
+        std::copy(grad_head.begin(), grad_head.end(), pdst);
         // @todo consider adding parallelism
-        for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-            vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
+        for (size_t sample = 1, sample_count = grad_.size(); sample < sample_count; ++sample) {
+            // dst += grad_[sample]
+            vectorize::reduce<float_t>(&grad_[sample][0], sz, pdst);
         }
     }
 

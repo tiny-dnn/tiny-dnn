@@ -226,7 +226,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
         std::vector<tensor_t*> in_data_(in_data.size());
         in_data_[0] = in_data_padded(in_data);
-
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
             in_data_[i] = in_data[i];
         }
@@ -259,18 +258,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        std::vector<tensor_t*> in_data_;
-        in_data_.push_back(in_data_padded(in_data));
-
+        std::vector<tensor_t*> in_data_(in_data.size());
+        in_data_[0] = in_data_padded(in_data);
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
-            in_data_.push_back(in_data[i]);
+            in_data_[i] = in_data[i];
         }
 
-        std::vector<tensor_t*> in_grad_;
-        for (serial_size_t i = 0; i < in_grad.size(); ++i) {
-            in_grad_.push_back(in_grad[i]);
-        }
-
+        std::vector<tensor_t*> in_grad_ = in_grad;
         if (params_.pad_type == padding::same) {
             in_grad_[0] = &cws_.prev_delta_padded_;
         }

@@ -200,6 +200,9 @@ inline void accumulate_dw(
         int prevo_delta = in_padded.width_ * params.h_stride;
         const size_t out_width = out.width_;
         const size_t out_height = out.height_;
+        assert(1 < out_width);
+        assert(1 < out_height);
+        __m256 sums[25];
         if (w_stride > 1) {
             for (serial_size_t inc = 0;
                  inc < in.depth_;
@@ -229,17 +232,18 @@ inline void accumulate_dw(
                              ++wx, ++widx
                         ) {
                             serial_size_t prev_out_idx = in_padded.get_index(
-                                (serial_size_t)wx,
-                                (serial_size_t)wy,
+                                static_cast<serial_size_t>(wx),
+                                static_cast<serial_size_t>(wy),
                                 inc
                             );
                             const float* prevo = &prev_out[prev_out_idx];
                             float_t dst = float_t(0);
-                            for (size_t y = 0, prevo_idx = 0;
+                            for (size_t y = 0, prevo_idx = 0, delta_idx = 0;
                                  y < out_height;
-                                 ++y, prevo_idx += prevo_delta
+                                 ++y,
+                                 prevo_idx += prevo_delta,
+                                 delta_idx += out_width
                             ) {
-                                size_t delta_idx = y * out_width;
                                 for (size_t x = 0;
                                     x < out_width;
                                     ++x
@@ -263,31 +267,28 @@ inline void accumulate_dw(
                      outc < out.depth_;
                      outc++
                 ) {
-                    const float* delta = &curr_delta[
-                        out.get_index(0, 0, outc)
-                    ];
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
-                    serial_size_t widx = weight.get_index(
-                        0,
-                        0,
-                        in.depth_ * outc + inc
-                    );
+                    const float* delta = &curr_delta[
+                        out.get_index(0, 0, outc)
+                    ];
+                    __m256* psums = sums;
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
                     ) {
+                        size_t prev_out_idx = in_padded.get_index(
+                            0,
+                            static_cast<serial_size_t>(wy),
+                            inc
+                        );
+                        const float* pprev_out = &prev_out[prev_out_idx];
                         for (size_t wx = 0;
                              wx < 5; // weight.width_
-                             ++wx, ++widx
+                             ++wx, ++pprev_out, ++psums
                         ) {
-                            size_t prev_out_idx = in_padded.get_index(
-                                (serial_size_t)wx,
-                                (serial_size_t)wy,
-                                inc
-                            );
-                            const float* pa = &prev_out[prev_out_idx];
+                            const float* pa = pprev_out;
                             const float* pb = delta;
                             __m256 sum0 = _mm256_setzero_ps();
                             __m256 sum1 = _mm256_setzero_ps();
@@ -313,16 +314,36 @@ inline void accumulate_dw(
                                 sum1 = madd256_ps(a, b, sum1);
                             }
                             __m256 sum = _mm256_add_ps(sum0, sum1);
-                            __m128 prev_sum = _mm_load_ss(&dW[widx]);
-                            _mm_store_ss(
-                                &dW[widx],
-                                _mm_add_ps(prev_sum, hsum256_ps(sum))
-                            );
+                            *psums = sum;
                         } // for wx
                     } // for wy
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
+                    for (int i=0; i<6; ++i) {
+                        _mm_storeu_ps(
+                            pdw+i*4,
+                            _mm_add_ps(
+                                _mm_loadu_ps(pdw+i*4),
+                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
+                                             sums[i*4+2], sums[i*4+3])
+                            )
+                        );
+                    }
+                    _mm_store_ss(
+                        pdw+24,
+                        _mm_add_ss(
+                            _mm_load_ss(pdw+24),
+                            hsum256_ps(sums[24])
+                        )
+                    );
                 } // for outc
             } // for inc
-        }else if (nblocks == 0 && remainder != 0) {
+        }else if (nblocks == 0) {
+            assert(remainder != 0);
             for (serial_size_t inc = 0;
                  inc < in.depth_;
                  ++inc
@@ -331,56 +352,145 @@ inline void accumulate_dw(
                      outc < out.depth_;
                      outc++
                 ) {
-                    const float* delta = &curr_delta[
-                        out.get_index(0, 0, outc)
-                    ];
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
+                    const float* delta = &curr_delta[
+                        out.get_index(0, 0, outc)
+                    ];
+                    __m256* psums = sums;
+                    for (size_t wy = 0;
+                         wy < 5; // weight.height_
+                         ++wy
+                    ) {
+                        size_t prev_out_idx = in_padded.get_index(
+                            0,
+                            static_cast<serial_size_t>(wy),
+                            inc
+                        );
+                        const float* pprev_out = &prev_out[prev_out_idx];
+                        for (size_t wx = 0;
+                             wx < 5; // weight.width_
+                             ++wx, ++pprev_out, ++psums
+                        ) {
+                            const float* pa = pprev_out;
+                            const float* pb = delta;
+                            // vectorize::dot
+                            __m256 a = _mm256_maskload_ps(pa, mask);
+                            __m256 b = _mm256_maskload_ps(pb, mask);
+                            __m256 sum = _mm256_mul_ps(a, b);
+                            for (size_t y = 1; y < out_height; ++y) {
+                                pa += prevo_delta;
+                                pb += out_width;
+                                // vectorize::dot
+                                a = _mm256_maskload_ps(pa, mask);
+                                b = _mm256_maskload_ps(pb, mask);
+                                sum = madd256_ps(a, b, sum);
+                            }
+                            *psums = sum;
+                        } // for wx
+                    } // for wy
                     serial_size_t widx = weight.get_index(
                         0,
                         0,
                         in.depth_ * outc + inc
                     );
+                    float* pdw = &dW[widx];
+                    for (int i=0; i<6; ++i) {
+                        _mm_storeu_ps(
+                            pdw+i*4,
+                            _mm_add_ps(
+                                _mm_loadu_ps(pdw+i*4),
+                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
+                                             sums[i*4+2], sums[i*4+3])
+                            )
+                        );
+                    }
+                    _mm_store_ss(
+                        pdw+24,
+                        _mm_add_ss(
+                            _mm_load_ss(pdw+24),
+                            hsum256_ps(sums[24])
+                        )
+                    );
+                } // for outc
+            } // for inc
+        }else if (nblocks == 1) {
+            assert(remainder == 0);
+            for (serial_size_t inc = 0;
+                 inc < in.depth_;
+                 ++inc
+            ) {
+                for (serial_size_t outc = 0;
+                     outc < out.depth_;
+                     outc++
+                ) {
+                    if (!tbl.is_connected(outc, inc)) {
+                        continue;
+                    }
+                    const float* delta = &curr_delta[
+                        out.get_index(0, 0, outc)
+                    ];
+                    __m256* psums = sums;
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
                     ) {
+                        size_t prev_out_idx = in_padded.get_index(
+                            0,
+                            static_cast<serial_size_t>(wy),
+                            inc
+                        );
+                        const float* pprev_out = &prev_out[prev_out_idx];
                         for (size_t wx = 0;
                              wx < 5; // weight.width_
-                             ++wx, ++widx
+                             ++wx, ++pprev_out, ++psums
                         ) {
-                            size_t prev_out_idx = in_padded.get_index(
-                                (serial_size_t)wx,
-                                (serial_size_t)wy,
-                                inc
-                            );
-                            const float* pa = &prev_out[prev_out_idx];
+                            const float* pa = pprev_out;
                             const float* pb = delta;
-                            __m256 sum1 = _mm256_setzero_ps();
-                            for (size_t y = 0;
-                                 y < out_height;
-                                 ++y, pa += prevo_delta, pb += out_width
-                            ) {
+                            // vectorize::dot
+                            __m256 a = _mm256_loadu_ps(pa);
+                            __m256 b = _mm256_loadu_ps(pb);
+                            __m256 sum = _mm256_mul_ps(a, b);
+                            for (size_t y = 1; y < out_height; ++y) {
+                                pa += prevo_delta;
+                                pb += out_width;
                                 // vectorize::dot
-                                __m256 a = _mm256_maskload_ps(
-                                    pa + 8 * nblocks, mask
-                                );
-                                __m256 b = _mm256_maskload_ps(
-                                    pb + 8 * nblocks, mask
-                                );
-                                sum1 = madd256_ps(a, b, sum1);
+                                a = _mm256_loadu_ps(pa);
+                                b = _mm256_loadu_ps(pb);
+                                sum = madd256_ps(a, b, sum);
                             }
-                            __m128 prev_sum = _mm_load_ss(&dW[widx]);
-                            _mm_store_ss(
-                                &dW[widx],
-                                _mm_add_ps(prev_sum, hsum256_ps(sum1))
-                            );
+                            *psums = sum;
                         } // for wx
                     } // for wy
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
+                    for (int i=0; i<6; ++i) {
+                        _mm_storeu_ps(
+                            pdw+i*4,
+                            _mm_add_ps(
+                                _mm_loadu_ps(pdw+i*4),
+                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
+                                             sums[i*4+2], sums[i*4+3])
+                            )
+                        );
+                    }
+                    _mm_store_ss(
+                        pdw+24,
+                        _mm_add_ss(
+                            _mm_load_ss(pdw+24),
+                            hsum256_ps(sums[24])
+                        )
+                    );
                 } // for outc
             } // for inc
         }else {
+            assert(nblocks > 1);
+            assert(remainder == 0);
             for (serial_size_t inc = 0;
                  inc < in.depth_;
                  ++inc
@@ -389,57 +499,86 @@ inline void accumulate_dw(
                      outc < out.depth_;
                      outc++
                 ) {
-                    const float* delta = &curr_delta[
-                        out.get_index(0, 0, outc)
-                    ];
                     if (!tbl.is_connected(outc, inc)) {
                         continue;
                     }
+                    const float* delta = &curr_delta[
+                        out.get_index(0, 0, outc)
+                    ];
+                    __m256* psums = sums;
+                    for (size_t wy = 0;
+                         wy < 5; // weight.height_
+                         ++wy
+                    ) {
+                        size_t prev_out_idx = in_padded.get_index(
+                            0,
+                            static_cast<serial_size_t>(wy),
+                            inc
+                        );
+                        const float* pprev_out = &prev_out[prev_out_idx];
+                        for (size_t wx = 0;
+                             wx < 5; // weight.width_
+                             ++wx, ++pprev_out, ++psums
+                        ) {
+                            const float* pa = pprev_out;
+                            const float* pb = delta;
+                            // vectorize::dot
+                            __m256 a = _mm256_loadu_ps(pa);
+                            __m256 b = _mm256_loadu_ps(pb);
+                            __m256 sum = _mm256_mul_ps(a, b);
+                            a = _mm256_loadu_ps(pa + 8);
+                            b = _mm256_loadu_ps(pb + 8);
+                            sum = madd256_ps(a, b, sum);
+                            for (size_t i = 2; i < nblocks; ++i) {
+                                a = _mm256_loadu_ps(pa + 8 * i);
+                                b = _mm256_loadu_ps(pb + 8 * i);
+                                sum = madd256_ps(a, b, sum);
+                            }
+                            for (size_t y = 1; y < out_height; ++y) {
+                                pa += prevo_delta;
+                                pb += out_width;
+                                // vectorize::dot
+                                a = _mm256_loadu_ps(pa);
+                                b = _mm256_loadu_ps(pb);
+                                sum = madd256_ps(a, b, sum);
+                                a = _mm256_loadu_ps(pa + 8);
+                                b = _mm256_loadu_ps(pb + 8);
+                                sum = madd256_ps(a, b, sum);
+                                for (size_t i = 2; i < nblocks; ++i) {
+                                    a = _mm256_loadu_ps(pa + 8 * i);
+                                    b = _mm256_loadu_ps(pb + 8 * i);
+                                    sum = madd256_ps(a, b, sum);
+                                }
+                            }
+                            *psums = sum;
+                        } // for wx
+                    } // for wy
                     serial_size_t widx = weight.get_index(
                         0,
                         0,
                         in.depth_ * outc + inc
                     );
-                    for (size_t wy = 0;
-                         wy < 5; // weight.height_
-                         ++wy
-                    ) {
-                        for (size_t wx = 0;
-                             wx < 5; // weight.width_
-                             ++wx, ++widx
-                        ) {
-                            size_t prev_out_idx = in_padded.get_index(
-                                (serial_size_t)wx,
-                                (serial_size_t)wy,
-                                inc
-                            );
-                            const float* pa = &prev_out[prev_out_idx];
-                            const float* pb = delta;
-                            __m256 sum0 = _mm256_setzero_ps();
-                            for (size_t y = 0;
-                                 y < out_height;
-                                 ++y, pa += prevo_delta, pb += out_width
-                            ) {
-                                // vectorize::dot
-                                __m256 a = _mm256_loadu_ps(pa);
-                                __m256 b = _mm256_loadu_ps(pb);
-                                sum0 = madd256_ps(a, b, sum0);
-                                for (size_t i = 1; i < nblocks; ++i) {
-                                    a = _mm256_loadu_ps(pa + 8 * i);
-                                    b = _mm256_loadu_ps(pb + 8 * i);
-                                    sum0 = madd256_ps(a, b, sum0);
-                                }
-                            }
-                            __m128 prev_sum = _mm_load_ss(&dW[widx]);
-                            _mm_store_ss(
-                                &dW[widx],
-                                _mm_add_ps(prev_sum, hsum256_ps(sum0))
-                            );
-                        } // for wx
-                    } // for wy
+                    float* pdw = &dW[widx];
+                    for (int i=0; i<6; ++i) {
+                        _mm_storeu_ps(
+                            pdw+i*4,
+                            _mm_add_ps(
+                                _mm_loadu_ps(pdw+i*4),
+                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
+                                             sums[i*4+2], sums[i*4+3])
+                            )
+                        );
+                    }
+                    _mm_store_ss(
+                        pdw+24,
+                        _mm_add_ss(
+                            _mm_load_ss(pdw+24),
+                            hsum256_ps(sums[24])
+                        )
+                    );
                 } // for outc
             } // for inc
-        }// else
+        }
     } // else
 } // accumulate_dw
 

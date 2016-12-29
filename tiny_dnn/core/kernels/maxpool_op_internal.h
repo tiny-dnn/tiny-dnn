@@ -43,13 +43,14 @@ maxpool_op_internal(const tensor_t& in_data,
         for (serial_size_t i = 0; i < out2in.size(); i++) {
             const auto& in_index = out2in[i];
             float_t max_value = std::numeric_limits<float_t>::lowest();
-
+            serial_size_t idx = 0;
             for (auto j : in_index) {
                 if (in[j] > max_value) {
                     max_value = in[j];
-                    max[i] = j;
+                    idx = j;
                 }
             }
+            max[i] = idx;
             a[i] = max_value;
         }
     });
