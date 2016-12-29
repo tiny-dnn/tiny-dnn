@@ -105,8 +105,6 @@ private:
 
 #undef CNN_REGISTER_LAYER_BODY
 #undef CNN_REGISTER_LAYER
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATION
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
 }; // class deserialization_helper
 
