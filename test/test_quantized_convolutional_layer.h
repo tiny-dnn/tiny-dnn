@@ -131,7 +131,8 @@ TEST(quantized_convolutional, fprop_npp) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+    static sigmoid sigmoid;
+    quantized_convolutional_layer l(sigmoid, 5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::nnpack);
 
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
@@ -202,7 +203,8 @@ TEST(quantized_convolutional, fprop_npp) {
 /*
 TEST(quantized_convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
-    nn << quantized_convolutional_layer<tan_h>(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    nn << quantized_convolutional_layer(tan_h, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -214,7 +216,8 @@ TEST(quantized_convolutional, gradient_check) { // tanh - mse
 
 TEST(quantized_convolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
-    nn << quantized_convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << quantized_convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -226,8 +229,8 @@ TEST(quantized_convolutional, gradient_check2) { // sigmoid - mse
 
 TEST(quantized_convolutional, gradient_check3) { // rectified - mse
     network<sequential> nn;
-
-    nn << quantized_convolutional_layer<rectified_linear>(5, 5, 3, 1, 1);
+    static rectified_linear rectified_linear;
+    nn << quantized_convolutional_layer(rectified_linear, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -239,8 +242,8 @@ TEST(quantized_convolutional, gradient_check3) { // rectified - mse
 
 TEST(quantized_convolutional, gradient_check4) { // identity - mse
     network<sequential> nn;
-
-    nn << quantized_convolutional_layer<identity>(5, 5, 3, 1, 1);
+    static identity identity;
+    nn << quantized_convolutional_layer(identity, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -253,7 +256,8 @@ TEST(quantized_convolutional, gradient_check4) { // identity - mse
 TEST(quantized_convolutional, gradient_check5) { // sigmoid - cross-entropy
     network<sequential> nn;
 
-    nn << quantized_convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << quantized_convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -265,8 +269,9 @@ TEST(quantized_convolutional, gradient_check5) { // sigmoid - cross-entropy
 
 TEST(quantized_convolutional, read_write)
 {
-    quantized_convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
-    quantized_convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    quantized_convolutional_layer l1(tan_h, 5, 5, 3, 1, 1);
+    quantized_convolutional_layer l2(tan_h, 5, 5, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();
@@ -284,8 +289,9 @@ TEST(quantized_convolutional, read_write2) {
     };
 #undef O
 #undef X
-    quantized_convolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    quantized_convolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    static tan_h tan_h;
+    quantized_convolutional_layer layer1(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    quantized_convolutional_layer layer2(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
     layer1.init_weight();
     layer2.init_weight();
 

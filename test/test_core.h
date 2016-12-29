@@ -167,7 +167,8 @@ TEST(core, device_add_op) {
                               5, 5, 3, 1, 2, padding::valid, true, 1, 1,
                               backend_t::libdnn);
 
-        //max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::opencl);
+        //static identity identity;
+        //max_pooling_layer l(identity, 4, 4, 1, 2, 2, core::backend_t::opencl);
 
         ASSERT_EQ(ProgramManager::getInstance().num_programs(),
                   static_cast<serial_size_t>(0));

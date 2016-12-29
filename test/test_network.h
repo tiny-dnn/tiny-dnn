@@ -324,8 +324,8 @@ TEST(network, at) {
     net << c1 << p1;
     net.init_weight();
 
-    // auto& c = net.at<convolutional_layer<identity>>(0);
-    // auto& p = net.at<average_pooling_layer<identity>>(1);
+    // auto& c = net.at<convolutional_layer>(0);
+    // auto& p = net.at<average_pooling_layer>(1);
 }
 
 TEST(network, bracket_operator) {

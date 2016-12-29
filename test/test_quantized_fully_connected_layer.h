@@ -35,8 +35,8 @@ namespace tiny_dnn {
 TEST(quantized_fully_connected, train) {
     network<sequential> nn;
     adagrad optimizer;
-
-    nn << quantized_fully_connected_layer<sigmoid>(3, 2);
+    static sigmoid sigmoid;
+    nn << quantized_fully_connected_layer(sigmoid, 3, 2);
 
     vec_t a(3), t(2), a2(3), t2(2);
 
