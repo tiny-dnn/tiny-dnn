@@ -383,8 +383,8 @@ inline void accumulate_dw(
                                 pa += prevo_delta;
                                 pb += out_width;
                                 // vectorize::dot
-                                __m256 a = _mm256_maskload_ps(pa, mask);
-                                __m256 b = _mm256_maskload_ps(pb, mask);
+                                a = _mm256_maskload_ps(pa, mask);
+                                b = _mm256_maskload_ps(pb, mask);
                                 sum = madd256_ps(a, b, sum);
                             }
                             *psums = sum;
