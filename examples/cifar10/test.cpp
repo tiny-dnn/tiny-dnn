@@ -31,7 +31,12 @@ void convert_image(const std::string& imagefilename,
     for(int c = 0; c < resized.channels(); ++c){
         for(int y = 0; y < resized.rows; ++y){
             for(int x = 0; x < resized.cols; ++x){
-                data[c * w * h + y*w + x] = resized.data[y*resized.step + x*resized.step + c];
+#if CV_MAJOR_VERSION == 2
+					data[c * w * h + y*w + x] = resized.data[y*resized.step + x*resized.step + c];
+#elif CV_MAJOR_VERSION == 3
+					data[c * w * h + y*w + x] = resized.data[y*resized.step[0] + x*resized.step[1] + c];
+#endif
+                
             }
         }
     }
