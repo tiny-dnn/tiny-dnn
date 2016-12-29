@@ -38,19 +38,17 @@ namespace tiny_dnn {
 /**
  * local response normalization
  */
-template<typename Activation>
-class lrn_layer : public feedforward_layer<Activation> {
+class lrn_layer : public feedforward_layer {
 public:
-    CNN_USE_LAYER_MEMBERS;
+    typedef feedforward_layer Base;
 
-    typedef feedforward_layer<Activation> Base;
-
-    lrn_layer(const shape3d& in_shape,
-              serial_size_t     local_size,
+    lrn_layer(const activation::function& activation_fn,
+              const shape3d& in_shape,
+              serial_size_t  local_size,
               float_t        alpha  = 1.0,
               float_t        beta   = 5.0,
               norm_region    region = norm_region::across_channels)
-        : Base({ vector_type::data }),
+        : Base(activation_fn, { vector_type::data }),
         in_shape_(in_shape),
         size_(local_size),
         alpha_(alpha),
@@ -66,12 +64,15 @@ public:
     * @param alpha       [in] the scaling parameter (same to caffe's LRN)
     * @param beta        [in] the scaling parameter (same to caffe's LRN)
     **/
-    lrn_layer(layer*      prev,
+    lrn_layer(const activation::function& activation_fn,
+              layer*      prev,
               serial_size_t  local_size,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
-        : lrn_layer(prev->out_data_shape()[0], local_size, alpha, beta, region) {}
+        : lrn_layer(activation_fn,
+                    prev->out_data_shape()[0],
+                    local_size, alpha, beta, region) {}
 
     /**
      * @param in_width    [in] the width of input data
@@ -81,14 +82,17 @@ public:
      * @param alpha       [in] the scaling parameter (same to caffe's LRN)
      * @param beta        [in] the scaling parameter (same to caffe's LRN)
      **/
-    lrn_layer(serial_size_t  in_width,
+    lrn_layer(const activation::function& activation_fn,
+              serial_size_t  in_width,
               serial_size_t  in_height,
               serial_size_t  local_size,
               serial_size_t  in_channels,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
-        : lrn_layer(shape3d{in_width, in_height, in_channels}, local_size, alpha, beta, region){}
+        : lrn_layer(activation_fn,
+                    shape3d{in_width, in_height, in_channels},
+                    local_size, alpha, beta, region){}
 
     serial_size_t fan_in_size() const override {
         return size_;
@@ -142,24 +146,29 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<lrn_layer> & construct) {
+    static void load_and_construct(Archive & ar,
+                                   cereal::construct<lrn_layer> & construct) {
+        std::string activation_fn_name;
         shape3d in_shape;
         serial_size_t size;
         float_t alpha, beta;
         norm_region region;
 
-        ar(cereal::make_nvp("in_shape", in_shape),
+        ar(cereal::make_nvp("activation_fn", activation_fn_name),
+           cereal::make_nvp("in_shape", in_shape),
            cereal::make_nvp("size", size),
            cereal::make_nvp("alpha", alpha),
            cereal::make_nvp("beta", beta),
            cereal::make_nvp("region", region));
-        construct(in_shape, size, alpha, beta, region);
+        construct(activation::get_function(activation_fn_name),
+                  in_shape, size, alpha, beta, region);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_shape", in_shape_),
+        ar(cereal::make_nvp("activation_fn", std::string{h_.name()}),
+           cereal::make_nvp("in_shape", in_shape_),
            cereal::make_nvp("size", size_),
            cereal::make_nvp("alpha", alpha_),
            cereal::make_nvp("beta", beta_),

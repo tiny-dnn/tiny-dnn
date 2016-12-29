@@ -32,7 +32,8 @@
 namespace tiny_dnn {
 
 TEST(quantized_deconvolutional, setup_internal) {
-    quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
+    static sigmoid sigmoid;
+    quantized_deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::internal);
   
     EXPECT_EQ(l.parallelize(),           true);            // if layer can be parallelized
@@ -57,7 +58,8 @@ TEST(quantized_deconvolutional, fprop) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2);
+    static sigmoid sigmoid;
+    quantized_deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2);
 
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
     auto create_simple_tensor = [](size_t vector_size) {
@@ -133,7 +135,8 @@ TEST(quantized_deconvolutional, fprop2) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    quantized_deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2, padding::same);
+    static sigmoid sigmoid;
+    quantized_deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2, padding::same);
 
     vec_t in(4), out(32), a(32), weight(18), bias(2);
 
@@ -178,7 +181,8 @@ TEST(quantized_deconvolutional, fprop2) {
 
 TEST(quantized_deconvolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer<tan_h>(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    nn << quantized_deconvolutional_layer(tan_h, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -190,7 +194,8 @@ TEST(quantized_deconvolutional, gradient_check) { // tanh - mse
 
 TEST(quantized_deconvolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << quantized_deconvolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -203,7 +208,8 @@ TEST(quantized_deconvolutional, gradient_check2) { // sigmoid - mse
 TEST(quantized_deconvolutional, gradient_check3) { // rectified - mse
     network<sequential> nn;
 
-    nn << quantized_deconvolutional_layer<rectified_linear>(5, 5, 3, 1, 1);
+    static rectified_linear rectified_linear;
+    nn << quantized_deconvolutional_layer(rectified_linear, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -216,7 +222,8 @@ TEST(quantized_deconvolutional, gradient_check3) { // rectified - mse
 TEST(quantized_deconvolutional, gradient_check4) { // identity - mse
     network<sequential> nn;
 
-    nn << quantized_deconvolutional_layer<identity>(5, 5, 3, 1, 1);
+    static identity identity;
+    nn << quantized_deconvolutional_layer(identity, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -229,7 +236,8 @@ TEST(quantized_deconvolutional, gradient_check4) { // identity - mse
 TEST(quantized_deconvolutional, gradient_check5) { // sigmoid - cross-entropy
     network<sequential> nn;
 
-    nn << quantized_deconvolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << quantized_deconvolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -241,8 +249,9 @@ TEST(quantized_deconvolutional, gradient_check5) { // sigmoid - cross-entropy
 
 TEST(quantized_deconvolutional, read_write)
 {
-    quantized_deconvolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
-    quantized_deconvolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    quantized_deconvolutional_layer l1(tan_h, 5, 5, 3, 1, 1);
+    quantized_deconvolutional_layer l2(tan_h, 5, 5, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();
@@ -260,8 +269,9 @@ TEST(quantized_deconvolutional, read_write2) {
     };
 #undef O
 #undef X
-    quantized_deconvolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    quantized_deconvolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    static tan_h tan_h;
+    quantized_deconvolutional_layer layer1(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    quantized_deconvolutional_layer layer2(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
     layer1.init_weight();
     layer2.init_weight();
 

@@ -36,10 +36,11 @@ TEST(ave_unpool, gradient_check) { // sigmoid - cross-entropy
     typedef activation::sigmoid activation;
     typedef network<sequential> network;
 
+    static activation activation_fn;
     network nn;
-    nn << fully_connected_layer<activation>(3, 4)
-        << average_unpooling_layer<activation>(2, 2, 1, 2) // 2x2 => 4x4
-        << average_pooling_layer<activation>(4, 4, 1, 2);
+    nn << fully_connected_layer(activation_fn, 3, 4)
+        << average_unpooling_layer(activation_fn, 2, 2, 1, 2) // 2x2 => 4x4
+        << average_pooling_layer(activation_fn, 4, 4, 1, 2);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -48,7 +49,8 @@ TEST(ave_unpool, gradient_check) { // sigmoid - cross-entropy
 }
 
 TEST(ave_unpool, forward) {
-    average_unpooling_layer<identity> l(2, 2, 1, 2);
+    static identity identity;
+    average_unpooling_layer l(identity, 2, 2, 1, 2);
     vec_t in = {
         4, 3,
         1.5, -0.5
@@ -74,7 +76,8 @@ TEST(ave_unpool, forward) {
 }
 
 TEST(ave_unpool, forward_stride) {
-    average_unpooling_layer<identity> l(3, 3, 1, 2, 1);
+    static identity identity;
+    average_unpooling_layer l(identity, 3, 3, 1, 2, 1);
     vec_t in = {
         0, 1, 2,
         8, 7, 5,
@@ -100,8 +103,9 @@ TEST(ave_unpool, forward_stride) {
 }
 
 TEST(ave_unpool, read_write) {
-    average_unpooling_layer<tan_h> l1(100, 100, 5, 2);
-    average_unpooling_layer<tan_h> l2(100, 100, 5, 2);
+    static tan_h tan_h;
+    average_unpooling_layer l1(tan_h, 100, 100, 5, 2);
+    average_unpooling_layer l2(tan_h, 100, 100, 5, 2);
 
     l1.setup(true);
     l2.setup(true);

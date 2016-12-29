@@ -30,22 +30,19 @@
 
 namespace tiny_dnn {
 
-template<typename Activation>
-class partial_connected_layer : public feedforward_layer<Activation> {
+class partial_connected_layer : public feedforward_layer {
 public:
-    CNN_USE_LAYER_MEMBERS;
-
     typedef std::vector<std::pair<serial_size_t, serial_size_t> > io_connections;
     typedef std::vector<std::pair<serial_size_t, serial_size_t> > wi_connections;
     typedef std::vector<std::pair<serial_size_t, serial_size_t> > wo_connections;
-    typedef feedforward_layer<Activation> Base;
 
-    partial_connected_layer(serial_size_t in_dim,
+    partial_connected_layer(const activation::function& activation_fn,
+                            serial_size_t in_dim,
                             serial_size_t out_dim,
                             size_t     weight_dim,
                             size_t     bias_dim,
                             float_t    scale_factor = float_t(1))
-        : Base(std_input_order(bias_dim > 0)),
+        : feedforward_layer(activation_fn, std_input_order(bias_dim > 0)),
           weight2io_(weight_dim),
           out2wi_(out_dim),
           in2wo_(in_dim),

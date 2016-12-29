@@ -34,11 +34,9 @@ namespace tiny_dnn {
 /**
  * applies max-pooing operaton to the spatial data
  **/
-template <typename Activation = activation::identity>
-class max_unpooling_layer : public feedforward_layer<Activation> {
+class max_unpooling_layer : public feedforward_layer {
 public:
-    CNN_USE_LAYER_MEMBERS;
-    typedef feedforward_layer<Activation> Base;
+    typedef feedforward_layer Base;
 
     /**
      * @param in_width     [in] width of input image
@@ -46,18 +44,26 @@ public:
      * @param in_channels  [in] the number of input image channels(depth)
      * @param unpooling_size [in] factor by which to upscale
      **/
-    max_unpooling_layer(serial_size_t in_width,
+    max_unpooling_layer(const activation::function& activation_fn,
+                        serial_size_t in_width,
                         serial_size_t in_height,
                         serial_size_t in_channels,
                         serial_size_t unpooling_size)
-        : max_unpooling_layer(in_width, in_height, in_channels, unpooling_size, unpooling_size)
+        : max_unpooling_layer(activation_fn,
+                              in_width, in_height, in_channels,
+                              unpooling_size, unpooling_size)
     {}
 
-    max_unpooling_layer(const shape3d& in_size,
+    max_unpooling_layer(const activation::function& activation_fn,
+                        const shape3d& in_size,
                         serial_size_t unpooling_size,
                         serial_size_t stride)
-        : max_unpooling_layer(in_size.width_, in_size.height_, in_size.depth_, unpooling_size, unpooling_size)
-    {}
+        : max_unpooling_layer(activation_fn,
+                              in_size.width_, in_size.height_, in_size.depth_,
+                              unpooling_size, unpooling_size)
+    {
+        CNN_UNREFERENCED_PARAMETER(stride);
+    }
 
     /**
      * @param in_width     [in] width of input image
@@ -66,41 +72,40 @@ public:
      * @param unpooling_size [in] factor by which to upscale
      * @param stride       [in] interval at which to apply the filters to the input
     **/
-    max_unpooling_layer(serial_size_t in_width,
+    max_unpooling_layer(const activation::function& activation_fn,
+                        serial_size_t in_width,
                         serial_size_t in_height,
                         serial_size_t in_channels,
                         serial_size_t unpooling_size,
                         serial_size_t stride)
-        : Base({vector_type::data}),
+        : Base(activation_fn, {vector_type::data}),
         unpool_size_(unpooling_size),
         stride_(stride),
         in_(in_width, in_height, in_channels),
         out_(unpool_out_dim(in_width, unpooling_size, stride), unpool_out_dim(in_height, unpooling_size, stride), in_channels)
     {
-        //set_worker_count(CNN_TASK_SIZE);
         init_connection();
     }
 
-    size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return 1;
     }
 
-    size_t fan_out_size() const override {
-        return in2out_[0].size();
+    serial_size_t fan_out_size() const override {
+        return static_cast<serial_size_t>(in2out_[0].size());
     }
 
     void forward_propagation(serial_size_t index,
-                             const std::vector<vec_t*>& in_data,
-                             std::vector<vec_t*>&       out_data)  override {
-        const vec_t& in  = *in_data[0];
-        // vec_t&       out = *out_data[0];
-        vec_t&       a   = *out_data[1];
+                             const std::vector<tensor_t*>& in_data,
+                             std::vector<tensor_t*>&       out_data ) {
+        const tensor_t& in  = *in_data[0];
+        tensor_t&       a   = *out_data[1];
         std::vector<serial_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
 
         for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i < r.end(); i++) {
                 const auto& in_index = out2in_[i];
-                a[i] = (max_idx[in_index] == i) ? in[in_index] : float_t(0);
+                a[i] = (max_idx[in_index] == static_cast<serial_size_t>(i)) ? in[in_index] : vec_t{float_t(0)};
             }
         });
 
@@ -108,12 +113,12 @@ public:
     }
 
     void back_propagation(serial_size_t                 index,
-                          const std::vector<vec_t*>& in_data,
-                          const std::vector<vec_t*>& out_data,
-                          std::vector<vec_t*>&       out_grad,
-                          std::vector<vec_t*>&       in_grad) override {
-        vec_t&       prev_delta = *in_grad[0];
-        vec_t&       curr_delta = *out_grad[1];
+                          const std::vector<tensor_t*>& in_data,
+                          const std::vector<tensor_t*>& out_data,
+                          std::vector<tensor_t*>&       out_grad,
+                          std::vector<tensor_t*>&       in_grad) {
+        tensor_t& prev_delta = *in_grad[0];
+        tensor_t& curr_delta = *out_grad[1];
         std::vector<serial_size_t>& max_idx = max_unpooling_layer_worker_storage_[index].in2outmax_;
 
         CNN_UNREFERENCED_PARAMETER(in_data);
@@ -123,7 +128,7 @@ public:
         for_(parallelize_, 0, in2out_.size(), [&](const blocked_range& r) {
             for (int i = r.begin(); i != r.end(); i++) {
                 serial_size_t outi = out2in_[i];
-                prev_delta[i] = (max_idx[outi] == i) ? curr_delta[outi] : float_t(0);
+                prev_delta[i] = (max_idx[outi] == static_cast<serial_size_t>(i)) ? curr_delta[outi] : vec_t{float_t(0)};
             }
         });
     }
@@ -133,8 +138,7 @@ public:
     std::string layer_type() const override { return "max-unpool"; }
     size_t unpool_size() const {return unpool_size_;}
 
-    virtual void set_worker_count(serial_size_t worker_count) override {
-        Base::set_worker_count(worker_count);
+    void set_worker_count(serial_size_t worker_count) {
         max_unpooling_layer_worker_storage_.resize(worker_count);
         for (max_unpooling_layer_worker_specific_storage& mws : max_unpooling_layer_worker_storage_) {
             mws.in2outmax_.resize(out_.size());
@@ -142,18 +146,29 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<max_unpooling_layer> & construct
+    ) {
+        std::string activation_fn_name;
         shape3d in;
         serial_size_t stride, unpool_size;
 
-        ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size), cereal::make_nvp("stride", stride));
-        construct(in, unpool_size, stride);
+        ar(cereal::make_nvp("activation_fn", activation_fn_name),
+           cereal::make_nvp("in_size", in),
+           cereal::make_nvp("unpool_size", unpool_size),
+           cereal::make_nvp("stride", stride));
+        construct(activation::get_function(activation_fn_name),
+                  in, unpool_size, stride);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("unpool_size", unpool_size_), cereal::make_nvp("stride", stride_));
+        ar(cereal::make_nvp("activation_fn", h_.name()),
+           cereal::make_nvp("in_size", in_),
+           cereal::make_nvp("unpool_size", unpool_size_),
+           cereal::make_nvp("stride", stride_));
     }
 
 private:

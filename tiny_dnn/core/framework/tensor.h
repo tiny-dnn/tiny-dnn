@@ -64,7 +64,7 @@ namespace tiny_dnn {
 /**
  * A tensor of the given dimension.
  * A tensor holds data in C-style nD array, i.e row-major order:
- * the rightmost index “varies the fastest”.
+ * the rightmost index "varies the fastest".
  *
  * Data is held by a std::vector with 64 bytes alignment.
  * Unmutable if kConst == true
@@ -416,7 +416,7 @@ private:
 
     /**
      * A tensor holds data in C-style nD array, i.e row-major order:
-     * the rightmost index “varies the fastest”.
+     * the rightmost index "varies the fastest".
      */
     std::array<size_t, kDimensions> shape_;
 

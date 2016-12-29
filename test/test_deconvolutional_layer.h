@@ -32,7 +32,8 @@
 namespace tiny_dnn {
 /*
 TEST(deconvolutional, setup_tiny) {
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
+    static sigmoid sigmoid;
+    deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
     EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
@@ -56,7 +57,8 @@ TEST(deconvolutional, setup_tiny) {
 
 #ifdef CNN_USE_NNPACK
 TEST(deconvolutional, setup_nnp) {
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
+    static sigmoid sigmoid;
+    deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2,
         padding::valid, true, 1, 1, backend_t::nnpack);
 
     EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
@@ -83,7 +85,8 @@ TEST(deconvolutional, fprop) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2);
+    static sigmoid sigmoid;
+    deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2);
 
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
     auto create_simple_tensor = [](size_t vector_size) {
@@ -157,7 +160,8 @@ TEST(deconvolutional, fprop2) {
     typedef network<sequential> CNN;
     CNN nn;
 
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2, padding::same);
+    static sigmoid sigmoid;
+    deconvolutional_layer l(sigmoid, 2, 2, 3, 1, 2, padding::same);
 
     auto create_simple_tensor = [](size_t vector_size) {
         return tensor_t(1, vec_t(vector_size));
@@ -215,7 +219,8 @@ TEST(deconvolutional, fprop2) {
 
 TEST(deconvolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
-    nn << deconvolutional_layer<tan_h>(2, 2, 3, 1, 1);
+    static tan_h tan_h;
+    nn << deconvolutional_layer(tan_h, 2, 2, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -224,7 +229,8 @@ TEST(deconvolutional, gradient_check) { // tanh - mse
 
 TEST(deconvolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
-    nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << deconvolutional_layer(sigmoid, 2, 2, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -234,7 +240,8 @@ TEST(deconvolutional, gradient_check2) { // sigmoid - mse
 TEST(deconvolutional, gradient_check3) { // rectified - mse
     network<sequential> nn;
 
-    nn << deconvolutional_layer<rectified_linear>(2, 2, 3, 1, 1);
+    static rectified_linear rectified_linear;
+    nn << deconvolutional_layer(rectified_linear, 2, 2, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -244,7 +251,8 @@ TEST(deconvolutional, gradient_check3) { // rectified - mse
 TEST(deconvolutional, gradient_check4) { // identity - mse
     network<sequential> nn;
 
-    nn << deconvolutional_layer<identity>(2, 2, 3, 1, 1);
+    static identity identity;
+    nn << deconvolutional_layer(identity, 2, 2, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -254,7 +262,8 @@ TEST(deconvolutional, gradient_check4) { // identity - mse
 TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
     network<sequential> nn;
 
-    nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << deconvolutional_layer(sigmoid, 2, 2, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -263,8 +272,9 @@ TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
 
 TEST(deconvolutional, read_write)
 {
-    deconvolutional_layer<tan_h> l1(2, 2, 3, 1, 1);
-    deconvolutional_layer<tan_h> l2(2, 2, 3, 1, 1);
+    static tan_h tan_h;
+    deconvolutional_layer l1(tan_h, 2, 2, 3, 1, 1);
+    deconvolutional_layer l2(tan_h, 2, 2, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();
@@ -282,8 +292,9 @@ TEST(deconvolutional, read_write2) {
     };
 #undef O
 #undef X
-    deconvolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    deconvolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    static tan_h tan_h;
+    deconvolutional_layer layer1(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    deconvolutional_layer layer2(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
     layer1.init_weight();
     layer2.init_weight();
 

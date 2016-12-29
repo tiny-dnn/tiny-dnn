@@ -235,11 +235,6 @@ std::string to_string(T value) {
     return os.str();
 }
 
-// boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS using layer::parallelize_; \
-    using feedforward_layer<Activation>::h_
-
-
 #define CNN_LOG_VECTOR(vec, name)
 /*
 void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {

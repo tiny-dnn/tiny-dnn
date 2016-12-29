@@ -120,7 +120,10 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<concat_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<concat_layer> & construct
+    ) {
         std::vector<shape3d> in_shapes;
 
         ar(cereal::make_nvp("in_size", in_shapes));

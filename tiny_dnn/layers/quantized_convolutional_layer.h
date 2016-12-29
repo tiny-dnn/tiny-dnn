@@ -50,11 +50,9 @@ namespace tiny_dnn {
  *
  * take input as two-dimensional *image* and applying filtering operation.
  **/
-template<typename Activation = activation::identity>
-class quantized_convolutional_layer : public feedforward_layer<Activation> {
+class quantized_convolutional_layer : public feedforward_layer {
  public:
-    typedef feedforward_layer<Activation> Base;
-    CNN_USE_LAYER_MEMBERS;
+    typedef feedforward_layer Base;
 
     /**
     * constructing convolutional layer
@@ -71,22 +69,24 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_convolutional_layer(serial_size_t     in_width,
+    quantized_convolutional_layer(const activation::function& activation_fn,
+                                  serial_size_t     in_width,
                                   serial_size_t     in_height,
                                   serial_size_t     window_size,
                                   serial_size_t     in_channels,
                                   serial_size_t     out_channels,
-                                  padding        pad_type = padding::valid,
-                                  bool           has_bias = true,
+                                  padding           pad_type = padding::valid,
+                                  bool              has_bias = true,
                                   serial_size_t     w_stride = 1,
                                   serial_size_t     h_stride = 1,
-                                  backend_t      backend_type = core::backend_t::internal)
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
+                                  backend_t         backend_type = core::backend_t::internal)
+        : Base(activation_fn, std_input_order(has_bias))
+    {
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_size, window_size,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride);
+        init_backend(backend_type);
     }
 
     /**
@@ -105,23 +105,25 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_convolutional_layer(serial_size_t     in_width,
+    quantized_convolutional_layer(const activation::function& activation_fn,
+                                  serial_size_t     in_width,
                                   serial_size_t     in_height,
                                   serial_size_t     window_width,
                                   serial_size_t     window_height,
                                   serial_size_t     in_channels,
                                   serial_size_t     out_channels,
-                                  padding        pad_type = padding::valid,
-                                  bool           has_bias = true,
+                                  padding           pad_type = padding::valid,
+                                  bool              has_bias = true,
                                   serial_size_t     w_stride = 1,
                                   serial_size_t     h_stride = 1,
-                                  backend_t      backend_type = core::backend_t::internal)
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
+                                  backend_t         backend_type = core::backend_t::internal)
+        : Base(activation_fn, std_input_order(has_bias))
+    {
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_width, window_height,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride);
+        init_backend(backend_type);
     }
 
     /**
@@ -140,24 +142,26 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_convolutional_layer(serial_size_t              in_width,
-                                  serial_size_t              in_height,
-                                  serial_size_t              window_size,
-                                  serial_size_t              in_channels,
-                                  serial_size_t              out_channels,
+    quantized_convolutional_layer(const activation::function&   activation_fn,
+                                  serial_size_t           in_width,
+                                  serial_size_t           in_height,
+                                  serial_size_t           window_size,
+                                  serial_size_t           in_channels,
+                                  serial_size_t           out_channels,
                                   const connection_table& connection_table,
                                   padding                 pad_type = padding::valid,
                                   bool                    has_bias = true,
-                                  serial_size_t              w_stride = 1,
-                                  serial_size_t              h_stride = 1,
-                                  backend_t backend_type = core::backend_t::internal)
-        : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
+                                  serial_size_t           w_stride = 1,
+                                  serial_size_t           h_stride = 1,
+                                  backend_t               backend_type = core::backend_t::internal)
+        : Base(activation_fn, std_input_order(has_bias))
+    {
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_size, window_size,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride,
+                        connection_table);
+        init_backend(backend_type);
     }
 
     /**
@@ -177,32 +181,34 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_convolutional_layer(serial_size_t              in_width,
-                                  serial_size_t              in_height,
-                                  serial_size_t              window_width,
-                                  serial_size_t              window_height,
-                                  serial_size_t              in_channels,
-                                  serial_size_t              out_channels,
+    quantized_convolutional_layer(const activation::function&   activation_fn,
+                                  serial_size_t           in_width,
+                                  serial_size_t           in_height,
+                                  serial_size_t           window_width,
+                                  serial_size_t           window_height,
+                                  serial_size_t           in_channels,
+                                  serial_size_t           out_channels,
                                   const connection_table& connection_table,
                                   padding                 pad_type = padding::valid,
                                   bool                    has_bias = true,
-                                  serial_size_t              w_stride = 1,
-                                  serial_size_t              h_stride = 1,
-                                  backend_t      backend_type = core::backend_t::internal)
-        : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
+                                  serial_size_t           w_stride = 1,
+                                  serial_size_t           h_stride = 1,
+                                  backend_t               backend_type = core::backend_t::internal)
+        : Base(activation_fn, std_input_order(has_bias))
+    {
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_width, window_height,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride,
+                        connection_table);
+        init_backend(backend_type);
     }
 
     // move constructor
     quantized_convolutional_layer(quantized_convolutional_layer&& other)  // NOLINT
-            : Base(std::move(other))
-            , params_(std::move(other.params_))
-            , cws_(std::move(other.cws_)) {
+        : Base(std::move(other))
+        , params_(std::move(other.params_))
+        , cws_(std::move(other.cws_)) {
         init_backend(core::backend_t::internal);
     }
 
@@ -271,7 +277,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         const auto width = params_.out.depth_ * pitch + border_width;
         const auto height = params_.in.depth_ * pitch + border_width;
         const image<>::intensity_t bg_color = 255;
-        const vec_t& W = *this->get_weights()[0];
+        const vec_t& W = *this->weights()[0];
 
         img.resize(width, height);
         img.fill(bg_color);
@@ -306,13 +312,13 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
  private:
     void conv_set_params(const shape3d& in,
-                         serial_size_t     w_width,
-                         serial_size_t     w_height,
-                         serial_size_t     outc,
+                         serial_size_t  w_width,
+                         serial_size_t  w_height,
+                         serial_size_t  outc,
                          padding        ptype,
                          bool           has_bias,
-                         serial_size_t     w_stride,
-                         serial_size_t     h_stride,
+                         serial_size_t  w_stride,
+                         serial_size_t  h_stride,
                          const connection_table& tbl = connection_table()) {
         params_.in = in;
         params_.in_padded = shape3d(in_length(in.width_, w_width, ptype),
@@ -347,8 +353,8 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     }
 
     static serial_size_t conv_out_length(serial_size_t in_length,
-                                      serial_size_t window_size,
-                                      serial_size_t stride, padding pad_type) {
+                                         serial_size_t window_size,
+                                         serial_size_t stride, padding pad_type) {
         float_t tmp;
         if (pad_type == padding::same) {
             tmp = static_cast<float_t>(in_length) / stride;
@@ -361,20 +367,20 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     }
 
     static serial_size_t conv_out_dim(serial_size_t in_width,
-                                   serial_size_t in_height,
-                                   serial_size_t window_size,
-                                   serial_size_t w_stride,
-                                   serial_size_t h_stride, padding pad_type) {
+                                      serial_size_t in_height,
+                                      serial_size_t window_size,
+                                      serial_size_t w_stride,
+                                      serial_size_t h_stride, padding pad_type) {
         return conv_out_length(in_width, window_size, w_stride, pad_type) *
                conv_out_length(in_height, window_size, h_stride, pad_type);
     }
 
     serial_size_t conv_out_dim(serial_size_t in_width,
-                            serial_size_t in_height,
-                            serial_size_t window_width,
-                            serial_size_t window_height,
-                            serial_size_t w_stride,
-                            serial_size_t h_stride, padding pad_type) const {
+                               serial_size_t in_height,
+                               serial_size_t window_width,
+                               serial_size_t window_height,
+                               serial_size_t w_stride,
+                               serial_size_t h_stride, padding pad_type) const {
         return conv_out_length(in_width, window_width, w_stride, pad_type) *
                conv_out_length(in_height, window_height, h_stride, pad_type);
     }

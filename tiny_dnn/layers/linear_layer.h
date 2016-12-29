@@ -34,21 +34,21 @@ namespace tiny_dnn {
 /**
  * element-wise operation: ```f(x) = h(scale*x+bias)```
  */
-template<typename Activation>
-class linear_layer : public feedforward_layer<Activation> {
+class linear_layer : public feedforward_layer {
 public:
-    CNN_USE_LAYER_MEMBERS;
-
-    typedef feedforward_layer<Activation> Base;
+    typedef feedforward_layer Base;
 
     /**
      * @param dim   [in] number of elements
      * @param scale [in] factor by which to multiply
      * @param bias  [in] bias term
      **/
-    explicit linear_layer(serial_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
-        : Base({vector_type::data}),
-        dim_(dim), scale_(scale), bias_(bias) {}
+    explicit linear_layer(const activation::function& activation_fn,
+                          serial_size_t dim,
+                          float_t scale = float_t(1),
+                          float_t bias = float_t(0))
+        : Base(activation_fn, {vector_type::data}),
+               dim_(dim), scale_(scale), bias_(bias) {}
 
     std::vector<shape3d> in_shape() const override {
         return {shape3d(dim_, 1, 1) };
@@ -97,19 +97,30 @@ public:
     }
 
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<linear_layer> & construct) {
+    static void load_and_construct(
+        Archive & ar,
+        cereal::construct<linear_layer> & construct
+    ) {
+        std::string activation_fn_name;
         serial_size_t dim;
         float_t scale, bias;
 
-        ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale), cereal::make_nvp("bias", bias));
+        ar(cereal::make_nvp("activation_fn", activation_fn_name),
+           cereal::make_nvp("in_size", dim),
+           cereal::make_nvp("scale", scale),
+           cereal::make_nvp("bias", bias));
 
-        construct(dim, scale, bias);
+        construct(activation::get_function(activation_fn_name),
+                  dim, scale, bias);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
+        ar(cereal::make_nvp("activation_fn", std::string(h_.name())),
+           cereal::make_nvp("in_size", dim_),
+           cereal::make_nvp("scale", scale_),
+           cereal::make_nvp("bias", bias_));
     }
 
 protected:

@@ -141,8 +141,9 @@ TEST(target_cost, train_unbalanced_data_1dim) {
 
     auto create_net = []() {
         network<sequential> net;
-        net << fully_connected_layer<tan_h>(1, 10)
-            << fully_connected_layer<tan_h>(10, 2);
+        static tan_h tan_h;
+        net << fully_connected_layer(tan_h, 1, 10)
+            << fully_connected_layer(tan_h, 10, 2);
         return net;
     };
 
@@ -215,8 +216,9 @@ TEST(target_cost, train_unbalanced_data) {
 
     auto create_net = []() {
         network<sequential> net;
-        net << fully_connected_layer<tan_h>(2, 10)
-            << fully_connected_layer<tan_h>(10, 2);
+        static tan_h tan_h;
+        net << fully_connected_layer(tan_h, 2, 10)
+            << fully_connected_layer(tan_h, 10, 2);
         return net;
     };
 

@@ -32,8 +32,8 @@
 namespace tiny_dnn {
 
 TEST(convolutional, setup_internal) {
-
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 3, 1, 2);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           serial_size_t(3));  // num of input tensors
@@ -102,7 +102,8 @@ private:
 
 TEST(convolutional, fprop) {
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 3, 1, 2);
 
     tensor_buf buf(l, false);
 
@@ -187,7 +188,8 @@ TEST(convolutional, with_stride) {
         18.5f, 27.5f
     };
 
-    convolutional_layer<identity> l(5, 5, 3, 1, 1, padding::valid, true, 2, 2);
+    static identity identity;
+    convolutional_layer l(identity, 5, 5, 3, 1, 1, padding::valid, true, 2, 2);
     tensor_buf data(l, false), grad(l, false);
 
     data.in_at(0)[0] = vec_t(in, in + 25);
@@ -249,7 +251,8 @@ TEST(convolutional, with_stride) {
 #ifdef CNN_USE_AVX
 TEST(convolutional, fprop_avx) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2);
 
     tensor_buf buf(l), buf2(l);
 
@@ -272,7 +275,8 @@ TEST(convolutional, fprop_avx) {
 
 TEST(convolutional, bprop_avx) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2);
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
@@ -298,7 +302,8 @@ TEST(convolutional, bprop_avx) {
 
 TEST(convolutional, fprop_avx_1x1out) {
 
-    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 5, 1, 2);
 
     tensor_buf buf(l), buf2(l);
 
@@ -320,7 +325,8 @@ TEST(convolutional, fprop_avx_1x1out) {
 
 TEST(convolutional, bprop_avx_1x1out) {
 
-    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 5, 1, 2);
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
@@ -346,7 +352,8 @@ TEST(convolutional, bprop_avx_1x1out) {
 
 TEST(convolutional, fprop_avx_hstride) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2, padding::valid, true, 1, 2);
 
     tensor_buf buf(l), buf2(l);
 
@@ -368,7 +375,8 @@ TEST(convolutional, fprop_avx_hstride) {
 
 TEST(convolutional, bprop_avx_hstride) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2, padding::valid, true, 1, 2);
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
@@ -394,7 +402,8 @@ TEST(convolutional, bprop_avx_hstride) {
 
 TEST(convolutional, fprop_avx_hstride_1x1out) {
 
-    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2, padding::valid, true, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 5, 1, 2, padding::valid, true, 1, 2);
 
     tensor_buf buf(l), buf2(l);
 
@@ -416,7 +425,8 @@ TEST(convolutional, fprop_avx_hstride_1x1out) {
 
 TEST(convolutional, bprop_avx_hstride_1x1out) {
 
-    convolutional_layer<sigmoid> l(5, 5, 5, 1, 2, padding::valid, true, 1, 2);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 5, 1, 2, padding::valid, true, 1, 2);
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
@@ -442,7 +452,8 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
 
 TEST(convolutional, fprop_avx_wstride) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2, padding::valid, true, 2, 1);
 
     tensor_buf buf(l), buf2(l);
 
@@ -464,7 +475,8 @@ TEST(convolutional, fprop_avx_wstride) {
 
 TEST(convolutional, bprop_avx_wstride) {
 
-    convolutional_layer<sigmoid> l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 7, 7, 5, 1, 2, padding::valid, true, 2, 1);
 
     tensor_buf data(l), grad1(l);
     tensor_buf grad2(grad1);
@@ -493,7 +505,8 @@ TEST(convolutional, bprop_avx_wstride) {
 #ifdef CNN_USE_NNPACK
 TEST(convolutional, fprop_nnp) {
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2,
+    static sigmoid sigmoid;
+    convolutional_layer l(sigmoid, 5, 5, 3, 1, 2,
         padding::valid, true, 1, 1, core::backend_t::nnpack);
 
     // layer::forward_propagation expects tensors, even if we feed only one input at a time
@@ -564,7 +577,8 @@ TEST(convolutional, fprop_nnp) {
 
 TEST(convolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
-    nn << convolutional_layer<tan_h>(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    nn << convolutional_layer(tan_h, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -575,7 +589,8 @@ TEST(convolutional, gradient_check) { // tanh - mse
 
 TEST(convolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
-    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -587,7 +602,8 @@ TEST(convolutional, gradient_check2) { // sigmoid - mse
 TEST(convolutional, gradient_check3) { // rectified - mse
     network<sequential> nn;
 
-    nn << convolutional_layer<rectified_linear>(5, 5, 3, 1, 1);
+    static rectified_linear rectified_linear;
+    nn << convolutional_layer(rectified_linear, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -599,7 +615,8 @@ TEST(convolutional, gradient_check3) { // rectified - mse
 TEST(convolutional, gradient_check4) { // identity - mse
     network<sequential> nn;
 
-    nn << convolutional_layer<identity>(5, 5, 3, 1, 1);
+    static identity identity;
+    nn << convolutional_layer(identity, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -611,7 +628,8 @@ TEST(convolutional, gradient_check4) { // identity - mse
 TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -623,7 +641,8 @@ TEST(convolutional, gradient_check5) { // sigmoid - cross-entropy
 TEST(convolutional, gradient_check6) { // sigmoid - absolute
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -635,7 +654,8 @@ TEST(convolutional, gradient_check6) { // sigmoid - absolute
 TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid>(5, 5, 3, 1, 1);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid, 5, 5, 3, 1, 1);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -647,8 +667,10 @@ TEST(convolutional, gradient_check7) { // sigmoid - absolute eps
 TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
     network<sequential> nn;
 
-    nn << convolutional_layer<sigmoid> (5, 5, 3, 1, 1, padding::same,
-                                        true, 1, 1, core::backend_t::internal);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid,
+                              5, 5, 3, 1, 1, padding::same,
+                              true, 1, 1, core::backend_t::internal);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -660,8 +682,10 @@ TEST(convolutional, gradient_check8_pad_same) { // sigmoid - mse - padding same
 TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
     network<sequential> nn;
 
-    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
-                                        true, 2, 1, core::backend_t::internal);
+    static identity identity;
+    nn << convolutional_layer(identity,
+                              3, 3, 1, 1, 1, padding::valid,
+                              true, 2, 1, core::backend_t::internal);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
@@ -673,8 +697,10 @@ TEST(convolutional, gradient_check9_w_stride) { // sigmoid - mse - w_stride > 1
 TEST(convolutional, gradient_check10_h_stride) { // sigmoid - mse - h_stride > 1
     network<sequential> nn;
 
-    nn << convolutional_layer<identity>(3, 3, 1, 1, 1, padding::valid,
-                                        true, 1, 2, core::backend_t::internal);
+    static identity identity;
+    nn << convolutional_layer(identity,
+                              3, 3, 1, 1, 1, padding::valid,
+                              true, 1, 2, core::backend_t::internal);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
     nn.init_weight();
@@ -692,8 +718,10 @@ TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has co
 
     connection_table connections(tbl, 3, 3);
 
-    nn << convolutional_layer<sigmoid>(7, 7, 3, 3, 1, connections, padding::valid,
-                                       true, 1, 1, core::backend_t::internal);
+    static sigmoid sigmoid;
+    nn << convolutional_layer(sigmoid,
+                              7, 7, 3, 3, 1, connections, padding::valid,
+                              true, 1, 1, core::backend_t::internal);
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
@@ -705,8 +733,10 @@ TEST(convolutional, gradient_check11_connection_tbl) { // sigmoid - mse - has co
 TEST(convolutional, gradient_check12_pad_same) { // sigmoid - mse - padding same
 	network<sequential> nn;
 
-	nn << fully_connected_layer<identity>(10, 5*5) <<
-		convolutional_layer<sigmoid>(5, 5, 3, 1, 1, padding::same,
+    static identity identity;
+    static sigmoid sigmoid;
+	nn << fully_connected_layer(identity, 10, 5*5) <<
+		convolutional_layer(sigmoid, 5, 5, 3, 1, 1, padding::same,
 		true, 1, 1, core::backend_t::internal);
 
 	const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -718,8 +748,9 @@ TEST(convolutional, gradient_check12_pad_same) { // sigmoid - mse - padding same
 
 TEST(convolutional, read_write)
 {
-    convolutional_layer<tan_h> l1(5, 5, 3, 1, 1);
-    convolutional_layer<tan_h> l2(5, 5, 3, 1, 1);
+    static tan_h tan_h;
+    convolutional_layer l1(tan_h, 5, 5, 3, 1, 1);
+    convolutional_layer l2(tan_h, 5, 5, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();
@@ -737,8 +768,9 @@ TEST(convolutional, read_write2) {
     };
 #undef O
 #undef X
-    convolutional_layer<tan_h> layer1(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
-    convolutional_layer<tan_h> layer2(14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    static tan_h tan_h;
+    convolutional_layer layer1(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
+    convolutional_layer layer2(tan_h, 14, 14, 5, 3, 6, connection_table(connection, 3, 6));
     layer1.init_weight();
     layer2.init_weight();
 

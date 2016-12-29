@@ -56,12 +56,14 @@ void convert_image(const std::string& imagefilename,
 
 void construct_net(network<sequential>& nn) {
     // construct nets
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << average_pooling_layer<activation::identity>(28, 28, 6, 2)
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16)
-       << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
-       << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
-       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+    static tan_h tan_h;
+    static activation::identity identity;
+    nn << convolutional_layer(tan_h, 32, 32, 5, 1, 6)
+       << average_pooling_layer(identity, 28, 28, 6, 2)
+       << convolutional_layer(tan_h, 14, 14, 5, 6, 16)
+       << deconvolutional_layer(tan_h, 10, 10, 5, 16, 6)
+       << average_unpooling_layer(identity, 14, 14, 6, 2)
+       << deconvolutional_layer(tan_h, 28, 28, 5, 6, 1);
 }
 
 void train_network(network<sequential> nn, const string& train_dir_path) {
@@ -135,7 +137,7 @@ void recognize(const std::string& dictionary, const std::string& src_filename, c
         out_img.save(filename);
     }
     // visualize filter shape of first convolutional layer
-    auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+    auto weightc = nn.at<convolutional_layer>(0).weight_to_image();
     weightc.save("weights.png");
 }
 

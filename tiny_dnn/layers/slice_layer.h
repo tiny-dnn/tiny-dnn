@@ -129,14 +129,18 @@ public:
         slice_type slice_type;
         serial_size_t num_outputs;
 
-        ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("slice_type", slice_type), cereal::make_nvp("num_outputs", num_outputs));
+        ar(cereal::make_nvp("in_size", in_shape),
+           cereal::make_nvp("slice_type", slice_type),
+           cereal::make_nvp("num_outputs", num_outputs));
         construct(in_shape, slice_type, num_outputs);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("slice_type", slice_type_), cereal::make_nvp("num_outputs", num_outputs_));
+        ar(cereal::make_nvp("in_size", in_shape_),
+           cereal::make_nvp("slice_type", slice_type_),
+           cereal::make_nvp("num_outputs", num_outputs_));
     }
 private:
     void slice_data_forward(const tensor_t& in_data,

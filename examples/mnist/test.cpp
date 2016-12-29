@@ -82,7 +82,7 @@ void recognize(const std::string& dictionary, const std::string& src_filename) {
     }
     // save filter shape of first convolutional layer
     {
-        auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+        auto weight = nn.at<convolutional_layer>(0).weight_to_image();
         auto filename = "weights.png";
         weight.save(filename);
     }
