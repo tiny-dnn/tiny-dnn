@@ -461,7 +461,7 @@ class network {
         std::vector<tensor_t> v(t.size());
         const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
         for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-            net_.label2vec(&t[sample][0], static_cast<serial_size_t>(t[sample].size()), &v[sample]);
+            net_.label2vec(t[sample], v[sample]);
         }
 
         for (auto current : net_) {  // ignore first input layer
@@ -1029,7 +1029,7 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], static_cast<serial_size_t>(inputs.size()), &vec);
+        net_.label2vec(inputs, vec);
         normalize_tensor(vec, normalized);
     }
 
