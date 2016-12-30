@@ -3,7 +3,7 @@
 /*#include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>*/
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_cnn;
 using namespace tiny_cnn::activation;
@@ -31,12 +31,7 @@ void convert_image(const std::string& imagefilename,
     for(int c = 0; c < resized.channels(); ++c){
         for(int y = 0; y < resized.rows; ++y){
             for(int x = 0; x < resized.cols; ++x){
-#if CV_MAJOR_VERSION == 2
-					data[c * w * h + y*w + x] = resized.data[y*resized.step + x*resized.step + c];
-#elif CV_MAJOR_VERSION == 3
-					data[c * w * h + y*w + x] = resized.data[y*resized.step[0] + x*resized.step[1] + c];
-#endif
-                
+		data[c * w * h + y*w + x] = resized.data[y*resized.step[0] + x*resized.step[1] + c];
             }
         }
     }
