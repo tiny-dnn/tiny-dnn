@@ -38,11 +38,8 @@
 #include "tiny_dnn/layers/input_layer.h"
 #include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/convolutional_layer.h"
-#include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/deconvolutional_layer.h"
-#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
-#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
 #include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
@@ -55,6 +52,12 @@
 #include "tiny_dnn/layers/batch_normalization_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
+#include "tiny_dnn/layers/quantized_convolutional_layer.h"
+#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+
+#ifdef CNN_USE_GEMMLOWP
+#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
+#endif  // CNN_USE_GEMMLOWP
 
 #include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
@@ -72,12 +75,12 @@
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
-#endif
+#endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/serialization_helper.h"
 #include "tiny_dnn/util/deserialization_helper.h"
-#endif
+#endif  // CNN_NO_SERIALIZATION
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf

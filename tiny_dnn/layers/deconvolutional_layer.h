@@ -33,16 +33,18 @@
 #include "tiny_dnn/core/backend_tiny.h"
 #include "tiny_dnn/core/backend_nnp.h"
 #include "tiny_dnn/core/backend_dnn.h"
+
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/backend_avx.h"
-#endif
+#endif  // CNN_USE_AVX
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/activations/activation_function.h"
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
-#endif
+#endif  // DNN_USE_IMAGE_API
+
 
 using namespace tiny_dnn::core;
 
