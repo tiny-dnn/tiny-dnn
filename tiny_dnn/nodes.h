@@ -43,21 +43,25 @@ namespace cereal {
 
 template <typename Archive>
 void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
+#ifndef CNN_NO_SERIALIZATION
     ar(cereal::make_size_tag((cereal::size_type)v.size()));
     for (auto n : v) {
         tiny_dnn::layer::save_layer(ar, *n);
     }
+#endif
 }
 
 
 template <typename Archive>
 void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
+#ifndef CNN_NO_SERIALIZATION
     cereal::size_type size;
     ar(cereal::make_size_tag(size));
 
     for (size_t i = 0; i < size; i++) {
         v.emplace_back(tiny_dnn::layer::load_layer(ar));
     }
+#endif
 }
 
 }
@@ -470,10 +474,12 @@ private:
                              std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
         }
 
+#ifndef CNN_NO_SERIALIZATION
         template <typename Archive>
         void serialize(Archive & ar) {
             ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
         }
+#endif
 
         std::vector<std::tuple<serial_size_t, serial_size_t, serial_size_t, serial_size_t>> connections;
         std::vector<serial_size_t> in_nodes, out_nodes;
@@ -481,6 +487,7 @@ private:
 
     template <typename OutputArchive>
     void save_connections(OutputArchive& oa) const {
+#ifndef CNN_NO_SERIALIZATION
         _graph_connection gc;
         std::unordered_map<node*, serial_size_t> node2id;
         serial_size_t idx = 0;
@@ -514,10 +521,12 @@ private:
         }
 
         oa(cereal::make_nvp("graph", gc));
+#endif
     }
 
     template <typename InputArchive>
     void load_connections(InputArchive& ia) {
+#ifndef CNN_NO_SERIALIZATION
         _graph_connection gc;
         ia(cereal::make_nvp("graph", gc));
 
@@ -532,6 +541,7 @@ private:
         for (auto out : gc.out_nodes) {
             output_layers_.push_back(nodes_[out]);
         }
+#endif
     }
 
      // normalize indexing back to [sample][layer][feature]
@@ -571,6 +581,7 @@ private:
 
 template <typename OutputArchive>
 void nodes::save_model(OutputArchive & oa) const {
+#ifndef CNN_NO_SERIALIZATION
     oa(cereal::make_nvp("nodes", nodes_));
 
     if (typeid(*this) == typeid(sequential)) {
@@ -579,10 +590,12 @@ void nodes::save_model(OutputArchive & oa) const {
     else {
         dynamic_cast<const graph*>(this)->save_connections(oa);
     }
+#endif
 }
 
 template <typename InputArchive>
 void nodes::load_model(InputArchive & ia) {
+#ifndef CNN_NO_SERIALIZATION
     own_nodes_.clear();
     nodes_.clear();
 
@@ -598,6 +611,7 @@ void nodes::load_model(InputArchive & ia) {
     else {
         dynamic_cast<graph*>(this)->load_connections(ia);
     }
+#endif
 }
 
 

@@ -72,6 +72,7 @@ struct connection_table {
         return rows_ == 0 && cols_ == 0;
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <typename Archive>
     void serialize(Archive & ar) {
         ar(cereal::make_nvp("rows", rows_), cereal::make_nvp("cols", cols_));
@@ -83,6 +84,7 @@ struct connection_table {
             ar(cereal::make_nvp("connection", connected_));
         }
     }
+#endif
 
     std::deque<bool> connected_;
     serial_size_t rows_;

@@ -601,6 +601,7 @@ class network {
     const_iterator begin() const { return net_.begin(); }
     const_iterator end() const { return net_.end(); }
 
+#ifndef CNN_NO_SERIALIZATION
     void load(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) {
@@ -672,6 +673,7 @@ class network {
         cereal::JSONInputArchive ia(ss);
         from_archive(ia, what);
     }
+#endif
 
     ///< @deprecated use save(filename,target,format) instead.
     void save(std::ostream& os) const {
