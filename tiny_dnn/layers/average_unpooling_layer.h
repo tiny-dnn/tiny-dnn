@@ -31,9 +31,12 @@
 #include <algorithm>
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/layers/partial_connected_layer.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 namespace tiny_dnn {
 

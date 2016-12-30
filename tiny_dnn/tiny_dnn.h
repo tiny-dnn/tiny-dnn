@@ -61,7 +61,6 @@
 #include "tiny_dnn/optimizers/optimizer.h"
 
 #include "tiny_dnn/util/weight_init.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/deform.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/graph_visualizer.h"
@@ -70,6 +69,10 @@
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 #ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/serialization_helper.h"

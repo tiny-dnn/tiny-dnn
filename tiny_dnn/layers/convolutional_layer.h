@@ -36,8 +36,11 @@
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 using namespace tiny_dnn::core;
 
@@ -326,6 +329,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return ss.str();
     }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weight_to_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -365,6 +369,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
@@ -405,7 +410,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", params_.h_stride)
             );
     }
-#endif
+#endif  // CNN_NO_SERIALIZATION
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {

@@ -57,6 +57,8 @@ using namespace tiny_dnn::activation;
 #include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
 #include "test_quantized_deconvolutional_layer.h"
+#include "test_tensor.h"
+
 #ifdef CNN_USE_GEMMLOWP
 #include "test_quantized_fully_connected_layer.h"
 #endif
@@ -65,8 +67,9 @@ using namespace tiny_dnn::activation;
 #include "test_caffe_converter.h"
 #endif
 
-#include "test_tensor.h"
+#ifdef DNN_USE_IMAGE_API
 #include "test_image.h"
+#endif
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

@@ -38,8 +38,11 @@
 #endif
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 using namespace tiny_dnn::core;
 
@@ -264,6 +267,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
     std::string layer_type() const override { return "q_conv"; }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weight_to_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -303,6 +307,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
  private:
     void conv_set_params(const shape3d& in,

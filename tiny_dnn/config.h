@@ -68,6 +68,12 @@
 //#define CNN_NO_SERIALIZATION
 
 /**
+ * Disable Image API support.
+ * Currently we use stb by default.
+ **/
+//#define DNN_USE_IMAGE_API
+
+/**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
