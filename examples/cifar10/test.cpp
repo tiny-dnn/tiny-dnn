@@ -5,8 +5,8 @@
 #include <opencv2/highgui.hpp>*/
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
