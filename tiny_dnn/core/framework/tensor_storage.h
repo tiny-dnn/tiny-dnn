@@ -73,7 +73,7 @@ static inline size_t compute_offset(const C1 &start, const C2 &shape) {
     size_t res = 0;
     for (size_t i = 0; i < shape.size(); ++i) {
         res *= shape[i];
-	res += (i < start.size()) ? *(start.begin() + i) : 0;
+        res += (i < start.size()) ? *(start.begin() + i) : 0;
     }
     return res;
 }

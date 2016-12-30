@@ -70,7 +70,7 @@ namespace tiny_dnn {
  * Unmutable if kConst == true
  */
 template<typename U = float_t, size_t kDimensions = 4, bool kConst = false,
-	 typename Allocator = aligned_allocator<U, 64> >
+         typename Allocator = aligned_allocator<U, 64> >
 class Tensor {
     // Define constant types for constant Tensor,
     // and mutable ones for mutable Tensor
@@ -295,14 +295,14 @@ class Tensor {
         //No size change for reshape
         if (calcSize() != product(sz)) {
             throw nn_error("Reshape to Tensor of different size.");
-	}
+        }
         shape_ = sz;
     }
 
     void resize(const std::array<size_t, kDimensions> &sz) {
         if (offset_ != 0 || size_ != storage_ptr_->size()) {
             throw nn_error("Resize of partial view is impossible.");
-	}
+        }
         shape_ = sz;
         storage_ptr_->resize(std::vector<size_t>(sz.begin(), sz.end()));
     }
@@ -357,8 +357,8 @@ class Tensor {
      *                                                     // offset 4.
      */
     Tensor subView(std::initializer_list<size_t> const &start,
-                std::initializer_list<size_t> const &new_shape) {
-	return subview_impl(start, new_shape);
+                   std::initializer_list<size_t> const &new_shape) {
+        return subview_impl(start, new_shape);
     }
 
     /*
@@ -380,7 +380,7 @@ private:
      */
     explicit Tensor(const TensorStoragePointer storage,
                     const size_t offset,
-		    std::initializer_list<size_t> const &shape) {
+                    std::initializer_list<size_t> const &shape) {
         offset_ = offset;
         size_ = product(shape);
         storage_ptr_ = storage;
@@ -399,13 +399,13 @@ private:
             throw nn_error("Overpassed number of existing dimensions.");
         }
 
-	// compute the new offset and check that it's feasible to create
-	// the new view.
-	//TODO(edgarriba/randl): add proper tests to this
-	const size_t new_offset = offset_ + compute_offset(start, shape_);
-	if (new_offset + product(new_shape) > size_) {
+        // compute the new offset and check that it's feasible to create
+        // the new view.
+        //TODO(edgarriba/randl): add proper tests to this
+        const size_t new_offset = offset_ + compute_offset(start, shape_);
+        if (new_offset + product(new_shape) > size_) {
             throw nn_error("Cannot create a view from this tensor");
-	}
+        }
 
         return Tensor(storage_ptr_, new_offset, new_shape);
     }
