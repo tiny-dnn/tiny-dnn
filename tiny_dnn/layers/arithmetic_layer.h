@@ -83,6 +83,7 @@ public:
             *in_grad[i] = *out_grad[0];
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<elementwise_add_layer> & construct) {
         serial_size_t num_args, dim;
@@ -96,6 +97,8 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
     }
+#endif
+
 private:
     serial_size_t num_args_;
     serial_size_t dim_;

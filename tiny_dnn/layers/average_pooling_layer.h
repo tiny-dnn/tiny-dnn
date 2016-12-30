@@ -266,6 +266,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
             Base::bias2out_);
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<average_pooling_layer> & construct) {
         shape3d in;
@@ -293,6 +294,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
            cereal::make_nvp("pad_type", pad_type_)
         );
     }
+#endif
 
     std::pair<serial_size_t, serial_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }
 

@@ -110,6 +110,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<power_layer> & construct) {
         shape3d in_shape;
@@ -125,6 +126,7 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_), cereal::make_nvp("scale", scale_));
     }
+#endif
 
     float_t factor() const {
         return factor_;

@@ -164,6 +164,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<dropout_layer> & construct) {
         net_phase phase;
@@ -179,6 +180,7 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_size_), cereal::make_nvp("dropout_rate", dropout_rate_), cereal::make_nvp("phase", phase_));
     }
+#endif
 
 private:
     net_phase phase_;

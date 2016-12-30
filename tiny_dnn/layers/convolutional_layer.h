@@ -366,7 +366,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return img;
     }
 
-
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(
         Archive & ar, cereal::construct<convolutional_layer> & construct) {
@@ -405,6 +405,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", params_.h_stride)
             );
     }
+#endif
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {

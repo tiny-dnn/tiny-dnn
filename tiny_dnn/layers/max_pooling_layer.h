@@ -187,6 +187,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     }
 
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void
     load_and_construct(Archive & ar,
@@ -215,6 +216,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("stride_y", params_.stride_y),
             cereal::make_nvp("pad_type", params_.pad_type));
     }
+#endif
 
 private:
     /* The Max Poling operation params */

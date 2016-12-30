@@ -29,8 +29,11 @@
 #include <vector>
 #include <tuple>
 #include <unordered_map>
+
+#ifndef CNN_NO_SERIALIZATION
 #include <cereal/types/utility.hpp>
 #include <cereal/types/tuple.hpp>
+#endif
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"

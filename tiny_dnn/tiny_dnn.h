@@ -70,8 +70,11 @@
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+
+#ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/serialization_helper.h"
 #include "tiny_dnn/util/deserialization_helper.h"
+#endif
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
