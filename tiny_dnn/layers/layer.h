@@ -115,7 +115,7 @@ class layer : public node {
 
     bool parallelize() const { return parallelize_; }
 
-    // TODO(edgar): Deprecated: use the below method 
+    // TODO(edgar): Deprecated: use the below method
     core::backend_t backend_type() const {
         return backend_->type();
     }
@@ -282,7 +282,7 @@ class layer : public node {
      * override properly if the layer is intended to be used as output layer
      **/
     virtual std::pair<float_t, float_t> out_value_range() const {
-        return { float_t(0.0), float_t(1.0) };
+        return { float_t{0.0}, float_t{1.0} };
     }
 
     /**
@@ -420,7 +420,7 @@ class layer : public node {
      * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of hessian matrix)
      * it is never called if optimizer is hessian-free
      **/
-    //virtual void back_propagation_2nd(const std::vector<vec_t>& delta_in) = 0;
+    // virtual void back_propagation_2nd(const std::vector<vec_t>& delta_in) = 0;
 
     // called afrer updating weight
     virtual void post_update() {}
@@ -521,8 +521,7 @@ class layer : public node {
             in_data(in_channels_),
             in_grad(in_channels_),
             out_data(out_channels_),
-            out_grad(out_channels_)
-        ;
+            out_grad(out_channels_);
 
         // organize input/output vectors from storage
         for (serial_size_t i = 0; i < in_channels_; i++) {
@@ -627,14 +626,14 @@ class layer : public node {
         }
     }
 
-    void update_weight(optimizer *o, serial_size_t batch_size) {
-        float_t rcp_batch_size = float_t(1) / float_t(batch_size);
+    void update_weight(optimizer* o, serial_size_t batch_size) {
+        float_t rcp_batch_size = float_t{1} / float_t(batch_size);
         auto& diff = weights_diff_;
         for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t& target = *get_weight_data(i);
                 ith_in_node(i)->merge_grads(&diff);
-                for (size_t j=0; j<diff.size(); ++j) {
+                for (size_t j = 0; j < diff.size(); ++j) {
                     diff[j] *= rcp_batch_size;
                 }
                 // parallelize only when target size is big enough to mitigate
@@ -663,7 +662,6 @@ class layer : public node {
     }
 
     virtual void set_sample_count(serial_size_t sample_count) {
-
         // increase the size if necessary - but do not decrease
         auto resize = [sample_count](tensor_t* tensor) {
             tensor->resize(sample_count, (*tensor)[0]);
@@ -755,7 +753,7 @@ class layer : public node {
     void alloc_output(serial_size_t i) const {
         // the created outcoming will have the current layer as the
         // previous node.
-        next_[i] = std::make_shared<edge>((layer*)this,
+        next_[i] = std::make_shared<edge>(const_cast<layer*>(this),
                                           out_shape()[i], out_type_[i]);
     }
 
@@ -907,14 +905,14 @@ inline void pooling_size_mismatch(serial_size_t in_width,
 
 
 template <typename T, typename U>
-void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
+void graph_traverse(layer* root_node, T&& node_callback, U&& edge_callback) {
     std::unordered_set<layer*> visited;
     std::queue<layer*> S;
 
     S.push(root_node);
 
     while (!S.empty()) {
-        layer *curr = S.front();
+        layer* curr = S.front();
         S.pop();
         visited.insert(curr);
 

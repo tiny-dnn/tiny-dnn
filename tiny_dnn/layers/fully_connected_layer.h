@@ -35,9 +35,9 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-template<typename Activation>
+template <typename Activation>
 class fully_connected_layer : public feedforward_layer<Activation> {
-public:
+ public:
     typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
@@ -48,9 +48,9 @@ public:
      **/
     fully_connected_layer(serial_size_t in_dim,
                           serial_size_t out_dim,
-                          bool       has_bias = true,
-                          backend_t  backend_type = core::default_engine())
-            : Base(std_input_order(has_bias)) {
+                          bool          has_bias = true,
+                          backend_t     backend_type = core::default_engine())
+        : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
         Base::set_backend_type(backend_type);
@@ -58,10 +58,10 @@ public:
 
     // move constructor
     fully_connected_layer(fully_connected_layer&& other)
-            : Base(std::move(other))
-            , params_(std::move(other.params_))
-            , kernel_fwd_(std::move(other.kernel_fwd_))
-            , kernel_back_(std::move(other.kernel_back_)) {
+        : Base(std::move(other)),
+          params_(std::move(other.params_)),
+          kernel_fwd_(std::move(other.kernel_fwd_)),
+          kernel_back_(std::move(other.kernel_back_)) {
         init_backend(std::move(other.engine()));
     }
 
@@ -77,12 +77,12 @@ public:
         if (params_.has_bias_) {
             return { index3d<serial_size_t>(params_.in_size_, 1, 1),
                      index3d<serial_size_t>(params_.in_size_,
-                                         params_.out_size_, 1),
+                                            params_.out_size_, 1),
                      index3d<serial_size_t>(params_.out_size_, 1, 1) };
         } else {
             return { index3d<serial_size_t>(params_.in_size_, 1, 1),
                      index3d<serial_size_t>(params_.in_size_,
-                                         params_.out_size_, 1) };
+                                            params_.out_size_, 1) };
         }
     }
 
@@ -126,7 +126,8 @@ public:
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<fully_connected_layer> & construct) {
+    static void load_and_construct(Archive & ar,
+                                   cereal::construct<fully_connected_layer> & construct) {
         serial_size_t in_dim, out_dim;
         bool has_bias;
 
@@ -145,11 +146,10 @@ public:
     }
 #endif
 
-protected:
-
+ protected:
     void set_params(const serial_size_t in_size,
                     const serial_size_t out_size,
-                    bool             has_bias) {
+                    bool                has_bias) {
         params_.in_size_  = in_size;
         params_.out_size_ = out_size;
         params_.has_bias_ = has_bias;
@@ -159,15 +159,12 @@ protected:
         core::OpKernelConstruction ctx =
         core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::internal ||
-            backend_type == backend_t::avx ||
-            backend_type == backend_t::nnpack) {
-
+        if (backend_type == backend_t::internal
+            || backend_type == backend_t::avx
+            || backend_type == backend_t::nnpack) {
             kernel_fwd_.reset(new FullyConnectedOp(ctx));
             kernel_back_.reset(new FullyConnectedGradOp(ctx));
-            return;
-        }
-        else {
+        } else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
     }
@@ -181,4 +178,4 @@ protected:
     std::shared_ptr<core::OpKernel> kernel_back_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

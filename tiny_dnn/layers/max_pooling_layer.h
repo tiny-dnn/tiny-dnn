@@ -61,13 +61,13 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       serial_size_t in_height,
                       serial_size_t in_channels,
                       serial_size_t pooling_size,
-                      backend_t  backend_type = core::default_engine())
+                      backend_t     backend_type = core::default_engine())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
                             pooling_size, backend_type) {}
 
     max_pooling_layer(const shape3d& in_shape,
-                      serial_size_t     pooling_size,
-                      serial_size_t     stride,
+                      serial_size_t  pooling_size,
+                      serial_size_t  stride,
                       backend_t      backend_type = core::default_engine())
         : max_pooling_layer(in_shape.width_, in_shape.height_, in_shape.depth_,
                             pooling_size, stride, backend_type) {}
@@ -77,7 +77,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       serial_size_t in_channels,
                       serial_size_t pooling_size,
                       serial_size_t stride,
-                      backend_t  backend_type = core::default_engine())
+                      backend_t     backend_type = core::default_engine())
         : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
                             pooling_size, stride, stride, padding::valid,
                             backend_type) {}
@@ -96,10 +96,10 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       serial_size_t pooling_size_y,
                       serial_size_t stride_x,
                       serial_size_t stride_y,
-                      padding    pad_type = padding::valid,
-                      backend_t  backend_type = core::default_engine())
-            : Base({ vector_type::data }) {
-        set_maxpool_params(
+                      padding       pad_type = padding::valid,
+                      backend_t     backend_type = core::default_engine())
+        : Base({ vector_type::data }) {
+          set_maxpool_params(
             shape3d(in_width, in_height, in_channels),
             shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
                     conv_out_length(in_height, pooling_size_y, stride_y, pad_type),
@@ -113,8 +113,8 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     // move constructor
     max_pooling_layer(max_pooling_layer&& other)  // NOLINT
-            : Base(std::move(other))
-            , params_(std::move(other.params_)) {
+        : Base(std::move(other)),
+          params_(std::move(other.params_)) {
         init_connection();
         init_backend(std::move(Base::engine()));
     }
@@ -206,15 +206,15 @@ class max_pooling_layer : public feedforward_layer<Activation> {
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in),
-            cereal::make_nvp("pool_size_x", params_.pool_size_x),
-            cereal::make_nvp("pool_size_y", params_.pool_size_y),
-            cereal::make_nvp("stride_x", params_.stride_x),
-            cereal::make_nvp("stride_y", params_.stride_y),
-            cereal::make_nvp("pad_type", params_.pad_type));
+           cereal::make_nvp("pool_size_x", params_.pool_size_x),
+           cereal::make_nvp("pool_size_y", params_.pool_size_y),
+           cereal::make_nvp("stride_x", params_.stride_x),
+           cereal::make_nvp("stride_y", params_.stride_y),
+           cereal::make_nvp("pad_type", params_.pad_type));
     }
 #endif
 
-private:
+ private:
     /* The Max Poling operation params */
     maxpool_params params_;
 
@@ -273,15 +273,13 @@ private:
         core::OpKernelConstruction ctx =
             core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::internal ||
-            backend_type == backend_t::nnpack   ||
-            backend_type == backend_t::avx) {
-
+        if (backend_type == backend_t::internal
+            || backend_type == backend_t::nnpack
+            || backend_type == backend_t::avx) {
             kernel_fwd_.reset(new MaxPoolOp(ctx));
             kernel_back_.reset(new MaxPoolGradOp(ctx));
             return;
-        }
-        else {
+        } else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
 
@@ -305,4 +303,3 @@ private:
 };
 
 }  // namespace tiny_dnn
-

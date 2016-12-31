@@ -92,7 +92,7 @@ class NNPackInitializer {
     // otherwise it returns a void.
     // Throws an error if we do not succed with initialization.
     void initialize() {
-        if (initialized_) return; // alredy initialized, do nothig.
+        if (initialized_) return;  // alredy initialized, do nothig.
 
         // calls internal method to initialize
         nnp_status init_status = nnp_initialize();
@@ -111,14 +111,14 @@ class NNPackInitializer {
     bool initialized_ = false;
 };
 
-//TODO: create an interface to let users choose the algorithm
+// TODO(you): create an interface to let users choose the algorithm
 inline nnp_convolution_algorithm nnp_algorithm() {
     return nnp_convolution_algorithm_auto;
 }
 
-//TODO: create an interface to let users choose the transform strategy
+// TODO(you): create an interface to let users choose the transform strategy
 inline nnp_convolution_transform_strategy nnp_kts() {
-    //some algorithm accept tuple based only
+    // some algorithm accept tuple based only
     return nnp_convolution_transform_strategy_tuple_based;
 }
 #endif

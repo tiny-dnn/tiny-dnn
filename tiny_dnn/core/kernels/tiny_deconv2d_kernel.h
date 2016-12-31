@@ -48,22 +48,22 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
                 idx = params.in.depth_ * o + inc;
                 idx = params.weight.get_index(0, 0, idx);
                 assert(idx < W.size());
-                const float_t *pw = &W[idx];
+                const float_t* pw = &W[idx];
 
                 idx = params.in.get_index(0, 0, inc);
                 assert(static_cast<serial_size_t>(sample) < in.size() &&
                        idx < in[sample].size());
-                const float_t *pi = &in[sample][idx];
+                const float_t* pi = &in[sample][idx];
 
                 idx = params.out.get_index(0, 0, o);
                 assert(static_cast<serial_size_t>(sample) < a.size() &&
                        idx < a[sample].size());
-                float_t *pa = &a[sample][idx];
+                float_t* pa = &a[sample][idx];
 
                 for (serial_size_t y = 0; y < params.in.height_; y++) {
                     for (serial_size_t x = 0; x < params.in.width_; x++) {
-                        const float_t * ppw = pw;
-                        const float_t * ppi = pi + y * params.in.width_ + x;
+                        const float_t* ppw = pw;
+                        const float_t* ppi = pi + y * params.in.width_ + x;
                         // should be optimized for small kernel(3x3,5x5)
                         for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
                             for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
@@ -78,8 +78,8 @@ inline void tiny_deconv2d_kernel(const deconv_params& params,
             }
 
             if (params.has_bias) {
-                float_t * pa = &a[sample][params.out.get_index(0, 0, o)];
-                float_t * paa = pa + params.out.width_ * params.out.height_;
+                float_t* pa = &a[sample][params.out.get_index(0, 0, o)];
+                float_t* paa = pa + params.out.width_ * params.out.height_;
                 std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
             }
         }

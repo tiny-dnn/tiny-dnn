@@ -28,10 +28,10 @@ inline void accumulate_db(
         size_t nblocks = out.depth_ / 8;
         for (size_t i = 0; i < nblocks; ++i) {
             _mm256_storeu_ps(
-                &db[i*8],
+                &db[i * 8],
                 _mm256_add_ps(
-                    _mm256_loadu_ps(&db[i*8]),
-                    _mm256_loadu_ps(&curr_delta[i*8])
+                    _mm256_loadu_ps(&db[i * 8]),
+                    _mm256_loadu_ps(&curr_delta[i * 8])
                 )
             );
         }
@@ -61,27 +61,27 @@ inline void accumulate_db(
                 0,
                 static_cast<serial_size_t>(outc)
             );
-            const float *delta = &curr_delta[idx];
+            const float* delta = &curr_delta[idx];
             __m256 sum0 = _mm256_setzero_ps();
             __m256 sum1 = _mm256_setzero_ps();
-            for (size_t i=0; i<nblocks/2; ++i) {
+            for (size_t i = 0; i < nblocks / 2; ++i) {
                 sum0 = _mm256_add_ps(
                     sum0,
-                    _mm256_loadu_ps(delta + i*16)
+                    _mm256_loadu_ps(delta + i * 16)
                 );
                 sum1 = _mm256_add_ps(
                     sum1,
-                    _mm256_loadu_ps(delta + i*16+8)
+                    _mm256_loadu_ps(delta + i * 16 + 8)
                 );
             }
             if (nblocks & 1) {
                 sum0 = _mm256_add_ps(
                     sum0,
-                    _mm256_loadu_ps(delta + (nblocks - 1)*8)
+                    _mm256_loadu_ps(delta + (nblocks - 1) * 8)
                 );
             }
             sum0 = _mm256_add_ps(sum0, sum1);
-            sum1 = _mm256_loadu_ps(delta + nblocks*8);
+            sum1 = _mm256_loadu_ps(delta + nblocks * 8);
             sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
             sum0 = _mm256_add_ps(sum0, sum1);
             db[outc] += _mm_cvtss_f32(hsum256_ps(sum0));
@@ -237,7 +237,7 @@ inline void accumulate_dw(
                                 inc
                             );
                             const float* prevo = &prev_out[prev_out_idx];
-                            float_t dst = float_t(0);
+                            float_t dst {0};
                             for (size_t y = 0, prevo_idx = 0, delta_idx = 0;
                                  y < out_height;
                                  ++y,
@@ -323,20 +323,20 @@ inline void accumulate_dw(
                         in.depth_ * outc + inc
                     );
                     float* pdw = &dW[widx];
-                    for (int i=0; i<6; ++i) {
+                    for (int i = 0; i < 6; ++i) {
                         _mm_storeu_ps(
-                            pdw+i*4,
+                            pdw + i * 4,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw+i*4),
-                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
-                                             sums[i*4+2], sums[i*4+3])
+                                _mm_loadu_ps(pdw + i * 4),
+                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
+                                             sums[i * 4 + 2], sums[i * 4 + 3])
                             )
                         );
                     }
                     _mm_store_ss(
-                        pdw+24,
+                        pdw + 24,
                         _mm_add_ss(
-                            _mm_load_ss(pdw+24),
+                            _mm_load_ss(pdw + 24),
                             hsum256_ps(sums[24])
                         )
                     );
@@ -396,20 +396,20 @@ inline void accumulate_dw(
                         in.depth_ * outc + inc
                     );
                     float* pdw = &dW[widx];
-                    for (int i=0; i<6; ++i) {
+                    for (int i = 0; i < 6; ++i) {
                         _mm_storeu_ps(
-                            pdw+i*4,
+                            pdw + i * 4,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw+i*4),
-                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
-                                             sums[i*4+2], sums[i*4+3])
+                                _mm_loadu_ps(pdw + i * 4),
+                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
+                                             sums[i * 4 + 2], sums[i * 4 + 3])
                             )
                         );
                     }
                     _mm_store_ss(
-                        pdw+24,
+                        pdw + 24,
                         _mm_add_ss(
-                            _mm_load_ss(pdw+24),
+                            _mm_load_ss(pdw + 24),
                             hsum256_ps(sums[24])
                         )
                     );
@@ -469,20 +469,20 @@ inline void accumulate_dw(
                         in.depth_ * outc + inc
                     );
                     float* pdw = &dW[widx];
-                    for (int i=0; i<6; ++i) {
+                    for (int i = 0; i < 6; ++i) {
                         _mm_storeu_ps(
-                            pdw+i*4,
+                            pdw + i * 4,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw+i*4),
-                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
-                                             sums[i*4+2], sums[i*4+3])
+                                _mm_loadu_ps(pdw + i * 4),
+                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
+                                             sums[i * 4 + 2], sums[i * 4 + 3])
                             )
                         );
                     }
                     _mm_store_ss(
-                        pdw+24,
+                        pdw + 24,
                         _mm_add_ss(
-                            _mm_load_ss(pdw+24),
+                            _mm_load_ss(pdw + 24),
                             hsum256_ps(sums[24])
                         )
                     );
@@ -559,20 +559,20 @@ inline void accumulate_dw(
                         in.depth_ * outc + inc
                     );
                     float* pdw = &dW[widx];
-                    for (int i=0; i<6; ++i) {
+                    for (int i = 0; i < 6; ++i) {
                         _mm_storeu_ps(
-                            pdw+i*4,
+                            pdw + i * 4,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw+i*4),
-                                hsum4x256_ps(sums[i*4+0], sums[i*4+1],
-                                             sums[i*4+2], sums[i*4+3])
+                                _mm_loadu_ps(pdw + i * 4),
+                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
+                                             sums[i * 4 + 2], sums[i * 4 + 3])
                             )
                         );
                     }
                     _mm_store_ss(
-                        pdw+24,
+                        pdw + 24,
                         _mm_add_ss(
-                            _mm_load_ss(pdw+24),
+                            _mm_load_ss(pdw + 24),
                             hsum256_ps(sums[24])
                         )
                     );
@@ -626,11 +626,11 @@ void avx_conv2d_5x5_back_kernel_one(
                     out.get_index(0, 0, outc)
                 ];
                 float* pdelta_dst = pdelta_dst_org;
-                __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw+0), mask);
-                __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw+5), mask);
-                __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw+10), mask);
-                __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw+15), mask);
-                __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw+20), mask);
+                __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+                __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+                __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+                __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+                __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
                 __m256 w0b = leftShift<4>(w0a);
                 __m256 w1b = leftShift<4>(w1a);
                 __m256 w2b = leftShift<4>(w2a);

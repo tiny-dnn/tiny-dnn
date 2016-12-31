@@ -39,12 +39,16 @@ struct conv_layer_worker_specific_storage {
 
 struct connection_table {
     connection_table() : rows_(0), cols_(0) {}
-    connection_table(const bool *ar, serial_size_t rows, serial_size_t cols)
-            : connected_(rows * cols), rows_(rows), cols_(cols) {
+    connection_table(const bool* ar,
+                     serial_size_t rows,
+                     serial_size_t cols)
+        : connected_(rows * cols), rows_(rows), cols_(cols) {
         std::copy(ar, ar + rows * cols, connected_.begin());
     }
-    connection_table(serial_size_t ngroups, serial_size_t rows, serial_size_t cols)
-            : connected_(rows * cols, false), rows_(rows), cols_(cols) {
+    connection_table(serial_size_t ngroups,
+                     serial_size_t rows,
+                     serial_size_t cols)
+        : connected_(rows * cols, false), rows_(rows), cols_(cols) {
         if (rows % ngroups || cols % ngroups) {
             throw nn_error("invalid group size");
         }
@@ -73,15 +77,14 @@ struct connection_table {
     }
 
     template <typename Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive& ar) {
 #ifndef CNN_NO_SERIALIZATION
         ar(cereal::make_nvp("rows", rows_),
            cereal::make_nvp("cols", cols_));
 
         if (is_empty()) {
             ar(cereal::make_nvp("connection", std::string("all")));
-        }
-        else {
+        } else {
             ar(cereal::make_nvp("connection", connected_));
         }
 #else
@@ -106,7 +109,7 @@ class conv_params : public Params {
     serial_size_t w_stride;
     serial_size_t h_stride;
 
-    friend std::ostream& operator<<(std::ostream &o,
+    friend std::ostream& operator<<(std::ostream&            o,
                                     const core::conv_params& param) {
         o << "in:        " << param.in        << "\n";
         o << "out:       " << param.out       << "\n";

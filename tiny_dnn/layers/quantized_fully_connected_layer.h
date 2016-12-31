@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/product.h"
 
@@ -33,9 +34,9 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-template<typename Activation>
+template <typename Activation>
 class quantized_fully_connected_layer : public feedforward_layer<Activation> {
-public:
+ public:
     typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
@@ -48,15 +49,15 @@ public:
                                     serial_size_t out_dim,
                                     bool       has_bias = true,
                                     backend_t  backend_type = core::backend_t::internal)
-            : Base(std_input_order(has_bias)) {
+        : Base(std_input_order(has_bias)) {
         set_params(in_dim, out_dim, has_bias);
         init_backend(backend_type);
     }
 
     // move constructor
     quantized_fully_connected_layer(quantized_fully_connected_layer&& other)
-            : Base(std::move(other))
-            , params_(std::move(other.params_)) {
+        : Base(std::move(other)),
+          params_(std::move(other.params_)) {
         init_backend(core::backend_t::internal);
     }
 
@@ -107,12 +108,12 @@ public:
 
     std::string layer_type() const override { return "q_fully-connected"; }
 
-protected:
+ protected:
     fully_params params_;
 
     void set_params(const serial_size_t in_size,
                     const serial_size_t out_size,
-                    bool             has_bias) {
+                    bool                has_bias) {
         params_.in_size_  = in_size;
         params_.out_size_ = out_size;
         params_.has_bias_ = has_bias;
@@ -142,4 +143,4 @@ protected:
     }
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

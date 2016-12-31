@@ -25,20 +25,22 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <vector>
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
 #include <array>
+
 #include "tiny_dnn/util/util.h"
 
 #ifdef _MSC_VER
 #pragma warning(push)
-#pragma warning(disable:4996) // suppress warnings about using fopen
+#pragma warning(disable:4996)  // suppress warnings about using fopen
 #endif
 
 #define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_INLINE // We need this define to avoid multiple definition
+#define STB_IMAGE_INLINE  // We need this define to avoid multiple definition
 #include "third_party/stb/stb_image.h"
 
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -69,30 +71,28 @@ inline bool ends_with(std::string const & value, std::string const & ending) {
     return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
 }
 
-inline void resize_image_core(const uint8_t* src, int srcw, int srch, uint8_t* dst, int dstw, int dsth, int channels)
-{
+inline void resize_image_core(const uint8_t* src, int srcw, int srch, uint8_t* dst, int dstw, int dsth, int channels) {
     stbir_resize_uint8(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
 }
 
-inline void resize_image_core(const float* src, int srcw, int srch, float* dst, int dstw, int dsth, int channels)
-{
+inline void resize_image_core(const float* src, int srcw, int srch, float* dst, int dstw, int dsth, int channels) {
     stbir_resize_float(src, srcw, srch, 0, dst, dstw, dsth, 0, channels);
 }
 
-} // namespace detail
+}  // namespace detail
 
 enum class image_type {
     grayscale,    ///< load image and convert automatically to 8-bit grayscale
-    rgb, ///< load image and keep original color channels
+    rgb,          ///< load image and keep original color channels
     bgr
 };
 
 /**
  * Simple image utility class
  */
-template<typename T = unsigned char>
+template <typename T = unsigned char>
 class image {
-public:
+ public:
     typedef T intensity_t;
     typedef typename std::vector<intensity_t>::iterator iterator;
     typedef typename std::vector<intensity_t>::const_iterator const_iterator;
@@ -103,8 +103,10 @@ public:
      * create image from raw pointer
      */
     image(const T* data, size_t width, size_t height, image_type type)
-        : width_(width), height_(height), depth_(type == image_type::grayscale ? 1: 3), type_(type), data_(depth_ * width_ * height_, 0)
-    {
+        : width_(width), height_(height),
+          depth_(type == image_type::grayscale ? 1: 3),
+          type_(type),
+          data_(depth_ * width_ * height_, 0) {
         std::copy(data, data + width * height * depth_, &data_[0]);
     }
 
@@ -114,18 +116,25 @@ public:
     image(const shape3d& size, image_type type)
         : width_(size.width_), height_(size.height_), depth_(size.depth_),
           type_(type),
-          data_(depth_ * width_ * height_, 0){
+          data_(depth_ * width_ * height_, 0) {
         if (type == image_type::grayscale && size.depth_ != 1) {
             throw nn_error("depth must be 1 in grayscale");
-        }
-        else if (type != image_type::grayscale && size.depth_ != 3) {
+        } else if (type != image_type::grayscale && size.depth_ != 3) {
             throw nn_error("depth must be 3 in rgb/bgr");
         }
     }
 
     template <typename U>
-    image(const image<U>& rhs) : width_(rhs.width()), height_(rhs.height()), depth_(rhs.depth()), type_(rhs.type()), data_(rhs.shape().size()) {
-        std::transform(rhs.begin(), rhs.end(), data_.begin(), [](T src) { return static_cast<intensity_t>(src); });
+    image(const image<U>& rhs)
+        : width_(rhs.width()),
+          height_(rhs.height()),
+          depth_(rhs.depth()),
+          type_(rhs.type()),
+          data_(rhs.shape().size()) {
+        std::transform(rhs.begin(),
+                       rhs.end(),
+                       data_.begin(),
+                       [](T src) { return static_cast<intensity_t>(src); });
     }
 
     /**
@@ -133,8 +142,7 @@ public:
      * supported file format: JPEG/PNG/TGA/BMP/PSD/GIF/HDR/PIC/PNM
      *                        (see detail at the comments in thrid_party/stb/stb_image.h)
      */
-    image(const std::string& filename, image_type type)
-    {
+    image(const std::string& filename, image_type type) {
         int w, h, d;
         stbi_uc* input_pixels = stbi_load(filename.c_str(), &w, &h, &d, type == image_type::grayscale ? 1 : 3);
         if (input_pixels == nullptr) {
@@ -150,7 +158,7 @@ public:
 
         // reorder to HxWxD -> DxHxW
         from_rgb(input_pixels, input_pixels + data_.size());
-   
+
         stbi_image_free(input_pixels);
     }
 
@@ -164,8 +172,7 @@ public:
                                  static_cast<int>(height_),
                                  static_cast<int>(depth_),
                                  (const void*)&buf[0], 0);
-        }
-        else {
+        } else {
             ret = stbi_write_bmp(path.c_str(),
                                  static_cast<int>(width_),
                                  static_cast<int>(height_),
@@ -181,8 +188,7 @@ public:
         save(path);
     }
 
-    void resize(size_t width, size_t height) 
-    {
+    void resize(size_t width, size_t height) {
         data_.resize(width * height * depth_);
         width_ = width;
         height_ = height;
@@ -213,8 +219,8 @@ public:
     const_iterator begin() const { return data_.begin(); }
     const_iterator end() const { return data_.end(); }
 
-    intensity_t& operator[](std::size_t idx)       { return data_[idx]; };
-    const intensity_t& operator[](std::size_t idx) const { return data_[idx]; };
+    intensity_t& operator[](std::size_t idx) { return data_[idx]; }
+    const intensity_t& operator[](std::size_t idx) const { return data_[idx]; }
 
     size_t width() const { return width_; }
     size_t height() const { return height_; }
@@ -232,8 +238,7 @@ public:
     std::vector<U> to_rgb() const {
         if (depth_ == 1) {
             return std::vector<U>(data_.begin(), data_.end());
-        }
-        else {
+        } else {
             std::vector<U> buf(shape().size());
             auto order = depth_order(type_);
             auto dst = buf.begin();
@@ -247,11 +252,10 @@ public:
     }
 
     template <typename Iter>
-    void from_rgb(Iter begin, Iter end) { 
+    void from_rgb(Iter begin, Iter end) {
         if (depth_ == 1) {
             std::copy(begin, end, data_.begin());
-        }
-        else {
+        } else {
             auto order = depth_order(type_);
             assert(static_cast<serial_size_t>(
                 std::distance(begin, end)) == data_.size());
@@ -263,14 +267,13 @@ public:
         }
     }
 
-private:
+ private:
     std::array<size_t, 3> depth_order(image_type img) const {
         if (img == image_type::rgb) {
-            return{ {0,1,2} };
-        }
-        else {
+            return{ {0, 1, 2} };
+        } else {
             assert(img == image_type::bgr);
-            return{ {2,1,0 } };
+            return{ {2, 1, 0 } };
         }
     }
     size_t width_;
@@ -281,12 +284,11 @@ private:
 };
 
 template <typename T>
-image<float_t> mean_image(const image<T>& src)
-{
+image<float_t> mean_image(const image<T>& src) {
     image<float_t> mean(shape3d(1, 1, (serial_size_t)src.depth()), src.type());
 
     for (size_t i = 0; i < src.depth(); i++) {
-        float_t sum = 0.0f;
+        float_t sum {0.0};
         for (size_t y = 0; y < src.height(); y++) {
             for (size_t x = 0; x < src.width(); x++) {
                 sum += src.at(x, y, i);
@@ -304,8 +306,7 @@ image<float_t> mean_image(const image<T>& src)
  * and cubic spline algorithm for upsampling.
  */
 template <typename T>
-inline image<T> resize_image(const image<T>& src, int width, int height)
-{
+inline image<T> resize_image(const image<T>& src, int width, int height) {
     image<T> resized(shape3d(static_cast<serial_size_t>(width),
                              static_cast<serial_size_t>(height),
                              static_cast<serial_size_t>(src.depth())),
@@ -329,8 +330,7 @@ inline image<T> resize_image(const image<T>& src, int width, int height)
 
 // dst[x,y,d] = lhs[x,y,d] - rhs[x,y,d]
 template <typename T>
-image<T> subtract_image(const image<T>& lhs, const image<T>& rhs)
-{
+image<T> subtract_image(const image<T>& lhs, const image<T>& rhs) {
     if (lhs.shape() != rhs.shape()) {
         throw nn_error("Shapes of lhs/rhs must be same. lhs:" + to_string(lhs.shape()) + ",rhs:" + to_string(rhs.shape()));
     }
@@ -348,8 +348,7 @@ image<T> subtract_image(const image<T>& lhs, const image<T>& rhs)
 }
 
 template <typename T>
-image<T> subtract_scalar(const image<T>& lhs, const image<T>& rhs)
-{
+image<T> subtract_scalar(const image<T>& lhs, const image<T>& rhs) {
     if (lhs.depth() != rhs.depth()) {
         throw nn_error("Depth of lhs/rhs must be same. lhs:" + to_string(lhs.depth()) + ",rhs:" + to_string(rhs.depth()));
     }
@@ -385,9 +384,8 @@ image<T> subtract_scalar(const image<T>& lhs, const image<T>& rhs)
  *   -11-55-33-
  *   ----------
  **/
-template<typename T>
-inline image<T> vec2image(const vec_t& vec, serial_size_t block_size = 2, serial_size_t max_cols = 20)
-{
+template <typename T>
+inline image<T> vec2image(const vec_t& vec, serial_size_t block_size = 2, serial_size_t max_cols = 20) {
     if (vec.empty())
         throw nn_error("failed to visialize image: vector is empty");
 
@@ -416,8 +414,8 @@ inline image<T> vec2image(const vec_t& vec, serial_size_t block_size = 2, serial
                 = static_cast<typename image<T>::intensity_t>(rescale(src, *minmax.first, *minmax.second, 0, 255));
 
             for (serial_size_t y = 0; y < block_size; y++)
-              for (serial_size_t x = 0; x < block_size; x++)
-                img.at(x + leftx, y + topy) = dst;
+                for (serial_size_t x = 0; x < block_size; x++)
+                    img.at(x + leftx, y + topy) = dst;
 
             if (current_idx == vec.size()) return img;
         }
@@ -439,7 +437,7 @@ inline image<T> vec2image(const vec_t& vec, serial_size_t block_size = 2, serial
  *  -63-42-
  *  -------
  **/
-template<typename T>
+template <typename T>
 inline image<T> vec2image(const vec_t& vec, const index3d<serial_size_t>& maps) {
     if (vec.empty())
         throw nn_error("failed to visualize image: vector is empty");
@@ -474,7 +472,7 @@ inline image<T> vec2image(const vec_t& vec, const index3d<serial_size_t>& maps) 
     return img;
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
 
 #ifdef _MSC_VER
 #pragma warning(pop)

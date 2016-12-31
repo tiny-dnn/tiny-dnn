@@ -926,7 +926,7 @@ TEST(tensor, nd1) {
 
 }
 
-template<size_t N> std::ostream& print_tester(std::ostream &os) {
+template<size_t N> std::ostream& print_tester(std::ostream& os) {
     os << "\nPrinting " << N << "-dimensional Tensor" << ":\n\n";
     std::vector<size_t> shape(N, 2);
     shape.back() = 3;
@@ -938,7 +938,7 @@ template<size_t N> std::ostream& print_tester(std::ostream &os) {
     return os;
 }
 
-template<> std::ostream& print_tester<0>(std::ostream &os) {
+template<> std::ostream& print_tester<0>(std::ostream& os) {
     return os;
 }
 

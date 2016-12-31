@@ -80,7 +80,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
         // Conv2d::setParams(context.params());
 
         // initialize outputs
-        fill_tensor(out_data, float_t(0));
+        fill_tensor(out_data, float_t{0});
 
         // retrive device context and queue
 

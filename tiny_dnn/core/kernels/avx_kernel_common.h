@@ -203,7 +203,7 @@ inline __m128d hsum256_pd(__m256d x) {
     return sum;
 }
 
-template<int n>
+template <int n>
 struct foobar : std::false_type
 { };
 

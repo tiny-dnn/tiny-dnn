@@ -51,9 +51,9 @@ namespace tiny_dnn {
  *
  * take input as two-dimensional *image* and applying filtering operation.
  **/
-template<typename Activation = activation::identity>
+template <typename Activation = activation::identity>
 class quantized_deconvolutional_layer : public feedforward_layer<Activation> {
-public:
+ public:
     typedef feedforward_layer<Activation> Base;
     CNN_USE_LAYER_MEMBERS;
 
@@ -72,22 +72,22 @@ public:
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_deconvolutional_layer(serial_size_t     in_width,
-                                    serial_size_t     in_height,
-                                    serial_size_t     window_size,
-                                    serial_size_t     in_channels,
-                                    serial_size_t     out_channels,
+    quantized_deconvolutional_layer(serial_size_t  in_width,
+                                    serial_size_t  in_height,
+                                    serial_size_t  window_size,
+                                    serial_size_t  in_channels,
+                                    serial_size_t  out_channels,
                                     padding        pad_type = padding::valid,
                                     bool           has_bias = true,
-                                    serial_size_t     w_stride = 1,
-                                    serial_size_t     h_stride = 1,
+                                    serial_size_t  w_stride = 1,
+                                    serial_size_t  h_stride = 1,
                                     backend_t      backend_type = core::backend_t::internal)
         : Base(std_input_order(has_bias)) {
-            deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
+        deconv_set_params(shape3d(in_width, in_height, in_channels),
+                          window_size, window_size,
+                          out_channels, pad_type, has_bias,
+                          w_stride, h_stride);
+        init_backend(backend_type);
     }
 
     /**
@@ -106,23 +106,23 @@ public:
     * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_deconvolutional_layer(serial_size_t     in_width,
-                                    serial_size_t     in_height,
-                                    serial_size_t     window_width,
-                                    serial_size_t     window_height,
-                                    serial_size_t     in_channels,
-                                    serial_size_t     out_channels,
+    quantized_deconvolutional_layer(serial_size_t  in_width,
+                                    serial_size_t  in_height,
+                                    serial_size_t  window_width,
+                                    serial_size_t  window_height,
+                                    serial_size_t  in_channels,
+                                    serial_size_t  out_channels,
                                     padding        pad_type = padding::valid,
                                     bool           has_bias = true,
-                                    serial_size_t     w_stride = 1,
-                                    serial_size_t     h_stride = 1,
+                                    serial_size_t  w_stride = 1,
+                                    serial_size_t  h_stride = 1,
                                     backend_t      backend_type = core::backend_t::internal)
         : Base(std_input_order(has_bias)) {
-            deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride);
-            init_backend(backend_type);
+        deconv_set_params(shape3d(in_width, in_height, in_channels),
+                          window_width, window_height,
+                          out_channels, pad_type, has_bias,
+                          w_stride, h_stride);
+        init_backend(backend_type);
     }
 
     /**
@@ -141,24 +141,24 @@ public:
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_deconvolutional_layer(serial_size_t              in_width,
-                                    serial_size_t              in_height,
-                                    serial_size_t              window_size,
-                                    serial_size_t              in_channels,
-                                    serial_size_t              out_channels,
+    quantized_deconvolutional_layer(serial_size_t           in_width,
+                                    serial_size_t           in_height,
+                                    serial_size_t           window_size,
+                                    serial_size_t           in_channels,
+                                    serial_size_t           out_channels,
                                     const connection_table& connection_table,
                                     padding                 pad_type = padding::valid,
                                     bool                    has_bias = true,
-                                    serial_size_t              w_stride = 1,
-                                    serial_size_t              h_stride = 1,
+                                    serial_size_t           w_stride = 1,
+                                    serial_size_t           h_stride = 1,
                                     backend_t               backend_type = core::backend_t::internal)
         : Base(std_input_order(has_bias)) {
-            deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_size, window_size,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
+        deconv_set_params(shape3d(in_width, in_height, in_channels),
+                          window_size, window_size,
+                          out_channels, pad_type, has_bias,
+                          w_stride, h_stride,
+                          connection_table);
+        init_backend(backend_type);
     }
 
     /**
@@ -178,45 +178,45 @@ public:
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_deconvolutional_layer(serial_size_t              in_width,
-                                    serial_size_t              in_height,
-                                    serial_size_t              window_width,
-                                    serial_size_t              window_height,
-                                    serial_size_t              in_channels,
-                                    serial_size_t              out_channels,
+    quantized_deconvolutional_layer(serial_size_t           in_width,
+                                    serial_size_t           in_height,
+                                    serial_size_t           window_width,
+                                    serial_size_t           window_height,
+                                    serial_size_t           in_channels,
+                                    serial_size_t           out_channels,
                                     const connection_table& connection_table,
                                     padding                 pad_type = padding::valid,
                                     bool                    has_bias = true,
-                                    serial_size_t              w_stride = 1,
-                                    serial_size_t              h_stride = 1,
+                                    serial_size_t           w_stride = 1,
+                                    serial_size_t           h_stride = 1,
                                     backend_t               backend_type = core::backend_t::internal)
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
-            deconv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
+        deconv_set_params(shape3d(in_width, in_height, in_channels),
+                          window_width, window_height,
+                          out_channels, pad_type, has_bias,
+                          w_stride, h_stride,
+                          connection_table);
+        init_backend(backend_type);
     }
 
     // move constructor
     quantized_deconvolutional_layer(quantized_deconvolutional_layer&& other)
-        : Base(std::move(other))
-        , params_(std::move(other.params_))
-        , backend_type_(std::move(other.backend_type_))
-        , deconv_layer_worker_storage_(std::move(other.deconv_layer_worker_storage_)) {
-            init_backend(std::move(Base::get_backend_type()));
+        : Base(std::move(other)),
+          params_(std::move(other.params_)),
+          backend_type_(std::move(other.backend_type_)),
+          deconv_layer_worker_storage_(std::move(other.deconv_layer_worker_storage_)) {
+        init_backend(std::move(Base::get_backend_type()));
     }
 
     ///< number of incoming connections for each output unit
-    virtual serial_size_t fan_in_size() const override {
+    serial_size_t fan_in_size() const override {
         return  params_.weight.width_ *
                 params_.weight.height_ *
                 params_.in.depth_;
     }
 
     ///< number of outgoing connections for each input unit
-    virtual serial_size_t fan_out_size() const override {
+    serial_size_t fan_out_size() const override {
         return  (params_.weight.width_ * params_.w_stride) *
                 (params_.weight.height_ * params_.h_stride) *
                 params_.out.depth_;
@@ -305,7 +305,7 @@ public:
     }
 #endif  // DNN_USE_IMAGE_API
 
-private:
+ private:
     void init_backend(const backend_t backend_type) {
         std::shared_ptr<core::backend> backend = nullptr;
 
@@ -351,14 +351,14 @@ private:
     }
 
     void deconv_set_params(const shape3d& in,
-                         serial_size_t     w_width,
-                         serial_size_t     w_height,
-                         serial_size_t     outc,
-                         padding        ptype,
-                         bool           has_bias,
-                         serial_size_t     w_stride,
-                         serial_size_t     h_stride,
-                         const connection_table& tbl = connection_table()) {
+                           serial_size_t  w_width,
+                           serial_size_t  w_height,
+                           serial_size_t  outc,
+                           padding        ptype,
+                           bool           has_bias,
+                           serial_size_t  w_stride,
+                           serial_size_t  h_stride,
+                           const connection_table& tbl = connection_table()) {
         params_.in = in;
         params_.out =
               shape3d(deconv_out_length(in.width_, w_width, w_stride),
@@ -380,48 +380,51 @@ private:
         deconv_layer_worker_specific_storage& dws =  deconv_layer_worker_storage_;
 
         if (params_.pad_type == padding::same) {
-            dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t(0)));
-            dws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t(0)));
-        }
-        else {
+            dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t{0}));
+            dws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t{0}));
+        } else {
             dws.curr_out_buf_.clear();
         }
     }
 
     serial_size_t in_length(serial_size_t in_length,
-                        serial_size_t window_size, padding pad_type) const {
+                            serial_size_t window_size,
+                            padding pad_type) const {
         return in_length;
     }
 
     static serial_size_t deconv_out_length(serial_size_t in_length,
-                                        serial_size_t window_size,
-                                        serial_size_t stride) {
+                                           serial_size_t window_size,
+                                           serial_size_t stride) {
         return (serial_size_t)ceil((float_t)(in_length) * stride + window_size - 1);
     }
 
     static serial_size_t deconv_out_unpadded_length(serial_size_t in_length,
-                                                 serial_size_t window_size,
-                                                 serial_size_t stride, padding pad_type) {
+                                                    serial_size_t window_size,
+                                                    serial_size_t stride,
+                                                    padding pad_type) {
         return pad_type == padding::same ?
                 (serial_size_t)ceil((float_t)in_length * stride) :
                 (serial_size_t)ceil((float_t)(in_length) * stride + window_size - 1);
     }
 
     static serial_size_t deconv_out_dim(serial_size_t in_width,
-                                     serial_size_t in_height,
-                                     serial_size_t window_size,
-                                     serial_size_t w_stride,
-                                     serial_size_t h_stride, padding pad_type) {
+                                        serial_size_t in_height,
+                                        serial_size_t window_size,
+                                        serial_size_t w_stride,
+                                        serial_size_t h_stride,
+                                        padding pad_type) {
         return deconv_out_unpadded_length(in_width, window_size, w_stride, pad_type) *
                 deconv_out_unpadded_length(in_height, window_size, h_stride, pad_type);
     }
 
     serial_size_t deconv_out_dim(serial_size_t in_width,
-                              serial_size_t in_height,
-                              serial_size_t window_width,
-                              serial_size_t window_height,
-                              serial_size_t w_stride,
-                              serial_size_t h_stride, padding pad_type) const {
+                                 serial_size_t in_height,
+                                 serial_size_t window_width,
+                                 serial_size_t window_height,
+                                 serial_size_t w_stride,
+                                 serial_size_t h_stride,
+                                 padding pad_type) const {
         return deconv_out_unpadded_length(in_width, window_width, w_stride, pad_type) *
                 deconv_out_unpadded_length(in_height, window_height, h_stride, pad_type);
     }
@@ -429,8 +432,7 @@ private:
     void copy_and_pad_delta(const tensor_t& delta, tensor_t& delta_padded) {
         if (params_.pad_type == padding::valid) {
             delta_padded = delta;
-        }
-        else {
+        } else {
             for (serial_size_t sample = 0; sample < delta.size(); sample++) {
                 vec_t& dst = delta_padded[sample];
                 const vec_t& src = delta[sample];
@@ -452,9 +454,7 @@ private:
         deconv_layer_worker_specific_storage& dws =
             deconv_layer_worker_storage_;
 
-        dws.curr_out_buf_ = tensor_t(out.size(), vec_t(params_.out_unpadded.width_*
-                                  params_.out_unpadded.height_*
-                                  params_.out_unpadded.depth_,0));
+        dws.curr_out_buf_ = tensor_t(out.size(), vec_t(params_.out_unpadded.size(), 0));
         tensor_t* dst_tensor = &dws.curr_out_buf_;
 
         if (params_.pad_type == padding::valid) {
@@ -497,4 +497,4 @@ private:
     deconv_layer_worker_specific_storage deconv_layer_worker_storage_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

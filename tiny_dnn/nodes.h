@@ -42,9 +42,9 @@
 namespace cereal {
 
 template <typename Archive>
-void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
+void save(Archive& ar, const std::vector<tiny_dnn::layerptr_t>& v) {
 #ifndef CNN_NO_SERIALIZATION
-    ar(cereal::make_size_tag((cereal::size_type)v.size()));
+    ar(cereal::make_size_tag(static_cast<cereal::size_type>(v.size())));
     for (auto n : v) {
         tiny_dnn::layer::save_layer(ar, *n);
     }
@@ -54,7 +54,8 @@ void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
 }
 
 template <typename Archive>
-void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
+void load(Archive& ar,
+          std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
 #ifndef CNN_NO_SERIALIZATION
     cereal::size_type size;
     ar(cereal::make_size_tag(size));
@@ -68,7 +69,6 @@ void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
 }
 
 }  // namespace cereal
-
 
 namespace tiny_dnn {
 
@@ -95,8 +95,8 @@ namespace tiny_dnn {
  **/
 class nodes {
  public:
-     typedef std::vector<layerptr_t>::iterator iterator;
-     typedef std::vector<layerptr_t>::const_iterator const_iterator;
+    typedef std::vector<layerptr_t>::iterator iterator;
+    typedef std::vector<layerptr_t>::const_iterator const_iterator;
 
     /**
      * propagate gradient
@@ -117,7 +117,7 @@ class nodes {
      * update weights and clear all gradients
      **/
     virtual
-    void update_weights(optimizer *opt, int batch_size) {
+    void update_weights(optimizer* opt, int batch_size) {
         for (auto l : nodes_) {
             l->update_weight(opt, batch_size);
         }
@@ -321,8 +321,8 @@ class sequential : public nodes {
         push_back(std::forward<T>(layer));
 
         if (nodes_.size() != 1) {
-            auto head = nodes_[nodes_.size()-2];
-            auto tail = nodes_[nodes_.size()-1];
+            auto head = nodes_[nodes_.size() - 2];
+            auto tail = nodes_[nodes_.size() - 1];
             connect(head, tail, 0, 0);
             auto out = head->outputs();
             auto in = tail->inputs();
@@ -333,7 +333,7 @@ class sequential : public nodes {
     void check_connectivity() {
         for (serial_size_t i = 0; i < nodes_.size() - 1; i++) {
             auto out = nodes_[i]->outputs();
-            auto in = nodes_[i+1]->inputs();
+            auto in = nodes_[i + 1]->inputs();
 
             if (out[0] != in[0]) {
                 throw nn_error("");
@@ -354,7 +354,7 @@ class sequential : public nodes {
     template <typename OutputArchive>
     void save_connections(OutputArchive& ) const { }
 
-private:
+ private:
     friend class nodes;
 
     std::vector<tensor_t> normalize_out(const std::vector<tensor_t>& out)
@@ -462,17 +462,23 @@ class graph : public nodes {
         setup(false);
     }
 
-private:
+ private:
     friend class nodes;
 
     struct _graph_connection {
-        void add_connection(serial_size_t head, serial_size_t tail, serial_size_t head_index, serial_size_t tail_index) {
+        void add_connection(serial_size_t head,
+                            serial_size_t tail,
+                            serial_size_t head_index,
+                            serial_size_t tail_index) {
             if (!is_connected(head, tail, head_index, tail_index)) {
                 connections.emplace_back(head, tail, head_index, tail_index);
             }
         }
 
-        bool is_connected(serial_size_t head, serial_size_t tail, serial_size_t head_index, serial_size_t tail_index) const {
+        bool is_connected(serial_size_t head,
+                          serial_size_t tail,
+                          serial_size_t head_index,
+                          serial_size_t tail_index) const {
             return std::find(connections.begin(),
                              connections.end(),
                              std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
@@ -590,7 +596,6 @@ private:
 };
 
 
-
 template <typename OutputArchive>
 void nodes::save_model(OutputArchive & oa) const {
 #ifndef CNN_NO_SERIALIZATION
@@ -598,8 +603,7 @@ void nodes::save_model(OutputArchive & oa) const {
 
     if (typeid(*this) == typeid(sequential)) {
         dynamic_cast<const sequential*>(this)->save_connections(oa);
-    }
-    else {
+    } else {
         dynamic_cast<const graph*>(this)->save_connections(oa);
     }
 #else
@@ -621,8 +625,7 @@ void nodes::load_model(InputArchive & ia) {
 
     if (typeid(*this) == typeid(sequential)) {
         dynamic_cast<sequential*>(this)->load_connections(ia);
-    }
-    else {
+    } else {
         dynamic_cast<graph*>(this)->load_connections(ia);
     }
 #else
@@ -630,6 +633,4 @@ void nodes::load_model(InputArchive & ia) {
 #endif  // CNN_NO_SERIALIZATION
 }
 
-
 }  // namespace tiny_dnn
-

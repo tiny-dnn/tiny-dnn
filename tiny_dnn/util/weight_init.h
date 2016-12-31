@@ -25,24 +25,25 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 namespace weight_init {
 
 class function {
-public:
+ public:
     virtual void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) = 0;
 };
 
 class scalable : public function {
-public:
-    scalable(float_t value) : scale_(value) {}
+ public:
+    explicit scalable(float_t value) : scale_(value) {}
 
     void scale(float_t value) {
         scale_ = value;
     }
-protected:
+ protected:
     float_t scale_;
 };
 
@@ -54,14 +55,14 @@ protected:
  * Proc. AISTATS 10, May 2010, vol.9, pp249-256
  **/
 class xavier : public scalable {
-public:
+ public:
     xavier() : scalable(float_t(6)) {}
     explicit xavier(float_t value) : scalable(value) {}
 
     void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) override {
         const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
-        uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);     
+        uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
     }
 };
 
@@ -73,8 +74,8 @@ public:
  * Neural Networks, Tricks of the Trade, Springer, 1998
  **/
 class lecun : public scalable {
-public:
-    lecun() : scalable(float_t(1)) {}
+ public:
+    lecun() : scalable(float_t{1}) {}
     explicit lecun(float_t value) : scalable(value) {}
 
     void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) override {
@@ -87,21 +88,21 @@ public:
 };
 
 class gaussian : public scalable {
-public:
-    gaussian() : scalable(float_t(1)) {}
+ public:
+    gaussian() : scalable(float_t{1}) {}
     explicit gaussian(float_t sigma) : scalable(sigma) {}
 
     void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) override {
         CNN_UNREFERENCED_PARAMETER(fan_in);
         CNN_UNREFERENCED_PARAMETER(fan_out);
 
-        gaussian_rand(weight->begin(), weight->end(), float_t(0), scale_);
+        gaussian_rand(weight->begin(), weight->end(), float_t{0}, scale_);
     }
 };
 
 class constant : public scalable {
-public:
-    constant() : scalable(float_t(0)) {}
+ public:
+    constant() : scalable(float_t{0}) {}
     explicit constant(float_t value) : scalable(value) {}
 
     void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) override {
@@ -113,8 +114,8 @@ public:
 };
 
 class he : public scalable {
-public:
-    he() : scalable(float_t(2)) {}
+ public:
+    he() : scalable(float_t{2}) {}
     explicit he(float_t value) : scalable(value) {}
 
     void fill(vec_t *weight, serial_size_t fan_in, serial_size_t fan_out) override {
@@ -122,9 +123,9 @@ public:
 
         const float_t sigma = std::sqrt(scale_ /fan_in);
 
-        gaussian_rand(weight->begin(), weight->end(), float_t(0), sigma);
+        gaussian_rand(weight->begin(), weight->end(), float_t{0}, sigma);
     }
 };
 
-} // namespace weight_init
-} // namespace tiny_dnn
+}  // namespace weight_init
+}  // namespace tiny_dnn

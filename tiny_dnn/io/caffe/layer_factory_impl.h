@@ -67,7 +67,7 @@ namespace tiny_dnn {
 namespace detail {
 
 inline void read_proto_from_text(const std::string& prototxt,
-                                 google::protobuf::Message *message) {
+                                 google::protobuf::Message* message) {
     int fd = CNN_OPEN_TXT(prototxt.c_str());
     if (fd == -1) {
         throw nn_error("file not fonud: " + prototxt);
@@ -82,7 +82,7 @@ inline void read_proto_from_text(const std::string& prototxt,
 }
 
 inline void read_proto_from_binary(const std::string& protobinary,
-                                   google::protobuf::Message *message) {
+                                   google::protobuf::Message* message) {
     int fd = CNN_OPEN_BINARY(protobinary.c_str());
     google::protobuf::io::FileInputStream rawstr(fd);
     google::protobuf::io::CodedInputStream codedstr(&rawstr);
@@ -110,7 +110,7 @@ create_filler(const std::string& filler) {
 }
 
 template <typename param>
-inline bool get_kernel_size_2d(const param& p, layer_size_t *kernel) {
+inline bool get_kernel_size_2d(const param& p, layer_size_t* kernel) {
     if (p.has_kernel_w() && p.has_kernel_h()) {
         if (p.kernel_w() != p.kernel_h()) {
             throw nn_error("unsupported kernel shape");
@@ -122,7 +122,9 @@ inline bool get_kernel_size_2d(const param& p, layer_size_t *kernel) {
 }
 
 template <typename param>
-inline bool get_kernel_size_2d(const param& p, layer_size_t *kernel_w, layer_size_t *kernel_h) {
+inline bool get_kernel_size_2d(const param& p,
+                               layer_size_t* kernel_w,
+                               layer_size_t* kernel_h) {
     if (p.has_kernel_w() && p.has_kernel_h()) {
         *kernel_w = p.kernel_w();
         *kernel_h = p.kernel_h();
@@ -148,12 +150,13 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
                                               layer_size_t stride_h,
                                               padding pad_type,
                                               const shape_t& bottom_shape,
-                                              shape_t *top_shape) {
+                                              shape_t* top_shape) {
     using max_pool = max_pooling_layer<activation::identity>;
     auto mp = std::make_shared<max_pool>(bottom_shape.width_,
                                          bottom_shape.height_,
                                          bottom_shape.depth_,
-                                         pool_size_w, pool_size_h, stride_w, stride_h, pad_type);
+                                         pool_size_w, pool_size_h,
+                                         stride_w, stride_h, pad_type);
 
     *top_shape = mp->out_shape()[0];
     mp->init_weight();
@@ -167,21 +170,22 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
                                               layer_size_t stride_h,
                                               padding pad_type,
                                               const shape_t& bottom_shape,
-                                              shape_t *top_shape) {
+                                              shape_t* top_shape) {
     using ave_pool = average_pooling_layer<activation::identity>;
     auto ap = std::make_shared<ave_pool>(bottom_shape.width_,
                                          bottom_shape.height_,
                                          bottom_shape.depth_,
-                                         pool_size_w, pool_size_h, stride_w, stride_h, pad_type);
+                                         pool_size_w, pool_size_h,
+                                         stride_w, stride_h, pad_type);
 
     // tiny-dnn has trainable parameter in average-pooling layer
-    float_t weight = float_t(1) / (pool_size_w * pool_size_h);
+    float_t weight = float_t{1} / (pool_size_w * pool_size_h);
 
     vec_t& w = *ap->weights()[0];
     vec_t& b = *ap->weights()[1];
 
     std::fill(w.begin(), w.end(), weight);
-    std::fill(b.begin(), b.end(), float_t(0));
+    std::fill(b.begin(), b.end(), float_t{0});
 
     *top_shape = ap->out_shape()[0];
     ap->init_weight();
@@ -192,7 +196,7 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
 
 inline
 std::shared_ptr<layer> create_softmax(const caffe::LayerParameter& layer,
-                                      const shape_t& bottom_shape, shape_t *) {
+                                      const shape_t& bottom_shape, shape_t*) {
     auto sm = std::make_shared<linear_layer<activation::softmax>>(
         bottom_shape.size());
     sm->init_weight();
@@ -201,7 +205,7 @@ std::shared_ptr<layer> create_softmax(const caffe::LayerParameter& layer,
 
 inline
 std::shared_ptr<layer> create_sigmoid(const caffe::LayerParameter& layer,
-                                      const shape_t& bottom_shape, shape_t *) {
+                                      const shape_t& bottom_shape, shape_t*) {
     auto ce = std::make_shared<linear_layer<activation::sigmoid>>(
         bottom_shape.size());
     return ce;
@@ -209,7 +213,7 @@ std::shared_ptr<layer> create_sigmoid(const caffe::LayerParameter& layer,
 
 inline
 std::shared_ptr<layer> create_tanh(const caffe::LayerParameter& layer,
-                                   const shape_t& bottom_shape, shape_t *) {
+                                   const shape_t& bottom_shape, shape_t*) {
     auto tanh = std::make_shared<linear_layer<activation::tan_h>>(
         bottom_shape.size());
     return tanh;
@@ -217,8 +221,10 @@ std::shared_ptr<layer> create_tanh(const caffe::LayerParameter& layer,
 
 inline
 std::shared_ptr<layer> create_power(const caffe::LayerParameter& layer,
-                                    const shape_t& bottom_shape, shape_t *) {
-    auto power = std::make_shared<power_layer>(bottom_shape, layer.power_param().power(), layer.power_param().scale());
+                                    const shape_t& bottom_shape, shape_t*) {
+    auto power = std::make_shared<power_layer>(bottom_shape,
+                                               layer.power_param().power(),
+                                               layer.power_param().scale());
     return power;
 }
 
@@ -226,7 +232,7 @@ std::shared_ptr<layer> create_power(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape,
-                                      shape_t *top_shape) {
+                                      shape_t* top_shape) {
     if (!layer.has_pooling_param()) {
         throw nn_error("pool param missing");
     }
@@ -304,14 +310,15 @@ std::shared_ptr<layer> create_pooling(const caffe::LayerParameter& layer,
 
 inline
 std::shared_ptr<layer> create_relu(const caffe::LayerParameter& layer,
-                                   const shape_t& bottom_shape, shape_t *) {
+                                   const shape_t& bottom_shape, shape_t*) {
     auto relu = std::make_shared<linear_layer<activation::relu>>(
         bottom_shape.size());
     return relu;
 }
 
 inline std::shared_ptr<layer> create_batchnorm(const caffe::LayerParameter& layer,
-    const shape_t& bottom_shape, shape_t *top_shape) {
+                                               const shape_t& bottom_shape,
+                                               shape_t* top_shape) {
     using bn_layer = batch_normalization_layer;
 
     *top_shape = bottom_shape;
@@ -356,7 +363,7 @@ inline std::shared_ptr<layer> create_batchnorm(const caffe::LayerParameter& laye
 
 
 inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
-                                        layer *dst) {
+                                        layer* dst) {
     auto weights = src.blobs(0);
     int curr = 0;
 
@@ -396,7 +403,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter& src,
 
 inline std::shared_ptr<layer> create_fullyconnected(
         const caffe::LayerParameter& layer,
-        const shape_t& bottom_shape, shape_t *top_shape) {
+        const shape_t& bottom_shape, shape_t* top_shape) {
     using fc_layer = fully_connected_layer<activation::identity>;
 
     if (!layer.has_inner_product_param()) {
@@ -433,7 +440,7 @@ inline std::shared_ptr<layer> create_fullyconnected(
     return ip;
 }
 
-inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
+inline void load_weights_conv(const caffe::LayerParameter& src, layer* dst) {
     // fill weight
     auto weights = src.blobs(0);
 
@@ -482,7 +489,7 @@ inline void load_weights_conv(const caffe::LayerParameter& src, layer *dst) {
     }
 }
 
-inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
+inline void load_weights_pool(const caffe::LayerParameter& src, layer* dst) {
     auto pool_param = src.pooling_param();
 
     //TODO
@@ -495,14 +502,14 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
         }
 
         // tiny-dnn has trainable parameter in average-pooling layer
-        float_t weight = float_t(1) / sqr(pool_size);
+        float_t weight = float_t{1} / sqr(pool_size);
 
         //TODO
         /*if (!dst->weight().empty()) {
             std::fill(dst->weight().begin(), dst->weight().end(), weight);
         }
         if (!dst->bias().empty()) {
-            std::fill(dst->bias().begin(), dst->bias().end(), float_t(0));
+            std::fill(dst->bias().begin(), dst->bias().end(), float_t{0});
             dst->init_bias();
         }*/
 
@@ -513,7 +520,7 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
             std::fill(w.begin(), w.end(), weight);
         }
         if (!b.empty()) {
-            std::fill(b.begin(), b.end(), float_t(0));
+            std::fill(b.begin(), b.end(), float_t{0});
             //dst->init_bias();
         }
     }
@@ -522,7 +529,7 @@ inline void load_weights_pool(const caffe::LayerParameter& src, layer *dst) {
 inline
 std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
                                   const shape_t& bottom_shape,
-                                  shape_t *top_shape) {
+                                  shape_t* top_shape) {
     using lrn_layer = lrn_layer<activation::identity>;
 
     if (!layer.has_lrn_param()) {
@@ -554,7 +561,7 @@ std::shared_ptr<layer> create_lrn(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_dropout(const caffe::LayerParameter& layer,
                                       const shape_t& bottom_shape,
-                                      shape_t *top_shape) {
+                                      shape_t* top_shape) {
     if (!layer.has_dropout_param()) {
         throw nn_error("dropout param missing");
     }
@@ -574,7 +581,7 @@ std::shared_ptr<layer> create_dropout(const caffe::LayerParameter& layer,
 inline
 std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
                                         const shape_t& bottom_shape,
-                                        shape_t *top_shape) {
+                                        shape_t* top_shape) {
     using conv_layer = convolutional_layer<activation::identity>;
 
     if (!layer.has_convolution_param()) {
@@ -665,8 +672,8 @@ std::shared_ptr<layer> create_convlayer(const caffe::LayerParameter& layer,
 
 inline
 std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
-                                        const shape_t& bottom_shape,
-                                        shape_t *top_shape) {
+                                          const shape_t& bottom_shape,
+                                          shape_t* top_shape) {
     using deconv_layer = deconvolutional_layer<activation::identity>;
 
     if (!layer.has_convolution_param()) {
@@ -731,12 +738,12 @@ std::shared_ptr<layer> create_deconvlayer(const caffe::LayerParameter& layer,
     }
 
     auto deconv = std::make_shared<deconv_layer>(in_width, in_height,
-                                             window_size,
-                                             in_channels, out_channels,
-                                             table,
-                                             pad_type,
-                                             has_bias,
-                                             w_stride, h_stride);
+                                                 window_size,
+                                                 in_channels, out_channels,
+                                                 table,
+                                                 pad_type,
+                                                 has_bias,
+                                                 w_stride, h_stride);
     // filler
     if (deconv_param.has_weight_filler()) {
         deconv->weight_init(create_filler(deconv_param.weight_filler().type()));
@@ -850,7 +857,7 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter& layer,
     throw nn_error("layer parser not found");
 }
 
-inline void load(const caffe::LayerParameter& src, layer *dst) {
+inline void load(const caffe::LayerParameter& src, layer* dst) {
     typedef std::function<void(const caffe::LayerParameter&, layer*)> factoryimpl; // NOLINT
     std::unordered_map<std::string, factoryimpl> factory_registry;
 
@@ -868,12 +875,12 @@ inline void load(const caffe::LayerParameter& src, layer *dst) {
 
 
 struct layer_node {
-    const caffe::LayerParameter *layer;
-    const layer_node *next;  // top-side
-    const layer_node *prev;  // bottom-side
+    const caffe::LayerParameter* layer;
+    const layer_node* next;  // top-side
+    const layer_node* prev;  // bottom-side
 
     layer_node() : layer(0), next(0), prev(0) {}
-    explicit layer_node(const caffe::LayerParameter *l)
+    explicit layer_node(const caffe::LayerParameter* l)
         : layer(l), next(0), prev(0) {}
 };
 
@@ -921,7 +928,7 @@ class caffe_layer_vector {
         }
 
         root_node = &*root;
-        const layer_node *current = &*root;
+        const layer_node* current = &*root;
 
         while (current) {
             node_list.push_back(current->layer);
@@ -939,7 +946,7 @@ class caffe_layer_vector {
 
  private:
     void upgradev1net(const caffe::NetParameter& old,
-                      caffe::NetParameter *dst) const {
+                      caffe::NetParameter* dst) const {
         dst->CopyFrom(old);
         dst->clear_layers();
         dst->clear_layer();
@@ -1037,7 +1044,7 @@ class caffe_layer_vector {
     }
 
     void upgradev1layer(const caffe::V1LayerParameter& old,
-                        caffe::LayerParameter *dst) const {
+                        caffe::LayerParameter* dst) const {
         dst->Clear();
 
         for (int i = 0; i < old.bottom_size(); i++) {
@@ -1096,7 +1103,7 @@ class caffe_layer_vector {
     }
 
     caffe::NetParameter net;
-    layer_node *root_node;
+    layer_node* root_node;
     /* layer name -> layer */
     std::map<std::string, layer_node*> layer_table;
     /* blob name -> bottom holder */

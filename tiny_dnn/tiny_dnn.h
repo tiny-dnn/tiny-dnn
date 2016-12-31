@@ -132,7 +132,7 @@ using max_unpool = tiny_dnn::max_unpooling_layer<T>;
 template <class T>
 using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
 
-}
+}  // namespace layers
 
 #include "tiny_dnn/models/alexnet.h"
 
@@ -142,4 +142,4 @@ using slice = tiny_dnn::slice_layer;
 
 using power = tiny_dnn::power_layer;
 
-}
+}  // namespace tiny_dnn

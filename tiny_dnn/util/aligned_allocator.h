@@ -38,7 +38,7 @@ namespace tiny_dnn {
 
 template <typename T, std::size_t alignment>
 class aligned_allocator {
-public:
+ public:
     typedef T value_type;
     typedef T* pointer;
     typedef std::size_t size_type;
@@ -80,7 +80,7 @@ public:
         aligned_free(ptr);
     }
 
-    template<class U, class V>
+    template <class U, class V>
     void construct(U* ptr, const V& value) {
         void* p = ptr;
         ::new(p) U(value);
@@ -89,33 +89,33 @@ public:
 #if defined(_MSC_VER) && _MSC_VER <= 1800
     // -vc2013 doesn't support variadic templates
 #else
-    template<class U, class... Args>
+    template <class U, class... Args>
     void construct(U* ptr, Args&&... args) {
         void* p = ptr;
         ::new(p) U(std::forward<Args>(args)...);
     }
 #endif
 
-    template<class U>
+    template <class U>
     void construct(U* ptr) {
         void* p = ptr;
         ::new(p) U();
     }
 
-    template<class U>
+    template <class U>
     void destroy(U* ptr) {
         ptr->~U();
     }
 
-private:
+ private:
     void* aligned_alloc(size_type align, size_type size) const {
 #if defined(_MSC_VER)
         return ::_aligned_malloc(size, align);
-#elif defined (__ANDROID__)
+#elif defined(__ANDROID__)
         return ::memalign(align, size);
-#elif defined (__MINGW32__)
+#elif defined(__MINGW32__)
         return ::_mm_malloc(size, align);
-#else // posix assumed
+#else  // posix assumed
         void* p;
         if (::posix_memalign(&p, align, size) != 0) {
             p = 0;
@@ -135,15 +135,16 @@ private:
     }
 };
 
-template<typename T1, typename T2, std::size_t alignment>
-inline bool operator==(const aligned_allocator<T1, alignment>&, const aligned_allocator<T2, alignment>&)
-{
+template <typename T1, typename T2, std::size_t alignment>
+inline bool operator==(const aligned_allocator<T1, alignment>&,
+                       const aligned_allocator<T2, alignment>&) {
     return true;
 }
 
-template<typename T1, typename T2, std::size_t alignment>
-inline bool operator!=(const aligned_allocator<T1, alignment>&, const aligned_allocator<T2, alignment>&)
-{
+template <typename T1, typename T2, std::size_t alignment>
+inline bool operator!=(const aligned_allocator<T1, alignment>&,
+                       const aligned_allocator<T2, alignment>&) {
     return false;
 }
-}
+
+}  // namespace tiny_dnn

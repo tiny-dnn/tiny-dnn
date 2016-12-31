@@ -25,28 +25,29 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <cstddef>
 #include <cstdint>
 
 /**
  * define if you want to use intel TBB library
  */
-//#define CNN_USE_TBB
+// #define CNN_USE_TBB
 
 /**
  * define to enable avx vectorization
  */
-//#define CNN_USE_AVX
+// #define CNN_USE_AVX
 
 /**
  * define to enable sse2 vectorization
  */
-//#define CNN_USE_SSE
+// #define CNN_USE_SSE
 
 /**
  * define to enable OMP parallelization
  */
-//#define CNN_USE_OMP
+// #define CNN_USE_OMP
 
 /**
  * define to use exceptions
@@ -58,14 +59,14 @@
  */
 #define CNN_USE_STDOUT
 
-//#define CNN_SINGLE_THREAD
+// #define CNN_SINGLE_THREAD
 
 /**
  * disable serialization/deserialization function
  * You can uncomment this to speedup compilation & linking time,
  * if you don't use network::save / network::load functions.
  **/
-//#define CNN_NO_SERIALIZATION
+// #define CNN_NO_SERIALIZATION
 
 /**
  * Enable Image API support.
@@ -110,4 +111,4 @@ typedef float float_t;
  **/
 typedef std::uint32_t serial_size_t;
 
-}
+}  // namespace tiny_dnn

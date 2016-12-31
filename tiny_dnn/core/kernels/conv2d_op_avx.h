@@ -112,17 +112,17 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 if (oidx & 7) {
                     headSize = 8 - (oidx & 7);
                     assert(headSize < out_area);
-                    for (size_t i=0; i<headSize; ++i) {
+                    for (size_t i = 0; i < headSize; ++i) {
                         _mm_store_ss(&pa[i], _mm256_castps256_ps128(b2));
                     }
                 }
                 size_t cnt = (out_area - headSize) / 16;
                 float* pa2 = pa + headSize;
-                for (size_t i=0; i<cnt; ++i) {
-                    _mm256_store_ps(&pa2[i*16+0], b2);
-                    _mm256_store_ps(&pa2[i*16+8], b2);
+                for (size_t i = 0; i < cnt; ++i) {
+                    _mm256_store_ps(&pa2[i * 16 + 0], b2);
+                    _mm256_store_ps(&pa2[i * 16 + 8], b2);
                 }
-                for (size_t i=headSize+cnt*16; i<out_area; ++i) {
+                for (size_t i = headSize + cnt * 16; i < out_area; ++i) {
                     pa[i] = b;
                 }
             }
@@ -132,11 +132,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 const float* pw = (const float*) &W[25 * (params.in.depth_ * o + inc)];
                 const float* pi = (const float*) &in[in_padded.get_index(0, 0, inc)];
 
-                __m256 w0a = _mm256_maskload_ps(pw+0, imask);
-                __m256 w1a = _mm256_maskload_ps(pw+5, imask);
-                __m256 w2a = _mm256_maskload_ps(pw+10, imask);
-                __m256 w3a = _mm256_maskload_ps(pw+15, imask);
-                __m256 w4a = _mm256_maskload_ps(pw+20, imask);
+                __m256 w0a = _mm256_maskload_ps(pw + 0, imask);
+                __m256 w1a = _mm256_maskload_ps(pw + 5, imask);
+                __m256 w2a = _mm256_maskload_ps(pw + 10, imask);
+                __m256 w3a = _mm256_maskload_ps(pw + 15, imask);
+                __m256 w4a = _mm256_maskload_ps(pw + 20, imask);
                 __m256 w0b = leftShift<4>(w0a);
                 __m256 w1b = leftShift<4>(w1a);
                 __m256 w2b = leftShift<4>(w2a);
@@ -417,10 +417,10 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 size_t cnt = (out_area - headSize) / 8;
                 double* pa2 = pa + headSize;
                 for (size_t i = 0; i < cnt; ++i) {
-                    _mm256_store_pd(&pa2[i*8+0], b2);
-                    _mm256_store_pd(&pa2[i*8+4], b2);
+                    _mm256_store_pd(&pa2[i * 8 + 0], b2);
+                    _mm256_store_pd(&pa2[i * 8 + 4], b2);
                 }
-                for (size_t i = headSize + cnt*8; i < out_area; ++i) {
+                for (size_t i = headSize + cnt * 8; i < out_area; ++i) {
                     _mm_store_sd(&pa[i], _mm256_castpd256_pd128(b2));
                 }
             }
@@ -431,16 +431,16 @@ void avx_conv2d_5x5_kernel(const core::conv_params& params,
                 const double* pw = (const double*)&W[25 * (params.in.depth_ * o + inc)];
                 const double* pi = &in[in_padded.get_index(0, 0, inc)];
 
-                __m256d w0a = _mm256_loadu_pd(pw+0);
-                __m128d w0b = _mm_load_sd(pw+4);
-                __m256d w1a = _mm256_loadu_pd(pw+5);
-                __m128d w1b = _mm_load_sd(pw+9);
-                __m256d w2a = _mm256_loadu_pd(pw+10);
-                __m128d w2b = _mm_load_sd(pw+14);
-                __m256d w3a = _mm256_loadu_pd(pw+15);
-                __m128d w3b = _mm_load_sd(pw+19);
-                __m256d w4a = _mm256_loadu_pd(pw+20);
-                __m128d w4b = _mm_load_sd(pw+24);
+                __m256d w0a = _mm256_loadu_pd(pw + 0);
+                __m128d w0b = _mm_load_sd(pw + 4);
+                __m256d w1a = _mm256_loadu_pd(pw + 5);
+                __m128d w1b = _mm_load_sd(pw + 9);
+                __m256d w2a = _mm256_loadu_pd(pw + 10);
+                __m128d w2b = _mm_load_sd(pw + 14);
+                __m256d w3a = _mm256_loadu_pd(pw + 15);
+                __m128d w3b = _mm_load_sd(pw + 19);
+                __m256d w4a = _mm256_loadu_pd(pw + 20);
+                __m128d w4b = _mm_load_sd(pw + 24);
 
                 double* ppa = pa;
                 for (serial_size_t y = 0; y < out.height_; ++y, pi += in_stride, ppa += out.width_) {

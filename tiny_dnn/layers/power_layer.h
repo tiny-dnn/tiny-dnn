@@ -25,18 +25,19 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
-#include "tiny_dnn/layers/layer.h"
+
 #include <cmath>
 
-namespace tiny_dnn {
+#include "tiny_dnn/util/util.h"
+#include "tiny_dnn/layers/layer.h"
 
+namespace tiny_dnn {
 
 /**
  * element-wise pow: ```y = scale*x^factor```
  **/
 class power_layer : public layer {
-public:
+ public:
     typedef layer Base;
 
     /**
@@ -44,7 +45,7 @@ public:
      * @param factor   [in] floating-point number that specifies a power 
      * @param scale    [in] scale factor for additional multiply
      */
-    power_layer(const shape3d& in_shape, float_t factor, float_t scale=1.0f)
+    power_layer(const shape3d& in_shape, float_t factor, float_t scale = float_t{1.0})
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(in_shape), factor_(factor), scale_(scale) {
     }
@@ -54,7 +55,7 @@ public:
      * @param factor     [in] floating-point number that specifies a power 
      * @param scale      [in] scale factor for additional multiply
      */
-    power_layer(const layer& prev_layer, float_t factor, float_t scale=1.0f)
+    power_layer(const layer& prev_layer, float_t factor, float_t scale = float_t{1.0})
         : layer({ vector_type::data }, { vector_type::data }),
         in_shape_(prev_layer.out_shape()[0]), factor_(factor), scale_(scale) {
     }
@@ -102,8 +103,7 @@ public:
                 //      = dy * factor * y / x
                 if (std::abs(x[i][j]) > 1e-10) {
                     dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
-                }
-                else {
+                } else {
                     dx[i][j] = dy[i][j] * scale_ * factor_ * std::pow(x[i][j], factor_ - 1.0f);
                 }
             }
@@ -112,19 +112,24 @@ public:
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<power_layer> & construct) {
+    static void load_and_construct(Archive& ar,
+                                   cereal::construct<power_layer>& construct) {
         shape3d in_shape;
         float_t factor;
-        float_t scale(1.0f);
+        float_t scale {1.0};
 
-        ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("factor", factor), cereal::make_nvp("scale", scale));
+        ar(cereal::make_nvp("in_size", in_shape),
+           cereal::make_nvp("factor", factor),
+           cereal::make_nvp("scale", scale));
         construct(in_shape, factor, scale);
     }
 
     template <class Archive>
     void serialize(Archive & ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("factor", factor_), cereal::make_nvp("scale", scale_));
+        ar(cereal::make_nvp("in_size", in_shape_),
+           cereal::make_nvp("factor", factor_),
+           cereal::make_nvp("scale", scale_));
     }
 #endif
 
@@ -135,11 +140,11 @@ public:
     float_t scale() const {
         return scale_;
     }
-private:
 
+ private:
     shape3d in_shape_;
     float_t factor_;
     float_t scale_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

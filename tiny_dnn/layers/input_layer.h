@@ -30,18 +30,17 @@
 namespace tiny_dnn {
 
 class input_layer : public layer {
-public:
+ public:
     explicit input_layer(const shape3d& shape)
-    : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
+        : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
 
     explicit input_layer(serial_size_t in_dim)
-    : layer({ vector_type::data }, { vector_type::data }), shape_(shape3d(in_dim,1,1)) {}
+        : layer({ vector_type::data }, { vector_type::data }),
+          shape_(shape3d(in_dim, 1, 1)) {}
 
     std::vector<shape3d> in_shape() const override { return { shape_ }; }
     std::vector<shape3d> out_shape() const override { return { shape_ }; }
     std::string layer_type() const override { return "input"; }
-
-
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
@@ -63,4 +62,4 @@ private:
     shape3d shape_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
