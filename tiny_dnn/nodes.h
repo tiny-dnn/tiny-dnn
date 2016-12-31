@@ -48,9 +48,10 @@ void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
     for (auto n : v) {
         tiny_dnn::layer::save_layer(ar, *n);
     }
-#endif
+#else
+    throw tiny_dnn::nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
-
 
 template <typename Archive>
 void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
@@ -61,10 +62,13 @@ void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
     for (size_t i = 0; i < size; i++) {
         v.emplace_back(tiny_dnn::layer::load_layer(ar));
     }
-#endif
+#else
+    throw tiny_dnn::nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
-}
+}  // namespace cereal
+
 
 namespace tiny_dnn {
 
@@ -474,12 +478,15 @@ private:
                              std::make_tuple(head, tail, head_index, tail_index)) != connections.end();
         }
 
-#ifndef CNN_NO_SERIALIZATION
         template <typename Archive>
         void serialize(Archive & ar) {
-            ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
+#ifndef CNN_NO_SERIALIZATION
+            ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes),
+               CEREAL_NVP(out_nodes));
+#else
+            throw nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
         }
-#endif
 
         std::vector<std::tuple<serial_size_t, serial_size_t, serial_size_t, serial_size_t>> connections;
         std::vector<serial_size_t> in_nodes, out_nodes;
@@ -521,7 +528,9 @@ private:
         }
 
         oa(cereal::make_nvp("graph", gc));
-#endif
+#else
+        throw nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     template <typename InputArchive>
@@ -541,7 +550,9 @@ private:
         for (auto out : gc.out_nodes) {
             output_layers_.push_back(nodes_[out]);
         }
-#endif
+#else
+        throw nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
      // normalize indexing back to [sample][layer][feature]
@@ -590,7 +601,9 @@ void nodes::save_model(OutputArchive & oa) const {
     else {
         dynamic_cast<const graph*>(this)->save_connections(oa);
     }
-#endif
+#else
+    throw nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
 template <typename InputArchive>
@@ -611,7 +624,9 @@ void nodes::load_model(InputArchive & ia) {
     else {
         dynamic_cast<graph*>(this)->load_connections(ia);
     }
-#endif
+#else
+    throw nn_error("TinyDNN was not build with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
 

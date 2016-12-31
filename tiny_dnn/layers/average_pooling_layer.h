@@ -36,7 +36,7 @@
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
-#endif
+#endif  // DNN_USE_IMAGE_API
 
 namespace tiny_dnn {
 

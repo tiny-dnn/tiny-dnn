@@ -72,9 +72,9 @@ struct connection_table {
         return rows_ == 0 && cols_ == 0;
     }
 
-#ifndef CNN_NO_SERIALIZATION
     template <typename Archive>
     void serialize(Archive & ar) {
+#ifndef CNN_NO_SERIALIZATION
         ar(cereal::make_nvp("rows", rows_), cereal::make_nvp("cols", cols_));
 
         if (is_empty()) {
@@ -83,8 +83,10 @@ struct connection_table {
         else {
             ar(cereal::make_nvp("connection", connected_));
         }
+#else
+        throw nn_error("TinyDNN was not compiled with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
-#endif
 
     std::deque<bool> connected_;
     serial_size_t rows_;

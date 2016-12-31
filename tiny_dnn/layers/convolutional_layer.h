@@ -40,7 +40,7 @@
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
-#endif
+#endif  // DNN_USE_IMAGE_API
 
 using namespace tiny_dnn::core;
 
@@ -395,9 +395,11 @@ class convolutional_layer : public feedforward_layer<Activation> {
         construct(in.width_, in.height_, w_width, w_height, in.depth_,
                   out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
     }
+#endif  // CNN_NO_SERIALIZATION
 
     template <class Archive>
     void serialize(Archive & ar) {
+#ifndef CNN_NO_SERIALIZATION
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in),
             cereal::make_nvp("window_width", params_.weight.width_),
@@ -409,8 +411,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("w_stride", params_.w_stride),
             cereal::make_nvp("h_stride", params_.h_stride)
             );
-    }
+#else
+        throw nn_error("TinyDNN was not build with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
+    }
 
 private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
