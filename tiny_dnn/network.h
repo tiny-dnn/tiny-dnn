@@ -267,7 +267,7 @@ class network {
     /**
     * trains the network for a fixed number of epochs to generate desired output.
     *
-    * This method execute fixed number of training steps and invoke callbacks for each mini-batch/epochs.
+    * This method executes fixed number of training steps and invoke callbacks for each mini-batch/epochs.
     * The network is trained to minimize given loss function(specified by template parameter).
     *
     * Shape of inputs and desired_outputs must be same to network inputs. For example, if your network
