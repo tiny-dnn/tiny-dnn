@@ -169,7 +169,7 @@ class network {
     typedef typename std::vector<layerptr_t>::iterator iterator;
     typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
-    explicit network(const std::string& name = "") : name_(name) {}
+    explicit network(const std::string& name = "") : name_(name), stop_training_(false) {}
 
     /**
      * name of the network
@@ -383,6 +383,16 @@ class network {
         for (auto n : net_) {
             n->set_context(phase);
         }
+    }
+
+    /**
+     * request to finish an ongoing training
+     *
+     * It is safe to test the current network performance in @a on_batch_enumerate and
+     * @a on_epoch_enumerate callbacks during training.
+     */
+    void stop_ongoing_training() {
+        stop_training_ = true;
     }
 
     /**
@@ -768,8 +778,9 @@ class network {
         for (auto n : net_)
             n->set_parallelize(true);
         optimizer.reset();
-        for (int iter = 0; iter < epoch; iter++) {
-            for (size_t i = 0; i < inputs.size(); i += batch_size) {
+        stop_training_ = false;
+        for (int iter = 0; iter < epoch && !stop_training_; iter++) {
+            for (size_t i = 0; i < inputs.size() && !stop_training_; i += batch_size) {
                 train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
                     static_cast<int>(std::min(batch_size, inputs.size() - i)),
                     n_threads,
@@ -1035,6 +1046,7 @@ class network {
 
     std::string name_;
     NetType net_;
+    bool stop_training_;
 };
 
 /**
