@@ -136,10 +136,4 @@ using slice = tiny_dnn::slice_layer;
 
 using power = tiny_dnn::power_layer;
 
-using batch_norm = tiny_dnn::batch_normalization_layer;
-
-using slice = tiny_dnn::slice_layer;
-
-using power = tiny_dnn::power_layer;
-
 }
