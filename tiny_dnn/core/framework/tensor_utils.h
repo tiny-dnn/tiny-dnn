@@ -68,9 +68,9 @@ inline std::ostream& print_last_two_dimesions (std::ostream           &os,
                                                const Tensor<T, kDim>& tensor,
                                                const Args...          args) {
     const std::array<size_t, kDim>& shape = tensor.shape();
-    for (size_t k = 0; k < shape[kDim-1]; ++k) {
-        for (size_t l = 0; l < shape[kDim-2]; ++l) {
-            os << "\t" << tensor.host_at(args..., l, k);
+    for (size_t k = 0; k < shape[kDim-2]; ++k) {
+        for (size_t l = 0; l < shape[kDim-1]; ++l) {
+            os << "\t" << tensor.host_at(args..., k, l);
         }
         os << "\n";
     }
@@ -82,8 +82,8 @@ inline std::ostream& print_last_n_dimesions (std::ostream &os,
                                                const Tensor<T, kDim>& tensor,
                                                const int              d,
                                                const Args...          args) {
-    const std::array<size_t, kDim>& shape = tensor.shape();
-    const size_t n_dim = sizeof...(args);
+    //const std::array<size_t, kDim>& shape = tensor.shape();
+    //const size_t n_dim = sizeof...(args);
         os << "Tensor(";
         print_pack(os, d, args...);
         os << ",:,:):\n";
@@ -130,7 +130,6 @@ inline std::ostream &operator<<(std::ostream &os,
  * @param tensor
  * @return
  */
-//TODO(Randl): make to compile
 template<typename T, size_t kDim>
 inline std::ostream& operator<< (std::ostream &os,
                                  const Tensor<T, kDim>& tensor) {
