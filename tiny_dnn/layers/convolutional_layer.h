@@ -382,14 +382,14 @@ class convolutional_layer : public feedforward_layer<Activation> {
         connection_table tbl;
 
         ar(cereal::make_nvp("in_size", in),
-            cereal::make_nvp("window_width", w_width),
-            cereal::make_nvp("window_height", w_height),
-            cereal::make_nvp("out_channels", out_ch),
-            cereal::make_nvp("connection_table", tbl),
-            cereal::make_nvp("pad_type", pad_type),
-            cereal::make_nvp("has_bias", has_bias),
-            cereal::make_nvp("w_stride", w_stride),
-            cereal::make_nvp("h_stride", h_stride)
+           cereal::make_nvp("window_width", w_width),
+           cereal::make_nvp("window_height", w_height),
+           cereal::make_nvp("out_channels", out_ch),
+           cereal::make_nvp("connection_table", tbl),
+           cereal::make_nvp("pad_type", pad_type),
+           cereal::make_nvp("has_bias", has_bias),
+           cereal::make_nvp("w_stride", w_stride),
+           cereal::make_nvp("h_stride", h_stride)
         );
 
         construct(in.width_, in.height_, w_width, w_height, in.depth_,
@@ -412,7 +412,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("h_stride", params_.h_stride)
             );
 #else
-        throw nn_error("TinyDNN was not build with Serialization support");
+        throw nn_error("TinyDNN was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
     }
 

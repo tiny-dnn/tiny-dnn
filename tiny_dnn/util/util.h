@@ -189,7 +189,7 @@ struct index3d {
         ar(cereal::make_nvp("height", height_));
         ar(cereal::make_nvp("depth", depth_));
 #else
-        throw nn_error("TinyDNN was not build with Serialization support");
+        throw nn_error("TinyDNN was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
     }
 
