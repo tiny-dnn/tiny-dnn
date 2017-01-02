@@ -33,9 +33,10 @@
 #include "tiny_dnn/core/kernels/tiny_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_deconv2d_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_deconv2d_back_kernel.h"
+
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/core/kernels/tiny_quantized_fully_connected_kernel.h"
-#endif
+#endif  // CNN_USE_GEMMLOWP
 
 namespace tiny_dnn {
 namespace core {

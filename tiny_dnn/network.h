@@ -614,6 +614,7 @@ class network {
     void load(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) {
+#ifndef CNN_NO_SERIALIZATION
         std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
         if (ifs.fail() || ifs.bad())
             throw nn_error("failed to open:" + filename);
@@ -634,11 +635,15 @@ class network {
             default:
                 throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     void save(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) const {
+#ifndef CNN_NO_SERIALIZATION
         std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
         if (ofs.fail() || ofs.bad())
             throw nn_error("failed to open:" + filename);
@@ -659,28 +664,40 @@ class network {
             default:
                 throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * save the network architecture as json string
      **/
     std::string to_json(content_type what = content_type::model) const {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
             to_archive(oa, what);
         }
         return ss.str();
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * load the network architecture from json string
      **/
-    void from_json(const std::string& json_string, content_type what = content_type::model) {
+    void from_json(const std::string& json_string,
+                   content_type what = content_type::model) {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
         from_archive(ia, what);
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     ///< @deprecated use save(filename,target,format) instead.

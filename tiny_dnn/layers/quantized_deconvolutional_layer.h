@@ -38,8 +38,11 @@
 #endif
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 using namespace tiny_dnn::core;
 
@@ -263,6 +266,7 @@ public:
 
     std::string layer_type() const override { return "q_deconv"; }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weightto_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -301,6 +305,7 @@ public:
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
 private:
     void init_backend(const backend_t backend_type) {

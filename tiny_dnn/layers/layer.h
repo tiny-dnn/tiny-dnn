@@ -41,11 +41,14 @@
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/product.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/weight_init.h"
 
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 namespace tiny_dnn {
 
@@ -384,10 +387,12 @@ class layer : public node {
     ///< visualize latest output of this layer
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
+#ifdef DNN_USE_IMAGE_API
     virtual image<> output_to_image(size_t channel = 0) const {
         const vec_t* output = &(*(outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
+#endif
 
     /////////////////////////////////////////////////////////////////////////
     // fprop/bprop

@@ -26,6 +26,7 @@
 */
 #pragma once
 
+#ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/core/params/fully_params.h"
 #include "tiny_dnn/core/kernels/tiny_quantization_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_matmul_kernel.h"
@@ -369,3 +370,5 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
 }  // namespace kernels
 }  // namespace core
 }  // namespace tiny_dnn
+
+#endif  // CNN_USE_GEMMLOWP

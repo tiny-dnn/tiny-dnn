@@ -184,9 +184,13 @@ struct index3d {
 
     template <class Archive>
     void serialize(Archive & ar) {
+#ifndef CNN_NO_SERIALIZATION
         ar(cereal::make_nvp("width", width_));
         ar(cereal::make_nvp("height", height_));
         ar(cereal::make_nvp("depth", depth_));
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     T width_;

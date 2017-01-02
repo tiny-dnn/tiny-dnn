@@ -68,6 +68,21 @@
 //#define CNN_NO_SERIALIZATION
 
 /**
+ * Enable Image API support.
+ * Currently we use stb by default.
+ **/
+//#define DNN_USE_IMAGE_API
+
+/**
+ * Enable Gemmlowp support.
+ **/
+#ifdef USE_GEMMLOWP
+#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
+#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
+#endif
+#endif  // USE_GEMMLOWP
+
+/**
  * number of task in batch-gradient-descent.
  * @todo automatic optimization
  */
@@ -75,10 +90,6 @@
 #define CNN_TASK_SIZE 100
 #else
 #define CNN_TASK_SIZE 8
-#endif
-
-#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
-#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
 #endif
 
 namespace tiny_dnn {
