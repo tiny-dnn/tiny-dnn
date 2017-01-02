@@ -92,6 +92,11 @@
 #define CNN_TASK_SIZE 8
 #endif
 
+/**
+ * Use std::tr1 namespace for random computations.
+ **/
+//#define CNN_TR1_RANDOM
+
 namespace tiny_dnn {
 
 /**

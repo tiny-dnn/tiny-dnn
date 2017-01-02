@@ -25,11 +25,25 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+#if !defined(CNN_TR1_RANDOM)
 #include <random>
+#else
+#include <tr1/random>
+#endif
 #include <type_traits>
 #include <limits>
 #include "nn_error.h"
 #include "tiny_dnn/config.h"
+
+#if !defined(CNN_TR1_RANDOM)
+#define STD_RANDOM_NS std
+#define STD_RANDOM_UNI_INT uniform_int_distribution
+#define STD_RANDOM_UNI_REAL uniform_real_distribution
+#else
+#define STD_RANDOM_NS std::tr1
+#define STD_RANDOM_UNI_INT uniform_int
+#define STD_RANDOM_UNI_REAL uniform_real
+#endif
 
 namespace tiny_dnn {
 
@@ -40,7 +54,7 @@ public:
         return instance;
     }
 
-    std::mt19937& operator()() {
+    STD_RANDOM_NS::mt19937& operator()() {
         return gen_;
     }
 
@@ -51,27 +65,27 @@ private:
     // avoid gen_(0) for MSVC known issue
     // https://connect.microsoft.com/VisualStudio/feedback/details/776456
     random_generator() : gen_(1) {}
-    std::mt19937 gen_;
+    STD_RANDOM_NS::mt19937 gen_;
 };
 
 template<typename T> inline
 typename std::enable_if<std::is_integral<T>::value, T>::type
 uniform_rand(T min, T max) {
-    std::uniform_int_distribution<T> dst(min, max);
+    STD_RANDOM_NS::STD_RANDOM_UNI_INT<T> dst(min, max);
     return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 uniform_rand(T min, T max) {
-    std::uniform_real_distribution<T> dst(min, max);
+    STD_RANDOM_NS::STD_RANDOM_UNI_REAL<T> dst(min, max);
     return dst(random_generator::get_instance()());
 }
 
 template<typename T> inline
 typename std::enable_if<std::is_floating_point<T>::value, T>::type
 gaussian_rand(T mean, T sigma) {
-    std::normal_distribution<T> dst(mean, sigma);
+    STD_RANDOM_NS::normal_distribution<T> dst(mean, sigma);
     return dst(random_generator::get_instance()());
 }
 
