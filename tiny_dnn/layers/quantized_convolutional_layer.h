@@ -31,8 +31,6 @@
 #include <algorithm>
 
 #include "tiny_dnn/core/backend_tiny.h"
-#include "tiny_dnn/core/backend_nnp.h"
-#include "tiny_dnn/core/backend_dnn.h"
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/backend_avx.h"
 #endif
@@ -461,14 +459,6 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                     return Base::backward_activation(p_delta, out, c_delta);
                 },
                 &cws_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_,
-                [this](const tensor_t& in) {
-                    return copy_and_pad_input(in);
-                },
-                &cws_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,

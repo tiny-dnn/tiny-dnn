@@ -31,9 +31,6 @@
 #include <algorithm>
 
 #include "tiny_dnn/core/backend_tiny.h"
-#include "tiny_dnn/core/backend_nnp.h"
-#include "tiny_dnn/core/backend_dnn.h"
-
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/backend_avx.h"
 #endif  // CNN_USE_AVX
@@ -324,11 +321,7 @@ private:
                         return Base::backward_activation(p_delta, out, c_delta);
                     },
                     &deconv_layer_worker_storage_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>();
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
-#ifdef CNN_USE_AVX
+        #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,
                     [this](const tensor_t& in) {

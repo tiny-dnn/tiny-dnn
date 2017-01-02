@@ -128,10 +128,6 @@ protected:
                        const tensor_t& out, tensor_t& c_delta) {
                      return Base::backward_activation(p_delta, out, c_delta);
                 });
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
         } else {
             throw nn_error("Not supported backend type.");
         }
