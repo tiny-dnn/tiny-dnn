@@ -70,16 +70,6 @@ class tiny_backend : public backend {
       , copy_and_pad_delta(f2)
       , backward_activation(f3) {}
 
-    // maxpooling
-    tiny_backend(std::vector<std::vector<serial_size_t>>* out2in,
-                 std::vector<serial_size_t>* in2out,
-                 std::function<void(const tensor_t&, const tensor_t&, tensor_t&)> f,
-                 max_pooling_layer_worker_specific_storage* ptr)
-      : max_pooling_layer_worker_storage_(ptr)
-      , out2in_(out2in)
-      , in2out_(in2out)
-      , backward_activation(f) {}
-
     // fully_connected
     tiny_backend(fully_params* params,
                  std::function<void(const tensor_t&, const tensor_t&, tensor_t&)> f)
@@ -357,9 +347,6 @@ class tiny_backend : public backend {
     /* Pointer to the workers */
     conv_layer_worker_specific_storage* conv_layer_worker_storage_;
     deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
-    max_pooling_layer_worker_specific_storage* max_pooling_layer_worker_storage_;
-    std::vector<std::vector<serial_size_t>>* out2in_;
-    std::vector<serial_size_t>* in2out_;
 
     /* Pointers to parent class functions */
     std::function<void(const tensor_t&)> copy_and_pad_input;
