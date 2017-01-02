@@ -30,13 +30,6 @@
 #include <vector>
 #include <algorithm>
 
-#include "tiny_dnn/core/backend_tiny.h"
-#include "tiny_dnn/core/backend_nnp.h"
-#include "tiny_dnn/core/backend_dnn.h"
-#ifdef CNN_USE_AVX
-#include "tiny_dnn/core/backend_avx.h"
-#endif
-
 #include "tiny_dnn/core/kernels/maxpool_op.h"
 #include "tiny_dnn/core/kernels/maxpool_grad_op.h"
 
