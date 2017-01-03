@@ -1,3 +1,4 @@
+// Copyright (c) 2016, Juha Reunanen
 #pragma once
 
 #include <numeric>  // std::accumulate

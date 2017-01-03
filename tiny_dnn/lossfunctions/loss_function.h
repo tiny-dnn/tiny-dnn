@@ -131,7 +131,7 @@ class cross_entropy {
         float_t d {0};
 
         for (serial_size_t i = 0; i < y.size(); ++i)
-            d += -t[i] * std::log(y[i]) - (float_t(1) - t[i]) * std::log(float_t{1} - y[i]);
+            d += -t[i] * std::log(y[i]) - (float_t(1) - t[i]) * std::log(float_t(1) - y[i]);
 
         return d;
     }
