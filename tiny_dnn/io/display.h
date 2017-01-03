@@ -33,7 +33,7 @@ class progress_display {
  public:
     explicit progress_display(size_t expected_count_,
                               std::ostream& os = std::cout,
-                              const std::string& s1 = "\n", // leading strings
+                              const std::string& s1 = "\n",  // leading strings
                               const std::string& s2 = "",
                               const std::string& s3 = "")
     // os is hint; implementation may ignore, particularly in embedded systems
@@ -49,18 +49,18 @@ class progress_display {
              << m_s2 << "|----|----|----|----|----|----|----|----|----|----|"
              << std::endl  // endl implies flush, which ensures display
              << m_s3;
-        if ( !_expected_count ) _expected_count = 1;  // prevent divide by zero
+        if (!_expected_count) _expected_count = 1;  // prevent divide by zero
     }  // restart
 
     size_t operator+=(size_t increment) {
     //  Effects: Display appropriate progress tic if needed.
     //  Postconditions: count()== original count() + increment
     //  Returns: count().
-        if ( (_count += increment) >= _next_tic_count ) { display_tic(); }
+        if ((_count += increment) >= _next_tic_count) { display_tic(); }
         return _count;
     }
 
-    size_t operator++()           { return operator+=( 1 ); }
+    size_t operator++()           { return operator+=(1); }
     size_t count() const          { return _count; }
     size_t expected_count() const { return _expected_count; }
 
@@ -78,12 +78,12 @@ class progress_display {
         // to suppress spurious compiler warnings.
         size_t tics_needed =
             static_cast<size_t>(
-              (static_cast<double>(_count)/_expected_count)*50.0 );
-        do { m_os << '*' << std::flush; } while ( ++_tic < tics_needed );
+                (static_cast<double>(_count) / _expected_count) * 50.0);
+        do { m_os << '*' << std::flush; } while (++_tic < tics_needed);
         _next_tic_count =
-            static_cast<size_t>((_tic/50.0)*_expected_count);
-        if ( _count == _expected_count ) {
-            if ( _tic < 51 ) m_os << '*';
+            static_cast<size_t>((_tic / 50.0) * _expected_count);
+        if (_count == _expected_count) {
+            if (_tic < 51) m_os << '*';
             m_os << std::endl;
         }
     }  // display_tic

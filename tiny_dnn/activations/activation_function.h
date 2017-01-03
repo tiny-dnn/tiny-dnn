@@ -76,8 +76,8 @@ class identity : public function {
 class sigmoid : public function {
  public:
     using function::df;
-    float_t f(const vec_t& v, size_t i) const override { return float_t{1} / (float_t{1} + std::exp(-v[i])); }
-    float_t df(float_t y) const override { return y * (float_t{1} - y); }
+    float_t f(const vec_t& v, size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
+    float_t df(float_t y) const override { return y * (float_t(1) - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
@@ -102,8 +102,8 @@ class leaky_relu : public function {
 class elu : public function {
  public:
     using function::df;
-    float_t f(const vec_t& v, size_t i) const override { return (v[i]<float_t{0} ? (exp(v[i])- float_t{1}) : v[i]); }
-    float_t df(float_t y) const override { return (y > float_t{0} ? float_t{1} : (float_t{1}+y)); }
+    float_t f(const vec_t& v, size_t i) const override { return (v[i] < float_t(0) ? (exp(v[i]) - float_t(1)) : v[i]); }
+    float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1) + y)); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
@@ -119,7 +119,7 @@ class softmax : public function {
     }
 
     float_t df(float_t y) const override {
-        return y * (float_t{1} - y);
+        return y * (float_t(1) - y);
     }
 
     vec_t df(const vec_t& y, size_t index) const override {
@@ -156,7 +156,7 @@ class tan_h : public function {
         return x / std::sqrt(1.0 + x * x);// invsqrt(static_cast<float>(1.0 + x * x));
     }*/
 
-    float_t df(float_t y) const override { return float_t{1} - sqr(y); }
+    float_t df(float_t y) const override { return float_t(1) - sqr(y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(-0.8), float_t(0.8)); }
 
  private:
@@ -180,7 +180,7 @@ class tan_hp1m2 : public function {
         return ep / (ep + std::exp(-v[i]));
     }
 
-    float_t df(float_t y) const override { return 2 * y *(float_t{1} - y); }
+    float_t df(float_t y) const override { return 2 * y *(float_t(1) - y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 

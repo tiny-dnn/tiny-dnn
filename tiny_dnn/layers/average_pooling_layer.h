@@ -207,7 +207,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
         : Base(in_width * in_height * in_channels,
                conv_out_length(in_width, pool_size_x, stride_x, pad_type) *
                conv_out_length(in_height, pool_size_y, stride_y, pad_type) * in_channels,
-               in_channels, in_channels, float_t{1} / (pool_size_x * pool_size_y)),
+               in_channels, in_channels, float_t(1) / (pool_size_x * pool_size_y)),
                stride_x_(stride_x),
                stride_y_(stride_y),
                pool_size_x_(pool_size_x),

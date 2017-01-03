@@ -153,7 +153,8 @@ struct adam : public stateful_optimizer<2> {
     float_t b1;     // decay term
     float_t b2;     // decay term
     float_t b1_t;   // decay term power t
-    float_t b2_t;   // decay term power t   
+    float_t b2_t;   // decay term power t
+
  private:
     float_t eps;    // constant value to avoid zero-division
 };
@@ -199,9 +200,9 @@ struct momentum : public stateful_optimizer<1> {
         });
     }
 
-    float_t alpha;  // learning rate
-    float_t lambda; // weight decay
-    float_t mu;     // momentum
+    float_t alpha;   // learning rate
+    float_t lambda;  // weight decay
+    float_t mu;      // momentum
 };
 
 }  // namespace tiny_dnn
