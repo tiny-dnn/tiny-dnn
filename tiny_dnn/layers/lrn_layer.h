@@ -143,31 +143,8 @@ class lrn_layer : public feedforward_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<lrn_layer>& construct) {
-        shape3d in_shape;
-        serial_size_t size;
-        float_t alpha, beta;
-        norm_region region;
-
-        ar(cereal::make_nvp("in_shape", in_shape),
-           cereal::make_nvp("size", size),
-           cereal::make_nvp("alpha", alpha),
-           cereal::make_nvp("beta", beta),
-           cereal::make_nvp("region", region));
-        construct(in_shape, size, alpha, beta, region);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_shape", in_shape_),
-           cereal::make_nvp("size", size_),
-           cereal::make_nvp("alpha", alpha_),
-           cereal::make_nvp("beta", beta_),
-           cereal::make_nvp("region", region_));
-    }
+    template <class Archive, typename Activation>
+    friend void serialize(Archive& ar, lrn_layer<Activation>& layer);
 #endif
 
  private:

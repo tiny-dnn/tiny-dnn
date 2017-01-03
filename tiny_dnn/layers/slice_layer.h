@@ -129,25 +129,7 @@ class slice_layer : public layer {
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<slice_layer>& construct) {
-        shape3d in_shape;
-        slice_type slice_type;
-        serial_size_t num_outputs;
-
-        ar(cereal::make_nvp("in_size", in_shape),
-           cereal::make_nvp("slice_type", slice_type),
-           cereal::make_nvp("num_outputs", num_outputs));
-        construct(in_shape, slice_type, num_outputs);
-    }
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_),
-           cereal::make_nvp("slice_type", slice_type_),
-           cereal::make_nvp("num_outputs", num_outputs_));
-    }
+    friend void serialize(Archive& ar, slice_layer& layer);
 #endif
 
  private:

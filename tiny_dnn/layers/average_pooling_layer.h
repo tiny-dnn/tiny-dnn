@@ -264,35 +264,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive & ar,
-                                   cereal::construct<average_pooling_layer> & construct) {
-        shape3d in;
-        serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
-        padding pad_type;
-
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("pool_size_x", pool_size_x),
-           cereal::make_nvp("pool_size_y", pool_size_y),
-           cereal::make_nvp("stride_x", stride_x),
-           cereal::make_nvp("stride_y", stride_y),
-           cereal::make_nvp("pad_type", pad_type));
-
-        construct(in.width_, in.height_, in.depth_,
-                  pool_size_x, pool_size_y,
-                  stride_x, stride_y, pad_type);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_),
-           cereal::make_nvp("pool_size_x", pool_size_x_),
-           cereal::make_nvp("pool_size_y", pool_size_y_),
-           cereal::make_nvp("stride_x", stride_x_),
-           cereal::make_nvp("stride_y", stride_y_),
-           cereal::make_nvp("pad_type", pad_type_));
-    }
+    template <class Archive, typename Activation>
+    friend void serialize(Archive& ar, average_pooling_layer<Activation>& layer);
 #endif
 
     std::pair<serial_size_t, serial_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }
