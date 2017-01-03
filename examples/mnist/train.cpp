@@ -126,7 +126,7 @@ static void train_lenet(const std::string& data_dir_path) {
     nn.save("LeNet-model");
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     if (argc != 2) {
         std::cerr << "Usage : " << argv[0]
                   << " path_to_data (example:../data)" << std::endl;

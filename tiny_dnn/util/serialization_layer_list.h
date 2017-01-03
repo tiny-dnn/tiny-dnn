@@ -1,3 +1,4 @@
+// Copyright (c) 2017, Taiga Nomi
 #ifndef CNN_NO_SERIALIZATION
 
 CNN_REGISTER_LAYER_WITH_ACTIVATIONS(convolutional_layer, conv);

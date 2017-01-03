@@ -25,19 +25,21 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <vector>
 #include <type_traits>
 #include <limits>
 #include <cassert>
 #include <cstdio>
 #include <string>
+
 #include "aligned_allocator.h"
 #include "nn_error.h"
 #include "tiny_dnn/config.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
-#define NOMINMAX // tbb includes windows.h in tbb/machine/windows_api.h
+#define NOMINMAX  // tbb includes windows.h in tbb/machine/windows_api.h
 #endif
 #include <tbb/tbb.h>
 #include <tbb/task_group.h>
@@ -52,15 +54,16 @@ namespace tiny_dnn {
 
 #ifdef CNN_USE_TBB
 
-static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);//tbb::task_scheduler_init::deferred);
+static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);  // tbb::task_scheduler_init::deferred);
 
 typedef tbb::blocked_range<int> blocked_range;
 
-template<typename Func>
+template <typename Func>
 void parallel_for(int begin, int end, const Func& f, int grainsize) {
     tbb::parallel_for(blocked_range(begin, end, end - begin > grainsize ? grainsize : 1), f);
 }
-template<typename Func>
+
+template <typename Func>
 void xparallel_for(int begin, int end, const Func& f) {
     f(blocked_range(begin, end, 100));
 }
@@ -75,12 +78,12 @@ struct blocked_range {
 
     const_iterator begin() const { return begin_; }
     const_iterator end() const { return end_; }
-private:
+ private:
     int begin_;
     int end_;
 };
 
-template<typename Func>
+template <typename Func>
 void xparallel_for(size_t begin, size_t end, const Func& f) {
     blocked_range r(begin, end);
     f(r);
@@ -88,27 +91,27 @@ void xparallel_for(size_t begin, size_t end, const Func& f) {
 
 #if defined(CNN_USE_OMP)
 
-template<typename Func>
+template <typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     #pragma omp parallel for
-    for (int i=begin; i<end; ++i)
-        f(blocked_range(i,i+1));
+    for (int i = begin; i < end; ++i)
+        f(blocked_range(i, i + 1));
 }
 
 #elif defined(CNN_SINGLE_THREAD)
 
-template<typename Func>
+template <typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
     xparallel_for(static_cast<size_t>(begin), static_cast<size_t>(end), f);
 }
 
 #else
 
-template<typename Func>
-void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
+template <typename Func>
+void parallel_for(int start, int end, const Func& f, int /*grainsize*/) {
     int nthreads = std::thread::hardware_concurrency();
     int blockSize = (end - start) / nthreads;
-    if (blockSize*nthreads < end - start)
+    if (blockSize * nthreads < end - start)
         blockSize++;
 
     std::vector<std::future<void>> futures;
@@ -128,34 +131,34 @@ void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
         if (blockEnd > end) blockEnd = end;
     }
 
-    for (auto &future : futures)
+    for (auto& future : futures)
         future.wait();
 }
 
 #endif
 
-#endif // CNN_USE_TBB
+#endif  // CNN_USE_TBB
 
-template<typename T, typename U>
+template <typename T, typename U>
 bool value_representation(U const &value) {
     return static_cast<U>(static_cast<T>(value)) == value;
 }
 
-template<typename T, typename Func>
+template <typename T, typename Func>
 inline
-void for_(std::true_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
+void for_(std::true_type, bool parallelize, int begin, T end, Func f, int grainsize = 100) {
     parallelize = parallelize && value_representation<int>(end);
     parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) :
                   xparallel_for(begin, static_cast<int>(end), f);
 }
 
-template<typename T, typename Func>
+template <typename T, typename Func>
 inline
-void for_(std::false_type, bool parallelize, int begin, T end, Func f, int grainsize = 100){
+void for_(std::false_type, bool parallelize, int begin, T end, Func f, int grainsize = 100) {
     parallelize ? parallel_for(begin, static_cast<int>(end), f, grainsize) : xparallel_for(begin, end, f);
 }
 
-template<typename T, typename Func>
+template <typename T, typename Func>
 inline
 void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
     static_assert(std::is_integral<T>::value, "end must be integral type");
@@ -163,14 +166,13 @@ void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
 }
 
 template <typename T, typename Func>
-void for_i(bool parallelize, T size, Func f, int grainsize = 100)
-{
+void for_i(bool parallelize, T size, Func f, int grainsize = 100) {
 #ifdef CNN_SINGLE_THREAD
     parallelize = false;
 #endif
     for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
-#pragma omp parallel for
+        #pragma omp parallel for
 #endif
         for (int i = r.begin(); i < r.end(); i++)
             f(i);
@@ -182,4 +184,4 @@ void for_i(T size, Func f, int grainsize = 100) {
     for_i(true, size, f, grainsize);
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

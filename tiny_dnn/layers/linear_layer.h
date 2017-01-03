@@ -25,18 +25,19 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
+
 #include <algorithm>
 
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
 /**
  * element-wise operation: ```f(x) = h(scale*x+bias)```
  */
-template<typename Activation>
+template <typename Activation>
 class linear_layer : public feedforward_layer<Activation> {
-public:
+ public:
     CNN_USE_LAYER_MEMBERS;
 
     typedef feedforward_layer<Activation> Base;
@@ -46,7 +47,9 @@ public:
      * @param scale [in] factor by which to multiply
      * @param bias  [in] bias term
      **/
-    explicit linear_layer(serial_size_t dim, float_t scale = float_t(1), float_t bias = float_t(0))
+    explicit linear_layer(serial_size_t dim,
+                          float_t scale = float_t{1},
+                          float_t bias = float_t{0})
         : Base({vector_type::data}),
         dim_(dim), scale_(scale), bias_(bias) {}
 
@@ -98,25 +101,30 @@ public:
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<linear_layer> & construct) {
+    static void load_and_construct(Archive& ar,
+                                   cereal::construct<linear_layer>& construct) {
         serial_size_t dim;
         float_t scale, bias;
 
-        ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale), cereal::make_nvp("bias", bias));
+        ar(cereal::make_nvp("in_size", dim),
+           cereal::make_nvp("scale", scale),
+           cereal::make_nvp("bias", bias));
 
         construct(dim, scale, bias);
     }
 
     template <class Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive& ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
+        ar(cereal::make_nvp("in_size", dim_),
+           cereal::make_nvp("scale", scale_),
+           cereal::make_nvp("bias", bias_));
     }
 #endif
 
-protected:
+ protected:
     serial_size_t dim_;
     float_t scale_, bias_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

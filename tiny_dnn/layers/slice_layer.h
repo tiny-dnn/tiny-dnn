@@ -25,22 +25,22 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
 
 namespace tiny_dnn {
 
-    enum class slice_type {
-        slice_samples,
-        slice_channels
-    };
-
+enum class slice_type {
+    slice_samples,
+    slice_channels
+};
 
 /**
  * slice an input data into multiple outputs along a given slice dimension.
  **/
 class slice_layer : public layer {
-public:
+ public:
     typedef layer Base;
 
     /**
@@ -67,14 +67,18 @@ public:
      *   output[2]: 4x2x2x2
     **/
     slice_layer(const shape3d& in_shape, slice_type slice_type, serial_size_t num_outputs)
-    : layer(std::vector<vector_type>(1, vector_type::data), std::vector<vector_type>(num_outputs, vector_type::data)),
-      in_shape_(in_shape), slice_type_(slice_type), num_outputs_(num_outputs) {
+        : layer(std::vector<vector_type>(1, vector_type::data), std::vector<vector_type>(num_outputs, vector_type::data)),
+          in_shape_(in_shape),
+          slice_type_(slice_type),
+          num_outputs_(num_outputs) {
         set_shape();
     }
 
     slice_layer(const layer& prev_layer, slice_type slice_type, serial_size_t num_outputs)
         : layer(std::vector<vector_type>(1, vector_type::data), std::vector<vector_type>(num_outputs, vector_type::data)),
-        in_shape_(prev_layer.out_shape()[0]), slice_type_(slice_type), num_outputs_(num_outputs) {
+          in_shape_(prev_layer.out_shape()[0]),
+          slice_type_(slice_type),
+          num_outputs_(num_outputs) {
         set_shape();
     }
 
@@ -125,23 +129,28 @@ public:
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<slice_layer> & construct) {
+    static void load_and_construct(Archive& ar,
+                                   cereal::construct<slice_layer>& construct) {
         shape3d in_shape;
         slice_type slice_type;
         serial_size_t num_outputs;
 
-        ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("slice_type", slice_type), cereal::make_nvp("num_outputs", num_outputs));
+        ar(cereal::make_nvp("in_size", in_shape),
+           cereal::make_nvp("slice_type", slice_type),
+           cereal::make_nvp("num_outputs", num_outputs));
         construct(in_shape, slice_type, num_outputs);
     }
 
     template <class Archive>
-    void serialize(Archive & ar) {
+    void serialize(Archive& ar) {
         layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("slice_type", slice_type_), cereal::make_nvp("num_outputs", num_outputs_));
+        ar(cereal::make_nvp("in_size", in_shape_),
+           cereal::make_nvp("slice_type", slice_type_),
+           cereal::make_nvp("num_outputs", num_outputs_));
     }
 #endif
 
-private:
+ private:
     void slice_data_forward(const tensor_t& in_data,
                             std::vector<tensor_t*>& out_data) {
         const vec_t* in  = &in_data[0];
@@ -176,8 +185,8 @@ private:
 
         for (serial_size_t i = 0; i < num_outputs_; i++) {
             for (serial_size_t s = 0; s < num_samples; s++) {
-                float_t       *out = &(*out_data[i])[s][0];
-                const float_t *in  = &in_data[s][0] + channel_idx*spatial_dim;
+                float_t*       out = &(*out_data[i])[s][0];
+                const float_t* in  = &in_data[s][0] + channel_idx * spatial_dim;
 
                 std::copy(in, in + slice_size_[i] * spatial_dim, out);
             }
@@ -193,8 +202,8 @@ private:
 
         for (serial_size_t i = 0; i < num_outputs_; i++) {
             for (serial_size_t s = 0; s < num_samples; s++) {
-                const float_t *out = &(*out_grad[i])[s][0];
-                float_t       *in = &in_grad[s][0] + channel_idx*spatial_dim;
+                const float_t* out = &(*out_grad[i])[s][0];
+                float_t*       in = &in_grad[s][0] + channel_idx * spatial_dim;
 
                 std::copy(out, out + slice_size_[i] * spatial_dim, in);
             }
@@ -256,4 +265,4 @@ private:
     std::vector<serial_size_t> slice_size_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

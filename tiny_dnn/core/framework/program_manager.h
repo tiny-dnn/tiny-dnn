@@ -146,8 +146,8 @@ class ProgramManager {
         programs_.insert({ key_program, program });
 */
 #else  // USE_OPENCL OR USE_CUDA
-    CNN_UNREFERENCED_PARAMETER(device);
-    CNN_UNREFERENCED_PARAMETER(layer);
+        CNN_UNREFERENCED_PARAMETER(device);
+        CNN_UNREFERENCED_PARAMETER(layer);
 #endif
     }
 

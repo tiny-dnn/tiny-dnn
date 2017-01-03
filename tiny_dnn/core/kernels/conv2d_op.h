@@ -67,7 +67,7 @@ class Conv2dOp : public core::OpKernel {
         tensor_t&      out_data = context.output(1);
 
         // initialize outputs
-        fill_tensor(out_data, float_t(0));
+        fill_tensor(out_data, float_t{0});
 
         // call convolution algorithm depending
         // on the selected engine type

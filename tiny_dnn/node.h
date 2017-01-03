@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <sstream>
 #include <iomanip>
 #include <memory>
@@ -60,7 +61,7 @@ typedef layer* layerptr_t;
  * base class of all kind of tinny-cnn data
  **/
 class node : public std::enable_shared_from_this<node> {
-public:
+ public:
     node(serial_size_t in_size, serial_size_t out_size)
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}
@@ -82,6 +83,7 @@ public:
 
     std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
     std::vector<node*> next_nodes() const; // @todo refactor and remove this method
+
  protected:
     node() = delete;
 
@@ -247,5 +249,4 @@ inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
     return rhs;
 }
 
-
-}   // namespace tiny_dnn
+}  // namespace tiny_dnn

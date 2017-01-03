@@ -69,15 +69,15 @@ namespace tiny_dnn {
  * Data is held by a std::vector with 64 bytes alignment.
  * Unmutable if kConst == true
  */
-template<typename U = float_t, size_t kDimensions = 4, bool kConst = false,
-         typename Allocator = aligned_allocator<U, 64> >
+template <typename U = float_t, size_t kDimensions = 4, bool kConst = false,
+          typename Allocator = aligned_allocator<U, 64> >
 class Tensor {
     // Define constant types for constant Tensor,
     // and mutable ones for mutable Tensor
     typedef typename std::conditional<kConst,
                                       const TensorStorage<U, Allocator>,
                                       TensorStorage<U, Allocator>>::type TensorStorageType;
-    typedef typename std::conditional<kConst, const U *, U *>::type
+    typedef typename std::conditional<kConst, const U*, U*>::type
         UPtr;
     typedef typename std::shared_ptr<TensorStorageType> TensorStoragePointer;
     typedef typename std::conditional<kConst,
@@ -178,7 +178,7 @@ class Tensor {
      * @param args indexes in tensor
      * @return the value of a specified index in the tensor
      */
-    template<typename... Args>
+    template <typename... Args>
     U& host_at(const Args... args) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         return *host_ptr(args...);
@@ -190,7 +190,7 @@ class Tensor {
      * @param args indexes in tensor
      * @return the value of a specified index in the tensor
      */
-    template<typename... Args>
+    template <typename... Args>
     U host_at(const Args... args) const {
         return *host_ptr(args...);
     }
@@ -216,7 +216,7 @@ class Tensor {
      * @param args index of rest (k-1) dimensions.
      * @return offset from the first index of (n-k)th dimension
      */
-    template<typename... Args>
+    template <typename... Args>
     size_t host_pos(const size_t  d,
                     const Args... args) const {
         static_assert(sizeof...(args) < kDimensions,
@@ -232,12 +232,12 @@ class Tensor {
         return (d * shift + host_pos(args...));
     }
 
-    template<typename... Args>
+    template <typename... Args>
     UPtr host_ptr(const Args... args) const {
         return &(*host_iter(args...));
     }
 
-    template<typename... Args>
+    template <typename... Args>
     StorageIterator host_iter (const Args... args) const {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         static_assert(sizeof...(args) == kDimensions,
@@ -290,7 +290,7 @@ class Tensor {
 
     //TODO(Randl): variadic template version of reshape
     //TODO(Randl): non-checked version
-    void reshape(const std::array<size_t, kDimensions> &sz) {
+    void reshape(const std::array<size_t, kDimensions>& sz) {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         //No size change for reshape
         if (calcSize() != product(sz)) {
@@ -299,7 +299,7 @@ class Tensor {
         shape_ = sz;
     }
 
-    void resize(const std::array<size_t, kDimensions> &sz) {
+    void resize(const std::array<size_t, kDimensions>& sz) {
         if (offset_ != 0 || size_ != storage_ptr_->size()) {
             throw nn_error("Resize of partial view is impossible.");
         }

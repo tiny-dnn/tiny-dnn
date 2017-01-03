@@ -43,7 +43,7 @@ fully_connected_op_internal(const tensor_t&     in_data,
         vec_t& out = out_data[sample];
 
         for (serial_size_t i = 0; i < params.out_size_; i++) {
-            out[i] = float_t(0);
+            out[i] = float_t{0};
             for (serial_size_t c = 0; c < params.in_size_; c++) {
                 out[i] += W[c * params.out_size_ + i] * in[c];
             }

@@ -30,9 +30,9 @@
 
 namespace tiny_dnn {
 
-template<typename Activation>
+template <typename Activation>
 class partial_connected_layer : public feedforward_layer<Activation> {
-public:
+ public:
     CNN_USE_LAYER_MEMBERS;
 
     typedef std::vector<std::pair<serial_size_t, serial_size_t> > io_connections;
@@ -44,14 +44,14 @@ public:
                             serial_size_t out_dim,
                             size_t     weight_dim,
                             size_t     bias_dim,
-                            float_t    scale_factor = float_t(1))
+                            float_t    scale_factor = float_t{1})
         : Base(std_input_order(bias_dim > 0)),
           weight2io_(weight_dim),
           out2wi_(out_dim),
           in2wo_(in_dim),
           bias2out_(bias_dim),
           out2bias_(out_dim),
-          scale_factor_(scale_factor){}
+          scale_factor_(scale_factor) {}
 
     size_t param_size() const {
         size_t total_param = 0;
@@ -70,7 +70,9 @@ public:
         return max_size(in2wo_);
     }
 
-    void connect_weight(serial_size_t input_index, serial_size_t output_index, serial_size_t weight_index) {
+    void connect_weight(serial_size_t input_index,
+                        serial_size_t output_index,
+                        serial_size_t weight_index) {
         weight2io_[weight_index].emplace_back(input_index, output_index);
         out2wi_[output_index].emplace_back(weight_index, input_index);
         in2wo_[input_index].emplace_back(weight_index, output_index);
@@ -97,10 +99,10 @@ public:
 
                 float_t& a_element = a_sample[i];
 
-                a_element = float_t(0);
+                a_element = float_t{0};
 
-                for (auto connection : connections)// 13.1%
-                    a_element += W[connection.first] * in[sample][connection.second]; // 3.2%
+                for (auto connection : connections)
+                    a_element += W[connection.first] * in[sample][connection.second];
 
                 a_element *= scale_factor_;
                 a_element += b[out2bias_[i]];
@@ -128,21 +130,21 @@ public:
             for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range& r) {
                 for (int i = r.begin(); i != r.end(); i++) {
                     const wo_connections& connections = in2wo_[i];
-                    float_t delta = float_t(0);
+                    float_t delta {0};
 
                     for (auto connection : connections)
-                        delta += W[connection.first] * curr_delta[sample][connection.second]; // 40.6%
+                        delta += W[connection.first] * curr_delta[sample][connection.second];
 
-                    prev_delta[sample][i] = delta * scale_factor_; // 2.1%
+                    prev_delta[sample][i] = delta * scale_factor_;
                 }
             });
 
             for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range& r) {
                 for (int i = r.begin(); i < r.end(); i++) {
                     const io_connections& connections = weight2io_[i];
-                    float_t diff = float_t(0);
+                    float_t diff {0};
 
-                    for (auto connection : connections) // 11.9%
+                    for (auto connection : connections)
                         diff += prev_out[sample][connection.first] * curr_delta[sample][connection.second];
 
                     dW[i] += diff * scale_factor_;
@@ -151,7 +153,7 @@ public:
 
             for (size_t i = 0; i < bias2out_.size(); i++) {
                 const std::vector<serial_size_t>& outs = bias2out_[i];
-                float_t diff = float_t(0);
+                float_t diff {0};
 
                 for (auto o : outs)
                     diff += curr_delta[sample][o];
@@ -161,13 +163,13 @@ public:
         }
     }
 
-protected:
-    std::vector<io_connections> weight2io_; // weight_id -> [(in_id, out_id)]
-    std::vector<wi_connections> out2wi_; // out_id -> [(weight_id, in_id)]
-    std::vector<wo_connections> in2wo_; // in_id -> [(weight_id, out_id)]
+ protected:
+    std::vector<io_connections> weight2io_;  // weight_id -> [(in_id, out_id)]
+    std::vector<wi_connections> out2wi_;     // out_id -> [(weight_id, in_id)]
+    std::vector<wo_connections> in2wo_;      // in_id -> [(weight_id, out_id)]
     std::vector<std::vector<serial_size_t> > bias2out_;
     std::vector<size_t> out2bias_;
     float_t scale_factor_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

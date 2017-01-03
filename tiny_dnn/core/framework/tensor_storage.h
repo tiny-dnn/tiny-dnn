@@ -78,8 +78,8 @@ static inline size_t compute_offset(const C1 &start, const C2 &shape) {
     return res;
 }
 
-template<typename U = float_t,
-         typename Allocator = aligned_allocator<U, 64>>
+template <typename U = float_t,
+          typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {
     typedef typename std::vector<U, Allocator>::iterator DataIter;
     typedef typename std::vector<U, Allocator>::const_iterator ConstDataIter;
@@ -179,7 +179,7 @@ class TensorStorage {
                                host_data_->size(),
                                // using const_cast<> to avoid making host_data_
                                // entirely mutable
-                               const_cast<U *>(host_data_->data()));
+                               const_cast<U*>(host_data_->data()));
 #endif
             data_is_on_host_ = true;
             data_dirty_ = false;

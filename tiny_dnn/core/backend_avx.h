@@ -25,7 +25,6 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-
 #include "tiny_dnn/core/backend.h"
 
 #include "tiny_dnn/core/kernels/avx_deconv2d_kernel.h"
@@ -112,9 +111,9 @@ class avx_backend : public backend {
         const vec_t& W = (*in_data[1])[0];
         const vec_t& bias = (*in_data[2])[0];
         tensor_t&       a = *out_data[1];
-        const tensor_t &in = *in_data[0]; // input
+        const tensor_t &in = *in_data[0];  // input
 
-        fill_tensor(a, float_t(0));
+        fill_tensor(a, float_t{0});
 
         kernels::avx_deconv2d_kernel(*params_d_,
             in, W, bias, a, layer_->parallelize());
@@ -141,7 +140,6 @@ class avx_backend : public backend {
                   const std::vector<tensor_t*>& out_data,
                   std::vector<tensor_t*>&       out_grad,
                   std::vector<tensor_t*>&       in_grad) override {
-
         deconv_layer_worker_specific_storage& cws = (*deconv_layer_worker_storage_);
         if (params_d_->pad_type == padding::same)
             copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
@@ -159,7 +157,7 @@ class avx_backend : public backend {
 
         backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-        fill_tensor(*prev_delta, float_t(0));
+        fill_tensor(*prev_delta, float_t{0});
 
         kernels::avx_deconv2d_back_kernel(*params_d_,
             prev_out, W, dW, db, curr_delta, prev_delta);
@@ -204,12 +202,12 @@ class avx_backend : public backend {
     backend_t type() const override { return backend_t::avx; }
 
  private:
-    /* Pointer to the convolution parameters */
+    /* Pointers to the convolution parameters */
     conv_params* params_c_;
     deconv_params* params_d_;
     fully_params* params_f_;
 
-    /* Pointer to the workers */
+    /* Pointers to the workers */
     conv_layer_worker_specific_storage* conv_layer_worker_storage_;
     deconv_layer_worker_specific_storage* deconv_layer_worker_storage_;
     max_pooling_layer_worker_specific_storage* max_pooling_layer_worker_storage_;
