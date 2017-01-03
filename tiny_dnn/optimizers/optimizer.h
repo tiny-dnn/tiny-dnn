@@ -107,8 +107,7 @@ struct RMSprop : public stateful_optimizer<1> {
     void update(const vec_t& dW, vec_t& W, bool parallelize) {
         vec_t& g = get<0>(W);
 
-        for_i(parallelize, static_cast<int>(W.size()), [&](int i)
-        {
+        for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
             g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
             W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
         });
