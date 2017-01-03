@@ -400,7 +400,7 @@ inline void printAvailableDevice(const serial_size_t platform_id,
     printf(" > Max work-group size          %zu\n", device.MaxWorkGroupSize());
     printf(" > Max thread dimensions        %zu\n", device.MaxWorkItemDimensions());
     printf(" > Max work-group sizes:\n");
-    for (auto i=size_t{0}; i<device.MaxWorkItemDimensions(); ++i) {
+    for (auto i = size_t{0}; i < device.MaxWorkItemDimensions(); ++i) {
         printf("   - in the %zu-dimension         %zu\n", i, device.MaxWorkItemSizes()[i]);
     }
     printf(" > Local memory per work-group  %zu bytes\n", device.LocalMemSize());

@@ -150,7 +150,7 @@ struct float_avx {
     static register_type loadu(const value_type* px) { return _mm256_loadu_ps(px); }
     static void store(value_type* px, const register_type& v) { _mm256_store_ps(px, v); }
     static void storeu(value_type* px, const register_type& v) { _mm256_storeu_ps(px, v); }
-    static value_type resemble(const register_type& x) { 
+    static value_type resemble(const register_type& x) {
         VECTORIZE_ALIGN(32) float tmp[8];
         _mm256_store_ps(tmp, x);
         return std::accumulate(tmp, tmp + 8, 0.0f);
@@ -174,7 +174,7 @@ struct double_avx {
     static value_type resemble(const register_type& x) {
         VECTORIZE_ALIGN(32) double tmp[4];
         _mm256_store_pd(tmp, x);
-        return std::accumulate(tmp, tmp + 4, 0.0);  
+        return std::accumulate(tmp, tmp + 4, 0.0);
     }
 };
 
@@ -199,8 +199,8 @@ template <typename T>
 inline typename T::value_type dot_product_nonaligned(const typename T::value_type* f1, const typename T::value_type* f2, std::size_t  size) {
     typename T::register_type result = T::zero();
 
-    for (std::size_t i = 0; i < size / T::unroll_size; i++) 
-        result = T::add(result, T::mul(T::loadu(&f1[i * T::unroll_size]), T::loadu(&f2[i * T::unroll_size])));  
+    for (std::size_t i = 0; i < size / T::unroll_size; i++)
+        result = T::add(result, T::mul(T::loadu(&f1[i * T::unroll_size]), T::loadu(&f2[i * T::unroll_size])));
 
     typename T::value_type sum = T::resemble(result);
 
@@ -218,9 +218,9 @@ inline typename T::value_type dot_product_aligned(const typename T::value_type* 
     assert(is_aligned(T(), f1));
     assert(is_aligned(T(), f2));
 
-    for (std::size_t i = 0; i < size / T::unroll_size; i++) 
-        result = T::add(result, T::mul(T::load(&f1[i * T::unroll_size]), T::load(&f2[i * T::unroll_size])));  
-    
+    for (std::size_t i = 0; i < size / T::unroll_size; i++)
+        result = T::add(result, T::mul(T::load(&f1[i * T::unroll_size]), T::load(&f2[i * T::unroll_size])));
+
     typename T::value_type sum = T::resemble(result);
 
     for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
@@ -282,7 +282,7 @@ inline void reduce_aligned(const typename T::value_type* src, std::size_t  size,
         dst[i] += src[i];
 }
 
-} // namespace detail
+}  // namespace detail
 
 #if defined(CNN_USE_AVX)
 #define VECTORIZE_TYPE(T) detail::avx<T>

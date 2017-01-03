@@ -50,14 +50,14 @@ class dropout_layer : public layer {
         : Base({vector_type::data}, {vector_type::data}),
           phase_(phase),
           dropout_rate_(dropout_rate),
-          scale_(float_t{1} / (float_t{1} - dropout_rate_)),
+          scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           in_size_(in_dim) {
         mask_.resize(1, std::vector<uint8_t>(in_dim));
         clear_mask();
     }
 
     dropout_layer(const dropout_layer& obj) = default;
-    virtual ~dropout_layer(){}
+    virtual ~dropout_layer() {}
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     dropout_layer(dropout_layer&& obj) = default;
@@ -67,7 +67,7 @@ class dropout_layer : public layer {
 
     void set_dropout_rate(float_t rate) {
         dropout_rate_ = rate;
-        scale_ = float_t{1} / (float_t{1} - dropout_rate_);
+        scale_ = float_t(1) / (float_t(1) - dropout_rate_);
     }
 
     float_t dropout_rate() const {

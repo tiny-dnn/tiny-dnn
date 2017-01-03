@@ -282,7 +282,6 @@ class max_pooling_layer : public feedforward_layer<Activation> {
         } else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
-
     }
 
     void set_maxpool_params(const shape3d& in,

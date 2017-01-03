@@ -71,7 +71,7 @@ class aligned_allocator {
             throw nn_error("failed to allocate");
         return static_cast<pointer>(p);
     }
-    
+
     size_type max_size() const {
         return ~static_cast<std::size_t>(0) / sizeof(T);
     }

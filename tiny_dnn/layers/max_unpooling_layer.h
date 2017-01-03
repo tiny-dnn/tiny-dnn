@@ -225,7 +225,6 @@ class max_unpooling_layer : public feedforward_layer<Activation> {
                     connect_kernel(static_cast<serial_size_t>(unpool_size_),
                                    x, y, c);
     }
-
 };
 
 }  // namespace tiny_dnn

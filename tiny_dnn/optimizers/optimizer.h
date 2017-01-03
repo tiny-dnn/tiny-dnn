@@ -142,10 +142,10 @@ struct adam : public stateful_optimizer<2> {
         b1_t*=b1; b2_t*=b2;
 
         for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
-            mt[i] = b1 * mt[i] + (float_t{1} - b1) * dW[i];
-            vt[i] = b2 * vt[i] + (float_t{1} - b2) * dW[i] * dW[i];
+            mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
+            vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
-            W[i] -= alpha * ( mt[i]/(float_t{1} -b1_t) ) / std::sqrt( (vt[i]/(float_t{1}-b2_t)) + eps);
+            W[i] -= alpha * (mt[i] / (float_t(1) - b1_t)) / std::sqrt((vt[i] / (float_t(1) - b2_t)) + eps);
         });
     }
 
@@ -165,7 +165,7 @@ struct adam : public stateful_optimizer<2> {
  * slightly faster than tiny_dnn::momentum
  **/
 struct gradient_descent : public optimizer {
-    gradient_descent() : alpha(float_t(0.01)), lambda(float_t{0}) {}
+    gradient_descent() : alpha(float_t(0.01)), lambda(float_t(0)) {}
 
     void update(const vec_t& dW, vec_t& W, bool parallelize) {
         for_i(parallelize, static_cast<int>(W.size()), [&](int i){
@@ -173,8 +173,8 @@ struct gradient_descent : public optimizer {
         });
     }
 
-    float_t alpha; // learning rate
-    float_t lambda; // weight decay
+    float_t alpha;   // learning rate
+    float_t lambda;  // weight decay
 };
 
 

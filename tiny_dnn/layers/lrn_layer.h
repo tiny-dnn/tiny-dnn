@@ -195,7 +195,7 @@ class lrn_layer : public feedforward_layer<Activation> {
             float_t* dst = &out[in_shape_.get_index(0, 0, i)];
             const float_t* src = &in[in_shape_.get_index(0, 0, i)];
             for (serial_size_t j = 0; j < wxh; j++)
-                dst[j] = src[j] * std::pow(float_t{1} + alpha_div_size * in_square_[j], -beta_);
+                dst[j] = src[j] * std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
         }
     }
 

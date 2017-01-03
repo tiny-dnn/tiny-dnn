@@ -226,7 +226,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) override { 
+                             std::vector<tensor_t*>&       out_data) override {
         // apply padding to the input tensor
         padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
@@ -298,8 +298,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         if (params_.has_bias) {
             return { params_.in, params_.weight,
                 index3d<serial_size_t>(1, 1, params_.out.depth_) };
-        }
-        else {
+        } else {
             return { params_.in, params_.weight };
         }
     }
@@ -311,12 +310,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return std::string("conv");
     }
 
-    //TODO(edgar): check this
+    // TODO(edgar): check this
     std::string kernel_file() const override {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
     }
 
-    //TODO(edgar): is it really needed?
+    // TODO(edgar): is it really needed?
     std::string kernel_header() const override {
         std::stringstream ss;
         ss << "#define MULTI\n";
@@ -392,8 +391,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
            cereal::make_nvp("pad_type", pad_type),
            cereal::make_nvp("has_bias", has_bias),
            cereal::make_nvp("w_stride", w_stride),
-           cereal::make_nvp("h_stride", h_stride)
-        );
+           cereal::make_nvp("h_stride", h_stride));
 
         construct(in.width_, in.height_, w_width, w_height, in.depth_,
                   out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
@@ -412,14 +410,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("pad_type", params_.pad_type),
             cereal::make_nvp("has_bias", params_.has_bias),
             cereal::make_nvp("w_stride", params_.w_stride),
-            cereal::make_nvp("h_stride", params_.h_stride)
-            );
+            cereal::make_nvp("h_stride", params_.h_stride));
 #else
         throw nn_error("TinyDNN was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
     }
 
-private:
+ private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
         return (params_.pad_type == padding::valid) ? in[0]
                                                     : &cws_.prev_out_padded_;

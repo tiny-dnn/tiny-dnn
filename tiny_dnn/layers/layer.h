@@ -627,7 +627,7 @@ class layer : public node {
     }
 
     void update_weight(optimizer* o, serial_size_t batch_size) {
-        float_t rcp_batch_size = float_t{1} / float_t(batch_size);
+        float_t rcp_batch_size = float_t(1) / float_t(batch_size);
         auto& diff = weights_diff_;
         for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {

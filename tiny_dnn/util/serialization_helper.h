@@ -128,8 +128,8 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 template <typename OutputArchive>
 template <typename T>
 void serialization_helper<OutputArchive>::save_layer_impl(OutputArchive& oa, const layer* layer) {
-    oa (cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
-                         *dynamic_cast<const T*>(layer)));
+    oa(cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
+                        *dynamic_cast<const T*>(layer)));
 }
 
 template <typename OutputArchive>
@@ -145,4 +145,3 @@ void layer::serialize_prolog(Archive & ar) {
 }
 
 }  // namespace tiny_dnn
-

@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (c) 2016, Taiga Nomi
     All rights reserved.
 

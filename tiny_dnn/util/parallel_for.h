@@ -54,7 +54,7 @@ namespace tiny_dnn {
 
 #ifdef CNN_USE_TBB
 
-static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);  //tbb::task_scheduler_init::deferred);
+static tbb::task_scheduler_init tbbScheduler(tbb::task_scheduler_init::automatic);  // tbb::task_scheduler_init::deferred);
 
 typedef tbb::blocked_range<int> blocked_range;
 

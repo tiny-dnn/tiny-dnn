@@ -192,7 +192,7 @@ class image {
         data_.resize(width * height * depth_);
         width_ = width;
         height_ = height;
-        //depth_ = depth;
+        // depth_ = depth;
     }
 
     void fill(intensity_t value) {

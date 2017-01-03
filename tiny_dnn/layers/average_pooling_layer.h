@@ -223,7 +223,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
 
         init_connection(pool_size_x, pool_size_y);
     }
-    
+
     std::vector<index3d<serial_size_t>> in_shape() const override {
         return { in_, w_, index3d<serial_size_t>(1, 1, out_.depth_) };
     }

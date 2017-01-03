@@ -12,13 +12,13 @@ namespace tiny_dnn {
 
 class timer {
  public:
-    timer():  t1(std::chrono::high_resolution_clock::now()){};
-    float_t elapsed(){return std::chrono::duration_cast<std::chrono::duration<float_t>>(std::chrono::high_resolution_clock::now() - t1).count();}
-    void restart(){t1 = std::chrono::high_resolution_clock::now();}
-    void start(){t1 = std::chrono::high_resolution_clock::now();}
-    void stop(){t2 = std::chrono::high_resolution_clock::now();}
-    float_t total(){stop();return std::chrono::duration_cast<std::chrono::duration<float_t>>(t2 - t1).count();}
-    ~timer(){}
+    timer():  t1(std::chrono::high_resolution_clock::now()) {}
+    float_t elapsed() { return std::chrono::duration_cast<std::chrono::duration<float_t>>(std::chrono::high_resolution_clock::now() - t1).count(); }
+    void restart() { t1 = std::chrono::high_resolution_clock::now(); }
+    void start() { t1 = std::chrono::high_resolution_clock::now(); }
+    void stop() { t2 = std::chrono::high_resolution_clock::now(); }
+    float_t total() { stop(); return std::chrono::duration_cast<std::chrono::duration<float_t>>(t2 - t1).count(); }
+    ~timer() {}
  private:
     std::chrono::high_resolution_clock::time_point t1, t2;
 };
@@ -50,7 +50,7 @@ class progress_display {
              << std::endl  // endl implies flush, which ensures display
              << m_s3;
         if ( !_expected_count ) _expected_count = 1;  // prevent divide by zero
-    } // restart
+    }  // restart
 
     size_t operator+=(size_t increment) {
     //  Effects: Display appropriate progress tic if needed.
@@ -80,7 +80,7 @@ class progress_display {
             static_cast<size_t>(
               (static_cast<double>(_count)/_expected_count)*50.0 );
         do { m_os << '*' << std::flush; } while ( ++_tic < tics_needed );
-        _next_tic_count = 
+        _next_tic_count =
             static_cast<size_t>((_tic/50.0)*_expected_count);
         if ( _count == _expected_count ) {
             if ( _tic < 51 ) m_os << '*';

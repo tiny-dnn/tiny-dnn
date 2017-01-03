@@ -153,7 +153,7 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
                             serial_size_t pooling_size)
         : Base(in_width * in_height * in_channels,
                in_width * in_height * in_channels * sqr(pooling_size),
-               in_channels, in_channels, float_t{1} * sqr(pooling_size)),
+               in_channels, in_channels, float_t(1) * sqr(pooling_size)),
           stride_(pooling_size),
           in_(in_width, in_height, in_channels),
           out_(in_width * pooling_size, in_height * pooling_size, in_channels),
@@ -176,7 +176,7 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
         : Base(in_width * in_height * in_channels,
                unpool_out_dim(in_width, pooling_size, stride) *
                unpool_out_dim(in_height, pooling_size, stride) * in_channels,
-               in_channels, in_channels, float_t{1} * sqr(pooling_size)),
+               in_channels, in_channels, float_t(1) * sqr(pooling_size)),
           stride_(stride),
           in_(in_width, in_height, in_channels),
           out_(unpool_out_dim(in_width, pooling_size, stride),
