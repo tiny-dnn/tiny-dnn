@@ -45,7 +45,7 @@
 #include <tbb/task_group.h>
 #endif
 
-#ifndef CNN_USE_OMP
+#if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
 #include <thread>
 #include <future>
 #endif
