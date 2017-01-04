@@ -105,7 +105,7 @@ class archive {
     void save(const std::string &path_to_archive_file) const {
         
         std::ofstream ofs(path_to_archive_file, std::ios::binary | std::ios::out);
-        cereal::JSONOutputArchive bo(ofs);
+        cereal::JSONOutputArchive bo(ofs, cereal::JSONOutputArchive::Options::NoIndent());
         net.to_archive(bo);
         
         bo(cereal::make_nvp("width", mean.width()),
