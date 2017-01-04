@@ -108,10 +108,11 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
     if (magic_number != 0x00000801 || num_items <= 0)
         throw nn_error("MNIST label-file format error");
 
+    labels->resize(num_items);
     for (uint32_t i = 0; i < num_items; i++) {
         uint8_t label;
         ifs.read((char*) &label, 1);
-        labels->push_back((label_t) label);
+        (*labels)[i] = static_cast<label_t>(label);
     }
 }
 
@@ -158,10 +159,11 @@ inline void parse_mnist_images(const std::string& image_file,
 
     detail::parse_mnist_header(ifs, header);
 
+    images->resize(header.num_items);
     for (uint32_t i = 0; i < header.num_items; i++) {
         vec_t image;
         detail::parse_mnist_image(ifs, header, scale_min, scale_max, x_padding, y_padding, image);
-        images->push_back(image);
+        (*images)[i] = image;
     }
 }
 

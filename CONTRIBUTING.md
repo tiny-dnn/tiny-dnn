@@ -30,10 +30,9 @@ These are just guidelines, not rules, and feel free to propose changes to this d
     - CPU/GPU optimized code should be extracted as a separated file, and should be guarded as preprocessor macro.
 
 ### Preferred coding style 
-- Use ```snake_case``` for identifiers
-- Use ```SCREAMING_SNAKE_CASE_START_WITH_CNN``` for preprocessor macros.
-- Use 4-spaces instead of tabs.
 - Use [Google coding style guide](https://google.github.io/styleguide/cppguide.html) with some exceptions:
+    - Use ```CNN_NAME_OF_THE_MACRO``` style for preprocessor macros.   
+    - Use ```snake_case``` for rest of identifiers
     - ["We do not use C++ exceptions"](https://google.github.io/styleguide/cppguide.html#Exceptions) - We are using exceptions which throw ```tiny_dnn::nn_error``` or its subclass to keep error handling simple.
     - ["Avoid using Run Time Type Information (RTTI)"](https://google.github.io/styleguide/cppguide.html#Run-Time_Type_Information__RTTI_) - We are using RTTI for serialization/deserialization.
     - ["All parameters passed by reference must be labeled const"](https://google.github.io/styleguide/cppguide.html#Reference_Arguments) - We sometimes use non-const reference to 1) avoid null-pointer dereference, or 2) keep code clean (especially when overloading ```operator << (std::ostream&,T)```

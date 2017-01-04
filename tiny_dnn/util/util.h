@@ -36,12 +36,14 @@
 #include <string>
 #include <sstream>
 
+#ifndef CNN_NO_SERIALIZATION
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/deque.hpp>
+#endif
 
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/macro.h"
@@ -182,9 +184,13 @@ struct index3d {
 
     template <class Archive>
     void serialize(Archive & ar) {
+#ifndef CNN_NO_SERIALIZATION
         ar(cereal::make_nvp("width", width_));
         ar(cereal::make_nvp("height", height_));
         ar(cereal::make_nvp("depth", depth_));
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     T width_;
@@ -279,9 +285,9 @@ std::vector<T> filter(const std::vector<T>& vec, Pred p) {
 
 template <typename Result, typename T, typename Pred>
 std::vector<Result> map_(const std::vector<T>& vec, Pred p) {
-    std::vector<Result> res;
-    for (auto& v : vec) {
-        res.push_back(p(v));
+    std::vector<Result> res(vec.size());
+    for (size_t i=0; i<vec.size(); ++i) {
+        res[i] = p(vec[i]);
     }
     return res;
 }

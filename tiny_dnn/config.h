@@ -58,13 +58,29 @@
  */
 #define CNN_USE_STDOUT
 
+//#define CNN_SINGLE_THREAD
 
 /**
  * disable serialization/deserialization function
- * You can uncomment this to speedup compilation&linking time,
+ * You can uncomment this to speedup compilation & linking time,
  * if you don't use network::save / network::load functions.
  **/
 //#define CNN_NO_SERIALIZATION
+
+/**
+ * Enable Image API support.
+ * Currently we use stb by default.
+ **/
+//#define DNN_USE_IMAGE_API
+
+/**
+ * Enable Gemmlowp support.
+ **/
+#ifdef USE_GEMMLOWP
+#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
+#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
+#endif
+#endif  // USE_GEMMLOWP
 
 /**
  * number of task in batch-gradient-descent.
@@ -76,9 +92,10 @@
 #define CNN_TASK_SIZE 8
 #endif
 
-#if !defined(_MSC_VER) && !defined(_WIN32) && !defined(WIN32)
-#define CNN_USE_GEMMLOWP // gemmlowp doesn't support MSVC/mingw
-#endif
+/**
+ * Use std::tr1 namespace for random computations.
+ **/
+//#define CNN_TR1_RANDOM
 
 namespace tiny_dnn {
 

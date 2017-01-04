@@ -51,7 +51,7 @@ public:
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
           in_size_(in_dim)
     {
-		mask_.resize(1, std::vector<uint8_t>(in_dim));
+        mask_.resize(1, std::vector<uint8_t>(in_dim));
         clear_mask();
     }
 
@@ -122,7 +122,7 @@ public:
             mask_.resize(sample_count, mask_[0]);
         }
 
-        for (size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
+        for (size_t sample = 0; sample < sample_count; ++sample) {
 
             std::vector<uint8_t>& mask = mask_[sample];
 
@@ -160,10 +160,11 @@ public:
 
     void clear_mask() {
         for (auto& sample : mask_) {
-			std::fill(sample.begin(), sample.end(), 0);
-		}
+            std::fill(sample.begin(), sample.end(), 0);
+        }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<dropout_layer> & construct) {
         net_phase phase;
@@ -179,13 +180,14 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_size_), cereal::make_nvp("dropout_rate", dropout_rate_), cereal::make_nvp("phase", phase_));
     }
+#endif
 
 private:
     net_phase phase_;
     float_t dropout_rate_;
     float_t scale_;
     serial_size_t in_size_;
-	std::vector<std::vector<uint8_t>> mask_;
+    std::vector<std::vector<uint8_t>> mask_;
 };
 
 } // namespace tiny_dnn

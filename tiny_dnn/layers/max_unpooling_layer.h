@@ -26,8 +26,11 @@
 */
 #pragma once
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 namespace tiny_dnn {
 
@@ -141,6 +144,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<max_unpooling_layer> & construct) {
         shape3d in;
@@ -155,6 +159,7 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_), cereal::make_nvp("unpool_size", unpool_size_), cereal::make_nvp("stride", stride_));
     }
+#endif
 
 private:
     serial_size_t unpool_size_;

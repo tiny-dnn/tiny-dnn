@@ -95,7 +95,7 @@ void train_network(network<sequential> nn, const string& train_dir_path) {
     ofs << nn;
 }
 
-void recognize(const std::string& dictionary, const std::string& filename, const string& train_dir_path = "") {
+void recognize(const std::string& dictionary, const std::string& src_filename, const string& train_dir_path = "") {
     network<sequential> nn;
 
     construct_net(nn);
@@ -111,7 +111,7 @@ void recognize(const std::string& dictionary, const std::string& filename, const
 
     // convert imagefile to vec_t
     vec_t data;
-    convert_image(filename, -1.0, 1.0, 32, 32, data);
+    convert_image(src_filename, -1.0, 1.0, 32, 32, data);
 
     std::cout << "start predicting on single image..." << std::endl;
 

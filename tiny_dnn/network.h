@@ -169,7 +169,7 @@ class network {
     typedef typename std::vector<layerptr_t>::iterator iterator;
     typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
-    explicit network(const std::string& name = "") : name_(name) {}
+    explicit network(const std::string& name = "") : name_(name), stop_training_(false) {}
 
     /**
      * name of the network
@@ -267,7 +267,7 @@ class network {
     /**
     * trains the network for a fixed number of epochs to generate desired output.
     *
-    * This method execute fixed number of training steps and invoke callbacks for each mini-batch/epochs.
+    * This method executes fixed number of training steps and invoke callbacks for each mini-batch/epochs.
     * The network is trained to minimize given loss function(specified by template parameter).
     *
     * Shape of inputs and desired_outputs must be same to network inputs. For example, if your network
@@ -386,6 +386,16 @@ class network {
     }
 
     /**
+     * request to finish an ongoing training
+     *
+     * It is safe to test the current network performance in @a on_batch_enumerate and
+     * @a on_epoch_enumerate callbacks during training.
+     */
+    void stop_ongoing_training() {
+        stop_training_ = true;
+    }
+
+    /**
      * test and generate confusion-matrix for classification task
      **/
     result test(const std::vector<vec_t>& in, const std::vector<label_t>& t) {
@@ -461,7 +471,7 @@ class network {
         std::vector<tensor_t> v(t.size());
         const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
         for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-            net_.label2vec(&t[sample][0], static_cast<serial_size_t>(t[sample].size()), &v[sample]);
+            net_.label2vec(t[sample], v[sample]);
         }
 
         for (auto current : net_) {  // ignore first input layer
@@ -604,6 +614,7 @@ class network {
     void load(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) {
+#ifndef CNN_NO_SERIALIZATION
         std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
         if (ifs.fail() || ifs.bad())
             throw nn_error("failed to open:" + filename);
@@ -624,11 +635,15 @@ class network {
             default:
                 throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     void save(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) const {
+#ifndef CNN_NO_SERIALIZATION
         std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
         if (ofs.fail() || ofs.bad())
             throw nn_error("failed to open:" + filename);
@@ -649,28 +664,40 @@ class network {
             default:
                 throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * save the network architecture as json string
      **/
-    std::string to_json() const {
+    std::string to_json(content_type what = content_type::model) const {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
-            to_archive(oa, content_type::model);
+            to_archive(oa, what);
         }
         return ss.str();
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * load the network architecture from json string
      **/
-    void from_json(const std::string& json_string) {
+    void from_json(const std::string& json_string,
+                   content_type what = content_type::model) {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
-        from_archive(ia, content_type::model);
+        from_archive(ia, what);
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     ///< @deprecated use save(filename,target,format) instead.
@@ -727,8 +754,8 @@ class network {
     }
 
  protected:
-    float_t fprop_max(const vec_t& in, int idx = 0) {
-        const vec_t& prediction = fprop(in, idx);
+    float_t fprop_max(const vec_t& in) {
+        const vec_t& prediction = fprop(in);
         return *std::max_element(std::begin(prediction), std::end(prediction));
     }
 
@@ -768,8 +795,9 @@ class network {
         for (auto n : net_)
             n->set_parallelize(true);
         optimizer.reset();
-        for (int iter = 0; iter < epoch; iter++) {
-            for (size_t i = 0; i < inputs.size(); i += batch_size) {
+        stop_training_ = false;
+        for (int iter = 0; iter < epoch && !stop_training_; iter++) {
+            for (size_t i = 0; i < inputs.size() && !stop_training_; i += batch_size) {
                 train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
                     static_cast<int>(std::min(batch_size, inputs.size() - i)),
                     n_threads,
@@ -821,6 +849,7 @@ class network {
                         int             batch_size,
                         const int       num_tasks,
                         const tensor_t* t_cost) {
+        CNN_UNREFERENCED_PARAMETER(num_tasks);
         std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
         std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
         std::vector<tensor_t> t_cost_batch = t_cost
@@ -1028,12 +1057,13 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], static_cast<serial_size_t>(inputs.size()), &vec);
+        net_.label2vec(inputs, vec);
         normalize_tensor(vec, normalized);
     }
 
     std::string name_;
     NetType net_;
+    bool stop_training_;
 };
 
 /**

@@ -165,6 +165,9 @@ void for_(bool parallelize, int begin, T end, Func f, int grainsize = 100) {
 template <typename T, typename Func>
 void for_i(bool parallelize, T size, Func f, int grainsize = 100)
 {
+#ifdef CNN_SINGLE_THREAD
+    parallelize = false;
+#endif
     for_(parallelize, 0, size, [&](const blocked_range& r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for

@@ -35,6 +35,8 @@ using namespace std;
 
 int  main(int argc, char** argv) {
     
+    CNN_UNREFERENCED_PARAMETER(argc);
+    CNN_UNREFERENCED_PARAMETER(argv);
     models::alexnet nn;
 
     // change all layers at once

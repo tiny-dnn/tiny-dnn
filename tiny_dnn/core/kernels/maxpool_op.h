@@ -92,12 +92,12 @@ class MaxPoolOp : public core::OpKernel {
             }
 
             */
-	    kernels::maxpool_op_nnpack(
+            kernels::maxpool_op_nnpack(
                 in_data,
                 out_data,
                 params);
         } else if (engine == core::backend_t::avx) {
-	    kernels::maxpool_op_avx(
+            kernels::maxpool_op_avx(
                 in_data,
                 out_data,
                 params.out2inmax,

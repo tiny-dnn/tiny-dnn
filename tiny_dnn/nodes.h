@@ -29,8 +29,11 @@
 #include <vector>
 #include <tuple>
 #include <unordered_map>
+
+#ifndef CNN_NO_SERIALIZATION
 #include <cereal/types/utility.hpp>
 #include <cereal/types/tuple.hpp>
+#endif
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
@@ -40,24 +43,32 @@ namespace cereal {
 
 template <typename Archive>
 void save(Archive & ar, const std::vector<tiny_dnn::layerptr_t>& v) {
+#ifndef CNN_NO_SERIALIZATION
     ar(cereal::make_size_tag((cereal::size_type)v.size()));
     for (auto n : v) {
         tiny_dnn::layer::save_layer(ar, *n);
     }
+#else
+    throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
-
 
 template <typename Archive>
 void load(Archive & ar, std::vector<std::shared_ptr<tiny_dnn::layer>>& v) {
+#ifndef CNN_NO_SERIALIZATION
     cereal::size_type size;
     ar(cereal::make_size_tag(size));
 
     for (size_t i = 0; i < size; i++) {
         v.emplace_back(tiny_dnn::layer::load_layer(ar));
     }
+#else
+    throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
-}
+}  // namespace cereal
+
 
 namespace tiny_dnn {
 
@@ -183,15 +194,21 @@ class nodes {
         }
     }
 
-    void label2vec(const label_t* t, serial_size_t num, std::vector<vec_t> *vec) const {
+    void label2vec(const label_t* t, serial_size_t num, std::vector<vec_t>& vec) const {
         serial_size_t outdim = out_data_size();
 
-        vec->reserve(num);
+        vec.reserve(num);
         for (serial_size_t i = 0; i < num; i++) {
             assert(t[i] < outdim);
-            vec->emplace_back(outdim, target_value_min());
-            vec->back()[t[i]] = target_value_max();
+            vec.emplace_back(outdim, target_value_min());
+            vec.back()[t[i]] = target_value_max();
         }
+    }
+
+    void label2vec(const std::vector<label_t>& labels, std::vector<vec_t>& vec) const {
+        return label2vec(&labels[0],
+                         static_cast<serial_size_t>(labels.size()),
+                         vec);
     }
 
     template <typename OutputArchive>
@@ -326,6 +343,7 @@ class sequential : public nodes {
 
     template <typename InputArchive>
     void load_connections(InputArchive& ia) {
+        CNN_UNREFERENCED_PARAMETER(ia);
         for (serial_size_t i = 0; i < nodes_.size() - 1; i++) {
             auto head = nodes_[i];
             auto tail = nodes_[i + 1];
@@ -462,7 +480,13 @@ private:
 
         template <typename Archive>
         void serialize(Archive & ar) {
-            ar(CEREAL_NVP(connections), CEREAL_NVP(in_nodes), CEREAL_NVP(out_nodes));
+#ifndef CNN_NO_SERIALIZATION
+            ar(CEREAL_NVP(connections),
+               CEREAL_NVP(in_nodes),
+               CEREAL_NVP(out_nodes));
+#else
+            throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
         }
 
         std::vector<std::tuple<serial_size_t, serial_size_t, serial_size_t, serial_size_t>> connections;
@@ -471,6 +495,7 @@ private:
 
     template <typename OutputArchive>
     void save_connections(OutputArchive& oa) const {
+#ifndef CNN_NO_SERIALIZATION
         _graph_connection gc;
         std::unordered_map<node*, serial_size_t> node2id;
         serial_size_t idx = 0;
@@ -486,22 +511,32 @@ private:
         }
 
         for (auto l : input_layers_) {
-            graph_traverse(l, [=](layer& l) {}, [&](edge& e) {
-                auto next = e.next();
-                serial_size_t head_index = e.prev()->next_port(e);
+            graph_traverse(
+                l,
+                [=](layer& l) {
+                    CNN_UNREFERENCED_PARAMETER(l);
+                },
+                [&](edge& e) {
+                    auto next = e.next();
+                    serial_size_t head_index = e.prev()->next_port(e);
 
-                for (auto n : next) {
-                    serial_size_t tail_index = n->prev_port(e);
-                    gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                    for (auto n : next) {
+                        serial_size_t tail_index = n->prev_port(e);
+                        gc.add_connection(node2id[e.prev()], node2id[n], head_index, tail_index);
+                    }
                 }
-            });
+            );
         }
 
         oa(cereal::make_nvp("graph", gc));
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     template <typename InputArchive>
     void load_connections(InputArchive& ia) {
+#ifndef CNN_NO_SERIALIZATION
         _graph_connection gc;
         ia(cereal::make_nvp("graph", gc));
 
@@ -516,6 +551,9 @@ private:
         for (auto out : gc.out_nodes) {
             output_layers_.push_back(nodes_[out]);
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
      // normalize indexing back to [sample][layer][feature]
@@ -555,6 +593,7 @@ private:
 
 template <typename OutputArchive>
 void nodes::save_model(OutputArchive & oa) const {
+#ifndef CNN_NO_SERIALIZATION
     oa(cereal::make_nvp("nodes", nodes_));
 
     if (typeid(*this) == typeid(sequential)) {
@@ -563,10 +602,14 @@ void nodes::save_model(OutputArchive & oa) const {
     else {
         dynamic_cast<const graph*>(this)->save_connections(oa);
     }
+#else
+    throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
 template <typename InputArchive>
 void nodes::load_model(InputArchive & ia) {
+#ifndef CNN_NO_SERIALIZATION
     own_nodes_.clear();
     nodes_.clear();
 
@@ -582,6 +625,9 @@ void nodes::load_model(InputArchive & ia) {
     else {
         dynamic_cast<graph*>(this)->load_connections(ia);
     }
+#else
+    throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
 }
 
 

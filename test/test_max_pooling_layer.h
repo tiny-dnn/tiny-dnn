@@ -67,7 +67,7 @@ TEST(max_pool, forward) {
 
 TEST(max_pool, setup_internal) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-		                  core::backend_t::internal);
+                                  core::backend_t::internal);
 
     EXPECT_EQ(l.parallelize(),           true);           // if layer can be parallelized
     EXPECT_EQ(l.in_channels(),           serial_size_t(1));  // num of input tensors
@@ -89,7 +89,7 @@ TEST(max_pool, setup_internal) {
 
 TEST(max_pool, forward_stride_internal) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2,
-		                  core::backend_t::internal);
+                                  core::backend_t::internal);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -111,7 +111,7 @@ TEST(max_pool, forward_stride_internal) {
 
 TEST(max_pool, forward_padding_same) {
     max_pooling_layer<identity> l(4, 4, 1, 2, 2, 1, 1,
-		                  padding::same, core::backend_t::internal);
+                                  padding::same, core::backend_t::internal);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,
@@ -211,7 +211,7 @@ TEST(max_pool, forward_stride_nnp) {
 TEST(max_pool, forward_stride_nnp_not_2x2) {
     nnp_initialize();
     max_pooling_layer<identity> l(4, 4, 1, 3, 1,
-		                  core::backend_t::nnpack);
+                                  core::backend_t::nnpack);
     vec_t in = {
         0, 1, 2, 3,
         8, 7, 5, 6,

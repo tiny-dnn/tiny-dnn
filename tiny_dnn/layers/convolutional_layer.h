@@ -36,8 +36,11 @@
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif  // DNN_USE_IMAGE_API
 
 using namespace tiny_dnn::core;
 
@@ -81,9 +84,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         serial_size_t h_stride = 1,
                         backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_size, window_size,
-			      in_channels, out_channels, connection_table(),
-			      pad_type, has_bias, w_stride, h_stride,
-			      backend_type) {}
+                              in_channels, out_channels, connection_table(),
+                              pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -114,9 +117,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         serial_size_t h_stride = 1,
                         backend_t  backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_width, window_height,
-			      in_channels, out_channels, connection_table(),
-			      pad_type, has_bias, w_stride, h_stride,
-			      backend_type) {}
+                              in_channels, out_channels, connection_table(),
+                              pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -147,8 +150,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         serial_size_t              h_stride = 1,
                         backend_t      backend_type = core::default_engine())
         : convolutional_layer(in_width, in_height, window_size, window_size,
-			      in_channels, out_channels, connection_table,
-			      pad_type, has_bias, w_stride, h_stride,
+                              in_channels, out_channels, connection_table,
+                              pad_type, has_bias, w_stride, h_stride,
                               backend_type) {}
 
     /**
@@ -226,7 +229,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
         std::vector<tensor_t*> in_data_(in_data.size());
         in_data_[0] = in_data_padded(in_data);
-
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
             in_data_[i] = in_data[i];
         }
@@ -259,18 +261,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        std::vector<tensor_t*> in_data_;
-        in_data_.push_back(in_data_padded(in_data));
-
+        std::vector<tensor_t*> in_data_(in_data.size());
+        in_data_[0] = in_data_padded(in_data);
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
-            in_data_.push_back(in_data[i]);
+            in_data_[i] = in_data[i];
         }
 
-        std::vector<tensor_t*> in_grad_;
-        for (serial_size_t i = 0; i < in_grad.size(); ++i) {
-            in_grad_.push_back(in_grad[i]);
-        }
-
+        std::vector<tensor_t*> in_grad_ = in_grad;
         if (params_.pad_type == padding::same) {
             in_grad_[0] = &cws_.prev_delta_padded_;
         }
@@ -332,6 +329,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return ss.str();
     }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weight_to_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -371,8 +369,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
-
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(
         Archive & ar, cereal::construct<convolutional_layer> & construct) {
@@ -383,22 +382,24 @@ class convolutional_layer : public feedforward_layer<Activation> {
         connection_table tbl;
 
         ar(cereal::make_nvp("in_size", in),
-            cereal::make_nvp("window_width", w_width),
-            cereal::make_nvp("window_height", w_height),
-            cereal::make_nvp("out_channels", out_ch),
-            cereal::make_nvp("connection_table", tbl),
-            cereal::make_nvp("pad_type", pad_type),
-            cereal::make_nvp("has_bias", has_bias),
-            cereal::make_nvp("w_stride", w_stride),
-            cereal::make_nvp("h_stride", h_stride)
+           cereal::make_nvp("window_width", w_width),
+           cereal::make_nvp("window_height", w_height),
+           cereal::make_nvp("out_channels", out_ch),
+           cereal::make_nvp("connection_table", tbl),
+           cereal::make_nvp("pad_type", pad_type),
+           cereal::make_nvp("has_bias", has_bias),
+           cereal::make_nvp("w_stride", w_stride),
+           cereal::make_nvp("h_stride", h_stride)
         );
 
         construct(in.width_, in.height_, w_width, w_height, in.depth_,
                   out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
     }
+#endif  // CNN_NO_SERIALIZATION
 
     template <class Archive>
     void serialize(Archive & ar) {
+#ifndef CNN_NO_SERIALIZATION
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", params_.in),
             cereal::make_nvp("window_width", params_.weight.width_),
@@ -410,6 +411,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
             cereal::make_nvp("w_stride", params_.w_stride),
             cereal::make_nvp("h_stride", params_.h_stride)
             );
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
 private:

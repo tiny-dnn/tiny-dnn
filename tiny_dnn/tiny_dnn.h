@@ -38,11 +38,8 @@
 #include "tiny_dnn/layers/input_layer.h"
 #include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/convolutional_layer.h"
-#include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/deconvolutional_layer.h"
-#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
-#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
 #include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
@@ -55,13 +52,18 @@
 #include "tiny_dnn/layers/batch_normalization_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
+#include "tiny_dnn/layers/quantized_convolutional_layer.h"
+#include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+
+#ifdef CNN_USE_GEMMLOWP
+#include "tiny_dnn/layers/quantized_fully_connected_layer.h"
+#endif  // CNN_USE_GEMMLOWP
 
 #include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
 #include "tiny_dnn/util/weight_init.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/deform.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/graph_visualizer.h"
@@ -70,8 +72,15 @@
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif  // DNN_USE_IMAGE_API
+
+#ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/serialization_helper.h"
 #include "tiny_dnn/util/deserialization_helper.h"
+#endif  // CNN_NO_SERIALIZATION
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
@@ -126,12 +135,6 @@ using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
 }
 
 #include "tiny_dnn/models/alexnet.h"
-
-using batch_norm = tiny_dnn::batch_normalization_layer;
-
-using slice = tiny_dnn::slice_layer;
-
-using power = tiny_dnn::power_layer;
 
 using batch_norm = tiny_dnn::batch_normalization_layer;
 

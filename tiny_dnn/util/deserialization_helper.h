@@ -143,10 +143,14 @@ std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(Inp
 }
 
 template <typename T>
-void start_loading_layer(T & ar) {}
+void start_loading_layer(T & ar) {
+    CNN_UNREFERENCED_PARAMETER(ar);
+}
 
 template <typename T>
-void finish_loading_layer(T & ar) {}
+void finish_loading_layer(T & ar) {
+    CNN_UNREFERENCED_PARAMETER(ar);
+}
 
 inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 

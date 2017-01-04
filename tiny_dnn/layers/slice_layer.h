@@ -123,6 +123,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<slice_layer> & construct) {
         shape3d in_shape;
@@ -138,6 +139,8 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", in_shape_), cereal::make_nvp("slice_type", slice_type_), cereal::make_nvp("num_outputs", num_outputs_));
     }
+#endif
+
 private:
     void slice_data_forward(const tensor_t& in_data,
                             std::vector<tensor_t*>& out_data) {
@@ -232,7 +235,7 @@ private:
     void set_shape_channels() {
         serial_size_t channel_per_out = in_shape_.depth_ / num_outputs_;
 
-        out_shapes_.clear();
+        out_shapes_.resize(num_outputs_);
         for (serial_size_t i = 0; i < num_outputs_; i++) {
             serial_size_t ch = channel_per_out;
 
@@ -242,7 +245,7 @@ private:
             }
 
             slice_size_.push_back(ch);
-            out_shapes_.push_back(shape3d(in_shape_.width_, in_shape_.height_, ch));
+            out_shapes_[i] = shape3d(in_shape_.width_, in_shape_.height_, ch);
         }
     }
 

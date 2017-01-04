@@ -96,6 +96,7 @@ public:
         }
     }
 
+#ifndef CNN_NO_SERIALIZATION
     template <class Archive>
     static void load_and_construct(Archive & ar, cereal::construct<linear_layer> & construct) {
         serial_size_t dim;
@@ -111,6 +112,7 @@ public:
         layer::serialize_prolog(ar);
         ar(cereal::make_nvp("in_size", dim_), cereal::make_nvp("scale", scale_), cereal::make_nvp("bias", bias_));
     }
+#endif
 
 protected:
     serial_size_t dim_;

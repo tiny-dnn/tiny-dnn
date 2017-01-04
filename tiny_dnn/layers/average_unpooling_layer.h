@@ -31,9 +31,12 @@
 #include <algorithm>
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/layers/partial_connected_layer.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif  // DNN_USE_IMAGE_API
 
 namespace tiny_dnn {
 
@@ -46,6 +49,7 @@ void tiny_average_unpooling_kernel(bool parallelize,
                                    float_t                       scale_factor,
                                    std::vector<typename partial_connected_layer<Activation>::wi_connections>& out2wi,
                                    Activation&                   h) {
+    CNN_UNREFERENCED_PARAMETER(scale_factor);
     for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
         const vec_t& in  = (*in_data[0])[sample];
         const vec_t& W   = (*in_data[1])[0];
@@ -87,7 +91,8 @@ void tiny_average_unpooling_back_kernel(const std::vector<tensor_t*>&   in_data,
                                         std::vector<typename partial_connected_layer<Activation>::io_connections>& weight2io,
                                         std::vector<typename partial_connected_layer<Activation>::wo_connections>& in2wo,
                                         std::vector<std::vector<serial_size_t>>& bias2out) {
-
+    CNN_UNREFERENCED_PARAMETER(out_data);
+    CNN_UNREFERENCED_PARAMETER(scale_factor);
     for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
         const vec_t& prev_out   = (*in_data[0])[sample];
         const vec_t& W          = (*in_data[1])[0];
