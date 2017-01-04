@@ -27,6 +27,7 @@
 #pragma once
 
 #include "tiny_dnn/tiny_dnn.h"
+#include "cereal/archives/json.hpp"
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
@@ -47,7 +48,7 @@ class archive {
     archive(const std::string& path_to_archive_file) {
         
         std::ifstream ifs(path_to_archive_file, std::ios::binary | std::ios::in);
-        cereal::BinaryInputArchive bi(ifs);
+        cereal::JSONInputArchive bi(ifs);
         
         try {
             this->net.from_archive(bi);
@@ -104,7 +105,7 @@ class archive {
     void save(const std::string &path_to_archive_file) const {
         
         std::ofstream ofs(path_to_archive_file, std::ios::binary | std::ios::out);
-        cereal::BinaryOutputArchive bo(ofs);
+        cereal::JSONOutputArchive bo(ofs);
         net.to_archive(bo);
         
         bo(cereal::make_nvp("width", mean.width()),
