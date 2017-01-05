@@ -54,10 +54,10 @@ int  main(int argc, char** argv) {
     // predict
     auto res = nn.predict(in);
 
-    double elapsed_ms = t.elapsed();
+    double elapsed_s = t.elapsed();
     t.stop();
 
-    cout << "Elapsed time(ms): " << elapsed_ms << endl;
+    cout << "Elapsed time(s): " << elapsed_s << endl;
 }
 
 
