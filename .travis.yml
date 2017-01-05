@@ -66,6 +66,7 @@ before_install:
   - g++ --version
 
 install:
+  - bash -x .travis/install-protobuf.sh
   - bash -x .travis/install.sh
   - gem install coveralls-lcov
 

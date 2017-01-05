@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 #include <map>
-#include "tiny_cnn/io/tensorflow/proto_parser.h"
+#include "tiny_dnn/io/tensorflow/proto_parser.h"
 using namespace std;
 using namespace tiny_cnn;
 using namespace tensorflow;
