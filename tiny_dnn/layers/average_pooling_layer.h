@@ -264,8 +264,8 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive, typename Activation>
-    friend void serialize(Archive& ar, average_pooling_layer<Activation>& layer);
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, average_pooling_layer<Activation2>& layer);
 #endif
 
     std::pair<serial_size_t, serial_size_t> pool_size() const { return std::make_pair(pool_size_x_, pool_size_y_); }

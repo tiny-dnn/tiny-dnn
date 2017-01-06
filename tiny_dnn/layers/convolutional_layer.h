@@ -374,8 +374,8 @@ class convolutional_layer : public feedforward_layer<Activation> {
 #endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive, typename Activation>
-    friend void serialize(Archive& ar, convolutional_layer<Activation>& layer);
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, convolutional_layer<Activation2>& layer);
 #endif
 
  private:
