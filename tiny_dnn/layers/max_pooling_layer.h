@@ -62,8 +62,12 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       serial_size_t in_channels,
                       serial_size_t pooling_size,
                       backend_t     backend_type = core::default_engine())
-        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-                            pooling_size, backend_type) {}
+        : max_pooling_layer(in_width,
+                            in_height,
+                            in_channels,
+                            pooling_size,
+                            (in_height == 1 ? 1 : pooling_size),
+                            backend_type) {}
 
     max_pooling_layer(const shape3d& in_shape,
                       serial_size_t  pooling_size,
@@ -78,8 +82,14 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                       serial_size_t pooling_size,
                       serial_size_t stride,
                       backend_t     backend_type = core::default_engine())
-        : max_pooling_layer(in_width, in_height, in_channels, pooling_size,
-                            pooling_size, stride, stride, padding::valid,
+        : max_pooling_layer(in_width,
+                            in_height,
+                            in_channels,
+                            pooling_size,
+                            (in_height == 1 ? 1 : pooling_size),
+                            stride,
+                            stride,
+                            padding::valid,
                             backend_type) {}
 
     /**
