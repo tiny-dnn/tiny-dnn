@@ -157,7 +157,7 @@ class TensorStorage {
             CLCudaAPI::Queue queue = device_->queue();
             if (device_data_ && device_data_->GetSize() >= host_data_->size()) {
                 device_data_->Write(queue,
-                                    host_data.size(),
+                                    host_data_.size(),
                                     host_data_->data(),
                                     0);
             } else {
