@@ -53,13 +53,21 @@ class max_unpooling_layer : public feedforward_layer<Activation> {
                         serial_size_t in_height,
                         serial_size_t in_channels,
                         serial_size_t unpooling_size)
-        : max_unpooling_layer(in_width, in_height, in_channels, unpooling_size, unpooling_size)
+        : max_unpooling_layer(in_width,
+                              in_height,
+                              in_channels,
+                              unpooling_size,
+                              (in_height == 1 ? 1 : unpooling_size))
     {}
 
     max_unpooling_layer(const shape3d& in_size,
                         serial_size_t unpooling_size,
                         serial_size_t stride)
-        : max_unpooling_layer(in_size.width_, in_size.height_, in_size.depth_, unpooling_size, unpooling_size)
+        : max_unpooling_layer(in_size.width_,
+                              in_size.height_,
+                              in_size.depth_,
+                              unpooling_size,
+                              (in_size.height_ == 1 ? 1 : unpooling_size))
     {}
 
     /**

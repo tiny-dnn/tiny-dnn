@@ -157,7 +157,9 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
           stride_(pooling_size),
           in_(in_width, in_height, in_channels),
           out_(in_width * pooling_size, in_height * pooling_size, in_channels),
-          w_(pooling_size, pooling_size, in_channels) {
+          w_(pooling_size,
+             (in_height == 1 ? 1 : pooling_size),
+             in_channels) {
         init_connection(pooling_size);
     }
 
@@ -181,7 +183,9 @@ class average_unpooling_layer : public partial_connected_layer<Activation> {
           in_(in_width, in_height, in_channels),
           out_(unpool_out_dim(in_width, pooling_size, stride),
                unpool_out_dim(in_height, pooling_size, stride), in_channels),
-          w_(pooling_size, pooling_size, in_channels) {
+          w_(pooling_size,
+             (in_height == 1 ? 1 : pooling_size),
+             in_channels) {
         init_connection(pooling_size);
     }
 
