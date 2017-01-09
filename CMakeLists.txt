@@ -227,7 +227,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     endif(USE_AVX AND COMPILER_HAS_AVX_FLAG)
     # set Advanced Vector Extensions 2 (AVX2)
     if(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
-        add_definitions(-DCNN_USE_AVX)
+        add_definitions(-DCNN_USE_AVX2)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -mfma -march=core-avx2")
     endif(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
 
@@ -246,7 +246,7 @@ elseif(MSVC)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX")
     endif(USE_AVX)
     if(USE_AVX2)
-        add_definitions(-DCNN_USE_AVX)
+        add_definitions(-DCNN_USE_AVX2)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX2")
     endif(USE_AVX2)
     # include specific flags for release and debug modes.

@@ -36,22 +36,46 @@
 #endif
 
 inline __m256 madd256_ps(__m256 a, __m256 b, __m256 c) {
+#ifdef CNN_USE_AVX2
+    return _mm256_fmadd_ps(a, b, c);
+#else
     return _mm256_add_ps(_mm256_mul_ps(a, b), c);
+#endif
 }
 inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
+#ifdef CNN_USE_AVX2
+    return _mm_fmadd_ps(a, b, c);
+#else
     return _mm_add_ps(_mm_mul_ps(a, b), c);
+#endif
 }
 inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
+#ifdef CNN_USE_AVX2
+    return _mm_fmadd_ss(a, b, c);
+#else
     return _mm_add_ss(_mm_mul_ss(a, b), c);
+#endif
 }
 inline __m256d madd256_pd(__m256d a, __m256d b, __m256d c) {
+#ifdef CNN_USE_AVX2
+    return _mm256_fmadd_pd(a, b, c);
+#else
     return _mm256_add_pd(_mm256_mul_pd(a, b), c);
+#endif
 }
 inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
+#ifdef CNN_USE_AVX2
+    return _mm_fmadd_pd(a, b, c);
+#else
     return _mm_add_pd(_mm_mul_pd(a, b), c);
+#endif
 }
 inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
+#ifdef CNN_USE_AVX2
+    return _mm_fmadd_sd(a, b, c);
+#else
     return _mm_add_sd(_mm_mul_sd(a, b), c);
+#endif
 }
 
 // Horizontally add elements of __m256 type argument (sadly, _mm256_hadd_ps isn't good enough)
