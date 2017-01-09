@@ -232,8 +232,7 @@ class batch_normalization_layer : public layer {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    friend void serialize(Archive& ar, batch_normalization_layer& layer);
+    friend struct serialization_buddy;
 #endif
 
     float_t epsilon() const {

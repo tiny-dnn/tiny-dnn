@@ -128,8 +128,7 @@ class slice_layer : public layer {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    friend void serialize(Archive& ar, slice_layer& layer);
+    friend struct serialization_buddy;
 #endif
 
  private:

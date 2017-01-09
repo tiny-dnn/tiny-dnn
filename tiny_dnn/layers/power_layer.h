@@ -111,8 +111,7 @@ class power_layer : public layer {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    friend void serialize(Archive& ar, power_layer& layer);
+    friend struct serialization_buddy;
 #endif
 
     float_t factor() const {
