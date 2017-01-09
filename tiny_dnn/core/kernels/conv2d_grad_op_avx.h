@@ -202,7 +202,7 @@ inline void accumulate_dw(
         const size_t out_height = out.height_;
         assert(1 < out_width);
         assert(1 < out_height);
-        __m256 sums[25];
+        __m256 sum0, sum1, sum2, sum3, sum4;
         if (w_stride > 1) {
             for (serial_size_t inc = 0;
                  inc < in.depth_;
@@ -258,7 +258,7 @@ inline void accumulate_dw(
                     } // for wy
                 } // for outc
             } // for inc
-        }else if (nblocks != 0 && remainder != 0) {
+        }else if (nblocks == 1 && remainder != 0) {
             for (serial_size_t inc = 0;
                  inc < in.depth_;
                  ++inc
@@ -273,7 +273,12 @@ inline void accumulate_dw(
                     const float* delta = &curr_delta[
                         out.get_index(0, 0, outc)
                     ];
-                    __m256* psums = sums;
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
@@ -283,63 +288,154 @@ inline void accumulate_dw(
                             static_cast<serial_size_t>(wy),
                             inc
                         );
-                        const float* pprev_out = &prev_out[prev_out_idx];
-                        for (size_t wx = 0;
-                             wx < 5; // weight.width_
-                             ++wx, ++pprev_out, ++psums
-                        ) {
-                            const float* pa = pprev_out;
-                            const float* pb = delta;
-                            __m256 sum0 = _mm256_setzero_ps();
-                            __m256 sum1 = _mm256_setzero_ps();
-                            for (size_t y = 0;
-                                 y < out_height;
-                                 ++y, pa += prevo_delta, pb += out_width
-                            ) {
-                                // vectorize::dot
-                                __m256 a = _mm256_loadu_ps(pa);
-                                __m256 b = _mm256_loadu_ps(pb);
-                                sum0 = madd256_ps(a, b, sum0);
-                                for (size_t i = 1; i < nblocks; ++i) {
-                                    a = _mm256_loadu_ps(pa + 8 * i);
-                                    b = _mm256_loadu_ps(pb + 8 * i);
-                                    sum0 = madd256_ps(a, b, sum0);
-                                }
-                                a = _mm256_maskload_ps(
-                                    pa + 8 * nblocks, mask
-                                );
-                                b = _mm256_maskload_ps(
-                                    pb + 8 * nblocks, mask
-                                );
-                                sum1 = madd256_ps(a, b, sum1);
-                            }
-                            __m256 sum = _mm256_add_ps(sum0, sum1);
-                            *psums = sum;
-                        } // for wx
+                        const float* pa = &prev_out[prev_out_idx];
+                        const float* pb = delta;
+                        // y = 0
+                        sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
+                        for (size_t y = 0; y < out_height; ++y) {
+                            // vectorize::dot
+                            __m256 a0 = _mm256_loadu_ps(pa + 0);
+                            __m256 a1 = _mm256_loadu_ps(pa + 1);
+                            __m256 a2 = _mm256_loadu_ps(pa + 2);
+                            __m256 a3 = _mm256_loadu_ps(pa + 3);
+                            __m256 a4 = _mm256_loadu_ps(pa + 4);
+                            __m256 b = _mm256_loadu_ps(pb);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            a0 = _mm256_maskload_ps(pa + 010, mask);
+                            a1 = _mm256_maskload_ps(pa + 011, mask);
+                            a2 = _mm256_maskload_ps(pa + 012, mask);
+                            a3 = _mm256_maskload_ps(pa + 013, mask);
+                            a4 = _mm256_maskload_ps(pa + 014, mask);
+                            b = _mm256_maskload_ps(pb + 010, mask);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            pa += prevo_delta;
+                            pb += out_width;
+                        }
+                        _mm_storeu_ps(
+                            pdw + wy * 5,
+                            _mm_add_ps(
+                                _mm_loadu_ps(pdw + wy * 5),
+                                hsum4x256_ps(sum0, sum1, sum2, sum3)
+                            )
+                        );
+                        _mm_store_ss(
+                            pdw + wy * 5 + 4,
+                            _mm_add_ss(
+                                _mm_load_ss(pdw + wy * 5 + 4),
+                                hsum256_ps(sum4)
+                            )
+                        );
                     } // for wy
+                } // for outc
+            } // for inc
+        }else if (nblocks > 1 && remainder != 0) {
+            for (serial_size_t inc = 0;
+                 inc < in.depth_;
+                 ++inc
+            ) {
+                for (serial_size_t outc = 0;
+                     outc < out.depth_;
+                     outc++
+                ) {
+                    if (!tbl.is_connected(outc, inc)) {
+                        continue;
+                    }
+                    const float* delta = &curr_delta[
+                        out.get_index(0, 0, outc)
+                    ];
                     serial_size_t widx = weight.get_index(
                         0,
                         0,
                         in.depth_ * outc + inc
                     );
                     float* pdw = &dW[widx];
-                    for (int i = 0; i < 6; ++i) {
+                    for (size_t wy = 0;
+                         wy < 5; // weight.height_
+                         ++wy
+                    ) {
+                        size_t prev_out_idx = in_padded.get_index(
+                            0,
+                            static_cast<serial_size_t>(wy),
+                            inc
+                        );
+                        const float* pa = &prev_out[prev_out_idx];
+                        const float* pb = delta;
+                        sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
+                        for (size_t y = 0;
+                             y < out_height;
+                             ++y, pa += prevo_delta, pb += out_width
+                        ) {
+                            // vectorize::dot
+                            __m256 a0 = _mm256_loadu_ps(pa + 0);
+                            __m256 a1 = _mm256_loadu_ps(pa + 1);
+                            __m256 a2 = _mm256_loadu_ps(pa + 2);
+                            __m256 a3 = _mm256_loadu_ps(pa + 3);
+                            __m256 a4 = _mm256_loadu_ps(pa + 4);
+                            __m256 b = _mm256_loadu_ps(pb);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            a0 = _mm256_loadu_ps(pa + 010);
+                            a1 = _mm256_loadu_ps(pa + 011);
+                            a2 = _mm256_loadu_ps(pa + 012);
+                            a3 = _mm256_loadu_ps(pa + 013);
+                            a4 = _mm256_loadu_ps(pa + 014);
+                            b = _mm256_loadu_ps(pb + 010);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            for (size_t i = 2; i < nblocks; ++i) {
+                                a0 = _mm256_loadu_ps(pa + 8 * i + 0);
+                                a1 = _mm256_loadu_ps(pa + 8 * i + 1);
+                                a2 = _mm256_loadu_ps(pa + 8 * i + 2);
+                                a3 = _mm256_loadu_ps(pa + 8 * i + 3);
+                                a4 = _mm256_loadu_ps(pa + 8 * i + 4);
+                                b = _mm256_loadu_ps(pb + 8 * i);
+                                sum0 = madd256_ps(a0, b, sum0);
+                                sum1 = madd256_ps(a1, b, sum1);
+                                sum2 = madd256_ps(a2, b, sum2);
+                                sum3 = madd256_ps(a3, b, sum3);
+                                sum4 = madd256_ps(a4, b, sum4);
+                            }
+                            a0 = _mm256_maskload_ps(pa + 8 * nblocks + 0, mask);
+                            a1 = _mm256_maskload_ps(pa + 8 * nblocks + 1, mask);
+                            a2 = _mm256_maskload_ps(pa + 8 * nblocks + 2, mask);
+                            a3 = _mm256_maskload_ps(pa + 8 * nblocks + 3, mask);
+                            a4 = _mm256_maskload_ps(pa + 8 * nblocks + 4, mask);
+                            b = _mm256_maskload_ps(pb + 8 * nblocks, mask);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                        }
                         _mm_storeu_ps(
-                            pdw + i * 4,
+                            pdw + wy * 5,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw + i * 4),
-                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
-                                             sums[i * 4 + 2], sums[i * 4 + 3])
+                                _mm_loadu_ps(pdw + wy * 5),
+                                hsum4x256_ps(sum0, sum1, sum2, sum3)
                             )
                         );
-                    }
-                    _mm_store_ss(
-                        pdw + 24,
-                        _mm_add_ss(
-                            _mm_load_ss(pdw + 24),
-                            hsum256_ps(sums[24])
-                        )
-                    );
+                        _mm_store_ss(
+                            pdw + wy * 5 + 4,
+                            _mm_add_ss(
+                                _mm_load_ss(pdw + wy * 5 + 4),
+                                hsum256_ps(sum4)
+                            )
+                        );
+                    } // for wy
                 } // for outc
             } // for inc
         }else if (nblocks == 0) {
@@ -358,7 +454,12 @@ inline void accumulate_dw(
                     const float* delta = &curr_delta[
                         out.get_index(0, 0, outc)
                     ];
-                    __m256* psums = sums;
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
@@ -368,51 +469,41 @@ inline void accumulate_dw(
                             static_cast<serial_size_t>(wy),
                             inc
                         );
-                        const float* pprev_out = &prev_out[prev_out_idx];
-                        for (size_t wx = 0;
-                             wx < 5; // weight.width_
-                             ++wx, ++pprev_out, ++psums
-                        ) {
-                            const float* pa = pprev_out;
-                            const float* pb = delta;
+                        const float* pa = &prev_out[prev_out_idx];
+                        const float* pb = delta;
+                        // vectorize::dot
+                        sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
+                        for (size_t y = 0; y < out_height; ++y) {
                             // vectorize::dot
-                            __m256 a = _mm256_maskload_ps(pa, mask);
+                            __m256 a0 = _mm256_maskload_ps(pa + 0, mask);
+                            __m256 a1 = _mm256_maskload_ps(pa + 1, mask);
+                            __m256 a2 = _mm256_maskload_ps(pa + 2, mask);
+                            __m256 a3 = _mm256_maskload_ps(pa + 3, mask);
+                            __m256 a4 = _mm256_maskload_ps(pa + 4, mask);
                             __m256 b = _mm256_maskload_ps(pb, mask);
-                            __m256 sum = _mm256_mul_ps(a, b);
-                            for (size_t y = 1; y < out_height; ++y) {
-                                pa += prevo_delta;
-                                pb += out_width;
-                                // vectorize::dot
-                                a = _mm256_maskload_ps(pa, mask);
-                                b = _mm256_maskload_ps(pb, mask);
-                                sum = madd256_ps(a, b, sum);
-                            }
-                            *psums = sum;
-                        } // for wx
-                    } // for wy
-                    serial_size_t widx = weight.get_index(
-                        0,
-                        0,
-                        in.depth_ * outc + inc
-                    );
-                    float* pdw = &dW[widx];
-                    for (int i = 0; i < 6; ++i) {
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            pa += prevo_delta;
+                            pb += out_width;
+                        }
                         _mm_storeu_ps(
-                            pdw + i * 4,
+                            pdw + wy * 5,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw + i * 4),
-                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
-                                             sums[i * 4 + 2], sums[i * 4 + 3])
+                                _mm_loadu_ps(pdw + wy * 5),
+                                hsum4x256_ps(sum0, sum1, sum2, sum3)
                             )
                         );
-                    }
-                    _mm_store_ss(
-                        pdw + 24,
-                        _mm_add_ss(
-                            _mm_load_ss(pdw + 24),
-                            hsum256_ps(sums[24])
-                        )
-                    );
+                        _mm_store_ss(
+                            pdw + wy * 5 + 4,
+                            _mm_add_ss(
+                                _mm_load_ss(pdw + wy * 5 + 4),
+                                hsum256_ps(sum4)
+                            )
+                        );
+                    } // for wy
                 } // for outc
             } // for inc
         }else if (nblocks == 1) {
@@ -431,7 +522,12 @@ inline void accumulate_dw(
                     const float* delta = &curr_delta[
                         out.get_index(0, 0, outc)
                     ];
-                    __m256* psums = sums;
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
@@ -441,51 +537,41 @@ inline void accumulate_dw(
                             static_cast<serial_size_t>(wy),
                             inc
                         );
-                        const float* pprev_out = &prev_out[prev_out_idx];
-                        for (size_t wx = 0;
-                             wx < 5; // weight.width_
-                             ++wx, ++pprev_out, ++psums
-                        ) {
-                            const float* pa = pprev_out;
-                            const float* pb = delta;
+                        const float* pa = &prev_out[prev_out_idx];
+                        const float* pb = delta;
+                        // vectorize::dot
+                        sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
+                        for (size_t y = 0; y < out_height; ++y) {
                             // vectorize::dot
-                            __m256 a = _mm256_loadu_ps(pa);
+                            __m256 a0 = _mm256_loadu_ps(pa + 0);
+                            __m256 a1 = _mm256_loadu_ps(pa + 1);
+                            __m256 a2 = _mm256_loadu_ps(pa + 2);
+                            __m256 a3 = _mm256_loadu_ps(pa + 3);
+                            __m256 a4 = _mm256_loadu_ps(pa + 4);
                             __m256 b = _mm256_loadu_ps(pb);
-                            __m256 sum = _mm256_mul_ps(a, b);
-                            for (size_t y = 1; y < out_height; ++y) {
-                                pa += prevo_delta;
-                                pb += out_width;
-                                // vectorize::dot
-                                a = _mm256_loadu_ps(pa);
-                                b = _mm256_loadu_ps(pb);
-                                sum = madd256_ps(a, b, sum);
-                            }
-                            *psums = sum;
-                        } // for wx
-                    } // for wy
-                    serial_size_t widx = weight.get_index(
-                        0,
-                        0,
-                        in.depth_ * outc + inc
-                    );
-                    float* pdw = &dW[widx];
-                    for (int i = 0; i < 6; ++i) {
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            pa += prevo_delta;
+                            pb += out_width;
+                        }
                         _mm_storeu_ps(
-                            pdw + i * 4,
+                            pdw + wy * 5,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw + i * 4),
-                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
-                                             sums[i * 4 + 2], sums[i * 4 + 3])
+                                _mm_loadu_ps(pdw + wy * 5),
+                                hsum4x256_ps(sum0, sum1, sum2, sum3)
                             )
                         );
-                    }
-                    _mm_store_ss(
-                        pdw + 24,
-                        _mm_add_ss(
-                            _mm_load_ss(pdw + 24),
-                            hsum256_ps(sums[24])
-                        )
-                    );
+                        _mm_store_ss(
+                            pdw + wy * 5 + 4,
+                            _mm_add_ss(
+                                _mm_load_ss(pdw + wy * 5 + 4),
+                                hsum256_ps(sum4)
+                            )
+                        );
+                    } // for wy
                 } // for outc
             } // for inc
         }else {
@@ -505,7 +591,12 @@ inline void accumulate_dw(
                     const float* delta = &curr_delta[
                         out.get_index(0, 0, outc)
                     ];
-                    __m256* psums = sums;
+                    serial_size_t widx = weight.get_index(
+                        0,
+                        0,
+                        in.depth_ * outc + inc
+                    );
+                    float* pdw = &dW[widx];
                     for (size_t wy = 0;
                          wy < 5; // weight.height_
                          ++wy
@@ -515,67 +606,65 @@ inline void accumulate_dw(
                             static_cast<serial_size_t>(wy),
                             inc
                         );
-                        const float* pprev_out = &prev_out[prev_out_idx];
-                        for (size_t wx = 0;
-                             wx < 5; // weight.width_
-                             ++wx, ++pprev_out, ++psums
-                        ) {
-                            const float* pa = pprev_out;
-                            const float* pb = delta;
+                        const float* pa = &prev_out[prev_out_idx];
+                        const float* pb = delta;
+                        // vectorize::dot
+                        sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
+                        for (size_t y = 0; y < out_height; ++y) {
                             // vectorize::dot
-                            __m256 a = _mm256_loadu_ps(pa);
+                            __m256 a0 = _mm256_loadu_ps(pa + 0);
+                            __m256 a1 = _mm256_loadu_ps(pa + 1);
+                            __m256 a2 = _mm256_loadu_ps(pa + 2);
+                            __m256 a3 = _mm256_loadu_ps(pa + 3);
+                            __m256 a4 = _mm256_loadu_ps(pa + 4);
                             __m256 b = _mm256_loadu_ps(pb);
-                            __m256 sum = _mm256_mul_ps(a, b);
-                            a = _mm256_loadu_ps(pa + 8);
-                            b = _mm256_loadu_ps(pb + 8);
-                            sum = madd256_ps(a, b, sum);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
+                            a0 = _mm256_loadu_ps(pa + 010);
+                            a1 = _mm256_loadu_ps(pa + 011);
+                            a2 = _mm256_loadu_ps(pa + 012);
+                            a3 = _mm256_loadu_ps(pa + 013);
+                            a4 = _mm256_loadu_ps(pa + 014);
+                            b = _mm256_loadu_ps(pb + 010);
+                            sum0 = madd256_ps(a0, b, sum0);
+                            sum1 = madd256_ps(a1, b, sum1);
+                            sum2 = madd256_ps(a2, b, sum2);
+                            sum3 = madd256_ps(a3, b, sum3);
+                            sum4 = madd256_ps(a4, b, sum4);
                             for (size_t i = 2; i < nblocks; ++i) {
-                                a = _mm256_loadu_ps(pa + 8 * i);
+                                a0 = _mm256_loadu_ps(pa + 8 * i + 0);
+                                a1 = _mm256_loadu_ps(pa + 8 * i + 1);
+                                a2 = _mm256_loadu_ps(pa + 8 * i + 2);
+                                a3 = _mm256_loadu_ps(pa + 8 * i + 3);
+                                a4 = _mm256_loadu_ps(pa + 8 * i + 4);
                                 b = _mm256_loadu_ps(pb + 8 * i);
-                                sum = madd256_ps(a, b, sum);
+                                sum0 = madd256_ps(a0, b, sum0);
+                                sum1 = madd256_ps(a1, b, sum1);
+                                sum2 = madd256_ps(a2, b, sum2);
+                                sum3 = madd256_ps(a3, b, sum3);
+                                sum4 = madd256_ps(a4, b, sum4);
                             }
-                            for (size_t y = 1; y < out_height; ++y) {
-                                pa += prevo_delta;
-                                pb += out_width;
-                                // vectorize::dot
-                                a = _mm256_loadu_ps(pa);
-                                b = _mm256_loadu_ps(pb);
-                                sum = madd256_ps(a, b, sum);
-                                a = _mm256_loadu_ps(pa + 8);
-                                b = _mm256_loadu_ps(pb + 8);
-                                sum = madd256_ps(a, b, sum);
-                                for (size_t i = 2; i < nblocks; ++i) {
-                                    a = _mm256_loadu_ps(pa + 8 * i);
-                                    b = _mm256_loadu_ps(pb + 8 * i);
-                                    sum = madd256_ps(a, b, sum);
-                                }
-                            }
-                            *psums = sum;
-                        } // for wx
-                    } // for wy
-                    serial_size_t widx = weight.get_index(
-                        0,
-                        0,
-                        in.depth_ * outc + inc
-                    );
-                    float* pdw = &dW[widx];
-                    for (int i = 0; i < 6; ++i) {
+                            pa += prevo_delta;
+                            pb += out_width;
+                        }
                         _mm_storeu_ps(
-                            pdw + i * 4,
+                            pdw + wy * 5,
                             _mm_add_ps(
-                                _mm_loadu_ps(pdw + i * 4),
-                                hsum4x256_ps(sums[i * 4 + 0], sums[i * 4 + 1],
-                                             sums[i * 4 + 2], sums[i * 4 + 3])
+                                _mm_loadu_ps(pdw + wy * 5),
+                                hsum4x256_ps(sum0, sum1, sum2, sum3)
                             )
                         );
-                    }
-                    _mm_store_ss(
-                        pdw + 24,
-                        _mm_add_ss(
-                            _mm_load_ss(pdw + 24),
-                            hsum256_ps(sums[24])
-                        )
-                    );
+                        _mm_store_ss(
+                            pdw + wy * 5 + 4,
+                            _mm_add_ss(
+                                _mm_load_ss(pdw + wy * 5 + 4),
+                                hsum256_ps(sum4)
+                            )
+                        );
+                    } // for wy
                 } // for outc
             } // for inc
         }
