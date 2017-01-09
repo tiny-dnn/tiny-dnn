@@ -266,15 +266,15 @@ class Tensor {
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     const void *device_data() const {
-        toDevice();
-        return (*device_data_)();
+        storage_ptr_->toDevice();
+        return (*storage_ptr_->device_data_)();
     }
 
     void *mutable_device_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        toDevice();
-        data_dirty_ = true;
-        return (*device_data_)();
+        storage_ptr_->toDevice();
+        storage_ptr_->data_dirty_ = true;
+        return (*storage_ptr_->device_data_)();
     }
 #endif
 
