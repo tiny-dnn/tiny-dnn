@@ -125,25 +125,8 @@ class fully_connected_layer : public feedforward_layer<Activation> {
     std::string layer_type() const override { return "fully-connected"; }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive & ar,
-                                   cereal::construct<fully_connected_layer> & construct) {
-        serial_size_t in_dim, out_dim;
-        bool has_bias;
-
-        ar(cereal::make_nvp("in_size", in_dim),
-           cereal::make_nvp("out_size", out_dim),
-           cereal::make_nvp("has_bias", has_bias));
-        construct(in_dim, out_dim, has_bias);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in_size_),
-           cereal::make_nvp("out_size", params_.out_size_),
-           cereal::make_nvp("has_bias", params_.has_bias_));
-    }
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, fully_connected_layer<Activation2>& layer);
 #endif
 
  protected:

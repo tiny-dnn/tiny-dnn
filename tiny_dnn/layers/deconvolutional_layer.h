@@ -326,7 +326,7 @@ class deconvolutional_layer : public feedforward_layer<Activation> {
                         return Base::backward_activation(p_delta, out, c_delta);
                     },
                     &deconv_layer_worker_storage_);
-        #ifdef CNN_USE_AVX
+#ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,
                     [this](const tensor_t& in) {

@@ -374,47 +374,9 @@ class convolutional_layer : public feedforward_layer<Activation> {
 #endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<convolutional_layer>& construct) {
-        serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
-        bool has_bias;
-        shape3d in;
-        padding pad_type;
-        connection_table tbl;
-
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("window_width", w_width),
-           cereal::make_nvp("window_height", w_height),
-           cereal::make_nvp("out_channels", out_ch),
-           cereal::make_nvp("connection_table", tbl),
-           cereal::make_nvp("pad_type", pad_type),
-           cereal::make_nvp("has_bias", has_bias),
-           cereal::make_nvp("w_stride", w_stride),
-           cereal::make_nvp("h_stride", h_stride));
-
-        construct(in.width_, in.height_, w_width, w_height, in.depth_,
-                  out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
-    }
-#endif  // CNN_NO_SERIALIZATION
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-#ifndef CNN_NO_SERIALIZATION
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in),
-            cereal::make_nvp("window_width", params_.weight.width_),
-            cereal::make_nvp("window_height", params_.weight.height_),
-            cereal::make_nvp("out_channels", params_.out.depth_),
-            cereal::make_nvp("connection_table", params_.tbl),
-            cereal::make_nvp("pad_type", params_.pad_type),
-            cereal::make_nvp("has_bias", params_.has_bias),
-            cereal::make_nvp("w_stride", params_.w_stride),
-            cereal::make_nvp("h_stride", params_.h_stride));
-#else
-        throw nn_error("TinyDNN was not built with Serialization support");
-#endif  // CNN_NO_SERIALIZATION
-    }
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, convolutional_layer<Activation2>& layer);
+#endif
 
  private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {

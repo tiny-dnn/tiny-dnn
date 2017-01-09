@@ -112,25 +112,7 @@ class power_layer : public layer {
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<power_layer>& construct) {
-        shape3d in_shape;
-        float_t factor;
-        float_t scale {1.0};
-
-        ar(cereal::make_nvp("in_size", in_shape),
-           cereal::make_nvp("factor", factor),
-           cereal::make_nvp("scale", scale));
-        construct(in_shape, factor, scale);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_shape_),
-           cereal::make_nvp("factor", factor_),
-           cereal::make_nvp("scale", scale_));
-    }
+    friend void serialize(Archive& ar, power_layer& layer);
 #endif
 
     float_t factor() const {

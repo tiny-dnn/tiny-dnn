@@ -121,18 +121,7 @@ class concat_layer : public layer {
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<concat_layer> & construct) {
-        std::vector<shape3d> in_shapes;
-
-        ar(cereal::make_nvp("in_size", in_shapes));
-        construct(in_shapes);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(in_shapes_);
-    }
+    friend void serialize(Archive& ar, concat_layer& layer);
 #endif
 
  private:

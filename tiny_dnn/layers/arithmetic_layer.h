@@ -87,22 +87,8 @@ class elementwise_add_layer : public layer {
 
 #ifndef CNN_NO_SERIALIZATION
     template <class Archive>
-    static void load_and_construct(Archive & ar,
-        cereal::construct<elementwise_add_layer> & construct
-    ) {
-        serial_size_t num_args, dim;
+    friend void serialize(Archive& ar, elementwise_add_layer& layer);
 
-        ar(cereal::make_nvp("num_args", num_args),
-           cereal::make_nvp("dim", dim));
-        construct(num_args, dim);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("num_args", num_args_),
-           cereal::make_nvp("dim", dim_));
-    }
 #endif
 
  private:

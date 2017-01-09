@@ -154,25 +154,8 @@ class max_unpooling_layer : public feedforward_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<max_unpooling_layer>& construct) {
-        shape3d in;
-        serial_size_t stride, unpool_size;
-
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("unpool_size", unpool_size),
-           cereal::make_nvp("stride", stride));
-        construct(in, unpool_size, stride);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_),
-           cereal::make_nvp("unpool_size", unpool_size_),
-           cereal::make_nvp("stride", stride_));
-    }
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, max_unpooling_layer<Activation2>& layer);
 #endif
 
  private:

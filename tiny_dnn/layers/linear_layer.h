@@ -100,26 +100,8 @@ class linear_layer : public feedforward_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<linear_layer>& construct) {
-        serial_size_t dim;
-        float_t scale, bias;
-
-        ar(cereal::make_nvp("in_size", dim),
-           cereal::make_nvp("scale", scale),
-           cereal::make_nvp("bias", bias));
-
-        construct(dim, scale, bias);
-    }
-
-    template <class Archive>
-    void serialize(Archive& ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", dim_),
-           cereal::make_nvp("scale", scale_),
-           cereal::make_nvp("bias", bias_));
-    }
+    template <class Archive, typename Activation2>
+    friend void serialize(Archive& ar, linear_layer<Activation2>& layer);
 #endif
 
  protected:
