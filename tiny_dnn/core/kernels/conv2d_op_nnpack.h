@@ -32,94 +32,69 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void
-conv2d_op_nnpack(const tensor_t&         in_data,
-                 const vec_t&                  W,
-                 const vec_t&               bias,
-                 tensor_t&              out_data,
-                 const core::conv_params& params) {
+inline void conv2d_op_nnpack(const tensor_t& in_data, const vec_t& W, const vec_t& bias, tensor_t& out_data,
+                             const core::conv_params& params) {
 #ifdef CNN_USE_NNPACK
-    // call singleton to initialize NNPACK
-    core::NNPackInitializer::getInstance().initialize();
+  // call singleton to initialize NNPACK
+  core::NNPackInitializer::getInstance().initialize();
 
-    const auto algorithm = core::nnp_algorithm();
-    const auto kernel_transform_strategy = core::nnp_kts();
+  const auto algorithm = core::nnp_algorithm();
+  const auto kernel_transform_strategy = core::nnp_kts();
 
-    const serial_size_t input_channels = params.in.depth_;
-    const serial_size_t output_channels = params.out.depth_;
+  const serial_size_t input_channels = params.in.depth_;
+  const serial_size_t output_channels = params.out.depth_;
 
-    // input data passed by convolution layer has been padded already
-    // set input_size to padded size
-    const nnp_size input_size = {
-        static_cast<size_t>(params.in_padded.width_),
-        static_cast<size_t>(params.in_padded.height_)
-    };
+  // input data passed by convolution layer has been padded already
+  // set input_size to padded size
+  const nnp_size input_size = {static_cast<size_t>(params.in_padded.width_),
+                               static_cast<size_t>(params.in_padded.height_)};
 
-    const nnp_size kernel_size = {
-        static_cast<size_t>(params.weight.width_),
-        static_cast<size_t>(params.weight.height_)
-    };
+  const nnp_size kernel_size = {static_cast<size_t>(params.weight.width_), static_cast<size_t>(params.weight.height_)};
 
-    // input padded ,so no need to do padding
-    const float_t dx {0.0}; // params.in_padded.width_  - params.in.width_;
-    const float_t dy {0.0}; // params.in_padded.height_ - params.in.height_;
+  // input padded ,so no need to do padding
+  const float_t dx{0.0};  // params.in_padded.width_  - params.in.width_;
+  const float_t dy{0.0};  // params.in_padded.height_ - params.in.height_;
 
-    // we'll assume that padding is symmetric
+  // we'll assume that padding is symmetric
 
-    const nnp_padding padding = {
-        static_cast<size_t>(dy/2),  // top
-        static_cast<size_t>(dx/2),  // right
-        static_cast<size_t>(dy/2),  // bottom
-        static_cast<size_t>(dx/2)   // left
-    };
+  const nnp_padding padding = {
+      static_cast<size_t>(dy / 2),  // top
+      static_cast<size_t>(dx / 2),  // right
+      static_cast<size_t>(dy / 2),  // bottom
+      static_cast<size_t>(dx / 2)   // left
+  };
 
-    const nnp_size stride = {
-        static_cast<size_t>(params.w_stride),
-        static_cast<size_t>(params.h_stride)
-    };
-    
-    const float* input_ptr  = in_data[0].data();
-    const float* kernel_ptr = W.data();
-    const float* bias_ptr   = bias.data();
+  const nnp_size stride = {static_cast<size_t>(params.w_stride), static_cast<size_t>(params.h_stride)};
 
-    float* output_ptr = out_data[0].data();
+  const float* input_ptr = in_data[0].data();
+  const float* kernel_ptr = W.data();
+  const float* bias_ptr = bias.data();
 
-    // TODO: embed it into a class
-    const size_t num_mkl_threads = 1;
-    pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
+  float* output_ptr = out_data[0].data();
 
-    nnp_profile* profile = nullptr;
+  // TODO: embed it into a class
+  const size_t num_mkl_threads = 1;
+  pthreadpool_t threadpool = pthreadpool_create(num_mkl_threads);
 
-    nnp_status status =
-        nnp_convolution_inference(
-            algorithm,
-            kernel_transform_strategy,
-            input_channels,
-            output_channels,
-            input_size,
-            padding,
-            kernel_size,
-            stride,
-            input_ptr,
-            kernel_ptr,
-            bias_ptr,
-            output_ptr,
-            threadpool,
-            profile);
+  nnp_profile* profile = nullptr;
 
-    if (status != nnp_status_success) {
-        throw nn_error("Could not succeed with nnp_convolution_inference");
-    }
+  nnp_status status = nnp_convolution_inference(algorithm, kernel_transform_strategy, input_channels, output_channels,
+                                                input_size, padding, kernel_size, stride, input_ptr, kernel_ptr,
+                                                bias_ptr, output_ptr, threadpool, profile);
 
-    // TODO: embed it into a class
-    pthreadpool_destroy(threadpool);
+  if (status != nnp_status_success) {
+    throw nn_error("Could not succeed with nnp_convolution_inference");
+  }
+
+  // TODO: embed it into a class
+  pthreadpool_destroy(threadpool);
 #else
-    CNN_UNREFERENCED_PARAMETER(in_data);
-    CNN_UNREFERENCED_PARAMETER(W);
-    CNN_UNREFERENCED_PARAMETER(bias);
-    CNN_UNREFERENCED_PARAMETER(out_data);
-    CNN_UNREFERENCED_PARAMETER(params);
-    throw nn_error("TinyDNN has not been compiled with NNPACK support.");
+  CNN_UNREFERENCED_PARAMETER(in_data);
+  CNN_UNREFERENCED_PARAMETER(W);
+  CNN_UNREFERENCED_PARAMETER(bias);
+  CNN_UNREFERENCED_PARAMETER(out_data);
+  CNN_UNREFERENCED_PARAMETER(params);
+  throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
 }
 

@@ -26,237 +26,205 @@
 */
 #pragma once
 
+#include <cereal/access.hpp>  // For LoadAndConstruct
 #include "tiny_dnn/tiny_dnn.h"
-#include <cereal/access.hpp> // For LoadAndConstruct
 
 namespace cereal {
 
-template <> struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::elementwise_add_layer>& construct) {
-        tiny_dnn::serial_size_t num_args, dim;
+template <>
+struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::elementwise_add_layer>& construct) {
+    tiny_dnn::serial_size_t num_args, dim;
 
-        ar(cereal::make_nvp("num_args", num_args),
-           cereal::make_nvp("dim", dim));
-        construct(num_args, dim);
-    }
+    ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
+    construct(num_args, dim);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::average_pooling_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::average_pooling_layer<Activation>>& construct) {
-        tiny_dnn::shape3d in;
-        tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
-        tiny_dnn::padding pad_type;
+  template <class Archive>
+  static void load_and_construct(Archive& ar,
+                                 cereal::construct<tiny_dnn::average_pooling_layer<Activation>>& construct) {
+    tiny_dnn::shape3d in;
+    tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    tiny_dnn::padding pad_type;
 
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("pool_size_x", pool_size_x),
-           cereal::make_nvp("pool_size_y", pool_size_y),
-           cereal::make_nvp("stride_x", stride_x),
-           cereal::make_nvp("stride_y", stride_y),
-           cereal::make_nvp("pad_type", pad_type));
-        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y, stride_x, stride_y, pad_type);
-    }
+    ar(cereal::make_nvp("in_size", in), cereal::make_nvp("pool_size_x", pool_size_x),
+       cereal::make_nvp("pool_size_y", pool_size_y), cereal::make_nvp("stride_x", stride_x),
+       cereal::make_nvp("stride_y", stride_y), cereal::make_nvp("pad_type", pad_type));
+    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y, stride_x, stride_y, pad_type);
+  }
 };
 
-template <> struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::batch_normalization_layer>& construct) {
-        tiny_dnn::shape3d in;
-        tiny_dnn::serial_size_t in_spatial_size, in_channels;
-        tiny_dnn::float_t eps, momentum;
-        tiny_dnn::net_phase phase;
-        tiny_dnn::vec_t mean, variance;
-        
-        ar(cereal::make_nvp("in_spatial_size", in_spatial_size),
-           cereal::make_nvp("in_channels", in_channels),
-           cereal::make_nvp("epsilon", eps),
-           cereal::make_nvp("momentum", momentum),
-           cereal::make_nvp("phase", phase),
-           cereal::make_nvp("mean", mean),
-           cereal::make_nvp("variance", variance));
-        construct(in_spatial_size, in_channels, eps, momentum, phase);
-        construct->set_mean(mean);
-        construct->set_variance(variance);
-    }
+template <>
+struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::batch_normalization_layer>& construct) {
+    tiny_dnn::shape3d in;
+    tiny_dnn::serial_size_t in_spatial_size, in_channels;
+    tiny_dnn::float_t eps, momentum;
+    tiny_dnn::net_phase phase;
+    tiny_dnn::vec_t mean, variance;
+
+    ar(cereal::make_nvp("in_spatial_size", in_spatial_size), cereal::make_nvp("in_channels", in_channels),
+       cereal::make_nvp("epsilon", eps), cereal::make_nvp("momentum", momentum), cereal::make_nvp("phase", phase),
+       cereal::make_nvp("mean", mean), cereal::make_nvp("variance", variance));
+    construct(in_spatial_size, in_channels, eps, momentum, phase);
+    construct->set_mean(mean);
+    construct->set_variance(variance);
+  }
 };
 
-template <> struct LoadAndConstruct<tiny_dnn::concat_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::concat_layer>& construct) {
-        std::vector<tiny_dnn::shape3d> in_shapes;
+template <>
+struct LoadAndConstruct<tiny_dnn::concat_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::concat_layer>& construct) {
+    std::vector<tiny_dnn::shape3d> in_shapes;
 
-        ar(cereal::make_nvp("in_size", in_shapes));
-        construct(in_shapes);
-    }
+    ar(cereal::make_nvp("in_size", in_shapes));
+    construct(in_shapes);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::convolutional_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::convolutional_layer<Activation>>& construct) {
-        tiny_dnn::serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
-        bool has_bias;
-        tiny_dnn::shape3d in;
-        tiny_dnn::padding pad_type;
-        tiny_dnn::core::connection_table tbl;
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::convolutional_layer<Activation>>& construct) {
+    tiny_dnn::serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
+    bool has_bias;
+    tiny_dnn::shape3d in;
+    tiny_dnn::padding pad_type;
+    tiny_dnn::core::connection_table tbl;
 
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("window_width", w_width),
-           cereal::make_nvp("window_height", w_height),
-           cereal::make_nvp("out_channels", out_ch),
-           cereal::make_nvp("connection_table", tbl),
-           cereal::make_nvp("pad_type", pad_type),
-           cereal::make_nvp("has_bias", has_bias),
-           cereal::make_nvp("w_stride", w_stride),
-           cereal::make_nvp("h_stride", h_stride));
+    ar(cereal::make_nvp("in_size", in), cereal::make_nvp("window_width", w_width),
+       cereal::make_nvp("window_height", w_height), cereal::make_nvp("out_channels", out_ch),
+       cereal::make_nvp("connection_table", tbl), cereal::make_nvp("pad_type", pad_type),
+       cereal::make_nvp("has_bias", has_bias), cereal::make_nvp("w_stride", w_stride),
+       cereal::make_nvp("h_stride", h_stride));
 
-        construct(in.width_, in.height_, w_width, w_height, in.depth_,
-                  out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
-    }
+    construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
+  }
 };
 
-template <> struct LoadAndConstruct<tiny_dnn::dropout_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::dropout_layer>& construct) {
-        tiny_dnn::net_phase phase;
-        tiny_dnn::float_t dropout_rate;
-        tiny_dnn::serial_size_t in_size;
+template <>
+struct LoadAndConstruct<tiny_dnn::dropout_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::dropout_layer>& construct) {
+    tiny_dnn::net_phase phase;
+    tiny_dnn::float_t dropout_rate;
+    tiny_dnn::serial_size_t in_size;
 
-        ar(cereal::make_nvp("in_size", in_size),
-           cereal::make_nvp("dropout_rate", dropout_rate),
-           cereal::make_nvp("phase", phase));
-        construct(in_size, dropout_rate, phase);
-    }
+    ar(cereal::make_nvp("in_size", in_size), cereal::make_nvp("dropout_rate", dropout_rate),
+       cereal::make_nvp("phase", phase));
+    construct(in_size, dropout_rate, phase);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::fully_connected_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::fully_connected_layer<Activation>>& construct) {
-        tiny_dnn::serial_size_t in_dim, out_dim;
-        bool has_bias;
+  template <class Archive>
+  static void load_and_construct(Archive& ar,
+                                 cereal::construct<tiny_dnn::fully_connected_layer<Activation>>& construct) {
+    tiny_dnn::serial_size_t in_dim, out_dim;
+    bool has_bias;
 
-        ar(cereal::make_nvp("in_size", in_dim),
-           cereal::make_nvp("out_size", out_dim),
-           cereal::make_nvp("has_bias", has_bias));
-        construct(in_dim, out_dim, has_bias);
-    }
+    ar(cereal::make_nvp("in_size", in_dim), cereal::make_nvp("out_size", out_dim),
+       cereal::make_nvp("has_bias", has_bias));
+    construct(in_dim, out_dim, has_bias);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::linear_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::linear_layer<Activation>>& construct) {
-        tiny_dnn::serial_size_t dim;
-        tiny_dnn::float_t scale, bias;
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::linear_layer<Activation>>& construct) {
+    tiny_dnn::serial_size_t dim;
+    tiny_dnn::float_t scale, bias;
 
-        ar(cereal::make_nvp("in_size", dim),
-           cereal::make_nvp("scale", scale),
-           cereal::make_nvp("bias", bias));
+    ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale), cereal::make_nvp("bias", bias));
 
-        construct(dim, scale, bias);
-    }
+    construct(dim, scale, bias);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::lrn_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::lrn_layer<Activation>>& construct) {
-        tiny_dnn::shape3d in_shape;
-        tiny_dnn::serial_size_t size;
-        tiny_dnn::float_t alpha, beta;
-        tiny_dnn::norm_region region;
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::lrn_layer<Activation>>& construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::serial_size_t size;
+    tiny_dnn::float_t alpha, beta;
+    tiny_dnn::norm_region region;
 
-        ar(cereal::make_nvp("in_shape", in_shape),
-           cereal::make_nvp("size",     size),
-           cereal::make_nvp("alpha",    alpha),
-           cereal::make_nvp("beta",     beta),
-           cereal::make_nvp("region",   region));
-        construct(in_shape, size, alpha, beta, region);
-    }
+    ar(cereal::make_nvp("in_shape", in_shape), cereal::make_nvp("size", size), cereal::make_nvp("alpha", alpha),
+       cereal::make_nvp("beta", beta), cereal::make_nvp("region", region));
+    construct(in_shape, size, alpha, beta, region);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::max_pooling_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::max_pooling_layer<Activation>>& construct) {
-        tiny_dnn::shape3d in;
-        tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
-        tiny_dnn::padding pad_type;
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::max_pooling_layer<Activation>>& construct) {
+    tiny_dnn::shape3d in;
+    tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    tiny_dnn::padding pad_type;
 
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("pool_size_x", pool_size_x),
-           cereal::make_nvp("pool_size_y", pool_size_y),
-           cereal::make_nvp("stride_x", stride_x),
-           cereal::make_nvp("stride_y", stride_y),
-           cereal::make_nvp("pad_type", pad_type));
-        construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-                  stride_x, stride_y, pad_type);
-    }
+    ar(cereal::make_nvp("in_size", in), cereal::make_nvp("pool_size_x", pool_size_x),
+       cereal::make_nvp("pool_size_y", pool_size_y), cereal::make_nvp("stride_x", stride_x),
+       cereal::make_nvp("stride_y", stride_y), cereal::make_nvp("pad_type", pad_type));
+    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y, stride_x, stride_y, pad_type);
+  }
 };
 
 template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::max_unpooling_layer<Activation>> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::max_unpooling_layer<Activation>>& construct) {
-        tiny_dnn::shape3d in;
-        tiny_dnn::serial_size_t stride, unpool_size;
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::max_unpooling_layer<Activation>>& construct) {
+    tiny_dnn::shape3d in;
+    tiny_dnn::serial_size_t stride, unpool_size;
 
-        ar(cereal::make_nvp("in_size", in),
-           cereal::make_nvp("unpool_size", unpool_size),
-           cereal::make_nvp("stride", stride));
-        construct(in, unpool_size, stride);
-    }
+    ar(cereal::make_nvp("in_size", in), cereal::make_nvp("unpool_size", unpool_size),
+       cereal::make_nvp("stride", stride));
+    construct(in, unpool_size, stride);
+  }
 };
 
-template <> struct LoadAndConstruct<tiny_dnn::power_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::power_layer>& construct) {
-        tiny_dnn::shape3d in_shape;
-        tiny_dnn::float_t factor;
-        tiny_dnn::float_t scale(1.0f);
+template <>
+struct LoadAndConstruct<tiny_dnn::power_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::power_layer>& construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t factor;
+    tiny_dnn::float_t scale(1.0f);
 
-        ar(cereal::make_nvp("in_size", in_shape),
-           cereal::make_nvp("factor", factor),
-           cereal::make_nvp("scale", scale));
-        construct(in_shape, factor, scale);
-    }
+    ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("factor", factor), cereal::make_nvp("scale", scale));
+    construct(in_shape, factor, scale);
+  }
 };
 
-template <> struct LoadAndConstruct<tiny_dnn::slice_layer> {
-    template <class Archive>
-    static void load_and_construct(Archive& ar,
-                                   cereal::construct<tiny_dnn::slice_layer>& construct) {
-        tiny_dnn::shape3d in_shape;
-        tiny_dnn::slice_type slice_type;
-        tiny_dnn::serial_size_t num_outputs;
+template <>
+struct LoadAndConstruct<tiny_dnn::slice_layer> {
+  template <class Archive>
+  static void load_and_construct(Archive& ar, cereal::construct<tiny_dnn::slice_layer>& construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::slice_type slice_type;
+    tiny_dnn::serial_size_t num_outputs;
 
-        ar(cereal::make_nvp("in_size", in_shape),
-           cereal::make_nvp("slice_type", slice_type),
-           cereal::make_nvp("num_outputs", num_outputs));
-        construct(in_shape, slice_type, num_outputs);
-    }
+    ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("slice_type", slice_type),
+       cereal::make_nvp("num_outputs", num_outputs));
+    construct(in_shape, slice_type, num_outputs);
+  }
 };
 
 template <class Archive>
 struct specialize<Archive, tiny_dnn::elementwise_add_layer, cereal::specialization::non_member_serialize> {};
 
 template <class Archive, typename Activation>
-struct specialize<Archive, tiny_dnn::average_pooling_layer<Activation>, cereal::specialization::non_member_serialize> {};
+struct specialize<Archive, tiny_dnn::average_pooling_layer<Activation>, cereal::specialization::non_member_serialize> {
+};
 
 template <class Archive>
 struct specialize<Archive, tiny_dnn::batch_normalization_layer, cereal::specialization::non_member_serialize> {};
@@ -271,7 +239,8 @@ template <class Archive>
 struct specialize<Archive, tiny_dnn::dropout_layer, cereal::specialization::non_member_serialize> {};
 
 template <class Archive, typename Activation>
-struct specialize<Archive, tiny_dnn::fully_connected_layer<Activation>, cereal::specialization::non_member_serialize> {};
+struct specialize<Archive, tiny_dnn::fully_connected_layer<Activation>, cereal::specialization::non_member_serialize> {
+};
 
 template <class Archive, typename Activation>
 struct specialize<Archive, tiny_dnn::linear_layer<Activation>, cereal::specialization::non_member_serialize> {};
@@ -291,7 +260,7 @@ struct specialize<Archive, tiny_dnn::power_layer, cereal::specialization::non_me
 template <class Archive>
 struct specialize<Archive, tiny_dnn::slice_layer, cereal::specialization::non_member_serialize> {};
 
-} // namespace cereal
+}  // namespace cereal
 
 namespace tiny_dnn {
 
@@ -546,4 +515,4 @@ void serialize(Archive& ar,
 
 } // namespace core
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

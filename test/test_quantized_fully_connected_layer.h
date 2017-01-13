@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -128,21 +128,20 @@ TEST(quantized_fully_connected, read_write)
     quantized_serialization_test(l1, l2);
 }*/
 
-TEST(quantized_fully_connected, forward)
-{
-    quantized_fully_connected_layer<identity> l(4, 2);
-    EXPECT_EQ(l.in_channels(), serial_size_t(3)); // in, W and b
+TEST(quantized_fully_connected, forward) {
+  quantized_fully_connected_layer<identity> l(4, 2);
+  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
 
-    l.weight_init(weight_init::constant(1.0));
-    l.bias_init(weight_init::constant(0.5));
+  l.weight_init(weight_init::constant(1.0));
+  l.bias_init(weight_init::constant(0.5));
 
-    vec_t in = {0,1,2,3};
-    vec_t out = l.forward({ { in } })[0][0];
-    vec_t out_expected = {6.5, 6.5}; // 0+1+2+3+0.5
+  vec_t in = {0, 1, 2, 3};
+  vec_t out = l.forward({{in}})[0][0];
+  vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
-    for (size_t i = 0; i < out_expected.size(); i++) {
-        EXPECT_NEAR(out_expected[i], out[i], 1E-2);
-    }
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+  }
 }
 
 /*#ifdef CNN_USE_NNPACK
@@ -164,20 +163,19 @@ TEST(quantized_fully_connected, forward_nnp)
 }
 #endif*/
 
-TEST(quantized_fully_connected, forward_nobias)
-{
-    quantized_fully_connected_layer<identity> l(4, 2, false);
-    EXPECT_EQ(l.in_channels(), serial_size_t(2));// in and W
+TEST(quantized_fully_connected, forward_nobias) {
+  quantized_fully_connected_layer<identity> l(4, 2, false);
+  EXPECT_EQ(l.in_channels(), serial_size_t(2));  // in and W
 
-    l.weight_init(weight_init::constant(1.0));
+  l.weight_init(weight_init::constant(1.0));
 
-    vec_t in = { 0,1,2,3 };
-    vec_t out = l.forward({ { in } })[0][0];
-    vec_t out_expected = { 6.0, 6.0 }; // 0+1+2+3
+  vec_t in = {0, 1, 2, 3};
+  vec_t out = l.forward({{in}})[0][0];
+  vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
-    for (size_t i = 0; i < out_expected.size(); i++) {
-        EXPECT_NEAR(out_expected[i], out[i], 1E-2);
-    }
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+  }
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny-dnn

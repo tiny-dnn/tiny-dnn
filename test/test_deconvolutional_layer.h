@@ -25,7 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
- #include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -258,7 +258,8 @@ TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
 
     const auto test_data = generate_gradient_check_data(nn.in_data_size());
     nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
+    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first, test_data.second, epsilon<float_t>(),
+GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, read_write)
@@ -290,4 +291,4 @@ TEST(deconvolutional, read_write2) {
     serialization_test(layer1, layer2);
 }
 */
-} // namespace tiny-dnn
+}  // namespace tiny-dnn

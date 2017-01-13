@@ -48,4 +48,3 @@
 #if defined _WIN32
 #define CNN_WINDOWS
 #endif
-
