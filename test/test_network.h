@@ -552,7 +552,7 @@ TEST(network, read_write) {
 
   for (int i = 0; i < 10; i++) {
     tiny_dnn::float_t eps = std::abs(res1[i]) * 1e-5f;
-    ASSERT_TRUE(std::abs(res1[i] - res2[i]) < eps);
+    ASSERT_NEAR(res1[i], res2[i],eps);
   }
 }
 
