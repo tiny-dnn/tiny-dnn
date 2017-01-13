@@ -25,8 +25,8 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/feedforward_layer.h"
+#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
