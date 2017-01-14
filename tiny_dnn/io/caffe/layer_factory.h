@@ -150,14 +150,20 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer,
     for (size_t caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
         auto type = src_net[caffe_layer_idx].type();
 
-        size_t next_idx = tiny_layer_idx + 1;
+	if ( detail::layer_skipped(type) ||
+	    !detail::layer_has_weights(type)) {
+            continue;
+	}
 
-        while (next_idx < net->depth() && !detail::layer_match(type, (*net)[next_idx]->layer_type())) {
-            next_idx++;
+	if (!detail::layer_supported(type)) {
+            throw nn_error("error: tiny-dnn does not support this layer type:" + type);
+	}
+
+        while (tiny_layer_idx < net->depth() && !detail::layer_match(type, (*net)[tiny_layer_idx]->layer_type())) {
+            tiny_layer_idx++;
         }
-        if (next_idx >= net->depth()) break;
 
-        tiny_layer_idx = next_idx;
+        if (tiny_layer_idx >= net->depth()) break;
 
         // load weight
         detail::load(src_net[caffe_layer_idx], (*net)[tiny_layer_idx++]);
