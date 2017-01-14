@@ -295,139 +295,255 @@ struct specialize<Archive, tiny_dnn::slice_layer, cereal::specialization::non_me
 
 namespace tiny_dnn {
 
+struct serialization_buddy {
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::elementwise_add_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("num_args", layer.num_args_),
+           cereal::make_nvp("dim", layer.dim_));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::average_pooling_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size", layer.in_),
+           cereal::make_nvp("pool_size_x", layer.pool_size_x_),
+           cereal::make_nvp("pool_size_y", layer.pool_size_y_),
+           cereal::make_nvp("stride_x", layer.stride_x_),
+           cereal::make_nvp("stride_y", layer.stride_y_),
+           cereal::make_nvp("pad_type", layer.pad_type_));
+    }
+
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::batch_normalization_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_spatial_size", layer.in_spatial_size_),
+           cereal::make_nvp("in_channels", layer.in_channels_),
+           cereal::make_nvp("epsilon", layer.eps_),
+           cereal::make_nvp("momentum", layer.momentum_),
+           cereal::make_nvp("phase", layer.phase_),
+           cereal::make_nvp("mean", layer.mean_),
+           cereal::make_nvp("variance", layer.variance_));
+    }
+
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::concat_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(layer.in_shapes_);
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::convolutional_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        auto& params_ = layer.params_;
+        ar(cereal::make_nvp("in_size", params_.in),
+           cereal::make_nvp("window_width", params_.weight.width_),
+           cereal::make_nvp("window_height", params_.weight.height_),
+           cereal::make_nvp("out_channels", params_.out.depth_),
+           cereal::make_nvp("connection_table", params_.tbl),
+           cereal::make_nvp("pad_type", params_.pad_type),
+           cereal::make_nvp("has_bias", params_.has_bias),
+           cereal::make_nvp("w_stride", params_.w_stride),
+           cereal::make_nvp("h_stride", params_.h_stride));
+    }
+
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::dropout_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size", layer.in_size_),
+           cereal::make_nvp("dropout_rate", layer.dropout_rate_),
+           cereal::make_nvp("phase", layer.phase_));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::fully_connected_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        auto& params_ = layer.params_;
+        ar(cereal::make_nvp("in_size", params_.in_size_),
+           cereal::make_nvp("out_size", params_.out_size_),
+           cereal::make_nvp("has_bias", params_.has_bias_));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::linear_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size", layer.dim_),
+           cereal::make_nvp("scale", layer.scale_),
+           cereal::make_nvp("bias", layer.bias_));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::lrn_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_shape", layer.in_shape_),
+           cereal::make_nvp("size",     layer.size_),
+           cereal::make_nvp("alpha",    layer.alpha_),
+           cereal::make_nvp("beta",     layer.beta_),
+           cereal::make_nvp("region",   layer.region_));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::max_pooling_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        auto& params_ = layer.params_;
+        ar(cereal::make_nvp("in_size", params_.in),
+           cereal::make_nvp("pool_size_x", params_.pool_size_x),
+           cereal::make_nvp("pool_size_y", params_.pool_size_y),
+           cereal::make_nvp("stride_x", params_.stride_x),
+           cereal::make_nvp("stride_y", params_.stride_y),
+           cereal::make_nvp("pad_type", params_.pad_type));
+    }
+
+    template <class Archive, typename Activation>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::max_unpooling_layer<Activation>& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size",     layer.in_),
+           cereal::make_nvp("unpool_size", layer.unpool_size_),
+           cereal::make_nvp("stride",      layer.stride_));
+    }
+
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::power_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size", layer.in_shape_),
+           cereal::make_nvp("factor", layer.factor_),
+           cereal::make_nvp("scale", layer.scale_));
+    }
+
+    template <class Archive>
+    static inline void
+    serialize(Archive& ar,
+              tiny_dnn::slice_layer& layer) {
+        layer.serialize_prolog(ar);
+        ar(cereal::make_nvp("in_size", layer.in_shape_),
+           cereal::make_nvp("slice_type", layer.slice_type_),
+           cereal::make_nvp("num_outputs", layer.num_outputs_));
+    }
+};
+
 template <class Archive>
-void serialize(Archive& ar,
-               tiny_dnn::elementwise_add_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("num_args", layer.num_args_),
-       cereal::make_nvp("dim", layer.dim_));
+void serialize(Archive& ar, tiny_dnn::elementwise_add_layer& layer) {
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::average_pooling_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_),
-       cereal::make_nvp("pool_size_x", layer.pool_size_x_),
-       cereal::make_nvp("pool_size_y", layer.pool_size_y_),
-       cereal::make_nvp("stride_x", layer.stride_x_),
-       cereal::make_nvp("stride_y", layer.stride_y_),
-       cereal::make_nvp("pad_type", layer.pad_type_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
 void serialize(Archive& ar,
                tiny_dnn::batch_normalization_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_spatial_size", layer.in_spatial_size_),
-       cereal::make_nvp("in_channels", layer.in_channels_),
-       cereal::make_nvp("epsilon", layer.eps_),
-       cereal::make_nvp("momentum", layer.momentum_),
-       cereal::make_nvp("phase", layer.phase_),
-       cereal::make_nvp("mean", layer.mean_),
-       cereal::make_nvp("variance", layer.variance_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
 void serialize(Archive& ar,
                tiny_dnn::concat_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(layer.in_shapes_);
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::convolutional_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
-    ar(cereal::make_nvp("in_size", params_.in),
-       cereal::make_nvp("window_width", params_.weight.width_),
-       cereal::make_nvp("window_height", params_.weight.height_),
-       cereal::make_nvp("out_channels", params_.out.depth_),
-       cereal::make_nvp("connection_table", params_.tbl),
-       cereal::make_nvp("pad_type", params_.pad_type),
-       cereal::make_nvp("has_bias", params_.has_bias),
-       cereal::make_nvp("w_stride", params_.w_stride),
-       cereal::make_nvp("h_stride", params_.h_stride));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
 void serialize(Archive& ar,
                tiny_dnn::dropout_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_size_),
-       cereal::make_nvp("dropout_rate", layer.dropout_rate_),
-       cereal::make_nvp("phase", layer.phase_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::fully_connected_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
-    ar(cereal::make_nvp("in_size", params_.in_size_),
-       cereal::make_nvp("out_size", params_.out_size_),
-       cereal::make_nvp("has_bias", params_.has_bias_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::linear_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.dim_),
-       cereal::make_nvp("scale", layer.scale_),
-       cereal::make_nvp("bias", layer.bias_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::lrn_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_shape", layer.in_shape_),
-       cereal::make_nvp("size",     layer.size_),
-       cereal::make_nvp("alpha",    layer.alpha_),
-       cereal::make_nvp("beta",     layer.beta_),
-       cereal::make_nvp("region",   layer.region_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::max_pooling_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
-    ar(cereal::make_nvp("in_size", params_.in),
-       cereal::make_nvp("pool_size_x", params_.pool_size_x),
-       cereal::make_nvp("pool_size_y", params_.pool_size_y),
-       cereal::make_nvp("stride_x", params_.stride_x),
-       cereal::make_nvp("stride_y", params_.stride_y),
-       cereal::make_nvp("pad_type", params_.pad_type));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
 void serialize(Archive& ar,
                tiny_dnn::max_unpooling_layer<Activation>& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size",     layer.in_),
-       cereal::make_nvp("unpool_size", layer.unpool_size_),
-       cereal::make_nvp("stride",      layer.stride_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
 void serialize(Archive& ar,
                tiny_dnn::power_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_shape_),
-       cereal::make_nvp("factor", layer.factor_),
-       cereal::make_nvp("scale", layer.scale_));
+    serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
 void serialize(Archive& ar,
                tiny_dnn::slice_layer& layer) {
-    layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_shape_),
-       cereal::make_nvp("slice_type", layer.slice_type_),
-       cereal::make_nvp("num_outputs", layer.num_outputs_));
+    serialization_buddy::serialize(ar, layer);
 }
+
+template <class Archive, typename T>
+void serialize(Archive& ar,
+               tiny_dnn::index3d<T>& idx) {
+    ar(cereal::make_nvp("width",  idx.width_),
+       cereal::make_nvp("height", idx.height_),
+       cereal::make_nvp("depth",  idx.depth_));
+}
+
+namespace core {
+
+template <class Archive>
+void serialize(Archive& ar,
+               tiny_dnn::core::connection_table& tbl) {
+    ar(cereal::make_nvp("rows", tbl.rows_),
+       cereal::make_nvp("cols", tbl.cols_));
+    if (tbl.is_empty()) {
+        ar(cereal::make_nvp("connection", std::string("all")));
+    } else {
+        ar(cereal::make_nvp("connection", tbl.connected_));
+    }
+}
+
+} // namespace core
 
 } // namespace tiny_dnn

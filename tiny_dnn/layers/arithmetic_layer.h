@@ -86,9 +86,7 @@ class elementwise_add_layer : public layer {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive>
-    friend void serialize(Archive& ar, elementwise_add_layer& layer);
-
+    friend struct serialization_buddy;
 #endif
 
  private:

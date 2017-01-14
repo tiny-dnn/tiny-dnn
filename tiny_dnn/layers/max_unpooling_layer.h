@@ -154,8 +154,7 @@ class max_unpooling_layer : public feedforward_layer<Activation> {
     }
 
 #ifndef CNN_NO_SERIALIZATION
-    template <class Archive, typename Activation2>
-    friend void serialize(Archive& ar, max_unpooling_layer<Activation2>& layer);
+    friend struct serialization_buddy;
 #endif
 
  private:
