@@ -13,15 +13,18 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY
     EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY
     DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
     ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -30,22 +33,22 @@ namespace tiny_dnn {
 namespace core {
 
 struct deconv_layer_worker_specific_storage {
-  const tensor_t* prev_out_;
-  const tensor_t* curr_out_unpadded_;
-  tensor_t curr_out_buf_;
-  tensor_t curr_delta_padded;
+    const tensor_t *prev_out_;
+    const tensor_t *curr_out_unpadded_;
+    tensor_t        curr_out_buf_;
+    tensor_t        curr_delta_padded;
 };
 
 struct deconv_params {
-  connection_table tbl;
-  index3d<serial_size_t> in;
-  index3d<serial_size_t> out;
-  index3d<serial_size_t> out_unpadded;
-  index3d<serial_size_t> weight;
-  bool has_bias;
-  padding pad_type;
-  serial_size_t w_stride;
-  serial_size_t h_stride;
+    connection_table       tbl;
+    index3d<serial_size_t> in;
+    index3d<serial_size_t> out;
+    index3d<serial_size_t> out_unpadded;
+    index3d<serial_size_t> weight;
+    bool                   has_bias;
+    padding                pad_type;
+    serial_size_t          w_stride;
+    serial_size_t          h_stride;
 };
 
 }  // namespace core

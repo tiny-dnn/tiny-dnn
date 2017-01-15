@@ -10,7 +10,8 @@
     All rights reserved.
 
     Each contributor holds copyright over their respective contributions.
-    The project versioning (Git) records all such contribution source information.
+    The project versioning (Git) records all such contribution source
+   information.
 
     LICENSE
 
@@ -20,7 +21,8 @@
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, this
+    * Redistributions of source code must retain the above copyright notice,
+   this
       list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
@@ -33,13 +35,16 @@
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
     FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
     DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
     SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+   LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+   USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -64,28 +69,28 @@ namespace tiny_dnn {
  * implemented as Singleton.
  */
 class ProgramManager {
- public:
-  /* This function is called to create an instance of the class.
-   * Calling the constructor publicly is not allowed.
-   * The constructor is private and is only called by this Instance function.
-   */
-  static ProgramManager& getInstance() {
-    static ProgramManager instance;
-    return instance;
-  }
+   public:
+    /* This function is called to create an instance of the class.
+     * Calling the constructor publicly is not allowed.
+     * The constructor is private and is only called by this Instance function.
+     */
+    static ProgramManager &getInstance() {
+        static ProgramManager instance;
+        return instance;
+    }
 
-  /* Registers and compiles a kernel source code.
-   *
-   * Creates a new program based on the kernel string.
-   * Note that the kernel string is moved-out when constructing the
-   * program to save copying: it should no longer be used in the
-   * remainder of this function.
-   */
-  void registerOp(const Device& device, layer& layer) {
+    /* Registers and compiles a kernel source code.
+     *
+     * Creates a new program based on the kernel string.
+     * Note that the kernel string is moved-out when constructing the
+     * program to save copying: it should no longer be used in the
+     * remainder of this function.
+     */
+    void registerOp(const Device &device, layer &layer) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    // Register device to layer
-    layer.setDevice(device);
-    layer.createOp();
+        // Register device to layer
+        layer.setDevice(device);
+        layer.createOp();
 
 /*
         // retrieve incoming device an layer
@@ -121,7 +126,8 @@ class ProgramManager {
 
         std::cout << layer.kernel_header() << std::endl;
 
-        std::string program_string = std::string{program_head} + std::string{program_tail};
+        std::string program_string = std::string{program_head} +
+   std::string{program_tail};
         auto program = CLCudaAPI::Program(context_, std::move(program_string));
 */
 /*
@@ -146,47 +152,47 @@ class ProgramManager {
         programs_.insert({ key_program, program });
 */
 #else  // USE_OPENCL OR USE_CUDA
-    CNN_UNREFERENCED_PARAMETER(device);
-    CNN_UNREFERENCED_PARAMETER(layer);
+        CNN_UNREFERENCED_PARAMETER(device);
+        CNN_UNREFERENCED_PARAMETER(layer);
 #endif
-  }
+    }
 
-  // Returns the number of registered programs
-  serial_size_t num_programs() const {
+    // Returns the number of registered programs
+    serial_size_t num_programs() const {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    return programs_.size();
+        return programs_.size();
 #else
-    return serial_size_t(0);
+        return serial_size_t(0);
 #endif
-  }
+    }
 
 // Returns a CLCudaProgram given a key Program
 // based on internal device and op.
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-  CLCudaAPI::Program program(const Program& program) {
-    auto p = programs_.find(program);
-    if (p == programs_.end()) {
-      throw nn_error("Cannot retrieve program.");
+    CLCudaAPI::Program program(const Program &program) {
+        auto p = programs_.find(program);
+        if (p == programs_.end()) {
+            throw nn_error("Cannot retrieve program.");
+        }
+        return p->second;
     }
-    return p->second;
-  }
 #endif
 
-  // Removes the current programs from the general state
-  void reset() {
+    // Removes the current programs from the general state
+    void reset() {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    programs_.clear();
+        programs_.clear();
 #endif
-  }
+    }
 
- protected:
-  ProgramManager() = default;
-  ProgramManager(const ProgramManager&) = delete;
-  ProgramManager& operator=(const ProgramManager&) = delete;
+   protected:
+    ProgramManager() = default;
+    ProgramManager(const ProgramManager &) = delete;
+    ProgramManager &operator=(const ProgramManager &) = delete;
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-  /* Container holding compiled kernels */
-  std::unordered_map<Program, CLCudaAPI::Program, ProgramHash> programs_;
+    /* Container holding compiled kernels */
+    std::unordered_map<Program, CLCudaAPI::Program, ProgramHash> programs_;
 #endif
 };
 

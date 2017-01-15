@@ -13,15 +13,18 @@
     names of its contributors may be used to endorse or promote products
     derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY
     EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+   FOR ANY
     DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
     ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
@@ -35,22 +38,22 @@ namespace tiny_dnn {
 namespace core {
 
 class session {
- public:
-  explicit session(const std::string name) : name_(name) {}
+   public:
+    explicit session(const std::string name) : name_(name) {}
 
-  std::string get_name() const { return name_; }
-  size_t get_num_devices() const { return devices_.size(); }
+    std::string get_name() const { return name_; }
+    size_t      get_num_devices() const { return devices_.size(); }
 
-  // will call construct graph
-  // should we here specify the devices to use?
-  void schedule_session(/* network<sequential>& net */);
+    // will call construct graph
+    // should we here specify the devices to use?
+    void schedule_session(/* network<sequential>& net */);
 
-  // will call forward or backward methods
-  void run_session(/* data */);
+    // will call forward or backward methods
+    void run_session(/* data */);
 
- private:
-  std::string name_;
-  std::vector<std::shared_ptr<device>> devices_;
+   private:
+    std::string                          name_;
+    std::vector<std::shared_ptr<device>> devices_;
 };
 
 }  // namespace core
