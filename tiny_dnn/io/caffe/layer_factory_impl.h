@@ -2,30 +2,8 @@
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-   AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-   FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-   THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
 #include <algorithm>
@@ -291,8 +269,7 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
       case caffe::PoolingParameter_PoolMethod_AVE:
         return create_ave_pool(pool_size_w, pool_size_h, w_stride, h_stride,
                                pad_type, bottom_shape, top_shape);
-      default:
-        throw nn_error("unsupported layer type");
+      default: throw nn_error("unsupported layer type");
     }
   }
 
@@ -958,88 +935,55 @@ class caffe_layer_vector {
 
   const char *v1type2name(caffe::V1LayerParameter_LayerType type) const {
     switch (type) {
-      case caffe::V1LayerParameter_LayerType_NONE:
-        return "";
-      case caffe::V1LayerParameter_LayerType_ABSVAL:
-        return "AbsVal";
-      case caffe::V1LayerParameter_LayerType_ACCURACY:
-        return "Accuracy";
-      case caffe::V1LayerParameter_LayerType_ARGMAX:
-        return "ArgMax";
-      case caffe::V1LayerParameter_LayerType_BNLL:
-        return "BNLL";
-      case caffe::V1LayerParameter_LayerType_CONCAT:
-        return "Concat";
+      case caffe::V1LayerParameter_LayerType_NONE: return "";
+      case caffe::V1LayerParameter_LayerType_ABSVAL: return "AbsVal";
+      case caffe::V1LayerParameter_LayerType_ACCURACY: return "Accuracy";
+      case caffe::V1LayerParameter_LayerType_ARGMAX: return "ArgMax";
+      case caffe::V1LayerParameter_LayerType_BNLL: return "BNLL";
+      case caffe::V1LayerParameter_LayerType_CONCAT: return "Concat";
       case caffe::V1LayerParameter_LayerType_CONTRASTIVE_LOSS:
         return "ContrastiveLoss";
-      case caffe::V1LayerParameter_LayerType_CONVOLUTION:
-        return "Convolution";
+      case caffe::V1LayerParameter_LayerType_CONVOLUTION: return "Convolution";
       case caffe::V1LayerParameter_LayerType_DECONVOLUTION:
         return "Deconvolution";
-      case caffe::V1LayerParameter_LayerType_DATA:
-        return "Data";
-      case caffe::V1LayerParameter_LayerType_DROPOUT:
-        return "Dropout";
-      case caffe::V1LayerParameter_LayerType_DUMMY_DATA:
-        return "DummyData";
+      case caffe::V1LayerParameter_LayerType_DATA: return "Data";
+      case caffe::V1LayerParameter_LayerType_DROPOUT: return "Dropout";
+      case caffe::V1LayerParameter_LayerType_DUMMY_DATA: return "DummyData";
       case caffe::V1LayerParameter_LayerType_EUCLIDEAN_LOSS:
         return "EuclideanLoss";
-      case caffe::V1LayerParameter_LayerType_ELTWISE:
-        return "Eltwise";
-      case caffe::V1LayerParameter_LayerType_EXP:
-        return "Exp";
-      case caffe::V1LayerParameter_LayerType_FLATTEN:
-        return "Flatten";
-      case caffe::V1LayerParameter_LayerType_HDF5_DATA:
-        return "HDF5Data";
-      case caffe::V1LayerParameter_LayerType_HDF5_OUTPUT:
-        return "HDF5Output";
-      case caffe::V1LayerParameter_LayerType_HINGE_LOSS:
-        return "HingeLoss";
-      case caffe::V1LayerParameter_LayerType_IM2COL:
-        return "Im2col";
-      case caffe::V1LayerParameter_LayerType_IMAGE_DATA:
-        return "ImageData";
+      case caffe::V1LayerParameter_LayerType_ELTWISE: return "Eltwise";
+      case caffe::V1LayerParameter_LayerType_EXP: return "Exp";
+      case caffe::V1LayerParameter_LayerType_FLATTEN: return "Flatten";
+      case caffe::V1LayerParameter_LayerType_HDF5_DATA: return "HDF5Data";
+      case caffe::V1LayerParameter_LayerType_HDF5_OUTPUT: return "HDF5Output";
+      case caffe::V1LayerParameter_LayerType_HINGE_LOSS: return "HingeLoss";
+      case caffe::V1LayerParameter_LayerType_IM2COL: return "Im2col";
+      case caffe::V1LayerParameter_LayerType_IMAGE_DATA: return "ImageData";
       case caffe::V1LayerParameter_LayerType_INFOGAIN_LOSS:
         return "InfogainLoss";
       case caffe::V1LayerParameter_LayerType_INNER_PRODUCT:
         return "InnerProduct";
-      case caffe::V1LayerParameter_LayerType_LRN:
-        return "LRN";
-      case caffe::V1LayerParameter_LayerType_MEMORY_DATA:
-        return "MemoryData";
+      case caffe::V1LayerParameter_LayerType_LRN: return "LRN";
+      case caffe::V1LayerParameter_LayerType_MEMORY_DATA: return "MemoryData";
       case caffe::V1LayerParameter_LayerType_MULTINOMIAL_LOGISTIC_LOSS:
         return "MultinomialLogisticLoss";
-      case caffe::V1LayerParameter_LayerType_MVN:
-        return "MVN";
-      case caffe::V1LayerParameter_LayerType_POOLING:
-        return "Pooling";
-      case caffe::V1LayerParameter_LayerType_POWER:
-        return "Power";
-      case caffe::V1LayerParameter_LayerType_RELU:
-        return "ReLU";
-      case caffe::V1LayerParameter_LayerType_SIGMOID:
-        return "Sigmoid";
+      case caffe::V1LayerParameter_LayerType_MVN: return "MVN";
+      case caffe::V1LayerParameter_LayerType_POOLING: return "Pooling";
+      case caffe::V1LayerParameter_LayerType_POWER: return "Power";
+      case caffe::V1LayerParameter_LayerType_RELU: return "ReLU";
+      case caffe::V1LayerParameter_LayerType_SIGMOID: return "Sigmoid";
       case caffe::V1LayerParameter_LayerType_SIGMOID_CROSS_ENTROPY_LOSS:
         return "SigmoidCrossEntropyLoss";
-      case caffe::V1LayerParameter_LayerType_SILENCE:
-        return "Silence";
-      case caffe::V1LayerParameter_LayerType_SOFTMAX:
-        return "Softmax";
+      case caffe::V1LayerParameter_LayerType_SILENCE: return "Silence";
+      case caffe::V1LayerParameter_LayerType_SOFTMAX: return "Softmax";
       case caffe::V1LayerParameter_LayerType_SOFTMAX_LOSS:
         return "SoftmaxWithLoss";
-      case caffe::V1LayerParameter_LayerType_SPLIT:
-        return "Split";
-      case caffe::V1LayerParameter_LayerType_SLICE:
-        return "Slice";
-      case caffe::V1LayerParameter_LayerType_TANH:
-        return "TanH";
-      case caffe::V1LayerParameter_LayerType_WINDOW_DATA:
-        return "WindowData";
-      case caffe::V1LayerParameter_LayerType_THRESHOLD:
-        return "Threshold";
-      default:
-        throw nn_error("unknown v1 layer-type");
+      case caffe::V1LayerParameter_LayerType_SPLIT: return "Split";
+      case caffe::V1LayerParameter_LayerType_SLICE: return "Slice";
+      case caffe::V1LayerParameter_LayerType_TANH: return "TanH";
+      case caffe::V1LayerParameter_LayerType_WINDOW_DATA: return "WindowData";
+      case caffe::V1LayerParameter_LayerType_THRESHOLD: return "Threshold";
+      default: throw nn_error("unknown v1 layer-type");
     }
   }
 
