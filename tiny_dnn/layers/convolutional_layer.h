@@ -431,7 +431,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
 #endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
  private:

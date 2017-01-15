@@ -138,7 +138,7 @@ class lrn_layer : public feedforward_layer<Activation> {
   }
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
  private:

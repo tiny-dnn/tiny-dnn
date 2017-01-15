@@ -129,7 +129,7 @@ class slice_layer : public layer {
   }
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
  private:

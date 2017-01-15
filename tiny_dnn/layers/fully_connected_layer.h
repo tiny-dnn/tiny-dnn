@@ -122,7 +122,7 @@ class fully_connected_layer : public feedforward_layer<Activation> {
   std::string layer_type() const override { return "fully-connected"; }
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
  protected:

@@ -115,7 +115,7 @@ class power_layer : public layer {
   }
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
   float_t factor() const { return factor_; }

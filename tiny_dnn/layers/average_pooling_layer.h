@@ -265,7 +265,7 @@ class average_pooling_layer : public partial_connected_layer<Activation> {
   }
 
 #ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
+  friend struct serialization_buddy;
 #endif
 
   std::pair<serial_size_t, serial_size_t> pool_size() const {

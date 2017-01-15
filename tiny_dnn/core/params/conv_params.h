@@ -75,9 +75,9 @@ struct connection_table {
 
   bool is_empty() const { return rows_ == 0 && cols_ == 0; }
 
-    std::deque<bool> connected_;
-    serial_size_t rows_;
-    serial_size_t cols_;
+  std::deque<bool> connected_;
+  serial_size_t rows_;
+  serial_size_t cols_;
 };
 
 class conv_params : public Params {

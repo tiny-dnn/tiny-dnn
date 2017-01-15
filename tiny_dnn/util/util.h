@@ -185,9 +185,9 @@ struct index3d {
 
   T size() const { return width_ * height_ * depth_; }
 
-    T width_;
-    T height_;
-    T depth_;
+  T width_;
+  T height_;
+  T depth_;
 };
 
 typedef index3d<serial_size_t> shape3d;
