@@ -35,62 +35,73 @@
 namespace tiny_dnn {
 
 TEST(quantized_convolutional, setup_internal) {
-    quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1, backend_t::internal);
+  quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true,
+                                           1, 1, backend_t::internal);
 
-    EXPECT_EQ(l.parallelize(), true);                        // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(), serial_size_t(3));            // num of input tensors
-    EXPECT_EQ(l.out_channels(), serial_size_t(2));           // num of output tensors
-    EXPECT_EQ(l.in_data_size(), serial_size_t(25));          // size of input tensors
-    EXPECT_EQ(l.out_data_size(), serial_size_t(18));         // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(), serial_size_t(1));   // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), serial_size_t(1));  // num of output shapes
-    EXPECT_EQ(l.weights().size(), serial_size_t(2));         // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(), serial_size_t(2));   // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(), serial_size_t(3));          // num of input edges
-    EXPECT_EQ(l.outputs().size(), serial_size_t(2));         // num of outpus edges
-    EXPECT_EQ(l.in_types().size(), serial_size_t(3));        // num of input data types
-    EXPECT_EQ(l.out_types().size(), serial_size_t(2));       // num of output data types
-    EXPECT_EQ(l.fan_in_size(), serial_size_t(9));            // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(), serial_size_t(18));          // num of outgoing connections
-    EXPECT_STREQ(l.layer_type().c_str(), "q_conv");          // string with layer type
+  EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // num of input tensors
+  EXPECT_EQ(l.out_channels(), serial_size_t(2));    // num of output tensors
+  EXPECT_EQ(l.in_data_size(), serial_size_t(25));   // size of input tensors
+  EXPECT_EQ(l.out_data_size(), serial_size_t(18));  // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(),
+            serial_size_t(1));  // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(),
+            serial_size_t(1));                      // num of output shapes
+  EXPECT_EQ(l.weights().size(), serial_size_t(2));  // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(),
+            serial_size_t(2));                       // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), serial_size_t(3));    // num of input edges
+  EXPECT_EQ(l.outputs().size(), serial_size_t(2));   // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), serial_size_t(3));  // num of input data types
+  EXPECT_EQ(l.out_types().size(),
+            serial_size_t(2));                   // num of output data types
+  EXPECT_EQ(l.fan_in_size(), serial_size_t(9));  // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(),
+            serial_size_t(18));  // num of outgoing connections
+  EXPECT_STREQ(l.layer_type().c_str(), "q_conv");  // string with layer type
 }
 
 TEST(quantized_convolutional, fprop) {
-    typedef network<sequential> CNN;
-    CNN                         nn;
+  typedef network<sequential> CNN;
+  CNN nn;
 
-    quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
+  quantized_convolutional_layer<sigmoid> l(5, 5, 3, 1, 2);
 
-    // layer::forward_propagation expects tensors, even if we feed only one input
-    // at a time
-    auto create_simple_tensor = [](size_t vector_size) { return tensor_t(1, vec_t(vector_size)); };
+  // layer::forward_propagation expects tensors, even if we feed only one
+  // input
+  // at a time
+  auto create_simple_tensor = [](size_t vector_size) {
+    return tensor_t(1, vec_t(vector_size));
+  };
 
-    // create simple tensors that wrap the payload vectors of the correct size
-    tensor_t in_tensor = create_simple_tensor(25), out_tensor = create_simple_tensor(18),
-             a_tensor = create_simple_tensor(18), weight_tensor = create_simple_tensor(18),
-             bias_tensor = create_simple_tensor(2);
+  // create simple tensors that wrap the payload vectors of the correct size
+  tensor_t in_tensor     = create_simple_tensor(25),
+           out_tensor    = create_simple_tensor(18),
+           a_tensor      = create_simple_tensor(18),
+           weight_tensor = create_simple_tensor(18),
+           bias_tensor   = create_simple_tensor(2);
 
-    // short-hand references to the payload vectors
-    vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
+  // short-hand references to the payload vectors
+  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18));  // weight
+  ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18));  // weight
 
-    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<tensor_t *> in_data, out_data;
-    in_data.push_back(&in_tensor);
-    in_data.push_back(&weight_tensor);
-    in_data.push_back(&bias_tensor);
-    out_data.push_back(&out_tensor);
-    out_data.push_back(&a_tensor);
-    l.setup(false);
-    {
-        l.forward_propagation(in_data, out_data);
+  std::vector<tensor_t *> in_data, out_data;
+  in_data.push_back(&in_tensor);
+  in_data.push_back(&weight_tensor);
+  in_data.push_back(&bias_tensor);
+  out_data.push_back(&out_tensor);
+  out_data.push_back(&a_tensor);
+  l.setup(false);
+  {
+    l.forward_propagation(in_data, out_data);
 
-        for (auto o : out) EXPECT_NEAR(0.5, o, 1E-3);
-    }
+    for (auto o : out) EXPECT_NEAR(0.5, o, 1E-3);
+  }
 
-    // clang-format off
+  // clang-format off
     weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
     weight[3] = 0.0f;  weight[4] = -0.1f; weight[5] = -0.1f;
     weight[6] = 0.05f; weight[7] = -0.2f; weight[8] = 0.05f;
@@ -118,7 +129,7 @@ TEST(quantized_convolutional, fprop) {
         EXPECT_NEAR(0.7595109, out[7], 2E-2);
         EXPECT_NEAR(0.6899745, out[8], 2E-2);
     }
-    // clang-format on
+  // clang-format on
 }
 
 /*#ifdef CNN_USE_NNPACK

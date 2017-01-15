@@ -38,12 +38,13 @@ namespace tiny_dnn {
 */
 template <typename activation, typename Iter>
 network<sequential> make_mlp(Iter first, Iter last) {
-    typedef network<sequential> net_t;
-    net_t                       n;
+  typedef network<sequential> net_t;
+  net_t n;
 
-    Iter next = first + 1;
-    for (; next != last; ++first, ++next) n << fully_connected_layer<activation>(*first, *next);
-    return n;
+  Iter next = first + 1;
+  for (; next != last; ++first, ++next)
+    n << fully_connected_layer<activation>(*first, *next);
+  return n;
 }
 
 /**
@@ -51,7 +52,7 @@ network<sequential> make_mlp(Iter first, Iter last) {
  */
 template <typename activation>
 network<sequential> make_mlp(const std::vector<serial_size_t> &units) {
-    return make_mlp<activation>(units.begin(), units.end());
+  return make_mlp<activation>(units.begin(), units.end());
 }
 
 }  // namespace tiny_dnn

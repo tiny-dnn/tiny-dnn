@@ -37,23 +37,23 @@ using namespace tiny_dnn;
 namespace tiny_dnn {
 
 TEST(models, alexnet) {
-    models::alexnet nn("alexnet");
+  models::alexnet nn("alexnet");
 
-    ASSERT_EQ(nn.name(), "alexnet");
-    EXPECT_EQ(nn.in_data_size(), serial_size_t(224 * 224 * 3));
+  ASSERT_EQ(nn.name(), "alexnet");
+  EXPECT_EQ(nn.in_data_size(), serial_size_t(224 * 224 * 3));
 
-    vec_t in(nn.in_data_size());
+  vec_t in(nn.in_data_size());
 
-    // generate random variables
-    uniform_rand(in.begin(), in.end(), 0, 1);
+  // generate random variables
+  uniform_rand(in.begin(), in.end(), 0, 1);
 
-    // init wieghts and biases
-    nn.weight_init(weight_init::constant(2.0));
-    nn.bias_init(weight_init::constant(2.0));
-    nn.init_weight();
+  // init wieghts and biases
+  nn.weight_init(weight_init::constant(2.0));
+  nn.bias_init(weight_init::constant(2.0));
+  nn.init_weight();
 
-    // predict
-    auto res = nn.predict(in);
+  // predict
+  auto res = nn.predict(in);
 }
 
 }  // namespace tiny-dnn

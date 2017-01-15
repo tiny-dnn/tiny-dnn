@@ -35,14 +35,16 @@ namespace tiny_dnn {
 namespace core {
 
 class fully_params : public Params {
-   public:
-    serial_size_t in_size_;
-    serial_size_t out_size_;
-    bool          has_bias_;
+ public:
+  serial_size_t in_size_;
+  serial_size_t out_size_;
+  bool has_bias_;
 };
 
 // TODO(nyanp): can we do better here?
-inline fully_params Params::fully() const { return *(static_cast<const fully_params *>(this)); }
+inline fully_params Params::fully() const {
+  return *(static_cast<const fully_params *>(this));
+}
 
 }  // namespace core
 }  // namespace tiny_dnn

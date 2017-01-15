@@ -38,12 +38,12 @@ class maxpool_params;
 
 /* Base class to model operation parameters */
 class Params {
-   public:
-    Params() {}
+ public:
+  Params() {}
 
-    conv_params     conv() const;
-    fully_params    fully() const;
-    maxpool_params &maxpool();
+  conv_params conv() const;
+  fully_params fully() const;
+  maxpool_params &maxpool();
 };
 
 }  // namespace core

@@ -35,13 +35,13 @@
 namespace tiny_dnn {
 
 TEST(concat, forward_data) {
-    std::vector<shape3d> in_shapes;
-    in_shapes.push_back(shape3d(1, 2, 1));
-    in_shapes.push_back(shape3d(1, 2, 1));
-    in_shapes.push_back(shape3d(1, 2, 1));
-    concat_layer cl(in_shapes);
+  std::vector<shape3d> in_shapes;
+  in_shapes.push_back(shape3d(1, 2, 1));
+  in_shapes.push_back(shape3d(1, 2, 1));
+  in_shapes.push_back(shape3d(1, 2, 1));
+  concat_layer cl(in_shapes);
 
-    // clang-format off
+  // clang-format off
     tensor_t in0 = {
         { 0, 1 },
         { 6, 7 },
@@ -70,25 +70,25 @@ TEST(concat, forward_data) {
         { 18, 19, 20, 21, 22, 23 }
     };
 
-    // clang-format on
+  // clang-format on
 
-    auto out = cl.forward({in0, in1, in2});
+  auto out = cl.forward({in0, in1, in2});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-        for (serial_size_t j = 0; j < 2; j++) {
-            EXPECT_FLOAT_EQ(out_expected[i][j], out[0][i][j]);
-        }
+  for (serial_size_t i = 0; i < 4; i++) {
+    for (serial_size_t j = 0; j < 2; j++) {
+      EXPECT_FLOAT_EQ(out_expected[i][j], out[0][i][j]);
     }
+  }
 
-    out = cl.backward({out_expected});
+  out = cl.backward({out_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-        for (serial_size_t j = 0; j < 2; j++) {
-            EXPECT_FLOAT_EQ(in0[i][j], out[0][i][j]);
-            EXPECT_FLOAT_EQ(in1[i][j], out[1][i][j]);
-            EXPECT_FLOAT_EQ(in2[i][j], out[2][i][j]);
-        }
+  for (serial_size_t i = 0; i < 4; i++) {
+    for (serial_size_t j = 0; j < 2; j++) {
+      EXPECT_FLOAT_EQ(in0[i][j], out[0][i][j]);
+      EXPECT_FLOAT_EQ(in1[i][j], out[1][i][j]);
+      EXPECT_FLOAT_EQ(in2[i][j], out[2][i][j]);
     }
+  }
 }
 
 }  // namespace tiny-dnn
