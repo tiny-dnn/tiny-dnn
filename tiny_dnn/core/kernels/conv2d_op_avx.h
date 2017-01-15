@@ -138,14 +138,13 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         float *ppa = pa;
         if (w_stride == 1) {
           if (nblocks) {
-            for (serial_size_t y = 0; y < out.height_; y++) {
+            for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
               const float *pi0 = (pi + y * stride);
               const float *pi1 = pi0 + 1 * in_padded.width_;
               const float *pi2 = pi0 + 2 * in_padded.width_;
               const float *pi3 = pi0 + 3 * in_padded.width_;
               const float *pi4 = pi0 + 4 * in_padded.width_;
               __m256 dst0, dst1, dst2, dst3;
-              float *ppa2     = ppa;
               __m256 i0       = _mm256_loadu_ps(pi0);
               __m256 i1       = _mm256_loadu_ps(pi1);
               __m256 i2       = _mm256_loadu_ps(pi2);
@@ -171,22 +170,16 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               dst1            = madd256_ps(w4b, i4, dst1);
               dst2            = madd256_ps(w4c, i4, dst2);
               dst3            = madd256_ps(w4d, i4, dst3);
-              __m128 sum      = _mm_loadu_ps(ppa2);
+              __m128 sum      = _mm_loadu_ps(ppa);
               __m128 hsum0123 = hsum4x256_ps(dst0, dst1, dst2, dst3);
               sum             = _mm_add_ps(sum, hsum0123);
-              _mm_storeu_ps(ppa2, sum);
-              pi0 += 4;
-              pi1 += 4;
-              pi2 += 4;
-              pi3 += 4;
-              pi4 += 4;
-              ppa2 += 4;
+              _mm_storeu_ps(ppa, sum);
               for (size_t i = 1; i < nblocks; ++i) {
-                i0       = _mm256_loadu_ps(pi0);
-                i1       = _mm256_loadu_ps(pi1);
-                i2       = _mm256_loadu_ps(pi2);
-                i3       = _mm256_loadu_ps(pi3);
-                i4       = _mm256_loadu_ps(pi4);
+                i0       = _mm256_loadu_ps(pi0 + i * 4);
+                i1       = _mm256_loadu_ps(pi1 + i * 4);
+                i2       = _mm256_loadu_ps(pi2 + i * 4);
+                i3       = _mm256_loadu_ps(pi3 + i * 4);
+                i4       = _mm256_loadu_ps(pi4 + i * 4);
                 dst0     = _mm256_mul_ps(w0a, i0);
                 dst1     = _mm256_mul_ps(w0b, i0);
                 dst2     = _mm256_mul_ps(w0c, i0);
@@ -207,24 +200,18 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
                 dst1     = madd256_ps(w4b, i4, dst1);
                 dst2     = madd256_ps(w4c, i4, dst2);
                 dst3     = madd256_ps(w4d, i4, dst3);
-                sum      = _mm_loadu_ps(ppa2);
+                sum      = _mm_loadu_ps(ppa + i * 4);
                 hsum0123 = hsum4x256_ps(dst0, dst1, dst2, dst3);
                 sum      = _mm_add_ps(sum, hsum0123);
-                _mm_storeu_ps(ppa2, sum);
-                pi0 += 4;
-                pi1 += 4;
-                pi2 += 4;
-                pi3 += 4;
-                pi4 += 4;
-                ppa2 += 4;
+                _mm_storeu_ps(ppa + i * 4, sum);
               }
               for (serial_size_t x = nblocks * 4; x < out.width_; ++x) {
                 sum         = _mm_load_ss(&ppa[x]);
-                i0          = _mm256_loadu_ps(pi0);
-                i1          = _mm256_loadu_ps(pi1);
-                i2          = _mm256_loadu_ps(pi2);
-                i3          = _mm256_loadu_ps(pi3);
-                i4          = _mm256_maskload_ps(pi4, imask);
+                i0          = _mm256_loadu_ps(pi0 + x);
+                i1          = _mm256_loadu_ps(pi1 + x);
+                i2          = _mm256_loadu_ps(pi2 + x);
+                i3          = _mm256_loadu_ps(pi3 + x);
+                i4          = _mm256_loadu_ps(pi4 + x);
                 __m256 sum0 = _mm256_mul_ps(w0a, i0);
                 __m256 sum1 = _mm256_mul_ps(w1a, i1);
                 sum0        = madd256_ps(w2a, i2, sum0);
@@ -232,16 +219,10 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
                 sum0        = madd256_ps(w4a, i4, sum0);
                 sum0        = _mm256_add_ps(sum0, sum1);
                 _mm_store_ss(&ppa[x], _mm_add_ss(sum, hsum256_ps(sum0)));
-                pi0 += w_stride;
-                pi1 += w_stride;
-                pi2 += w_stride;
-                pi3 += w_stride;
-                pi4 += w_stride;
-              }  // x loop
-              ppa += out.width_;
-            }  // y loop
-          } else {
-            for (serial_size_t y = 0; y < out.height_; y++) {
+              }     // x loop
+            }       // y loop
+          } else {  // if (nblocks) {
+            for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
               const float *pi0 = (pi + y * stride);
               const float *pi1 = pi0 + 1 * in_padded.width_;
               const float *pi2 = pi0 + 2 * in_padded.width_;
@@ -249,11 +230,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               const float *pi4 = pi0 + 4 * in_padded.width_;
               for (serial_size_t x = 0; x < out.width_; ++x) {
                 __m128 sum  = _mm_load_ss(&ppa[x]);
-                __m256 i0   = _mm256_loadu_ps(pi0);
-                __m256 i1   = _mm256_loadu_ps(pi1);
-                __m256 i2   = _mm256_loadu_ps(pi2);
-                __m256 i3   = _mm256_loadu_ps(pi3);
-                __m256 i4   = _mm256_maskload_ps(pi4, imask);
+                __m256 i0   = _mm256_loadu_ps(pi0 + x);
+                __m256 i1   = _mm256_loadu_ps(pi1 + x);
+                __m256 i2   = _mm256_loadu_ps(pi2 + x);
+                __m256 i3   = _mm256_loadu_ps(pi3 + x);
+                __m256 i4   = _mm256_loadu_ps(pi4 + x);
                 __m256 sum0 = _mm256_mul_ps(w0a, i0);
                 __m256 sum1 = _mm256_mul_ps(w1a, i1);
                 sum0        = madd256_ps(w2a, i2, sum0);
@@ -261,17 +242,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
                 sum0        = madd256_ps(w4a, i4, sum0);
                 sum0        = _mm256_add_ps(sum0, sum1);
                 _mm_store_ss(&ppa[x], _mm_add_ss(sum, hsum256_ps(sum0)));
-                pi0 += w_stride;
-                pi1 += w_stride;
-                pi2 += w_stride;
-                pi3 += w_stride;
-                pi4 += w_stride;
               }  // x loop
-              ppa += out.width_;
-            }  // y loop
+            }    // y loop
           }
-        } else {
-          for (serial_size_t y = 0; y < out.height_; y++) {
+        } else {  // if (w_stride == 1) {
+          for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
             const float *pi0 = (pi + y * stride);
             const float *pi1 = pi0 + 1 * in_padded.width_;
             const float *pi2 = pi0 + 2 * in_padded.width_;
@@ -283,7 +258,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               __m256 i1   = _mm256_loadu_ps(pi1);
               __m256 i2   = _mm256_loadu_ps(pi2);
               __m256 i3   = _mm256_loadu_ps(pi3);
-              __m256 i4   = _mm256_maskload_ps(pi4, imask);
+              __m256 i4   = _mm256_loadu_ps(pi4);
               __m256 sum0 = _mm256_mul_ps(w0a, i0);
               __m256 sum1 = _mm256_mul_ps(w1a, i1);
               sum0        = madd256_ps(w2a, i2, sum0);
@@ -297,8 +272,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               pi3 += w_stride;
               pi4 += w_stride;
             }  // x loop
-            ppa += out.width_;
-          }  // y loop
+          }    // y loop
         }
       }  // in depth loop
     }    // out depth loop

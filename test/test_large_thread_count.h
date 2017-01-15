@@ -13,7 +13,7 @@ TEST(test_large_thread_count, test_large_thread_count) {
   std::vector<vec_t> data;
   std::vector<label_t> labels;
 
-  const size_t tnum = 100;
+  const size_t tnum = 300;
 
   for (size_t i = 0; i < tnum; i++) {
     bool in    = bernoulli(0.5);

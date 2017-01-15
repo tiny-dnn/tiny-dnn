@@ -50,9 +50,7 @@ class feedforward_layer : public layer {
         static_cast<serial_size_t>(prev_delta_vec.size());
 
       if (h_.one_hot()) {
-        for (serial_size_t c = 0; c < len; c++) {
-          curr_delta_vec[c] = prev_delta_vec[c] * h_.df(out_vec[c]);
-        }
+        h_.itedf(curr_delta_vec, prev_delta_vec, out_vec, len);
       } else {
         for (serial_size_t c = 0; c < len; c++) {
           vec_t df          = h_.df(out_vec, c);

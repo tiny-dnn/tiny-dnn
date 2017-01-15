@@ -22,6 +22,10 @@
 #define VECTORIZE_ALIGN(x) __attribute__((aligned(x)))
 #endif
 
+#ifdef CNN_USE_AVX
+#include "tiny_dnn/core/kernels/avx_kernel_common.h"
+#endif
+
 namespace vectorize {
 namespace detail {
 
@@ -52,6 +56,11 @@ struct generic_vec_type {
   static register_type add(const register_type &v1, const register_type &v2) {
     return v1 + v2;
   }
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return v1 * v2 + v3;
+  }
   static register_type load(const value_type *px) { return *px; }
   static register_type loadu(const value_type *px) { return *px; }
   static void store(value_type *px, const register_type &v) { *px = v; }
@@ -66,15 +75,17 @@ struct float_sse {
   typedef float value_type;
   enum { unroll_size = 4 };
   static register_type set1(const value_type &x) { return _mm_set1_ps(x); }
-  static register_type zero() {
-    register_type v = {};
-    return v;
-  }
+  static register_type zero() { return _mm_setzero_ps(); }
   static register_type mul(const register_type &v1, const register_type &v2) {
     return _mm_mul_ps(v1, v2);
   }
   static register_type add(const register_type &v1, const register_type &v2) {
     return _mm_add_ps(v1, v2);
+  }
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm_add_ps(_mm_mul_ps(v1, v2), v3);
   }
   static register_type load(const value_type *px) { return _mm_load_ps(px); }
   static register_type loadu(const value_type *px) { return _mm_loadu_ps(px); }
@@ -96,15 +107,17 @@ struct double_sse {
   typedef double value_type;
   enum { unroll_size = 2 };
   static register_type set1(const value_type &x) { return _mm_set1_pd(x); }
-  static register_type zero() {
-    register_type v = {};
-    return v;
-  }
+  static register_type zero() { return _mm_setzero_pd(); }
   static register_type mul(const register_type &v1, const register_type &v2) {
     return _mm_mul_pd(v1, v2);
   }
   static register_type add(const register_type &v1, const register_type &v2) {
     return _mm_add_pd(v1, v2);
+  }
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm_add_pd(_mm_mul_pd(v1, v2), v3);
   }
   static register_type load(const value_type *px) { return _mm_load_pd(px); }
   static register_type loadu(const value_type *px) { return _mm_loadu_pd(px); }
@@ -144,16 +157,26 @@ struct float_avx {
   typedef float value_type;
   enum { unroll_size = 8 };
   static register_type set1(const value_type &x) { return _mm256_set1_ps(x); }
-  static register_type zero() {
-    register_type v = {};
-    return v;
-  }
+  static register_type zero() { return _mm256_setzero_ps(); }
   static register_type mul(const register_type &v1, const register_type &v2) {
     return _mm256_mul_ps(v1, v2);
   }
   static register_type add(const register_type &v1, const register_type &v2) {
     return _mm256_add_ps(v1, v2);
   }
+#ifdef CNN_USE_AVX2
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm256_fmadd_ps(v1, v2, v3);
+  }
+#else
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm256_add_ps(_mm256_mul_ps(v1, v2), v3);
+  }
+#endif
   static register_type load(const value_type *px) { return _mm256_load_ps(px); }
   static register_type loadu(const value_type *px) {
     return _mm256_loadu_ps(px);
@@ -165,9 +188,7 @@ struct float_avx {
     _mm256_storeu_ps(px, v);
   }
   static value_type resemble(const register_type &x) {
-    VECTORIZE_ALIGN(32) float tmp[8];
-    _mm256_store_ps(tmp, x);
-    return std::accumulate(tmp, tmp + 8, 0.0f);
+    return _mm_cvtss_f32(hsum256_ps(x));
   }
 };
 
@@ -176,16 +197,26 @@ struct double_avx {
   typedef double value_type;
   enum { unroll_size = 4 };
   static register_type set1(const value_type &x) { return _mm256_set1_pd(x); }
-  static register_type zero() {
-    register_type v = {};
-    return v;
-  }
+  static register_type zero() { return _mm256_setzero_pd(); }
   static register_type mul(const register_type &v1, const register_type &v2) {
     return _mm256_mul_pd(v1, v2);
   }
   static register_type add(const register_type &v1, const register_type &v2) {
     return _mm256_add_pd(v1, v2);
   }
+#ifdef CNN_USE_AVX2
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm256_fmadd_pd(v1, v2, v3);
+  }
+#else
+  static register_type madd(const register_type &v1,
+                            const register_type &v2,
+                            const register_type &v3) {
+    return _mm256_add_pd(_mm256_mul_pd(v1, v2), v3);
+  }
+#endif
   static register_type load(const value_type *px) { return _mm256_load_pd(px); }
   static register_type loadu(const value_type *px) {
     return _mm256_loadu_pd(px);
@@ -228,8 +259,8 @@ inline typename T::value_type dot_product_nonaligned(
   typename T::register_type result = T::zero();
 
   for (std::size_t i = 0; i < size / T::unroll_size; i++)
-    result = T::add(result, T::mul(T::loadu(&f1[i * T::unroll_size]),
-                                   T::loadu(&f2[i * T::unroll_size])));
+    result = T::madd(T::loadu(&f1[i * T::unroll_size]),
+                     T::loadu(&f2[i * T::unroll_size]), result);
 
   typename T::value_type sum = T::resemble(result);
 
@@ -251,8 +282,8 @@ inline typename T::value_type dot_product_aligned(
   assert(is_aligned(T(), f2));
 
   for (std::size_t i = 0; i < size / T::unroll_size; i++)
-    result = T::add(result, T::mul(T::load(&f1[i * T::unroll_size]),
-                                   T::load(&f2[i * T::unroll_size])));
+    result = T::madd(T::load(&f1[i * T::unroll_size]),
+                     T::load(&f2[i * T::unroll_size]), result);
 
   typename T::value_type sum = T::resemble(result);
 
@@ -272,7 +303,7 @@ inline void muladd_aligned(const typename T::value_type *src,
   for (std::size_t i = 0; i < size / T::unroll_size; i++) {
     typename T::register_type d = T::load(&dst[i * T::unroll_size]);
     typename T::register_type s = T::load(&src[i * T::unroll_size]);
-    T::store(&dst[i * T::unroll_size], T::add(d, T::mul(s, factor)));
+    T::store(&dst[i * T::unroll_size], T::madd(s, factor, d));
   }
 
   for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
@@ -289,7 +320,7 @@ inline void muladd_nonaligned(const typename T::value_type *src,
   for (std::size_t i = 0; i < size / T::unroll_size; i++) {
     typename T::register_type d = T::loadu(&dst[i * T::unroll_size]);
     typename T::register_type s = T::loadu(&src[i * T::unroll_size]);
-    T::storeu(&dst[i * T::unroll_size], T::add(d, T::mul(s, factor)));
+    T::storeu(&dst[i * T::unroll_size], T::madd(s, factor, d));
   }
 
   for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
@@ -368,14 +399,13 @@ inline void fill(float *dst, size_t cnt, float value) {
   size_t remain = cnt % 32;
   __m256 yvalue = _mm256_set1_ps(value);
   for (size_t i = 0; i < nite; ++i) {
-    _mm256_storeu_ps(p, yvalue);
-    _mm256_storeu_ps(p + 8, yvalue);
-    _mm256_storeu_ps(p + 16, yvalue);
-    _mm256_storeu_ps(p + 24, yvalue);
-    p += 32;
+    _mm256_storeu_ps(p + i * 32 + 0, yvalue);
+    _mm256_storeu_ps(p + i * 32 + 8, yvalue);
+    _mm256_storeu_ps(p + i * 32 + 16, yvalue);
+    _mm256_storeu_ps(p + i * 32 + 24, yvalue);
   }
   for (size_t i = 0; i < remain; ++i) {
-    p[i] = value;
+    p[nite * 32 + i] = value;
   }
 #else
   std::fill(dst, dst + cnt, value);
@@ -389,14 +419,13 @@ inline void fill(double *dst, size_t cnt, double value) {
   size_t remain  = cnt % 16;
   __m256d yvalue = _mm256_set1_pd(value);
   for (size_t i = 0; i < nite; ++i) {
-    _mm256_storeu_pd(p, yvalue);
-    _mm256_storeu_pd(p + 4, yvalue);
-    _mm256_storeu_pd(p + 8, yvalue);
-    _mm256_storeu_pd(p + 12, yvalue);
-    p += 16;
+    _mm256_storeu_pd(p + i * 16 + 0, yvalue);
+    _mm256_storeu_pd(p + i * 16 + 4, yvalue);
+    _mm256_storeu_pd(p + i * 16 + 8, yvalue);
+    _mm256_storeu_pd(p + i * 16 + 12, yvalue);
   }
   for (size_t i = 0; i < remain; ++i) {
-    p[i] = value;
+    p[nite * 16 + i] = value;
   }
 #else
   std::fill(dst, dst + cnt, value);
