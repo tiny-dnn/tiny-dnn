@@ -768,6 +768,17 @@ inline bool layer_skipped(const std::string& type) {
     return false;
 }
 
+inline bool layer_has_weights(const std::string& type) {
+    static const char* activations[] = {
+        "SoftmaxWithLoss", "SigmoidCrossEntropyLoss", "LRN", "Dropout",
+        "ReLU", "Sigmoid", "TanH", "Softmax"
+    };
+    for (unsigned int i = 0; i < sizeof(activations) / sizeof(activations[0]); i++) {
+        if (activations[i] == type) return false;
+    }
+    return true;
+}
+
 inline bool layer_supported(const std::string& type) {
     static const char* supported[] = {
         "InnerProduct", "Convolution", "Deconvolution", "Pooling",
