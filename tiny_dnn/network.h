@@ -74,7 +74,7 @@ struct result {
 
   std::set<label_t> labels() const {
     std::set<label_t> all_labels;
-    for (auto r : confusion_matrix) {
+    for (auto& r : confusion_matrix) {
       all_labels.insert(r.first);
       for (auto c : r.second) all_labels.insert(c.first);
     }

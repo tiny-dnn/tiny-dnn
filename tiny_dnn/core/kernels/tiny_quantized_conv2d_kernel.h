@@ -282,13 +282,6 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params &params,
     &min_prev_delta_requantized, &max_prev_delta_requantized,
     &prev_delta_requantized);
 
-  // dequantize to flaot, this could be removed within concatenated quantized
-  // network
-  vec_t prev_delta_vec = quantized_tensor_to_float<uint8_t>(
-    prev_delta_requantized, min_prev_delta_requantized,
-    max_prev_delta_requantized);
-  prev_delta = &prev_delta_vec;
-
   // Accumulate dw
   for_i(params.in.depth_, [&](int inc) {
     for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
@@ -313,69 +306,6 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params &params,
                  offset_prev_out) *
                 (static_cast<int32_t>(*(delta + y * params.out.width_ + x)) -
                  offset_curr_delta);
-            }
-          }
-
-          idx = params.in.depth_ * outc + inc;
-          dW_quantized[params.weight.get_index(wx, wy, idx)] += dst;
-        }
-      }
-    }
-  });
-
-  float_t min_dW_requantized;
-  float_t max_dW_requantized;
-  std::vector<uint8_t> dW_requantized(dW_quantized.size(),
-                                      static_cast<uint8_t>(0));
-
-  // requantize from 32bits to 8 bits for next layer
-  quantize_down_and_shrink_range<int32_t, uint8_t>(
-    dW_quantized, min_dW_value, max_dW_value, &min_dW_requantized,
-    &max_dW_requantized, &dW_requantized);
-
-  // dequantize to flaot, this could be removed within concatenated quantized
-  // network
-  dW = quantized_tensor_to_float<uint8_t>(dW_requantized, min_dW_requantized,
-                                          max_dW_requantized);
-
-  // Accumulate db
-  if (params.has_bias) {
-    // vec_t& db = *in_grad[2];
-
-    for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
-      serial_size_t idx     = params.out.get_index(0, 0, outc);
-      const float_t *delta  = &curr_delta[idx];
-      const float_t *deltaa = delta + params.out.width_ * params.out.height_;
-      db[outc] += std::accumulate(delta, deltaa, float_t{0});
-    }
-  }
-}
-
-inline void tiny_quantized_conv2d_kernel(const conv_params &params,
-                                         const vec_t &in,
-                                         const vec_t &W,
-                                         const vec_t &bias,
-                                         const vec_t &in_r,
-                                         const vec_t &W_r,
-                                         const vec_t &b_r,
-                                         vec_t &a,
-                                         vec_t &a_r,
-                                         const bool layer_parallelize) {
-  // filter range
-  float_t min_filter(W_r[0]);
-  float_t max_filter(W_r[1]);
-  if (W_r[0] == W_r[1]) {
-    max_filter = W_r[1] + 1e-3f;
-    min_filter = W_r[0] - 1e-3f;
-  }
-  // bias range
-  float_t min_bias(b_r[0]);
-  float_t max_bias(b_r[1]);
-  if (params.has_bias) {
-    if (min_bias == max_bias) {
-      max_bias = b_r[1] + 1e-3f;
-      min_bias = b_r[0] - 1e-3f;
-    }
   }
   // output range
   float_t min_output_value;
