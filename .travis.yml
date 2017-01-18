@@ -104,7 +104,6 @@ script:
   - test/tiny_dnn_test
 
 after_success:
-
   - if [ "$TRAVIS_OS_NAME" == "linux" ] then
       # coding style test
       - bash -x .travis/lang-format.sh
