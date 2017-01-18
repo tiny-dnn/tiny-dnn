@@ -104,7 +104,7 @@ script:
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      bash -x .travis/lang-format.sh;
+      bash -x .travis/clang-format.sh;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --capture --output-file coverage.info;
