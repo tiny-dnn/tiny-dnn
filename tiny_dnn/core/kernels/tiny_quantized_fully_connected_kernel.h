@@ -1,4 +1,4 @@
-/*
+ /*
     Copyright (c) 2016, Taiga Nomi, Edgar Riba
     All rights reserved.
 
@@ -41,72 +41,37 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
                                                   const vec_t&        b,
                                                   vec_t&              a,
                                                   const bool          layer_parallelize) {
-    // input quantization
-    float_t min_input(in[0]);
-    float_t max_input(in[0]);
-    for (serial_size_t c = 0; c < params.in_size_; c++) {
-        min_input = std::min(min_input, in[c]);
-        max_input = std::max(max_input, in[c]);
-    }
+    // Input quantization
+    vec_t range_in = tensor_range<float_t>(in);
     std::vector<uint8_t> in_quantized =
-        float_tensor_to_quantized<uint8_t>(in, min_input, max_input);
-    // filter quantization
-    float_t min_filter(W[0]);
-    float_t max_filter(W[0]);
-    for (serial_size_t c = 0; c < W.size(); c++) {
-        min_filter = std::min(min_filter, W[c]);
-        max_filter = std::max(max_filter, W[c]);
-    }
-    if (min_filter == max_filter) {
-      max_filter = W[0] + 1e-3f;
-      min_filter = W[0] - 1e-3f;
-    }
-    std::vector<uint8_t> W_quantized =
-        float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
-    // output range
-    float_t min_output_value;
-    float_t max_output_value;
-    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
-        min_input, max_input, min_filter, max_filter, &min_output_value,
-        &max_output_value);
-    // bias quantization
-    float_t min_bias(0);
-    float_t max_bias(0);
-    std::vector<uint8_t> bias_quantized;
-    if (params.has_bias_) {
-        for (serial_size_t inc = 0; inc < b.size(); inc++) {
-            min_bias = std::min(min_bias, b[inc]);
-            max_bias = std::max(max_bias, b[inc]);
-        }
-        if (min_bias == max_bias) {
-          max_bias = b[0] + 1e-3f;
-          min_bias = b[0] - 1e-3f;
-        }
-        bias_quantized =
-            float_tensor_to_quantized<uint8_t>(b, min_bias, max_bias);
-    }
-    min_output_value += min_bias;
-    max_output_value += max_bias;
-
-    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
-
-    // calculating offset
+        float_tensor_to_quantized<uint8_t>(in, range_in[0], range_in[1]);
     const int32_t offset_input =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input);
+        float_to_quantized_unclamped<uint8_t>(0.0f, range_in[0], range_in[1]);
+
+    // Filter quantization
+    vec_t range_w = tensor_range<float_t>(W);
+    std::vector<uint8_t> w_quantized =
+        float_tensor_to_quantized<uint8_t>(W, range_w[0], range_w[1]);
     const int32_t offset_filter =
-        float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+        float_to_quantized_unclamped<uint8_t>(0.0f, range_w[0], range_w[1]);
+
+    // Output range
+    vec_t range_output(2, 0);
+    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
+        range_in[0], range_in[1], range_w[0], range_w[1],
+        &(range_output[0]), &(range_output[1]));
+    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
     const int32_t zero_in_total_space =
-        float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
+        float_to_quantized<int32_t>(0.0f, range_output[0], range_output[1]);
 
-    const int32_t offset_output = 0;
-    const int32_t mult_output = 1;
-    const int32_t shift_output = 0;
+    const int32_t offset_output = 0, mult_output = 1, shift_output = 0;
 
+    // Calculating inner product
     bool use_gemm = false;
     if (use_gemm) {
         std::vector<size_t> shape{params.in_size_, 1, params.out_size_, params.in_size_};
         tiny_quantized_matmul(in_quantized,
-                              W_quantized,
+                              w_quantized,
                               a_quantized,
                               shape,
                               offset_input,
@@ -114,33 +79,48 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
                               offset_output,
                               mult_output,
                               shift_output);
-        if (params.has_bias_) {
-            for_i(layer_parallelize, params.out_size_, [&](int i) {
-            a[i] += b[i];
-        });
-    }
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
             for (serial_size_t c = 0; c < params.in_size_; c++) {
-                a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
-                 static_cast<int32_t>(in_quantized[c] - offset_input);
-            }
-            if (params.has_bias_) {
-                a_quantized[i] += (bias_quantized[i] - zero_in_total_space);
+                a_quantized[i] += static_cast<int32_t>(
+                  w_quantized[c * params.out_size_ + i] - offset_filter) *
+                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }
         });
     }
 
-    float_t min_output_requantized;
-    float_t max_output_requantized;
+    vec_t range_output_requantized(2, 0);
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
-    // Requantize from 32bits to 8 bits for next layer
-    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
-    &min_output_requantized, &max_output_requantized, &a_requantized);
+    // Requantize from 32bits to 8 bits
+    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
 
-    // dequantize to flaot, this could be removed within concatenated quantized network
-    a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
+    // Adding bias if it is needed
+    vec_t range_b(2, 0);
+    std::vector<uint8_t> b_quantized;
+    if (params.has_bias_) {
+      // Bias quantization
+      range_b = tensor_range<float_t>(b);
+      b_quantized =
+          float_tensor_to_quantized<uint8_t>(b, range_b[0], range_b[1]);
+      quantized_add<uint8_t, uint8_t, int32_t>(a_requantized,
+        range_output_requantized[0], range_output_requantized[1],
+        b_quantized, range_b[0], range_b[1],
+        &a_quantized, &(range_output[0]), &(range_output[1]));
+
+      quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
+    }
+
+    // Transforming dequantize data in uint8_t to flaot,
+    // this could be removed within concatenated quantized network
+    a = quantized_tensor_to_float<uint8_t>(a_requantized,
+      range_output_requantized[0], range_output_requantized[1]);
 }
 
 inline void tiny_quantized_fully_connected_back_kernel(const fully_params& params,
@@ -172,7 +152,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
       max_filter = W[0] + 1e-3f;
       min_filter = W[0] - 1e-3f;
     }
-    std::vector<uint8_t> W_quantized =
+    std::vector<uint8_t> w_quantized =
         float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
 
     // current delta quantization
@@ -201,7 +181,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
         min_curr_delta, max_curr_delta, min_prev_out, max_prev_out, &min_dW_value,
         &max_dW_value);
 
-    std::vector<int32_t> dW_quantized(dW.size(), static_cast<int32_t>(0));
+    std::vector<int32_t> dw_quantized(dW.size(), static_cast<int32_t>(0));
 
     // calculating offset
     const int32_t offset_prev_out =
@@ -218,7 +198,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
         for (serial_size_t io = 0; io < params.out_size_; io++) {
             prev_delta_quantized[c] += (static_cast<int32_t>(curr_delta_quantized[io]) - offset_curr_delta)
-                                       * (static_cast<int32_t>(W_quantized[c * params.out_size_ + io]) - offset_filter);
+                                       * (static_cast<int32_t>(w_quantized[c * params.out_size_ + io]) - offset_filter);
         }
     }
 
@@ -238,7 +218,7 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
         // dW[c * out_size + i] += current_delta[i] * prev_out[c]
         for (serial_size_t c = 0; c < params.in_size_; c++) {
             for (serial_size_t io = 0; io < params.out_size_; io++) {
-                dW_quantized[c * params.out_size_ + io] += (static_cast<int32_t>(curr_delta_quantized[io]) - offset_curr_delta)
+                dw_quantized[c * params.out_size_ + io] += (static_cast<int32_t>(curr_delta_quantized[io]) - offset_curr_delta)
                                                    * (static_cast<int32_t>(prev_out_quantized[c]) - offset_prev_out);
             }
         }
@@ -253,10 +233,10 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
 
     float_t min_dW_requantized;
     float_t max_dW_requantized;
-    std::vector<uint8_t> dW_requantized(dW_quantized.size(), static_cast<uint8_t>(0));
+    std::vector<uint8_t> dW_requantized(dw_quantized.size(), static_cast<uint8_t>(0));
 
     // requantize from 32bits to 8 bits for next layer
-    quantize_down_and_shrink_range<int32_t, uint8_t>(dW_quantized, min_dW_value, max_dW_value,
+    quantize_down_and_shrink_range<int32_t, uint8_t>(dw_quantized, min_dW_value, max_dW_value,
     &min_dW_requantized, &max_dW_requantized, &dW_requantized);
 
     // dequantize to flaot, this could be removed within concatenated quantized network
@@ -296,15 +276,15 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
         in_r[0], in_r[1], min_filter, max_filter, &min_output_value,
         &max_output_value);
     // data type restore
-    std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
+    std::vector<uint8_t> in_quantized, w_quantized, b_quantized;
     for (size_t i = 0; i < in.size(); i++) {
        in_quantized.push_back(static_cast<uint8_t>(in[i]));
     }
     for (size_t i = 0; i < W.size(); i++) {
-        W_quantized.push_back(static_cast<uint8_t>(W[i]));
+        w_quantized.push_back(static_cast<uint8_t>(W[i]));
     }
     for (size_t i = 0; i < b.size(); i++) {
-        bias_quantized.push_back(static_cast<uint8_t>(b[i]));
+        b_quantized.push_back(static_cast<uint8_t>(b[i]));
     }
     min_output_value += min_bias;
     max_output_value += max_bias;
@@ -327,7 +307,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     if (use_gemm) {
         std::vector<size_t> shape{params.in_size_, 1, params.out_size_, params.in_size_};
         tiny_quantized_matmul(in_quantized,
-                              W_quantized,
+                              w_quantized,
                               a_quantized,
                               shape,
                               offset_input,
@@ -343,11 +323,11 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     } else {
         for_i(layer_parallelize, params.out_size_, [&](int i) {
             for (serial_size_t c = 0; c < params.in_size_; c++) {
-                a_quantized[i] += static_cast<int32_t>(W_quantized[c * params.out_size_ + i] - offset_filter) *
+                a_quantized[i] += static_cast<int32_t>(w_quantized[c * params.out_size_ + i] - offset_filter) *
                  static_cast<int32_t>(in_quantized[c] - offset_input);
             }
             if (params.has_bias_) {
-                a_quantized[i] += (bias_quantized[i] - zero_in_total_space);
+                a_quantized[i] += (b_quantized[i] - zero_in_total_space);
             }
         });
     }

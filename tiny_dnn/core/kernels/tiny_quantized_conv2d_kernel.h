@@ -39,66 +39,28 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                                          const vec_t&       bias,
                                          vec_t&             a,
                                          const bool layer_parallelize) {
-    // image quantization
-    float_t min_input(in[0]);
-    float_t max_input(in[0]);
-    for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
-        for (serial_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
-            serial_size_t idx = params.in_padded.get_index(0, 0, inc);
-            min_input = std::min(min_input, (&in[idx])[ins]);
-            max_input = std::max(max_input, (&in[idx])[ins]);
-        }
-    }
+    // Input quantization
+    vec_t range_in = tensor_range<float_t>(in);
     std::vector<uint8_t> in_quantized =
-        float_tensor_to_quantized<uint8_t>(in, min_input, max_input);
-    // filter quantization
-    float_t min_filter(W[0]);
-    float_t max_filter(W[0]);
-    for (serial_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
-        for (serial_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
-            serial_size_t idx = params.in_padded.get_index(0, 0, inc);
-            min_filter = std::min(min_filter, (&W[idx])[ins]);
-            max_filter = std::max(max_filter, (&W[idx])[ins]);
-        }
-    }
-    if (min_filter == max_filter) {
-      max_filter = W[0] + 1e-3f;
-      min_filter = W[0] - 1e-3f;
-    }
-    std::vector<uint8_t> W_quantized =
-        float_tensor_to_quantized<uint8_t>(W, min_filter, max_filter);
-    // bias quantization
-    float_t min_bias(0);
-    float_t max_bias(0);
-    std::vector<uint8_t> bias_quantized;
-    if (params.has_bias) {
-        for (serial_size_t inc = 0; inc < params.out.depth_; inc++) {
-            min_bias = std::min(min_bias, bias[inc]);
-            max_bias = std::max(max_bias, bias[inc]);
-        }
-        if (min_bias == max_bias) {
-          max_bias = bias[0] + 1e-3f;
-          min_bias = bias[0] - 1e-3f;
-        }
-        bias_quantized =
-            float_tensor_to_quantized<uint8_t>(bias, min_bias, max_bias);
-    }
-    // output range
-    float_t min_output_value;
-    float_t max_output_value;
-    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
-        min_input, max_input, min_filter, max_filter, &min_output_value,
-        &max_output_value);
-
-    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
-
-    // calculating offset
+        float_tensor_to_quantized<uint8_t>(in, range_in[0], range_in[1]);
     const int32_t offset_input =
-        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_input, max_input));
+        float_to_quantized_unclamped<uint8_t>(0.0f, range_in[0], range_in[1]);
+
+    // Filter quantization
+    vec_t range_w = tensor_range<float_t>(W);
+    std::vector<uint8_t> w_quantized =
+        float_tensor_to_quantized<uint8_t>(W, range_w[0], range_w[1]);
     const int32_t offset_filter =
-        int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
+        float_to_quantized_unclamped<uint8_t>(0.0f, range_w[0], range_w[1]);
+
+    // Output range
+    vec_t range_output(2, 0);
+    quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
+        range_in[0], range_in[1], range_w[0], range_w[1],
+        &(range_output[0]), &(range_output[1]));
+    std::vector<int32_t> a_quantized(a.size(), static_cast<int32_t>(0));
     const int32_t zero_in_total_space =
-        int64_to_int32(float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value));
+        float_to_quantized<int32_t>(0.0f, range_output[0], range_output[1]);
 
     for_i(layer_parallelize, params.out.depth_, [&](int o) {
         for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
@@ -107,7 +69,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             serial_size_t idx = 0;
             idx = params.in.depth_ * o + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t* pw = &W_quantized[idx];
+            const uint8_t* pw = &w_quantized[idx];
 
             idx = params.in_padded.get_index(0, 0, inc);
             const uint8_t* pi = &in_quantized[idx];
@@ -135,25 +97,40 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
                 }
             }
         }
-        if (params.has_bias) {
-            int32_t* pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
-            int32_t* paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
-            std::for_each(pa_quantized, paa_quantized, [&](int32_t& f) {
-                f += (bias_quantized[o] - zero_in_total_space);
-            });
-        }
     });
 
-    float_t min_output_requantized;
-    float_t max_output_requantized;
+    vec_t range_output_requantized(2, 0);
     std::vector<uint8_t> a_requantized(a_quantized.size(), static_cast<uint8_t>(0));
 
-    // Requantize from 32bits to 8 bits for next layer
-    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized, min_output_value, max_output_value,
-    &min_output_requantized, &max_output_requantized, &a_requantized);
+    // Requantize from 32bits to 8 bits
+    quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
 
-    // dequantize to flaot, this could be removed within concatenated quantized network
-    a = quantized_tensor_to_float<uint8_t>(a_requantized, min_output_requantized, max_output_requantized);
+    // Adding bias if it is needed
+    vec_t range_b(2, 0);
+    std::vector<uint8_t> b_quantized;
+    if (params.has_bias) {
+      // Bias quantization
+      range_b = tensor_range<float_t>(bias);
+      b_quantized =
+          float_tensor_to_quantized<uint8_t>(bias, range_b[0], range_b[1]);
+      quantized_add<uint8_t, uint8_t, int32_t>(a_requantized,
+        range_output_requantized[0], range_output_requantized[1],
+        b_quantized, range_b[0], range_b[1],
+        &a_quantized, &(range_output[0]), &(range_output[1]));
+
+      quantize_down_and_shrink_range<int32_t, uint8_t>(a_quantized,
+        range_output[0], range_output[1],
+        &(range_output_requantized[0]), &(range_output_requantized[1]),
+        &a_requantized);
+    }
+
+    // Transforming dequantize data in uint8_t to flaot,
+    // this could be removed within concatenated quantized network
+    a = quantized_tensor_to_float<uint8_t>(a_requantized,
+      range_output_requantized[0], range_output_requantized[1]);
 }
 
 inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
