@@ -59,10 +59,10 @@ matrix:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      curl http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list
-      sudo apt-get update -qq
-      sudo apt-get install clang-format-4.0 -y
+      curl http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -;
+      echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list;
+      sudo apt-get update -qq;
+      sudo apt-get install clang-format-4.0 -y;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
        export CC="gcc-4.8";
@@ -104,7 +104,7 @@ script:
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      bash -x .travis/lang-format.sh
+      bash -x .travis/lang-format.sh;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
       lcov --directory . --capture --output-file coverage.info;
