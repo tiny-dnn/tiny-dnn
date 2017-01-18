@@ -69,7 +69,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params& params,
             serial_size_t idx = 0;
             idx = params.in.depth_ * o + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t* pw = &W_quantized[idx];
+            const uint8_t* pw = &w_quantized[idx];
 
             idx = params.in.get_index(0, 0, inc);
             const uint8_t* pi = &in_quantized[idx];
