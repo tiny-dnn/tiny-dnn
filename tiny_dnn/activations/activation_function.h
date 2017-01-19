@@ -161,7 +161,7 @@ class softmax : public function {
   vec_t df(const vec_t &y, size_t index) const override {
     vec_t v(y.size(), 0);
     for (size_t i = 0; i < y.size(); i++)
-      v[i] = (i == index) ? df(y[index]) : -y[i] * y[index];
+      v[i]        = (i == index) ? df(y[index]) : -y[i] * y[index];
 
     return v;
   }
