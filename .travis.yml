@@ -39,6 +39,7 @@ addons:
 branches:
   only:
     - master
+    - feat/tensor_integration
 env:
   global:
     - USE_TBB=ON

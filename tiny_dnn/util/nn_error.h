@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <exception>
 #include <string>
 #include "tiny_dnn/util/colored_print.h"
@@ -35,13 +36,13 @@ namespace tiny_dnn {
  * error exception class for tiny-dnn
  **/
 class nn_error : public std::exception {
-public:
+ public:
     explicit nn_error(const std::string& msg) : msg_(msg) {}
     const char* what() const throw() override {
         return msg_.c_str();
     }
 
-private:
+ private:
     std::string msg_;
 };
 
@@ -50,14 +51,14 @@ private:
  * warning class for tiny-dnn (for debug)
  **/
 class nn_warn {
-public:
+ public:
     explicit nn_warn(const std::string& msg) : msg_(msg) {
 #ifdef CNN_USE_STDOUT
         coloredPrint(Color::YELLOW, msg_h_ + msg_);
 #endif
     }
 
-private:
+ private:
     std::string msg_;
     std::string msg_h_ = std::string("[WARNING] ");
 };
@@ -67,22 +68,22 @@ private:
  * info class for tiny-dnn (for debug)
  **/
 class nn_info {
-public:
-    nn_info(const std::string& msg) : msg_(msg) {
+ public:
+    explicit nn_info(const std::string& msg) : msg_(msg) {
 #ifdef CNN_USE_STDOUT
         std::cout << msg_h + msg_ << std::endl;
 #endif
     }
 
-private:
+ private:
     std::string msg_;
     std::string msg_h = std::string("[INFO] ");
 };
 
 
 class nn_not_implemented_error : public nn_error {
-public:
+ public:
     explicit nn_not_implemented_error(const std::string& msg = "not implemented") : nn_error(msg) {}
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

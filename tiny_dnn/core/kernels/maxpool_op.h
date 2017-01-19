@@ -65,7 +65,7 @@ class MaxPoolOp : public core::OpKernel {
         tensor_t&      out_data = context.output(1);
 
         // initialize outputs
-        fill_tensor(out_data, float_t(0));
+        fill_tensor(out_data, float_t{0});
 
         // call convolution algorithm depending
         // on the selected engine type
@@ -92,12 +92,12 @@ class MaxPoolOp : public core::OpKernel {
             }
 
             */
-	    kernels::maxpool_op_nnpack(
+            kernels::maxpool_op_nnpack(
                 in_data,
                 out_data,
                 params);
         } else if (engine == core::backend_t::avx) {
-	    kernels::maxpool_op_avx(
+            kernels::maxpool_op_avx(
                 in_data,
                 out_data,
                 params.out2inmax,

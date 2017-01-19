@@ -41,11 +41,14 @@
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/product.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/weight_init.h"
 
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 namespace tiny_dnn {
 
@@ -112,7 +115,7 @@ class layer : public node {
 
     bool parallelize() const { return parallelize_; }
 
-    // TODO(edgar): Deprecated: use the below method 
+    // TODO(edgar): Deprecated: use the below method
     core::backend_t backend_type() const {
         return backend_->type();
     }
@@ -213,26 +216,25 @@ class layer : public node {
     }
 
     std::vector<edgeptr_t> inputs() {
-        std::vector<edgeptr_t> nodes;
+        std::vector<edgeptr_t> nodes(in_channels_);
         for (serial_size_t i = 0; i < in_channels_; i++) {
-            nodes.push_back(ith_in_node(i));
+            nodes[i] = ith_in_node(i);
         }
         return nodes;
     }
 
     std::vector<edgeptr_t> outputs() {
-        std::vector<edgeptr_t> nodes;
+        std::vector<edgeptr_t> nodes(out_channels_);
         for (serial_size_t i = 0; i < out_channels_; i++) {
-            nodes.push_back(ith_out_node(i));
+            nodes[i] = ith_out_node(i);
         }
         return nodes;
     }
 
     std::vector<edgeptr_t> outputs() const {
-        std::vector<edgeptr_t> nodes;
+        std::vector<edgeptr_t> nodes(out_channels_);
         for (serial_size_t i = 0; i < out_channels_; i++) {
-            nodes.push_back(const_cast<layerptr_t>(this)
-                    ->ith_out_node(i));
+            nodes[i] = const_cast<layerptr_t>(this)->ith_out_node(i);
         }
         return nodes;
     }
@@ -280,7 +282,7 @@ class layer : public node {
      * override properly if the layer is intended to be used as output layer
      **/
     virtual std::pair<float_t, float_t> out_value_range() const {
-        return { float_t(0.0), float_t(1.0) };
+        return { float_t{0.0}, float_t{1.0} };
     }
 
     /**
@@ -385,10 +387,12 @@ class layer : public node {
     ///< visualize latest output of this layer
     ///< default implementation interpret output as 1d-vector,
     ///< so "visual" layer(like convolutional layer) should override this for better visualization.
+#ifdef DNN_USE_IMAGE_API
     virtual image<> output_to_image(size_t channel = 0) const {
         const vec_t* output = &(*(outputs()[channel]->get_data()))[0];
         return vec2image<unsigned char>(*output, out_shape()[channel]);
     }
+#endif
 
     /////////////////////////////////////////////////////////////////////////
     // fprop/bprop
@@ -416,7 +420,7 @@ class layer : public node {
      * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of hessian matrix)
      * it is never called if optimizer is hessian-free
      **/
-    //virtual void back_propagation_2nd(const std::vector<vec_t>& delta_in) = 0;
+    // virtual void back_propagation_2nd(const std::vector<vec_t>& delta_in) = 0;
 
     // called afrer updating weight
     virtual void post_update() {}
@@ -485,14 +489,14 @@ class layer : public node {
      */
     void forward() {
         // the computational graph
-        std::vector<tensor_t*> in_data, out_data;
+        std::vector<tensor_t*> in_data(in_channels_), out_data(out_channels_);
 
         // Organize input/output vectors from storage (computational graph).
         // Internally ith_in_node() will create a connection/edge in the
         // computational graph and will allocate memory in case that it's not
         // done yet.
         for (serial_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data());
+            in_data[i] = ith_in_node(i)->get_data();
         }
 
         // resize outs and stuff to have room for every input sample in
@@ -504,7 +508,7 @@ class layer : public node {
         // done yet. In addition, gradient vector are initialized to default
         // values.
         for (serial_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data());
+            out_data[i] = ith_out_node(i)->get_data();
             ith_out_node(i)->clear_grads();
         }
 
@@ -513,20 +517,22 @@ class layer : public node {
     }
 
     void backward() {
-        std::vector<tensor_t*> in_data, out_data, in_grad, out_grad;
+        std::vector<tensor_t*>
+            in_data(in_channels_),
+            in_grad(in_channels_),
+            out_data(out_channels_),
+            out_grad(out_channels_);
 
         // organize input/output vectors from storage
         for (serial_size_t i = 0; i < in_channels_; i++) {
-            in_data.push_back(ith_in_node(i)->get_data());
+            const auto& nd = ith_in_node(i);
+            in_data[i] = nd->get_data();
+            in_grad[i] = nd->get_gradient();
         }
         for (serial_size_t i = 0; i < out_channels_; i++) {
-            out_data.push_back(ith_out_node(i)->get_data());
-        }
-        for (serial_size_t i = 0; i < in_channels_; i++) {
-            in_grad.push_back(ith_in_node(i)->get_gradient());
-        }
-        for (serial_size_t i = 0; i < out_channels_; i++) {
-            out_grad.push_back(ith_out_node(i)->get_gradient());
+            const auto& nd = ith_out_node(i);
+            out_data[i] = nd->get_data();
+            out_grad[i] = nd->get_gradient();
         }
         back_propagation(in_data, out_data, out_grad, in_grad);
     }
@@ -620,16 +626,16 @@ class layer : public node {
         }
     }
 
-    void update_weight(optimizer *o, serial_size_t batch_size) {
+    void update_weight(optimizer* o, serial_size_t batch_size) {
         float_t rcp_batch_size = float_t(1) / float_t(batch_size);
-        vec_t diff;
+        auto& diff = weights_diff_;
         for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size()); i++) {
             if (trainable() && is_trainable_weight(in_type_[i])) {
                 vec_t& target = *get_weight_data(i);
                 ith_in_node(i)->merge_grads(&diff);
-                std::transform(diff.begin(), diff.end(),
-                               diff.begin(), [&](float_t x) { // NOLINT
-                                  return x * rcp_batch_size; });
+                for (size_t j = 0; j < diff.size(); ++j) {
+                    diff[j] *= rcp_batch_size;
+                }
                 // parallelize only when target size is big enough to mitigate
                 // thread spawning overhead.
                 bool parallelize = (target.size() >= 512);
@@ -656,7 +662,6 @@ class layer : public node {
     }
 
     virtual void set_sample_count(serial_size_t sample_count) {
-
         // increase the size if necessary - but do not decrease
         auto resize = [sample_count](tensor_t* tensor) {
             tensor->resize(sample_count, (*tensor)[0]);
@@ -708,6 +713,8 @@ class layer : public node {
     std::shared_ptr<core::backend> backend_;
     /** Pointer to the device on which the layer/node will run */
     Device* device_ptr_ = nullptr;
+    /** Used in update_weight method. Kept as a member variable to reduce frequent memory allocation */
+    vec_t weights_diff_;
 
  private:
     /** Flag indicating whether the layer/node parameters are trainable */
@@ -746,8 +753,8 @@ class layer : public node {
     void alloc_output(serial_size_t i) const {
         // the created outcoming will have the current layer as the
         // previous node.
-	next_[i] = std::make_shared<edge>((layer*)this,
-            out_shape()[i], out_type_[i]);
+        next_[i] = std::make_shared<edge>(const_cast<layer*>(this),
+                                          out_shape()[i], out_type_[i]);
     }
 
     /* @brief Creates an edge between the current node and one incoming
@@ -898,14 +905,14 @@ inline void pooling_size_mismatch(serial_size_t in_width,
 
 
 template <typename T, typename U>
-void graph_traverse(layer *root_node, T&& node_callback, U&& edge_callback) {
+void graph_traverse(layer* root_node, T&& node_callback, U&& edge_callback) {
     std::unordered_set<layer*> visited;
     std::queue<layer*> S;
 
     S.push(root_node);
 
     while (!S.empty()) {
-        layer *curr = S.front();
+        layer* curr = S.front();
         S.pop();
         visited.insert(curr);
 

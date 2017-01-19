@@ -64,7 +64,7 @@ class MaxPoolGradOp : public core::OpKernel {
         tensor_t& curr_delta = context.output_grad(1);
 
         // initialize outputs
-        fill_tensor(prev_delta, float_t(0));
+        fill_tensor(prev_delta, float_t{0});
 
         // call the algorithm depending on the selected engine type
 
@@ -78,7 +78,7 @@ class MaxPoolGradOp : public core::OpKernel {
                 params.in2out,
                 context.parallelize());
         } else if (engine == core::backend_t::avx) {
-	    kernels::maxpool_grad_op_avx(
+            kernels::maxpool_grad_op_avx(
                 prev_delta,
                 curr_delta,
                 params.out2inmax,

@@ -34,24 +34,26 @@ namespace tiny_dnn {
  * element-wise add N vectors ```y_i = x0_i + x1_i + ... + xnum_i```
  **/
 class elementwise_add_layer : public layer {
-public:
+ public:
     /**
      * @param num_args [in] number of inputs
      * @param dim      [in] number of elements for each input
      */
     elementwise_add_layer(serial_size_t num_args, serial_size_t dim)
-    : layer(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}), num_args_(num_args), dim_(dim) {}
+        : layer(std::vector<vector_type>(num_args, vector_type::data), {vector_type::data}),
+          num_args_(num_args),
+          dim_(dim) {}
 
     std::string layer_type() const override {
         return "elementwise-add";
     }
 
     std::vector<shape3d> in_shape() const override {
-        return std::vector<shape3d>(num_args_, shape3d(dim_,1,1));
+        return std::vector<shape3d>(num_args_, shape3d(dim_, 1, 1));
     }
 
     std::vector<shape3d> out_shape() const override {
-        return{ shape3d(dim_,1,1) };
+        return{ shape3d(dim_, 1, 1) };
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
@@ -83,23 +85,14 @@ public:
             *in_grad[i] = *out_grad[0];
     }
 
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<elementwise_add_layer> & construct) {
-        serial_size_t num_args, dim;
+#ifndef CNN_NO_SERIALIZATION
+    friend struct serialization_buddy;
+#endif
 
-        ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
-        construct(num_args, dim);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("num_args", num_args_), cereal::make_nvp("dim", dim_));
-    }
-private:
+ private:
     serial_size_t num_args_;
     serial_size_t dim_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn
 

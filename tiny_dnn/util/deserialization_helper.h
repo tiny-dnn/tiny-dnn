@@ -25,22 +25,26 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <typeindex>
 #include <map>
 #include <functional>
 #include <memory>
 #include <string>
+
 #include <cereal/archives/json.hpp>
 #include <cereal/types/memory.hpp>
+
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/macro.h"
+#include "tiny_dnn/util/serialization_functions.h"
 #include "tiny_dnn/layers/layers.h"
 
 namespace tiny_dnn {
 
 template <typename InputArchive>
 class deserialization_helper {
-public:
+ public:
     void register_loader(const std::string& name, std::function<std::shared_ptr<layer>(InputArchive&)> func) {
         loaders_[name] = [=](void* ar) {
             return func(*reinterpret_cast<InputArchive*>(ar));
@@ -75,13 +79,13 @@ public:
         return instance;
     }
 
-private:
+ private:
     void check_if_enabled() const {
 #ifdef CNN_NO_SERIALIZATION
-        static_assert(sizeof(InputArchive)==0,
-                             "You are using load functions, but deserialization function is disabled in current configuration.\n\n"
-                             "You need to undef CNN_NO_SERIALIZATION to enable these functions.\n"
-                             "If you are using cmake, you can use -DUSE_SERIALIZER=ON option.\n\n");
+        static_assert(sizeof(InputArchive) == 0,
+                      "You are using load functions, but deserialization function is disabled in current configuration.\n\n"
+                      "You need to undef CNN_NO_SERIALIZATION to enable these functions.\n"
+                      "If you are using cmake, you can use -DUSE_SERIALIZER=ON option.\n\n");
 #endif
     }
 
@@ -121,12 +125,11 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATION
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
-}; // class deserialization_helper
+};  // class deserialization_helper
 
 template <typename InputArchive>
 template <typename T>
 std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(InputArchive& ia) {
-
     using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
 
     std::unique_ptr<ST> bn(new ST());
@@ -143,10 +146,14 @@ std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(Inp
 }
 
 template <typename T>
-void start_loading_layer(T & ar) {}
+void start_loading_layer(T & ar) {
+    CNN_UNREFERENCED_PARAMETER(ar);
+}
 
 template <typename T>
-void finish_loading_layer(T & ar) {}
+void finish_loading_layer(T & ar) {
+    CNN_UNREFERENCED_PARAMETER(ar);
+}
 
 inline void start_loading_layer(cereal::JSONInputArchive & ia) { ia.startNode(); }
 
@@ -168,4 +175,4 @@ std::shared_ptr<layer> layer::load_layer(InputArchive & ia) {
     return l;
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

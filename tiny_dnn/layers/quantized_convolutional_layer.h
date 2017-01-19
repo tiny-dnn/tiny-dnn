@@ -31,15 +31,16 @@
 #include <algorithm>
 
 #include "tiny_dnn/core/backend_tiny.h"
-#include "tiny_dnn/core/backend_nnp.h"
-#include "tiny_dnn/core/backend_dnn.h"
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/backend_avx.h"
 #endif
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 using namespace tiny_dnn::core;
 
@@ -50,7 +51,7 @@ namespace tiny_dnn {
  *
  * take input as two-dimensional *image* and applying filtering operation.
  **/
-template<typename Activation = activation::identity>
+template <typename Activation = activation::identity>
 class quantized_convolutional_layer : public feedforward_layer<Activation> {
  public:
     typedef feedforward_layer<Activation> Base;
@@ -177,32 +178,32 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     * @param w_stride         [in] specify the horizontal interval at which to apply the filters to the input
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     **/
-    quantized_convolutional_layer(serial_size_t              in_width,
-                                  serial_size_t              in_height,
-                                  serial_size_t              window_width,
-                                  serial_size_t              window_height,
-                                  serial_size_t              in_channels,
-                                  serial_size_t              out_channels,
+    quantized_convolutional_layer(serial_size_t           in_width,
+                                  serial_size_t           in_height,
+                                  serial_size_t           window_width,
+                                  serial_size_t           window_height,
+                                  serial_size_t           in_channels,
+                                  serial_size_t           out_channels,
                                   const connection_table& connection_table,
                                   padding                 pad_type = padding::valid,
                                   bool                    has_bias = true,
-                                  serial_size_t              w_stride = 1,
-                                  serial_size_t              h_stride = 1,
+                                  serial_size_t           w_stride = 1,
+                                  serial_size_t           h_stride = 1,
                                   backend_t      backend_type = core::backend_t::internal)
         : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_width, window_height,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride,
+                        connection_table);
+        init_backend(backend_type);
     }
 
     // move constructor
     quantized_convolutional_layer(quantized_convolutional_layer&& other)  // NOLINT
-            : Base(std::move(other))
-            , params_(std::move(other.params_))
-            , cws_(std::move(other.cws_)) {
+        : Base(std::move(other)),
+          params_(std::move(other.params_)),
+          cws_(std::move(other.cws_)) {
         init_backend(core::backend_t::internal);
     }
 
@@ -248,7 +249,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                           std::vector<tensor_t*>&       out_grad,
                           std::vector<tensor_t*>&       in_grad) override {
         Base::backend_->conv2d_q(in_data, out_data, out_grad, in_grad);
-      }
+    }
 
     std::vector<index3d<serial_size_t>> in_shape() const override {
         if (params_.has_bias) {
@@ -264,6 +265,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
     std::string layer_type() const override { return "q_conv"; }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weight_to_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -303,16 +305,17 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
  private:
     void conv_set_params(const shape3d& in,
-                         serial_size_t     w_width,
-                         serial_size_t     w_height,
-                         serial_size_t     outc,
+                         serial_size_t  w_width,
+                         serial_size_t  w_height,
+                         serial_size_t  outc,
                          padding        ptype,
                          bool           has_bias,
-                         serial_size_t     w_stride,
-                         serial_size_t     h_stride,
+                         serial_size_t  w_stride,
+                         serial_size_t  h_stride,
                          const connection_table& tbl = connection_table()) {
         params_.in = in;
         params_.in_padded = shape3d(in_length(in.width_, w_width, ptype),
@@ -332,23 +335,24 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
 
     void init() {
         if (params_.pad_type == padding::same) {
-            cws_.prev_out_buf_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
-            cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t(0)));
-        }
-        else {
+            cws_.prev_out_buf_.resize(1, vec_t(params_.in_padded.size(), float_t{0}));
+            cws_.prev_delta_padded_.resize(1, vec_t(params_.in_padded.size(), float_t{0}));
+        } else {
             cws_.prev_out_buf_.clear();
         }
     }
 
     serial_size_t in_length(serial_size_t in_length,
-                         serial_size_t window_size, padding pad_type) const {
+                            serial_size_t window_size,
+                            padding pad_type) const {
         return pad_type == padding::same ?
                (in_length + window_size - 1) : in_length;
     }
 
     static serial_size_t conv_out_length(serial_size_t in_length,
-                                      serial_size_t window_size,
-                                      serial_size_t stride, padding pad_type) {
+                                         serial_size_t window_size,
+                                         serial_size_t stride,
+                                         padding pad_type) {
         float_t tmp;
         if (pad_type == padding::same) {
             tmp = static_cast<float_t>(in_length) / stride;
@@ -364,17 +368,19 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                                    serial_size_t in_height,
                                    serial_size_t window_size,
                                    serial_size_t w_stride,
-                                   serial_size_t h_stride, padding pad_type) {
+                                   serial_size_t h_stride,
+                                   padding pad_type) {
         return conv_out_length(in_width, window_size, w_stride, pad_type) *
                conv_out_length(in_height, window_size, h_stride, pad_type);
     }
 
     serial_size_t conv_out_dim(serial_size_t in_width,
-                            serial_size_t in_height,
-                            serial_size_t window_width,
-                            serial_size_t window_height,
-                            serial_size_t w_stride,
-                            serial_size_t h_stride, padding pad_type) const {
+                               serial_size_t in_height,
+                               serial_size_t window_width,
+                               serial_size_t window_height,
+                               serial_size_t w_stride,
+                               serial_size_t h_stride,
+                               padding pad_type) const {
         return conv_out_length(in_width, window_width, w_stride, pad_type) *
                conv_out_length(in_height, window_height, h_stride, pad_type);
     }
@@ -394,8 +400,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         for (serial_size_t sample = 0; sample < sample_count; ++sample) {
             if (params_.pad_type == padding::valid) {
                 cws.prev_out_padded_[sample] = &(in[sample]);
-            }
-            else {
+            } else {
                 vec_t* dst = &cws.prev_out_buf_[sample];
 
                 // make padded version in order to avoid corner-case in fprop/bprop
@@ -413,11 +418,11 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         }
     }
 
-    void copy_and_unpad_delta(const tensor_t& delta, tensor_t& delta_unpadded) {
+    void copy_and_unpad_delta(const tensor_t& delta,
+                              tensor_t& delta_unpadded) {
         if (params_.pad_type == padding::valid) {
             delta_unpadded = delta;
-        }
-        else {
+        } else {
             for (serial_size_t sample = 0; sample < delta.size(); sample++) {
                 serial_size_t idx = 0;
                 const vec_t& src = delta[sample];
@@ -456,14 +461,6 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                     return Base::backward_activation(p_delta, out, c_delta);
                 },
                 &cws_);
-        } else if (backend_type == backend_t::nnpack) {
-            backend = std::make_shared<core::nnp_backend>(&params_,
-                [this](const tensor_t& in) {
-                    return copy_and_pad_input(in);
-                },
-                &cws_);
-        } else if (backend_type == backend_t::libdnn) {
-            backend = std::make_shared<core::dnn_backend>();
 #ifdef CNN_USE_AVX
         } else if (backend_type == backend_t::avx) {
             backend = std::make_shared<core::avx_backend>(&params_,
@@ -495,7 +492,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     conv_params params_;
 
     /* The type of backend */
-    //backend_t backend_type_;
+    // backend_t backend_type_;
 
     /* Workers buffers */
     conv_layer_worker_specific_storage cws_;

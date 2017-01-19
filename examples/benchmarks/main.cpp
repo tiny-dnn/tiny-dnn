@@ -35,6 +35,8 @@ using namespace std;
 
 int  main(int argc, char** argv) {
     
+    CNN_UNREFERENCED_PARAMETER(argc);
+    CNN_UNREFERENCED_PARAMETER(argv);
     models::alexnet nn;
 
     // change all layers at once
@@ -52,10 +54,10 @@ int  main(int argc, char** argv) {
     // predict
     auto res = nn.predict(in);
 
-    double elapsed_ms = t.elapsed();
+    double elapsed_s = t.elapsed();
     t.stop();
 
-    cout << "Elapsed time(ms): " << elapsed_ms << endl;
+    cout << "Elapsed time(s): " << elapsed_s << endl;
 }
 
 

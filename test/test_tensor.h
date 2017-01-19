@@ -129,6 +129,93 @@ TEST(tensor, check_bounds) {
     EXPECT_THROW(tensor.host_ptr(1,0,0,1), nn_error);
 }
 
+TEST(tensor, view1) {
+
+    Tensor<float_t, 4> t1({2,2,2,2});
+    Tensor<float_t, 4> t2 = t1.subView({2,4});
+    Tensor<float_t, 4> t3 = t1.subView({0}, {2,4});
+
+    EXPECT_TRUE(!t1.isSubView());
+    EXPECT_TRUE( t2.isSubView());
+    EXPECT_TRUE( t3.isSubView());
+
+    EXPECT_EQ(t1.size(), size_t(2*2*2*2));
+    EXPECT_EQ(t2.size(), size_t(2*4));
+    EXPECT_EQ(t3.size(), size_t(2*4));
+}
+
+TEST(tensor, view2) {
+
+    Tensor<float_t, 4> t1({2,2,2,2});
+
+    EXPECT_NO_THROW(t1.subView({2,4,0,0}));
+    EXPECT_NO_THROW(t1.subView({0,0,0,0}, {2,4,0,0}));
+
+    // test that num parameters exceed to num of dimensions
+    EXPECT_THROW(t1.subView({2,4,0,0,0}), nn_error);
+    EXPECT_THROW(t1.subView({0,0,0,0},   {2,4,0,0,0}), nn_error);
+    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0}),   nn_error);
+    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0,0}), nn_error);
+}
+
+TEST(tensor, view3) {
+
+    Tensor<float_t, 4> t1({2,2,2,2});
+
+    // test that cannot generate view bigger than current tensor
+    EXPECT_THROW(t1.subView({4,5}), nn_error);
+    EXPECT_THROW(t1.subView({1}, {4,4}), nn_error);
+}
+
+TEST(tensor, view4) {
+
+    Tensor<float_t, 4> t1({2,2,2,2});
+    Tensor<float_t, 4> t2 = t1.subView({2,4});
+
+    // modify sub view tensor
+    for (size_t i = 0; i < t2.size(); ++i) {
+        t2.host_data()[i] = float_t(i+1);
+    }
+
+    // check that root tensor has also been modified
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_EQ(t1.host_data()[i], float_t(i+1));
+        EXPECT_EQ(t2.host_data()[i], float_t(i+1));
+    }
+}
+
+TEST(tensor, view5) {
+
+    Tensor<float_t, 2> t1({3,3});
+
+    // we create a sub view tensor with size @2x2.
+    // Ideally it should represent the top-left matrix.
+    // However, since we assume continous memory, it will
+    // mask the first four elements from the root view.
+    Tensor<float_t, 2> t2 = t1.subView({0}, {2,2});
+
+    // modify sub view tensor
+    for (size_t i = 0; i < t2.size(); ++i) {
+        t2.host_data()[i] = float_t(i+1);
+    }
+
+    // check that root tensor has been modified assuming
+    // continous memory. The ideal case would be that the
+    // new sub ºview can handle non continous memory pointing
+    // to the top-left matrix from the root tensor.
+    EXPECT_EQ(t1.host_at(0,0), float_t(1.0));
+    EXPECT_EQ(t1.host_at(0,1), float_t(2.0));
+    EXPECT_EQ(t1.host_at(0,2), float_t(3.0));
+    EXPECT_EQ(t1.host_at(1,0), float_t(4.0));
+
+    // check that the new sub view does not assume the ideal
+    // case with non continuous memory.
+    EXPECT_TRUE( t1.host_at(0,0) == float_t(1.0));
+    EXPECT_TRUE( t1.host_at(0,1) == float_t(2.0));
+    EXPECT_FALSE(t1.host_at(1,0) == float_t(3.0));
+    EXPECT_FALSE(t1.host_at(1,1) == float_t(4.0));
+}
+
 TEST(tensor, access_data1) {
     Tensor<float_t, 4> tensor({1,2,2,1});
 
@@ -839,14 +926,26 @@ TEST(tensor, nd1) {
 
 }
 
-TEST(tensor, print) {
-    Tensor<float_t, 4> t({3,2,2,2});
+template<size_t N> std::ostream& print_tester(std::ostream& os) {
+    os << "\nPrinting " << N << "-dimensional Tensor" << ":\n\n";
+    std::vector<size_t> shape(N, 2);
+    shape.back() = 3;
 
-    t.fill(float_t(1.0));
-
-    //std::cout << t;
-
+    Tensor<float_t, N> t(shape);
+    t.fill(float_t{1.0});
+    os << t;
+    print_tester<N-1>(os);
+    return os;
 }
+
+template<> std::ostream& print_tester<0>(std::ostream& os) {
+    return os;
+}
+
+TEST(tensor, print) {
+    print_tester<5>(std::cout);
+}
+
 //TEST(tensor, exp) {
 //    Tensor<float_t> t(2, 2, 2, 2);
 //

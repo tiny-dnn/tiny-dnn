@@ -25,8 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
+
 #include <algorithm>
+
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
@@ -38,15 +40,15 @@ namespace tiny_dnn {
 /**
  * local response normalization
  */
-template<typename Activation>
+template <typename Activation>
 class lrn_layer : public feedforward_layer<Activation> {
-public:
+ public:
     CNN_USE_LAYER_MEMBERS;
 
     typedef feedforward_layer<Activation> Base;
 
     lrn_layer(const shape3d& in_shape,
-              serial_size_t     local_size,
+              serial_size_t  local_size,
               float_t        alpha  = 1.0,
               float_t        beta   = 5.0,
               norm_region    region = norm_region::across_channels)
@@ -66,10 +68,10 @@ public:
     * @param alpha       [in] the scaling parameter (same to caffe's LRN)
     * @param beta        [in] the scaling parameter (same to caffe's LRN)
     **/
-    lrn_layer(layer*      prev,
-              serial_size_t  local_size,
-              float_t     alpha = 1.0,
-              float_t     beta  = 5.0,
+    lrn_layer(layer*        prev,
+              serial_size_t local_size,
+              float_t       alpha = 1.0,
+              float_t       beta  = 5.0,
               norm_region region = norm_region::across_channels)
         : lrn_layer(prev->out_data_shape()[0], local_size, alpha, beta, region) {}
 
@@ -88,7 +90,8 @@ public:
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
-        : lrn_layer(shape3d{in_width, in_height, in_channels}, local_size, alpha, beta, region){}
+        : lrn_layer(shape3d{in_width, in_height, in_channels},
+                    local_size, alpha, beta, region) {}
 
     serial_size_t fan_in_size() const override {
         return size_;
@@ -110,7 +113,6 @@ public:
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
                              std::vector<tensor_t*>& out_data) override {
-
         // @todo revise the parallelism strategy
         for (size_t sample = 0, sample_count = in_data[0]->size(); sample < sample_count; ++sample) {
             vec_t& in  = (*in_data[0])[sample];
@@ -119,8 +121,7 @@ public:
 
             if (region_ == norm_region::across_channels) {
                 forward_across(in, a);
-            }
-            else {
+            } else {
                 forward_within(in, a);
             }
 
@@ -141,34 +142,13 @@ public:
         throw nn_error("not implemented");
     }
 
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<lrn_layer> & construct) {
-        shape3d in_shape;
-        serial_size_t size;
-        float_t alpha, beta;
-        norm_region region;
+#ifndef CNN_NO_SERIALIZATION
+    friend struct serialization_buddy;
+#endif
 
-        ar(cereal::make_nvp("in_shape", in_shape),
-           cereal::make_nvp("size", size),
-           cereal::make_nvp("alpha", alpha),
-           cereal::make_nvp("beta", beta),
-           cereal::make_nvp("region", region));
-        construct(in_shape, size, alpha, beta, region);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_shape", in_shape_),
-           cereal::make_nvp("size", size_),
-           cereal::make_nvp("alpha", alpha_),
-           cereal::make_nvp("beta", beta_),
-           cereal::make_nvp("region", region_));
-    }
-
-private:
+ private:
     void forward_across(const vec_t& in, vec_t& out) {
-        std::fill(in_square_.begin(), in_square_.end(), float_t(0));
+        std::fill(in_square_.begin(), in_square_.end(), float_t{0});
 
         for (serial_size_t i = 0; i < size_ / 2; i++) {
             serial_size_t idx = in_shape_.get_index(0, 0, i);
@@ -188,8 +168,8 @@ private:
             if (tail >= 0)
                 sub_square_sum(&in[in_shape_.get_index(0, 0, tail)], wxh, &in_square_[0]);
 
-            float_t *dst = &out[in_shape_.get_index(0, 0, i)];
-            const float_t *src = &in[in_shape_.get_index(0, 0, i)];
+            float_t* dst = &out[in_shape_.get_index(0, 0, i)];
+            const float_t* src = &in[in_shape_.get_index(0, 0, i)];
             for (serial_size_t j = 0; j < wxh; j++)
                 dst[j] = src[j] * std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
         }
@@ -201,12 +181,12 @@ private:
         throw nn_error("not implemented");
     }
 
-    void add_square_sum(const float_t *src, serial_size_t size, float_t *dst) {
+    void add_square_sum(const float_t* src, serial_size_t size, float_t* dst) {
         for (serial_size_t i = 0; i < size; i++)
             dst[i] += src[i] * src[i];
     }
 
-    void sub_square_sum(const float_t *src, serial_size_t size, float_t *dst) {
+    void sub_square_sum(const float_t* src, serial_size_t size, float_t* dst) {
         for (serial_size_t i = 0; i < size; i++)
             dst[i] -= src[i] * src[i];
     }
@@ -220,4 +200,4 @@ private:
     vec_t in_square_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

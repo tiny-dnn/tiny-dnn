@@ -107,18 +107,18 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             serial_size_t idx = 0;
             idx = params.in.depth_ * o + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t *pw = &W_quantized[idx];
+            const uint8_t* pw = &W_quantized[idx];
 
             idx = params.in_padded.get_index(0, 0, inc);
-            const uint8_t *pi = &in_quantized[idx];
+            const uint8_t* pi = &in_quantized[idx];
 
             idx = params.out.get_index(0, 0, o);
-            int32_t *pa_quantized = &a_quantized[idx];
+            int32_t* pa_quantized = &a_quantized[idx];
 
             for (serial_size_t y = 0; y < params.out.height_; y++) {
                 for (serial_size_t x = 0; x < params.out.width_; x++) {
-                    const uint8_t * ppw = pw;
-                    const uint8_t * ppi = pi + params.in_padded.width_ *
+                    const uint8_t* ppw = pw;
+                    const uint8_t* ppi = pi + params.in_padded.width_ *
                                         (y * params.h_stride) +
                                          x * params.w_stride;
                     int32_t sum = 0;
@@ -136,8 +136,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             }
         }
         if (params.has_bias) {
-            int32_t * pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
-            int32_t * paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
+            int32_t* pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
+            int32_t* paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
             std::for_each(pa_quantized, paa_quantized, [&](int32_t& f) {
                 f += (bias_quantized[o] - zero_in_total_space);
             });
@@ -167,7 +167,7 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     float_t min_prev_out(prev_out[0]);
     float_t max_prev_out(prev_out[0]);
     for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
-        for (serial_size_t ins = 0; ins < params.in_padded.height_*params.in_padded.height_; ins++) {
+        for (serial_size_t ins = 0; ins < params.in_padded.height_ * params.in_padded.height_; ins++) {
             serial_size_t idx = params.in_padded.get_index(0, 0, inc);
             min_prev_out = std::min(min_prev_out, (&prev_out[idx])[ins]);
             max_prev_out = std::max(min_prev_out, (&prev_out[idx])[ins]);
@@ -180,7 +180,7 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     float_t min_filter(W[0]);
     float_t max_filter(W[0]);
     for (serial_size_t inc = 0; inc < params.in_padded.depth_; inc++) {
-        for (serial_size_t ins = 0; ins < params.weight.height_*params.weight.height_; ins++) {
+        for (serial_size_t ins = 0; ins < params.weight.height_ * params.weight.height_; ins++) {
             serial_size_t idx = params.in_padded.get_index(0, 0, inc);
             min_filter = std::min(min_filter, (&W[idx])[ins]);
             max_filter = std::max(max_filter, (&W[idx])[ins]);
@@ -197,7 +197,7 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
     float_t min_curr_delta(curr_delta[0]);
     float_t max_curr_delta(curr_delta[0]);
     for (serial_size_t inc = 0; inc < params.out.depth_; inc++) {
-        for (serial_size_t ins = 0; ins < params.out.height_*params.out.height_; ins++) {
+        for (serial_size_t ins = 0; ins < params.out.height_ * params.out.height_; ins++) {
             serial_size_t idx = params.out.get_index(0, 0, inc);
             min_curr_delta = std::min(min_curr_delta, (&curr_delta[idx])[ins]);
             max_curr_delta = std::max(max_curr_delta, (&curr_delta[idx])[ins]);
@@ -242,22 +242,22 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
             serial_size_t idx = 0;
             idx = params.in.depth_ * outc + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t *pw = &W_quantized[idx];
+            const uint8_t* pw = &W_quantized[idx];
 
             idx = params.out.get_index(0, 0, outc);
-            const uint8_t *pdelta_src = &curr_delta_quantized[idx];
+            const uint8_t* pdelta_src = &curr_delta_quantized[idx];
 
             idx = params.in_padded.get_index(0, 0, inc);
-            int32_t *pdelta_quantized_dst = &(prev_delta_quantized)[idx];
+            int32_t* pdelta_quantized_dst = &(prev_delta_quantized)[idx];
 
             for (serial_size_t y = 0; y < params.out.height_; y++) {
                 for (serial_size_t x = 0; x < params.out.width_; x++) {
-                    const uint8_t * ppw = pw;
+                    const uint8_t* ppw = pw;
 
                     idx = y * params.out.width_ + x;
                     const uint8_t ppdelta_src = pdelta_src[idx];
 
-                    int32_t * ppdelta_quantized_dst = pdelta_quantized_dst +
+                    int32_t* ppdelta_quantized_dst = pdelta_quantized_dst +
                           y * params.h_stride * params.in_padded.width_ +
                           x * params.w_stride;
 
@@ -296,10 +296,10 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
 
                     serial_size_t idx = 0;
                     idx = params.in_padded.get_index(wx, wy, inc);
-                    const uint8_t * prevo = &prev_out_quantized[idx];
+                    const uint8_t* prevo = &prev_out_quantized[idx];
 
                     idx = params.out.get_index(0, 0, outc);
-                    const uint8_t * delta = &curr_delta_quantized[idx];
+                    const uint8_t* delta = &curr_delta_quantized[idx];
 
                     for (serial_size_t y = 0; y < params.out.height_; y++) {
                         for (serial_size_t x = 0; x < params.out.width_; x++) {
@@ -332,10 +332,10 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params& params,
 
         for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
             serial_size_t idx = params.out.get_index(0, 0, outc);
-            const float_t * delta = &curr_delta[idx];
-            const float_t * deltaa = delta + params.out.width_ *
+            const float_t* delta = &curr_delta[idx];
+            const float_t* deltaa = delta + params.out.width_ *
                                              params.out.height_;
-            db[outc] += std::accumulate(delta, deltaa, float_t(0));
+            db[outc] += std::accumulate(delta, deltaa, float_t{0});
         }
     }
 }
@@ -401,18 +401,18 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             serial_size_t idx = 0;
             idx = params.in.depth_ * o + inc;
             idx = params.weight.get_index(0, 0, idx);
-            const uint8_t *pw = &W_quantized[idx];
+            const uint8_t* pw = &W_quantized[idx];
 
             idx = params.in_padded.get_index(0, 0, inc);
-            const uint8_t *pi = &in_quantized[idx];
+            const uint8_t* pi = &in_quantized[idx];
 
             idx = params.out.get_index(0, 0, o);
-            int32_t *pa_quantized = &a_quantized[idx];
+            int32_t* pa_quantized = &a_quantized[idx];
 
             for (serial_size_t y = 0; y < params.out.height_; y++) {
                 for (serial_size_t x = 0; x < params.out.width_; x++) {
-                    const uint8_t * ppw = pw;
-                    const uint8_t * ppi = pi + params.in_padded.width_ *
+                    const uint8_t* ppw = pw;
+                    const uint8_t* ppi = pi + params.in_padded.width_ *
                                         (y * params.h_stride) +
                                          x * params.w_stride;
                     int32_t sum = 0;
@@ -430,8 +430,8 @@ inline void tiny_quantized_conv2d_kernel(const conv_params& params,
             }
         }
         if (params.has_bias) {
-            int32_t * pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
-            int32_t * paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
+            int32_t* pa_quantized  = &a_quantized[params.out.get_index(0, 0, o)];
+            int32_t* paa_quantized = pa_quantized + params.out.width_ * params.out.height_;
             std::for_each(pa_quantized, paa_quantized, [&](int32_t& f) {
                 f += static_cast<int32_t>((bias[o] - zero_in_total_space));
             });

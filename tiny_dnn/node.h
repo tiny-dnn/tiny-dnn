@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <sstream>
 #include <iomanip>
 #include <memory>
@@ -36,11 +37,14 @@
 
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/product.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/util/weight_init.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif
 
 namespace tiny_dnn {
 
@@ -57,7 +61,7 @@ typedef layer* layerptr_t;
  * base class of all kind of tinny-cnn data
  **/
 class node : public std::enable_shared_from_this<node> {
-public:
+ public:
     node(serial_size_t in_size, serial_size_t out_size)
         : prev_(in_size), next_(out_size) {}
     virtual ~node() {}
@@ -79,6 +83,7 @@ public:
 
     std::vector<node*> prev_nodes() const; // @todo refactor and remove this method
     std::vector<node*> next_nodes() const; // @todo refactor and remove this method
+
  protected:
     node() = delete;
 
@@ -102,19 +107,25 @@ class edge {
           prev_(prev) {}
 
     void merge_grads(vec_t *dst) {
-        dst->resize(grad_[0].size());
-        std::fill(dst->begin(), dst->end(), static_cast<float_t>(0));
-
+        assert(!grad_.empty());
+        const auto& grad_head = grad_[0];
+        size_t sz = grad_head.size();
+        dst->resize(sz);
+        float_t* pdst = &(*dst)[0];
+        // dst = grad_[0]
+        std::copy(grad_head.begin(), grad_head.end(), pdst);
         // @todo consider adding parallelism
-		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-			vectorize::reduce<float_t>(&grad_[sample][0], dst->size(), &(*dst)[0]);
-		}
+        for (size_t sample = 1, sample_count = grad_.size(); sample < sample_count; ++sample) {
+            // dst += grad_[sample]
+            vectorize::reduce<float_t>(&grad_[sample][0], sz, pdst);
+        }
     }
 
     void clear_grads() {
-		for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
-			std::fill(grad_[sample].begin(), grad_[sample].end(), (float_t)0);
-		}
+        for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count; ++sample) {
+            auto& g = grad_[sample];
+            vectorize::fill(&g[0], g.size(), float_t{0});
+        }
     }
 
     tensor_t* get_data() {
@@ -238,5 +249,4 @@ inline node_tuple<T*>& operator << (U& lhs, const node_tuple<T*>& rhs) {
     return rhs;
 }
 
-
-}   // namespace tiny_dnn
+}  // namespace tiny_dnn

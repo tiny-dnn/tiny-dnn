@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -36,5 +37,4 @@ inline vec_t corrupt(vec_t&& in, float_t corruption_level, float_t min_value) {
     return in;
 }
 
-
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

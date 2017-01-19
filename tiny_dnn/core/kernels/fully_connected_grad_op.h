@@ -69,7 +69,7 @@ class FullyConnectedGradOp : public core::OpKernel {
         tensor_t dummy; // need lvalue for non-const reference
 
         // initialize outputs
-        fill_tensor(prev_delta, float_t(0));
+        fill_tensor(prev_delta, float_t{0});
 
         // call the algorithm depending on the selected engine type
 

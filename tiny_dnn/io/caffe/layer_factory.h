@@ -45,7 +45,8 @@ namespace tiny_dnn {
 * @param data_shape [in] size of input data (width x height x channels)
 */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_shape)
+create_net_from_caffe_net(const caffe::NetParameter& layer,
+                          const shape3d& data_shape)
 {
     detail::caffe_layer_vector src_net(layer);
     shape_t shape;
@@ -107,7 +108,8 @@ create_net_from_caffe_net(const caffe::NetParameter& layer, const shape3d& data_
  * @param data_shape [in] size of input data (width x height x channels)
  */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const shape3d& data_shape)
+create_net_from_caffe_protobinary(const std::string& caffebinarymodel,
+                                  const shape3d& data_shape)
 {
     caffe::NetParameter np;
 
@@ -121,7 +123,8 @@ create_net_from_caffe_protobinary(const std::string& caffebinarymodel, const sha
  * @param layer [in] netparameter of caffe prototxt
  */
 inline std::shared_ptr<network<sequential>>
-create_net_from_caffe_prototxt(const std::string& caffeprototxt, const shape3d& shape =shape3d())
+create_net_from_caffe_prototxt(const std::string& caffeprototxt,
+                               const shape3d& shape = shape3d())
 {
     caffe::NetParameter np;
 
@@ -137,7 +140,8 @@ create_net_from_caffe_prototxt(const std::string& caffeprototxt, const shape3d& 
  * @param net [out] tiny-dnn's network
  */
 template <typename N>
-inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, network<N> *net)
+inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer,
+                                         network<N>* net)
 {
     detail::caffe_layer_vector src_net(layer);
 
@@ -146,14 +150,20 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, netwo
     for (size_t caffe_layer_idx = 0; caffe_layer_idx < src_net.size(); caffe_layer_idx++) {
         auto type = src_net[caffe_layer_idx].type();
 
-        size_t next_idx = tiny_layer_idx + 1;
+	if ( detail::layer_skipped(type) ||
+	    !detail::layer_has_weights(type)) {
+            continue;
+	}
 
-        while (next_idx < net->depth() && !detail::layer_match(type, (*net)[next_idx]->layer_type())) {
-            next_idx++;
+	if (!detail::layer_supported(type)) {
+            throw nn_error("error: tiny-dnn does not support this layer type:" + type);
+	}
+
+        while (tiny_layer_idx < net->depth() && !detail::layer_match(type, (*net)[tiny_layer_idx]->layer_type())) {
+            tiny_layer_idx++;
         }
-        if (next_idx >= net->depth()) break;
 
-        tiny_layer_idx = next_idx;
+        if (tiny_layer_idx >= net->depth()) break;
 
         // load weight
         detail::load(src_net[caffe_layer_idx], (*net)[tiny_layer_idx++]);
@@ -168,7 +178,8 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter& layer, netwo
  * @param net [out] tiny-dnn's network
  */
 template <typename N>
-inline void reload_weight_from_caffe_protobinary(const std::string& caffebinary, network<N> *net)
+inline void reload_weight_from_caffe_protobinary(const std::string& caffebinary,
+                                                 network<N>* net)
 {
     caffe::NetParameter np;
 

@@ -25,9 +25,9 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
 #include <fstream>
 #include <cstdint>
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 namespace detail {
@@ -40,10 +40,10 @@ struct mnist_header {
 };
 
 inline void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
-    ifs.read((char*) &header.magic_number, 4);
-    ifs.read((char*) &header.num_items, 4);
-    ifs.read((char*) &header.num_rows, 4);
-    ifs.read((char*) &header.num_cols, 4);
+    ifs.read(reinterpret_cast<char*>(&header.magic_number), 4);
+    ifs.read(reinterpret_cast<char*>(&header.num_items), 4);
+    ifs.read(reinterpret_cast<char*>(&header.num_rows), 4);
+    ifs.read(reinterpret_cast<char*>(&header.num_cols), 4);
 
     if (is_little_endian()) {
         reverse_endian(&header.magic_number);
@@ -59,28 +59,29 @@ inline void parse_mnist_header(std::ifstream& ifs, mnist_header& header) {
 }
 
 inline void parse_mnist_image(std::ifstream& ifs,
-    const mnist_header& header,
-    float_t scale_min,
-    float_t scale_max,
-    int x_padding,
-    int y_padding,
-    vec_t& dst) {
+                              const mnist_header& header,
+                              float_t scale_min,
+                              float_t scale_max,
+                              int x_padding,
+                              int y_padding,
+                              vec_t& dst
+) {
     const int width = header.num_cols + 2 * x_padding;
     const int height = header.num_rows + 2 * y_padding;
 
     std::vector<uint8_t> image_vec(header.num_rows * header.num_cols);
 
-    ifs.read((char*) &image_vec[0], header.num_rows * header.num_cols);
+    ifs.read(reinterpret_cast<char*>(&image_vec[0]), header.num_rows * header.num_cols);
 
     dst.resize(width * height, scale_min);
 
     for (uint32_t y = 0; y < header.num_rows; y++)
         for (uint32_t x = 0; x < header.num_cols; x++)
             dst[width * (y + y_padding) + x + x_padding]
-            = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
+                = (image_vec[y * header.num_cols + x] / float_t(255)) * (scale_max - scale_min) + scale_min;
 }
 
-} // namespace detail
+}  // namespace detail
 
 /**
  * parse MNIST database format labels with rescaling/resizing
@@ -89,7 +90,8 @@ inline void parse_mnist_image(std::ifstream& ifs,
  * @param label_file [in]  filename of database (i.e.train-labels-idx1-ubyte)
  * @param labels     [out] parsed label data
  **/
-inline void parse_mnist_labels(const std::string& label_file, std::vector<label_t> *labels) {
+inline void parse_mnist_labels(const std::string& label_file,
+                               std::vector<label_t>* labels) {
     std::ifstream ifs(label_file.c_str(), std::ios::in | std::ios::binary);
 
     if (ifs.bad() || ifs.fail())
@@ -97,10 +99,10 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
 
     uint32_t magic_number, num_items;
 
-    ifs.read((char*) &magic_number, 4);
-    ifs.read((char*) &num_items, 4);
+    ifs.read(reinterpret_cast<char*>(&magic_number), 4);
+    ifs.read(reinterpret_cast<char*>(&num_items), 4);
 
-    if (is_little_endian()) { // MNIST data is big-endian format
+    if (is_little_endian()) {  // MNIST data is big-endian format
         reverse_endian(&magic_number);
         reverse_endian(&num_items);
     }
@@ -108,10 +110,11 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
     if (magic_number != 0x00000801 || num_items <= 0)
         throw nn_error("MNIST label-file format error");
 
+    labels->resize(num_items);
     for (uint32_t i = 0; i < num_items; i++) {
         uint8_t label;
-        ifs.read((char*) &label, 1);
-        labels->push_back((label_t) label);
+        ifs.read(reinterpret_cast<char*>(&label), 1);
+        (*labels)[i] = static_cast<label_t>(label);
     }
 }
 
@@ -138,12 +141,11 @@ inline void parse_mnist_labels(const std::string& label_file, std::vector<label_
  *
  **/
 inline void parse_mnist_images(const std::string& image_file,
-    std::vector<vec_t> *images,
-    float_t scale_min,
-    float_t scale_max,
-    int x_padding,
-    int y_padding) {
-
+                               std::vector<vec_t>* images,
+                               float_t scale_min,
+                               float_t scale_max,
+                               int x_padding,
+                               int y_padding) {
     if (x_padding < 0 || y_padding < 0)
         throw nn_error("padding size must not be negative");
     if (scale_min >= scale_max)
@@ -158,11 +160,12 @@ inline void parse_mnist_images(const std::string& image_file,
 
     detail::parse_mnist_header(ifs, header);
 
+    images->resize(header.num_items);
     for (uint32_t i = 0; i < header.num_items; i++) {
         vec_t image;
         detail::parse_mnist_image(ifs, header, scale_min, scale_max, x_padding, y_padding, image);
-        images->push_back(image);
+        (*images)[i] = image;
     }
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

@@ -3,10 +3,10 @@
 /*#include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/highgui.hpp>*/
-#include "tiny_cnn/tiny_cnn.h"
+#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_cnn;
-using namespace tiny_cnn::activation;
+using namespace tiny_dnn;
+using namespace tiny_dnn::activation;
 using namespace std;
 
 // rescale output to 0-100
@@ -31,7 +31,7 @@ void convert_image(const std::string& imagefilename,
     for(int c = 0; c < resized.channels(); ++c){
         for(int y = 0; y < resized.rows; ++y){
             for(int x = 0; x < resized.cols; ++x){
-                data[c * w * h + y*w + x] = resized.data[y*resized.step + x*resized.step + c];
+		data[c * w * h + y*w + x] = resized.data[y*resized.step[0] + x*resized.step[1] + c];
             }
         }
     }

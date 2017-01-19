@@ -25,16 +25,16 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
 #include <fstream>
 #include <cstdint>
 #include <algorithm>
+#include "tiny_dnn/util/util.h"
 
 #define CIFAR10_IMAGE_DEPTH (3)
 #define CIFAR10_IMAGE_WIDTH (32)
 #define CIFAR10_IMAGE_HEIGHT (32)
-#define CIFAR10_IMAGE_AREA (CIFAR10_IMAGE_WIDTH*CIFAR10_IMAGE_HEIGHT)
-#define CIFAR10_IMAGE_SIZE (CIFAR10_IMAGE_AREA*CIFAR10_IMAGE_DEPTH)
+#define CIFAR10_IMAGE_AREA (CIFAR10_IMAGE_WIDTH * CIFAR10_IMAGE_HEIGHT)
+#define CIFAR10_IMAGE_SIZE (CIFAR10_IMAGE_AREA * CIFAR10_IMAGE_DEPTH)
 
 
 namespace tiny_dnn {
@@ -51,13 +51,12 @@ namespace tiny_dnn {
  * @param y_padding  [in]  adding border width (top,bottom)
  **/
 inline void parse_cifar10(const std::string& filename,
-                          std::vector<vec_t> *train_images,
-                          std::vector<label_t> *train_labels,
+                          std::vector<vec_t>* train_images,
+                          std::vector<label_t>* train_labels,
                           float_t scale_min,
                           float_t scale_max,
                           int x_padding,
-                          int y_padding)
-{
+                          int y_padding) {
     if (x_padding < 0 || y_padding < 0)
         throw nn_error("padding size must not be negative");
     if (scale_min >= scale_max)
@@ -70,13 +69,12 @@ inline void parse_cifar10(const std::string& filename,
     uint8_t label;
     std::vector<unsigned char> buf(CIFAR10_IMAGE_SIZE);
 
-    while (ifs.read((char*) &label, 1)) {
+    while (ifs.read(reinterpret_cast<char*>(&label), 1)) {
         vec_t img;
 
-        if (!ifs.read((char*) &buf[0], CIFAR10_IMAGE_SIZE)) break;
+        if (!ifs.read(reinterpret_cast<char*>(&buf[0]), CIFAR10_IMAGE_SIZE)) break;
 
-        if (x_padding || y_padding)
-        {
+        if (x_padding || y_padding) {
             int w = CIFAR10_IMAGE_WIDTH + 2 * x_padding;
             int h = CIFAR10_IMAGE_HEIGHT + 2 * y_padding;
 
@@ -90,9 +88,7 @@ inline void parse_cifar10(const std::string& filename,
                     }
                 }
             }
-        }
-        else
-        {
+        } else {
             std::transform(buf.begin(), buf.end(), std::back_inserter(img),
                 [=](unsigned char c) { return scale_min + (scale_max - scale_min) * c / 255; });
         }
@@ -102,4 +98,4 @@ inline void parse_cifar10(const std::string& filename,
     }
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

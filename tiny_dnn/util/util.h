@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <vector>
 #include <functional>
 #include <random>
@@ -36,12 +37,14 @@
 #include <string>
 #include <sstream>
 
+#ifndef CNN_NO_SERIALIZATION
 #include <cereal/cereal.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/deque.hpp>
+#endif
 
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/util/macro.h"
@@ -64,7 +67,7 @@ namespace tiny_dnn {
 ///< must be equal to serial_size_t, because size of last layer is equal to num. of classes
 typedef serial_size_t label_t;
 
-typedef serial_size_t layer_size_t; // for backward compatibility
+typedef serial_size_t layer_size_t;  // for backward compatibility
 
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
@@ -80,7 +83,7 @@ enum class padding {
     same    ///< add zero-padding around input so as to keep image size
 };
 
-template<typename T>
+template <typename T>
 T* reverse_endian(T* p) {
     std::reverse(reinterpret_cast<char*>(p), reinterpret_cast<char*>(p) + sizeof(T));
     return p;
@@ -88,28 +91,27 @@ T* reverse_endian(T* p) {
 
 inline bool is_little_endian() {
     int x = 1;
-    return *(char*) &x != 0;
+    return *reinterpret_cast<char*>(&x) != 0;
 }
 
 
-template<typename T>
+template <typename T>
 size_t max_index(const T& vec) {
     auto begin_iterator = std::begin(vec);
     return std::max_element(begin_iterator, std::end(vec)) - begin_iterator;
 }
 
-template<typename T, typename U>
+template <typename T, typename U>
 U rescale(T x, T src_min, T src_max, U dst_min, U dst_max) {
     U value =  static_cast<U>(((x - src_min) * (dst_max - dst_min)) / (src_max - src_min) + dst_min);
     return std::min(dst_max, std::max(value, dst_min));
 }
 
-inline void nop()
-{
+inline void nop() {
     // do nothing
 }
 
-template <typename T> inline T sqr(T value) { return value*value; }
+template <typename T> inline T sqr(T value) { return value * value; }
 
 inline bool isfinite(float_t x) {
     return x == x;
@@ -130,7 +132,7 @@ serial_size_t max_size(const Container& c) {
     return static_cast<serial_size_t>(max_size);
 }
 
-inline std::string format_str(const char *fmt, ...) {
+inline std::string format_str(const char* fmt, ...) {
     static char buf[2048];
 
 #ifdef _MSC_VER
@@ -159,7 +161,7 @@ struct index3d {
         height_ = height;
         depth_ = depth;
 
-        if ((long long) width * height * depth > std::numeric_limits<T>::max())
+        if ((int64_t) width * height * depth > std::numeric_limits<T>::max())
             throw nn_error(
             format_str("error while constructing layer: layer size too large for tiny-dnn\nWidthxHeightxChannels=%dx%dx%d >= max size of [%s](=%d)",
             width, height, depth, typeid(T).name(), std::numeric_limits<T>::max()));
@@ -178,13 +180,6 @@ struct index3d {
 
     T size() const {
         return width_ * height_ * depth_;
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        ar(cereal::make_nvp("width", width_));
-        ar(cereal::make_nvp("height", height_));
-        ar(cereal::make_nvp("depth", depth_));
     }
 
     T width_;
@@ -239,7 +234,6 @@ std::string to_string(T value) {
 #define CNN_USE_LAYER_MEMBERS using layer::parallelize_; \
     using feedforward_layer<Activation>::h_
 
-
 #define CNN_LOG_VECTOR(vec, name)
 /*
 void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
@@ -279,28 +273,27 @@ std::vector<T> filter(const std::vector<T>& vec, Pred p) {
 
 template <typename Result, typename T, typename Pred>
 std::vector<Result> map_(const std::vector<T>& vec, Pred p) {
-    std::vector<Result> res;
-    for (auto& v : vec) {
-        res.push_back(p(v));
+    std::vector<Result> res(vec.size());
+    for (size_t i = 0; i < vec.size(); ++i) {
+        res[i] = p(vec[i]);
     }
     return res;
 }
 
 enum class vector_type : int32_t {
     // 0x0001XXX : in/out data
-    data = 0x0001000, // input/output data, fed by other layer or input channel
+    data = 0x0001000,  // input/output data, fed by other layer or input channel
 
     // 0x0002XXX : trainable parameters, updated for each back propagation
     weight = 0x0002000,
     bias = 0x0002001,
 
     label = 0x0004000,
-    aux = 0x0010000 // layer-specific storage
+    aux = 0x0010000  // layer-specific storage
 };
 
 inline std::string to_string(vector_type vtype) {
-    switch (vtype)
-    {
+    switch (vtype) {
     case tiny_dnn::vector_type::data:
         return "data";
     case tiny_dnn::vector_type::weight:
@@ -332,8 +325,7 @@ inline bool is_trainable_weight(vector_type vtype) {
 inline std::vector<vector_type> std_input_order(bool has_bias) {
     if (has_bias) {
         return{ vector_type::data, vector_type::weight, vector_type::bias };
-    }
-    else {
+    } else {
         return{ vector_type::data, vector_type::weight };
     }
 }
@@ -341,8 +333,7 @@ inline std::vector<vector_type> std_input_order(bool has_bias) {
 inline std::vector<vector_type> std_output_order(bool has_activation) {
     if (has_activation) {
         return{ vector_type::data, vector_type::aux };
-    }
-    else {
+    } else {
         return{ vector_type::data };
     }
 }
@@ -367,11 +358,9 @@ inline serial_size_t conv_out_length(serial_size_t in_length,
 
     if (pad_type == padding::same) {
         output_length = in_length;
-    }
-    else if (pad_type == padding::valid) {
+    } else if (pad_type == padding::valid) {
         output_length = in_length - window_size + 1;
-    }
-    else {
+    } else {
         throw nn_error("Not recognized pad_type.");
     }
     return (output_length + stride - 1) / stride;
@@ -400,7 +389,7 @@ inline void printAvailableDevice(const serial_size_t platform_id,
     printf(" > Max work-group size          %zu\n", device.MaxWorkGroupSize());
     printf(" > Max thread dimensions        %zu\n", device.MaxWorkItemDimensions());
     printf(" > Max work-group sizes:\n");
-    for (auto i=size_t{0}; i<device.MaxWorkItemDimensions(); ++i) {
+    for (auto i = size_t{0}; i < device.MaxWorkItemDimensions(); ++i) {
         printf("   - in the %zu-dimension         %zu\n", i, device.MaxWorkItemSizes()[i]);
     }
     printf(" > Local memory per work-group  %zu bytes\n", device.LocalMemSize());
@@ -418,10 +407,9 @@ inline void printAvailableDevice(const serial_size_t platform_id,
 #endif
 }
 
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args)
-{
+template <typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

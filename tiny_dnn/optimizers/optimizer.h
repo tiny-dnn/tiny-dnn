@@ -25,8 +25,10 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
+
 #include <unordered_map>
+
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
@@ -46,8 +48,9 @@ struct optimizer {
 #endif
     virtual ~optimizer() = default;
     virtual void update(const vec_t& dW, vec_t &W, bool parallelize) = 0;
-    virtual void reset() {} // override to implement pre-learning action
+    virtual void reset() {}  // override to implement pre-learning action
 };
+
 
 // helper class to hold N values for each weight
 template <int N>
@@ -56,7 +59,7 @@ struct stateful_optimizer : public optimizer {
         for (auto& e : E_) e.clear();
     }
 
-protected:
+ protected:
     template <int Index>
     vec_t& get(const vec_t& key) {
         static_assert(Index < N, "index out of range");
@@ -66,6 +69,7 @@ protected:
     }
     std::unordered_map<const vec_t*, vec_t> E_[N];
 };
+
 
 /**
  * adaptive gradient method
@@ -85,10 +89,11 @@ struct adagrad : public stateful_optimizer<1> {
         });
     }
 
-    float_t alpha; // learning rate
-private:
+    float_t alpha;  // learning rate
+ private:
     float_t eps;
 };
+
 
 /**
  * RMSprop
@@ -102,17 +107,16 @@ struct RMSprop : public stateful_optimizer<1> {
     void update(const vec_t& dW, vec_t& W, bool parallelize) {
         vec_t& g = get<0>(W);
 
-        for_i(parallelize, static_cast<int>(W.size()), [&](int i)
-        {
+        for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
             g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
             W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
         });
     }
 
-    float_t alpha; // learning rate
-    float_t mu; // decay term
-private:
-    float_t eps; // constant value to avoid zero-division
+    float_t alpha;  // learning rate
+    float_t mu;     // decay term
+ private:
+    float_t eps;    // constant value to avoid zero-division
 };
 
 
@@ -123,31 +127,36 @@ private:
  * 
  */
 struct adam : public stateful_optimizer<2> {
-    adam() : alpha(float_t(0.001)), b1(float_t(0.9)), b2(float_t(0.999)), b1_t(float_t(0.9)), b2_t(float_t(0.999)), eps(float_t(1e-8)) {}
+    adam() : alpha(float_t(0.001)),
+             b1(float_t(0.9)),
+             b2(float_t(0.999)),
+             b1_t(float_t(0.9)),
+             b2_t(float_t(0.999)),
+             eps(float_t(1e-8)) {}
 
     void update(const vec_t& dW, vec_t& W, bool parallelize) {
         vec_t& mt = get<0>(W);
         vec_t& vt = get<1>(W);
 
-        b1_t*=b1;b2_t*=b2;
+        b1_t*=b1; b2_t*=b2;
 
-        for_i(parallelize, static_cast<int>(W.size()), [&](int i){
+        for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
             mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
             vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
-            W[i] -= alpha * ( mt[i]/(float_t(1) -b1_t) ) / std::sqrt( (vt[i]/(float_t(1)-b2_t)) + eps);
+            W[i] -= alpha * (mt[i] / (float_t(1) - b1_t)) / std::sqrt((vt[i] / (float_t(1) - b2_t)) + eps);
         });
     }
 
-    float_t alpha; // learning rate
-    float_t b1; // decay term
-    float_t b2; // decay term
-    float_t b1_t; // decay term power t
-    float_t b2_t; // decay term power t   
-private:
-    float_t eps; // constant value to avoid zero-division
-};
+    float_t alpha;  // learning rate
+    float_t b1;     // decay term
+    float_t b2;     // decay term
+    float_t b1_t;   // decay term power t
+    float_t b2_t;   // decay term power t
 
+ private:
+    float_t eps;    // constant value to avoid zero-division
+};
 
 
 /**
@@ -164,9 +173,10 @@ struct gradient_descent : public optimizer {
         });
     }
 
-    float_t alpha; // learning rate
-    float_t lambda; // weight decay
+    float_t alpha;   // learning rate
+    float_t lambda;  // weight decay
 };
+
 
 /**
  * SGD with momentum
@@ -176,8 +186,8 @@ struct gradient_descent : public optimizer {
  * USSR Computational Mathematics and Mathematical Physics, 4(5):1-17, 1964.
  **/
 struct momentum : public stateful_optimizer<1> {
-public:
-    momentum() : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
+ public:
+    momentum() : alpha(float_t(0.01)), lambda(float_t{0}), mu(float_t(0.9)) {}
 
     void update(const vec_t& dW, vec_t& W, bool parallelize) {
         vec_t& dWprev = get<0>(W);
@@ -189,9 +199,9 @@ public:
         });
     }
 
-    float_t alpha; // learning rate
-    float_t lambda; // weight decay
-    float_t mu; // momentum
+    float_t alpha;   // learning rate
+    float_t lambda;  // weight decay
+    float_t mu;      // momentum
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

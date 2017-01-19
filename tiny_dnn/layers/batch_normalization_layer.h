@@ -25,11 +25,12 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
+#include <algorithm>
+
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/math_functions.h"
 #include "tiny_dnn/layers/layer.h"
-
-#include <algorithm>
 
 namespace tiny_dnn {
 
@@ -40,7 +41,7 @@ namespace tiny_dnn {
  * Normalize the activations of the previous layer at each batch
  **/
 class batch_normalization_layer : public layer {
-public:
+ public:
     typedef layer Base;
 
     /**
@@ -54,13 +55,12 @@ public:
                               float_t momentum = 0.999,
                               net_phase phase = net_phase::train)
         : Base({ vector_type::data }, { vector_type::data }),
-        in_channels_(prev_layer.out_shape()[0].depth_),
-        in_spatial_size_(prev_layer.out_shape()[0].area()),
-        phase_(phase),
-        momentum_(momentum),
-        eps_(epsilon),
-        update_immidiately_(false)
-    {
+          in_channels_(prev_layer.out_shape()[0].depth_),
+          in_spatial_size_(prev_layer.out_shape()[0].area()),
+          phase_(phase),
+          momentum_(momentum),
+          eps_(epsilon),
+          update_immidiately_(false) {
         init();
     }
 
@@ -77,17 +77,16 @@ public:
                               float_t momentum = 0.999,
                               net_phase phase = net_phase::train)
         : Base({ vector_type::data }, { vector_type::data }),
-        in_channels_(in_channels),
-        in_spatial_size_(in_spatial_size),
-        phase_(phase),
-        momentum_(momentum),
-        eps_(epsilon),
-        update_immidiately_(false)
-    {
+          in_channels_(in_channels),
+          in_spatial_size_(in_spatial_size),
+          phase_(phase),
+          momentum_(momentum),
+          eps_(epsilon),
+          update_immidiately_(false) {
         init();
     }
 
-    virtual ~batch_normalization_layer(){}
+    virtual ~batch_normalization_layer() {}
 
     ///< number of incoming connections for each output unit
     serial_size_t fan_in_size() const override {
@@ -126,7 +125,7 @@ public:
                 delta_dot_y[i][j] *= curr_delta[i][j];
             }
         }
- 
+
         moments(delta_dot_y, in_spatial_size_, in_channels_, mean_delta_dot_y);
         moments(curr_delta, in_spatial_size_, in_channels_, mean_delta);
         // if Y = (X-mean(X))/(sqrt(var(X)+eps)), then
@@ -138,20 +137,20 @@ public:
         for_i(num_samples, [&](int i) {
             for (serial_size_t j = 0; j < in_channels_; j++) {
                 for (serial_size_t k = 0; k < in_spatial_size_; k++) {
-                    serial_size_t index = j*in_spatial_size_ + k;
+                    serial_size_t index = j * in_spatial_size_ + k;
 
                     prev_delta[i][index]
                         = curr_delta[i][index] - mean_delta[j] - mean_delta_dot_y[j] * curr_out[i][index];
 
-                    // stddev_ is calculated in the forward pass 
+                    // stddev_ is calculated in the forward pass
                     prev_delta[i][index] /= stddev_[j];
-                }            
+                }
             }
         });
     }
 
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-        std::vector<tensor_t*>& out_data) override {
+                             std::vector<tensor_t*>& out_data) override {
         vec_t& mean = (phase_ == net_phase::train) ? mean_current_: mean_;
         vec_t& variance = (phase_ == net_phase::train) ? variance_current_ : variance_;
         tensor_t& in = *in_data[0];
@@ -169,10 +168,10 @@ public:
             const float_t* inptr  = &in[i][0];
             float_t*       outptr = &out[i][0];
 
-            for (serial_size_t j = 0; j < in_channels_; j++) {
+            for (size_t j = 0; j < in_channels_; j++) {
                 float_t m = mean[j];
 
-                for (serial_size_t k = 0; k < in_spatial_size_; k++) {
+                for (size_t k = 0; k < in_spatial_size_; k++) {
                     *outptr++ = (*inptr++ - m) / stddev_[j];
                 }
             }
@@ -184,33 +183,32 @@ public:
         }
     }
 
-    void set_context(net_phase ctx) override
-    {
+    void set_context(net_phase ctx) override {
         phase_ = ctx;
     }
 
     std::string layer_type() const override { return "batch-norm"; }
 
-    virtual void post_update() override {
+    void post_update() override {
         for (serial_size_t i = 0; i < mean_.size(); i++) {
             mean_[i] = momentum_ * mean_[i] + (1 - momentum_) * mean_current_[i];
             variance_[i] = momentum_ * variance_[i] + (1 - momentum_) * variance_current_[i];
         }
     }
 
-    virtual void save(std::ostream& os) const override {
+    void save(std::ostream& os) const override {
         Base::save(os);
         for (auto m : mean_) os << m << " ";
         for (auto v : variance_) os << v << " ";
     }
 
-    virtual void load(std::istream& is) override {
+    void load(std::istream& is) override {
         Base::load(is);
         for (auto& m : mean_) is >> m;
         for (auto& v : variance_) is >> v;
     }
 
-    virtual void load(const std::vector<float_t>& src, int& idx) override {
+    void load(const std::vector<float_t>& src, int& idx) override {
         Base::load(src, idx);
         for (auto& m : mean_) m = src[idx++];
         for (auto& v : variance_) v = src[idx++];
@@ -233,37 +231,9 @@ public:
         calc_stddev(variance);
     }
 
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<batch_normalization_layer> & construct) {
-        shape3d in;
-        serial_size_t in_spatial_size, in_channels;
-        float_t eps, momentum;
-        net_phase phase;
-        vec_t mean, variance;
-        
-        ar(cereal::make_nvp("in_spatial_size", in_spatial_size),
-            cereal::make_nvp("in_channels", in_channels),
-            cereal::make_nvp("epsilon", eps),
-            cereal::make_nvp("momentum", momentum),
-            cereal::make_nvp("phase", phase),
-            cereal::make_nvp("mean", mean),
-            cereal::make_nvp("variance", variance));
-        construct(in_spatial_size, in_channels, eps, momentum, phase);
-        construct->set_mean(mean);
-        construct->set_variance(variance);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_spatial_size", in_spatial_size_),
-           cereal::make_nvp("in_channels", in_channels_),
-           cereal::make_nvp("epsilon", eps_),
-           cereal::make_nvp("momentum", momentum_),
-           cereal::make_nvp("phase", phase_),
-           cereal::make_nvp("mean", mean_),
-           cereal::make_nvp("variance", variance_));
-    }
+#ifndef CNN_NO_SERIALIZATION
+    friend struct serialization_buddy;
+#endif
 
     float_t epsilon() const {
         return eps_;
@@ -273,7 +243,7 @@ public:
         return momentum_;
     }
 
-private:
+ private:
     void calc_stddev(const vec_t& variance) {
         for (size_t i = 0; i < in_channels_; i++) {
             stddev_[i] = sqrt(variance[i] + eps_);
@@ -311,4 +281,4 @@ private:
     bool update_immidiately_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

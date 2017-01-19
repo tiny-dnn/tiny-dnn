@@ -61,8 +61,8 @@ conv2d_op_nnpack(const tensor_t&         in_data,
     };
 
     // input padded ,so no need to do padding
-    const float_t dx = float_t(0.0); // params.in_padded.width_  - params.in.width_;
-    const float_t dy = float_t(0.0); // params.in_padded.height_ - params.in.height_;
+    const float_t dx {0.0}; // params.in_padded.width_  - params.in.width_;
+    const float_t dy {0.0}; // params.in_padded.height_ - params.in.height_;
 
     // we'll assume that padding is symmetric
 

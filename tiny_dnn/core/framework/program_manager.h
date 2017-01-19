@@ -68,7 +68,7 @@ class ProgramManager {
     /* This function is called to create an instance of the class.
      * Calling the constructor publicly is not allowed.
      * The constructor is private and is only called by this Instance function.
-	 */
+     */
     static ProgramManager& getInstance() {
         static ProgramManager instance;
         return instance;
@@ -104,8 +104,8 @@ class ProgramManager {
 
         // Define op kernel string and instantiate program
         // TODO(edgar): load from `cl_kernels` dir.
-		// std::ifstream cl_file("opencl_hello_world.cl");
-		std::ifstream cl_file(layer.kernel_file());
+        // std::ifstream cl_file("opencl_hello_world.cl");
+        std::ifstream cl_file(layer.kernel_file());
         std::string program_tail{std::istreambuf_iterator<char>(cl_file),
                                  std::istreambuf_iterator<char>()};
         // fixed kernel params
@@ -146,8 +146,8 @@ class ProgramManager {
         programs_.insert({ key_program, program });
 */
 #else  // USE_OPENCL OR USE_CUDA
-    CNN_UNREFERENCED_PARAMETER(device);
-    CNN_UNREFERENCED_PARAMETER(layer);
+        CNN_UNREFERENCED_PARAMETER(device);
+        CNN_UNREFERENCED_PARAMETER(layer);
 #endif
     }
 

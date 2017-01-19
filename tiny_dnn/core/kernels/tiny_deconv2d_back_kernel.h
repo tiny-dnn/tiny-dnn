@@ -34,7 +34,7 @@ namespace kernels {
 
 inline void tiny_deconv2d_back_kernel(const deconv_params& params,
                                       const tensor_t& prev_out,
-                                      const vec_t& W,
+                                      const vec_t&    W,
                                       tensor_t&       dW,
                                       tensor_t&       db,
                                       tensor_t&       curr_delta,
@@ -48,20 +48,20 @@ inline void tiny_deconv2d_back_kernel(const deconv_params& params,
                 serial_size_t idx = 0;
                 idx = params.in.depth_ * outc + inc;
                 idx = params.weight.get_index(0, 0, idx);
-                const float_t *pw = &W[idx];
+                const float_t* pw = &W[idx];
 
                 idx = params.out_unpadded.get_index(0, 0, outc);
-                const float_t *pdelta_src = &curr_delta[sample][idx];
+                const float_t* pdelta_src = &curr_delta[sample][idx];
 
                 idx = params.in.get_index(0, 0, inc);
-                float_t *pdelta_dst = &(*prev_delta)[sample][idx];
+                float_t* pdelta_dst = &(*prev_delta)[sample][idx];
 
                 for (serial_size_t y = 0; y < params.in.height_; y++) {
                     for (serial_size_t x = 0; x < params.in.width_; x++) {
-                        const float_t * ppw = pw;
+                        const float_t* ppw = pw;
 
-                        float_t * ppdelta_dst = pdelta_dst + y * params.in.width_ + x;
-                        float_t sum = float_t(0);
+                        float_t* ppdelta_dst = pdelta_dst + y * params.in.width_ + x;
+                        float_t sum {0};
 
                         for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
                             for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
@@ -85,14 +85,14 @@ inline void tiny_deconv2d_back_kernel(const deconv_params& params,
 
                 for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
                     for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
-                        float_t dst = float_t(0);
+                        float_t dst {0};
 
                         serial_size_t idx = 0;
                         idx = params.in.get_index(0, 0, inc);
-                        const float_t * prevo = &prev_out[sample][idx];
+                        const float_t* prevo = &prev_out[sample][idx];
 
                         idx = params.out.get_index(wx, wy, outc);
-                        const float_t * delta = &curr_delta[sample][idx];
+                        const float_t* delta = &curr_delta[sample][idx];
 
                         for (serial_size_t y = 0; y < params.in.height_; y++) {
                             dst += vectorize::dot(
@@ -114,10 +114,10 @@ inline void tiny_deconv2d_back_kernel(const deconv_params& params,
 
             for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
                 serial_size_t idx = params.out.get_index(0, 0, outc);
-                const float_t * delta = &curr_delta[sample][idx];
-                const float_t * deltaa = delta + params.out.width_ *
+                const float_t* delta = &curr_delta[sample][idx];
+                const float_t* deltaa = delta + params.out.width_ *
                     params.out.height_;
-                db[sample][outc] += std::accumulate(delta, deltaa, float_t(0));
+                db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});
             }
         }
     });

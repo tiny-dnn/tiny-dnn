@@ -68,7 +68,7 @@ class Conv2dGradOp : public core::OpKernel {
         tensor_t&    curr_delta = context.output_grad(1);
 
         // initalize outputs
-        fill_tensor(prev_delta, float_t(0));
+        fill_tensor(prev_delta, float_t{0});
 
         // call convolution algorithm depending
         // on the selected engine type

@@ -36,8 +36,11 @@
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/image.h"
 #include "tiny_dnn/activations/activation_function.h"
+
+#ifdef DNN_USE_IMAGE_API
+#include "tiny_dnn/util/image.h"
+#endif  // DNN_USE_IMAGE_API
 
 using namespace tiny_dnn::core;
 
@@ -75,15 +78,16 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         serial_size_t window_size,
                         serial_size_t in_channels,
                         serial_size_t out_channels,
-                        padding    pad_type = padding::valid,
-                        bool       has_bias = true,
+                        padding       pad_type = padding::valid,
+                        bool          has_bias = true,
                         serial_size_t w_stride = 1,
                         serial_size_t h_stride = 1,
-                        backend_t  backend_type = core::default_engine())
-        : convolutional_layer(in_width, in_height, window_size, window_size,
-			      in_channels, out_channels, connection_table(),
-			      pad_type, has_bias, w_stride, h_stride,
-			      backend_type) {}
+                        backend_t     backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height,
+                              window_size, window_size,
+                              in_channels, out_channels, connection_table(),
+                              pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -97,10 +101,10 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param padding       [in] rounding strategy
     *                           - valid: use valid pixels of input only. ```output-size = (in-width - window_width + 1) * (in-height - window_height + 1) * out_channels```
     *                           - same: add zero-padding to keep same width/height. ```output-size = in-width * in-height * out_channels```
-    * @param has_bias     [in] whether to add a bias vector to the filter outputs
-    * @param w_stride     [in] specify the horizontal interval at which to apply the filters to the input
-    * @param h_stride     [in] specify the vertical interval at which to apply the filters to the input
-    * @param backend_type [in] specify backend engine you use  
+    * @param has_bias      [in] whether to add a bias vector to the filter outputs
+    * @param w_stride      [in] specify the horizontal interval at which to apply the filters to the input
+    * @param h_stride      [in] specify the vertical interval at which to apply the filters to the input
+    * @param backend_type  [in] specify backend engine you use  
     **/
     convolutional_layer(serial_size_t in_width,
                         serial_size_t in_height,
@@ -108,15 +112,16 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         serial_size_t window_height,
                         serial_size_t in_channels,
                         serial_size_t out_channels,
-                        padding    pad_type = padding::valid,
-                        bool       has_bias = true,
+                        padding       pad_type = padding::valid,
+                        bool          has_bias = true,
                         serial_size_t w_stride = 1,
                         serial_size_t h_stride = 1,
-                        backend_t  backend_type = core::default_engine())
-        : convolutional_layer(in_width, in_height, window_width, window_height,
-			      in_channels, out_channels, connection_table(),
-			      pad_type, has_bias, w_stride, h_stride,
-			      backend_type) {}
+                        backend_t     backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height,
+                              window_width, window_height,
+                              in_channels, out_channels, connection_table(),
+                              pad_type, has_bias, w_stride, h_stride,
+                              backend_type) {}
 
     /**
     * constructing convolutional layer
@@ -135,20 +140,21 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     * @param backend_type [in] specify backend engine you use   
     **/
-    convolutional_layer(serial_size_t              in_width,
-                        serial_size_t              in_height,
-                        serial_size_t              window_size,
-                        serial_size_t              in_channels,
-                        serial_size_t              out_channels,
+    convolutional_layer(serial_size_t           in_width,
+                        serial_size_t           in_height,
+                        serial_size_t           window_size,
+                        serial_size_t           in_channels,
+                        serial_size_t           out_channels,
                         const connection_table& connection_table,
                         padding                 pad_type = padding::valid,
                         bool                    has_bias = true,
-                        serial_size_t              w_stride = 1,
-                        serial_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
-        : convolutional_layer(in_width, in_height, window_size, window_size,
-			      in_channels, out_channels, connection_table,
-			      pad_type, has_bias, w_stride, h_stride,
+                        serial_size_t           w_stride = 1,
+                        serial_size_t           h_stride = 1,
+                        backend_t               backend_type = core::default_engine())
+        : convolutional_layer(in_width, in_height,
+                              window_size, window_size,
+                              in_channels, out_channels, connection_table,
+                              pad_type, has_bias, w_stride, h_stride,
                               backend_type) {}
 
     /**
@@ -169,36 +175,36 @@ class convolutional_layer : public feedforward_layer<Activation> {
     * @param h_stride         [in] specify the vertical interval at which to apply the filters to the input
     * @param backend_type [in] specify backend engine you use   
     **/
-    convolutional_layer(serial_size_t              in_width,
-                        serial_size_t              in_height,
-                        serial_size_t              window_width,
-                        serial_size_t              window_height,
-                        serial_size_t              in_channels,
-                        serial_size_t              out_channels,
+    convolutional_layer(serial_size_t           in_width,
+                        serial_size_t           in_height,
+                        serial_size_t           window_width,
+                        serial_size_t           window_height,
+                        serial_size_t           in_channels,
+                        serial_size_t           out_channels,
                         const connection_table& connection_table,
                         padding                 pad_type = padding::valid,
                         bool                    has_bias = true,
-                        serial_size_t              w_stride = 1,
-                        serial_size_t              h_stride = 1,
-                        backend_t      backend_type = core::default_engine())
+                        serial_size_t           w_stride = 1,
+                        serial_size_t           h_stride = 1,
+                        backend_t               backend_type = core::default_engine())
         : Base(std_input_order(has_bias)) {
-            conv_set_params(shape3d(in_width, in_height, in_channels),
-                            window_width, window_height,
-                            out_channels, pad_type, has_bias,
-                            w_stride, h_stride,
-                            connection_table);
-            init_backend(backend_type);
-            Base::set_backend_type(backend_type);
+        conv_set_params(shape3d(in_width, in_height, in_channels),
+                        window_width, window_height,
+                        out_channels, pad_type, has_bias,
+                        w_stride, h_stride,
+                        connection_table);
+        init_backend(backend_type);
+        Base::set_backend_type(backend_type);
     }
 
     // move constructor
     convolutional_layer(convolutional_layer&& other)  // NOLINT
-            : Base(std::move(other))
-            , params_(std::move(other.params_))
-            , padding_op_(std::move(other.padding_op_))
-            , kernel_fwd_(std::move(other.kernel_fwd_))
-            , kernel_back_(std::move(other.kernel_back_))
-            , cws_(std::move(other.cws_)) {
+        : Base(std::move(other)),
+          params_(std::move(other.params_)),
+          padding_op_(std::move(other.padding_op_)),
+          kernel_fwd_(std::move(other.kernel_fwd_)),
+          kernel_back_(std::move(other.kernel_back_)),
+          cws_(std::move(other.cws_)) {
         init_backend(std::move(other.engine()));
     }
 
@@ -220,13 +226,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
      * @param out_data     output vectors
      **/
     void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) override { 
+                             std::vector<tensor_t*>&       out_data) override {
         // apply padding to the input tensor
         padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
         std::vector<tensor_t*> in_data_(in_data.size());
         in_data_[0] = in_data_padded(in_data);
-
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
             in_data_[i] = in_data[i];
         }
@@ -259,18 +264,13 @@ class convolutional_layer : public feedforward_layer<Activation> {
         // TODO(edgar/nyanp): refactor and move activations outside
         this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
 
-        std::vector<tensor_t*> in_data_;
-        in_data_.push_back(in_data_padded(in_data));
-
+        std::vector<tensor_t*> in_data_(in_data.size());
+        in_data_[0] = in_data_padded(in_data);
         for (serial_size_t i = 1; i < in_data.size(); ++i) {
-            in_data_.push_back(in_data[i]);
+            in_data_[i] = in_data[i];
         }
 
-        std::vector<tensor_t*> in_grad_;
-        for (serial_size_t i = 0; i < in_grad.size(); ++i) {
-            in_grad_.push_back(in_grad[i]);
-        }
-
+        std::vector<tensor_t*> in_grad_ = in_grad;
         if (params_.pad_type == padding::same) {
             in_grad_[0] = &cws_.prev_delta_padded_;
         }
@@ -298,8 +298,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         if (params_.has_bias) {
             return { params_.in, params_.weight,
                 index3d<serial_size_t>(1, 1, params_.out.depth_) };
-        }
-        else {
+        } else {
             return { params_.in, params_.weight };
         }
     }
@@ -311,12 +310,12 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return std::string("conv");
     }
 
-    //TODO(edgar): check this
+    // TODO(edgar): check this
     std::string kernel_file() const override {
         return std::string("../tiny_cnn/core/kernels/cl_kernels/conv_layer_spatial.cl");
     }
 
-    //TODO(edgar): is it really needed?
+    // TODO(edgar): is it really needed?
     std::string kernel_header() const override {
         std::stringstream ss;
         ss << "#define MULTI\n";
@@ -332,6 +331,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
         return ss.str();
     }
 
+#ifdef DNN_USE_IMAGE_API
     image<> weight_to_image() const {
         image<> img;
         const serial_size_t border_width = 1;
@@ -371,61 +371,26 @@ class convolutional_layer : public feedforward_layer<Activation> {
         }
         return img;
     }
+#endif  // DNN_USE_IMAGE_API
 
+#ifndef CNN_NO_SERIALIZATION
+    friend struct serialization_buddy;
+#endif
 
-    template <class Archive>
-    static void load_and_construct(
-        Archive & ar, cereal::construct<convolutional_layer> & construct) {
-        serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
-        bool has_bias;
-        shape3d in;
-        padding pad_type;
-        connection_table tbl;
-
-        ar(cereal::make_nvp("in_size", in),
-            cereal::make_nvp("window_width", w_width),
-            cereal::make_nvp("window_height", w_height),
-            cereal::make_nvp("out_channels", out_ch),
-            cereal::make_nvp("connection_table", tbl),
-            cereal::make_nvp("pad_type", pad_type),
-            cereal::make_nvp("has_bias", has_bias),
-            cereal::make_nvp("w_stride", w_stride),
-            cereal::make_nvp("h_stride", h_stride)
-        );
-
-        construct(in.width_, in.height_, w_width, w_height, in.depth_,
-                  out_ch, tbl, pad_type, has_bias, w_stride, h_stride);
-    }
-
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", params_.in),
-            cereal::make_nvp("window_width", params_.weight.width_),
-            cereal::make_nvp("window_height", params_.weight.height_),
-            cereal::make_nvp("out_channels", params_.out.depth_),
-            cereal::make_nvp("connection_table", params_.tbl),
-            cereal::make_nvp("pad_type", params_.pad_type),
-            cereal::make_nvp("has_bias", params_.has_bias),
-            cereal::make_nvp("w_stride", params_.w_stride),
-            cereal::make_nvp("h_stride", params_.h_stride)
-            );
-    }
-
-private:
+ private:
     tensor_t* in_data_padded(const std::vector<tensor_t*>& in) {
-        return (params_.pad_type == padding::valid) ?
-            in[0] : &cws_.prev_out_padded_;
+        return (params_.pad_type == padding::valid) ? in[0]
+                                                    : &cws_.prev_out_padded_;
     }
 
     void conv_set_params(const shape3d& in,
-                         serial_size_t     w_width,
-                         serial_size_t     w_height,
-                         serial_size_t     outc,
+                         serial_size_t  w_width,
+                         serial_size_t  w_height,
+                         serial_size_t  outc,
                          padding        ptype,
                          bool           has_bias,
-                         serial_size_t     w_stride,
-                         serial_size_t     h_stride,
+                         serial_size_t  w_stride,
+                         serial_size_t  h_stride,
                          const connection_table& tbl = connection_table()) {
         params_.in = in;
         params_.in_padded = shape3d(in_length(in.width_, w_width, ptype),
@@ -452,26 +417,29 @@ private:
     }
 
     serial_size_t in_length(serial_size_t in_length,
-                         serial_size_t window_size, padding pad_type) const {
+                            serial_size_t window_size,
+                            padding       pad_type) const {
         return pad_type == padding::same ?
                (in_length + window_size - 1) : in_length;
     }
 
     static serial_size_t conv_out_dim(serial_size_t in_width,
-                                   serial_size_t in_height,
-                                   serial_size_t window_size,
-                                   serial_size_t w_stride,
-                                   serial_size_t h_stride, padding pad_type) {
+                                      serial_size_t in_height,
+                                      serial_size_t window_size,
+                                      serial_size_t w_stride,
+                                      serial_size_t h_stride,
+                                      padding       pad_type) {
         return conv_out_length(in_width, window_size, w_stride, pad_type) *
                conv_out_length(in_height, window_size, h_stride, pad_type);
     }
 
     serial_size_t conv_out_dim(serial_size_t in_width,
-                            serial_size_t in_height,
-                            serial_size_t window_width,
-                            serial_size_t window_height,
-                            serial_size_t w_stride,
-                            serial_size_t h_stride, padding pad_type) const {
+                               serial_size_t in_height,
+                               serial_size_t window_width,
+                               serial_size_t window_height,
+                               serial_size_t w_stride,
+                               serial_size_t h_stride,
+                               padding       pad_type) const {
         return conv_out_length(in_width, window_width, w_stride, pad_type) *
                conv_out_length(in_height, window_height, h_stride, pad_type);
     }
@@ -485,29 +453,24 @@ private:
         core::OpKernelConstruction(layer::device(), &params_);
 
         if (backend_type == backend_t::internal ||
-            backend_type == backend_t::nnpack   ||
+            backend_type == backend_t::nnpack ||
             backend_type == backend_t::avx) {
-            
             kernel_fwd_.reset(new Conv2dOp(ctx));
             kernel_back_.reset(new Conv2dGradOp(ctx));
             return;
-        }
-        else if (backend_type == backend_t::opencl) {
+        } else if (backend_type == backend_t::opencl) {
             throw nn_error("Not implemented engine: " + to_string(backend_type));
             /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
             kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
             return;*/
-        }
-        else if (backend_type == backend_t::libdnn) {
+        } else if (backend_type == backend_t::libdnn) {
             if (layer::device() == nullptr) return;
             kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
             kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
             return;
-        }
-        else {
+        } else {
             throw nn_error("Not supported engine: " + to_string(backend_type));
         }
-
     }
 
  private:

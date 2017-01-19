@@ -25,9 +25,11 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
+#include <algorithm>
+
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/layers/layer.h"
-#include <algorithm>
 
 namespace tiny_dnn {
 
@@ -35,7 +37,7 @@ namespace tiny_dnn {
  * applies dropout to the input
  **/
 class dropout_layer : public layer {
-public:
+ public:
     typedef activation::identity Activation;
     typedef layer Base;
 
@@ -49,14 +51,13 @@ public:
           phase_(phase),
           dropout_rate_(dropout_rate),
           scale_(float_t(1) / (float_t(1) - dropout_rate_)),
-          in_size_(in_dim)
-    {
-		mask_.resize(1, std::vector<uint8_t>(in_dim));
+          in_size_(in_dim) {
+        mask_.resize(1, std::vector<uint8_t>(in_dim));
         clear_mask();
     }
 
     dropout_layer(const dropout_layer& obj) = default;
-    virtual ~dropout_layer(){}
+    virtual ~dropout_layer() {}
 
 #ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     dropout_layer(dropout_layer&& obj) = default;
@@ -64,8 +65,7 @@ public:
     dropout_layer& operator=(dropout_layer&& obj) = default;
 #endif
 
-    void set_dropout_rate(float_t rate)
-    {
+    void set_dropout_rate(float_t rate) {
         dropout_rate_ = rate;
         scale_ = float_t(1) / (float_t(1) - dropout_rate_);
     }
@@ -75,14 +75,12 @@ public:
     }
 
     ///< number of incoming connections for each output unit
-    serial_size_t fan_in_size() const override
-    {
+    serial_size_t fan_in_size() const override {
         return 1;
     }
 
     ///< number of outgoing connections for each input unit
-    serial_size_t fan_out_size() const override
-    {
+    serial_size_t fan_out_size() const override {
         return 1;
     }
 
@@ -122,8 +120,7 @@ public:
             mask_.resize(sample_count, mask_[0]);
         }
 
-        for (size_t sample = 0, sample_count = in.size(); sample < sample_count; ++sample) {
-
+        for (size_t sample = 0; sample < sample_count; ++sample) {
             std::vector<uint8_t>& mask = mask_[sample];
 
             const vec_t& in_vec = in[sample];
@@ -135,8 +132,7 @@ public:
 
                 for (size_t i = 0; i < in_vec.size(); i++)
                     out_vec[i] = mask[i] * scale_ * in_vec[i];
-            }
-            else {
+            } else {
                 for (size_t i = 0, end = in_vec.size(); i < end; i++)
                     out_vec[i] = in_vec[i];
             }
@@ -146,8 +142,7 @@ public:
     /**
      * set dropout-context (training-phase or test-phase)
      **/
-    void set_context(net_phase ctx) override
-    {
+    void set_context(net_phase ctx) override {
         phase_ = ctx;
     }
 
@@ -160,32 +155,20 @@ public:
 
     void clear_mask() {
         for (auto& sample : mask_) {
-			std::fill(sample.begin(), sample.end(), 0);
-		}
+            std::fill(sample.begin(), sample.end(), 0);
+        }
     }
 
-    template <class Archive>
-    static void load_and_construct(Archive & ar, cereal::construct<dropout_layer> & construct) {
-        net_phase phase;
-        float_t dropout_rate;
-        serial_size_t in_size;
+#ifndef CNN_NO_SERIALIZATION
+    friend struct serialization_buddy;
+#endif
 
-        ar(cereal::make_nvp("in_size", in_size), cereal::make_nvp("dropout_rate", dropout_rate), cereal::make_nvp("phase", phase));
-        construct(in_size, dropout_rate, phase);
-    }
-    
-    template <class Archive>
-    void serialize(Archive & ar) {
-        layer::serialize_prolog(ar);
-        ar(cereal::make_nvp("in_size", in_size_), cereal::make_nvp("dropout_rate", dropout_rate_), cereal::make_nvp("phase", phase_));
-    }
-
-private:
+ private:
     net_phase phase_;
     float_t dropout_rate_;
     float_t scale_;
     serial_size_t in_size_;
-	std::vector<std::vector<uint8_t>> mask_;
+    std::vector<std::vector<uint8_t>> mask_;
 };
 
-} // namespace tiny_dnn
+}  // namespace tiny_dnn

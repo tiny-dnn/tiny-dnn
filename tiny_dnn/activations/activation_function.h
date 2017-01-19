@@ -25,14 +25,15 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-#include "tiny_dnn/util/util.h"
 #include <algorithm>
+#include <utility>
+#include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 namespace activation {
 
 class function {
-public:
+ public:
     function() = default;
     function(const function &) = default;
 #ifndef CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
@@ -65,15 +66,15 @@ public:
 };
 
 class identity : public function {
-public:
+ public:
     using function::df;
     float_t f(const vec_t& v, size_t i) const override { return v[i]; }
-    float_t df(float_t /*y*/) const override { return float_t(1); }
+    float_t df(float_t /*y*/) const override { return float_t{1}; }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class sigmoid : public function {
-public:
+ public:
     using function::df;
     float_t f(const vec_t& v, size_t i) const override { return float_t(1) / (float_t(1) + std::exp(-v[i])); }
     float_t df(float_t y) const override { return y * (float_t(1) - y); }
@@ -81,37 +82,37 @@ public:
 };
 
 class relu : public function {
-public:
+ public:
     using function::df;
-    float_t f(const vec_t& v, size_t i) const override { return std::max(float_t(0), v[i]); }
-    float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0); }
+    float_t f(const vec_t& v, size_t i) const override { return std::max(float_t{0}, v[i]); }
+    float_t df(float_t y) const override { return y > float_t{0} ? float_t{1} : float_t{0}; }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
-typedef relu rectified_linear; // for compatibility
+typedef relu rectified_linear;  // for compatibility
 
 class leaky_relu : public function {
-public:
+ public:
     using function::df;
-    float_t f(const vec_t& v, size_t i) const override { return (v[i] > float_t(0)) ? v[i] : float_t(0.01) * v[i]; }
-    float_t df(float_t y) const override { return y > float_t(0) ? float_t(1) : float_t(0.01); }
+    float_t f(const vec_t& v, size_t i) const override { return (v[i] > float_t{0}) ? v[i] : float_t(0.01) * v[i]; }
+    float_t df(float_t y) const override { return y > float_t{0} ? float_t{1} : float_t(0.01); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class elu : public function {
-public:
+ public:
     using function::df;
-    float_t f(const vec_t& v, size_t i) const override { return (v[i]<float_t(0) ? (exp(v[i])- float_t(1)) : v[i]); }
-    float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1)+y)); }
+    float_t f(const vec_t& v, size_t i) const override { return (v[i] < float_t(0) ? (exp(v[i]) - float_t(1)) : v[i]); }
+    float_t df(float_t y) const override { return (y > float_t(0) ? float_t(1) : (float_t(1) + y)); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
 class softmax : public function {
-public:
+ public:
     float_t f(const vec_t& v, size_t i) const override {
         float_t alpha = *std::max_element(v.begin(), v.end());
         float_t numer = std::exp(v[i] - alpha);
-        float_t denom = float_t(0);
+        float_t denom {0};
         for (auto x : v)
             denom += std::exp(x - alpha);
         return numer / denom;
@@ -121,7 +122,7 @@ public:
         return y * (float_t(1) - y);
     }
 
-    virtual vec_t df(const vec_t& y, size_t index) const override {
+    vec_t df(const vec_t& y, size_t index) const override {
         vec_t v(y.size(), 0);
         for (size_t i = 0; i < y.size(); i++)
             v[i] = (i == index) ? df(y[index]) : -y[i] * y[index];
@@ -129,13 +130,13 @@ public:
         return v;
     }
 
-    virtual bool one_hot() const override { return false; }
+    bool one_hot() const override { return false; }
 
-    std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0), float_t(1)); }
+    std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t{0}, float_t{1}); }
 };
 
 class tan_h : public function {
-public:
+ public:
     using function::df;
 
     float_t f(const vec_t& v, size_t i) const override {
@@ -158,7 +159,7 @@ public:
     float_t df(float_t y) const override { return float_t(1) - sqr(y); }
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(-0.8), float_t(0.8)); }
 
-private:
+ private:
     /*float invsqrt(float x) const {
         float x2 = x * 0.5f;
         long i = *reinterpret_cast<long*>(&x);
@@ -172,7 +173,7 @@ private:
 
 // s tan_h, but scaled to match the other functions
 class tan_hp1m2 : public function {
-public:
+ public:
     using function::df;
     float_t f(const vec_t& v, size_t i) const override {
         const float_t ep = std::exp(v[i]);
@@ -183,5 +184,5 @@ public:
     std::pair<float_t, float_t> scale() const override { return std::make_pair(float_t(0.1), float_t(0.9)); }
 };
 
-} // namespace activation
-} // namespace tiny_dnn
+}  // namespace activation
+}  // namespace tiny_dnn

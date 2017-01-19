@@ -59,7 +59,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 #ifdef CNN_USE_LIBDNN
             , initialized_(false)
 #endif
-    	{
+    {
         // TODO(edgar): remove this if statement when refactor
         // the init_backend() routine at layer level.
         if (OpKernel::device_ != nullptr) {
@@ -80,7 +80,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
         // Conv2d::setParams(context.params());
 
         // initialize outputs
-        fill_tensor(out_data, float_t(0));
+        fill_tensor(out_data, float_t{0});
 
         // retrive device context and queue
 

@@ -79,7 +79,7 @@ conv2d_op_internal(const tensor_t&         in_data,
                         const float_t * ppi = pi + params.in_padded.width_ *
                             (y * params.h_stride) +
                             x * params.w_stride;
-                        float_t sum = float_t(0);
+                        float_t sum {0};
 
                         // should be optimized for small kernel(3x3,5x5)
                         for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {    // NOLINT
@@ -94,8 +94,8 @@ conv2d_op_internal(const tensor_t&         in_data,
             }
 
             if (params.has_bias) {
-                float_t * pa = &a[params.out.get_index(0, 0, o)];
-                float_t * paa = pa + params.out.width_ * params.out.height_;
+                float_t* pa = &a[params.out.get_index(0, 0, o)];
+                float_t* paa = pa + params.out.width_ * params.out.height_;
                 std::for_each(pa, paa, [&](float_t& f) { f += bias[o]; });
             }
         }
@@ -128,23 +128,23 @@ conv2d_op_internal(const tensor_t&        prev_out,
                 serial_size_t idx = 0;
                 idx = params.in.depth_ * outc + inc;
                 idx = params.weight.get_index(0, 0, idx);
-                const float_t *pw = &W[idx];
+                const float_t* pw = &W[idx];
 
                 idx = params.out.get_index(0, 0, outc);
-                const float_t *pdelta_src = &curr_delta[sample][idx];
+                const float_t* pdelta_src = &curr_delta[sample][idx];
 
                 idx = params.in_padded.get_index(0, 0, inc);
-                //float_t *pdelta_dst = &(*prev_delta)[sample][idx];
-                float_t *pdelta_dst = &prev_delta[sample][idx];
+                //float_t* pdelta_dst = &(*prev_delta)[sample][idx];
+                float_t* pdelta_dst = &prev_delta[sample][idx];
 
                 for (serial_size_t y = 0; y < params.out.height_; y++) {
                     for (serial_size_t x = 0; x < params.out.width_; x++) {
-                        const float_t * ppw = pw;
+                        const float_t* ppw = pw;
 
                         idx = y * params.out.width_ + x;
                         const float_t ppdelta_src = pdelta_src[idx];
 
-                        float_t * ppdelta_dst = pdelta_dst +
+                        float_t* ppdelta_dst = pdelta_dst +
                                 y * params.h_stride * params.in_padded.width_ +
                                 x * params.w_stride;
 
@@ -166,14 +166,14 @@ conv2d_op_internal(const tensor_t&        prev_out,
 
                 for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
                     for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
-                        float_t dst = float_t(0);
+                        float_t dst {0};
 
                         serial_size_t idx = 0;
                         idx = params.in_padded.get_index(wx, wy, inc);
-                        const float_t * prevo = &prev_out[sample][idx];
+                        const float_t* prevo = &prev_out[sample][idx];
 
                         idx = params.out.get_index(0, 0, outc);
-                        const float_t * delta = &curr_delta[sample][idx];
+                        const float_t* delta = &curr_delta[sample][idx];
 
                         if (params.w_stride > 1) {
                             for (serial_size_t y = 0; y < params.out.height_; y++) {
@@ -205,10 +205,10 @@ conv2d_op_internal(const tensor_t&        prev_out,
         if (params.has_bias) {
             for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
                 serial_size_t idx = params.out.get_index(0, 0, outc);
-                const float_t * delta = &curr_delta[sample][idx];
-                const float_t * deltaa = delta + params.out.width_ *
+                const float_t* delta = &curr_delta[sample][idx];
+                const float_t* deltaa = delta + params.out.width_ *
                     params.out.height_;
-                db[sample][outc] += std::accumulate(delta, deltaa, float_t(0));
+                db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});
             }
         }
     });

@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
@@ -44,8 +45,8 @@
 namespace tiny_dnn {
 
 enum class content_type {
-    weights,  ///< save/load the weights
-    model,    ///< save/load the network architecture
+    weights,           ///< save/load the weights
+    model,             ///< save/load the network architecture
     weights_and_model  ///< save/load both the weights and the architecture
 };
 
@@ -63,9 +64,9 @@ struct result {
 
     template <typename Char, typename CharTraits>
     void print_summary(std::basic_ostream<Char, CharTraits>& os) const {
-      os << "accuracy:" << accuracy()
-         << "% (" << num_success << "/"
-         << num_total << ")" << std::endl;
+        os << "accuracy:" << accuracy()
+           << "% (" << num_success << "/"
+           << num_total << ")" << std::endl;
     }
 
     template <typename Char, typename CharTraits>
@@ -125,6 +126,7 @@ network<sequential>& operator << (network<sequential>& n, Layer&& l);
 void construct_graph(network<graph>& graph,
                      const std::vector<std::shared_ptr<layer>>& inputs,
                      const std::vector<std::shared_ptr<layer>>& outputs);
+
 void construct_graph(network<graph>& graph,
                      const std::vector<layer*>& inputs,
                      const std::vector<layer*>& outputs);
@@ -163,13 +165,14 @@ void construct_graph(network<graph>& graph,
  *                "sequential" means the network doesn't have any branch or merge pass.
  *                if the network has branch/merge, "graph" can be used.
  **/
-template<typename NetType>
+template <typename NetType>
 class network {
  public:
     typedef typename std::vector<layerptr_t>::iterator iterator;
     typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
 
-    explicit network(const std::string& name = "") : name_(name) {}
+    explicit network(const std::string& name = "")
+        : name_(name), stop_training_(false) {}
 
     /**
      * name of the network
@@ -243,7 +246,8 @@ class network {
      * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
      */
     template <typename Error, typename Optimizer,
-              typename OnBatchEnumerate, typename OnEpochEnumerate>
+              typename OnBatchEnumerate,
+              typename OnEpochEnumerate>
     bool train(Optimizer&                  optimizer,
                const std::vector<vec_t>&   inputs,
                const std::vector<label_t>& class_labels,
@@ -267,7 +271,7 @@ class network {
     /**
     * trains the network for a fixed number of epochs to generate desired output.
     *
-    * This method execute fixed number of training steps and invoke callbacks for each mini-batch/epochs.
+    * This method executes fixed number of training steps and invoke callbacks for each mini-batch/epochs.
     * The network is trained to minimize given loss function(specified by template parameter).
     *
     * Shape of inputs and desired_outputs must be same to network inputs. For example, if your network
@@ -307,7 +311,8 @@ class network {
     * @param t_cost             target costs (leave to nullptr in order to assume equal cost for every target)
     */
     template <typename Error, typename Optimizer,
-              typename OnBatchEnumerate, typename OnEpochEnumerate,
+              typename OnBatchEnumerate,
+              typename OnEpochEnumerate,
               typename T, typename U>
     bool fit(Optimizer&            optimizer,
              const std::vector<T>& inputs,
@@ -336,7 +341,8 @@ class network {
      * @param batch_size         number of samples per parameter update
      * @param epoch              number of training epochs
      **/
-    template<typename Error, typename Optimizer, typename T, typename U>
+    template <typename Error, typename Optimizer,
+              typename T, typename U>
     bool fit(Optimizer&            optimizer,
              const std::vector<T>& inputs,
              const std::vector<U>& desired_outputs,
@@ -353,7 +359,7 @@ class network {
      * @param batch_size         number of samples per parameter update
      * @param epoch              number of training epochs
      **/
-    template<typename Error, typename Optimizer>
+    template <typename Error, typename Optimizer>
     bool train(Optimizer&                  optimizer,
                const std::vector<vec_t>&   inputs,
                const std::vector<label_t>& class_labels,
@@ -366,7 +372,7 @@ class network {
     /**
      * @deprecated use fit instead for regression task
      **/
-    template<typename Error, typename Optimizer>
+    template <typename Error, typename Optimizer>
     bool train(Optimizer&                optimizer,
                const std::vector<vec_t>& in,
                const std::vector<vec_t>& t,
@@ -383,6 +389,16 @@ class network {
         for (auto n : net_) {
             n->set_context(phase);
         }
+    }
+
+    /**
+     * request to finish an ongoing training
+     *
+     * It is safe to test the current network performance in @a on_batch_enumerate and
+     * @a on_epoch_enumerate callbacks during training.
+     */
+    void stop_ongoing_training() {
+        stop_training_ = true;
     }
 
     /**
@@ -433,7 +449,8 @@ class network {
      * calculate loss value (the smaller, the better) for regression task
      **/
     template <typename E, typename T>
-    float_t get_loss(const std::vector<T>& in, const std::vector<tensor_t>& t) {
+    float_t get_loss(const std::vector<T>& in,
+                     const std::vector<tensor_t>& t) {
         float_t sum_loss = float_t(0);
         std::vector<tensor_t> in_tensor;
         normalize_tensor(in, in_tensor);
@@ -455,13 +472,14 @@ class network {
     template <typename E>
     bool gradient_check(const std::vector<tensor_t>& in,
                         const std::vector<std::vector<label_t>>& t,
-                        float_t eps, grad_check_mode mode) {
+                        float_t eps,
+                        grad_check_mode mode) {
         assert(in.size() == t.size());
 
         std::vector<tensor_t> v(t.size());
         const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
         for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-            net_.label2vec(&t[sample][0], static_cast<serial_size_t>(t[sample].size()), &v[sample]);
+            net_.label2vec(t[sample], v[sample]);
         }
 
         for (auto current : net_) {  // ignore first input layer
@@ -604,43 +622,48 @@ class network {
     void load(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) {
+#ifndef CNN_NO_SERIALIZATION
         std::ifstream ifs(filename.c_str(), std::ios::binary | std::ios::in);
         if (ifs.fail() || ifs.bad())
             throw nn_error("failed to open:" + filename);
 
         switch (format) {
-            case file_format::binary:
+        case file_format::binary: 
             {
                 cereal::BinaryInputArchive bi(ifs);
                 from_archive(bi, what);
             }
             break;
-            case file_format::json:
+        case file_format::json:
             {
                 cereal::JSONInputArchive ji(ifs);
                 from_archive(ji, what);
             }
             break;
-            default:
-                throw nn_error("invalid serialization format");
+        default:
+            throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     void save(const std::string& filename,
               content_type       what     = content_type::weights_and_model,
               file_format        format   = file_format::binary) const {
+#ifndef CNN_NO_SERIALIZATION
         std::ofstream ofs(filename.c_str(), std::ios::binary | std::ios::out);
         if (ofs.fail() || ofs.bad())
             throw nn_error("failed to open:" + filename);
 
         switch (format) {
-            case file_format::binary:
+        case file_format::binary:
             {
                 cereal::BinaryOutputArchive bo(ofs);
                 to_archive(bo, what);
             }
             break;
-            case file_format::json:
+        case file_format::json:
             {
                 cereal::JSONOutputArchive jo(ofs);
                 to_archive(jo, what);
@@ -649,28 +672,40 @@ class network {
             default:
                 throw nn_error("invalid serialization format");
         }
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * save the network architecture as json string
      **/
-    std::string to_json() const {
+    std::string to_json(content_type what = content_type::model) const {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         {
             cereal::JSONOutputArchive oa(ss);
-            to_archive(oa, content_type::model);
+            to_archive(oa, what);
         }
         return ss.str();
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     /**
      * load the network architecture from json string
      **/
-    void from_json(const std::string& json_string) {
+    void from_json(const std::string& json_string,
+                   content_type       what = content_type::model) {
+#ifndef CNN_NO_SERIALIZATION
         std::stringstream ss;
         ss << json_string;
         cereal::JSONInputArchive ia(ss);
-        from_archive(ia, content_type::model);
+        from_archive(ia, what);
+#else
+        throw nn_error("TinyDNN was not built with Serialization support");
+#endif  // CNN_NO_SERIALIZATION
     }
 
     ///< @deprecated use save(filename,target,format) instead.
@@ -702,7 +737,7 @@ class network {
 
     template <typename OutputArchive>
     void to_archive(OutputArchive& ar,
-                    content_type what = content_type::weights_and_model) const {
+                    content_type   what = content_type::weights_and_model) const {
         if (what == content_type::model ||
             what == content_type::weights_and_model) {
             net_.save_model(ar);
@@ -715,7 +750,7 @@ class network {
 
     template <typename InputArchive>
     void from_archive(InputArchive& ar,
-                      content_type what = content_type::weights_and_model) {
+                      content_type  what = content_type::weights_and_model) {
         if (what == content_type::model ||
             what == content_type::weights_and_model) {
             net_.load_model(ar);
@@ -727,9 +762,10 @@ class network {
     }
 
  protected:
-    float_t fprop_max(const vec_t& in, int idx = 0) {
-        const vec_t& prediction = fprop(in, idx);
-        return *std::max_element(std::begin(prediction), std::end(prediction));
+    float_t fprop_max(const vec_t& in) {
+        const vec_t& prediction = fprop(in);
+        return *std::max_element(std::begin(prediction),
+                                 std::end(prediction));
     }
 
     label_t fprop_max_index(const vec_t& in) {
@@ -751,15 +787,15 @@ class network {
     template <typename Error, typename Optimizer,
               typename OnBatchEnumerate, typename OnEpochEnumerate>
     bool fit(Optimizer&                   optimizer,
-        const std::vector<tensor_t>& inputs,
-        const std::vector<tensor_t>& desired_outputs,
-        size_t                       batch_size,
-        int                          epoch,
-        OnBatchEnumerate             on_batch_enumerate,
-        OnEpochEnumerate             on_epoch_enumerate,
-        const bool                   reset_weights = false,
-        const int                    n_threads = CNN_TASK_SIZE,
-        const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()) {
+             const std::vector<tensor_t>& inputs,
+             const std::vector<tensor_t>& desired_outputs,
+             size_t                       batch_size,
+             int                          epoch,
+             OnBatchEnumerate             on_batch_enumerate,
+             OnEpochEnumerate             on_epoch_enumerate,
+             const bool                   reset_weights = false,
+             const int                    n_threads = CNN_TASK_SIZE,
+             const std::vector<tensor_t>& t_cost = std::vector<tensor_t>()) {
         // check_training_data(in, t);
         check_target_cost_matrix(desired_outputs, t_cost);
         set_netphase(net_phase::train);
@@ -768,8 +804,9 @@ class network {
         for (auto n : net_)
             n->set_parallelize(true);
         optimizer.reset();
-        for (int iter = 0; iter < epoch; iter++) {
-            for (size_t i = 0; i < inputs.size(); i += batch_size) {
+        stop_training_ = false;
+        for (int iter = 0; iter < epoch && !stop_training_; iter++) {
+            for (size_t i = 0; i < inputs.size() && !stop_training_; i += batch_size) {
                 train_once<Error>(optimizer, &inputs[i], &desired_outputs[i],
                     static_cast<int>(std::min(batch_size, inputs.size() - i)),
                     n_threads,
@@ -793,11 +830,11 @@ class network {
      * @param size is the number of data points to use in this batch
      */
     template <typename E, typename Optimizer>
-    void train_once(Optimizer& optimizer,
+    void train_once(Optimizer&      optimizer,
                     const tensor_t* in,
                     const tensor_t* t,
-                    int size,
-                    const int nbThreads,
+                    int             size,
+                    const int       nbThreads,
                     const tensor_t* t_cost) {
         if (size == 1) {
             bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
@@ -821,6 +858,7 @@ class network {
                         int             batch_size,
                         const int       num_tasks,
                         const tensor_t* t_cost) {
+        CNN_UNREFERENCED_PARAMETER(num_tasks);
         std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
         std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
         std::vector<tensor_t> t_cost_batch = t_cost
@@ -862,7 +900,10 @@ class network {
     template <typename E>
     bool calc_delta(const std::vector<tensor_t>& in,
                     const std::vector<tensor_t>& v,
-                    vec_t& w, tensor_t& dw, int check_index, double eps) {
+                    vec_t&    w,
+                    tensor_t& dw,
+                    int       check_index,
+                    double    eps) {
         static const float_t delta = std::sqrt(
             std::numeric_limits<float_t>::epsilon());
 
@@ -914,9 +955,11 @@ class network {
     // convenience wrapper for the function below
     template <typename E>
     void bprop(const std::vector<vec_t>& out,
-               const std::vector<vec_t>& t, const std::vector<vec_t>& t_cost) {
+               const std::vector<vec_t>& t,
+               const std::vector<vec_t>& t_cost) {
         bprop<E>(std::vector<tensor_t>{out},
-                 std::vector<tensor_t>{t}, std::vector<tensor_t>{t_cost});
+                 std::vector<tensor_t>{t},
+                 std::vector<tensor_t>{t_cost});
     }
 
     template <typename E>
@@ -993,6 +1036,7 @@ class network {
                            "its shape must be identical to the target data");
         }
     }
+    
     void check_target_cost_element(const tensor_t& t, const tensor_t& t_cost) {
         if (t.size() != t_cost.size()) {
             throw nn_error("if target cost is supplied for a regression task, "
@@ -1028,12 +1072,13 @@ class network {
                           std::vector<tensor_t>& normalized) {
         std::vector<vec_t> vec;
         normalized.reserve(inputs.size());
-        net_.label2vec(&inputs[0], static_cast<serial_size_t>(inputs.size()), &vec);
+        net_.label2vec(inputs, vec);
         normalize_tensor(vec, normalized);
     }
 
     std::string name_;
     NetType net_;
+    bool stop_training_;
 };
 
 /**
@@ -1046,26 +1091,26 @@ class network {
  * @param sizepatch [size of the patch, such as the total number of pixel in the patch is sizepatch*sizepatch ]
  * @return [vector of vec_c (sample) to be passed to test function]
  */
-inline std::vector<vec_t> image2vec(const float_t* data,
-                                    const unsigned int  rows,
+inline std::vector<vec_t> image2vec(const float_t*     data,
+                                    const unsigned int rows,
                                     const unsigned int cols,
                                     const unsigned int sizepatch,
                                     const unsigned int step = 1) {
     assert(step > 0);
     std::vector<vec_t> res((cols-sizepatch) * (rows-sizepatch) / (step*step),
                            vec_t(sizepatch*sizepatch));
-        for_i((cols-sizepatch)*(rows-sizepatch)/(step*step), [&](int count) {
-            const int j = step*(count / ((cols-sizepatch)/step));
-            const int i = step*(count % ((cols-sizepatch)/step));
+        for_i((cols-sizepatch) * (rows-sizepatch) / (step * step), [&](int count) {
+            const int j = step * (count / ((cols - sizepatch) / step));
+            const int i = step * (count % ((cols - sizepatch) / step));
 
             // vec_t sample(sizepatch*sizepatch);
 
-            if (i+sizepatch < cols && j+sizepatch < rows) {
-                for (unsigned int k = 0; k < sizepatch*sizepatch; k++) {
+            if ((i + sizepatch) < cols && (j + sizepatch) < rows) {
+                for (unsigned int k = 0; k < (sizepatch * sizepatch); k++) {
                 // for_i(sizepatch*sizepatch, [&](int k) {
                     unsigned int y = k / sizepatch + j;
                     unsigned int x = k % sizepatch + i;
-                    res[count][k] = data[x+y*cols];
+                    res[count][k] = data[x + y * cols];
                 }
                 //});
                 // res[count] = (sample);
@@ -1081,17 +1126,17 @@ network<sequential>& operator << (network<sequential>& n, Layer&& l) {
 }
 
 template <typename NetType, typename Char, typename CharTraits>
-std::basic_ostream<Char, CharTraits>& operator << (std::basic_ostream<Char,
-                                                   CharTraits>& os,
-                                                   const network<NetType>& n) {
+std::basic_ostream<Char, CharTraits>&
+operator << (std::basic_ostream<Char, CharTraits>& os,
+             const network<NetType>& n) {
     n.save(os);
     return os;
 }
 
 template <typename NetType, typename Char, typename CharTraits>
-std::basic_istream<Char, CharTraits>& operator >> (std::basic_istream<Char,
-                                                   CharTraits>& os,
-                                                   network<NetType>& n) {
+std::basic_istream<Char, CharTraits>&
+operator >> (std::basic_istream<Char, CharTraits>& os,
+             network<NetType>& n) {
     n.load(os);
     return os;
 }
@@ -1102,7 +1147,7 @@ inline void construct_graph(network<graph>& graph,
     graph.net_.construct(inputs, outputs);
 }
 
-inline void construct_graph(network<graph>& graph,
+inline void construct_graph(network<graph>&    graph,
     const std::vector<std::shared_ptr<layer>>& inputs,
     const std::vector<std::shared_ptr<layer>>& outputs) {
     std::vector<layer*> in_ptr, out_ptr;
@@ -1115,4 +1160,5 @@ inline void construct_graph(network<graph>& graph,
 
     graph.net_.construct(in_ptr, out_ptr);
 }
+
 }  // namespace tiny_dnn

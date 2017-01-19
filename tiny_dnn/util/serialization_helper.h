@@ -25,6 +25,7 @@
     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
+
 #include <typeindex>
 #include <map>
 #include <functional>
@@ -32,15 +33,17 @@
 #include <string>
 #include <cereal/archives/json.hpp>
 #include <cereal/types/memory.hpp>
+
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/macro.h"
+#include "tiny_dnn/util/serialization_functions.h"
 #include "tiny_dnn/layers/layers.h"
 
 namespace tiny_dnn {
 
 template <typename OutputArchive>
 class serialization_helper {
-public:
+ public:
     void register_saver(const std::string& name, std::function<void(OutputArchive&, const layer*)> func) {
         savers_[name] = [=](void* ar, const layer* l) {
             return func(*reinterpret_cast<OutputArchive*>(ar), l);
@@ -75,10 +78,10 @@ public:
         return instance;
     }
 
-private:
+ private:
     void check_if_enabled() const {
 #ifdef CNN_NO_SERIALIZATION
-        static_assert(sizeof(OutputArchive)==0,
+        static_assert(sizeof(OutputArchive) == 0,
                              "You are using save functions, but serialization function is disabled in current configuration.\n\n"
                              "You need to undef CNN_NO_SERIALIZATION to enable these functions.\n"
                              "If you are using cmake, you can use -DUSE_SERIALIZER=ON option.\n\n");
@@ -89,7 +92,7 @@ private:
     std::map<std::string, std::function<void(void*, const layer*)>> savers_;
 
     std::map<std::type_index, std::string> type_names_;
-    
+
     template <typename T>
     static void save_layer_impl(OutputArchive& oa, const layer* layer);
 
@@ -121,13 +124,13 @@ CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATION
 #undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
-}; // class serialization_helper
+};  // class serialization_helper
 
 template <typename OutputArchive>
 template <typename T>
 void serialization_helper<OutputArchive>::save_layer_impl(OutputArchive& oa, const layer* layer) {
-    oa (cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
-                         *dynamic_cast<const T*>(layer)));
+    oa(cereal::make_nvp(serialization_helper<OutputArchive>::get_instance().type_name(typeid(T)),
+                        *dynamic_cast<const T*>(layer)));
 }
 
 template <typename OutputArchive>
@@ -139,8 +142,7 @@ void layer::save_layer(OutputArchive & oa, const layer& l) {
 template <class Archive>
 void layer::serialize_prolog(Archive & ar) {
     ar(cereal::make_nvp("type",
-        serialization_helper<Archive>::get_instance().type_name(typeid(*this))));
+       serialization_helper<Archive>::get_instance().type_name(typeid(*this))));
 }
 
-} // namespace tiny_dnn
-
+}  // namespace tiny_dnn

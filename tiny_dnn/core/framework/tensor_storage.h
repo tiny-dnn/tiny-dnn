@@ -68,8 +68,18 @@ static inline size_t product(Container &c) {
                            std::multiplies<size_t>());
 }
 
-template<typename U = float_t,
-         typename Allocator = aligned_allocator<U, 64>>
+template <typename C1, typename C2>
+static inline size_t compute_offset(const C1 &start, const C2 &shape) {
+    size_t res = 0;
+    for (size_t i = 0; i < shape.size(); ++i) {
+        res *= shape[i];
+        res += (i < start.size()) ? *(start.begin() + i) : 0;
+    }
+    return res;
+}
+
+template <typename U = float_t,
+          typename Allocator = aligned_allocator<U, 64>>
 class TensorStorage {
     typedef typename std::vector<U, Allocator>::iterator DataIter;
     typedef typename std::vector<U, Allocator>::const_iterator ConstDataIter;
@@ -147,7 +157,7 @@ class TensorStorage {
             CLCudaAPI::Queue queue = device_->queue();
             if (device_data_ && device_data_->GetSize() >= host_data_->size()) {
                 device_data_->Write(queue,
-                                    host_data.size(),
+                                    host_data_.size(),
                                     host_data_->data(),
                                     0);
             } else {
@@ -169,7 +179,7 @@ class TensorStorage {
                                host_data_->size(),
                                // using const_cast<> to avoid making host_data_
                                // entirely mutable
-                               const_cast<U *>(host_data_->data()));
+                               const_cast<U*>(host_data_->data()));
 #endif
             data_is_on_host_ = true;
             data_dirty_ = false;

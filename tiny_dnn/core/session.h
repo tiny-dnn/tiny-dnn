@@ -36,7 +36,7 @@ namespace core {
 
 class session {
  public:
-    session(const std::string name) : name_(name) {}
+    explicit session(const std::string name) : name_(name) {}
 
     std::string get_name() const { return name_; }
     size_t get_num_devices() const { return devices_.size(); }
