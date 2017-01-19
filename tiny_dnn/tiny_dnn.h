@@ -2,27 +2,8 @@
     Copyright (c) 2013, Taiga Nomi
     All rights reserved.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
 
@@ -35,25 +16,25 @@
 #include "tiny_dnn/core/framework/device.h"
 #include "tiny_dnn/core/framework/program_manager.h"
 
-#include "tiny_dnn/layers/input_layer.h"
-#include "tiny_dnn/layers/feedforward_layer.h"
-#include "tiny_dnn/layers/convolutional_layer.h"
-#include "tiny_dnn/layers/deconvolutional_layer.h"
-#include "tiny_dnn/layers/fully_connected_layer.h"
-#include "tiny_dnn/layers/average_pooling_layer.h"
-#include "tiny_dnn/layers/max_pooling_layer.h"
-#include "tiny_dnn/layers/linear_layer.h"
-#include "tiny_dnn/layers/lrn_layer.h"
-#include "tiny_dnn/layers/dropout_layer.h"
 #include "tiny_dnn/layers/arithmetic_layer.h"
-#include "tiny_dnn/layers/concat_layer.h"
-#include "tiny_dnn/layers/max_unpooling_layer.h"
+#include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/average_unpooling_layer.h"
 #include "tiny_dnn/layers/batch_normalization_layer.h"
-#include "tiny_dnn/layers/slice_layer.h"
+#include "tiny_dnn/layers/concat_layer.h"
+#include "tiny_dnn/layers/convolutional_layer.h"
+#include "tiny_dnn/layers/deconvolutional_layer.h"
+#include "tiny_dnn/layers/dropout_layer.h"
+#include "tiny_dnn/layers/feedforward_layer.h"
+#include "tiny_dnn/layers/fully_connected_layer.h"
+#include "tiny_dnn/layers/input_layer.h"
+#include "tiny_dnn/layers/linear_layer.h"
+#include "tiny_dnn/layers/lrn_layer.h"
+#include "tiny_dnn/layers/max_pooling_layer.h"
+#include "tiny_dnn/layers/max_unpooling_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+#include "tiny_dnn/layers/slice_layer.h"
 
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
@@ -63,30 +44,29 @@
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
-#include "tiny_dnn/util/weight_init.h"
 #include "tiny_dnn/util/deform.h"
-#include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/graph_visualizer.h"
+#include "tiny_dnn/util/product.h"
+#include "tiny_dnn/util/weight_init.h"
 
-#include "tiny_dnn/io/mnist_parser.h"
 #include "tiny_dnn/io/cifar10_parser.h"
 #include "tiny_dnn/io/display.h"
 #include "tiny_dnn/io/layer_factory.h"
+#include "tiny_dnn/io/mnist_parser.h"
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
 #endif  // DNN_USE_IMAGE_API
 
 #ifndef CNN_NO_SERIALIZATION
-#include "tiny_dnn/util/serialization_helper.h"
 #include "tiny_dnn/util/deserialization_helper.h"
+#include "tiny_dnn/util/serialization_helper.h"
 #endif  // CNN_NO_SERIALIZATION
 
 #ifdef CNN_USE_CAFFE_CONVERTER
 // experimental / require google protobuf
 #include "tiny_dnn/io/caffe/layer_factory.h"
 #endif
-
 
 // shortcut version of layer names
 namespace tiny_dnn {

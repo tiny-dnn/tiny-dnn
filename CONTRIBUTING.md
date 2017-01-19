@@ -16,6 +16,7 @@ These are just guidelines, not rules, and feel free to propose changes to this d
     - This is usually the ```master``` branch.
 - Make commits.
 - Make sure you have added the necessary tests for your changes.
+- Make sure you're sticking with our code style. You can run [`clang-format`](http://clang.llvm.org/docs/ClangFormat.html) manually or by using [pre-commit hook](https://github.com/arraiy/dacron/blob/master/etc/git/hooks/pre-commit). Currently `clang-format-4.0` is used
 - Submit a pull request.
 - Make sure all CI builds are passed.
 
