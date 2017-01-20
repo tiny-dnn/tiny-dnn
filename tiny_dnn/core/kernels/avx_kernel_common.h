@@ -60,6 +60,7 @@ inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
 // isn't good enough)
 // http://stackoverflow.com/a/13222410/4699324
 // x = ( x7, x6, x5, x4, x3, x2, x1, x0 )
+// use _mm_cvtss_f32 if you need a float result instead of a __m128
 inline __m128 hsum256_ps(__m256 x) {
   // hiQuad = ( x7, x6, x5, x4 )
   const __m128 hiQuad = _mm256_extractf128_ps(x, 1);
@@ -211,6 +212,36 @@ template <int n>
 struct foobar : std::false_type {};
 
 // Byte Shift YMM Register Across 128-bit Lanes
+
+#ifdef CNN_USE_AVX2
+
+template <bool>
+struct Range;
+
+template <unsigned int N, typename = Range<true>>
+struct m256_shift_left_impl {};
+
+template <unsigned int N>
+struct m256_shift_left_impl<N, Range<N == 0>> {
+  static __m256 doit(__m256i a) { return a; }
+};
+
+template <unsigned int N>
+struct m256_shift_left_impl<N, Range<(0 < N && N < 16)>> {
+  static __m256 doit(__m256 a) {
+    __m256 mask = _mm256_permute2f128_ps(a, a, 0x08);
+    return _mm256_castsi256_ps(_mm256_alignr_epi8(
+      _mm256_castps_si256(a), _mm256_castps_si256(mask), 16 - N));
+  }
+};
+
+template <unsigned int N>
+inline __m256 leftShift(__m256 a) {
+  return m256_shift_left_impl<N>::doit(a);
+}
+
+#else  // #ifdef CNN_USE_AVX2
+
 // limitation : shift amount is immediate and is multiples of 4
 
 template <int n>
@@ -307,6 +338,8 @@ inline __m256 leftShift<28>(__m256 x) {
   __m256 y = _mm256_blend_ps(_mm256_setzero_ps(), t1, 0x80 /* 0b10000000 */);
   return y;
 }
+
+#endif  // #ifdef CNN_USE_AVX2
 
 template <int n>
 inline __m256 rightShift(__m256 a) {

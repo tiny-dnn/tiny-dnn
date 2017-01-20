@@ -239,6 +239,12 @@ class network {
              const bool reset_weights         = false,
              const int n_threads              = CNN_TASK_SIZE,
              const std::vector<vec_t> &t_cost = std::vector<vec_t>()) {
+    if (inputs.size() != class_labels.size()) {
+      return false;
+    }
+    if (inputs.size() < batch_size || class_labels.size() < batch_size) {
+      return false;
+    }
     std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
     normalize_tensor(inputs, input_tensor);
     normalize_tensor(class_labels, output_tensor);
@@ -767,6 +773,8 @@ class network {
     for (auto n : net_) n->set_parallelize(true);
     optimizer.reset();
     stop_training_ = false;
+    in_batch_.resize(batch_size);
+    t_batch_.resize(batch_size);
     for (int iter = 0; iter < epoch && !stop_training_; iter++) {
       for (size_t i = 0; i < inputs.size() && !stop_training_;
            i += batch_size) {
@@ -825,13 +833,13 @@ class network {
                       const int num_tasks,
                       const tensor_t *t_cost) {
     CNN_UNREFERENCED_PARAMETER(num_tasks);
-    std::vector<tensor_t> in_batch(&in[0], &in[0] + batch_size);
-    std::vector<tensor_t> t_batch(&t[0], &t[0] + batch_size);
+    std::copy(&in[0], &in[0] + batch_size, &in_batch_[0]);
+    std::copy(&t[0], &t[0] + batch_size, &t_batch_[0]);
     std::vector<tensor_t> t_cost_batch =
       t_cost ? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
              : std::vector<tensor_t>();
 
-    bprop<E>(fprop(in_batch), t_batch, t_cost_batch);
+    bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
     net_.update_weights(&optimizer, batch_size);
   }
 
@@ -1049,6 +1057,8 @@ class network {
   std::string name_;
   NetType net_;
   bool stop_training_;
+  std::vector<tensor_t> in_batch_;
+  std::vector<tensor_t> t_batch_;
 };
 
 /**

@@ -138,16 +138,16 @@ inline void accumulate_dw(const core::conv_params &params,
     __m256 sum0, sum1, sum2, sum3, sum4;
     if (w_stride > 1) {
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
-            for (size_t wx = 0; wx < 5;  // weight.width_
-                 ++wx, ++widx) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
+            // weight.width_
+            for (size_t wx = 0; wx < 5; ++wx, ++widx) {
               serial_size_t prev_out_idx =
                 in_padded.get_index(static_cast<serial_size_t>(wx),
                                     static_cast<serial_size_t>(wy), inc);
@@ -167,15 +167,15 @@ inline void accumulate_dw(const core::conv_params &params,
       }        // for inc
     } else if (nblocks == 1 && remainder != 0) {
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
               in_padded.get_index(0, static_cast<serial_size_t>(wy), inc);
             const float *pa = &prev_out[prev_out_idx];
@@ -220,15 +220,15 @@ inline void accumulate_dw(const core::conv_params &params,
       }      // for inc
     } else if (nblocks > 1 && remainder != 0) {
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
               in_padded.get_index(0, static_cast<serial_size_t>(wy), inc);
             const float *pa = &prev_out[prev_out_idx];
@@ -296,15 +296,15 @@ inline void accumulate_dw(const core::conv_params &params,
     } else if (nblocks == 0) {
       assert(remainder != 0);
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
               in_padded.get_index(0, static_cast<serial_size_t>(wy), inc);
             const float *pa = &prev_out[prev_out_idx];
@@ -339,15 +339,15 @@ inline void accumulate_dw(const core::conv_params &params,
     } else if (nblocks == 1) {
       assert(remainder == 0);
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
               in_padded.get_index(0, static_cast<serial_size_t>(wy), inc);
             const float *pa = &prev_out[prev_out_idx];
@@ -383,15 +383,15 @@ inline void accumulate_dw(const core::conv_params &params,
       assert(nblocks > 1);
       assert(remainder == 0);
       for (serial_size_t inc = 0; inc < in.depth_; ++inc) {
-        for (serial_size_t outc = 0; outc < out.depth_; outc++) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
           serial_size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
-          for (size_t wy = 0; wy < 5;  // weight.height_
-               ++wy) {
+          // weight.height_
+          for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
               in_padded.get_index(0, static_cast<serial_size_t>(wy), inc);
             const float *pa = &prev_out[prev_out_idx];
@@ -472,111 +472,200 @@ void avx_conv2d_5x5_back_kernel_one(
   static const __m256i imask  = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
   static const __m256 mask =
     _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0));
+  const size_t out_width  = out.width_;
+  const size_t out_height = out.height_;
   // propagate delta to previous layer
-  if (w_stride == 1 && out.width_ >= 4) {
-    const serial_size_t nblocks = out.width_ / 4;
-    for (serial_size_t inc = 0; inc < in.depth_;
-         ++inc, pdelta_dst_org += in_padded_area) {
-      for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
-        if (!tbl.is_connected(outc, inc)) {
-          continue;
-        }
-        const float *pw         = &W[25 * (in.depth_ * outc + inc)];
-        const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
-        float *pdelta_dst       = pdelta_dst_org;
-        __m256 w0a              = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
-        __m256 w1a              = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
-        __m256 w2a              = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
-        __m256 w3a              = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-        __m256 w4a              = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
-        __m256 w0b              = leftShift<4>(w0a);
-        __m256 w1b              = leftShift<4>(w1a);
-        __m256 w2b              = leftShift<4>(w2a);
-        __m256 w3b              = leftShift<4>(w3a);
-        __m256 w4b              = leftShift<4>(w4a);
-        __m256 w0c              = leftShift<8>(w0a);
-        __m256 w1c              = leftShift<8>(w1a);
-        __m256 w2c              = leftShift<8>(w2a);
-        __m256 w3c              = leftShift<8>(w3a);
-        __m256 w4c              = leftShift<8>(w4a);
-        __m256 w0d              = leftShift<12>(w0a);
-        __m256 w1d              = leftShift<12>(w1a);
-        __m256 w2d              = leftShift<12>(w2a);
-        __m256 w3d              = leftShift<12>(w3a);
-        __m256 w4d              = leftShift<12>(w4a);
-        for (serial_size_t y = 0; y < out.height_; ++y) {
-          const float *pdelta_src2 = pdelta_src;
-          float *delta_dst0        = pdelta_dst;
-          float *delta_dst1        = &pdelta_dst[in_padded.width_ * 1];
-          float *delta_dst2        = &pdelta_dst[in_padded.width_ * 2];
-          float *delta_dst3        = &pdelta_dst[in_padded.width_ * 3];
-          float *delta_dst4        = &pdelta_dst[in_padded.width_ * 4];
-          for (serial_size_t n = 0; n < nblocks; ++n) {
-            __m256 delta_src = _mm256_broadcast_ps((const __m128 *)pdelta_src2);
-            __m256 dst0      = _mm256_loadu_ps(delta_dst0 + 4 * n);
-            __m256 dst1      = _mm256_loadu_ps(delta_dst1 + 4 * n);
-            __m256 dst2      = _mm256_loadu_ps(delta_dst2 + 4 * n);
-            __m256 dst3      = _mm256_loadu_ps(delta_dst3 + 4 * n);
-            __m256 dst4      = _mm256_loadu_ps(delta_dst4 + 4 * n);
-            __m256 delta_src0 =
-              _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
-            __m256 delta_src1 =
-              _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
-            __m256 delta_src2 =
-              _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
-            __m256 delta_src3 =
-              _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
-            dst0 = madd256_ps(w0a, delta_src0, dst0);
-            dst1 = madd256_ps(w1a, delta_src0, dst1);
-            dst2 = madd256_ps(w2a, delta_src0, dst2);
-            dst3 = madd256_ps(w3a, delta_src0, dst3);
-            dst4 = madd256_ps(w4a, delta_src0, dst4);
-            dst0 = madd256_ps(w0b, delta_src1, dst0);
-            dst1 = madd256_ps(w1b, delta_src1, dst1);
-            dst2 = madd256_ps(w2b, delta_src1, dst2);
-            dst3 = madd256_ps(w3b, delta_src1, dst3);
-            dst4 = madd256_ps(w4b, delta_src1, dst4);
-            dst0 = madd256_ps(w0c, delta_src2, dst0);
-            dst1 = madd256_ps(w1c, delta_src2, dst1);
-            dst2 = madd256_ps(w2c, delta_src2, dst2);
-            dst3 = madd256_ps(w3c, delta_src2, dst3);
-            dst4 = madd256_ps(w4c, delta_src2, dst4);
-            dst0 = madd256_ps(w0d, delta_src3, dst0);
-            _mm256_storeu_ps(delta_dst0 + 4 * n, dst0);
-            dst1 = madd256_ps(w1d, delta_src3, dst1);
-            _mm256_storeu_ps(delta_dst1 + 4 * n, dst1);
-            dst2 = madd256_ps(w2d, delta_src3, dst2);
-            _mm256_storeu_ps(delta_dst2 + 4 * n, dst2);
-            dst3 = madd256_ps(w3d, delta_src3, dst3);
-            _mm256_storeu_ps(delta_dst3 + 4 * n, dst3);
-            dst4 = madd256_ps(w4d, delta_src3, dst4);
-            _mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
-            pdelta_src2 += 4;
+  if (w_stride == 1 && out_width >= 4) {
+    const size_t nblocks = out_width / 4;
+    if (out_width % 4) {
+      for (serial_size_t inc = 0; inc < in.depth_;
+           ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
+          if (!tbl.is_connected(outc, inc)) {
+            continue;
           }
-          for (serial_size_t x = nblocks * 4; x < out.width_; ++x) {
-            __m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
-            __m256 dst0      = _mm256_loadu_ps(delta_dst0 + x);
-            __m256 dst1      = _mm256_loadu_ps(delta_dst1 + x);
-            __m256 dst2      = _mm256_loadu_ps(delta_dst2 + x);
-            __m256 dst3      = _mm256_loadu_ps(delta_dst3 + x);
-            __m256 dst4      = _mm256_loadu_ps(delta_dst4 + x);
-            dst0             = madd256_ps(w0a, delta_src, dst0);
-            dst1             = madd256_ps(w1a, delta_src, dst1);
-            dst2             = madd256_ps(w2a, delta_src, dst2);
-            dst3             = madd256_ps(w3a, delta_src, dst3);
-            dst4             = madd256_ps(w4a, delta_src, dst4);
-            _mm256_storeu_ps(delta_dst0 + x, dst0);
-            _mm256_storeu_ps(delta_dst1 + x, dst1);
-            _mm256_storeu_ps(delta_dst2 + x, dst2);
-            _mm256_storeu_ps(delta_dst3 + x, dst3);
-            _mm256_storeu_ps(delta_dst4 + x, dst4);
+          const float *pw         = &W[25 * (in.depth_ * outc + inc)];
+          const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
+          float *pdelta_dst       = pdelta_dst_org;
+          __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+          __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+          __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+          __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+          __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
+          __m256 w0b = leftShift<4>(w0a);
+          __m256 w1b = leftShift<4>(w1a);
+          __m256 w2b = leftShift<4>(w2a);
+          __m256 w3b = leftShift<4>(w3a);
+          __m256 w4b = leftShift<4>(w4a);
+          __m256 w0c = leftShift<8>(w0a);
+          __m256 w1c = leftShift<8>(w1a);
+          __m256 w2c = leftShift<8>(w2a);
+          __m256 w3c = leftShift<8>(w3a);
+          __m256 w4c = leftShift<8>(w4a);
+          __m256 w0d = leftShift<12>(w0a);
+          __m256 w1d = leftShift<12>(w1a);
+          __m256 w2d = leftShift<12>(w2a);
+          __m256 w3d = leftShift<12>(w3a);
+          __m256 w4d = leftShift<12>(w4a);
+          for (serial_size_t y = 0; y < out_height;
+               ++y, pdelta_src += out_width, pdelta_dst += h_stride2) {
+            float *delta_dst0 = pdelta_dst;
+            float *delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
+            float *delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
+            float *delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
+            float *delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
+            for (serial_size_t n = 0; n < nblocks; ++n) {
+              __m256 delta_src =
+                _mm256_broadcast_ps((const __m128 *)(pdelta_src + n * 4));
+              __m256 dst0 = _mm256_loadu_ps(delta_dst0 + 4 * n);
+              __m256 dst1 = _mm256_loadu_ps(delta_dst1 + 4 * n);
+              __m256 dst2 = _mm256_loadu_ps(delta_dst2 + 4 * n);
+              __m256 dst3 = _mm256_loadu_ps(delta_dst3 + 4 * n);
+              __m256 dst4 = _mm256_loadu_ps(delta_dst4 + 4 * n);
+              __m256 delta_src0 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
+              __m256 delta_src1 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
+              __m256 delta_src2 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
+              __m256 delta_src3 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
+              dst0 = madd256_ps(w0a, delta_src0, dst0);
+              dst1 = madd256_ps(w1a, delta_src0, dst1);
+              dst2 = madd256_ps(w2a, delta_src0, dst2);
+              dst3 = madd256_ps(w3a, delta_src0, dst3);
+              dst4 = madd256_ps(w4a, delta_src0, dst4);
+              dst0 = madd256_ps(w0b, delta_src1, dst0);
+              dst1 = madd256_ps(w1b, delta_src1, dst1);
+              dst2 = madd256_ps(w2b, delta_src1, dst2);
+              dst3 = madd256_ps(w3b, delta_src1, dst3);
+              dst4 = madd256_ps(w4b, delta_src1, dst4);
+              dst0 = madd256_ps(w0c, delta_src2, dst0);
+              dst1 = madd256_ps(w1c, delta_src2, dst1);
+              dst2 = madd256_ps(w2c, delta_src2, dst2);
+              dst3 = madd256_ps(w3c, delta_src2, dst3);
+              dst4 = madd256_ps(w4c, delta_src2, dst4);
+              dst0 = madd256_ps(w0d, delta_src3, dst0);
+              _mm256_storeu_ps(delta_dst0 + 4 * n, dst0);
+              dst1 = madd256_ps(w1d, delta_src3, dst1);
+              _mm256_storeu_ps(delta_dst1 + 4 * n, dst1);
+              dst2 = madd256_ps(w2d, delta_src3, dst2);
+              _mm256_storeu_ps(delta_dst2 + 4 * n, dst2);
+              dst3 = madd256_ps(w3d, delta_src3, dst3);
+              _mm256_storeu_ps(delta_dst3 + 4 * n, dst3);
+              dst4 = madd256_ps(w4d, delta_src3, dst4);
+              _mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
+            }  // for nblocks
+            for (size_t x = nblocks * 4; x < out_width; ++x) {
+              __m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
+              __m256 dst0      = _mm256_loadu_ps(delta_dst0 + x);
+              __m256 dst1      = _mm256_loadu_ps(delta_dst1 + x);
+              __m256 dst2      = _mm256_loadu_ps(delta_dst2 + x);
+              __m256 dst3      = _mm256_loadu_ps(delta_dst3 + x);
+              __m256 dst4      = _mm256_loadu_ps(delta_dst4 + x);
+              dst0             = madd256_ps(w0a, delta_src, dst0);
+              dst1             = madd256_ps(w1a, delta_src, dst1);
+              dst2             = madd256_ps(w2a, delta_src, dst2);
+              dst3             = madd256_ps(w3a, delta_src, dst3);
+              dst4             = madd256_ps(w4a, delta_src, dst4);
+              _mm256_storeu_ps(delta_dst0 + x, dst0);
+              _mm256_storeu_ps(delta_dst1 + x, dst1);
+              _mm256_storeu_ps(delta_dst2 + x, dst2);
+              _mm256_storeu_ps(delta_dst3 + x, dst3);
+              _mm256_storeu_ps(delta_dst4 + x, dst4);
+            }  // for x
+          }    // for out_height
+        }      // for out.depth_
+      }        // for in.depth_
+    } else {
+      for (serial_size_t inc = 0; inc < in.depth_;
+           ++inc, pdelta_dst_org += in_padded_area) {
+        for (serial_size_t outc = 0; outc < out.depth_; ++outc) {
+          if (!tbl.is_connected(outc, inc)) {
+            continue;
           }
-          pdelta_src += out.width_;
-          pdelta_dst += h_stride2;
-        }
-      }
+          const float *pw         = &W[25 * (in.depth_ * outc + inc)];
+          const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
+          float *pdelta_dst       = pdelta_dst_org;
+          __m256 w0a      = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+          __m256 w1a      = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+          __m256 w2a      = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+          __m256 w3a      = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+          __m256 w4a      = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
+          __m256 w0b      = leftShift<4>(w0a);
+          __m256 w1b      = leftShift<4>(w1a);
+          __m256 w2b      = leftShift<4>(w2a);
+          __m256 w3b      = leftShift<4>(w3a);
+          __m256 w4b      = leftShift<4>(w4a);
+          __m256 w0c      = leftShift<8>(w0a);
+          __m256 w1c      = leftShift<8>(w1a);
+          __m256 w2c      = leftShift<8>(w2a);
+          __m256 w3c      = leftShift<8>(w3a);
+          __m256 w4c      = leftShift<8>(w4a);
+          __m256 w0d      = leftShift<12>(w0a);
+          __m256 w1d      = leftShift<12>(w1a);
+          __m256 w2d      = leftShift<12>(w2a);
+          __m256 w3d      = leftShift<12>(w3a);
+          __m256 w4d      = leftShift<12>(w4a);
+          serial_size_t y = 0;
+          do {
+            float *delta_dst0 = pdelta_dst;
+            float *delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
+            float *delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
+            float *delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
+            float *delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
+            serial_size_t n   = 0;
+            do {
+              __m256 delta_src =
+                _mm256_broadcast_ps((const __m128 *)(pdelta_src + n * 4));
+              __m256 dst0 = _mm256_loadu_ps(delta_dst0 + 4 * n);
+              __m256 dst1 = _mm256_loadu_ps(delta_dst1 + 4 * n);
+              __m256 dst2 = _mm256_loadu_ps(delta_dst2 + 4 * n);
+              __m256 dst3 = _mm256_loadu_ps(delta_dst3 + 4 * n);
+              __m256 dst4 = _mm256_loadu_ps(delta_dst4 + 4 * n);
+              __m256 delta_src0 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(0, 0, 0, 0));
+              __m256 delta_src1 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(1, 1, 1, 1));
+              __m256 delta_src2 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(2, 2, 2, 2));
+              __m256 delta_src3 =
+                _mm256_permute_ps(delta_src, _MM_SHUFFLE(3, 3, 3, 3));
+              dst0 = madd256_ps(w0a, delta_src0, dst0);
+              dst1 = madd256_ps(w1a, delta_src0, dst1);
+              dst2 = madd256_ps(w2a, delta_src0, dst2);
+              dst3 = madd256_ps(w3a, delta_src0, dst3);
+              dst4 = madd256_ps(w4a, delta_src0, dst4);
+              dst0 = madd256_ps(w0b, delta_src1, dst0);
+              dst1 = madd256_ps(w1b, delta_src1, dst1);
+              dst2 = madd256_ps(w2b, delta_src1, dst2);
+              dst3 = madd256_ps(w3b, delta_src1, dst3);
+              dst4 = madd256_ps(w4b, delta_src1, dst4);
+              dst0 = madd256_ps(w0c, delta_src2, dst0);
+              dst1 = madd256_ps(w1c, delta_src2, dst1);
+              dst2 = madd256_ps(w2c, delta_src2, dst2);
+              dst3 = madd256_ps(w3c, delta_src2, dst3);
+              dst4 = madd256_ps(w4c, delta_src2, dst4);
+              dst0 = madd256_ps(w0d, delta_src3, dst0);
+              _mm256_storeu_ps(delta_dst0 + 4 * n, dst0);
+              dst1 = madd256_ps(w1d, delta_src3, dst1);
+              _mm256_storeu_ps(delta_dst1 + 4 * n, dst1);
+              dst2 = madd256_ps(w2d, delta_src3, dst2);
+              _mm256_storeu_ps(delta_dst2 + 4 * n, dst2);
+              dst3 = madd256_ps(w3d, delta_src3, dst3);
+              _mm256_storeu_ps(delta_dst3 + 4 * n, dst3);
+              dst4 = madd256_ps(w4d, delta_src3, dst4);
+              _mm256_storeu_ps(delta_dst4 + 4 * n, dst4);
+              ++n;
+            } while (n < nblocks);
+            ++y;
+            pdelta_src += out_width;
+            pdelta_dst += h_stride2;
+          } while (y < out_height);
+        }  // for out.depth_
+      }    // for in.depth_
     }
-  } else if (out.height_ == 1 && out.width_ == 1) {
+  } else if (out_height == 1 && out_width == 1) {
     for (serial_size_t inc = 0; inc < in.depth_;
          ++inc, pdelta_dst_org += in_padded_area) {
       __m256 sum0 = _mm256_setzero_ps();
@@ -687,13 +776,14 @@ void avx_conv2d_5x5_back_kernel_one(
         __m256 w2a              = _mm256_maskload_ps(pw + 10, imask);
         __m256 w3a              = _mm256_maskload_ps(pw + 15, imask);
         __m256 w4a              = _mm256_maskload_ps(pw + 20, imask);
-        for (serial_size_t y = 0; y < out.height_; ++y) {
+        for (serial_size_t y = 0; y < out_height;
+             ++y, pdelta_src += out_width, pdelta_dst += h_stride2) {
           float *delta_dst0 = pdelta_dst;
           float *delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
           float *delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
           float *delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
           float *delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
-          for (serial_size_t x = 0; x < out.width_; x++) {
+          for (serial_size_t x = 0; x < out_width; ++x) {
             __m256 delta_src = _mm256_broadcast_ss(pdelta_src + x);
             __m256 dst0      = _mm256_loadu_ps(delta_dst0);
             __m256 dst1      = _mm256_loadu_ps(delta_dst1);
@@ -716,11 +806,9 @@ void avx_conv2d_5x5_back_kernel_one(
             delta_dst3 += w_stride;
             delta_dst4 += w_stride;
           }  // for x
-          pdelta_src += out.width_;
-          pdelta_dst += h_stride2;
-        }  // for y
-      }    // for outc
-    }      // for inc
+        }    // for y
+      }      // for outc
+    }        // for inc
   }
 
   accumulate_dw(params, prev_out, curr_delta, dW, db);

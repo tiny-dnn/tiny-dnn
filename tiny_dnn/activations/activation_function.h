@@ -35,6 +35,14 @@ class function {
 
   // dfi/dyi
   virtual float_t df(float_t y) const = 0;
+  void itedf(vec_t &cur,
+             const vec_t &prev,
+             const vec_t &out,
+             size_t cnt) const {
+    for (size_t i = 0; i < cnt; i++) {
+      cur[i] = prev[i] * df(out[i]);
+    }
+  }
 
   // dfi/dyk (k=0,1,..n)
   virtual vec_t df(const vec_t &y, size_t i) const {
@@ -53,8 +61,21 @@ class function {
 class identity : public function {
  public:
   using function::df;
-  float_t f(const vec_t &v, size_t i) const override { return v[i]; }
-  float_t df(float_t /*y*/) const override { return float_t{1}; }
+  inline float_t f(const vec_t &v, size_t i) const override { return v[i]; }
+  inline void itef(vec_t &out, const vec_t &in, size_t cnt) const {
+    CNN_UNREFERENCED_PARAMETER(cnt);
+    out = in;
+  }
+
+  inline float_t df(float_t /*y*/) const override { return float_t(1.0); }
+  void itedf(vec_t &cur,
+             const vec_t &prev,
+             const vec_t &out,
+             size_t cnt) const {
+    CNN_UNREFERENCED_PARAMETER(out);
+    CNN_UNREFERENCED_PARAMETER(cnt);
+    cur = prev;
+  }
   std::pair<float_t, float_t> scale() const override {
     return std::make_pair(float_t(0.1), float_t(0.9));
   }
@@ -125,14 +146,22 @@ class softmax : public function {
     for (auto x : v) denom += std::exp(x - alpha);
     return numer / denom;
   }
+  void itef(vec_t &out, const vec_t &in, size_t cnt) const {
+    float_t alpha = *std::max_element(in.begin(), in.end());
+    for (size_t i = 0; i < cnt; i++) {
+      float_t numer = std::exp(in[i] - alpha);
+      float_t denom{0};
+      for (auto x : in) denom += std::exp(x - alpha);
+      out[i] = numer / denom;
+    }
+  }
 
   float_t df(float_t y) const override { return y * (float_t(1) - y); }
 
   vec_t df(const vec_t &y, size_t index) const override {
     vec_t v(y.size(), 0);
-    for (size_t i = 0; i < y.size(); i++) {
-      v[i] = (i == index) ? df(y[index]) : -y[i] * y[index];
-    }
+    for (size_t i = 0; i < y.size(); i++)
+      v[i]        = (i == index) ? df(y[index]) : -y[i] * y[index];
 
     return v;
   }
@@ -148,9 +177,11 @@ class tan_h : public function {
  public:
   using function::df;
 
-  float_t f(const vec_t &v, size_t i) const override { return std::tanh(v[i]); }
+  inline float_t f(const vec_t &v, size_t i) const override {
+    return std::tanh(v[i]);
+  }
 
-  void itef(vec_t &out, const vec_t &in, size_t cnt) const {
+  inline void itef(vec_t &out, const vec_t &in, size_t cnt) const {
     for (size_t i = 0; i < cnt; i++) {
       out[i] = std::tanh(in[i]);
     }
@@ -165,7 +196,16 @@ class tan_h : public function {
   x));
   }*/
 
-  float_t df(float_t y) const override { return float_t(1) - sqr(y); }
+  inline float_t df(float_t y) const override { return float_t(1) - sqr(y); }
+  void itedf(vec_t &cur,
+             const vec_t &prev,
+             const vec_t &out,
+             size_t cnt) const {
+    for (size_t i = 0; i < cnt; i++) {
+      cur[i] = prev[i] * df(out[i]);
+    }
+  }
+
   std::pair<float_t, float_t> scale() const override {
     return std::make_pair(float_t(-0.8), float_t(0.8));
   }
