@@ -50,6 +50,6 @@
 #define CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
 #endif
 
-#if defined _WIN32
+#if defined _WIN32 && !defined(__MINGW32__)
 #define CNN_WINDOWS
 #endif
