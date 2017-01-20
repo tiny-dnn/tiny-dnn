@@ -54,8 +54,7 @@ inline void accumulate_db(const index3d<serial_size_t> &out,
         sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + (nblocks - 1) * 8));
       }
       sum0 = _mm256_add_ps(sum0, sum1);
-      sum1 = _mm256_loadu_ps(delta + nblocks * 8);
-      sum1 = _mm256_and_ps(sum1, _mm256_castsi256_ps(mask));
+      sum1 = _mm256_maskload_ps(delta + nblocks * 8, mask);
       sum0 = _mm256_add_ps(sum0, sum1);
       db[outc] += _mm_cvtss_f32(hsum256_ps(sum0));
     }
@@ -491,7 +490,7 @@ void avx_conv2d_5x5_back_kernel_one(
           __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
           __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
           __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-          __m256 w4a = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
+          __m256 w4a = _mm256_maskload_ps(pw + 20, imask);
           __m256 w0b = leftShift<4>(w0a);
           __m256 w1b = leftShift<4>(w1a);
           __m256 w2b = leftShift<4>(w2a);
@@ -562,17 +561,17 @@ void avx_conv2d_5x5_back_kernel_one(
               __m256 dst1      = _mm256_loadu_ps(delta_dst1 + x);
               __m256 dst2      = _mm256_loadu_ps(delta_dst2 + x);
               __m256 dst3      = _mm256_loadu_ps(delta_dst3 + x);
-              __m256 dst4      = _mm256_loadu_ps(delta_dst4 + x);
+              __m256 dst4      = _mm256_maskload_ps(delta_dst4 + x, imask);
               dst0             = madd256_ps(w0a, delta_src, dst0);
               dst1             = madd256_ps(w1a, delta_src, dst1);
               dst2             = madd256_ps(w2a, delta_src, dst2);
               dst3             = madd256_ps(w3a, delta_src, dst3);
               dst4             = madd256_ps(w4a, delta_src, dst4);
-              _mm256_storeu_ps(delta_dst0 + x, dst0);
-              _mm256_storeu_ps(delta_dst1 + x, dst1);
-              _mm256_storeu_ps(delta_dst2 + x, dst2);
-              _mm256_storeu_ps(delta_dst3 + x, dst3);
-              _mm256_storeu_ps(delta_dst4 + x, dst4);
+              _mm256_maskstore_ps(delta_dst0 + x, imask, dst0);
+              _mm256_maskstore_ps(delta_dst1 + x, imask, dst1);
+              _mm256_maskstore_ps(delta_dst2 + x, imask, dst2);
+              _mm256_maskstore_ps(delta_dst3 + x, imask, dst3);
+              _mm256_maskstore_ps(delta_dst4 + x, imask, dst4);
             }  // for x
           }    // for out_height
         }      // for out.depth_
@@ -591,7 +590,7 @@ void avx_conv2d_5x5_back_kernel_one(
           __m256 w1a      = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
           __m256 w2a      = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
           __m256 w3a      = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-          __m256 w4a      = _mm256_and_ps(_mm256_loadu_ps(pw + 20), mask);
+          __m256 w4a      = _mm256_maskload_ps(pw + 20, imask);
           __m256 w0b      = leftShift<4>(w0a);
           __m256 w1b      = leftShift<4>(w1a);
           __m256 w2b      = leftShift<4>(w2a);
@@ -715,7 +714,7 @@ void avx_conv2d_5x5_back_kernel_one(
       __m256 dst1       = _mm256_loadu_ps(delta_dst1);
       __m256 dst2       = _mm256_loadu_ps(delta_dst2);
       __m256 dst3       = _mm256_loadu_ps(delta_dst3);
-      __m256 dst4       = _mm256_loadu_ps(delta_dst4);
+      __m256 dst4       = _mm256_maskload_ps(delta_dst4, imask);
 
       // *FROM
       // 1110 0000
@@ -756,11 +755,11 @@ void avx_conv2d_5x5_back_kernel_one(
       dst3 = _mm256_add_ps(dst3, new_sum3);
       dst4 = _mm256_add_ps(dst4, new_sum4);
 
-      _mm256_storeu_ps(delta_dst0, dst0);
-      _mm256_storeu_ps(delta_dst1, dst1);
-      _mm256_storeu_ps(delta_dst2, dst2);
-      _mm256_storeu_ps(delta_dst3, dst3);
-      _mm256_storeu_ps(delta_dst4, dst4);
+      _mm256_maskstore_ps(delta_dst0, imask, dst0);
+      _mm256_maskstore_ps(delta_dst1, imask, dst1);
+      _mm256_maskstore_ps(delta_dst2, imask, dst2);
+      _mm256_maskstore_ps(delta_dst3, imask, dst3);
+      _mm256_maskstore_ps(delta_dst4, imask, dst4);
     }  // for
   } else {
     for (serial_size_t inc = 0; inc < in.depth_;
