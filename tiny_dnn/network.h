@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#ifndef CNN_NO_SERIALIZATION
+#include <fstream>
+#endif
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
