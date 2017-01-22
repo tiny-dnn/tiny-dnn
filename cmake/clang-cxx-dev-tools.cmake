@@ -1,21 +1,31 @@
 # Additional target to perform clang-format/clang-tidy run
 # Requires clang-format and clang-tidy
 
-file(GLOB_RECURSE ALL_CXX_SOURCE_FILES ../tiny_dnn/*.h)
-#message(${ALL_CXX_SOURCE_FILES})
+file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
+  ${CMAKE_SOURCE_DIR}/tiny_dnn/*.h
+  ${CMAKE_SOURCE_DIR}/test/*.h
+  ${CMAKE_SOURCE_DIR}/examples/*.h
+  ${CMAKE_SOURCE_DIR}/examples/*.cpp
+  )
 
-if (FALSE)
+set(clang-format "clang-format-4.0")
+
 # Adding clang-format target if executable is found
-find_program(CLANG_FORMAT "clang-format")
+find_program(CLANG_FORMAT ${clang-format})
 if(CLANG_FORMAT)
   add_custom_target(
     clang-format
-    COMMAND /usr/bin/clang-format
+    COMMAND /usr/bin/${clang-format}
     -i
-    -style=file
     ${ALL_CXX_SOURCE_FILES}
     )
-endif()
+
+  add_custom_target(
+    clang-format-check
+    COMMAND /bin/bash ${CMAKE_SOURCE_DIR}/.travis/clang-format.sh
+  )
+else()
+  message(STATUS "${clang-format} was not found")
 endif()
 
 # Adding clang-tidy target if executable is found
@@ -26,9 +36,9 @@ if(CLANG_TIDY)
     COMMAND /usr/bin/clang-tidy
     ${ALL_CXX_SOURCE_FILES}
     -config=''
+    -checks=*
     --
     -std=c++11
-    #${INCLUDE_DIRECTORIES}
-    -checks=-*,clang-analyzer-*,-clang-analyzer-cplusplus*
+    ${INCLUDE_DIRECTORIES}
     )
 endif()

@@ -332,9 +332,9 @@ class layer : public node {
   }
 
   virtual void save(std::ostream &os) const {  // NOLINT
-    /*if (is_exploded()) {
-        throw nn_error("failed to save weights because of infinite weight");
-    }*/
+                                               /*if (is_exploded()) {
+                                                   throw nn_error("failed to save weights because of infinite weight");
+                                               }*/
     auto all_weights = weights();
     for (auto &weight : all_weights) {
       for (auto w : *weight) os << w << " ";

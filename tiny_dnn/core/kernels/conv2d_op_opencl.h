@@ -118,7 +118,8 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
       kernel.SetArgument(9,
                          static_cast<cl_ushort>(params.in.height_));  // HEIGHT
       kernel.SetArgument(
-        10, static_cast<cl_ushort>(params.out.width_));  // OUTPUT_W
+        10,
+        static_cast<cl_ushort>(params.out.width_));  // OUTPUT_W
       kernel.SetArgument(
         11, static_cast<cl_ushort>(params.out.height_));  // OUTPUT_H
 

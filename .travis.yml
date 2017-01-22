@@ -58,12 +58,6 @@ matrix:
       compiler: gcc
 
 before_install:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      curl http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -;
-      echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list;
-      sudo apt-get update -qq;
-      sudo apt-get install clang-format-4.0 -y;
-    fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
        export CC="gcc-4.8";
        export CXX="g++-4.8";
@@ -102,7 +96,7 @@ script:
   - make -j2
   - test/tiny_dnn_test
   - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      bash -x .travis/clang-format.sh;
+      make clang-format-check;
     fi
 
 after_success:
@@ -112,5 +106,3 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
-  # coding style test
-  - bash -x .travis/cpplint_test.sh

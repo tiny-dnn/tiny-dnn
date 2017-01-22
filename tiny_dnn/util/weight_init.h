@@ -14,7 +14,7 @@ namespace weight_init {
 
 class function {
  public:
-  virtual void fill(vec_t* weight,
+  virtual void fill(vec_t *weight,
                     serial_size_t fan_in,
                     serial_size_t fan_out) = 0;
 };
@@ -41,7 +41,7 @@ class xavier : public scalable {
   xavier() : scalable(float_t(6)) {}
   explicit xavier(float_t value) : scalable(value) {}
 
-  void fill(vec_t* weight,
+  void fill(vec_t *weight,
             serial_size_t fan_in,
             serial_size_t fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
@@ -62,7 +62,7 @@ class lecun : public scalable {
   lecun() : scalable(float_t{1}) {}
   explicit lecun(float_t value) : scalable(value) {}
 
-  void fill(vec_t* weight,
+  void fill(vec_t *weight,
             serial_size_t fan_in,
             serial_size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
@@ -78,7 +78,7 @@ class gaussian : public scalable {
   gaussian() : scalable(float_t{1}) {}
   explicit gaussian(float_t sigma) : scalable(sigma) {}
 
-  void fill(vec_t* weight,
+  void fill(vec_t *weight,
             serial_size_t fan_in,
             serial_size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
@@ -93,7 +93,7 @@ class constant : public scalable {
   constant() : scalable(float_t{0}) {}
   explicit constant(float_t value) : scalable(value) {}
 
-  void fill(vec_t* weight,
+  void fill(vec_t *weight,
             serial_size_t fan_in,
             serial_size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
@@ -108,7 +108,7 @@ class he : public scalable {
   he() : scalable(float_t{2}) {}
   explicit he(float_t value) : scalable(value) {}
 
-  void fill(vec_t* weight,
+  void fill(vec_t *weight,
             serial_size_t fan_in,
             serial_size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
