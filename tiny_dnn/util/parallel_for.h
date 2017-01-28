@@ -27,6 +27,7 @@
 #endif
 
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
+#include <tiny_dnn/util/ThreadPool.h>
 #include <future>
 #include <thread>
 #endif
@@ -93,26 +94,32 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 
 template <typename Func>
 void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
-  int nthreads  = std::thread::hardware_concurrency();
-  int blockSize = (end - start) / nthreads;
-  if (blockSize * nthreads < end - start) blockSize++;
+  static int nthreads = std::thread::hardware_concurrency();
+  static ThreadPool pool(nthreads);
 
   std::vector<std::future<void> > futures;
-
-  int blockStart               = start;
-  int blockEnd                 = blockStart + blockSize;
-  if (blockEnd > end) blockEnd = end;
-
-  for (int i = 0; i < nthreads; i++) {
-    futures.push_back(
-      std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-        f(blocked_range(blockStart, blockEnd));
-      })));
-
-    blockStart += blockSize;
-    blockEnd = blockStart + blockSize;
-    if (blockStart >= end) break;
-    if (blockEnd > end) blockEnd = end;
+  int total_size = end - start;
+  if (total_size <= nthreads) {
+    for (int i = 0; i < total_size; i++) {
+      int block_start = start + i;
+      int block_end   = start + i + 1;
+      futures.emplace_back(pool.enqueue([block_start, block_end, &f] {
+        f(blocked_range(block_start, block_end));
+      }));
+    }
+  } else {
+    int block_size = total_size / nthreads;
+    if (total_size % nthreads) {
+      ++block_size;
+    }
+    int block_start = start;
+    while (block_start < end) {
+      int block_end = std::min(end, block_start + block_size);
+      futures.emplace_back(pool.enqueue([block_start, block_end, &f] {
+        f(blocked_range(block_start, block_end));
+      }));
+      block_start += block_size;
+    }
   }
 
   for (auto &future : futures) future.wait();
