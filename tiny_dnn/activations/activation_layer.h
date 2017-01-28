@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tiny_dnn/layer/layer.h"
+#include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -36,7 +36,7 @@ public:
 
     void back_propagation(const std::vector<tensor_t *> &in_data,
                           const std::vector<tensor_t *> &out_data,
-                          const std::vector<tensor_t *> &out_grad,
+                          std::vector<tensor_t *> &out_grad,
                           std::vector<tensor_t *> &in_grad) override {
         tensor_t &dx       = *in_grad[0];
         const tensor_t &dy = *out_grad[0];
@@ -45,7 +45,7 @@ public:
 
         for (serial_size_t i = 0; i < x.size(); i++) {
             for (serial_size_t j = 0; j < x[i].size(); j++) {
-                backward_activation(x, y, dx, dy);
+                backward_activation(x[i][j], y[i][j], dx[i][j], dy[i][j]);
             }
         }
     }
@@ -56,8 +56,8 @@ public:
                                     float_t &y) = 0;
 
     virtual void backward_activation(const float_t x,
-                                     float_t &dx,
                                      const float_t &y,
+                                     float_t &dx,
                                      const float_t &dy) = 0;
 
 private:
