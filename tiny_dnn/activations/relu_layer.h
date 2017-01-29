@@ -28,8 +28,8 @@ class relu_layer : public activation_layer {
                            vec_t &dx,
                            const vec_t &dy) {
     for (serial_size_t j = 0; j < x.size(); j++) {
-      float_t relu_grad = y[j] > float_t(0) ? float_t(1) : float_t(0);
-      dx[j]             = dy[j] * relu_grad;
+      // dx = dy * (gradient of relu)
+      dx[j] = dy[j] * (y[j] > float_t(0) ? float_t(1) : float_t(0));
     }
   }
 };
