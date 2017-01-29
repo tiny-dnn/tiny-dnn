@@ -20,14 +20,29 @@ class activation_layer : public layer {
   activation_layer(const shape3d &in_shape)
     : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
 
+  /**
+   * This constructor is suitable for adding an activation layer after
+   * 3D layers such as convolution / pooling layers.
+   *
+   * @param in_width    [in] number of input elements along width
+   * @param in_height   [in] number of input elements along height
+   * @param in_channels [in] number of channels (input elements along depth)
+   */
   activation_layer(serial_size_t in_width,
                    serial_size_t in_height,
                    serial_size_t in_channels)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(in_width, in_height, in_channels) {}
 
-  activation_layer(serial_size_t dim)
-    : layer({vector_type::data}, {vector_type::data}), in_shape_(dim, 1, 1) {}
+  /**
+   * This constructor is suitable for adding an activation layer after
+   * 1D layers such as fully connected layers.
+   *
+   * @param in_dim      [in] number of elements of the input
+   */
+  activation_layer(serial_size_t in_dim)
+    : layer({vector_type::data}, {vector_type::data}),
+      in_shape_(in_dim, 1, 1) {}
 
   activation_layer(const layer &prev_layer)
     : layer({vector_type::data}, {vector_type::data}),
@@ -63,8 +78,24 @@ class activation_layer : public layer {
 
   virtual std::string layer_type() const = 0;
 
+  /**
+   * Populate vec_t of elements 'y' according to activation y = f(x).
+   * Child classes must override this method, apply activation function
+   * element wise over a vec_t of elements.
+   *
+   * @param x  input vector
+   * @param y  output vector (values to be assigned based on input)
+   **/
   virtual void forward_activation(const vec_t &x, vec_t &y) = 0;
 
+  /**
+   * Populate vec_t of elements 'dx' according to gradient of activation.
+   *
+   * @param x  input vector of current layer (same as forward_activation)
+   * @param y  output vector of current layer (same as forward_activation)
+   * @param dx gradient of input vectors (i-th element correspond with x[i])
+   * @param dy gradient of output vectors (i-th element correspond with y[i])
+   **/
   virtual void backward_activation(const vec_t x,
                                    const vec_t &y,
                                    vec_t &dx,
