@@ -6,12 +6,7 @@ namespace tiny_dnn {
 
 class relu_layer : public activation_layer {
 public:
-    /**
-     * @param in_shape [in] shape of input tensor
-     */
-    relu_layer(const shape3d &in_shape)
-            : activation_layer(in_shape) {}
-
+    using activation_layer::activation_layer;
 
     std::string layer_type() const override {
         return "relu-activation";
