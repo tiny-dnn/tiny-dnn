@@ -420,10 +420,12 @@ TEST(network, gradient_check3) {  // mixture - mse
   typedef mse loss_func;
   typedef network<sequential> network;
 
+  // TODO: (karandesai) adopt this in all the tests gradually
   network nn;
   nn << fully_connected_layer<tan_h>(10, 14 * 14 * 3)
      << convolutional_layer<sigmoid>(14, 14, 5, 3, 6)
-     << average_pooling_layer<rectified_linear>(10, 10, 6, 2)
+     << average_pooling_layer<identity>(10, 10, 6, 2)
+     << relu_layer(shape3d(5, 5, 6))
      << fully_connected_layer<identity>(5 * 5 * 6, 3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
