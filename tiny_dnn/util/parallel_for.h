@@ -27,9 +27,13 @@
 #endif
 
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
-#include <tiny_dnn/util/ThreadPool.h>
 #include <future>
 #include <thread>
+
+#ifdef DNN_USE_THREADPOOL
+#include "third_party/ThreadPool/ThreadPool.h"
+#endif
+
 #endif
 
 namespace tiny_dnn {
@@ -95,6 +99,8 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 template <typename Func>
 void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
   static int nthreads = std::thread::hardware_concurrency();
+
+#ifdef DNN_USE_THREADPOOL
   static ThreadPool pool(nthreads);
 
   std::vector<std::future<void> > futures;
@@ -121,6 +127,28 @@ void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
       block_start += block_size;
     }
   }
+#else  // #ifdef DNN_USE_THREADPOOL
+  int blockSize = (end - start) / nthreads;
+  if (blockSize * nthreads < end - start) blockSize++;
+
+  std::vector<std::future<void> > futures;
+
+  int blockStart               = start;
+  int blockEnd                 = blockStart + blockSize;
+  if (blockEnd > end) blockEnd = end;
+
+  for (int i = 0; i < nthreads; i++) {
+    futures.push_back(
+      std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
+        f(blocked_range(blockStart, blockEnd));
+      })));
+
+    blockStart += blockSize;
+    blockEnd = blockStart + blockSize;
+    if (blockStart >= end) break;
+    if (blockEnd > end) blockEnd = end;
+  }
+#endif  // #ifdef DNN_USE_THREADPOOL
 
   for (auto &future : futures) future.wait();
 }
