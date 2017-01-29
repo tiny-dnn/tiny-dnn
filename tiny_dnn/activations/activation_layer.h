@@ -1,3 +1,10 @@
+/*
+    Copyright (c) 2017, Taiga Nomi, Karan Desai
+    All rights reserved.
+
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
+*/
 #pragma once
 
 #include "tiny_dnn/layers/layer.h"
@@ -12,6 +19,19 @@ class activation_layer : public layer {
    */
   activation_layer(const shape3d &in_shape)
     : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
+
+  activation_layer(serial_size_t in_width,
+                   serial_size_t in_height,
+                   serial_size_t in_channels)
+    : layer({vector_type::data}, {vector_type::data}),
+      in_shape_(in_width, in_height, in_channels) {}
+
+  activation_layer(serial_size_t dim)
+    : layer({vector_type::data}, {vector_type::data}), in_shape_(dim, 1, 1) {}
+
+  activation_layer(const layer &prev_layer)
+    : layer({vector_type::data}, {vector_type::data}),
+      in_shape_(prev_layer.out_shape()[0]) {}
 
   std::vector<shape3d> in_shape() const override { return {in_shape_}; }
 

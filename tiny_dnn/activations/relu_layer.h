@@ -1,3 +1,10 @@
+/*
+    Copyright (c) 2017, Taiga Nomi, Karan Desai
+    All rights reserved.
+
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
+*/
 #pragma once
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
