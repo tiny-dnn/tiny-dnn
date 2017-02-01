@@ -29,11 +29,6 @@
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
 #include <future>
 #include <thread>
-
-#ifdef DNN_USE_THREADPOOL
-#include "third_party/ThreadPool/ThreadPool.h"
-#endif
-
 #endif
 
 namespace tiny_dnn {
@@ -96,61 +91,113 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 
 #else
 
+struct thread_pool {
+  thread_pool(size_t nthreads = std::thread::hardware_concurrency())
+    : nthreads(nthreads), workers(nthreads) {
+    done = -1;
+    for (size_t i = 0; i < nthreads; ++i) {
+      workers[i].thread = std::thread([&, i] {
+        std::pair<int, int> range;
+        for (;;) {
+          {
+            std::unique_lock<std::mutex> lock(mutex);
+            condition.wait(lock,
+                           [&, i] { return !(done & (1 << i)) || this->stop; });
+            if (stop) return;
+            range = workers[i].range;
+          }
+          f(blocked_range(range.first, range.second));
+          {
+            std::unique_lock<std::mutex> lock(mutex);
+            done |= (1 << i);
+          }
+          // printf("%d %d done\n", begin, end);
+          condition2.notify_one();
+        }
+      });
+    }
+  }
+  ~thread_pool() {
+    {
+      std::unique_lock<std::mutex> lock(mutex);
+      stop = true;
+    }
+    condition.notify_all();
+    for (auto& w : workers) w.thread.join();
+    condition2.notify_one();
+  }
+  inline void run(int begin,
+                  int end,
+                  std::function<void(const blocked_range& r)> f) {
+    if (stop) {
+      return;
+    }
+    {
+      std::unique_lock<std::mutex> lock(mutex);
+      this->f        = f;
+      int total_size = end - begin;
+      if (total_size <= nthreads) {
+        for (int i = 0; i < total_size; i++) {
+          auto& r  = workers[i].range;
+          r.first  = begin + i;
+          r.second = begin + i + 1;
+        }
+        done = (-1) << total_size;
+      } else {
+        int block_size        = (total_size + nthreads - 1) / nthreads;
+        int block_begin       = begin;
+        size_t nthrads_to_use = total_size / block_size;
+        for (size_t i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+          int block_end = std::min(end, block_begin + block_size);
+          auto& r       = workers[i].range;
+          r.first       = block_begin;
+          r.second      = block_end;
+        }
+        done = (-1) << nthrads_to_use;
+      }
+    }
+    condition.notify_all();
+    {
+      std::unique_lock<std::mutex> lock(mutex);
+      condition2.wait(lock, [&] { return (done == -1) || stop; });
+    }
+  }
+
+ private:
+  size_t nthreads;
+  std::function<void(const blocked_range& r)> f;
+  struct thread_info {
+    std::thread thread;
+    std::pair<int, int> range;
+  };
+  std::vector<thread_info> workers;
+  std::mutex mutex;
+  std::condition_variable condition;
+  std::condition_variable condition2;
+  int64_t done;
+  bool stop;
+};
+
+template <typename T>
+class singleton {
+ private:
+  singleton()  = default;
+  ~singleton() = default;
+
+ public:
+  singleton(const singleton&) = delete;
+  singleton& operator=(const singleton&) = delete;
+  singleton(singleton&&)                 = delete;
+  singleton& operator=(singleton&&) = delete;
+  static T& get_instance() {
+    static T inst;
+    return inst;
+  }
+};
+
 template <typename Func>
-void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
-  static int nthreads = std::thread::hardware_concurrency();
-
-#ifdef DNN_USE_THREADPOOL
-  static ThreadPool pool(nthreads);
-
-  std::vector<std::future<void> > futures;
-  int total_size = end - start;
-  if (total_size <= nthreads) {
-    for (int i = 0; i < total_size; i++) {
-      int block_start = start + i;
-      int block_end   = start + i + 1;
-      futures.emplace_back(pool.enqueue([block_start, block_end, &f] {
-        f(blocked_range(block_start, block_end));
-      }));
-    }
-  } else {
-    int block_size = total_size / nthreads;
-    if (total_size % nthreads) {
-      ++block_size;
-    }
-    int block_start = start;
-    while (block_start < end) {
-      int block_end = std::min(end, block_start + block_size);
-      futures.emplace_back(pool.enqueue([block_start, block_end, &f] {
-        f(blocked_range(block_start, block_end));
-      }));
-      block_start += block_size;
-    }
-  }
-#else  // #ifdef DNN_USE_THREADPOOL
-  int blockSize = (end - start) / nthreads;
-  if (blockSize * nthreads < end - start) blockSize++;
-
-  std::vector<std::future<void> > futures;
-
-  int blockStart               = start;
-  int blockEnd                 = blockStart + blockSize;
-  if (blockEnd > end) blockEnd = end;
-
-  for (int i = 0; i < nthreads; i++) {
-    futures.push_back(
-      std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-        f(blocked_range(blockStart, blockEnd));
-      })));
-
-    blockStart += blockSize;
-    blockEnd = blockStart + blockSize;
-    if (blockStart >= end) break;
-    if (blockEnd > end) blockEnd = end;
-  }
-#endif  // #ifdef DNN_USE_THREADPOOL
-
-  for (auto &future : futures) future.wait();
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
+  singleton<thread_pool>::get_instance().run(begin, end, f);
 }
 
 #endif

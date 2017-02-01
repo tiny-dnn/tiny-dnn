@@ -50,7 +50,6 @@ option(USE_AVX        "Build tiny-dnn with AVX library support"     ON)
 option(USE_AVX2       "Build tiny-dnn with AVX2 library support"   OFF)
 option(USE_TBB        "Build tiny-dnn with TBB library support"    OFF)
 option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
-option(USE_THREADPOOL "Build tiny-dnn with ThreadPool library support"     OFF)
 option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
@@ -119,10 +118,6 @@ endif()
 
 if(USE_GEMMLOWP)
     add_definitions(-DUSE_GEMMLOWP)
-endif()
-
-if(USE_THREADPOOL)
-    add_definitions(-DDNN_USE_THREADPOOL)
 endif()
 
 # Find Open Multi-Processing (OpenMP)
