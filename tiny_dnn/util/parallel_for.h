@@ -111,7 +111,6 @@ struct thread_pool {
             std::unique_lock<std::mutex> lock(mutex);
             done |= (1 << i);
           }
-          // printf("%d %d done\n", begin, end);
           condition2.notify_one();
         }
       });
@@ -129,29 +128,28 @@ struct thread_pool {
   inline void run(int begin,
                   int end,
                   std::function<void(const blocked_range& r)> f) {
-    if (stop) {
+    if (stop || end <= begin) {
       return;
     }
     {
       std::unique_lock<std::mutex> lock(mutex);
       this->f        = f;
       int total_size = end - begin;
-      if (total_size <= nthreads) {
+      if (total_size <= (int)nthreads) {
         for (int i = 0; i < total_size; i++) {
           auto& r  = workers[i].range;
           r.first  = begin + i;
-          r.second = begin + i + 1;
+          r.second = r.first + 1;
         }
         done = (-1) << total_size;
       } else {
         int block_size        = (total_size + nthreads - 1) / nthreads;
+        size_t nthrads_to_use = (total_size + block_size - 1) / block_size;
         int block_begin       = begin;
-        size_t nthrads_to_use = total_size / block_size;
         for (size_t i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
-          int block_end = std::min(end, block_begin + block_size);
-          auto& r       = workers[i].range;
-          r.first       = block_begin;
-          r.second      = block_end;
+          auto& r  = workers[i].range;
+          r.first  = block_begin;
+          r.second = std::min(end, block_begin + block_size);
         }
         done = (-1) << nthrads_to_use;
       }
