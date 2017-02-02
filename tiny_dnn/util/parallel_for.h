@@ -10,10 +10,10 @@
 #include <cassert>
 #include <cstdio>
 #include <limits>
+#include <queue>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <queue>
 
 #include "aligned_allocator.h"
 #include "nn_error.h"
@@ -95,9 +95,9 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 namespace detail {
 
 struct thread_pool_4_parallel_for {
-  thread_pool_4_parallel_for(size_t nthreads = std::thread::hardware_concurrency())
-    : nthreads(nthreads),
-      stop(false) {
+  thread_pool_4_parallel_for(
+    size_t nthreads = std::thread::hardware_concurrency())
+    : nthreads(nthreads), stop(false) {
     packaged_tasks.resize(nthreads);
     futures.reserve(nthreads);
     for (size_t i = 0; i < nthreads; ++i) {
@@ -133,17 +133,19 @@ struct thread_pool_4_parallel_for {
     }
     futures.clear();
     int total_size = end - begin;
-    int block_size        = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+    int block_size = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
     int nthrads_to_use = (total_size + block_size - 1) / block_size;
-    int block_begin       = begin;
+    int block_begin    = begin;
     for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
       packaged_tasks[i] = std::packaged_task<void(const blocked_range& r)>(f);
-      auto& pt = packaged_tasks[i];
+      auto& pt          = packaged_tasks[i];
       futures.emplace_back(pt.get_future());
       {
         int block_end = std::min(end, block_begin + block_size);
         std::unique_lock<std::mutex> lock(mutex);
-        tasks.emplace([&pt, block_begin, block_end](){pt(blocked_range(block_begin, block_end));}); 
+        tasks.emplace([&pt, block_begin, block_end]() {
+          pt(blocked_range(block_begin, block_end));
+        });
       }
       condition.notify_one();
     }
@@ -155,9 +157,9 @@ struct thread_pool_4_parallel_for {
  private:
   size_t nthreads;
   std::vector<std::thread> workers;
-  std::vector<std::packaged_task<void(const blocked_range& r)>> packaged_tasks;
-  std::vector<std::future<void>> futures;
-  std::queue<std::function<void()>> tasks;
+  std::vector<std::packaged_task<void(const blocked_range& r)> > packaged_tasks;
+  std::vector<std::future<void> > futures;
+  std::queue<std::function<void()> > tasks;
   std::mutex mutex;
   std::condition_variable condition;
   bool stop;
@@ -180,11 +182,12 @@ class singleton {
   }
 };
 
-} // namespace detail
+}  // namespace detail
 
 template <typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-  detail::singleton<detail::thread_pool_4_parallel_for>::get_instance().run(begin, end, f);
+  detail::singleton<detail::thread_pool_4_parallel_for>::get_instance().run(
+    begin, end, f);
 }
 
 #endif
