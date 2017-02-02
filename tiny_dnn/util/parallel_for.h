@@ -13,6 +13,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <queue>
 
 #include "aligned_allocator.h"
 #include "nn_error.h"
@@ -91,88 +92,74 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 
 #else
 
-struct thread_pool {
-  thread_pool(size_t nthreads = std::thread::hardware_concurrency())
-    : nthreads(nthreads), workers(nthreads) {
-    done = -1;
+namespace detail {
+
+struct thread_pool_4_parallel_for {
+  thread_pool_4_parallel_for(size_t nthreads = std::thread::hardware_concurrency())
+    : nthreads(nthreads),
+      stop(false) {
+    packaged_tasks.resize(nthreads);
+    futures.reserve(nthreads);
     for (size_t i = 0; i < nthreads; ++i) {
-      workers[i].thread = std::thread([&, i] {
-        std::pair<int, int> range;
+      workers.emplace_back([this] {
+        std::function<void()> task;
         for (;;) {
           {
             std::unique_lock<std::mutex> lock(mutex);
             condition.wait(lock,
-                           [&, i] { return !(done & (1 << i)) || this->stop; });
+                           [this] { return !tasks.empty() || this->stop; });
             if (stop) return;
-            range = workers[i].range;
+            task = std::move(tasks.front());
+            tasks.pop();
           }
-          f(blocked_range(range.first, range.second));
-          {
-            std::unique_lock<std::mutex> lock(mutex);
-            done |= (1 << i);
-          }
-          condition2.notify_one();
+          task();
         }
       });
     }
   }
-  ~thread_pool() {
+  ~thread_pool_4_parallel_for() {
     {
       std::unique_lock<std::mutex> lock(mutex);
       stop = true;
     }
     condition.notify_all();
-    for (auto& w : workers) w.thread.join();
-    condition2.notify_one();
+    for (auto& w : workers) w.join();
   }
   inline void run(int begin,
                   int end,
-                  std::function<void(const blocked_range& r)> f) {
+                  const std::function<void(const blocked_range& r)>& f) {
     if (stop || end <= begin) {
       return;
     }
-    {
-      std::unique_lock<std::mutex> lock(mutex);
-      this->f        = f;
-      int total_size = end - begin;
-      if (total_size <= (int)nthreads) {
-        for (int i = 0; i < total_size; i++) {
-          auto& r  = workers[i].range;
-          r.first  = begin + i;
-          r.second = r.first + 1;
-        }
-        done = (-1) << total_size;
-      } else {
-        int block_size        = (total_size + nthreads - 1) / nthreads;
-        size_t nthrads_to_use = (total_size + block_size - 1) / block_size;
-        int block_begin       = begin;
-        for (size_t i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
-          auto& r  = workers[i].range;
-          r.first  = block_begin;
-          r.second = std::min(end, block_begin + block_size);
-        }
-        done = (-1) << nthrads_to_use;
+    futures.clear();
+    int total_size = end - begin;
+    int block_size        = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+    int nthrads_to_use = (total_size + block_size - 1) / block_size;
+    int block_begin       = begin;
+    for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+      packaged_tasks[i] = std::packaged_task<void(const blocked_range& r)>(f);
+      auto& pt = packaged_tasks[i];
+      futures.emplace_back(pt.get_future());
+      {
+        int block_end = std::min(end, block_begin + block_size);
+        std::unique_lock<std::mutex> lock(mutex);
+        tasks.emplace([&pt, block_begin, block_end](){pt(blocked_range(block_begin, block_end));}); 
       }
+      condition.notify_one();
     }
-    condition.notify_all();
-    {
-      std::unique_lock<std::mutex> lock(mutex);
-      condition2.wait(lock, [&] { return (done == -1) || stop; });
+    for (auto& f : futures) {
+      f.wait();
     }
   }
 
  private:
   size_t nthreads;
-  std::function<void(const blocked_range& r)> f;
-  struct thread_info {
-    std::thread thread;
-    std::pair<int, int> range;
-  };
-  std::vector<thread_info> workers;
+  std::vector<std::thread> workers;
+  std::vector<std::packaged_task<void(const blocked_range& r)>> packaged_tasks;
+  std::vector<std::future<void>> futures;
+  std::queue<std::function<void()>> tasks;
   std::mutex mutex;
   std::condition_variable condition;
-  std::condition_variable condition2;
-  int64_t done;
   bool stop;
 };
 
@@ -193,9 +180,11 @@ class singleton {
   }
 };
 
+} // namespace detail
+
 template <typename Func>
 void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
-  singleton<thread_pool>::get_instance().run(begin, end, f);
+  detail::singleton<detail::thread_pool_4_parallel_for>::get_instance().run(begin, end, f);
 }
 
 #endif
