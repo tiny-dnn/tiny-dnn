@@ -422,7 +422,8 @@ TEST(network, gradient_check3) {  // mixture - mse
 
   // TODO: (karandesai) adopt this in all the tests gradually
   network nn;
-  nn << fully_connected_layer<tan_h>(10, 14 * 14 * 3)
+  nn << fully_connected_layer<identity>(10, 14 * 14 * 3)
+     << tanh_layer(14 * 14 * 3)
      << convolutional_layer<identity>(14, 14, 5, 3, 6)
      << sigmoid_layer(10, 10, 6)
      << average_pooling_layer<identity>(10, 10, 6, 2) << relu_layer(5, 5, 6)

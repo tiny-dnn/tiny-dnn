@@ -38,6 +38,7 @@
 
 #include "tiny_dnn/activations/relu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
+#include "tiny_dnn/activations/tanh_layer.h"
 
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
