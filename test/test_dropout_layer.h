@@ -49,4 +49,62 @@ TEST(dropout, read_write) {
   serialization_test(l1, l2);
 }
 
+TEST(dropout, full_net) {
+  network<sequential> nn;
+  adam optimizer;  // adagrad crashes too
+
+  vec_t a(4, 0.0), t(2, 0.0), a2(4, 0.0), t2(2, 0.0);
+
+  // clang-format off
+  a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
+  t[0] = 0.3f; t[1] = 0.7f;
+
+  a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
+  t2[0] = 0.6f; t2[1] = 0.0f;
+  // clang-format on
+
+  std::vector<vec_t> data, train;
+
+  for (int i = 0; i < 100; i++) {
+    data.push_back(a);
+    data.push_back(a2);
+    train.push_back(t);
+    train.push_back(t2);
+  }
+
+  nn << fc<relu>(4, 10) << dropout(10, 0.5) << fc<sigmoid>(10, 2);
+
+  nn.train<mse>(optimizer, data, train, 1, 10);
+  // batch = 11,20,50
+}
+
+TEST(dropout, full_net_batch) {
+  network<sequential> nn;
+  adam optimizer;  // adagrad crashes too
+
+  vec_t a(4, 0.0), t(2, 0.0), a2(4, 0.0), t2(2, 0.0);
+
+  // clang-format off
+  a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
+  t[0] = 0.3f; t[1] = 0.7f;
+
+  a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
+  t2[0] = 0.6f; t2[1] = 0.0f;
+  // clang-format on
+
+  std::vector<vec_t> data, train;
+
+  for (int i = 0; i < 100; i++) {
+    data.push_back(a);
+    data.push_back(a2);
+    train.push_back(t);
+    train.push_back(t2);
+  }
+
+  nn << fc<relu>(4, 10) << dropout(10, 0.5) << fc<sigmoid>(10, 2);
+
+  nn.train<mse>(optimizer, data, train, 20, 10);  // ok with batch = 10,
+                                                  // doesn't work with
+                                                  // batch = 11,20,50
+}
 }  // namespace tiny-dnn

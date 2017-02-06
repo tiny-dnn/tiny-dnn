@@ -13,9 +13,8 @@
 
 using namespace tiny_dnn::activation;
 
-#include "test_network.h"
-// FIXME(Randl) switching previous and next lines breaks tests
 #include "test_average_pooling_layer.h"
+#include "test_network.h"
 // TODO(yida): fix broken test
 //#include "test_average_unpooling_layer.h"
 #include "test_batch_norm_layer.h"
