@@ -96,7 +96,7 @@ class activation_layer : public layer {
    * @param dx gradient of input vectors (i-th element correspond with x[i])
    * @param dy gradient of output vectors (i-th element correspond with y[i])
    **/
-  virtual void backward_activation(const vec_t x,
+  virtual void backward_activation(const vec_t &x,
                                    const vec_t &y,
                                    vec_t &dx,
                                    const vec_t &dy) = 0;
