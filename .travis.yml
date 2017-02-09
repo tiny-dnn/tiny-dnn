@@ -60,6 +60,8 @@ branches:
   only:
     - master
     - feat/tensor_integration
+    - feat/decouple_activations
+
 env:
   global:
     - USE_TBB=ON
