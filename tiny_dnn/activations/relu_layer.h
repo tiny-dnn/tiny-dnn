@@ -23,7 +23,7 @@ class relu_layer : public activation_layer {
     }
   }
 
-  void backward_activation(const vec_t x,
+  void backward_activation(const vec_t &x,
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) {
