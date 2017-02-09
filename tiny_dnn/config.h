@@ -31,6 +31,11 @@
 // #define CNN_USE_OMP
 
 /**
+ * define to enable Grand Central Dispatch parallelization
+ */
+//#define CNN_USE_GCD
+
+/**
  * define to use exceptions
  */
 #define CNN_USE_EXCEPTIONS

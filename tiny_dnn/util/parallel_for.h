@@ -31,6 +31,10 @@
 #include <thread>
 #endif
 
+#if defined(CNN_USE_GCD) && !defined(CNN_SINGLE_THREAD)
+#include <dispatch/dispatch.h>
+#endif
+
 namespace tiny_dnn {
 
 #ifdef CNN_USE_TBB
@@ -80,6 +84,30 @@ template <typename Func>
 void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 #pragma omp parallel for
   for (int i = begin; i < end; ++i) f(blocked_range(i, i + 1));
+}
+
+#elif defined(CNN_USE_GCD)
+
+template<typename Func>
+void parallel_for(int begin, int end, const Func& f, int grainsize) {
+    int count = end - begin;
+    int blockSize = grainsize;
+    if (count < blockSize || blockSize == 0) {
+        blockSize = 1;
+    }
+    int blockCount = (count + blockSize - 1) / blockSize;
+    assert(blockCount > 0);
+    
+    dispatch_apply(blockCount, dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^(size_t block) {
+        int blockStart = static_cast<int>(block*blockSize);
+        int blockEnd = blockStart + blockSize;
+        if (blockEnd > end) {
+            blockEnd = end;
+        }
+        assert(blockStart < blockEnd);
+        
+        f(blocked_range(blockStart,blockEnd));
+    });
 }
 
 #elif defined(CNN_SINGLE_THREAD)
