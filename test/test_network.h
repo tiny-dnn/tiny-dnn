@@ -454,14 +454,15 @@ TEST(network, gradient_check4) {  // sigmoid - cross-entropy
 
 TEST(network, gradient_check5) {  // softmax - cross-entropy
   typedef cross_entropy loss_func;
-  typedef softmax activation;
   typedef network<sequential> network;
 
   network nn;
-  nn << fully_connected_layer<activation>(10, 14 * 14 * 3)
-     << convolutional_layer<activation>(14, 14, 5, 3, 6)
-     << average_pooling_layer<activation>(10, 10, 6, 2)
-     << fully_connected_layer<activation>(5 * 5 * 6, 3);
+  nn << fully_connected_layer<identity>(10, 14 * 14 * 3)
+     << softmax_layer(14 * 14 * 3)
+     << convolutional_layer<identity>(14, 14, 5, 3, 6)
+     << softmax_layer(10, 10, 6)
+     << average_pooling_layer<identity>(10, 10, 6, 2) << softmax_layer(5, 5, 6)
+     << fully_connected_layer<identity>(5 * 5 * 6, 3) << softmax_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
