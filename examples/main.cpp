@@ -131,9 +131,9 @@ void sample2_mlp(const string& data_dir) {
 #if defined(_MSC_VER) && _MSC_VER < 1800
   // initializer-list is not supported
   int num_units[] = {28 * 28, num_hidden_units, 10};
-  auto nn         = make_mlp<tan_h>(num_units, num_units + 3);
+  auto nn         = make_mlp<tanh_layer>(num_units, num_units + 3);
 #else
-  auto nn = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
+  auto nn = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
 #endif
   gradient_descent optimizer;
 
@@ -186,7 +186,7 @@ void sample3_dae() {
   int num_units[] = {100, 400, 100};
   auto nn         = make_mlp<tan_h>(num_units, num_units + 3);
 #else
-  auto nn = make_mlp<tan_h>({100, 400, 100});
+  auto nn = make_mlp<tanh_layer>({100, 400, 100});
 #endif
 
   std::vector<vec_t> train_data_original;
@@ -278,8 +278,8 @@ void sample4_dropout(const string& data_dir) {
 void sample5_unbalanced_training_data(const string& data_dir) {
   // keep the network relatively simple
   const serial_size_t num_hidden_units = 20;
-  auto nn_standard = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
-  auto nn_balanced = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
+  auto nn_standard = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
+  auto nn_balanced = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
   gradient_descent optimizer;
 
   // load MNIST dataset
