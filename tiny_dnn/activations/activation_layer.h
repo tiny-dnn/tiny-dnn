@@ -53,7 +53,7 @@ class activation_layer : public layer {
   std::vector<shape3d> out_shape() const override { return {in_shape_}; }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) {
+                           std::vector<tensor_t *> &out_data) override {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
 

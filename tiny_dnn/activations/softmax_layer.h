@@ -17,7 +17,7 @@ class softmax_layer : public activation_layer {
 
   std::string layer_type() const override { return "softmax-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) {
+  void forward_activation(const vec_t &x, vec_t &y) override {
     float_t alpha = *std::max_element(x.begin(), x.end());
     float_t denominator(0);
     for (serial_size_t j = 0; j < x.size(); j++) {
@@ -32,7 +32,7 @@ class softmax_layer : public activation_layer {
   void backward_activation(const vec_t &x,
                            const vec_t &y,
                            vec_t &dx,
-                           const vec_t &dy) {
+                           const vec_t &dy) override {
     const serial_size_t len = static_cast<serial_size_t>(dy.size());
 
     // auxilliary vector to store element wise softmax gradients of all elements
