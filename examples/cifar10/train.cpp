@@ -116,8 +116,8 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream &log) {
 
 int main(int argc, char **argv) {
   if (argc != 3) {
-    cerr << "Usage : " << argv[0] << "arg[0]: path_to_data (example:../data)"
-         << "arg[1]: learning rate (example:0.01)" << endl;
+    cerr << "Usage : " << argv[0] << " path_to_data (example:../data)"
+         << " learning rate (example:0.01)" << endl;
     return -1;
   }
   train_cifar10(argv[1], stod(argv[2]), cout);
