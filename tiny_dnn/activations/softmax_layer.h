@@ -45,5 +45,9 @@ class softmax_layer : public activation_layer {
       dx[j] = vectorize::dot(&dy[0], &df[0], len);
     }
   }
+
+  std::pair<float_t, float_t> scale() const override {
+    return std::make_pair(float_t(0), float_t(1));
+  }
 };
 }  // namespace tiny_dnn

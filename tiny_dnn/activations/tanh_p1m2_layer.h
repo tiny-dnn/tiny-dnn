@@ -34,5 +34,9 @@ class tanh_p1m2_layer : public activation_layer {
       dx[j] = dy[j] * (2 * y[j] * (float_t(1) - y[j]));
     }
   }
+
+  std::pair<float_t, float_t> scale() const override {
+    return std::make_pair(float_t(0.1), float_t(0.9));
+  }
 };
 }  // namespace tiny_dnn

@@ -101,6 +101,11 @@ class activation_layer : public layer {
                                    vec_t &dx,
                                    const vec_t &dy) = 0;
 
+  /**
+   * Target value range for learning.
+   */
+  virtual std::pair<float_t, float_t> scale() const = 0;
+
  private:
   shape3d in_shape_;
 };
