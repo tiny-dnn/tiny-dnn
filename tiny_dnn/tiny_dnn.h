@@ -92,11 +92,9 @@ using max_pool = tiny_dnn::max_pooling_layer<T>;
 template <class T>
 using ave_pool = tiny_dnn::average_pooling_layer<T>;
 
-template <class T>
-using fc = tiny_dnn::fully_connected_layer<T>;
+using fc = tiny_dnn::fully_connected_layer;
 
-template <class T>
-using dense = tiny_dnn::fully_connected_layer<T>;
+using dense = tiny_dnn::fully_connected_layer;
 
 using add = tiny_dnn::elementwise_add_layer;
 
