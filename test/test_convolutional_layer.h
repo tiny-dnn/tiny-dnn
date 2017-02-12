@@ -715,7 +715,7 @@ TEST(convolutional,
      gradient_check12_pad_same) {  // sigmoid - mse - padding same
   network<sequential> nn;
 
-  nn << fully_connected_layer<identity>(10, 5 * 5)
+  nn << fully_connected_layer(10, 5 * 5)
      << convolutional_layer<sigmoid>(5, 5, 3, 1, 1, padding::same, true, 1, 1,
                                      core::backend_t::internal);
 

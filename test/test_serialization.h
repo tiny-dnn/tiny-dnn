@@ -495,9 +495,9 @@ TEST(serialization, serialize_tanh_p1m2) {
 TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer<tan_h>(10, 100)
+  net1 << fully_connected_layer(10, 100) << tanh_layer(100)
        << dropout_layer(100, 0.3f, net_phase::test)
-       << fully_connected_layer<softmax>(100, 9)
+       << fully_connected_layer(100, 9) << softmax_layer(9)
        << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
 
   auto json = net1.to_json();
@@ -524,7 +524,7 @@ TEST(serialization, sequential_to_json) {
 TEST(serialization, sequential_model) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer<tan_h>(10, 16)
+  net1 << fully_connected_layer(10, 16) << tanh_layer(16)
        << average_pooling_layer<relu>(4, 4, 1, 2)
        << power_layer(shape3d(2, 2, 1), 0.5f);
 
@@ -601,13 +601,18 @@ TEST(serialization, graph_model_and_weights) {
   network<graph> net1, net2;
   vec_t in = {1, 2, 3};
 
-  fully_connected_layer<tan_h> f1(3, 4);
+  fully_connected_layer f1(3, 4);
+  tanh_layer a1(4);
   slice_layer s1(shape3d(2, 1, 2), slice_type::slice_channels, 2);
-  fully_connected_layer<softmax> f2(2, 2);
-  fully_connected_layer<elu> f3(2, 2);
+  fully_connected_layer f2(2, 2);
+  softmax_layer a2(2);
+  fully_connected_layer f3(2, 2);
+  elu_layer a3(2);
   elementwise_add_layer c4(2, 2);
 
-  f1 << s1;
+  f1 << a1 << s1;
+  f2 << a2;
+  f3 << a3;
   s1 << (f2, f3) << c4;
 
   construct_graph(net1, {&f1}, {&c4});

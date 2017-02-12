@@ -16,7 +16,7 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-class fully_connected_layer : layer {
+class fully_connected_layer : public layer {
  public:
   using layer::parallelize_;
 
