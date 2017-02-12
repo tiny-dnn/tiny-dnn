@@ -422,10 +422,11 @@ TEST(network, gradient_check3) {  // mixture - mse
 
   // TODO: (karandesai) adopt this in all the tests gradually
   network nn;
-  nn << fully_connected_layer<tan_h>(10, 14 * 14 * 3)
-     << convolutional_layer<sigmoid>(14, 14, 5, 3, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2)
-     << relu_layer(shape3d(5, 5, 6))
+  nn << fully_connected_layer<identity>(10, 14 * 14 * 3)
+     << tanh_layer(14 * 14 * 3)
+     << convolutional_layer<identity>(14, 14, 5, 3, 6)
+     << sigmoid_layer(10, 10, 6)
+     << average_pooling_layer<identity>(10, 10, 6, 2) << relu_layer(5, 5, 6)
      << fully_connected_layer<identity>(5 * 5 * 6, 3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -453,14 +454,17 @@ TEST(network, gradient_check4) {  // sigmoid - cross-entropy
 
 TEST(network, gradient_check5) {  // softmax - cross-entropy
   typedef cross_entropy loss_func;
-  typedef softmax activation;
   typedef network<sequential> network;
+  using activation_layer = softmax_layer;
 
   network nn;
-  nn << fully_connected_layer<activation>(10, 14 * 14 * 3)
-     << convolutional_layer<activation>(14, 14, 5, 3, 6)
-     << average_pooling_layer<activation>(10, 10, 6, 2)
-     << fully_connected_layer<activation>(5 * 5 * 6, 3);
+  nn << fully_connected_layer<identity>(10, 14 * 14 * 3)
+     << activation_layer(14 * 14 * 3)
+     << convolutional_layer<identity>(14, 14, 5, 3, 6)
+     << activation_layer(10, 10, 6)
+     << average_pooling_layer<identity>(10, 10, 6, 2)
+     << activation_layer(5, 5, 6)
+     << fully_connected_layer<identity>(5 * 5 * 6, 3) << activation_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -485,7 +489,7 @@ TEST(network, gradient_check6) {  // sigmoid - cross-entropy
 
 TEST(network, gradient_check7) {  // leaky-relu - mse
   typedef mse loss_func;
-  typedef leaky_relu activation;
+  typedef leaky_relu_layer activation;
 
   auto nn = make_mlp<activation>({3, 201, 2});
 
@@ -504,7 +508,7 @@ TEST(network, gradient_check7) {  // leaky-relu - mse
 
 TEST(network, gradient_check8) {  // elu - mse
   typedef mse loss_func;
-  typedef elu activation;
+  typedef elu_layer activation;
 
   auto nn = make_mlp<activation>({3, 201, 2});
 
@@ -524,7 +528,7 @@ TEST(network, gradient_check8) {  // elu - mse
 
 TEST(network, gradient_check9) {  // tan_hp1m2 - mse
   typedef mse loss_func;
-  typedef tan_hp1m2 activation;
+  typedef tanh_p1m2_layer activation;
 
   auto nn = make_mlp<activation>({3, 201, 2});
 
@@ -590,30 +594,31 @@ TEST(network, read_write) {
 }
 
 TEST(network, trainable) {
-  auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
+  auto net =
+    make_mlp<sigmoid_layer>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
 
   // trainable=false, or "freeze" 2nd layer fc(3,2)
-  net[1]->set_trainable(false);
+  net[2]->set_trainable(false);
 
   vec_t w0 = {0, 1, 2, 3, 4, 5};
-  vec_t w1 = {6, 7, 8, 9, 8, 7};
-  vec_t w2 = {6, 5};
+  vec_t w2 = {6, 7, 8, 9, 8, 7};
+  vec_t w4 = {6, 5};
 
   *net[0]->weights()[0] = {0, 1, 2, 3, 4, 5};
-  *net[1]->weights()[0] = {6, 7, 8, 9, 8, 7};
-  *net[2]->weights()[0] = {6, 5};
+  *net[2]->weights()[0] = {6, 7, 8, 9, 8, 7};
+  *net[4]->weights()[0] = {6, 5};
 
   adam a;
 
   net.init_weight();
 
   auto w0_standby = *net[0]->weights()[0];
-  auto w1_standby = *net[1]->weights()[0];
   auto w2_standby = *net[2]->weights()[0];
+  auto w4_standby = *net[4]->weights()[0];
 
   EXPECT_NE(w0, w0_standby);
-  EXPECT_EQ(w1, w1_standby);
-  EXPECT_NE(w2, w2_standby);
+  EXPECT_EQ(w2, w2_standby);
+  EXPECT_NE(w4, w4_standby);
 
   std::vector<vec_t> data{{1, 0}, {0, 2}};
   std::vector<vec_t> out{{2}, {1}};
@@ -621,12 +626,12 @@ TEST(network, trainable) {
   net.fit<mse>(a, data, out, 1, 1);
 
   auto w0_after_update = *net[0]->weights()[0];
-  auto w1_after_update = *net[1]->weights()[0];
   auto w2_after_update = *net[2]->weights()[0];
+  auto w4_after_update = *net[4]->weights()[0];
 
   EXPECT_NE(w0, w0_after_update);
-  EXPECT_EQ(w1, w1_after_update);
-  EXPECT_NE(w2, w2_after_update);
+  EXPECT_EQ(w2, w2_after_update);
+  EXPECT_NE(w4, w4_after_update);
 }
 
 }  // namespace tiny-dnn

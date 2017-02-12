@@ -9,6 +9,8 @@
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/util/util.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 /**
@@ -21,7 +23,7 @@ network<sequential> make_mlp(Iter first, Iter last) {
 
   Iter next = first + 1;
   for (; next != last; ++first, ++next)
-    n << fully_connected_layer<activation>(*first, *next);
+    n << fully_connected_layer<identity>(*first, *next) << activation(*next);
   return n;
 }
 
