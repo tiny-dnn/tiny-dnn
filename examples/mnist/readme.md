@@ -318,7 +318,7 @@ Compile above code and try to pass 4.bmp, then you can get like:
 2,0.173432
 ```
 
-This means that the network predicted this image as "4", at confidence level of 78.1403%.
+This means that the network predicted this image as "4", at confidence level of 99.4535%.
 
 > Note:
 >
