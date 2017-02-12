@@ -11,15 +11,15 @@
 
 namespace tiny_dnn {
 
-class relu_layer : public activation_layer {
+class leaky_relu_layer : public activation_layer {
  public:
   using activation_layer::activation_layer;
 
-  std::string layer_type() const override { return "relu-activation"; }
+  std::string layer_type() const override { return "leaky-relu-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (serial_size_t j = 0; j < x.size(); j++) {
-      y[j] = std::max(float_t(0), x[j]);
+      y[j] = x[j] > float_t(0) ? x[j] : float_t(0.01) * x[j];
     }
   }
 
@@ -28,8 +28,8 @@ class relu_layer : public activation_layer {
                            vec_t &dx,
                            const vec_t &dy) override {
     for (serial_size_t j = 0; j < x.size(); j++) {
-      // dx = dy * (gradient of relu)
-      dx[j] = dy[j] * (y[j] > float_t(0) ? float_t(1) : float_t(0));
+      // dx = dy * (gradient of leaky relu)
+      dx[j] = dy[j] * (y[j] > float_t(0) ? float_t(1) : float_t(0.01));
     }
   }
 

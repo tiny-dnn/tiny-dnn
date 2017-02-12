@@ -36,7 +36,13 @@
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
 
+#include "tiny_dnn/activations/elu_layer.h"
+#include "tiny_dnn/activations/leaky_relu_layer.h"
 #include "tiny_dnn/activations/relu_layer.h"
+#include "tiny_dnn/activations/sigmoid_layer.h"
+#include "tiny_dnn/activations/softmax_layer.h"
+#include "tiny_dnn/activations/tanh_layer.h"
+#include "tiny_dnn/activations/tanh_p1m2_layer.h"
 
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
