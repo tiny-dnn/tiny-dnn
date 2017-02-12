@@ -1,5 +1,5 @@
 /*
-    Copyright (c) 2017, Taiga Nomi, Karan Desai
+    Copyright (c) 2017, Taiga Nomi
     All rights reserved.
 
     Use of this source code is governed by a BSD-style license that can be found
@@ -53,7 +53,7 @@ class activation_layer : public layer {
   std::vector<shape3d> out_shape() const override { return {in_shape_}; }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) {
+                           std::vector<tensor_t *> &out_data) override {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
 
@@ -100,6 +100,11 @@ class activation_layer : public layer {
                                    const vec_t &y,
                                    vec_t &dx,
                                    const vec_t &dy) = 0;
+
+  /**
+   * Target value range for learning.
+   */
+  virtual std::pair<float_t, float_t> scale() const = 0;
 
  private:
   shape3d in_shape_;
