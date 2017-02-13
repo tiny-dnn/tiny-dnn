@@ -50,6 +50,48 @@ TEST(fully_connected, train) {
   EXPECT_NEAR(predicted[1], t2[1], 1E-5);
 }
 
+TEST(fully_connected, train_different_batches) {
+  auto batch_sizes = {2, 7, 11, 16};
+  for (auto &batch_sz : batch_sizes) {
+    std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
+    network<sequential> nn;
+    adagrad optimizer;
+
+    nn << fully_connected_layer<sigmoid>(3, 2);
+
+    vec_t a(3), t(2), a2(3), t2(2);
+
+    // clang-format off
+    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
+    t[0] = 0.3f; t[1] = 0.7f;
+
+    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
+    t2[0] = 0.5f; t2[1] = 0.1f;
+    // clang-format on
+
+    std::vector<vec_t> data, train;
+
+    for (int i = 0; i < batch_sz * 10; i++) {
+      data.push_back(a);
+      data.push_back(a2);
+      train.push_back(t);
+      train.push_back(t2);
+    }
+    optimizer.alpha = 0.1f;
+    nn.train<mse>(optimizer, data, train, batch_sz, 10);
+
+    vec_t predicted = nn.predict(a);
+
+    EXPECT_NEAR(predicted[0], t[0], 1E-5);
+    EXPECT_NEAR(predicted[1], t[1], 1E-5);
+
+    predicted = nn.predict(a2);
+
+    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
+    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+  }
+}
+
 TEST(fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;

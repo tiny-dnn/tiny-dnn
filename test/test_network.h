@@ -253,6 +253,61 @@ TEST(network, train_predict) {
   }
 }
 
+TEST(network, train_predict_different_batches) {
+  auto batch_sizes = {2, 7, 11, 16};
+  for (auto &batch_sz : batch_sizes) {
+    std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
+    // train xor function
+    network<sequential> net;
+    adagrad optimizer;
+
+    std::vector<vec_t> data;
+    std::vector<label_t> label;
+    size_t tnum = batch_sz * 30;
+
+    optimizer.alpha *= 10;
+
+    for (size_t i = 0; i < tnum; i++) {
+      bool in[2] = {bernoulli(0.5), bernoulli(0.5)};
+      data.push_back(
+        {static_cast<float_t>(in[0]), static_cast<float_t>(in[1])});
+      label.push_back((in[0] ^ in[1]) ? 1 : 0);
+    }
+
+    net << fully_connected_layer<tan_h>(2, 10)
+        << fully_connected_layer<tan_h>(10, 2);
+
+    net.train<mse>(optimizer, data, label, batch_sz, 10);
+
+    std::vector<tensor_t> parallel_input(tnum);
+    std::vector<tensor_t> expected_parallel_output(tnum);
+
+    for (size_t i = 0; i < tnum; i++) {
+      const bool in[2]       = {bernoulli(0.5), bernoulli(0.5)};
+      const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+      const vec_t input      = {static_cast<float_t>(in[0]),
+                           static_cast<float_t>(in[1])};
+      const label_t actual = net.predict_label(input);
+      EXPECT_EQ(expected, actual);
+
+      const auto actual_vec = net.predict(input);
+      EXPECT_EQ(expected == 1, actual_vec[1] > actual_vec[0]);
+
+      parallel_input[i]           = tensor_t{input};
+      expected_parallel_output[i] = tensor_t{actual_vec};
+    }
+
+    // test predicting multiple samples in parallel
+    const auto actual_parallel_output = net.predict(parallel_input);
+    for (size_t i = 0; i < tnum; i++) {
+      EXPECT_NEAR(expected_parallel_output[i][0][0],
+                  actual_parallel_output[i][0][0], 1e-10);
+      EXPECT_NEAR(expected_parallel_output[i][0][1],
+                  actual_parallel_output[i][0][1], 1e-10);
+    }
+  }
+}
+
 TEST(network, set_netphase) {
   // TODO: add unit-test for public api
 }
