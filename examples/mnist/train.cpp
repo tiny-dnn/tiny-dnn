@@ -82,7 +82,8 @@ static void train_lenet(const std::string& data_dir_path) {
   int minibatch_size = 16;
   int num_epochs     = 30;
 
-  optimizer.alpha *= static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size));
+  optimizer.alpha *= std::min(
+    float_t(4), static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size)));
 
   // create callback
   auto on_enumerate_epoch = [&]() {
