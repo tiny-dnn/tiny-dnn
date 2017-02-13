@@ -16,8 +16,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::elementwise_add_layer>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::elementwise_add_layer> &construct) {
     tiny_dnn::serial_size_t num_args, dim;
 
     ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
@@ -29,8 +29,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::average_pooling_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::average_pooling_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::average_pooling_layer<Activation>> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -50,8 +50,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::batch_normalization_layer>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::batch_normalization_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t in_spatial_size, in_channels;
     tiny_dnn::float_t eps, momentum;
@@ -73,7 +73,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::concat_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar, cereal::construct<tiny_dnn::concat_layer>& construct) {
+    Archive &ar, cereal::construct<tiny_dnn::concat_layer> &construct) {
     std::vector<tiny_dnn::shape3d> in_shapes;
 
     ar(cereal::make_nvp("in_size", in_shapes));
@@ -85,8 +85,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::convolutional_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::convolutional_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::convolutional_layer<Activation>> &construct) {
     tiny_dnn::serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -112,7 +112,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar, cereal::construct<tiny_dnn::dropout_layer>& construct) {
+    Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
     tiny_dnn::net_phase phase;
     tiny_dnn::float_t dropout_rate;
     tiny_dnn::serial_size_t in_size;
@@ -128,8 +128,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::fully_connected_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::fully_connected_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::fully_connected_layer<Activation>> &construct) {
     tiny_dnn::serial_size_t in_dim, out_dim;
     bool has_bias;
 
@@ -144,8 +144,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::linear_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::linear_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::linear_layer<Activation>> &construct) {
     tiny_dnn::serial_size_t dim;
     tiny_dnn::float_t scale, bias;
 
@@ -160,8 +160,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::lrn_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::lrn_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::lrn_layer<Activation>> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::serial_size_t size;
     tiny_dnn::float_t alpha, beta;
@@ -178,8 +178,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::max_pooling_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::max_pooling_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::max_pooling_layer<Activation>> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -199,8 +199,8 @@ template <typename Activation>
 struct LoadAndConstruct<tiny_dnn::max_unpooling_layer<Activation>> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar,
-    cereal::construct<tiny_dnn::max_unpooling_layer<Activation>>& construct) {
+    Archive &ar,
+    cereal::construct<tiny_dnn::max_unpooling_layer<Activation>> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride, unpool_size;
 
@@ -215,7 +215,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::power_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar, cereal::construct<tiny_dnn::power_layer>& construct) {
+    Archive &ar, cereal::construct<tiny_dnn::power_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t factor;
     tiny_dnn::float_t scale(1.0f);
@@ -230,7 +230,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::slice_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive& ar, cereal::construct<tiny_dnn::slice_layer>& construct) {
+    Archive &ar, cereal::construct<tiny_dnn::slice_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::slice_type slice_type;
     tiny_dnn::serial_size_t num_outputs;
@@ -313,8 +313,8 @@ namespace tiny_dnn {
 
 struct serialization_buddy {
   template <class Archive>
-  static inline void serialize(Archive& ar,
-                               tiny_dnn::elementwise_add_layer& layer) {
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::elementwise_add_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("num_args", layer.num_args_),
        cereal::make_nvp("dim", layer.dim_));
@@ -322,7 +322,7 @@ struct serialization_buddy {
 
   template <class Archive, typename Activation>
   static inline void serialize(
-    Archive& ar, tiny_dnn::average_pooling_layer<Activation>& layer) {
+    Archive &ar, tiny_dnn::average_pooling_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("pool_size_x", layer.pool_size_x_),
@@ -333,8 +333,8 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive& ar,
-                               tiny_dnn::batch_normalization_layer& layer) {
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::batch_normalization_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_spatial_size", layer.in_spatial_size_),
        cereal::make_nvp("in_channels", layer.in_channels_),
@@ -346,16 +346,16 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive& ar, tiny_dnn::concat_layer& layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
     layer.serialize_prolog(ar);
     ar(layer.in_shapes_);
   }
 
   template <class Archive, typename Activation>
   static inline void serialize(
-    Archive& ar, tiny_dnn::convolutional_layer<Activation>& layer) {
+    Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
+    auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in),
        cereal::make_nvp("window_width", params_.weight.width_),
        cereal::make_nvp("window_height", params_.weight.height_),
@@ -368,7 +368,7 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive& ar, tiny_dnn::dropout_layer& layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::dropout_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_size_),
        cereal::make_nvp("dropout_rate", layer.dropout_rate_),
@@ -377,17 +377,17 @@ struct serialization_buddy {
 
   template <class Archive, typename Activation>
   static inline void serialize(
-    Archive& ar, tiny_dnn::fully_connected_layer<Activation>& layer) {
+    Archive &ar, tiny_dnn::fully_connected_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
+    auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in_size_),
        cereal::make_nvp("out_size", params_.out_size_),
        cereal::make_nvp("has_bias", params_.has_bias_));
   }
 
   template <class Archive, typename Activation>
-  static inline void serialize(Archive& ar,
-                               tiny_dnn::linear_layer<Activation>& layer) {
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::linear_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.dim_),
        cereal::make_nvp("scale", layer.scale_),
@@ -395,8 +395,8 @@ struct serialization_buddy {
   }
 
   template <class Archive, typename Activation>
-  static inline void serialize(Archive& ar,
-                               tiny_dnn::lrn_layer<Activation>& layer) {
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::lrn_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_shape", layer.in_shape_),
        cereal::make_nvp("size", layer.size_),
@@ -406,10 +406,10 @@ struct serialization_buddy {
   }
 
   template <class Archive, typename Activation>
-  static inline void serialize(Archive& ar,
-                               tiny_dnn::max_pooling_layer<Activation>& layer) {
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::max_pooling_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
-    auto& params_ = layer.params_;
+    auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in),
        cereal::make_nvp("pool_size_x", params_.pool_size_x),
        cereal::make_nvp("pool_size_y", params_.pool_size_y),
@@ -420,7 +420,7 @@ struct serialization_buddy {
 
   template <class Archive, typename Activation>
   static inline void serialize(
-    Archive& ar, tiny_dnn::max_unpooling_layer<Activation>& layer) {
+    Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("unpool_size", layer.unpool_size_),
@@ -428,7 +428,7 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive& ar, tiny_dnn::power_layer& layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape_),
        cereal::make_nvp("factor", layer.factor_),
@@ -436,7 +436,7 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive& ar, tiny_dnn::slice_layer& layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape_),
        cereal::make_nvp("slice_type", layer.slice_type_),
@@ -445,74 +445,74 @@ struct serialization_buddy {
 };
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::elementwise_add_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::elementwise_add_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar,
-               tiny_dnn::average_pooling_layer<Activation>& layer) {
+void serialize(Archive &ar,
+               tiny_dnn::average_pooling_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::batch_normalization_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::batch_normalization_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::concat_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar, tiny_dnn::convolutional_layer<Activation>& layer) {
+void serialize(Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::dropout_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::dropout_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar,
-               tiny_dnn::fully_connected_layer<Activation>& layer) {
+void serialize(Archive &ar,
+               tiny_dnn::fully_connected_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar, tiny_dnn::linear_layer<Activation>& layer) {
+void serialize(Archive &ar, tiny_dnn::linear_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar, tiny_dnn::lrn_layer<Activation>& layer) {
+void serialize(Archive &ar, tiny_dnn::lrn_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar, tiny_dnn::max_pooling_layer<Activation>& layer) {
+void serialize(Archive &ar, tiny_dnn::max_pooling_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename Activation>
-void serialize(Archive& ar, tiny_dnn::max_unpooling_layer<Activation>& layer) {
+void serialize(Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::power_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::slice_layer& layer) {
+void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename T>
-void serialize(Archive& ar, tiny_dnn::index3d<T>& idx) {
+void serialize(Archive &ar, tiny_dnn::index3d<T> &idx) {
   ar(cereal::make_nvp("width", idx.width_),
      cereal::make_nvp("height", idx.height_),
      cereal::make_nvp("depth", idx.depth_));
@@ -521,7 +521,7 @@ void serialize(Archive& ar, tiny_dnn::index3d<T>& idx) {
 namespace core {
 
 template <class Archive>
-void serialize(Archive& ar, tiny_dnn::core::connection_table& tbl) {
+void serialize(Archive &ar, tiny_dnn::core::connection_table &tbl) {
   ar(cereal::make_nvp("rows", tbl.rows_), cereal::make_nvp("cols", tbl.cols_));
   if (tbl.is_empty()) {
     ar(cereal::make_nvp("connection", std::string("all")));

@@ -59,3 +59,6 @@ endif()
 if(PROTO_CPP_GENERATE)
     add_dependencies(tiny_dnn_test generated_proto)
 endif()
+
+### Clang-tidy check
+include(../cmake/clang-cxx-dev-tools.cmake)
