@@ -317,6 +317,31 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(net[0]->out_shape()[1], shape3d(3, 2, 1));
 }
 
+TEST(serialization, serialize_relu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "relu",
+                "in_size" : {
+                    "width": 20,
+                    "height" : 20,
+                    "depth" : 10
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "relu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 20, 10));
+}
+
 TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
