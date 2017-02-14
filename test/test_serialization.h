@@ -317,14 +317,39 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(net[0]->out_shape()[1], shape3d(3, 2, 1));
 }
 
-TEST(serialization, serialize_relu) {
+TEST(serialization, serialize_sigmoid) {
   network<sequential> net;
 
   std::string json = R"(
     {
         "nodes": [
             {
-                "type": "relu",
+                "type": "sigmoid",
+                "in_size" : {
+                    "width": 3,
+                    "height" : 2,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "sigmoid-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 2, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 2, 1));
+}
+
+TEST(serialization, serialize_tanh) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "tanh",
                 "in_size" : {
                     "width": 20,
                     "height" : 20,
@@ -337,9 +362,109 @@ TEST(serialization, serialize_relu) {
 
   net.from_json(json);
 
-  EXPECT_EQ(net[0]->layer_type(), "relu-activation");
+  EXPECT_EQ(net[0]->layer_type(), "tanh-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 20, 10));
+}
+
+TEST(serialization, serialize_softmax) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "softmax",
+                "in_size" : {
+                    "width": 1000,
+                    "height" : 1,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "softmax-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(1000, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(1000, 1, 1));
+}
+
+TEST(serialization, serialize_leaky_relu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "leaky_relu",
+                "in_size" : {
+                    "width": 256,
+                    "height" : 256,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "leaky-relu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(256, 256, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(256, 256, 1));
+}
+
+TEST(serialization, serialize_elu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "elu",
+                "in_size" : {
+                    "width": 10,
+                    "height" : 10,
+                    "depth" : 3
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "elu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+}
+
+TEST(serialization, serialize_tanh_p1m2) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "tanh_scaled",
+                "in_size" : {
+                    "width": 5,
+                    "height" : 10,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "tanh-scaled-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
 }
 
 TEST(serialization, sequential_to_json) {
