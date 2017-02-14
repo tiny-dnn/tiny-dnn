@@ -367,6 +367,31 @@ TEST(serialization, serialize_tanh) {
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 20, 10));
 }
 
+TEST(serialization, serialize_relu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "relu",
+                "in_size" : {
+                    "width": 1,
+                    "height" : 128,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "relu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(1, 128, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(1, 128, 1));
+}
+
 TEST(serialization, serialize_softmax) {
   network<sequential> net;
 
@@ -519,10 +544,38 @@ TEST(serialization, sequential_model) {
 
 TEST(serialization, sequential_weights) {
   network<sequential> net1, net2;
+  vec_t data = {1, 2, 3, 4, 5, 6};
+
+  net1 << fully_connected_layer<identity>(6, 6) << sigmoid_layer(6)
+       << fully_connected_layer<identity>(6, 4) << tanh_layer(4)
+       << fully_connected_layer<identity>(4, 2) << relu_layer(2)
+       << fully_connected_layer<identity>(2, 2) << softmax_layer(2);
+
+  net1.init_weight();
+  net1.set_netphase(net_phase::test);
+
+  auto path = unique_path();
+  net1.save(path, content_type::weights_and_model);
+
+  net2.load(path, content_type::weights_and_model);
+
+  auto res1 = net1.predict(data);
+  auto res2 = net2.predict(data);
+
+  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3f));
+
+  for (int i = 0; i < 2; i++) {
+    EXPECT_FLOAT_EQ(res1[i], res2[i]);
+  }
+}
+
+TEST(serialization, sequential_weights2) {
+  network<sequential> net1, net2;
   vec_t data = {1, 2, 3, 4, 5, 0};
 
   net1 << batch_normalization_layer(3, 2, 0.01f, 0.99f, net_phase::train)
-       << linear_layer<elu>(3 * 2, 2.0f, 0.5f);
+       << linear_layer<identity>(3 * 2, 2.0f, 0.5f) << elu_layer(6)
+       << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu_layer(6);
 
   net1.init_weight();
   net1.at<batch_normalization_layer>(0).update_immidiately(true);
