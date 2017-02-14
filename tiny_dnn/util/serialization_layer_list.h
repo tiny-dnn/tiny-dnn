@@ -15,4 +15,6 @@ CNN_REGISTER_LAYER(power_layer, power);
 CNN_REGISTER_LAYER(slice_layer, slice);
 CNN_REGISTER_LAYER(elementwise_add_layer, elementwise_add);
 
+CNN_REGISTER_LAYER(relu_layer, relu);
+
 #endif
