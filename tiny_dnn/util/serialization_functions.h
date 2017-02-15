@@ -124,12 +124,12 @@ struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::fully_connected_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive& ar,
-    cereal::construct<tiny_dnn::fully_connected_layer<Activation>>& construct) {
+    cereal::construct<tiny_dnn::fully_connected_layer>& construct) {
     tiny_dnn::serial_size_t in_dim, out_dim;
     bool has_bias;
 
@@ -356,9 +356,9 @@ struct specialize<Archive,
                   tiny_dnn::dropout_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::fully_connected_layer<Activation>,
+                  tiny_dnn::fully_connected_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive, typename Activation>
@@ -494,9 +494,9 @@ struct serialization_buddy {
        cereal::make_nvp("phase", layer.phase_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive& ar, tiny_dnn::fully_connected_layer<Activation>& layer) {
+  template <class Archive>
+  static inline void serialize(Archive& ar,
+                               tiny_dnn::fully_connected_layer& layer) {
     layer.serialize_prolog(ar);
     auto& params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in_size_),
@@ -636,9 +636,8 @@ void serialize(Archive& ar, tiny_dnn::dropout_layer& layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive& ar,
-               tiny_dnn::fully_connected_layer<Activation>& layer) {
+template <class Archive>
+void serialize(Archive& ar, tiny_dnn::fully_connected_layer& layer) {
   serialization_buddy::serialize(ar, layer);
 }
 

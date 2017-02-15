@@ -54,13 +54,13 @@ class fully_connected_layer : public layer {
               index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),
               index3d<serial_size_t>(params_.out_size_, 1, 1)};
     } else {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1)};
+      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
+              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1)};
     }
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1),
-            index3d<serial_size_t>(params_.out_size_, 1, 1)};
+    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
