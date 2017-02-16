@@ -15,4 +15,12 @@ CNN_REGISTER_LAYER(power_layer, power);
 CNN_REGISTER_LAYER(slice_layer, slice);
 CNN_REGISTER_LAYER(elementwise_add_layer, elementwise_add);
 
+CNN_REGISTER_LAYER(sigmoid_layer, sigmoid);
+CNN_REGISTER_LAYER(tanh_layer, tanh);
+CNN_REGISTER_LAYER(relu_layer, relu);
+CNN_REGISTER_LAYER(softmax_layer, softmax);
+CNN_REGISTER_LAYER(leaky_relu_layer, leaky_relu);
+CNN_REGISTER_LAYER(elu_layer, elu);
+CNN_REGISTER_LAYER(tanh_p1m2_layer, tanh_scaled);
+
 #endif
