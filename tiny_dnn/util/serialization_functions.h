@@ -242,6 +242,90 @@ struct LoadAndConstruct<tiny_dnn::slice_layer> {
   }
 };
 
+template <>
+struct LoadAndConstruct<tiny_dnn::sigmoid_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::sigmoid_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::tanh_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::tanh_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::relu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::relu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::softmax_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::softmax_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::leaky_relu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::elu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::tanh_p1m2_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::tanh_p1m2_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
 template <class Archive>
 struct specialize<Archive,
                   tiny_dnn::elementwise_add_layer,
@@ -305,6 +389,41 @@ struct specialize<Archive,
 template <class Archive>
 struct specialize<Archive,
                   tiny_dnn::slice_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::sigmoid_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::tanh_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::relu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::softmax_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::leaky_relu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::elu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::tanh_p1m2_layer,
                   cereal::specialization::non_member_serialize> {};
 
 }  // namespace cereal
@@ -442,6 +561,48 @@ struct serialization_buddy {
        cereal::make_nvp("slice_type", layer.slice_type_),
        cereal::make_nvp("num_outputs", layer.num_outputs_));
   }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
 };
 
 template <class Archive>
@@ -508,6 +669,41 @@ void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
 
 template <class Archive>
 void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
