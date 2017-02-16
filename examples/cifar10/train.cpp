@@ -49,9 +49,8 @@ void construct_net(N &nn) {
      << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
      << pool(16, 16, n_fmaps, 2)
      << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
-     << pool(8, 8, n_fmaps2, 2)
-     << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-     << fully_connected_layer<softmax>(n_fc, 10);
+     << pool(8, 8, n_fmaps2, 2) << fully_connected_layer(4 * 4 * n_fmaps2, n_fc)
+     << fully_connected_layer(n_fc, 10) << softmax_layer(10);
 }
 
 void train_cifar10(string data_dir_path, double learning_rate, ostream &log) {
