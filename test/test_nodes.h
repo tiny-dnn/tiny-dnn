@@ -25,7 +25,7 @@ TEST(nodes, graph_no_branch) {
   // declare nodes
   auto in = std::make_shared<input_layer>(shape3d(8, 8, 1));
 
-  auto cnn = std::make_shared<convolutional_layer<tan_h>>(8, 8, 3, 1, 4);
+  auto cnn = std::make_shared<convolutional_layer>(8, 8, 3, 1, 4);
 
   auto pool = std::make_shared<average_pooling_layer<tan_h>>(6, 6, 4, 2);
 
