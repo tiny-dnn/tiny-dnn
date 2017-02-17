@@ -596,7 +596,7 @@ inline std::shared_ptr<layer> create_convlayer(
   const caffe::LayerParameter &layer,
   const shape_t &bottom_shape,
   shape_t *top_shape) {
-  using conv_layer = convolutional_layer<activation::identity>;
+  using conv_layer = convolutional_layer;
 
   if (!layer.has_convolution_param()) {
     throw nn_error("convolution param missing");

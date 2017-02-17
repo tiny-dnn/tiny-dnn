@@ -61,14 +61,15 @@ void sample1_convnet(const string& data_dir) {
 #undef O
 #undef X
 
-  nn << convolutional_layer<tan_h>(32, 32, 5, 1,
-                                   6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
+  nn << convolutional_layer(32, 32, 5, 1,
+                            6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
+     << tanh_layer(28, 28, 6)
      << average_pooling_layer<tan_h>(28, 28, 6,
                                      2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
-     << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-                                   connection_table(connection, 6, 16))
-     << average_pooling_layer<tan_h>(10, 10, 16, 2)
-     << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
+     << convolutional_layer(14, 14, 5, 6, 16,
+                            connection_table(connection, 6, 16))
+     << tanh_layer(10, 10, 16) << average_pooling_layer<tan_h>(10, 10, 16, 2)
+     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
      << fully_connected_layer(120, 10) << tanh_layer(10);
 
   std::cout << "load models..." << std::endl;
@@ -209,19 +210,19 @@ void sample3_dae() {
 // dropout-learning
 
 void sample4_dropout(const string& data_dir) {
-  typedef network<sequential> Network;
-  Network nn;
+  using network = network<sequential>;
+  network nn;
   serial_size_t input_dim    = 28 * 28;
   serial_size_t hidden_units = 800;
   serial_size_t output_dim   = 10;
   gradient_descent optimizer;
 
   fully_connected_layer f1(input_dim, hidden_units);
-  tanh_layer t1(hidden_units);
+  tanh_layer th1(hidden_units);
   dropout_layer dropout(hidden_units, 0.5);
   fully_connected_layer f2(hidden_units, output_dim);
-  tanh_layer t2(output_dim);
-  nn << f1 << t1 << dropout << f2 << t2;
+  tanh_layer th2(output_dim);
+  nn << f1 << th1 << dropout << f2 << th2;
 
   optimizer.alpha  = 0.003;  // TODO(nyanp): not optimized
   optimizer.lambda = 0.0;
