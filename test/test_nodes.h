@@ -17,7 +17,8 @@ namespace tiny_dnn {
 TEST(nodes, sequential) {
   network<sequential> nn;
 
-  nn << fc<tan_h>(10, 100) << fc<softmax>(100, 10);
+  nn << fully_connected_layer(10, 100) << tanh_layer(100)
+     << fully_connected_layer(100, 10) << softmax_layer(10);
 }
 
 TEST(nodes, graph_no_branch) {

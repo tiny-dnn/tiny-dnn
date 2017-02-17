@@ -32,8 +32,9 @@ nn << conv(32, 32, 5, 3, n_fmaps, padding::same)
     << pool(16, 16, n_fmaps, 2)
     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
     << pool(8, 8, n_fmaps2, 2)
-    << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-    << fully_connected_layer<softmax>(n_fc, 10);
+    << fully_connected_layer(4 * 4 * n_fmaps2, n_fc)
+    << fully_connected_layer(n_fc, 10)
+    << softmax_layer(10);
 
 ```
 
@@ -72,14 +73,14 @@ using namespace tiny_dnn::activation;
 
 template <typename N>
 void construct_net(N &nn, core::backend_t backend_type) {
-  typedef convolutional_layer<activation::identity> conv;
-  typedef max_pooling_layer<relu> pool;
+  using conv = convolutional_layer;
+  using pool = max_pooling_layer<relu>;
+  using fc   = fully_connected_layer;
+  using softmax = softmax_layer;
 
-  const serial_size_t n_fmaps = 32;  ///< number of feature maps for upper layer
-  const serial_size_t n_fmaps2 =
-    64;  ///< number of feature maps for lower layer
-  const serial_size_t n_fc =
-    64;  ///< number of hidden units in fully-connected layer
+  const serial_size_t n_fmaps = 32;  // number of feature maps for upper layer
+  const serial_size_t n_fmaps2 = 64;  // number of feature maps for lower layer
+  const serial_size_t n_fc = 64; // number of hidden units in fully-connected layer
 
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1, backend_type)
      << pool(32, 32, n_fmaps, 2, backend_type)
@@ -89,9 +90,8 @@ void construct_net(N &nn, core::backend_t backend_type) {
      << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
              backend_type)
      << pool(8, 8, n_fmaps2, 2, backend_type)
-     << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc,
-                                                    true, backend_type)
-     << fully_connected_layer<softmax>(n_fc, 10, true, backend_type);
+     << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)
+     << fc(n_fc, 10, true, backend_type) << softmax(10);
 }
 
 void train_cifar10(std::string data_dir_path,

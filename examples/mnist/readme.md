@@ -38,8 +38,9 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-ou
    << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
    << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
         padding::valid, true, 1, 1, backend_type)
-   << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
-        true, backend_type)
+   << fully_connected_layer(120, 10, true,         // F6, 120-in, 10-out
+        backend_type)
+   << tanh_layer(10);
 ```
 
 What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each of the feature maps gets different set of inputs (and hopefully they become complementary feature extractors).
@@ -145,9 +146,9 @@ static void construct_net(network<sequential>& nn) {
        << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
        << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
             padding::valid, true, 1, 1, backend_type)
-       << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
-            true, backend_type)
-    ;
+       << fully_connected_layer(120, 10, true          // F6, 120-in, 10-out
+            backend_type)
+       << tanh_layer(10);
 }
 
 static void train_lenet(const std::string& data_dir_path) {
