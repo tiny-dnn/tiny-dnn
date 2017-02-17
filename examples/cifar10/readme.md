@@ -1,7 +1,7 @@
 # Cifar-10 Classification Example
 
 [Cifar-10](http://www.cs.toronto.edu/~kriz/cifar.html) is a common dataset for object classification.
-The problem is to classify 32x32 RGB (thus 32x32x3=1024 dimensions) image into 10 classes:
+The problem is to classify 32x32 RGB (thus 32x32x3=3072 dimensions) image into 10 classes:
 airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. 
 
 This problem is more complex than [MNIST](http://yann.lecun.com/exdb/mnist/) classification task.
