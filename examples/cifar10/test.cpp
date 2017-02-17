@@ -20,12 +20,12 @@ void convert_image(const std::string &imagefilename,
                    vec_t &data) {
   image<> img(imagefilename, image_type::rgb);
   image<> resized = resize_image(img, w, h);
-  data.resize(w * h * 3);
-  for (int c = 0; c < 3; ++c) {
-    for (int y = 0; y < w; ++y) {
-      for (int x = 0; x < h; ++x) {
-        data[c * w * h + y * w + x] =
-          (maxv - minv) * (resized[y * w + x + c]) / 255.0 + minv;
+  data.resize(resized.width() * resized.height() * resized.depth());
+  for (size_t c = 0; c < resized.depth(); ++c) {
+    for (size_t y = 0; y < resized.height(); ++y) {
+      for (size_t x = 0; x < resized.width(); ++x) {
+        data[c * resized.width() * resized.height() + y * resized.width() + x] =
+          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
       }
     }
   }
