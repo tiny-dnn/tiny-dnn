@@ -69,7 +69,7 @@ void sample1_convnet(const string& data_dir) {
                                    connection_table(connection, 6, 16))
      << average_pooling_layer<tan_h>(10, 10, 16, 2)
      << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
-     << fully_connected_layer<tan_h>(120, 10);
+     << fully_connected_layer(120, 10) << tanh_layer(10);
 
   std::cout << "load models..." << std::endl;
 
@@ -216,10 +216,12 @@ void sample4_dropout(const string& data_dir) {
   serial_size_t output_dim   = 10;
   gradient_descent optimizer;
 
-  fully_connected_layer<tan_h> f1(input_dim, hidden_units);
+  fully_connected_layer f1(input_dim, hidden_units);
+  tanh_layer t1(hidden_units);
   dropout_layer dropout(hidden_units, 0.5);
-  fully_connected_layer<tan_h> f2(hidden_units, output_dim);
-  nn << f1 << dropout << f2;
+  fully_connected_layer f2(hidden_units, output_dim);
+  tanh_layer t2(output_dim);
+  nn << f1 << t1 << dropout << f2 << t2;
 
   optimizer.alpha  = 0.003;  // TODO(nyanp): not optimized
   optimizer.lambda = 0.0;
