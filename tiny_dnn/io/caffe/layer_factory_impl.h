@@ -389,7 +389,7 @@ inline std::shared_ptr<layer> create_fullyconnected(
   const caffe::LayerParameter &layer,
   const shape_t &bottom_shape,
   shape_t *top_shape) {
-  using fc_layer = fully_connected_layer<activation::identity>;
+  using fc_layer = fully_connected_layer;
 
   if (!layer.has_inner_product_param()) {
     throw nn_error("inner-product param missing");

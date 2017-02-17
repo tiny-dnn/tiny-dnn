@@ -13,14 +13,15 @@
 namespace tiny_dnn {
 
 TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
-  typedef cross_entropy loss_func;
-  typedef activation::sigmoid activation;
-  typedef network<sequential> network;
+  using loss_func        = cross_entropy;
+  using activation_layer = sigmoid_layer;
+  using network          = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer<activation>(3, 4)
-     << average_unpooling_layer<activation>(2, 2, 1, 2)  // 2x2 => 4x4
-     << average_pooling_layer<activation>(4, 4, 1, 2);
+  nn << fully_connected_layer(3, 4) << activation_layer(4)
+     << average_unpooling_layer<identity>(2, 2, 1, 2)  // 2x2 => 4x4
+     << activation_layer(4, 4, 1) << average_pooling_layer<identity>(4, 4, 1, 2)
+     << activation_layer(2, 2, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
