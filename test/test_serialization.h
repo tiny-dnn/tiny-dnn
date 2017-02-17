@@ -19,7 +19,7 @@ TEST(serialization, serialize_conv) {
     {
         "nodes": [
             {
-                "type": "conv<sigmoid>",
+                "type": "conv",
                 "in_size" : {
                     "width": 20,
                     "height" : 20,
@@ -498,7 +498,7 @@ TEST(serialization, sequential_to_json) {
   net1 << fully_connected_layer(10, 100) << tanh_layer(100)
        << dropout_layer(100, 0.3f, net_phase::test)
        << fully_connected_layer(100, 9) << softmax_layer(9)
-       << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
+       << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer(1);
 
   auto json = net1.to_json();
 
