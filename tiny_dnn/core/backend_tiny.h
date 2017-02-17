@@ -28,6 +28,16 @@ class tiny_backend : public backend {
   // context should be able to hold any types of structures (like boost::any)
 
   // convolution
+  tiny_backend(conv_params *params,
+               std::function<void(const tensor_t &)> f1,
+               std::function<void(const tensor_t &, tensor_t &)> f2,
+               conv_layer_worker_specific_storage *ptr)
+    : params_c_(params),
+      conv_layer_worker_storage_(ptr),
+      copy_and_pad_input(f1),
+      copy_and_unpad_delta(f2) {}
+
+  // quantized convolution
   tiny_backend(
     conv_params *params,
     std::function<void(const tensor_t &)> f1,

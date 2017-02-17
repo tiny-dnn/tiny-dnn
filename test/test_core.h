@@ -100,8 +100,8 @@ TEST(core, add_bad_device) {
 
   Device my_gpu_device(device_t::CPU);
 
-  convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                                 backend_t::libdnn);
+  convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
+                        backend_t::libdnn);
 
   EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
 }
@@ -118,8 +118,8 @@ TEST(core, add_bad_layer) {
   if (device != device_t::NONE) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                                   backend_t::internal);
+    convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
+                          backend_t::internal);
 
     EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
   }
@@ -138,8 +138,8 @@ TEST(core, device_add_op) {
   if (device != device_t::NONE) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                                   backend_t::libdnn);
+    convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
+                          backend_t::libdnn);
 
     // max_pooling_layer<identity> l(4, 4, 1, 2, 2,
     // core::backend_t::opencl);
@@ -172,8 +172,10 @@ TEST(core, ocl_conv) {
   if (device != device_t::NONE) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
-    convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                                   backend_t::libdnn);
+    convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
+                          backend_t::libdnn);
+    sigmoid_layer sgm(3, 3, 2);
+    l << sgm;
 
     // first time op registration: OK
     my_gpu_device.registerOp(l);

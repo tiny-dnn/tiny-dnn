@@ -80,8 +80,7 @@
 namespace tiny_dnn {
 namespace layers {
 
-template <class T>
-using conv = tiny_dnn::convolutional_layer<T>;
+using conv = tiny_dnn::convolutional_layer;
 
 template <class T>
 using q_conv = tiny_dnn::quantized_convolutional_layer<T>;

@@ -81,12 +81,11 @@ struct LoadAndConstruct<tiny_dnn::concat_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::convolutional_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::convolutional_layer<Activation>> &construct) {
+    Archive& ar, cereal::construct<tiny_dnn::convolutional_layer>& construct) {
     tiny_dnn::serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -346,9 +345,9 @@ struct specialize<Archive,
                   tiny_dnn::concat_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::convolutional_layer<Activation>,
+                  tiny_dnn::convolutional_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -470,9 +469,9 @@ struct serialization_buddy {
     ar(layer.in_shapes_);
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive& ar,
+                               tiny_dnn::convolutional_layer& layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in),
@@ -626,8 +625,8 @@ void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive& ar, tiny_dnn::convolutional_layer& layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
