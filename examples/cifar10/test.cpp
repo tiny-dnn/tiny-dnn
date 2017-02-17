@@ -24,8 +24,8 @@ void convert_image(const std::string &imagefilename,
   for (int c = 0; c < 3; ++c) {
     for (int y = 0; y < w; ++y) {
       for (int x = 0; x < h; ++x) {
-        data[c * w * h + y * w + x] +=
-          (maxv - minv) * (data[y * w + x + c]) / 255.0 + minv;
+        data[c * w * h + y * w + x] =
+          (maxv - minv) * (resized[y * w + x + c]) / 255.0 + minv;
       }
     }
   }
