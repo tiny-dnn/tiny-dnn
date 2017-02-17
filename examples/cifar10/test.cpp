@@ -20,8 +20,15 @@ void convert_image(const std::string &imagefilename,
                    vec_t &data) {
   image<> img(imagefilename, image_type::rgb);
   image<> resized = resize_image(img, w, h);
-  std::transform(resized.begin(), resized.end(), std::back_inserter(data),
-                 [=](uint8_t c) { return c * (maxv - minv) / 255.0 + minv; });
+  data.resize(w * h * 3);
+  for (int c = 0; c < 3; ++c) {
+    for (int y = 0; y < w; ++y) {
+      for (int x = 0; x < h; ++x) {
+        data[c * w * h + y * w + x] +=
+          (maxv - minv) * (data[y * w + x + c]) / 255.0 + minv;
+      }
+    }
+  }
 }
 
 template <typename N>
