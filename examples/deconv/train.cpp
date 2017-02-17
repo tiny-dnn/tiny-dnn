@@ -43,10 +43,11 @@ void deconv_lanet(network<graph> &nn,
                                   connection_table(tbl, 6, 16));
   average_pooling_layer<tan_h> p2(18, 18, 16, 2);
   convolutional_layer<tan_h> c2(9, 9, 9, 16, 120);
-  fully_connected_layer<tan_h> f1(120, 10);
+  fully_connected_layer f1(120, 10);
+  tanh_layer t1(10);
 
   // connect them to graph
-  i1 << c1 << p1 << d1 << p2 << c2 << f1;
+  i1 << c1 << p1 << d1 << p2 << c2 << f1 << t1;
   construct_graph(nn, {&i1}, {&f1});
 
   std::cout << "start training" << std::endl;
@@ -155,8 +156,9 @@ void enet(network<graph> &nn,
   deconvolutional_layer<tan_h> b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
   deconvolutional_layer<tan_h> b2d2(16, 16, 1, 16, 1, padding::same, true, 2,
                                     2);
-  fully_connected_layer<tan_h> f1(32 * 32, 10);
-  b1cc1 << b2d1 << b2d2 << f1;
+  fully_connected_layer f1(32 * 32, 10);
+  tanh_layer t1(10);
+  b1cc1 << b2d1 << b2d2 << f1 << t1;
 
   // construct whole network
   construct_graph(nn, {&ii0}, {&f1});
