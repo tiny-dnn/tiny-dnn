@@ -286,6 +286,14 @@ inline std::shared_ptr<layer> create_relu(const caffe::LayerParameter &layer,
   return relu;
 }
 
+inline std::shared_ptr<layer> create_elu(const caffe::LayerParameter &layer,
+                                          const shape_t &bottom_shape,
+                                          shape_t *) {
+  auto elu =
+    std::make_shared<linear_layer<activation::elu>>(bottom_shape.size());
+  return elu;
+}
+
 inline std::shared_ptr<layer> create_batchnorm(
   const caffe::LayerParameter &layer,
   const shape_t &bottom_shape,
@@ -725,7 +733,7 @@ inline std::shared_ptr<layer> create_deconvlayer(
 }
 
 inline bool layer_skipped(const std::string &type) {
-  if (type == "Data" || type == "EuclideanLoss" || type == "Input") return true;
+  if (type == "Data" || type == "EuclideanLoss" || type == "Input" || type == "HDF5Data") return true;
   return false;
 }
 
@@ -735,6 +743,7 @@ inline bool layer_has_weights(const std::string &type) {
                                       "LRN",
                                       "Dropout",
                                       "ReLU",
+                                      "ELU",
                                       "Sigmoid",
                                       "TanH",
                                       "Softmax"};
@@ -755,6 +764,7 @@ inline bool layer_supported(const std::string &type) {
                                     "SoftmaxWithLoss",
                                     "SigmoidCrossEntropyLoss",
                                     "ReLU",
+                                    "ELU",
                                     "Sigmoid",
                                     "TanH",
                                     "Softmax",
@@ -825,6 +835,10 @@ inline std::shared_ptr<layer> create(const caffe::LayerParameter &layer,
 
   if (layer_type == "ReLU") {
     return detail::create_relu(layer, in_shape, out_shape);
+  }
+
+  if (layer_type == "ELU") {
+    return detail::create_elu(layer, in_shape, out_shape);
   }
 
   if (layer_type == "TanH") {
