@@ -287,8 +287,8 @@ inline std::shared_ptr<layer> create_relu(const caffe::LayerParameter &layer,
 }
 
 inline std::shared_ptr<layer> create_elu(const caffe::LayerParameter &layer,
-                                          const shape_t &bottom_shape,
-                                          shape_t *) {
+                                         const shape_t &bottom_shape,
+                                         shape_t *) {
   auto elu =
     std::make_shared<linear_layer<activation::elu>>(bottom_shape.size());
   return elu;
@@ -733,7 +733,9 @@ inline std::shared_ptr<layer> create_deconvlayer(
 }
 
 inline bool layer_skipped(const std::string &type) {
-  if (type == "Data" || type == "EuclideanLoss" || type == "Input" || type == "HDF5Data") return true;
+  if (type == "Data" || type == "EuclideanLoss" || type == "Input" ||
+      type == "HDF5Data")
+    return true;
   return false;
 }
 
