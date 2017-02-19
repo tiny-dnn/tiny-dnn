@@ -143,7 +143,12 @@ inline void reload_weight_from_caffe_net(const caffe::NetParameter &layer,
       tiny_layer_idx++;
     }
 
-    if (tiny_layer_idx >= net->depth()) break;
+    if (tiny_layer_idx >= net->depth()) {
+      throw nn_error(
+        "error: tiny-dnn does not support loading weights "
+        "for this layer type: " +
+        type);
+    }
 
     // load weight
     detail::load(src_net[caffe_layer_idx], (*net)[tiny_layer_idx++]);
