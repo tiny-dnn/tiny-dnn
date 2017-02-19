@@ -1,8 +1,4 @@
 #include <iostream>
-#include <opencv2/opencv.hpp>
-/*#include <opencv2/imgproc.hpp>
-#include <opencv2/highgui.hpp>*/
-#include <opencv2/imgcodecs.hpp>
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
@@ -22,16 +18,14 @@ void convert_image(const std::string &imagefilename,
                    int w,
                    int h,
                    vec_t &data) {
-  cv::Mat img = cv::imread(imagefilename);
-  if (img.data == nullptr) return;  // cannot open, or it's not an image
-  cv::Mat resized;
-  cv::resize(img, resized, cv::Size(w, h), .0, .0);
-  data.resize(w * h * resized.channels(), minv);
-  for (int c = 0; c < resized.channels(); ++c) {
-    for (int y = 0; y < resized.rows; ++y) {
-      for (int x = 0; x < resized.cols; ++x) {
-        data[c * w * h + y * w + x] =
-          resized.data[y * resized.step[0] + x * resized.step[1] + c];
+  image<> img(imagefilename, image_type::rgb);
+  image<> resized = resize_image(img, w, h);
+  data.resize(resized.width() * resized.height() * resized.depth());
+  for (size_t c = 0; c < resized.depth(); ++c) {
+    for (size_t y = 0; y < resized.height(); ++y) {
+      for (size_t x = 0; x < resized.width(); ++x) {
+        data[c * resized.width() * resized.height() + y * resized.width() + x] =
+          (maxv - minv) * (resized[y * resized.width() + x + c]) / 255.0 + minv;
       }
     }
   }
@@ -55,7 +49,7 @@ void construct_net(N &nn) {
      << fully_connected_layer<softmax>(n_fc, 10);
 }
 
-void recognize(const std::string &dictionary, const std::string &filename) {
+void recognize(const std::string &dictionary, const std::string &src_filename) {
   network<sequential> nn;
 
   construct_net(nn);
@@ -66,7 +60,7 @@ void recognize(const std::string &dictionary, const std::string &filename) {
 
   // convert imagefile to vec_t
   vec_t data;
-  convert_image(filename, -1.0, 1.0, 32, 32, data);
+  convert_image(src_filename, -1.0, 1.0, 32, 32, data);
 
   // recognize
   auto res = nn.predict(data);
