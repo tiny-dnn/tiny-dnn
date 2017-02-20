@@ -1,6 +1,7 @@
 # Cifar-10 Classification Example
 
-[Cifar-10](http://www.cs.toronto.edu/~kriz/cifar.html) is a common dataset for object classification.
+[Cifar-10](http://www.cs.toronto.edu/~kriz/cifar.html) is a common dataset 
+for object classification.
 The problem is to classify 32x32 RGB (thus 32x32x3=3072 dimensions) image into 10 classes:
 airplane, automobile, bird, cat, deer, dog, frog, horse, ship, and truck. 
 
@@ -52,7 +53,8 @@ parse_cifar10(data_dir_path + "/test_batch.bin",
 
 # Grid Search
 One of the most important hyperparameter in deep learning is learning rate. 
-To get stable and better result, let's try [grid search](https://en.wikipedia.org/wiki/Hyperparameter_optimization#Grid_search)
+To get stable and better result, let's try
+ [grid search](https://en.wikipedia.org/wiki/Hyperparameter_optimization#Grid_search)
 for learning rate. The entire code for training cifar-10 is following:
 
 ```cpp
@@ -140,33 +142,49 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream& log) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        cerr << "Usage : " << argv[0]
-            << "arg[0]: path_to_data (example:../data)" << endl;
-        << "arg[1]: learning rate (example:0.01)" << endl;
-        return -1;
-    }
-    train_cifar10(argv[1], stod(argv[2]), cout);
+  double learning_rate  = 0.1;
+  int epochs            = 30;
+  std::string data_path = "";
+  for (int count = 1; count + 1 < argc; count += 2) {
+    std::string argname(argv[count]);
+    if (argname == "--learning_rate")
+      learning_rate = atof(argv[count + 1]);
+    else if (argname == "--epochs")
+      epochs = atoi(argv[count + 1]);
+    else if (argname == "--data_path")
+      data_path = std::string(argv[count + 1]);
+    else
+      std::cout << "argument " << argname << " isn't supported.";
+  }
+  if (data_path == "") {
+    std::cerr << "Data path not specified. Example of usage :\n"
+              << argv[0]
+              << "--data_path ./data --learning_rate 0.01 --epochs 30"
+              << std::endl;
+    return -1;
+  }
+  std::cout << "Running with learning rate " << learning_rate << " for "
+            << epochs << " epochs." << std::endl;
+  train_cifar10(data_path, learning_rate, epochs, std::cout);
 }
 ```
 
 compile this file and try various learning rate:
 
 ```
-./train your-cifar-10-data-directory 10.0
-./train your-cifar-10-data-directory 1.0
-./train your-cifar-10-data-directory 0.1
-./train your-cifar-10-data-directory 0.01
+./train --data_path your-cifar-10-data-directory --learning_rate 0.01 --epochs 30
+./train --data_path your-cifar-10-data-directory --learning_rate 0.1 --epochs 30
 ```
 
->Note:
->If training is too slow, change ```n_training_epochs```, ```n_fmaps``` and ```n_fmaps2``` variables to smaller value.
+**Note:** If training is too slow, change ```n_training_epochs```, ```n_fmaps```
+ and ```n_fmaps2``` variables to smaller value.
 
 If you see the following message, some network weights become infinite while training.
-Usually it implies too large learning rate.
+Usually it implies too large learning rate:
 
 ```
 [Warning]Detected infinite value in weight. stop learning.
 ```
 
-You will get about 70% accuracy in learning rate=0.01.
+You will get about 70% accuracy in learning rate=0.01. 
+There are pre-trained weights in file `cifar-weights` in this folder.

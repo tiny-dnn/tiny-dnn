@@ -26,13 +26,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+#include <cstdlib>
 #include <iostream>
 #include <vector>
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
-using namespace std;
 
 template <typename N>
 void construct_net(N &nn) {
@@ -54,20 +54,23 @@ void construct_net(N &nn) {
      << fully_connected_layer<softmax>(n_fc, 10);
 }
 
-void train_cifar10(string data_dir_path, double learning_rate, ostream &log) {
+void train_cifar10(std::string data_dir_path,
+                   double learning_rate,
+                   const int n_train_epochs,
+                   std::ostream &log) {
   // specify loss-function and learning strategy
   network<sequential> nn;
   adam optimizer;
 
   construct_net(nn);
 
-  log << "learning rate:" << learning_rate << endl;
+  log << "learning rate:" << learning_rate << std::endl;
 
-  cout << "load models..." << endl;
+  std::cout << "load models..." << std::endl;
 
   // load cifar dataset
-  vector<label_t> train_labels, test_labels;
-  vector<vec_t> train_images, test_images;
+  std::vector<label_t> train_labels, test_labels;
+  std::vector<vec_t> train_images, test_images;
 
   for (int i = 1; i <= 5; i++) {
     parse_cifar10(data_dir_path + "/data_batch_" + to_string(i) + ".bin",
@@ -77,21 +80,20 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream &log) {
   parse_cifar10(data_dir_path + "/test_batch.bin", &test_images, &test_labels,
                 -1.0, 1.0, 0, 0);
 
-  cout << "start learning" << endl;
+  std::cout << "start learning" << std::endl;
 
   progress_display disp(train_images.size());
   timer t;
-  const int n_minibatch    = 10;  ///< minibatch size
-  const int n_train_epochs = 30;  ///< training duration
+  const int n_minibatch = 10;  ///< minibatch size
 
   optimizer.alpha *=
     static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate);
 
   // create callback
   auto on_enumerate_epoch = [&]() {
-    cout << t.elapsed() << "s elapsed." << endl;
+    std::cout << t.elapsed() << "s elapsed." << std::endl;
     tiny_dnn::result res = nn.test(test_images, test_labels);
-    log << res.num_success << "/" << res.num_total << endl;
+    log << res.num_success << "/" << res.num_total << std::endl;
 
     disp.restart(train_images.size());
     t.restart();
@@ -104,21 +106,39 @@ void train_cifar10(string data_dir_path, double learning_rate, ostream &log) {
                           n_train_epochs, on_enumerate_minibatch,
                           on_enumerate_epoch);
 
-  cout << "end training." << endl;
+  std::cout << "end training." << std::endl;
 
   // test and show results
-  nn.test(test_images, test_labels).print_detail(cout);
+  nn.test(test_images, test_labels).print_detail(std::cout);
 
   // save networks
-  ofstream ofs("cifar-weights");
+  std::ofstream ofs("cifar-weights");
   ofs << nn;
 }
 
 int main(int argc, char **argv) {
-  if (argc != 3) {
-    cerr << "Usage : " << argv[0] << " path_to_data (example:../data)"
-         << " learning rate (example:0.01)" << endl;
+  double learning_rate  = 0.1;
+  int epochs            = 30;
+  std::string data_path = "";
+  for (int count = 1; count + 1 < argc; count += 2) {
+    std::string argname(argv[count]);
+    if (argname == "--learning_rate")
+      learning_rate = atof(argv[count + 1]);
+    else if (argname == "--epochs")
+      epochs = atoi(argv[count + 1]);
+    else if (argname == "--data_path")
+      data_path = std::string(argv[count + 1]);
+    else
+      std::cout << "argument " << argname << " isn't supported.";
+  }
+  if (data_path == "") {
+    std::cerr << "Data path not specified. Example of usage :\n"
+              << argv[0]
+              << "--data_path ./data --learning_rate 0.01 --epochs 30"
+              << std::endl;
     return -1;
   }
-  train_cifar10(argv[1], stod(argv[2]), cout);
+  std::cout << "Running with learning rate " << learning_rate << " for "
+            << epochs << " epochs." << std::endl;
+  train_cifar10(data_path, learning_rate, epochs, std::cout);
 }
