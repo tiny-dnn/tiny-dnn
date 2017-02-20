@@ -1,9 +1,7 @@
-<div align="center">
-  <img src="https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters-alpha-version.png"><br><br>
-</div>
+![tiny_dnn_logo](https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters-alpha-version.png)
 -----------------
 
-[![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)
+[![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master) [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/705/badge)](https://bestpractices.coreinfrastructure.org/projects/705)
 
 **tiny-dnn** is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
@@ -238,13 +236,6 @@ The BSD 3-Clause License
 We have a gitter rooms for discussing new features & QA.
 Feel free to join us!
 
-<table>
-<tr>
-    <td><b> developers </b></td>
-    <td> https://gitter.im/tiny-dnn/developers </td>
-</tr>
-<tr>
-    <td><b> users </b></td>
-    <td> https://gitter.im/tiny-dnn/users </td>
-</tr>
-</table>
+| developers | users|
+------------ | -------------
+|  https://gitter.im/tiny-dnn/developers | https://gitter.im/tiny-dnn/users |
