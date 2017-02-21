@@ -470,6 +470,39 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
   }
 }
 
+inline void load_weights_batchnorm(const caffe::LayerParameter &src,
+                                   layer *dst) {
+  if (dst->layer_type() != "batch-norm")
+    throw nn_error("batch-norm layer expected");
+
+  if (src.blobs_size() > 0) {
+    auto global_stats = src.blobs();
+    if (global_stats.size() != 3) {
+      throw nn_error("unexpected format for batch-norm statistics");
+    }
+
+    float_t scale_factor =
+      global_stats.Get(2).data(0) == 0 ? 0 : 1 / global_stats.Get(2).data(0);
+
+    int in_channels = dst->in_shape().at(0).depth_;
+    vec_t mean(in_channels);
+    vec_t variance(in_channels);
+
+    for (size_t i = 0; i < mean.size(); i++) {
+      mean[i]     = global_stats.Get(0).data(i) * scale_factor;
+      variance[i] = global_stats.Get(1).data(i) * scale_factor;
+    }
+    auto bnl = dynamic_cast<batch_normalization_layer *>(dst);
+    bnl->set_mean(mean);
+    bnl->set_variance(variance);
+
+  } else {
+    throw nn_error("batch-norm layer missing blobs");
+  }
+
+  return;
+}
+
 inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
   auto pool_param = src.pooling_param();
 
@@ -734,7 +767,7 @@ inline std::shared_ptr<layer> create_deconvlayer(
 
 inline bool layer_skipped(const std::string &type) {
   if (type == "Data" || type == "EuclideanLoss" || type == "Input" ||
-      type == "HDF5Data")
+      type == "HDF5Data" || type == "Split" || type == "Accuracy")
     return true;
   return false;
 }
@@ -785,7 +818,8 @@ inline bool layer_match(const std::string &caffetype,
                                   {"Convolution", "conv"},
                                   {"Deconvolution", "deconv"},
                                   {"Pooling", "ave-pool"},
-                                  {"Pooling", "max-pool"}};
+                                  {"Pooling", "max-pool"},
+                                  {"BatchNorm", "batch-norm"}};
 
   for (size_t i = 0; i < sizeof(conversions) / sizeof(conversions[0]); i++) {
     if (conversions[i][0] == caffetype && conversions[i][1] == tiny_dnn_type)
@@ -863,6 +897,7 @@ inline void load(const caffe::LayerParameter &src, layer *dst) {
   factory_registry["Deconvolution"] = detail::load_weights_conv;
   factory_registry["InnerProduct"]  = detail::load_weights_fullyconnected;
   factory_registry["Pooling"]       = detail::load_weights_pool;
+  factory_registry["BatchNorm"]     = detail::load_weights_batchnorm;
 
   if (factory_registry.find(src.type()) == factory_registry.end()) {
     throw nn_error("layer parser not found");
