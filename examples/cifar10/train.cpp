@@ -35,7 +35,7 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
 template <typename N>
-void construct_net(N &nn) {
+void construct_net(N &nn, core::backend_t backend_type) {
   typedef convolutional_layer<activation::identity> conv;
   typedef max_pooling_layer<relu> pool;
 
@@ -45,24 +45,30 @@ void construct_net(N &nn) {
   const serial_size_t n_fc =
     64;  ///< number of hidden units in fully-connected layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, padding::same) << pool(32, 32, n_fmaps, 2)
-     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
-     << pool(16, 16, n_fmaps, 2)
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
-     << pool(8, 8, n_fmaps2, 2)
-     << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-     << fully_connected_layer<softmax>(n_fc, 10);
+  nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1, backend_type)
+     << pool(32, 32, n_fmaps, 2, backend_type)
+     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
+             backend_type)
+     << pool(16, 16, n_fmaps, 2, backend_type)
+     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
+             backend_type)
+     << pool(8, 8, n_fmaps2, 2, backend_type)
+     << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc,
+                                                    true, backend_type)
+     << fully_connected_layer<softmax>(n_fc, 10, true, backend_type);
 }
 
 void train_cifar10(std::string data_dir_path,
                    double learning_rate,
                    const int n_train_epochs,
+                   const int n_minibatch,
+                   core::backend_t backend_type,
                    std::ostream &log) {
   // specify loss-function and learning strategy
   network<sequential> nn;
   adam optimizer;
 
-  construct_net(nn);
+  construct_net(nn, backend_type);
 
   log << "learning rate:" << learning_rate << std::endl;
 
@@ -84,7 +90,7 @@ void train_cifar10(std::string data_dir_path,
 
   progress_display disp(train_images.size());
   timer t;
-  const int n_minibatch = 10;  ///< minibatch size
+  // const int n_minibatch = 10;  ///< minibatch size
 
   optimizer.alpha *=
     static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate);
@@ -110,22 +116,39 @@ void train_cifar10(std::string data_dir_path,
 
   // test and show results
   nn.test(test_images, test_labels).print_detail(std::cout);
-
   // save networks
   std::ofstream ofs("cifar-weights");
   ofs << nn;
 }
 
+static core::backend_t parse_backend_name(const char *name) {
+  static const char *names[] = {
+    "internal", "nnpack", "libdnn", "avx", "opencl",
+  };
+  for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
+    if (strcasecmp(name, names[i]) == 0) {
+      return (core::backend_t)i;
+    }
+  }
+  return core::default_engine();
+}
+
 int main(int argc, char **argv) {
-  double learning_rate  = 0.1;
-  int epochs            = 30;
-  std::string data_path = "";
+  double learning_rate         = 0.1;
+  int epochs                   = 30;
+  std::string data_path        = "";
+  int minibatch_size           = 10;
+  core::backend_t backend_type = core::default_engine();
   for (int count = 1; count + 1 < argc; count += 2) {
     std::string argname(argv[count]);
     if (argname == "--learning_rate")
       learning_rate = atof(argv[count + 1]);
     else if (argname == "--epochs")
       epochs = atoi(argv[count + 1]);
+    else if (argname == "--minibatch_size")
+      minibatch_size = atoi(argv[count + 1]);
+    else if (argname == "--backend_type")
+      backend_type = parse_backend_name(argv[count + 1]);
     else if (argname == "--data_path")
       data_path = std::string(argv[count + 1]);
     else
@@ -134,11 +157,13 @@ int main(int argc, char **argv) {
   if (data_path == "") {
     std::cerr << "Data path not specified. Example of usage :\n"
               << argv[0]
-              << "--data_path ../data --learning_rate 0.01 --epochs 30"
-              << std::endl;
+              << "--data_path ../data --learning_rate 0.01 --epochs 30 "
+              << "--minibatch_size 10 --backend_type internal" << std::endl;
     return -1;
   }
-  std::cout << "Running with learning rate " << learning_rate << " for "
-            << epochs << " epochs." << std::endl;
-  train_cifar10(data_path, learning_rate, epochs, std::cout);
+  std::cout << "Running with learning rate " << learning_rate
+            << " and minibatch of size " << minibatch_size << " for " << epochs
+            << " epochs." << std::endl;
+  train_cifar10(data_path, learning_rate, epochs, minibatch_size, backend_type,
+                std::cout);
 }
