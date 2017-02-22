@@ -27,7 +27,7 @@
 
 typedef tiny_dnn::shape3d shape_t;
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(WIN32)
 #define _NOMINMAX
 #include <fcntl.h>
 #include <io.h>
