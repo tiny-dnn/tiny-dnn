@@ -137,163 +137,153 @@ TEST(tensor, check_bounds) {
 }
 
 TEST(tensor, view1) {
+  Tensor<float_t> t1({2, 2, 2, 2});
+  Tensor<float_t> t2 = t1.subView({2, 4});
+  Tensor<float_t> t3 = t1.subView({0}, {2, 4});
 
-    Tensor<float_t> t1({2, 2, 2, 2});
-    Tensor<float_t> t2 = t1.subView({2,4});
-    Tensor<float_t> t3 = t1.subView({0}, {2,4});
+  EXPECT_TRUE(!t1.isSubView());
+  EXPECT_TRUE(t2.isSubView());
+  EXPECT_TRUE(t3.isSubView());
 
-    EXPECT_TRUE(!t1.isSubView());
-    EXPECT_TRUE( t2.isSubView());
-    EXPECT_TRUE( t3.isSubView());
-
-    EXPECT_EQ(t1.size(), size_t(2*2*2*2));
-    EXPECT_EQ(t2.size(), size_t(2*4));
-    EXPECT_EQ(t3.size(), size_t(2*4));
+  EXPECT_EQ(t1.size(), size_t(2 * 2 * 2 * 2));
+  EXPECT_EQ(t2.size(), size_t(2 * 4));
+  EXPECT_EQ(t3.size(), size_t(2 * 4));
 }
 
 TEST(tensor, view2) {
+  Tensor<float_t> t1({2, 2, 2, 2});
 
-    Tensor<float_t> t1({2,2,2,2});
+  EXPECT_NO_THROW(t1.subView({2, 4, 0, 0}));
+  EXPECT_NO_THROW(t1.subView({0, 0, 0, 0}, {2, 4, 0, 0}));
 
-    EXPECT_NO_THROW(t1.subView({2,4,0,0}));
-    EXPECT_NO_THROW(t1.subView({0,0,0,0}, {2,4,0,0}));
-
-    // test that num parameters exceed to num of dimensions
-    EXPECT_THROW(t1.subView({2,4,0,0,0}), nn_error);
-    EXPECT_THROW(t1.subView({0,0,0,0},   {2,4,0,0,0}), nn_error);
-    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0}),   nn_error);
-    EXPECT_THROW(t1.subView({2,4,0,0,0}, {1,2,0,0,0}), nn_error);
+  // test that num parameters exceed to num of dimensions
+  EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}), nn_error);
+  EXPECT_THROW(t1.subView({0, 0, 0, 0}, {2, 4, 0, 0, 0}), nn_error);
+  EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}, {1, 2, 0, 0}), nn_error);
+  EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}, {1, 2, 0, 0, 0}), nn_error);
 }
 
 TEST(tensor, view3) {
+  Tensor<float_t> t1({2, 2, 2, 2});
 
-    Tensor<float_t> t1({2,2,2,2});
-
-    // test that cannot generate subView bigger than current tensor
-    EXPECT_THROW(t1.subView({4,5}), nn_error);
-    EXPECT_THROW(t1.subView({1}, {4,4}), nn_error);
+  // test that cannot generate subView bigger than current tensor
+  EXPECT_THROW(t1.subView({4, 5}), nn_error);
+  EXPECT_THROW(t1.subView({1}, {4, 4}), nn_error);
 }
 
 TEST(tensor, view4) {
+  Tensor<float_t> t1({2, 2, 2, 2});
+  Tensor<float_t> t2 = t1.subView({2, 4});
 
-    Tensor<float_t> t1({2,2,2,2});
-    Tensor<float_t> t2 = t1.subView({2,4});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t2.size(); ++i) {
+    t2.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t2.size(); ++i) {
-        t2.host_begin()[i] = float_t(i+1);
-    }
-
-    // check that root tensor has also been modified
-    for (size_t i = 0; i < t2.size(); ++i) {
-        EXPECT_EQ(t1.host_begin()[i], float_t(i+1));
-        EXPECT_EQ(t2.host_begin()[i], float_t(i+1));
-    }
+  // check that root tensor has also been modified
+  for (size_t i = 0; i < t2.size(); ++i) {
+    EXPECT_EQ(t1.host_begin()[i], float_t(i + 1));
+    EXPECT_EQ(t2.host_begin()[i], float_t(i + 1));
+  }
 }
 
 TEST(tensor, view5) {
+  Tensor<float_t> t1({3, 3});
 
-    Tensor<float_t> t1({3,3});
+  // we create a sub subView tensor with size @2x2.
+  // Ideally it should represent the top-left matrix.
+  // However, since we assume continous memory, it will
+  // mask the first four elements from the root subView.
+  Tensor<float_t> t2 = t1.subView({0}, {2, 2});
 
-    // we create a sub subView tensor with size @2x2.
-    // Ideally it should represent the top-left matrix.
-    // However, since we assume continous memory, it will
-    // mask the first four elements from the root subView.
-    Tensor<float_t> t2 = t1.subView({0}, {2,2});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t2.size(); ++i) {
+    t2.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t2.size(); ++i) {
-        t2.host_begin()[i] = float_t(i+1);
-    }
+  // check that root tensor has been modified assuming
+  // continous memory. The ideal case would be that the
+  // new sub ºsubView can handle non continous memory pointing
+  // to the top-left matrix from the root tensor.
+  EXPECT_EQ(t1.host_at(0, 0), float_t(1.0));
+  EXPECT_EQ(t1.host_at(0, 1), float_t(2.0));
+  EXPECT_EQ(t1.host_at(0, 2), float_t(3.0));
+  EXPECT_EQ(t1.host_at(1, 0), float_t(4.0));
 
-    // check that root tensor has been modified assuming
-    // continous memory. The ideal case would be that the
-    // new sub ºsubView can handle non continous memory pointing
-    // to the top-left matrix from the root tensor.
-    EXPECT_EQ(t1.host_at(0,0), float_t(1.0));
-    EXPECT_EQ(t1.host_at(0,1), float_t(2.0));
-    EXPECT_EQ(t1.host_at(0,2), float_t(3.0));
-    EXPECT_EQ(t1.host_at(1,0), float_t(4.0));
-
-    // check that the new sub subView does not assume the ideal
-    // case with non continuous memory.
-    EXPECT_TRUE( t1.host_at(0,0) == float_t(1.0));
-    EXPECT_TRUE( t1.host_at(0,1) == float_t(2.0));
-    EXPECT_FALSE(t1.host_at(1,0) == float_t(3.0));
-    EXPECT_FALSE(t1.host_at(1,1) == float_t(4.0));
+  // check that the new sub subView does not assume the ideal
+  // case with non continuous memory.
+  EXPECT_TRUE(t1.host_at(0, 0) == float_t(1.0));
+  EXPECT_TRUE(t1.host_at(0, 1) == float_t(2.0));
+  EXPECT_FALSE(t1.host_at(1, 0) == float_t(3.0));
+  EXPECT_FALSE(t1.host_at(1, 1) == float_t(4.0));
 }
 
 TEST(tensor, view_non_contiguous) {
+  Tensor<float_t> t1({3, 3});
 
-    Tensor<float_t> t1({3,3});
+  // we create a sub subView tensor with size @2x2.
+  Tensor<float_t> t2 = t1.subView({0}, {2, 2});
 
-    // we create a sub subView tensor with size @2x2.
-    Tensor<float_t> t2 = t1.subView({0}, {2,2});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t1.size(); ++i) {
+    t1.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t1.size(); ++i) {
-        t1.host_begin()[i] = float_t(i+1);
-    }
-
-    // check that root tensor has been modified
-    EXPECT_EQ(t2.host_at(0,0), float_t(1.0));
-    EXPECT_EQ(t2.host_at(0,1), float_t(2.0));
-    EXPECT_EQ(t2.host_at(1,0), float_t(4.0));
-    EXPECT_EQ(t2.host_at(1,1), float_t(5.0));
+  // check that root tensor has been modified
+  EXPECT_EQ(t2.host_at(0, 0), float_t(1.0));
+  EXPECT_EQ(t2.host_at(0, 1), float_t(2.0));
+  EXPECT_EQ(t2.host_at(1, 0), float_t(4.0));
+  EXPECT_EQ(t2.host_at(1, 1), float_t(5.0));
 }
 
 TEST(tensor, view_non_contiguous2) {
+  Tensor<float_t> t1({3, 3, 3});
 
-    Tensor<float_t> t1({3, 3, 3});
+  // we create a sub subView tensor with size @2x2.
+  Tensor<float_t> t2 = t1.subView({1}, {3, 3});
 
-    // we create a sub subView tensor with size @2x2.
-    Tensor<float_t> t2 = t1.subView({1}, {3,3});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t1.size(); ++i) {
+    t1.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t1.size(); ++i) {
-        t1.host_begin()[i] = float_t(i+1);
-    }
-
-    // check that root tensor has been modified
-    EXPECT_EQ(t2.host_at(0,0), float_t(10.0));
-    EXPECT_EQ(t2.host_at(0,1), float_t(11.0));
-    EXPECT_EQ(t2.host_at(1,0), float_t(13.0));
-    EXPECT_EQ(t2.host_at(1,1), float_t(14.0));
+  // check that root tensor has been modified
+  EXPECT_EQ(t2.host_at(0, 0), float_t(10.0));
+  EXPECT_EQ(t2.host_at(0, 1), float_t(11.0));
+  EXPECT_EQ(t2.host_at(1, 0), float_t(13.0));
+  EXPECT_EQ(t2.host_at(1, 1), float_t(14.0));
 }
 
-
 TEST(tensor, view_non_contiguous3) {
+  Tensor<float_t> t1({3, 3, 3, 3});
 
-    Tensor<float_t> t1({3, 3, 3, 3});
+  // we create a sub subView tensor with size @2x2.
+  Tensor<float_t> t2 = t1.subView({2, 2}, {3, 3});
 
-    // we create a sub subView tensor with size @2x2.
-    Tensor<float_t> t2 = t1.subView({2,2}, {3,3});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t1.size(); ++i) {
+    t1.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t1.size(); ++i) {
-        t1.host_begin()[i] = float_t(i+1);
-    }
-
-    // check that root tensor has been modified
-    EXPECT_EQ(t2.host_at(0,0), float_t(73.0));
-    EXPECT_EQ(t2.host_at(0,1), float_t(74.0));
-    EXPECT_EQ(t2.host_at(1,0), float_t(76.0));
-    EXPECT_EQ(t2.host_at(1,1), float_t(77.0));
+  // check that root tensor has been modified
+  EXPECT_EQ(t2.host_at(0, 0), float_t(73.0));
+  EXPECT_EQ(t2.host_at(0, 1), float_t(74.0));
+  EXPECT_EQ(t2.host_at(1, 0), float_t(76.0));
+  EXPECT_EQ(t2.host_at(1, 1), float_t(77.0));
 }
 
 TEST(tensor, view_non_contiguous4) {
+  Tensor<float_t> t1({3, 3, 3});
 
-    Tensor<float_t> t1({3, 3, 3});
+  // we create a sub subView tensor with size @2x2.
+  Tensor<float_t> t2 = t1.subView({0}, {2, 2});
 
-    // we create a sub subView tensor with size @2x2.
-    Tensor<float_t> t2 = t1.subView({0}, {2, 2});
+  // modify sub subView tensor
+  for (size_t i = 0; i < t1.size(); ++i) {
+    t1.host_begin()[i] = float_t(i + 1);
+  }
 
-    // modify sub subView tensor
-    for (size_t i = 0; i < t1.size(); ++i) {
-        t1.host_begin()[i] = float_t(i+1);
-    }
-
-    std::cout << t1 << std::endl;
+  std::cout << t1 << std::endl;
 }
 
 TEST(tensor, access_data1) {

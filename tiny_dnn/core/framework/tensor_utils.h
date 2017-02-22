@@ -58,14 +58,9 @@
 namespace tiny_dnn {
 
 template <typename T>
-void print_pack(std::ostream &out, T t) {  // TODO: C++17 allows easier printing
-  out << t;
-}
-
-template <typename T, typename U, typename... Args>
-void print_pack(std::ostream &out, T t, U u, Args... args) {
-  out << t << ',';
-  print_pack(out, u, args...);
+std::ostream &print_vector(std::ostream &out, std::vector<T> indices) {
+  for (auto &t : indices) out << t << ',';
+  return out;
 }
 
 /*template <typename T, typename... Args>
@@ -98,7 +93,6 @@ inline std::ostream &print_last_n_dimesions(std::ostream &os,
   return os;
 }*/
 
-
 // TODO(Ranld): static_if (C++17)
 /*template <typename T>
 inline std::ostream &operator<<(std::ostream &os, const Tensor<T, 1> &tensor) {
@@ -114,21 +108,22 @@ inline std::ostream &operator<<(std::ostream &os, const Tensor<T, 2> &tensor) {
   return os;
 }*/
 
-template <typename T, typename... Args>
+template <typename T>
 inline std::ostream &print_last_two_dimensions(std::ostream &os,
-                                              const Tensor<T> &tensor,
-                                              const size_t d,
-                                              const Args... args) {
+                                               const Tensor<T> &tensor,
+                                               std::vector<size_t> indices) {
   const size_t dims = tensor.dims();
-  const auto shape = tensor.shape();
-  
+  const auto shape  = tensor.shape();
+
+  assert(tensor.dims() == indices.size() + 2);
+
   os << "(";
-  print_pack(os, d, args...);
-  os << ",:,:):\n";
+  print_vector(os, indices);
+  os << ":,:):\n";
 
   for (size_t k = 0; k < shape[dims - 2]; ++k) {
     for (size_t l = 0; l < shape[dims - 1]; ++l) {
-      os << "\t" << tensor.host_at(k, l);
+      os << "\t" << tensor.host_at(indices, k, l);
     }
     os << "\n";
   }
@@ -137,30 +132,42 @@ inline std::ostream &print_last_two_dimensions(std::ostream &os,
 
 template <typename T>
 inline std::ostream &print_last_dimension(std::ostream &os,
-                                          const Tensor<T> &tensor) {
+                                          const Tensor<T> &tensor,
+                                          std::vector<size_t> indices) {
   for (size_t k = 0; k < tensor.shape()[0]; ++k) {
-    os << "\t" << tensor.host_at(k);
+    os << "\t" << tensor.host_at(indices, k);
     os << "\n";
   }
   return os;
 }
 
-template <typename T, typename... Args>
+/**
+ * Prints last n out of total m dimensions of Tensor, with first (m-n) indices
+ * specified
+ * @param os Stream to print to
+ * @param tensor Tesor which is printed
+ * @param indices vector of indices
+ * @return same stream
+ */
+template <typename T>
 inline std::ostream &print_last_n_dimensions(std::ostream &os,
-                                            const Tensor<T> &tensor,
-                                            const int d,
-                                            const Args... args) {
-  if (d == 1) {
-    return print_last_dimension(os, tensor);
-  } else if (d == 2) {
-    return print_last_two_dimensions(os, tensor, d, args...);
+                                             const Tensor<T> &tensor,
+                                             std::vector<size_t> indices) {
+  const size_t n_dim = indices.size();
+  assert(n_dim < indices.size());
+  if (tensor.dims() <= n_dim + 1) {
+    return print_last_dimension(os, tensor, indices);
+  } else if (tensor.dims() == n_dim + 2) {
+    return print_last_two_dimensions(os, tensor, indices);
+  } else {
+    const std::vector<size_t> &shape = tensor.shape();
+    for (size_t k = 0; k < shape[n_dim]; ++k) {
+      indices.push_back(k);
+      print_last_n_dimensions(os, tensor, indices);
+      indices.pop_back();
+    }
   }
 
-  const std::vector<size_t> &shape = tensor.shape();
-  const size_t n_dim = sizeof...(args);
-  for (size_t k = 0; k < shape[n_dim + 1]; ++k) {
-    print_last_n_dimensions(os, tensor, d, args..., k);
-  }
   return os;
 }
 
@@ -183,10 +190,9 @@ inline std::ostream &print_tensor_footer(std::ostream &os,
  * @return
  */
 template <typename T>
-inline std::ostream &operator<<(std::ostream &os,
-                                const Tensor<T> &tensor) {
+inline std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor) {
   for (size_t i = 0; i < tensor.shape()[0]; ++i) {
-    print_last_n_dimensions(os, tensor, i);
+    print_last_n_dimensions(os, tensor, {i});
   }
   print_tensor_footer(os, tensor);
   return os;

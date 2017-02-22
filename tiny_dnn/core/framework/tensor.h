@@ -98,7 +98,7 @@ class Tensor {
    */
   Tensor() {
     offset_ = size_ = stride_ = size_t(0);
-    storage_ptr_    = std::make_shared<TensorStorageType>();
+    storage_ptr_              = std::make_shared<TensorStorageType>();
   }
 
   /**
@@ -109,10 +109,10 @@ class Tensor {
    * @return
    */
   explicit Tensor(const std::vector<size_t> &shape) {
-    offset_ = size_t(0);
-    stride_ = size_t(0);
-    size_   = product(shape);
-    shape_  = shape;
+    offset_      = size_t(0);
+    stride_      = size_t(0);
+    size_        = product(shape);
+    shape_       = shape;
     storage_ptr_ = std::make_shared<TensorStorageType>(shape);
   }
 
@@ -172,6 +172,22 @@ class Tensor {
   }
 
   /**
+   * Access to indexes in tensor with vector or mixed vector/indices
+   * @param vec vector with first indices
+   * @param args rest of indices, if any
+   * @return the value of a specified index in the tensor
+   */
+  template <typename... Args>
+  U host_at(std::vector<size_t> vec, const Args... args) const {
+    if (vec.empty()) return *host_ptr(args...);
+    if (vec.size() + sizeof...(args) > dims())
+      throw nn_error("Number of indices exceeded number of dimensions");
+    auto tmp = vec.back();
+    vec.pop_back();
+    return host_at(vec, tmp, args...);
+  }
+
+  /**
    * Calculate an offset for last dimension.
    * @param d an index of last dimension
    * @return offest from the beginning of the dimesion
@@ -198,7 +214,7 @@ class Tensor {
     if (d >= shape_[dim]) {
       throw nn_error("Access tensor out of range.");
     }
-    
+
     size_t shift = 1;
     for (size_t i = dim + 1; i < dims(); ++i) {
       shift *= shape_[i];  // TODO(Randl): optimize. Reverse argumets?
@@ -206,7 +222,7 @@ class Tensor {
 
     // apply stride in case that we are in the last two dimensions
     const size_t total_shift = (dim > 2) ? shift : shift + stride_;
-    
+
     return (d * total_shift + host_pos(args...));
   }
 
@@ -225,10 +241,10 @@ class Tensor {
     return storage_ptr_->host_data(offset_);
   }
 
-  /*StorageIterator host_data() const {
-    // fromDevice();
-    return storage_ptr_->host_data(offset_);
-  }*/
+/*StorageIterator host_data() const {
+  // fromDevice();
+  return storage_ptr_->host_data(offset_);
+}*/
 
 // TODO: should we enable this again?
 #if 0
