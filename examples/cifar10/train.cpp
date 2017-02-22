@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
   if (data_path == "") {
     std::cerr << "Data path not specified. Example of usage :\n"
               << argv[0]
-              << "--data_path ../data --learning_rate 0.01 --epochs 30 "
+              << " --data_path ../data --learning_rate 0.01 --epochs 30 "
               << "--minibatch_size 10 --backend_type internal" << std::endl;
     return -1;
   }
