@@ -99,9 +99,12 @@ void train_cifar10(std::string data_dir_path,
   optimizer.alpha *=
     static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate);
 
+  int epoch = 1;
   // create callback
   auto on_enumerate_epoch = [&]() {
-    std::cout << t.elapsed() << "s elapsed." << std::endl;
+    std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
+              << t.elapsed() << "s elapsed." << std::endl;
+    ++epoch;
     tiny_dnn::result res = nn.test(test_images, test_labels);
     log << res.num_success << "/" << res.num_total << std::endl;
 
