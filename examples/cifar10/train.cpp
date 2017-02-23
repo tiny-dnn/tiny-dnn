@@ -145,18 +145,19 @@ int main(int argc, char **argv) {
   core::backend_t backend_type = core::default_engine();
   for (int count = 1; count + 1 < argc; count += 2) {
     std::string argname(argv[count]);
-    if (argname == "--learning_rate")
+    if (argname == "--learning_rate") {
       learning_rate = atof(argv[count + 1]);
-    else if (argname == "--epochs")
+    } else if (argname == "--epochs") {
       epochs = atoi(argv[count + 1]);
-    else if (argname == "--minibatch_size")
+    } else if (argname == "--minibatch_size") {
       minibatch_size = atoi(argv[count + 1]);
-    else if (argname == "--backend_type")
+    } else if (argname == "--backend_type") {
       backend_type = parse_backend_name(argv[count + 1]);
-    else if (argname == "--data_path")
+    } else if (argname == "--data_path") {
       data_path = std::string(argv[count + 1]);
-    else
+    } else {
       std::cout << "argument " << argname << " isn't supported.";
+    }
   }
   if (data_path == "") {
     std::cerr << "Data path not specified. Example of usage :\n"
@@ -184,7 +185,8 @@ int main(int argc, char **argv) {
   std::cout << "Running with following parameters:" << std::endl
             << "Learning rate: " << learning_rate << std::endl
             << "Minibatch size: " << minibatch_size << std::endl
-            << "Epochs: " << epochs << std::endl;
+            << "Epochs: " << epochs << std::endl
+            << "Backend type: " << backend_type << std::endl;
   train_cifar10(data_path, learning_rate, epochs, minibatch_size, backend_type,
                 std::cout);
 }
