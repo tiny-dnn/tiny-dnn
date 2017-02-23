@@ -74,8 +74,6 @@ void train_cifar10(std::string data_dir_path,
 
   construct_net(nn, backend_type);
 
-  log << "learning rate:" << learning_rate << std::endl;
-
   std::cout << "load models..." << std::endl;
 
   // load cifar dataset
@@ -94,7 +92,6 @@ void train_cifar10(std::string data_dir_path,
 
   progress_display disp(train_images.size());
   timer t;
-  // const int n_minibatch = 10;  ///< minibatch size
 
   optimizer.alpha *=
     static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate);
@@ -168,9 +165,26 @@ int main(int argc, char **argv) {
               << "--minibatch_size 10 --backend_type internal" << std::endl;
     return -1;
   }
-  std::cout << "Running with learning rate " << learning_rate
-            << " and minibatch of size " << minibatch_size << " for " << epochs
-            << " epochs." << std::endl;
+  if (learning_rate <= 0) {
+    std::cerr << "Invalid learning rate. Learning rate must be greater than 0"
+              << std::endl;
+    return -1;
+  }
+  if (epochs <= 0) {
+    std::cerr << "Invalid epochs number. Epochs number must be greater than 0"
+              << std::endl;
+    return -1;
+  }
+  if (minibatch_size <= 0 || minibatch_size > 50000) {
+    std::cerr << "Invalid minibatch size. Minibatch rate must be greater than 0"
+                 " and less than dataset size (50000)"
+              << std::endl;
+    return -1;
+  }
+  std::cout << "Running with following parameters:" << std::endl
+            << "Learning rate: " << learning_rate << std::endl
+            << "Minibatch size: " << minibatch_size << std::endl
+            << "Epochs: " << epochs << std::endl;
   train_cifar10(data_path, learning_rate, epochs, minibatch_size, backend_type,
                 std::cout);
 }

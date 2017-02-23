@@ -179,12 +179,12 @@ compile this file and try various learning rate:
 **Note:** If training is too slow, change ```n_training_epochs```, ```n_fmaps```
  and ```n_fmaps2``` variables to smaller value.
 
-If you see the following message, some network weights become infinite while training.
-Usually it implies too large learning rate:
+If you see the following message, some network weights become infinite 
+while training. Usually it implies too large learning rate:
 
 ```
 [Warning]Detected infinite value in weight. stop learning.
 ```
 
 You will get about 70% accuracy in learning rate=0.01. 
-There are pre-trained weights in file `cifar-weights` in this folder.
+There's a pre-trained weights file named `cifar-weights` in this folder.
