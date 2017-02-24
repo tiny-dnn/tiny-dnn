@@ -155,8 +155,14 @@ int main(int argc, char **argv) {
       backend_type = parse_backend_name(argv[count + 1]);
     } else if (argname == "--data_path") {
       data_path = std::string(argv[count + 1]);
+    } else if (argname == "--help") {
+      std::cout << "Example of usage :\n" << argv[0]
+          << " --data_path ../data --learning_rate 0.01 --epochs 30 "
+          << "--minibatch_size 10 --backend_type internal" << std::endl;
+      return 0;
     } else {
-      std::cout << "argument " << argname << " isn't supported.";
+      std::cerr << "argument " << argname << " isn't supported. Use --help to "
+          << "get usage example";
     }
   }
   if (data_path == "") {
