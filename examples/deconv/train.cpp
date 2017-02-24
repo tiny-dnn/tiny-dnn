@@ -40,8 +40,8 @@ void deconv_lanet(network<graph> &nn,
   convolutional_layer c1(32, 32, 5, 1, 6);
   tanh_layer c1_tanh(28, 28, 6);
   average_pooling_layer<tan_h> p1(28, 28, 6, 2);
-  deconvolutional_layer<tan_h> d1(14, 14, 5, 6, 16,
-                                  connection_table(tbl, 6, 16));
+  deconvolutional_layer d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
+  tanh_layer d1_tanh(18, 18, 16);
   average_pooling_layer<tan_h> p2(18, 18, 16, 2);
   convolutional_layer c2(9, 9, 9, 16, 120);
   tanh_layer c2_tanh(1, 1, 120);
@@ -50,6 +50,7 @@ void deconv_lanet(network<graph> &nn,
 
   // connecting activation layers behind other layers
   c1 << c1_tanh;
+  d1 << d1_tanh;
   c2 << c2_tanh;
   fc1 << fc1_tanh;
 
@@ -176,11 +177,19 @@ void enet(network<graph> &nn,
   (b1c2, b1c4) << b1cc1;
 
   // bottle neck module 2
-  deconvolutional_layer<tan_h> b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
-  deconvolutional_layer<tan_h> b2d2(16, 16, 1, 16, 1, padding::same, true, 2,
-                                    2);
+  deconvolutional_layer b2d1(8, 8, 1, 64, 16, padding::same, true, 2, 2);
+  tanh_layer b2d1_tanh(8, 8, 16);
+  deconvolutional_layer b2d2(16, 16, 1, 16, 1, padding::same, true, 2, 2);
+  tanh_layer b2d2_tanh(16, 16, 1);
+
   fully_connected_layer fc1(32 * 32, 10);
   tanh_layer fc1_tanh(10);
+
+  // connecting activation layers behind deconv and fc layers
+  b2d1 << b2d1_tanh;
+  b2d2 << b2d2_tanh;
+  fc1 << fc1_tanh;
+
   b1cc1 << b2d1 << b2d2 << fc1;
 
   // construct whole network

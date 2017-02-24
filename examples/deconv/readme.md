@@ -19,8 +19,10 @@ void construct_net(network<sequential>& nn) {
        << tanh_layer(28, 28, 6)
        << convolutional_layer(28, 28, 3, 6, 16)
        << tanh_layer(26, 26, 16)
-       << deconvolutional_layer<tan_h>(26, 26, 3, 16, 6)
-       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+       << deconvolutional_layer(26, 26, 3, 16, 6)
+       << tanh_layer(28, 28, 5)
+       << deconvolutional_layer(28, 28, 5, 6, 1)
+       << tanh_layer(32, 32, 1);
 }
 ```
 

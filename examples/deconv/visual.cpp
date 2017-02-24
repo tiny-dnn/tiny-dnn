@@ -39,9 +39,9 @@ void construct_net(network<sequential> &nn) {
   nn << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
      << average_pooling_layer<activation::identity>(28, 28, 6, 2)
      << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
-     << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
+     << deconvolutional_layer(10, 10, 5, 16, 6) << tanh_layer(14, 14, 6)
      << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
-     << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+     << deconvolutional_layer(28, 28, 5, 6, 1) << tanh_layer(32, 32, 1);
 }
 
 void train_network(network<sequential> nn, const string &train_dir_path) {

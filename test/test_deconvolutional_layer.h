@@ -11,248 +11,245 @@
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-/*
-TEST(deconvolutional, setup_tiny) {
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::tiny_dnn);
 
-    EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
-    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
-    EXPECT_EQ(l.in_data_size(), 4);             // size of input tensors
-    EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.weights().size(), 2);           // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(), 2);     // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(), 3);            // num of input edges
-    EXPECT_EQ(l.outputs().size(), 2);           // num of outpus edges
-    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
-    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
-    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
-    EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::tiny_dnn);
+TEST(deconvolutional, setup_tiny) {
+  deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
+                          backend_t::internal);
+
+  EXPECT_EQ(l.parallelize(), true);         // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 3);            // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1);           // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 4);           // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 32);         // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(), 1);   // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), 1);  // num of output shapes
+  EXPECT_EQ(l.weights().size(), 2);         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), 2);   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), 3);          // num of input edges
+  EXPECT_EQ(l.outputs().size(), 1);         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), 3);        // num of input data types
+  EXPECT_EQ(l.out_types().size(), 1);       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), 9);            // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 18);          // num of outgoing connections
+  EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
 }
 
 #ifdef CNN_USE_NNPACK
 TEST(deconvolutional, setup_nnp) {
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2,
-        padding::valid, true, 1, 1, backend_t::nnpack);
+  deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
+                          backend_t::nnpack);
 
-    EXPECT_EQ(l.parallelize(), true);           // if layer can be parallelized
-    EXPECT_EQ(l.in_channels(), 3);              // num of input tensors
-    EXPECT_EQ(l.out_channels(), 2);             // num of output tensors
-    EXPECT_EQ(l.in_data_size(), 4);             // size of input tensors
-    EXPECT_EQ(l.out_data_size(), 32);           // size of output tensors
-    EXPECT_EQ(l.in_data_shape().size(), 1);     // number of inputs shapes
-    EXPECT_EQ(l.out_data_shape().size(), 1);    // num of output shapes
-    EXPECT_EQ(l.weights().size(), 2);           // the wieghts vector size
-    EXPECT_EQ(l.weights_grads().size(), 2);     // the wieghts vector size
-    EXPECT_EQ(l.inputs().size(), 3);            // num of input edges
-    EXPECT_EQ(l.outputs().size(), 2);           // num of outpus edges
-    EXPECT_EQ(l.in_types().size(), 3);          // num of input data types
-    EXPECT_EQ(l.out_types().size(), 2);         // num of output data types
-    EXPECT_EQ(l.fan_in_size(), 9);              // num of incoming connections
-    EXPECT_EQ(l.fan_out_size(), 18);            // num of outgoing connections
-    EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
-    EXPECT_TRUE(l.backend_type() == backend_t::nnpack);
+  EXPECT_EQ(l.parallelize(), true);         // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 3);            // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1);           // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 4);           // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 32);         // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(), 1);   // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), 1);  // num of output shapes
+  EXPECT_EQ(l.weights().size(), 2);         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), 2);   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), 3);          // num of input edges
+  EXPECT_EQ(l.outputs().size(), 1);         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), 3);        // num of input data types
+  EXPECT_EQ(l.out_types().size(), 1);       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), 9);            // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 18);          // num of outgoing connections
+  EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
 }
 #endif
 
 TEST(deconvolutional, fprop) {
-    typedef network<sequential> CNN;
-    CNN nn;
+  network<sequential> nn;
 
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2);
+  deconvolutional_layer l(2, 2, 3, 1, 2);
 
-    // layer::forward_propagation expects tensors, even if we feed only one
-input at a time
-    auto create_simple_tensor = [](size_t vector_size) {
-        return tensor_t(1, vec_t(vector_size));
-    };
+  // layer::forward_propagation expects tensors, even if we feed only one
+  // input at a time
+  auto create_simple_tensor = [](size_t vector_size) {
+    return tensor_t(1, vec_t(vector_size));
+  };
 
-    // create simple tensors that wrap the payload vectors of the correct size
-    tensor_t in_tensor     = create_simple_tensor(4)
-           , out_tensor    = create_simple_tensor(32)
-           , a_tensor      = create_simple_tensor(32)
-           , weight_tensor = create_simple_tensor(18)
-           , bias_tensor   = create_simple_tensor(2);
+  // create simple tensors that wrap the payload vectors of the correct size
+  tensor_t in_tensor     = create_simple_tensor(4),
+           out_tensor    = create_simple_tensor(32),
+           a_tensor      = create_simple_tensor(32),
+           weight_tensor = create_simple_tensor(18),
+           bias_tensor   = create_simple_tensor(2);
 
-    // short-hand references to the payload vectors
-    vec_t &in     = in_tensor[0]
-        , &out    = out_tensor[0]
-        , &weight = weight_tensor[0];
+  // short-hand references to the payload vectors
+  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18);  // weight
 
-    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<tensor_t*> in_data, out_data;
-    in_data.push_back(&in_tensor);
-    in_data.push_back(&weight_tensor);
-    in_data.push_back(&bias_tensor);
-    out_data.push_back(&out_tensor);
-    out_data.push_back(&a_tensor);
-    l.setup(false);
-    {
-        l.forward_propagation(in_data, out_data);
+  std::vector<tensor_t *> in_data, out_data;
+  in_data.push_back(&in_tensor);
+  in_data.push_back(&weight_tensor);
+  in_data.push_back(&bias_tensor);
+  out_data.push_back(&out_tensor);
+  out_data.push_back(&a_tensor);
+  l.setup(false);
+  {
+    l.forward_propagation(in_data, out_data);
 
-        for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, (tiny_dnn::float_t)0.5);
-    }
+    for (auto o : out) EXPECT_DOUBLE_EQ(o, float_t(0));
+  }
 
-    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
-    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
-    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+  // clang-format off
+  weight[0] = 0.3;   weight[1] = 0.1;    weight[2] = 0.2;
+  weight[3] = 0.0;   weight[4] = -0.1;   weight[5] = -0.1;
+  weight[6] = 0.05;  weight[7] = -0.2;   weight[8] = 0.05;
 
-    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
-    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
-    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+  weight[9]  = 0.0;  weight[10] = -0.1;  weight[11] = 0.1;
+  weight[12] = 0.1;  weight[13] = -0.2;  weight[14] = 0.3;
+  weight[15] = 0.2;  weight[16] = -0.3;  weight[17] = 0.2;
 
-    in[0] = 3;  in[1] = 2;
-    in[2] = 3;  in[3] = 0;
+  in[0] = 3;  in[1] = 2;  in[2] = 3;  in[3] = 0;
+  // clang-format on
 
-    {
-        l.forward_propagation(in_data, out_data);
+  {
+    l.forward_propagation(in_data, out_data);
 
-        EXPECT_NEAR(0.7109495, out[0], 1E-5);
-        EXPECT_NEAR(0.7109495, out[1], 1E-5);
-        EXPECT_NEAR(0.6899745, out[2], 1E-5);
-        EXPECT_NEAR(0.5986877, out[3], 1E-5);
-        EXPECT_NEAR(0.7109495, out[4], 1E-5);
-        EXPECT_NEAR(0.5000000, out[5], 1E-5);
-        EXPECT_NEAR(0.5249792, out[6], 1E-5);
-        EXPECT_NEAR(0.4501660, out[7], 1E-5);
-        EXPECT_NEAR(0.5374298, out[8], 1E-5);
-        EXPECT_NEAR(0.3100255, out[9], 1E-5);
-        EXPECT_NEAR(0.3658644, out[10], 1E-5);
-        EXPECT_NEAR(0.5249791, out[11], 1E-5);
-        EXPECT_NEAR(0.5374298, out[12], 1E-5);
-        EXPECT_NEAR(0.3543437, out[13], 1E-5);
-        EXPECT_NEAR(0.5374298, out[14], 1E-5);
-        EXPECT_NEAR(0.5000000, out[15], 1E-5);
-    }
+    EXPECT_NEAR(0.900, out[0], 1E-5);
+    EXPECT_NEAR(0.900, out[1], 1E-5);
+    EXPECT_NEAR(0.800, out[2], 1E-5);
+    EXPECT_NEAR(0.400, out[3], 1E-5);
+    EXPECT_NEAR(0.900, out[4], 1E-5);
+    EXPECT_NEAR(0.000, out[5], 1E-5);
+    EXPECT_NEAR(0.100, out[6], 1E-5);
+    EXPECT_NEAR(-0.20, out[7], 1E-5);
+    EXPECT_NEAR(0.150, out[8], 1E-5);
+    EXPECT_NEAR(-0.80, out[9], 1E-5);
+    EXPECT_NEAR(-0.55, out[10], 1E-5);
+    EXPECT_NEAR(0.100, out[11], 1E-5);
+    EXPECT_NEAR(0.150, out[12], 1E-5);
+    EXPECT_NEAR(-0.60, out[13], 1E-5);
+    EXPECT_NEAR(0.150, out[14], 1E-5);
+    EXPECT_NEAR(0.000, out[15], 1E-5);
+  }
 }
 
 TEST(deconvolutional, fprop2) {
-    typedef network<sequential> CNN;
-    CNN nn;
+  network<sequential> nn;
 
-    deconvolutional_layer<sigmoid> l(2, 2, 3, 1, 2, padding::same);
+  deconvolutional_layer l(2, 2, 3, 1, 2, padding::same);
 
-    auto create_simple_tensor = [](size_t vector_size) {
-        return tensor_t(1, vec_t(vector_size));
-    };
+  auto create_simple_tensor = [](size_t vector_size) {
+    return tensor_t(1, vec_t(vector_size));
+  };
 
-    tensor_t in_tensor     = create_simple_tensor(4)
-           , out_tensor    = create_simple_tensor(32)
-           , a_tensor      = create_simple_tensor(32)
-           , weight_tensor = create_simple_tensor(18)
-           , bias_tensor   = create_simple_tensor(2);
+  tensor_t in_tensor     = create_simple_tensor(4),
+           out_tensor    = create_simple_tensor(32),
+           weight_tensor = create_simple_tensor(18),
+           bias_tensor   = create_simple_tensor(2);
 
-    // short-hand references to the payload vectors
-    vec_t &in = in_tensor[0]
-        , &out = out_tensor[0]
-        , &weight = weight_tensor[0];
+  // short-hand references to the payload vectors
+  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18); // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18);  // weight
 
-    uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<tensor_t*> in_data, out_data;
-    in_data.push_back(&in_tensor);
-    in_data.push_back(&weight_tensor);
-    in_data.push_back(&bias_tensor);
-    out_data.push_back(&out_tensor);
-    out_data.push_back(&a_tensor);
-    l.setup(false);
-    {
-        l.forward_propagation(in_data, out_data);
+  std::vector<tensor_t *> in_data, out_data;
+  in_data.push_back(&in_tensor);
+  in_data.push_back(&weight_tensor);
+  in_data.push_back(&bias_tensor);
+  out_data.push_back(&out_tensor);
+  l.setup(false);
+  {
+    l.forward_propagation(in_data, out_data);
 
-        for (auto o: out)
-            EXPECT_DOUBLE_EQ(o, (tiny_dnn::float_t)0.5);
-    }
+    for (auto o : out) EXPECT_DOUBLE_EQ(o, float_t(0));
+  }
 
-    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
-    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
-    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
+  // clang-format off
+  weight[0] = 0.3;   weight[1] = 0.1;   weight[2] = 0.2;
+  weight[3] = 0.0;   weight[4] = -0.1;  weight[5] = -0.1;
+  weight[6] = 0.05;  weight[7] = -0.2;  weight[8] = 0.05;
 
-    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
-    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
-    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
+  weight[9]  = 0.0;  weight[10] = -0.1; weight[11] = 0.1;
+  weight[12] = 0.1;  weight[13] = -0.2; weight[14] = 0.3;
+  weight[15] = 0.2;  weight[16] = -0.3; weight[17] = 0.2;
 
-    in[0] = 3;  in[1] = 2;
-    in[2] = 3;  in[3] = 0;
+  in[0] = 3;  in[1] = 2;  in[2] = 3;  in[3] = 0;
+  // clang-format on
 
-    {
-        l.forward_propagation(in_data, out_data);
+  // resize tensor because its dimension changed in above used test case
+  out_tensor[0].resize(32);
 
-        EXPECT_NEAR(0.5000000, out[0], 1E-5);
-        EXPECT_NEAR(0.5249792, out[1], 1E-5);
-        EXPECT_NEAR(0.3100255, out[2], 1E-5);
-        EXPECT_NEAR(0.3658644, out[3], 1E-5);
-    }
+  {
+    l.forward_propagation(in_data, out_data);
+
+    EXPECT_NEAR(0.000, out[0], 1E-5);
+    EXPECT_NEAR(0.100, out[1], 1E-5);
+    EXPECT_NEAR(-0.80, out[2], 1E-5);
+    EXPECT_NEAR(-0.55, out[3], 1E-5);
+    EXPECT_NEAR(-0.70, out[4], 1E-5);
+    EXPECT_NEAR(0.800, out[5], 1E-5);
+    EXPECT_NEAR(-1.10, out[6], 1E-5);
+    EXPECT_NEAR(0.900, out[7], 1E-5);
+  }
 }
 
-TEST(deconvolutional, gradient_check) { // tanh - mse
-    network<sequential> nn;
-    nn << deconvolutional_layer<tan_h>(2, 2, 3, 1, 1);
+/*
+TEST(deconvolutional, gradient_check) {  // tanh - mse
+  network<sequential> nn;
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh_layer(4, 4, 1);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-epsilon<float_t>(), GRAD_CHECK_ALL));
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
+                                     epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(deconvolutional, gradient_check2) { // sigmoid - mse
-    network<sequential> nn;
-    nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
+TEST(deconvolutional, gradient_check2) {  // sigmoid - mse
+  network<sequential> nn;
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid_layer(4, 4, 1);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-epsilon<float_t>(), GRAD_CHECK_ALL));
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
+                                     epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(deconvolutional, gradient_check3) { // rectified - mse
-    network<sequential> nn;
+TEST(deconvolutional, gradient_check3) {  // rectified - mse
+  network<sequential> nn;
 
-    nn << deconvolutional_layer<rectified_linear>(2, 2, 3, 1, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << relu_layer(4, 4, 1);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-epsilon<float_t>(), GRAD_CHECK_ALL));
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
+                                     epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(deconvolutional, gradient_check4) { // identity - mse
-    network<sequential> nn;
+TEST(deconvolutional, gradient_check4) {  // identity - mse
+  network<sequential> nn;
 
-    nn << deconvolutional_layer<identity>(2, 2, 3, 1, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-epsilon<float_t>(), GRAD_CHECK_ALL));
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
+                                     epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(deconvolutional, gradient_check5) { // sigmoid - cross-entropy
-    network<sequential> nn;
+TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
+  network<sequential> nn;
 
-    nn << deconvolutional_layer<sigmoid>(2, 2, 3, 1, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid_layer(4, 4, 1);
 
-    const auto test_data = generate_gradient_check_data(nn.in_data_size());
-    nn.init_weight();
-    EXPECT_TRUE(nn.gradient_check<cross_entropy>(test_data.first,
-test_data.second, epsilon<float_t>(),
-GRAD_CHECK_ALL));
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<cross_entropy>(
+    test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(deconvolutional, read_write)
 {
-    deconvolutional_layer<tan_h> l1(2, 2, 3, 1, 1);
-    deconvolutional_layer<tan_h> l2(2, 2, 3, 1, 1);
+    deconvolutional_layer l1(2, 2, 3, 1, 1);
+    deconvolutional_layer l2(2, 2, 3, 1, 1);
 
     l1.init_weight();
     l2.init_weight();
@@ -270,9 +267,9 @@ TEST(deconvolutional, read_write2) {
     };
 #undef O
 #undef X
-    deconvolutional_layer<tan_h> layer1(14, 14, 5, 3, 6,
+    deconvolutional_layer layer1(14, 14, 5, 3, 6,
 connection_table(connection, 3, 6));
-    deconvolutional_layer<tan_h> layer2(14, 14, 5, 3, 6,
+    deconvolutional_layer layer2(14, 14, 5, 3, 6,
 connection_table(connection, 3, 6));
     layer1.init_weight();
     layer2.init_weight();
