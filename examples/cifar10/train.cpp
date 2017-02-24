@@ -156,13 +156,14 @@ int main(int argc, char **argv) {
     } else if (argname == "--data_path") {
       data_path = std::string(argv[count + 1]);
     } else if (argname == "--help") {
-      std::cout << "Example of usage :\n" << argv[0]
-          << " --data_path ../data --learning_rate 0.01 --epochs 30 "
-          << "--minibatch_size 10 --backend_type internal" << std::endl;
+      std::cout << "Example of usage :\n"
+                << argv[0]
+                << " --data_path ../data --learning_rate 0.01 --epochs 30 "
+                << "--minibatch_size 10 --backend_type internal" << std::endl;
       return 0;
     } else {
       std::cerr << "argument " << argname << " isn't supported. Use --help to "
-          << "get usage example";
+                << "get usage example";
     }
   }
   if (data_path == "") {
