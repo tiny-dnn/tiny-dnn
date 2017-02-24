@@ -125,13 +125,13 @@ void train_cifar10(std::string data_dir_path,
   ofs << nn;
 }
 
-static core::backend_t parse_backend_name(const char *name) {
-  std::array<std::string, 5> names = {
+static core::backend_t parse_backend_name(const std::string &name) {
+  const std::array<const std::string, 5> names = {
     "internal", "nnpack", "libdnn", "avx", "opencl",
   };
   for (size_t i = 0; i < names.size(); ++i) {
-    if (strcasecmp(name, names[i].c_str()) == 0) {
-      return (core::backend_t)i;
+    if (name.compare(names[i]) == 0) {
+      return static_cast<core::backend_t>(i);
     }
   }
   return core::default_engine();
