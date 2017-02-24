@@ -17,7 +17,7 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
                                  const tensor_t &in,
                                  const vec_t &W,
                                  const vec_t &bias,
-                                 tensor_t &a,
+                                 tensor_t &out,
                                  const bool layer_parallelize) {
   for_i(layer_parallelize, in.size(), [&](int sample) {
     for (serial_size_t o = 0; o < params.out.depth_; o++) {
@@ -32,13 +32,13 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
 
         idx = params.in.get_index(0, 0, inc);
         assert(static_cast<serial_size_t>(sample) < in.size() &&
-               idx < in[sample].size());
+               idx <= in[sample].size());
         const float_t *pi = &in[sample][idx];
 
         idx = params.out.get_index(0, 0, o);
-        assert(static_cast<serial_size_t>(sample) < a.size() &&
-               idx < a[sample].size());
-        float_t *pa = &a[sample][idx];
+        assert(static_cast<serial_size_t>(sample) < out.size() &&
+               idx <= out[sample].size());
+        float_t *pout = &out[sample][idx];
 
         for (serial_size_t y = 0; y < params.in.height_; y++) {
           for (serial_size_t x = 0; x < params.in.width_; x++) {
@@ -47,8 +47,8 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
             // should be optimized for small kernel(3x3,5x5)
             for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
               for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
-                pa[(y * params.h_stride + wy) * params.out.width_ +
-                   (x * params.w_stride + wx)] +=
+                pout[(y * params.h_stride + wy) * params.out.width_ +
+                     (x * params.w_stride + wx)] +=
                   ppw[wy * params.weight.width_ + wx] * (*ppi);
               }
             }
@@ -57,9 +57,9 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
       }
 
       if (params.has_bias) {
-        float_t *pa  = &a[sample][params.out.get_index(0, 0, o)];
-        float_t *paa = pa + params.out.width_ * params.out.height_;
-        std::for_each(pa, paa, [&](float_t &f) { f += bias[o]; });
+        float_t *pout  = &out[sample][params.out.get_index(0, 0, o)];
+        float_t *pout2 = pout + params.out.width_ * params.out.height_;
+        std::for_each(pout, pout2, [&](float_t &f) { f += bias[o]; });
       }
     }
   });

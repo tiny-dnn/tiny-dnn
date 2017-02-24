@@ -48,8 +48,8 @@ static void construct_net(network<sequential>& nn) {
                             connection_table(tbl, 6, 16), padding::valid, true,
                             1, 1, backend_type)
      << tanh_layer(10, 10, 16)
-     << average_pooling_layer(10, 10, 16,
-                              2)  // S4, 16@10x10-in, 16@5x5-out
+     << average_pooling_layer<tan_h>(10, 10, 16,
+                                     2)  // S4, 16@10x10-in, 16@5x5-out
      << convolutional_layer(5, 5, 5, 16,
                             120,  // C5, 16@5x5-in, 120@1x1-out
                             padding::valid, true, 1, 1, backend_type)

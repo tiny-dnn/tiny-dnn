@@ -108,8 +108,7 @@ using input = tiny_dnn::input_layer;
 
 using concat = tiny_dnn::concat_layer;
 
-template <class T>
-using deconv = tiny_dnn::deconvolutional_layer<T>;
+using deconv = tiny_dnn::deconvolutional_layer;
 
 template <class T>
 using max_unpool = tiny_dnn::max_unpooling_layer<T>;
