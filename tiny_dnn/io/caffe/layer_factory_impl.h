@@ -639,7 +639,7 @@ inline std::shared_ptr<layer> create_deconvlayer(
   const caffe::LayerParameter &layer,
   const shape_t &bottom_shape,
   shape_t *top_shape) {
-  using deconv_layer = deconvolutional_layer<activation::identity>;
+  using deconv_layer = deconvolutional_layer;
 
   if (!layer.has_convolution_param()) {
     throw nn_error("deconvolution param missing");
