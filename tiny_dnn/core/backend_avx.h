@@ -39,10 +39,19 @@ class avx_backend : public backend {
     : params_c_(params),
       conv_layer_worker_storage_(ptr),
       copy_and_pad_input(f1),
-      copy_and_unpad_delta(f2),
-      backward_activation(f3) {}
+      copy_and_unpad_delta(f2) {}
 
   // deconvolution
+  avx_backend(deconv_params *params,
+              std::function<void(const tensor_t &)> f1,
+              std::function<void(const tensor_t &, tensor_t &)> f2,
+              deconv_layer_worker_specific_storage *ptr)
+    : params_d_(params),
+      deconv_layer_worker_storage_(ptr),
+      copy_and_unpad_output(f1),
+      copy_and_pad_delta(f2) {}
+
+  // quantized deconvolution
   avx_backend(
     deconv_params *params,
     std::function<void(const tensor_t &)> f1,
@@ -67,6 +76,9 @@ class avx_backend : public backend {
       backward_activation(f) {}
 
   // fully_connected
+  avx_backend(fully_params *params) : params_f_(params) {}
+
+  // quantized fully_connected
   avx_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
@@ -104,16 +116,16 @@ class avx_backend : public backend {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
     const vec_t &W                            = (*in_data[1])[0];
     const vec_t &bias                         = (*in_data[2])[0];
-    tensor_t &a                               = *out_data[1];
+    tensor_t &out                             = *out_data[0];
     const tensor_t &in                        = *in_data[0];  // input
 
-    fill_tensor(a, float_t{0});
+    fill_tensor(out, float_t{0});
 
-    kernels::avx_deconv2d_kernel(*params_d_, in, W, bias, a,
+    kernels::avx_deconv2d_kernel(*params_d_, in, W, bias, out,
                                  layer_->parallelize());
 
-    copy_and_unpad_output(a);
-    a = *(*deconv_layer_worker_storage_).curr_out_unpadded_;
+    copy_and_unpad_output(out);
+    out = *(*deconv_layer_worker_storage_).curr_out_unpadded_;
   }
 
   void deconv2d_q(const std::vector<tensor_t *> &in_data,
@@ -144,14 +156,12 @@ class avx_backend : public backend {
     tensor_t &db             = *in_grad[2];
     tensor_t &curr_delta     = (params_d_->pad_type == padding::same)
                              ? cws.curr_delta_padded
-                             : *out_grad[1];
+                             : *out_grad[0];
     tensor_t *prev_delta = in_grad[0];
 
     assert(W.size() == params_d_->weight.size());
     assert(dW[0].size() == params_d_->weight.size());
     assert(curr_delta[0].size() == layer_->out_shape()[0].size());
-
-    backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
     fill_tensor(*prev_delta, float_t{0});
 
