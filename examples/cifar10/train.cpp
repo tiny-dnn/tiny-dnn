@@ -126,11 +126,11 @@ void train_cifar10(std::string data_dir_path,
 }
 
 static core::backend_t parse_backend_name(const char *name) {
-  static const char *names[] = {
+  std::array<std::string, 5> names = {
     "internal", "nnpack", "libdnn", "avx", "opencl",
   };
-  for (size_t i = 0; i < sizeof(names) / sizeof(names[0]); ++i) {
-    if (strcasecmp(name, names[i]) == 0) {
+  for (size_t i = 0; i < names.size(); ++i) {
+    if (strcasecmp(name, names[i].c_str()) == 0) {
       return (core::backend_t)i;
     }
   }
