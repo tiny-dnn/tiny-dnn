@@ -81,8 +81,10 @@ class dropout_layer : public layer {
 
     for (serial_size_t sample = 0;
          sample < static_cast<serial_size_t>(prev_delta.size()); ++sample) {
-      for (serial_size_t i = 0;
-           i < static_cast<serial_size_t>(curr_delta.size()); i++) {
+      assert(prev_delta[sample].size() == curr_delta[sample].size());
+      assert(mask_[sample].size() == prev_delta[sample].size());
+      size_t sz = prev_delta[sample].size();
+      for (size_t i = 0; i < sz; ++i) {
         prev_delta[sample][i] = mask_[sample][i] * curr_delta[sample][i];
       }
     }

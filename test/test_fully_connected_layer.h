@@ -51,7 +51,7 @@ TEST(fully_connected, train) {
 }
 
 TEST(fully_connected, train_different_batches) {
-  auto batch_sizes = {2, 7, 11, 16};
+  auto batch_sizes = {2, 7, 10, 12};
   for (auto &batch_sz : batch_sizes) {
     std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
     network<sequential> nn;
