@@ -255,6 +255,8 @@ TEST(network, train_predict) {
 
 TEST(network, train_predict_different_batches) {
   auto batch_sizes = {2, 7, 11, 16};
+  size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
+                                     std::multiplies<int>());
   for (auto &batch_sz : batch_sizes) {
     std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
     // train xor function
@@ -263,11 +265,10 @@ TEST(network, train_predict_different_batches) {
 
     std::vector<vec_t> data;
     std::vector<label_t> label;
-    size_t tnum = batch_sz * 30;
 
     optimizer.alpha *= 10;
 
-    for (size_t i = 0; i < tnum; i++) {
+    for (size_t i = 0; i < data_size; i++) {
       bool in[2] = {bernoulli(0.5), bernoulli(0.5)};
       data.push_back(
         {static_cast<float_t>(in[0]), static_cast<float_t>(in[1])});
@@ -279,10 +280,10 @@ TEST(network, train_predict_different_batches) {
 
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 
-    std::vector<tensor_t> parallel_input(tnum);
-    std::vector<tensor_t> expected_parallel_output(tnum);
+    std::vector<tensor_t> parallel_input(data_size);
+    std::vector<tensor_t> expected_parallel_output(data_size);
 
-    for (size_t i = 0; i < tnum; i++) {
+    for (size_t i = 0; i < data_size; i++) {
       const bool in[2]       = {bernoulli(0.5), bernoulli(0.5)};
       const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
       const vec_t input      = {static_cast<float_t>(in[0]),
@@ -299,7 +300,7 @@ TEST(network, train_predict_different_batches) {
 
     // test predicting multiple samples in parallel
     const auto actual_parallel_output = net.predict(parallel_input);
-    for (size_t i = 0; i < tnum; i++) {
+    for (size_t i = 0; i < data_size; i++) {
       EXPECT_NEAR(expected_parallel_output[i][0][0],
                   actual_parallel_output[i][0][0], 1e-10);
       EXPECT_NEAR(expected_parallel_output[i][0][1],
