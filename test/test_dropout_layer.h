@@ -7,6 +7,7 @@
 */
 #pragma once
 #include <deque>
+#include <vector>
 #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
@@ -51,7 +52,7 @@ TEST(dropout, read_write) {
 
 TEST(dropout, full_net) {
   network<sequential> nn;
-  adam optimizer;  // adagrad crashes too
+  adam optimizer;
 
   vec_t a(4, 0.0), t(2, 0.0), a2(4, 0.0), t2(2, 0.0);
 
@@ -80,7 +81,7 @@ TEST(dropout, full_net) {
 
 TEST(dropout, full_net_batch) {
   network<sequential> nn;
-  adam optimizer;  // adagrad crashes too
+  adam optimizer;
 
   vec_t a(4, 0.0), t(2, 0.0), a2(4, 0.0), t2(2, 0.0);
 
@@ -103,8 +104,6 @@ TEST(dropout, full_net_batch) {
 
   nn << fc<relu>(4, 10) << dropout(10, 0.5) << fc<sigmoid>(10, 2);
 
-  nn.train<mse>(optimizer, data, train, 20, 10);  // ok with batch = 10,
-                                                  // doesn't work with
-                                                  // batch = 11,20,50
+  nn.train<mse>(optimizer, data, train, 20, 10);
 }
 }  // namespace tiny-dnn
