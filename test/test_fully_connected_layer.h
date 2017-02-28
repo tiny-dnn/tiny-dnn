@@ -52,6 +52,8 @@ TEST(fully_connected, train) {
 
 TEST(fully_connected, train_different_batches) {
   auto batch_sizes = {2, 7, 10, 12};
+  size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
+                                     std::multiplies<int>());
   for (auto &batch_sz : batch_sizes) {
     std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
     network<sequential> nn;
@@ -71,7 +73,7 @@ TEST(fully_connected, train_different_batches) {
 
     std::vector<vec_t> data, train;
 
-    for (int i = 0; i < batch_sz * 10; i++) {
+    for (size_t i = 0; i < data_size; i++) {
       data.push_back(a);
       data.push_back(a2);
       train.push_back(t);
