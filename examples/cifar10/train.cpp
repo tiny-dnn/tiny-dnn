@@ -31,10 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include "tiny_dnn/tiny_dnn.h"
 
-#ifdef _MSC_VER
-#define strcasecmp _stricmp
-#endif
-
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
@@ -164,6 +160,7 @@ int main(int argc, char **argv) {
     } else {
       std::cerr << "argument " << argname << " isn't supported. Use --help to "
                 << "get usage example";
+      return -1;
     }
   }
   if (data_path == "") {

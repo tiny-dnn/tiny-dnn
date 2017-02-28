@@ -6,6 +6,7 @@
     in the LICENSE file.
 */
 #pragma once
+#include <memory>
 #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
@@ -625,41 +626,6 @@ TEST(network, trainable) {
   EXPECT_NE(w0, w0_after_update);
   EXPECT_EQ(w1, w1_after_update);
   EXPECT_NE(w2, w2_after_update);
-}
-
-template <typename N>
-void construct_net(N &nn) {
-  // Build network
-
-  auto i1  = new input_layer(shape3d(2, 1, 1));
-  auto fc1 = new fully_connected_layer<activation::tan_h>(2, 4);
-  auto out = new fully_connected_layer<softmax>(4, 4);
-
-  *i1 << *fc1 << *out;
-
-  construct_graph(nn, {i1}, {out});
-}
-
-TEST(network, outer_inner_constructor) {
-  // Network built in main
-  network<graph> nn;
-
-  input_layer i1(shape3d(2, 1, 1));
-  fully_connected_layer<activation::tan_h> fc1(2, 4);
-  fully_connected_layer<softmax> out(4, 4);
-
-  i1 << fc1 << out;
-
-  construct_graph(nn, {&i1}, {&out});
-
-  // Test network
-  EXPECT_EQ(nn.in_data_size(), 2);  // works fine
-
-  // Network built via function
-  network<graph> nn2;
-  construct_net(nn2);
-
-  EXPECT_EQ(nn2.in_data_size(), 2);  // works fine too
 }
 
 }  // namespace tiny-dnn
