@@ -15,11 +15,9 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-template <typename Activation>
-class quantized_fully_connected_layer : public feedforward_layer<Activation> {
+class quantized_fully_connected_layer : public layer {
  public:
-  typedef feedforward_layer<Activation> Base;
-  CNN_USE_LAYER_MEMBERS;
+  using layer::parallelize_;
 
   /**
    * @param in_dim [in] number of elements of the input
@@ -31,14 +29,14 @@ class quantized_fully_connected_layer : public feedforward_layer<Activation> {
     serial_size_t out_dim,
     bool has_bias          = true,
     backend_t backend_type = core::backend_t::internal)
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
   }
 
   // move constructor
   quantized_fully_connected_layer(quantized_fully_connected_layer &&other)
-    : Base(std::move(other)), params_(std::move(other.params_)) {
+    : layer(std::move(other)), params_(std::move(other.params_)) {
     init_backend(core::backend_t::internal);
   }
 
@@ -58,19 +56,16 @@ class quantized_fully_connected_layer : public feedforward_layer<Activation> {
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1),
-            index3d<serial_size_t>(params_.out_size_, 1, 1)};
+    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
     if (in_data.size() == 2 || in_data.size() == 3) {
-      Base::backend_->fully_q(in_data, out_data);
+      layer::backend_->fully_q(in_data, out_data);
 
-      // activations
-      this->forward_activation(*out_data[0], *out_data[1]);
     } else if (in_data.size() == 4 || in_data.size() == 6) {
-      Base::backend_->fully_eq(in_data, out_data);
+      layer::backend_->fully_eq(in_data, out_data);
     }
   }
 
@@ -78,7 +73,7 @@ class quantized_fully_connected_layer : public feedforward_layer<Activation> {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    Base::backend_->fully_q(in_data, out_data, out_grad, in_grad);
+    layer::backend_->fully_q(in_data, out_data, out_grad, in_grad);
   }
 
   std::string layer_type() const override { return "q_fully-connected"; }
@@ -99,19 +94,15 @@ class quantized_fully_connected_layer : public feedforward_layer<Activation> {
 
     // allocate new backend
     if (backend_type == backend_t::internal) {
-      backend = std::make_shared<core::tiny_backend>(
-        &params_, [this](const tensor_t &p_delta, const tensor_t &out,
-                         tensor_t &c_delta) {
-          return Base::backward_activation(p_delta, out, c_delta);
-        });
+      backend = std::make_shared<core::tiny_backend>(&params_);
     } else {
       throw nn_error("Not supported backend type.");
     }
 
     if (backend) {
-      Base::set_backend(backend);
-      Base::set_backend_type(backend_type);
-      Base::backend_->set_layer(this);
+      layer::set_backend(backend);
+      layer::set_backend_type(backend_type);
+      layer::backend_->set_layer(this);
     } else {
       throw nn_error("Could not allocate the backend.");
     }
