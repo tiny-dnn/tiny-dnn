@@ -82,8 +82,7 @@ namespace layers {
 
 using conv = tiny_dnn::convolutional_layer;
 
-template <class T>
-using q_conv = tiny_dnn::quantized_convolutional_layer<T>;
+using q_conv = tiny_dnn::quantized_convolutional_layer;
 
 using max_pool = tiny_dnn::max_pooling_layer;
 
@@ -92,6 +91,8 @@ using ave_pool = tiny_dnn::average_pooling_layer;
 using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
+
+using q_fc = tiny_dnn::quantized_fully_connected_layer;
 
 using add = tiny_dnn::elementwise_add_layer;
 

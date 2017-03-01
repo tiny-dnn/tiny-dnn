@@ -95,12 +95,12 @@ TEST(quantized_convolutional, fprop) {
 
         EXPECT_NEAR(-0.043426, out[0], 2E-2);
         EXPECT_NEAR(1.6769816, out[1], 2E-2);
-        EXPECT_NEAR(1.4858254, out[2], 2E-2);
+        EXPECT_NEAR(1.4731820, out[2], 2E-2);
         EXPECT_NEAR(1.0822733, out[3], 2E-2);
         EXPECT_NEAR(0.0415336, out[4], 2E-2);
         EXPECT_NEAR(-1.997466, out[5], 2E-2);
         EXPECT_NEAR(0.4238461, out[6], 2E-2);
-        EXPECT_NEAR(1.1884713, out[7], 2E-2);
+        EXPECT_NEAR(1.1756143, out[7], 2E-2);
         EXPECT_NEAR(0.8273983, out[8], 2E-2);
         EXPECT_NEAR(-0.192101, out[9], 2E-2);
         EXPECT_NEAR(1.2309504, out[10], 2E-2);
@@ -153,51 +153,23 @@ TEST(quantized_convolutional, fprop_npp) {
     for (auto o : out) EXPECT_NEAR(0.5, o, 1E-3);
   }
 
-  weight[0] = 0.3;
-  weight[1] = 0.1;
-  weight[2] = 0.2;
-  weight[3] = 0.0;
-  weight[4] = -0.1;
-  weight[5] = -0.1;
-  weight[6] = 0.05;
-  weight[7] = -0.2;
-  weight[8] = 0.05;
+  // clang-format off
+  weight[0] = 0.3;  weight[1] = 0.1;   weight[2] = 0.2;
+  weight[3] = 0.0;  weight[4] = -0.1;  weight[5] = -0.1;
+  weight[6] = 0.05; weight[7] = -0.2;  weight[8] = 0.05;
 
-  weight[9]  = 0.0;
-  weight[10] = -0.1;
-  weight[11] = 0.1;
-  weight[12] = 0.1;
-  weight[13] = -0.2;
-  weight[14] = 0.3;
-  weight[15] = 0.2;
-  weight[16] = -0.3;
-  weight[17] = 0.2;
+  weight[9]  = 0.0; weight[10] = -0.1; weight[11] = 0.1;
+  weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
+  weight[15] = 0.2; weight[16] = -0.3; weight[17] = 0.2;
 
-  in[0]  = 3;
-  in[1]  = 2;
-  in[2]  = 1;
-  in[3]  = 5;
-  in[4]  = 2;
-  in[5]  = 3;
-  in[6]  = 0;
-  in[7]  = 2;
-  in[8]  = 0;
-  in[9]  = 1;
-  in[10] = 0;
-  in[11] = 6;
-  in[12] = 1;
-  in[13] = 1;
-  in[14] = 10;
-  in[15] = 3;
-  in[16] = -1;
-  in[17] = 2;
-  in[18] = 9;
-  in[19] = 0;
-  in[20] = 1;
-  in[21] = 2;
-  in[22] = 1;
-  in[23] = 5;
+  in[0]  = 3;  in[1]  = 2;  in[2]  = 1;  in[3]  = 5;
+  in[4]  = 2;  in[5]  = 3;  in[6]  = 0;  in[7]  = 2;
+  in[8]  = 0;  in[9]  = 1;  in[10] = 0;  in[11] = 6;
+  in[12] = 1;  in[13] = 1;  in[14] = 10; in[15] = 3;
+  in[16] = -1; in[17] = 2;  in[18] = 9;  in[19] = 0;
+  in[20] = 1;  in[21] = 2;  in[22] = 1;  in[23] = 5;
   in[24] = 5;
+  // clang-format on
 
   {
     l.forward_propagation(in_data, out_data);
