@@ -55,7 +55,6 @@ TEST(fully_connected, train_different_batches) {
   size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
                                      std::multiplies<int>());
   for (auto &batch_sz : batch_sizes) {
-    std::cout << "Batch size:" << batch_sz << std::endl << std::endl;
     network<sequential> nn;
     adagrad optimizer;
 
