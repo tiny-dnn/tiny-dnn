@@ -174,14 +174,19 @@ class batch_normalization_layer : public layer {
     }
   }
 
-  void save(std::ostream &os) const override {
-    Base::save(os);
+  void save(
+    std::ostream &os,
+    const int precision = std::numeric_limits<float_t>::digits10 + 2
+    /*by default, we want there to be enough precision*/) const override {
+    Base::save(os, precision);
     for (auto m : mean_) os << m << " ";
     for (auto v : variance_) os << v << " ";
   }
 
-  void load(std::istream &is) override {
-    Base::load(is);
+  void load(std::istream &is,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2
+            /*by default, we want there to be enough precision*/) override {
+    Base::load(is, precision);
     for (auto &m : mean_) is >> m;
     for (auto &v : variance_) is >> v;
   }

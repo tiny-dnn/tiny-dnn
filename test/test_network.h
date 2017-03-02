@@ -628,7 +628,7 @@ TEST(network, read_write) {
   adagrad optimizer;
   n1.train<loss_func>(optimizer, t, l, 1, 1);
 
-  serialization_test(n1, n2);
+  network_serialization_test(n1, n2);
 
   vec_t in(32 * 32, 0.0);
 
