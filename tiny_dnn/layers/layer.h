@@ -331,17 +331,27 @@ class layer : public node {
     initialized_ = true;
   }
 
-  virtual void save(std::ostream &os) const {  // NOLINT
-                                               /*if (is_exploded()) {
-                                                   throw nn_error("failed to save weights because of infinite weight");
-                                               }*/
+  virtual void save(
+    std::ostream &os,
+    const int precision = std::numeric_limits<float_t>::digits10 + 2
+    /*by default, we want there to be enough precision*/) const {  // NOLINT
+
+    /*
+     if (is_exploded()) {
+       throw nn_error("failed to save weights because of infinite weight");
+    }*/
+    os << std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
       for (auto w : *weight) os << w << " ";
     }
   }
 
-  virtual void load(std::istream &is) {  // NOLINT
+  virtual void load(
+    std::istream &is,
+    const int precision = std::numeric_limits<float_t>::digits10 + 2
+    /*by default, we want there to be enough precision*/) {  // NOLINT
+    is >> std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
       for (auto &w : *weight) is >> w;
