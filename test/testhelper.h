@@ -82,14 +82,17 @@ void network_serialization_test(T &src, T &dst) {
   std::remove(tmp_file_path.c_str());
 
   vec_t v(src.in_data_size());
-  uniform_rand(v.begin(), v.end(), -1.0f, 1.0f);
+  uniform_rand(v.begin(), v.end(), float_t{-1.0}, float_t{1.0});
 
-  EXPECT_TRUE(src.has_same_weights(dst, 1E-5f));
+  // a bit more than precision limit
+  float_t epsilon = std::numeric_limits<float_t>::epsilon()*2;
+
+  EXPECT_TRUE(src.has_same_weights(dst, epsilon));
 
   vec_t r1 = forward_pass(src, v);
   vec_t r2 = forward_pass(dst, v);
 
-  EXPECT_TRUE(is_near_container(r1, r2, 1E-4f));
+  EXPECT_TRUE(is_near_container(r1, r2, epsilon*10));
 }
 
 template <typename T>
@@ -112,14 +115,16 @@ void serialization_test(T &src, T &dst) {
   std::remove(tmp_file_path.c_str());
 
   vec_t v(src.in_data_size());
-  uniform_rand(v.begin(), v.end(), -1.0f, 1.0f);
+  uniform_rand(v.begin(), v.end(), float_t{-1.0}, float_t{1.0});
 
-  EXPECT_TRUE(src.has_same_weights(dst, 1E-5f));
+  // a bit more than precision limit
+  float_t epsilon = std::numeric_limits<float_t>::epsilon()*2;
+  EXPECT_TRUE(src.has_same_weights(dst, epsilon));
 
   vec_t r1 = forward_pass(src, v);
   vec_t r2 = forward_pass(dst, v);
 
-  EXPECT_TRUE(is_near_container(r1, r2, 1E-4f));
+  EXPECT_TRUE(is_near_container(r1, r2, epsilon*10));
 }
 
 template <typename T>
