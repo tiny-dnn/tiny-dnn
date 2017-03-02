@@ -160,9 +160,9 @@ TEST(network, manual_init) {
     std::vector<std::vector<vec_t>> out;
 
     auto in = std::make_shared<input_layer>(shape3d(2,1,1));
-    auto hidden = std::make_shared<layers::fc<tan_h>>(2,4);
-    auto out1 = std::make_shared<layers::fc<tan_h>>(4,2);
-    auto out2 = std::make_shared<layers::fc<tan_h>>(4,2);
+    auto hidden = std::make_shared<layers::fc>(2,4);
+    auto out1 = std::make_shared<layers::fc>(4,2);
+    auto out2 = std::make_shared<layers::fc>(4,2);
 
     in << hidden << out1;
     hidden << out2;
@@ -279,8 +279,8 @@ TEST(network, train_predict_different_batches) {
       label.push_back((in[0] ^ in[1]) ? 1 : 0);
     }
 
-    net << fully_connected_layer<tan_h>(2, 10)
-        << fully_connected_layer<tan_h>(10, 2);
+    net << fully_connected_layer(2, 10) << tanh_layer(10)
+        << fully_connected_layer(10, 2) << tanh_layer(2);
 
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 

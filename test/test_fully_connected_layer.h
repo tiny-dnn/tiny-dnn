@@ -58,7 +58,7 @@ TEST(fully_connected, train_different_batches) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << fully_connected_layer<sigmoid>(3, 2);
+    nn << fully_connected_layer(3, 2) << sigmoid_layer(2);
 
     vec_t a(3), t(2), a2(3), t2(2);
 

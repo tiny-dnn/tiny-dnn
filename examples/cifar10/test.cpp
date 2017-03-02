@@ -53,7 +53,7 @@ void construct_net(N &nn) {
      << pool(8, 8, n_fmaps2, 2)                           // P6
      << relu(4, 4, n_fmaps2)                              // activation
      << fc(4 * 4 * n_fmaps2, n_fc)                        // FC7
-     << fc(n_fc, 10) << softmax_layer(10);                // FC10
+     << fc(n_fc, 10) << softmax(10);                      // FC10
 }
 
 void recognize(const std::string &dictionary, const std::string &src_filename) {
