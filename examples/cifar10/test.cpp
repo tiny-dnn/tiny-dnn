@@ -34,7 +34,7 @@ void convert_image(const std::string &imagefilename,
 template <typename N>
 void construct_net(N &nn) {
   using conv    = convolutional_layer;
-  using pool    = max_pooling_layer<identity>;
+  using pool    = max_pooling_layer;
   using fc      = fully_connected_layer;
   using relu    = relu_layer;
   using softmax = softmax_layer;
