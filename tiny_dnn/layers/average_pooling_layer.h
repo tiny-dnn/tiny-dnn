@@ -22,15 +22,13 @@
 namespace tiny_dnn {
 
 // forward_propagation
-template <typename Activation>
-void tiny_average_pooling_kernel(
+inline void tiny_average_pooling_kernel(
   bool parallelize,
   const std::vector<tensor_t *> &in_data,
   std::vector<tensor_t *> &out_data,
   const shape3d &out_dim,
   float_t scale_factor,
-  std::vector<typename partial_connected_layer::wi_connections> &out2wi,
-  Activation &h) {
+  std::vector<typename partial_connected_layer::wi_connections> &out2wi) {
   CNN_UNREFERENCED_PARAMETER(parallelize);
   for_i(in_data[0]->size(), [&](size_t sample) {
     const vec_t &in = (*in_data[0])[sample];
@@ -54,16 +52,11 @@ void tiny_average_pooling_kernel(
     }
 
     assert(out.size() == out2wi.size());
-    for (serial_size_t i = 0; i < static_cast<serial_size_t>(out2wi.size());
-         i++) {
-      out[i] = h.f(out, i);
-    }
   });
 }
 
 // back_propagation
-template <typename Activation>
-void tiny_average_pooling_back_kernel(
+inline void tiny_average_pooling_back_kernel(
   const std::vector<tensor_t *> &in_data,
   const std::vector<tensor_t *> &out_data,
   std::vector<tensor_t *> &out_grad,
@@ -115,7 +108,6 @@ void tiny_average_pooling_back_kernel(
 /**
  * average pooling with trainable weights
  **/
-template <typename Activation = activation::identity>
 class average_pooling_layer : public partial_connected_layer {
  public:
   using Base = partial_connected_layer;
@@ -221,18 +213,17 @@ class average_pooling_layer : public partial_connected_layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    tiny_average_pooling_kernel<Activation>(parallelize_, in_data, out_data,
-                                            out_, Base::scale_factor_,
-                                            Base::out2wi_, h_);
+    tiny_average_pooling_kernel(parallelize_, in_data, out_data, out_,
+                                Base::scale_factor_, Base::out2wi_);
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tiny_average_pooling_back_kernel<Activation>(
-      in_data, out_data, out_grad, in_grad, in_, Base::scale_factor_,
-      Base::weight2io_, Base::in2wo_, Base::bias2out_);
+    tiny_average_pooling_back_kernel(in_data, out_data, out_grad, in_grad, in_,
+                                     Base::scale_factor_, Base::weight2io_,
+                                     Base::in2wo_, Base::bias2out_);
   }
 
 #ifndef CNN_NO_SERIALIZATION
@@ -297,8 +288,6 @@ class average_pooling_layer : public partial_connected_layer {
       }
     }
   }
-
-  Activation h_;
 };
 
 }  // namespace tiny_dnn
