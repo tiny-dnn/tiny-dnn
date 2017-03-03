@@ -109,8 +109,7 @@ using deconv = tiny_dnn::deconvolutional_layer;
 template <class T>
 using max_unpool = tiny_dnn::max_unpooling_layer<T>;
 
-template <class T>
-using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
+using ave_unpool = tiny_dnn::average_unpooling_layer;
 
 }  // namespace layers
 

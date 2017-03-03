@@ -19,7 +19,7 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
 
   network nn;
   nn << fully_connected_layer(3, 4) << activation_layer(4)
-     << average_unpooling_layer<identity>(2, 2, 1, 2)  // 2x2 => 4x4
+     << average_unpooling_layer(2, 2, 1, 2)  // 2x2 => 4x4
      << activation_layer(4, 4, 1) << average_pooling_layer(4, 4, 1, 2)
      << activation_layer(2, 2, 1);
 
@@ -31,7 +31,7 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
 }
 
 TEST(ave_unpool, forward) {
-  average_unpooling_layer<identity> l(2, 2, 1, 2);
+  average_unpooling_layer l(2, 2, 1, 2);
 
   // clang-format off
     vec_t in = {
@@ -59,7 +59,7 @@ TEST(ave_unpool, forward) {
 }
 
 TEST(ave_unpool, forward_stride) {
-  average_unpooling_layer<identity> l(3, 3, 1, 2, 1);
+  average_unpooling_layer l(3, 3, 1, 2, 1);
 
   // clang-format off
     vec_t in = {
@@ -88,8 +88,8 @@ TEST(ave_unpool, forward_stride) {
 }
 
 TEST(ave_unpool, read_write) {
-  average_unpooling_layer<tan_h> l1(100, 100, 5, 2);
-  average_unpooling_layer<tan_h> l2(100, 100, 5, 2);
+  average_unpooling_layer l1(100, 100, 5, 2);
+  average_unpooling_layer l2(100, 100, 5, 2);
 
   l1.setup(true);
   l2.setup(true);

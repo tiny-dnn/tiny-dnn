@@ -110,7 +110,7 @@ void deconv_ae(network<sequential> &nn,
      << average_pooling_layer(28, 28, 6, 2) << tanh_layer(14, 14, 6)
      << convolutional_layer(14, 14, 3, 6, 16) << tanh_layer(12, 12, 16)
      << deconvolutional_layer(12, 12, 3, 16, 6) << tanh_layer(14, 14, 6)
-     << average_unpooling_layer<tan_h>(14, 14, 6, 2)
+     << average_unpooling_layer(14, 14, 6, 2) << tanh_layer(28, 28, 6)
      << deconvolutional_layer(28, 28, 5, 6, 1) << tanh_layer(32, 32, 6);
 
   // load train-data and make corruption
