@@ -37,7 +37,7 @@ using namespace tiny_dnn::activation;
 template <typename N>
 void construct_net(N &nn, core::backend_t backend_type) {
   using conv    = convolutional_layer;
-  using pool    = max_pooling_layer<identity>;
+  using pool    = max_pooling_layer;
   using fc      = fully_connected_layer;
   using relu    = relu_layer;
   using softmax = softmax_layer;

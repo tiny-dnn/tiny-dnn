@@ -16,8 +16,8 @@
 namespace tiny_dnn {
 
 TEST(max_pool, read_write) {
-  max_pooling_layer<tan_h> l1(100, 100, 5, 2);
-  max_pooling_layer<tan_h> l2(100, 100, 5, 2);
+  max_pooling_layer l1(100, 100, 5, 2);
+  max_pooling_layer l2(100, 100, 5, 2);
 
   l1.init_weight();
   l2.init_weight();
@@ -26,7 +26,7 @@ TEST(max_pool, read_write) {
 }
 
 TEST(max_pool, forward) {
-  max_pooling_layer<identity> l(4, 4, 1, 2);
+  max_pooling_layer l(4, 4, 1, 2);
   vec_t in = {0, 1, 2, 3, 8, 7, 5, 6, 4, 3, 1, 2, 0, -1, -2, -3};
 
   vec_t expected = {8, 6, 4, 2};
@@ -39,11 +39,11 @@ TEST(max_pool, forward) {
 }
 
 TEST(max_pool, setup_internal) {
-  max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::internal);
+  max_pooling_layer l(4, 4, 1, 2, 2, core::backend_t::internal);
 
   EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
   EXPECT_EQ(l.in_channels(), serial_size_t(1));  // num of input tensors
-  EXPECT_EQ(l.out_channels(), serial_size_t(2));   // num of output tensors
+  EXPECT_EQ(l.out_channels(), serial_size_t(1));   // num of output tensors
   EXPECT_EQ(l.in_data_size(), serial_size_t(16));  // size of input tensors
   EXPECT_EQ(l.out_data_size(), serial_size_t(4));  // size of output tensors
   EXPECT_EQ(l.in_data_shape().size(),
@@ -54,17 +54,17 @@ TEST(max_pool, setup_internal) {
   EXPECT_EQ(l.weights_grads().size(),
             serial_size_t(0));                       // the wieghts vector size
   EXPECT_EQ(l.inputs().size(), serial_size_t(1));    // num of input edges
-  EXPECT_EQ(l.outputs().size(), serial_size_t(2));   // num of outpus edges
+  EXPECT_EQ(l.outputs().size(), serial_size_t(1));   // num of outpus edges
   EXPECT_EQ(l.in_types().size(), serial_size_t(1));  // num of input data types
   EXPECT_EQ(l.out_types().size(),
-            serial_size_t(2));                    // num of output data types
+            serial_size_t(1));                    // num of output data types
   EXPECT_EQ(l.fan_in_size(), serial_size_t(4));   // num of incoming connections
   EXPECT_EQ(l.fan_out_size(), serial_size_t(1));  // num of outgoing connections
   EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
 }
 
 TEST(max_pool, forward_stride_internal) {
-  max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::internal);
+  max_pooling_layer l(4, 4, 1, 2, 2, core::backend_t::internal);
 
   // clang-format off
     vec_t in = {
@@ -88,8 +88,8 @@ TEST(max_pool, forward_stride_internal) {
 }
 
 TEST(max_pool, forward_padding_same) {
-  max_pooling_layer<identity> l(4, 4, 1, 2, 2, 1, 1, padding::same,
-                                core::backend_t::internal);
+  max_pooling_layer l(4, 4, 1, 2, 2, 1, 1, padding::same,
+                      core::backend_t::internal);
 
   // clang-format off
     vec_t in = {
@@ -115,7 +115,7 @@ TEST(max_pool, forward_padding_same) {
 }
 
 TEST(max_pool, forward_stride_x) {
-  max_pooling_layer<identity> l(4, 4, 1, 2, 1, 2, 1, padding::valid);
+  max_pooling_layer l(4, 4, 1, 2, 1, 2, 1, padding::valid);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -143,7 +143,7 @@ TEST(max_pool, forward_stride_x) {
 }
 
 TEST(max_pool, forward_stride_y) {
-  max_pooling_layer<identity> l(4, 4, 1, 1, 2, 1, 2, padding::valid);
+  max_pooling_layer l(4, 4, 1, 1, 2, 1, 2, padding::valid);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -171,7 +171,7 @@ TEST(max_pool, forward_stride_y) {
 #ifdef CNN_USE_NNPACK
 TEST(max_pool, forward_stride_nnp) {
   nnp_initialize();
-  max_pooling_layer<identity> l(4, 4, 1, 2, 2, core::backend_t::nnpack);
+  max_pooling_layer l(4, 4, 1, 2, 2, core::backend_t::nnpack);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -196,7 +196,7 @@ TEST(max_pool, forward_stride_nnp) {
 
 TEST(max_pool, forward_stride_nnp_not_2x2) {
   nnp_initialize();
-  max_pooling_layer<identity> l(4, 4, 1, 3, 1, core::backend_t::nnpack);
+  max_pooling_layer l(4, 4, 1, 3, 1, core::backend_t::nnpack);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -220,7 +220,7 @@ TEST(max_pool, forward_stride_nnp_not_2x2) {
 #endif
 
 TEST(max_pool, forward_stride) {
-  max_pooling_layer<identity> l(4, 4, 1, 2, 1);
+  max_pooling_layer l(4, 4, 1, 2, 1);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -244,7 +244,7 @@ TEST(max_pool, forward_stride) {
 }
 
 TEST(max_pool, backward) {
-  max_pooling_layer<identity> l(4, 4, 1, 2);
+  max_pooling_layer l(4, 4, 1, 2);
   // clang-format off
     vec_t in = {
         0, 1, 2, 3,
@@ -276,7 +276,7 @@ TEST(max_pool, backward) {
 
 #ifndef CNN_NO_SERIALIZATION
 TEST(max_pool, serialization) {
-  max_pooling_layer<identity> src(4, 4, 1, 2);
+  max_pooling_layer src(4, 4, 1, 2);
 
   std::string str = layer_to_json(src);
 
@@ -303,7 +303,7 @@ TEST(max_pool, serialization) {
 }
 
 TEST(max_pool, serialization_stride) {
-  max_pooling_layer<identity> src(4, 4, 1, 2, 1, 1, 2, padding::valid);
+  max_pooling_layer src(4, 4, 1, 2, 1, 1, 2, padding::valid);
 
   std::string str = layer_to_json(src);
 
@@ -330,7 +330,7 @@ TEST(max_pool, serialization_stride) {
 }
 
 TEST(max_pool, serialization_padding) {
-  max_pooling_layer<identity> src(4, 4, 1, 2, 2, 1, 1, padding::same);
+  max_pooling_layer src(4, 4, 1, 2, 2, 1, 1, padding::same);
 
   std::string str = layer_to_json(src);
 
