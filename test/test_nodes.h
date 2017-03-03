@@ -27,7 +27,7 @@ TEST(nodes, graph_no_branch) {
 
   auto cnn = std::make_shared<convolutional_layer>(8, 8, 3, 1, 4);
 
-  auto pool = std::make_shared<average_pooling_layer<tan_h>>(6, 6, 4, 2);
+  auto pool = std::make_shared<average_pooling_layer>(6, 6, 4, 2);
 
   auto out = std::make_shared<linear_layer<relu>>(3 * 3 * 4);
 

@@ -20,7 +20,7 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
   network nn;
   nn << fully_connected_layer(3, 4) << activation_layer(4)
      << average_unpooling_layer<identity>(2, 2, 1, 2)  // 2x2 => 4x4
-     << activation_layer(4, 4, 1) << average_pooling_layer<identity>(4, 4, 1, 2)
+     << activation_layer(4, 4, 1) << average_pooling_layer(4, 4, 1, 2)
      << activation_layer(2, 2, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());

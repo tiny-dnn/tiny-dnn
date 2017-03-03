@@ -64,13 +64,15 @@ void sample1_convnet(const string& data_dir) {
   nn << convolutional_layer(32, 32, 5, 1,
                             6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
      << tanh_layer(28, 28, 6)
-     << average_pooling_layer<tan_h>(28, 28, 6,
-                                     2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
+     << average_pooling_layer(28, 28, 6,
+                              2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
+     << tanh_layer(14, 14, 6)
      << convolutional_layer(14, 14, 5, 6, 16,
                             connection_table(connection, 6, 16))
-     << tanh_layer(10, 10, 16) << average_pooling_layer<tan_h>(10, 10, 16, 2)
-     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
-     << fully_connected_layer(120, 10) << tanh_layer(10);
+     << tanh_layer(10, 10, 16) << average_pooling_layer(10, 10, 16, 2)
+     << tanh_layer(5, 5, 16) << convolutional_layer(5, 5, 5, 16, 120)
+     << tanh_layer(1, 1, 120) << fully_connected_layer(120, 10)
+     << tanh_layer(10);
 
   std::cout << "load models..." << std::endl;
 

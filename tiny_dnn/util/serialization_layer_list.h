@@ -1,10 +1,10 @@
 // Copyright (c) 2017, Taiga Nomi
 #ifndef CNN_NO_SERIALIZATION
 
-CNN_REGISTER_LAYER_WITH_ACTIVATIONS(average_pooling_layer, avepool);
 CNN_REGISTER_LAYER_WITH_ACTIVATIONS(linear_layer, linear);
 CNN_REGISTER_LAYER_WITH_ACTIVATIONS(lrn_layer, lrn);
 
+CNN_REGISTER_LAYER(average_pooling_layer, avepool);
 CNN_REGISTER_LAYER(batch_normalization_layer, batchnorm);
 CNN_REGISTER_LAYER(concat_layer, concat);
 CNN_REGISTER_LAYER(convolutional_layer, conv);
