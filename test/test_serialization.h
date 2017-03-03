@@ -57,7 +57,7 @@ TEST(serialization, serialize_maxpool) {
     {
         "nodes": [
             {
-                "type": "maxpool<softmax>",
+                "type": "maxpool",
                 "in_size": {
                     "width": 10,
                     "height": 10,

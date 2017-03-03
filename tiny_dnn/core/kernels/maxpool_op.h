@@ -67,7 +67,7 @@ class MaxPoolOp : public core::OpKernel {
 
     // incomimg/outcoming data
     const tensor_t &in_data = context.input(0);
-    tensor_t &out_data      = context.output(1);
+    tensor_t &out_data      = context.output(0);
 
     // initialize outputs
     fill_tensor(out_data, float_t{0});
