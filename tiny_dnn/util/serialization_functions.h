@@ -25,12 +25,12 @@ struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::average_pooling_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive &ar,
-    cereal::construct<tiny_dnn::average_pooling_layer<Activation>> &construct) {
+    cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -329,9 +329,9 @@ struct specialize<Archive,
                   tiny_dnn::elementwise_add_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::average_pooling_layer<Activation>,
+                  tiny_dnn::average_pooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -437,9 +437,9 @@ struct serialization_buddy {
        cereal::make_nvp("dim", layer.dim_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::average_pooling_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::average_pooling_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("pool_size_x", layer.pool_size_x_),
@@ -608,9 +608,8 @@ void serialize(Archive &ar, tiny_dnn::elementwise_add_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar,
-               tiny_dnn::average_pooling_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::average_pooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 

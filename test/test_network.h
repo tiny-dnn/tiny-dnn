@@ -353,20 +353,20 @@ TEST(network, get_loss) {
 TEST(network, at) {
   network<sequential> net;
   convolutional_layer c1(32, 32, 5, 3, 6, padding::same);
-  average_pooling_layer<identity> p1(32, 32, 6, 2);
+  average_pooling_layer p1(32, 32, 6, 2);
 
   net << c1 << p1;
   net.init_weight();
 
   // auto& c = net.at<convolutional_layer>(0);
-  // auto& p = net.at<average_pooling_layer<identity>>(1);
+  // auto& p = net.at<average_pooling_layer>(1);
 }
 
 TEST(network, bracket_operator) {
   network<sequential> net;
 
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
-      << average_pooling_layer<identity>(32, 32, 6, 2);
+      << average_pooling_layer(32, 32, 6, 2);
 
   EXPECT_EQ(net[0]->layer_type(), "conv");
   EXPECT_EQ(net[1]->layer_type(), "ave-pool");
@@ -376,7 +376,7 @@ TEST(network, weight_init) {
   network<sequential> net;
 
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
-      << average_pooling_layer<identity>(32, 32, 6, 2);
+      << average_pooling_layer(32, 32, 6, 2);
 
   // change all layers at once
   net.weight_init(weight_init::constant(2.0));
@@ -394,7 +394,7 @@ TEST(network, weight_init_per_layer) {
   network<sequential> net;
 
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
-      << average_pooling_layer<identity>(32, 32, 6, 2);
+      << average_pooling_layer(32, 32, 6, 2);
 
   // change specific layer
   net[0]->weight_init(weight_init::constant(2.0));
@@ -413,7 +413,7 @@ TEST(network, bias_init) {
   network<sequential> net;
 
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
-      << average_pooling_layer<identity>(32, 32, 6, 2);
+      << average_pooling_layer(32, 32, 6, 2);
 
   net.bias_init(weight_init::constant(2.0));
   net.init_weight();
@@ -430,7 +430,7 @@ TEST(network, bias_init_per_layer) {
   network<sequential> net;
 
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
-      << average_pooling_layer<identity>(32, 32, 6, 2);
+      << average_pooling_layer(32, 32, 6, 2);
 
   net[0]->bias_init(weight_init::constant(2.0));
   net[1]->bias_init(weight_init::constant(1.0));
@@ -452,9 +452,8 @@ TEST(network, gradient_check) {  // sigmoid - cross-entropy
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
      << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2)
-     << activation_layer(5, 5, 6) << fully_connected_layer(5 * 5 * 6, 3)
-     << activation_layer(3);
+     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
+     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -470,9 +469,8 @@ TEST(network, gradient_check2) {  // tan_h - mse
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
      << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2)
-     << activation_layer(5, 5, 6) << fully_connected_layer(5 * 5 * 6, 3)
-     << activation_layer(3);
+     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
+     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -487,7 +485,7 @@ TEST(network, gradient_check3) {  // mixture - mse
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << tanh_layer(14 * 14 * 3)
      << convolutional_layer(14, 14, 5, 3, 6) << sigmoid_layer(10, 10, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2) << relu_layer(5, 5, 6)
+     << average_pooling_layer(10, 10, 6, 2) << relu_layer(5, 5, 6)
      << fully_connected_layer(5 * 5 * 6, 3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -504,9 +502,8 @@ TEST(network, gradient_check4) {  // sigmoid - cross-entropy
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
      << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2)
-     << activation_layer(5, 5, 6) << fully_connected_layer(5 * 5 * 6, 3)
-     << activation_layer(3);
+     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
+     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -522,9 +519,8 @@ TEST(network, gradient_check5) {  // softmax - cross-entropy
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
      << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer<identity>(10, 10, 6, 2)
-     << activation_layer(5, 5, 6) << fully_connected_layer(5 * 5 * 6, 3)
-     << activation_layer(3);
+     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
+     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -605,16 +601,16 @@ TEST(network, read_write) {
   network n1, n2;
 
   n1 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
-     << average_pooling_layer<identity>(28, 28, 6, 2)
+     << average_pooling_layer(28, 28, 6, 2)
      << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
-     << average_pooling_layer<identity>(10, 10, 16, 2)
+     << average_pooling_layer(10, 10, 16, 2)
      << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
      << fully_connected_layer(120, 10) << softmax_layer(10);
 
   n2 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
-     << average_pooling_layer<identity>(28, 28, 6, 2)
+     << average_pooling_layer(28, 28, 6, 2)
      << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
-     << average_pooling_layer<identity>(10, 10, 16, 2)
+     << average_pooling_layer(10, 10, 16, 2)
      << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
      << fully_connected_layer(120, 10) << softmax_layer(10);
 
