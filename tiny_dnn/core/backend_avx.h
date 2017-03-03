@@ -65,15 +65,12 @@ class avx_backend : public backend {
       backward_activation(f3) {}
 
   // maxpooling
-  avx_backend(
-    std::vector<std::vector<serial_size_t>> *out2in,
-    std::vector<serial_size_t> *in2out,
-    std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f,
-    max_pooling_layer_worker_specific_storage *ptr)
+  avx_backend(std::vector<std::vector<serial_size_t>> *out2in,
+              std::vector<serial_size_t> *in2out,
+              max_pooling_layer_worker_specific_storage *ptr)
     : max_pooling_layer_worker_storage_(ptr),
       out2in_(out2in),
-      in2out_(in2out),
-      backward_activation(f) {}
+      in2out_(in2out) {}
 
   // fully_connected
   avx_backend(fully_params *params) : params_f_(params) {}

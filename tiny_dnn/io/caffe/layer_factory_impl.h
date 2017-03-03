@@ -132,7 +132,7 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
                                               padding pad_type,
                                               const shape_t &bottom_shape,
                                               shape_t *top_shape) {
-  using max_pool = max_pooling_layer<activation::identity>;
+  using max_pool = max_pooling_layer;
   auto mp        = std::make_shared<max_pool>(
     bottom_shape.width_, bottom_shape.height_, bottom_shape.depth_, pool_size_w,
     pool_size_h, stride_w, stride_h, pad_type);

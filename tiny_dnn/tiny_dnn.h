@@ -85,8 +85,7 @@ using conv = tiny_dnn::convolutional_layer;
 template <class T>
 using q_conv = tiny_dnn::quantized_convolutional_layer<T>;
 
-template <class T>
-using max_pool = tiny_dnn::max_pooling_layer<T>;
+using max_pool = tiny_dnn::max_pooling_layer;
 
 template <class T>
 using ave_pool = tiny_dnn::average_pooling_layer<T>;

@@ -18,7 +18,7 @@ inline void maxpool_op_internal(
   const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](int sample) {
     const vec_t &in                 = in_data[sample];
-    vec_t &a                        = out_data[sample];
+    vec_t &out                      = out_data[sample];
     std::vector<serial_size_t> &max = max_idx[sample];
 
     for (serial_size_t i = 0; i < out2in.size(); i++) {
@@ -32,7 +32,7 @@ inline void maxpool_op_internal(
         }
       }
       max[i] = idx;
-      a[i]   = max_value;
+      out[i] = max_value;
     }
   });
 }

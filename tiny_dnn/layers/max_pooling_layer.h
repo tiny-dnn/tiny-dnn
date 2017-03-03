@@ -26,11 +26,9 @@ namespace tiny_dnn {
 /**
  * applies max-pooing operaton to the spatial data
  **/
-template <typename Activation = activation::identity>
-class max_pooling_layer : public feedforward_layer<Activation> {
+class max_pooling_layer : public layer {
  public:
-  CNN_USE_LAYER_MEMBERS;
-  typedef feedforward_layer<Activation> Base;
+  using layer::parallelize_;
 
   /**
    * @param in_width     [in] width of input image
@@ -94,7 +92,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
                     serial_size_t stride_y,
                     padding pad_type       = padding::valid,
                     backend_t backend_type = core::default_engine())
-    : Base({vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
     set_maxpool_params(
       shape3d(in_width, in_height, in_channels),
       shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
@@ -104,14 +102,14 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     init_connection();
     init_backend(backend_type);
-    Base::set_backend_type(backend_type);
+    layer::set_backend_type(backend_type);
   }
 
   // move constructor
   max_pooling_layer(max_pooling_layer &&other)  // NOLINT
-    : Base(std::move(other)), params_(std::move(other.params_)) {
+    : layer(std::move(other)), params_(std::move(other.params_)) {
     init_connection();
-    init_backend(std::move(Base::engine()));
+    init_backend(std::move(layer::engine()));
   }
 
   serial_size_t fan_in_size() const override {
@@ -129,19 +127,12 @@ class max_pooling_layer : public feedforward_layer<Activation> {
 
     // launch convolutional kernel
     kernel_fwd_->compute(ctx);
-
-    // activations
-    this->forward_activation(*out_data[0], *out_data[1]);
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    // activations
-    // TODO(edgar/nyanp): refactor and move activations outside
-    this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
-
     // backward convolutional op context
     auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
     ctx.setParallelize(layer::parallelize());
@@ -156,7 +147,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {params_.out, params_.out};
+    return {params_.out};
   }
 
   std::string layer_type() const override { return std::string("max-pool"); }
@@ -170,7 +161,7 @@ class max_pooling_layer : public feedforward_layer<Activation> {
   }
 
   void set_sample_count(serial_size_t sample_count) override {
-    Base::set_sample_count(sample_count);
+    layer::set_sample_count(sample_count);
     params_.out2inmax.resize(sample_count,
                              std::vector<serial_size_t>(params_.out.size()));
   }

@@ -141,7 +141,8 @@ void enet(network<graph> &nn,
   input_layer ii0(shape3d(32, 32, 1));
   convolutional_layer ic1(32, 32, 3, 1, 8, padding::same, true, 2, 2);
   tanh_layer ic1_tanh(16, 16, 8);
-  max_pooling_layer<tan_h> ip1(32, 32, 1, 2);
+  max_pooling_layer ip1(32, 32, 1, 2);
+  tanh_layer ip1_tanh(16, 16, 1);
   convolutional_layer ic2(16, 16, 1, 1, 8, padding::same);
   tanh_layer ic2_tanh(16, 16, 8);
   concat_layer icc1(2, 16 * 16 * 8);
@@ -149,13 +150,15 @@ void enet(network<graph> &nn,
   // connecting activation layers behind other layers
   ic1 << ic1_tanh;
   ic2 << ic2_tanh;
+  ip1 << ip1_tanh;
 
   ii0 << ip1 << ic2;
   ii0 << ic1;
   (ic2, ic1) << icc1;
 
   // bottle neck module 1
-  max_pooling_layer<tan_h> b1p1(16, 16, 16, 2);
+  max_pooling_layer b1p1(16, 16, 16, 2);
+  tanh_layer b1p1_tanh(8, 8, 16);
   convolutional_layer b1c2(8, 8, 1, 16, 32, padding::same);
   tanh_layer b1c2_tanh(8, 8, 32);
   convolutional_layer b1c1(16, 16, 1, 16, 32, padding::same);
@@ -167,6 +170,7 @@ void enet(network<graph> &nn,
   concat_layer b1cc1(2, 8 * 8 * 32);
 
   // connecting activation layers behind other layers
+  b1p1 << b1p1_tanh;
   b1c1 << b1c1_tanh;
   b1c2 << b1c2_tanh;
   b1c3 << b1c3_tanh;

@@ -70,13 +70,14 @@ TEST(network, construct_multi_by_local_variables) {
   tanh_layer tanh1(32, 32, 6);
   conv conv2(32, 32, 7, 6, 12, padding::same);
   sigmoid_layer sgm2(32, 32, 12);
-  max_pool<relu> pool1(32, 32, 12, 2);
+  max_pool pool1(32, 32, 12, 2);
+  relu_layer relu1(16, 16, 12);
   lrn_layer<identity> lrn(16, 16, 4, 12);
   dropout dp(16 * 16 * 12, 0.5);
   fc full(16 * 16 * 12, 1);
   softmax_layer softmax(1);
 
-  net << conv1 << tanh1 << conv2 << sgm2 << pool1 << lrn << dp << full
+  net << conv1 << tanh1 << conv2 << sgm2 << pool1 << relu1 << lrn << dp << full
       << softmax;
 }
 
@@ -84,14 +85,15 @@ TEST(network, construct_multi_by_temporary_variables) {
   network<sequential> net;
   net << conv(32, 32, 5, 1, 6, padding::same) << tanh_layer(32, 32, 6)
       << conv(32, 32, 7, 6, 12, padding::same) << sigmoid_layer(32, 32, 12)
-      << max_pool<relu>(32, 32, 12, 2) << lrn_layer<identity>(16, 16, 4, 12)
-      << dropout(16 * 16 * 12, 0.5) << fc(16 * 16 * 12, 1) << softmax_layer(1);
+      << max_pool(32, 32, 12, 2) << relu_layer(16, 16, 12)
+      << lrn_layer<identity>(16, 16, 4, 12) << dropout(16 * 16 * 12, 0.5)
+      << fc(16 * 16 * 12, 1) << softmax_layer(1);
 }
 
 TEST(network, in_dim) {
   network<sequential> net;
   convolutional_layer c1(32, 32, 5, 3, 6, padding::same);
-  max_pooling_layer<identity> p1(32, 32, 6, 2);
+  max_pooling_layer p1(32, 32, 6, 2);
   net << c1 << p1;
 
   EXPECT_EQ(c1.in_data_size(), net.in_data_size());
@@ -100,7 +102,7 @@ TEST(network, in_dim) {
 TEST(network, out_dim) {
   network<sequential> net;
   convolutional_layer c1(32, 32, 5, 3, 6, padding::same);
-  max_pooling_layer<identity> p1(32, 32, 6, 2);
+  max_pooling_layer p1(32, 32, 6, 2);
   net << c1 << p1;
 
   EXPECT_EQ(p1.out_data_size(), net.out_data_size());
