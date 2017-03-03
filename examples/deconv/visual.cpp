@@ -40,7 +40,7 @@ void construct_net(network<sequential> &nn) {
      << average_pooling_layer(28, 28, 6, 2)
      << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
      << deconvolutional_layer(10, 10, 5, 16, 6) << tanh_layer(14, 14, 6)
-     << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
+     << average_unpooling_layer(14, 14, 6, 2)
      << deconvolutional_layer(28, 28, 5, 6, 1) << tanh_layer(32, 32, 1);
 }
 
