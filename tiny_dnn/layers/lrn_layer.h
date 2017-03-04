@@ -18,19 +18,16 @@ enum class norm_region { across_channels, within_channels };
 /**
  * local response normalization
  */
-template <typename Activation>
-class lrn_layer : public feedforward_layer<Activation> {
+class lrn_layer : public layer {
  public:
-  CNN_USE_LAYER_MEMBERS;
-
-  typedef feedforward_layer<Activation> Base;
+  using layer::parallelize_;
 
   lrn_layer(const shape3d &in_shape,
             serial_size_t local_size,
             float_t alpha      = 1.0,
             float_t beta       = 5.0,
             norm_region region = norm_region::across_channels)
-    : Base({vector_type::data}),
+    : layer({vector_type::data}, {vector_type::data}),
       in_shape_(in_shape),
       size_(local_size),
       alpha_(alpha),
@@ -79,9 +76,7 @@ class lrn_layer : public feedforward_layer<Activation> {
 
   std::vector<shape3d> in_shape() const override { return {in_shape_}; }
 
-  std::vector<shape3d> out_shape() const override {
-    return {in_shape_, in_shape_};
-  }
+  std::vector<shape3d> out_shape() const override { return {in_shape_}; }
 
   std::string layer_type() const override { return "lrn"; }
 
@@ -92,15 +87,12 @@ class lrn_layer : public feedforward_layer<Activation> {
          sample < sample_count; ++sample) {
       vec_t &in  = (*in_data[0])[sample];
       vec_t &out = (*out_data[0])[sample];
-      vec_t &a   = (*out_data[1])[sample];
 
       if (region_ == norm_region::across_channels) {
-        forward_across(in, a);
+        forward_across(in, out);
       } else {
-        forward_within(in, a);
+        forward_within(in, out);
       }
-
-      for_i(parallelize_, out.size(), [&](int i) { out[i] = h_.f(a, i); });
     }
   }
 

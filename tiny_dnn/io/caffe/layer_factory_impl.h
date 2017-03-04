@@ -514,8 +514,6 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
 inline std::shared_ptr<layer> create_lrn(const caffe::LayerParameter &layer,
                                          const shape_t &bottom_shape,
                                          shape_t *top_shape) {
-  using lrn_layer = lrn_layer<activation::identity>;
-
   if (!layer.has_lrn_param()) {
     throw nn_error("lrn param missing");
   }

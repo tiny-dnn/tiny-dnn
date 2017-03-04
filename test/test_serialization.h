@@ -238,7 +238,7 @@ TEST(serialization, serialize_lrn) {
     {
         "nodes": [
             {
-                "type": "lrn<elu>",
+                "type": "lrn",
                 "in_shape": {
                     "width": 5,
                     "height": 4,
