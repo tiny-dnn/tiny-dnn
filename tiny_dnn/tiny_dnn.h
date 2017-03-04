@@ -87,8 +87,7 @@ using q_conv = tiny_dnn::quantized_convolutional_layer<T>;
 
 using max_pool = tiny_dnn::max_pooling_layer;
 
-template <class T>
-using ave_pool = tiny_dnn::average_pooling_layer<T>;
+using ave_pool = tiny_dnn::average_pooling_layer;
 
 using fc = tiny_dnn::fully_connected_layer;
 
@@ -112,8 +111,7 @@ using deconv = tiny_dnn::deconvolutional_layer;
 template <class T>
 using max_unpool = tiny_dnn::max_unpooling_layer<T>;
 
-template <class T>
-using ave_unpool = tiny_dnn::average_unpooling_layer<T>;
+using ave_unpool = tiny_dnn::average_unpooling_layer;
 
 }  // namespace layers
 

@@ -20,7 +20,6 @@ void construct_net(network<sequential> &nn) {
                              X, X, O, O, O, O, X, O, O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
                              X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O, X, X, O, O, O, X, X, O,
                              O, O, O, X, O, O, X, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O};
-// clang-format on
 #undef O
 #undef X
 
@@ -33,19 +32,22 @@ void construct_net(network<sequential> &nn) {
   nn << quantized_convolutional_layer<tan_h>(
           32, 32, 5, 1, 6, padding::valid, true, 1, 1,
           backend_type)  // C1, 1@32x32-in, 6@28x28-out
-     << average_pooling_layer<tan_h>(28, 28, 6,
-                                     2)  // S2, 6@28x28-in, 6@14x14-out
+     << average_pooling_layer(28, 28, 6,
+                              2)  // S2, 6@28x28-in, 6@14x14-out
+     << tanh_layer(14, 14, 6)
      << quantized_convolutional_layer<tan_h>(
           14, 14, 5, 6, 16, connection_table(tbl, 6, 16), padding::valid, true,
           1, 1,
           backend_type)  // C3, 6@14x14-in, 16@10x10-in
-     << average_pooling_layer<tan_h>(10, 10, 16,
-                                     2)  // S4, 16@10x10-in, 16@5x5-out
+     << average_pooling_layer(10, 10, 16,
+                              2)  // S4, 16@10x10-in, 16@5x5-out
+     << tanh_layer(5, 5, 16)
      << quantized_convolutional_layer<tan_h>(
           5, 5, 5, 16, 120, padding::valid, true, 1, 1,
           backend_type)  // C5, 16@5x5-in, 120@1x1-out
      << quantized_fully_connected_layer<tan_h>(
           120, 10, true, backend_type);  // F6, 120-in, 10-out
+  // clang-format on
 }
 
 static void train_lenet(const std::string &data_dir_path) {

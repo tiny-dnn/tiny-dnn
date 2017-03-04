@@ -87,7 +87,7 @@ TEST(serialization, serialize_avepool) {
     {
         "nodes": [
             {
-                "type": "avepool<relu>",
+                "type": "avepool",
                 "in_size": {
                     "width": 10,
                     "height": 10,
@@ -529,7 +529,7 @@ TEST(serialization, sequential_model) {
   network<sequential> net1, net2;
 
   net1 << fully_connected_layer(10, 16) << tanh_layer(16)
-       << average_pooling_layer<relu>(4, 4, 1, 2)
+       << average_pooling_layer(4, 4, 1, 2) << relu_layer(2, 2, 1)
        << power_layer(shape3d(2, 2, 1), 0.5f);
 
   net1.init_weight();
@@ -539,7 +539,7 @@ TEST(serialization, sequential_model) {
 
   net2.load(path, content_type::model);
 
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < net1.layer_size(); i++) {
     ASSERT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
     ASSERT_EQ(net1[i]->out_shape(), net2[i]->out_shape());
     ASSERT_EQ(net1[i]->layer_type(), net2[i]->layer_type());
