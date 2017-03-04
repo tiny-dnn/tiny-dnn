@@ -174,8 +174,7 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
 inline std::shared_ptr<layer> create_softmax(const caffe::LayerParameter &layer,
                                              const shape_t &bottom_shape,
                                              shape_t *) {
-  auto sm =
-    std::make_shared<linear_layer<activation::softmax>>(bottom_shape.size());
+  auto sm = std::make_shared<softmax_layer>(bottom_shape.size());
   sm->init_weight();
   return sm;
 }
@@ -183,16 +182,14 @@ inline std::shared_ptr<layer> create_softmax(const caffe::LayerParameter &layer,
 inline std::shared_ptr<layer> create_sigmoid(const caffe::LayerParameter &layer,
                                              const shape_t &bottom_shape,
                                              shape_t *) {
-  auto ce =
-    std::make_shared<linear_layer<activation::sigmoid>>(bottom_shape.size());
+  auto ce = std::make_shared<sigmoid_layer>(bottom_shape.size());
   return ce;
 }
 
 inline std::shared_ptr<layer> create_tanh(const caffe::LayerParameter &layer,
                                           const shape_t &bottom_shape,
                                           shape_t *) {
-  auto tanh =
-    std::make_shared<linear_layer<activation::tan_h>>(bottom_shape.size());
+  auto tanh = std::make_shared<tanh_layer>(bottom_shape.size());
   return tanh;
 }
 
@@ -285,16 +282,14 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
 inline std::shared_ptr<layer> create_relu(const caffe::LayerParameter &layer,
                                           const shape_t &bottom_shape,
                                           shape_t *) {
-  auto relu =
-    std::make_shared<linear_layer<activation::relu>>(bottom_shape.size());
+  auto relu = std::make_shared<relu_layer>(bottom_shape.size());
   return relu;
 }
 
 inline std::shared_ptr<layer> create_elu(const caffe::LayerParameter &layer,
                                          const shape_t &bottom_shape,
                                          shape_t *) {
-  auto elu =
-    std::make_shared<linear_layer<activation::elu>>(bottom_shape.size());
+  auto elu = std::make_shared<elu_layer>(bottom_shape.size());
   return elu;
 }
 

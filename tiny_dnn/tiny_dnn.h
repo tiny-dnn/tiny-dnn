@@ -99,6 +99,8 @@ using dropout = tiny_dnn::dropout_layer;
 
 using input = tiny_dnn::input_layer;
 
+using linear = linear_layer;
+
 using lrn = tiny_dnn::lrn_layer;
 
 using input = tiny_dnn::input_layer;

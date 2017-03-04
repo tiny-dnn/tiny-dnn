@@ -139,12 +139,11 @@ struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::linear_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::linear_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::linear_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::linear_layer> &construct) {
     tiny_dnn::serial_size_t dim;
     tiny_dnn::float_t scale, bias;
 
@@ -358,9 +357,9 @@ struct specialize<Archive,
                   tiny_dnn::fully_connected_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::linear_layer<Activation>,
+                  tiny_dnn::linear_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -501,9 +500,8 @@ struct serialization_buddy {
        cereal::make_nvp("has_bias", params_.has_bias_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(Archive &ar,
-                               tiny_dnn::linear_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.dim_),
        cereal::make_nvp("scale", layer.scale_),
@@ -636,8 +634,8 @@ void serialize(Archive &ar, tiny_dnn::fully_connected_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::linear_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 

@@ -578,7 +578,7 @@ TEST(serialization, sequential_weights2) {
   vec_t data = {1, 2, 3, 4, 5, 0};
 
   net1 << batch_normalization_layer(3, 2, 0.01f, 0.99f, net_phase::train)
-       << linear_layer<identity>(3 * 2, 2.0f, 0.5f) << elu_layer(6)
+       << linear_layer(3 * 2, 2.0f, 0.5f) << elu_layer(6)
        << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu_layer(6);
 
   net1.init_weight();
