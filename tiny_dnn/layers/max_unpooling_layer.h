@@ -18,11 +18,9 @@ namespace tiny_dnn {
 /**
  * applies max-pooing operaton to the spatial data
  **/
-template <typename Activation = activation::identity>
-class max_unpooling_layer : public feedforward_layer<Activation> {
+class max_unpooling_layer : public layer {
  public:
-  CNN_USE_LAYER_MEMBERS;
-  typedef feedforward_layer<Activation> Base;
+  using layer::parallelize_;
 
   /**
    * @param in_width     [in] width of input image
@@ -62,74 +60,77 @@ class max_unpooling_layer : public feedforward_layer<Activation> {
                       serial_size_t in_channels,
                       serial_size_t unpooling_size,
                       serial_size_t stride)
-    : Base({vector_type::data}),
+    : layer({vector_type::data}, {vector_type::data}),
       unpool_size_(unpooling_size),
       stride_(stride),
       in_(in_width, in_height, in_channels),
       out_(unpool_out_dim(in_width, unpooling_size, stride),
            unpool_out_dim(in_height, unpooling_size, stride),
            in_channels) {
-    // set_worker_count(CNN_TASK_SIZE);
+    // init_workers(CNN_TASK_SIZE);
     init_connection();
   }
 
-  size_t fan_in_size() const override { return 1; }
+  serial_size_t fan_in_size() const override { return 1; }
 
-  size_t fan_out_size() const override { return in2out_[0].size(); }
+  serial_size_t fan_out_size() const override { return in2out_[0].size(); }
 
-  void forward_propagation(serial_size_t index,
-                           const std::vector<vec_t *> &in_data,
-                           std::vector<vec_t *> &out_data) override {
-    const vec_t &in = *in_data[0];
-    // vec_t&       out = *out_data[0];
-    vec_t &a = *out_data[1];
-    std::vector<serial_size_t> &max_idx =
-      max_unpooling_layer_worker_storage_[index].in2outmax_;
+  void forward_propagation(const std::vector<tensor_t *> &in_data,
+                           std::vector<tensor_t *> &out_data) override {
+    const tensor_t &in = *in_data[0];
+    tensor_t &out      = *out_data[0];
 
-    for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
-      for (int i = r.begin(); i < r.end(); i++) {
-        const auto &in_index = out2in_[i];
-        a[i] = (max_idx[in_index] == i) ? in[in_index] : float_t{0};
-      }
-    });
+    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
+      const vec_t &in_vec = in[sample];
+      vec_t &out_vec      = out[sample];
 
-    this->forward_activation(*out_data[0], *out_data[1]);
+      std::vector<serial_size_t> &max_idx =
+        max_unpooling_layer_worker_storage_[sample].in2outmax_;
+
+      for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
+        for (int i = r.begin(); i < r.end(); i++) {
+          const auto &in_index = out2in_[i];
+          out_vec[i] = (max_idx[in_index] == i) ? in_vec[in_index] : float_t{0};
+        }
+      });
+    }
   }
 
-  void back_propagation(serial_size_t index,
-                        const std::vector<vec_t *> &in_data,
-                        const std::vector<vec_t *> &out_data,
-                        std::vector<vec_t *> &out_grad,
-                        std::vector<vec_t *> &in_grad) override {
-    vec_t &prev_delta = *in_grad[0];
-    vec_t &curr_delta = *out_grad[1];
-    std::vector<serial_size_t> &max_idx =
-      max_unpooling_layer_worker_storage_[index].in2outmax_;
+  void back_propagation(const std::vector<tensor_t *> &in_data,
+                        const std::vector<tensor_t *> &out_data,
+                        std::vector<tensor_t *> &out_grad,
+                        std::vector<tensor_t *> &in_grad) override {
+    tensor_t &prev_delta = *in_grad[0];
+    tensor_t &curr_delta = *out_grad[0];
 
-    CNN_UNREFERENCED_PARAMETER(in_data);
+    for (serial_size_t sample = 0; sample < in_data[0]->size(); sample++) {
+      vec_t &prev_delta_vec = prev_delta[sample];
+      vec_t &curr_delta_vec = curr_delta[sample];
 
-    this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
+      std::vector<serial_size_t> &max_idx =
+        max_unpooling_layer_worker_storage_[sample].in2outmax_;
 
-    for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
-      for (int i = r.begin(); i != r.end(); i++) {
-        serial_size_t outi = out2in_[i];
-        prev_delta[i] = (max_idx[outi] == i) ? curr_delta[outi] : float_t{0};
-      }
-    });
+      for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
+        for (int i = r.begin(); i != r.end(); i++) {
+          serial_size_t outi = out2in_[i];
+          prev_delta_vec[i] =
+            (max_idx[outi] == i) ? curr_delta_vec[outi] : float_t{0};
+        }
+      });
+    }
   }
 
   std::vector<index3d<serial_size_t>> in_shape() const override {
     return {in_};
   }
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {out_, out_};
+    return {out_};
   }
   std::string layer_type() const override { return "max-unpool"; }
   size_t unpool_size() const { return unpool_size_; }
 
-  void set_worker_count(serial_size_t worker_count) override {
-    Base::set_worker_count(worker_count);
-    max_unpooling_layer_worker_storage_.resize(worker_count);
+  void init_workers(serial_size_t sample_count) {
+    max_unpooling_layer_worker_storage_.resize(sample_count);
     for (max_unpooling_layer_worker_specific_storage &mws :
          max_unpooling_layer_worker_storage_) {
       mws.in2outmax_.resize(out_.size());
