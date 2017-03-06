@@ -383,7 +383,7 @@ void sample6_graph() {
   auto in1   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto in2   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto added = std::make_shared<add>(2, 3);
-  auto out   = std::make_shared<linear_layer<relu>>(3);
+  auto out   = std::make_shared<linear_layer>(3);
 
   // connect
   (in1, in2) << added;

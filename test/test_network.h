@@ -72,7 +72,7 @@ TEST(network, construct_multi_by_local_variables) {
   sigmoid_layer sgm2(32, 32, 12);
   max_pool pool1(32, 32, 12, 2);
   relu_layer relu1(16, 16, 12);
-  lrn_layer<identity> lrn(16, 16, 4, 12);
+  lrn_layer lrn(16, 16, 4, 12);
   dropout dp(16 * 16 * 12, 0.5);
   fc full(16 * 16 * 12, 1);
   softmax_layer softmax(1);
@@ -86,7 +86,7 @@ TEST(network, construct_multi_by_temporary_variables) {
   net << conv(32, 32, 5, 1, 6, padding::same) << tanh_layer(32, 32, 6)
       << conv(32, 32, 7, 6, 12, padding::same) << sigmoid_layer(32, 32, 12)
       << max_pool(32, 32, 12, 2) << relu_layer(16, 16, 12)
-      << lrn_layer<identity>(16, 16, 4, 12) << dropout(16 * 16 * 12, 0.5)
+      << lrn_layer(16, 16, 4, 12) << dropout(16 * 16 * 12, 0.5)
       << fc(16 * 16 * 12, 1) << softmax_layer(1);
 }
 

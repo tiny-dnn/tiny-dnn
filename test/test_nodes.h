@@ -29,7 +29,7 @@ TEST(nodes, graph_no_branch) {
 
   auto pool = std::make_shared<average_pooling_layer>(6, 6, 4, 2);
 
-  auto out = std::make_shared<linear_layer<relu>>(3 * 3 * 4);
+  auto out = std::make_shared<linear_layer>(3 * 3 * 4);
 
   // connect
   in << cnn << pool << out;
@@ -43,11 +43,12 @@ TEST(nodes, graph_branch) {
   auto in1   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto in2   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto added = std::make_shared<add>(2, 3);
-  auto out   = std::make_shared<linear_layer<relu>>(3);
+  auto lin   = std::make_shared<linear_layer>(3);
+  auto out   = std::make_shared<relu_layer>(3);
 
   // connect
   (in1, in2) << added;
-  added << out;
+  added << lin << out;
 
   network<graph> net;
   construct_graph(net, {in1, in2}, {out});
@@ -65,14 +66,14 @@ TEST(nodes, graph_branch2) {
   input_layer in1(shape3d(3, 1, 1));
   input_layer in2(shape3d(3, 1, 1));
   add added(2, 3);
-  linear_layer<relu> out(3);
-
+  linear_layer out(3);
+  relu_layer out_relu(3);
   // connect
   (in1, in2) << added;
-  added << out;
+  added << out << out_relu;
 
   network<graph> net;
-  construct_graph(net, {&in1, &in2}, {&out});
+  construct_graph(net, {&in1, &in2}, {&out_relu});
 
   auto res = net.predict({{2, 4, 3}, {-1, 2, -5}})[0];
 
