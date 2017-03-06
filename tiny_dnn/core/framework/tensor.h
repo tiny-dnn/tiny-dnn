@@ -425,7 +425,7 @@ class Tensor {
     }
 
     // computes the stride
-    const size_t new_stride = std::abs(shape_.back() - new_shape[1]);
+    const size_t new_stride = std::abs(static_cast<int>(shape_.back() - new_shape[1]));
 
     return Tensor(storage_ptr_, new_offset, new_stride, new_shape);
   }
