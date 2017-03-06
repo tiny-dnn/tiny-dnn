@@ -99,8 +99,9 @@ using dropout = tiny_dnn::dropout_layer;
 
 using input = tiny_dnn::input_layer;
 
-template <class T>
-using lrn = tiny_dnn::lrn_layer<T>;
+using linear = linear_layer;
+
+using lrn = tiny_dnn::lrn_layer;
 
 using concat = tiny_dnn::concat_layer;
 

@@ -283,7 +283,7 @@ TEST(caffe_converter, lenet) {
   // relu
   EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
   EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
-  EXPECT_EQ((*model)[5]->layer_type(), "linear");
+  EXPECT_EQ((*model)[5]->layer_type(), "relu-activation");
 
   // fc
   EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
@@ -293,7 +293,7 @@ TEST(caffe_converter, lenet) {
   // softmax
   EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
   EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
-  EXPECT_EQ((*model)[7]->layer_type(), "linear");
+  EXPECT_EQ((*model)[7]->layer_type(), "softmax-activation");
 }
 
 TEST(caffe_converter, lenet_v1) {
@@ -453,7 +453,7 @@ TEST(caffe_converter, lenet_v1) {
   // relu
   EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
   EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
-  EXPECT_EQ((*model)[5]->layer_type(), "linear");
+  EXPECT_EQ((*model)[5]->layer_type(), "relu-activation");
 
   // fc
   EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
@@ -463,7 +463,7 @@ TEST(caffe_converter, lenet_v1) {
   // softmax
   EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
   EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
-  EXPECT_EQ((*model)[7]->layer_type(), "linear");
+  EXPECT_EQ((*model)[7]->layer_type(), "softmax-activation");
 }
 
 TEST(caffe_converter, dropout) {
