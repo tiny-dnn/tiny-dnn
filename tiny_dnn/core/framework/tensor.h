@@ -172,19 +172,39 @@ class Tensor {
   }
 
   /**
-   * Access to indexes in tensor with vector or mixed vector/indices
-   * @param vec vector with first indices
-   * @param args rest of indices, if any
+   * Access to indexes in tensor with or mixed vector/indices
+   * @param vec first indices
+   * @param args rest of indices
    * @return the value of a specified index in the tensor
    */
   template <typename... Args>
   U host_at(std::vector<size_t> vec, const Args... args) const {
-    if (vec.empty()) return *host_ptr(args...);
-    if (vec.size() + sizeof...(args) > dims())
-      throw nn_error("Number of indices exceeded number of dimensions");
-    auto tmp = vec.back();
-    vec.pop_back();
-    return host_at(vec, tmp, args...);
+    std::vector<size_t> rest = {args...};
+    vec.insert(vec.end(), rest.begin(), rest.end());
+    return host_at(vec);
+  }
+
+  /**
+   * Access to indexes in tensor with vector
+   * @param vec vector with first indices
+   * @return the value of a specified index in the tensor
+   */
+  U host_at(std::vector<size_t> vec) const {
+    if (vec.size() != dims())
+      throw nn_error(
+        "Number of indices is different from number "
+        "of dimensions");
+    size_t pos = 0;
+    for (auto it_vec = vec.cbegin(), it_shape = shape_.cbegin();
+         it_vec != vec.cend(); ++it_vec, ++it_shape) {
+      pos *= *it_shape;
+      pos += *it_vec;
+    }
+
+    // TODO(Randl, edgarriba) stride
+    // const size_t total_shift = (dim > 2) ? shift : shift + stride_;
+
+    return *(storage_ptr_->host_data(offset_) + pos);
   }
 
   /**

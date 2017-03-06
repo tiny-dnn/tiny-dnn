@@ -370,6 +370,32 @@ TEST(tensor, access_data4) {
       EXPECT_EQ(tensor.host_at(0, i, j, 1), vals2[i * 2 + j]);
     }
   }
+
+  // with vector
+  for (size_t i = 0; i < 2; ++i) {
+    for (serial_size_t j = 0; j < 2; ++j) {
+      EXPECT_EQ(tensor.host_at({0, i, j, 0}), vals1[i * 2 + j]);
+    }
+  }
+
+  for (size_t i = 0; i < 2; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      EXPECT_EQ(tensor.host_at({0, i, j, 1}), vals2[i * 2 + j]);
+    }
+  }
+
+  // partial vector
+  for (size_t i = 0; i < 2; ++i) {
+    for (serial_size_t j = 0; j < 2; ++j) {
+      EXPECT_EQ(tensor.host_at({0, i, j}, 0), vals1[i * 2 + j]);
+    }
+  }
+
+  for (size_t i = 0; i < 2; ++i) {
+    for (size_t j = 0; j < 2; ++j) {
+      EXPECT_EQ(tensor.host_at({0, i}, j, 1), vals2[i * 2 + j]);
+    }
+  }
 }
 
 TEST(tensor, access_data5) {
