@@ -172,10 +172,7 @@ nn.train<cross_entropy>(optimizer, train_images, train_labels, 50, 20, [](){},
          });
 ```
 
-### train unbalanced data
-
-
-## "freeze" layers
+### "freeze" layers
 
 You can use ```layer::set_trainable``` to exclude a layer from updating its weights.
 
@@ -363,6 +360,50 @@ vector<label_t> labels;
 parse_cifar10("data_batch1.bin", &images, &labels, -1.0, 1.0, 0, 0); 
 ```
 
+### reading images
+You can use a simple ```tiny_dnn::image``` class to handle your images. JPEG (baseline & progressive), PNG (1/2/4/8 bit per channel), BMP (non-1bp, non-RLE), GIF are supported reading formats. Note that it's memory layout differs from OpenCV - it's layout is KHW (K:channels, H:height, W:width).
+
+```cpp
+// default underlying type is uint8_t, and memory layout is KHW
+// consider following 2x2 RGB image:
+//
+// R = [R0, R1,  G = [G0, G1,  B = [B0, B1,
+//      R2, R3]       G2, G3]       B2, B3]
+//
+// memory layout of tiny_dnn::image is KHW, and order of channels K depends on its image_type:
+//
+// gray_img = { gray(R0,G0,B0), gray(R1,G1,B1), gray(R2,G2,B2), gray(R3,G3,B3) }
+// rgb_img = { R0, R1, R2, R3, G0, G1, G2, G3, B0, B1, B2, B3 }
+// bgr_img = { B0, B1, B2, B3, G0, G1, G2, G3, R0, R1, R2, R3 }
+//
+// gray(r,g,b) = 0.300r + 0.586g + 0.113b
+image<> gray_img("your-image.bmp", image_type::grayscale);
+image<> rgb_img("your-image.bmp", image_type::rgb);
+image<> bgr_img("your-image.bmp", image_type::bgr);
+
+// convert into tiny-dnn's interface type
+vec_t vec = img.to_vec();
+
+// convert into HWK format with RGB order like:
+// { R0, G0, B0, R1, G1, B1, R2, G2, B2, R3, G3, B3 }
+std::vector<uint8_t> rgb = rgb_img.to_rgb();
+
+// load data from HWK ordered array
+rgb_img.from_rgb(rgb.begin(), rgb.end());
+
+// resize image
+image<> resized = resize_image(rgb_img, 256, 256);
+
+// get the mean values (per channel)
+image<float_t> mean = mean_image(resized);
+
+// subtract mean values from image
+image<float_t> subtracted = subtract_scalar(resized, mean);
+
+// png,bmp are supported as saving types
+subtracted.save("subtracted.png");
+```
+
 ## get/set the properties
 ### traverse layers
 
@@ -522,5 +563,3 @@ try {
    cout << e.what();
 }
 ```
-
-### run tiny-dnn without exceptions

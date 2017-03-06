@@ -18,6 +18,12 @@ if(POLICY CMP0015)
 endif(POLICY CMP0015)
 
 #####
+# Enables project() command manages VERSION variables.
+if(POLICY CMP0048)
+    cmake_policy(SET CMP0048 NEW)
+endif(POLICY CMP0048)
+
+#####
 # Change the default build type from Debug to Release, while still
 # supporting overriding the build type.
 #
@@ -47,12 +53,16 @@ option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
 option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
 option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
-option(USE_SERIALIZER "Build tiny-dnn with Serialization support" ON)
+option(USE_SERIALIZER "Build tiny-dnn with Serialization support"   ON)
+option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
+option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
+option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
 
 option(BUILD_TESTS    "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
 option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
 option(COVERALLS      "Set to ON to build with code coverage" OFF)
+option(PROFILE        "Set to ON to build with profiling"     OFF)
 
 ####
 # Create the library target
@@ -96,6 +106,18 @@ endif()
 
 if(NOT USE_SERIALIZER)
     add_definitions(-DCNN_NO_SERIALIZATION)
+endif()
+
+if(USE_DOUBLE)
+    add_definitions(-DCNN_USE_DOUBLE)
+endif()
+
+if(USE_IMAGE_API)
+    add_definitions(-DDNN_USE_IMAGE_API)
+endif()
+
+if(USE_GEMMLOWP)
+    add_definitions(-DUSE_GEMMLOWP)
 endif()
 
 # Find Open Multi-Processing (OpenMP)
@@ -187,54 +209,69 @@ message(STATUS "C++11 support has been enabled by default.")
 # Unix
 if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
    CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	include(CheckCXXCompilerFlag)
+    include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag("-msse3" COMPILER_HAS_SSE_FLAG)
     check_cxx_compiler_flag("-mavx"  COMPILER_HAS_AVX_FLAG)
     check_cxx_compiler_flag("-mavx2" COMPILER_HAS_AVX2_FLAG)
+    check_cxx_compiler_flag("-mfma" COMPILER_HAS_AVX2_FLAG)
 
     # set Streaming SIMD Extension (SSE) instructions
     if(USE_SSE AND COMPILER_HAS_SSE_FLAG)
-    	add_definitions(-DCNN_USE_SSE)
+        add_definitions(-DCNN_USE_SSE)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -msse3")
     endif(USE_SSE AND COMPILER_HAS_SSE_FLAG)
     # set Advanced Vector Extensions (AVX)
     if(USE_AVX AND COMPILER_HAS_AVX_FLAG)
-    	add_definitions(-DCNN_USE_AVX)
-        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx -mfma")
+        add_definitions(-DCNN_USE_AVX)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx")
     endif(USE_AVX AND COMPILER_HAS_AVX_FLAG)
     # set Advanced Vector Extensions 2 (AVX2)
     if(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
-    	add_definitions(-DCNN_USE_AVX)
+        add_definitions(-DCNN_USE_AVX2)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -mfma -march=core-avx2")
     endif(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
 
-	# include extra flags to the compiler
-	# TODO: add info about those flags.
+    # include extra flags to the compiler
+    # TODO: add info about those flags.
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
-elseif(WIN32) # MSVC
-	if(USE_SSE)
-		add_definitions(-DCNN_USE_SSE)
+elseif(MSVC)
+    if(USE_SSE)
+        add_definitions(-DCNN_USE_SSE)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:SSE2")
-	endif(USE_SSE)
-	if(USE_AVX)
-		add_definitions(-DCNN_USE_AVX)
+    endif(USE_SSE)
+    if(USE_AVX)
+        add_definitions(-DCNN_USE_AVX)
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX")
-	endif(USE_AVX)
-	# include specific flags for release and debug modes.
+    endif(USE_AVX)
+    if(USE_AVX2)
+        add_definitions(-DCNN_USE_AVX2)
+        set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /arch:AVX2")
+    endif(USE_AVX2)
+    # include specific flags for release and debug modes.
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}
-        /Ox /Oi /Ot /Oy /GL /fp:fast /GS- /bigobj /LTCG")
-    set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG} /bigobj")       
-	add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+        /Ox /Oi /Ot /Oy /GL /fp:fast /GS-")
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LTCG")
+    set(EXTRA_C_FLAGS_DEBUG "${EXTRA_C_FLAGS_DEBUG}")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /W4 /bigobj")
+    # this is fine
+    add_definitions(-D _CRT_SECURE_NO_WARNINGS)
+    add_definitions(-D _SCL_SECURE_NO_WARNINGS)
+    # prolly powerless with header-only project
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /MP")
 endif()
 
 ####
 # Set compiler options
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG}")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
 
+if(PROFILE AND (CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
+    CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    set(CMAKE_CXX_FLAGS     "${CMAKE_CXX_FLAGS} -pg")
+endif()
 ####
 # Write the config.h
 # TODO: replace for tiny_dnn/config.h
@@ -295,6 +332,7 @@ write_basic_package_version_file(
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
+set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
 # Create *-targets.cmake file for build directory
 install(TARGETS ${project_library_target_name}
         EXPORT  ${targets_export_name}
@@ -320,6 +358,9 @@ install(FILES
 install(DIRECTORY   ${PROJECT_SOURCE_DIR}/${project_library_target_name}
         DESTINATION ${include_install_dir})
 
+# Check if protobuf available
+include(cmake/protoc.cmake)
+
 # Subdirectories for examples, testing and documentation
 # TODO: explain in brief about different examples, test and docs.
 if(BUILD_EXAMPLES)
@@ -331,7 +372,7 @@ if(BUILD_TESTS)
 endif(BUILD_TESTS)
 
 if(BUILD_DOCS)
-    add_subdirectory(doc)
+    add_subdirectory(docs)
 endif(BUILD_DOCS)
 
 ####

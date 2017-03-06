@@ -38,7 +38,7 @@ namespace models {
 
 class prediction {
 public:
-    prediction(const std::string &label, float confidence) : label(label), confidence(confidence) {}
+    prediction(const std::string &label, float confidence) : confidence(confidence), label(label) {}
     float confidence = -1;
     std::string label;
 };

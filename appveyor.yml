@@ -6,13 +6,15 @@ environment:
   cmake: C:\projects\cmake-3.4.1-win32-x86\bin\cmake.exe
   matrix:
   - generator : Visual Studio 14
-  - generator : Visual Studio 12
   - generator : Visual Studio 14 Win64
-  - generator : Visual Studio 12 Win64
 
 version: '{branch}-{build}'
 
 os: Visual Studio 2015
+
+branches:
+  only:
+    - master
 
 install:
   # Clone submodule

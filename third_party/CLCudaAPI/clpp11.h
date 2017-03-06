@@ -12,7 +12,7 @@
 // Portability here means that a similar header exists for CUDA with the same classes and
 // interfaces. In other words, moving from the OpenCL API to the CUDA API becomes a one-line change.
 //
-// This is version 7.0 of CLCudaAPI.
+// This is version 8.0 of CLCudaAPI.
 //
 // =================================================================================================
 //
@@ -149,6 +149,17 @@ class Platform {
   cl_platform_id platform_;
 };
 
+// Retrieves a vector with all platforms
+inline std::vector<Platform> GetAllPlatforms() {
+  auto num_platforms = cl_uint{0};
+  CheckError(clGetPlatformIDs(0, nullptr, &num_platforms));
+  auto all_platforms = std::vector<Platform>();
+  for (size_t platform_id = 0; platform_id < static_cast<size_t>(num_platforms); ++platform_id) {
+    all_platforms.push_back(Platform(platform_id));
+  }
+  return all_platforms;
+}
+
 // =================================================================================================
 
 // C++11 version of 'cl_device_id'
@@ -199,7 +210,7 @@ class Device {
     return GetInfoVector<size_t>(CL_DEVICE_MAX_WORK_ITEM_SIZES);
   }
   unsigned long LocalMemSize() const {
-    return GetInfo<cl_ulong>(CL_DEVICE_LOCAL_MEM_SIZE);
+    return static_cast<unsigned long>(GetInfo<cl_ulong>(CL_DEVICE_LOCAL_MEM_SIZE));
   }
   std::string Capabilities() const { return GetInfoString(CL_DEVICE_EXTENSIONS); }
   size_t CoreClock() const {
@@ -723,4 +734,3 @@ class Kernel {
 
 // CLCUDAAPI_CLPP11_H_
 #endif
-
