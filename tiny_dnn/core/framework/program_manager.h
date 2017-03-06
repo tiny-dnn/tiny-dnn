@@ -10,7 +10,8 @@
     All rights reserved.
 
     Each contributor holds copyright over their respective contributions.
-    The project versioning (Git) records all such contribution source information.
+    The project versioning (Git) records all such contribution source
+   information.
 
     LICENSE
 
@@ -20,7 +21,8 @@
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions are met:
 
-    * Redistributions of source code must retain the above copyright notice, this
+    * Redistributions of source code must retain the above copyright notice,
+   this
       list of conditions and the following disclaimer.
 
     * Redistributions in binary form must reproduce the above copyright notice,
@@ -33,21 +35,24 @@
 
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
     AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+   ARE
     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
     FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
     DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
     SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+   LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+   USE
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
 #include "tiny_dnn/layers/layer.h"
 
-#include "tiny_dnn/core/framework/program.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
+#include "tiny_dnn/core/framework/program.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -65,30 +70,30 @@ namespace tiny_dnn {
  */
 class ProgramManager {
  public:
-    /* This function is called to create an instance of the class.
-     * Calling the constructor publicly is not allowed.
-     * The constructor is private and is only called by this Instance function.
-	 */
-    static ProgramManager& getInstance() {
-        static ProgramManager instance;
-        return instance;
-    }
+  /* This function is called to create an instance of the class.
+   * Calling the constructor publicly is not allowed.
+   * The constructor is private and is only called by this Instance function.
+   */
+  static ProgramManager &getInstance() {
+    static ProgramManager instance;
+    return instance;
+  }
 
-    /* Registers and compiles a kernel source code.
-     *
-     * Creates a new program based on the kernel string.
-     * Note that the kernel string is moved-out when constructing the
-     * program to save copying: it should no longer be used in the
-     * remainder of this function.
-     */
-    void registerOp(const Device& device, layer& layer) {
+  /* Registers and compiles a kernel source code.
+   *
+   * Creates a new program based on the kernel string.
+   * Note that the kernel string is moved-out when constructing the
+   * program to save copying: it should no longer be used in the
+   * remainder of this function.
+   */
+  void registerOp(const Device &device, layer &layer) {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-        // Register device to layer
-        layer.setDevice(device);
-        layer.createOp();
+    // Register device to layer
+    layer.setDevice(device);
+    layer.createOp();
 
 /*
-        // retrieve incoming device an layer 
+        // retrieve incoming device an layer
         CLCudaAPI::Device  device_  = device.device();
         CLCudaAPI::Context context_ = device.context();
 
@@ -104,8 +109,8 @@ class ProgramManager {
 
         // Define op kernel string and instantiate program
         // TODO(edgar): load from `cl_kernels` dir.
-		// std::ifstream cl_file("opencl_hello_world.cl");
-		std::ifstream cl_file(layer.kernel_file());
+        // std::ifstream cl_file("opencl_hello_world.cl");
+        std::ifstream cl_file(layer.kernel_file());
         std::string program_tail{std::istreambuf_iterator<char>(cl_file),
                                  std::istreambuf_iterator<char>()};
         // fixed kernel params
@@ -121,13 +126,14 @@ class ProgramManager {
 
         std::cout << layer.kernel_header() << std::endl;
 
-        std::string program_string = std::string{program_head} + std::string{program_tail};
+        std::string program_string = std::string{program_head} +
+   std::string{program_tail};
         auto program = CLCudaAPI::Program(context_, std::move(program_string));
 */
-        /*
-         * Builds this program and checks for any compilation errors.
-         * If there are any, they are printed and execution is halted.
-         */
+/*
+ * Builds this program and checks for any compilation errors.
+ * If there are any, they are printed and execution is halted.
+ */
 /*        nn_info("Compiling the kernel ...");
         auto compiler_options = std::vector<std::string>{};
         auto build_status = program.Build(device_, compiler_options);
@@ -145,45 +151,48 @@ class ProgramManager {
         // Kernel compilation succeed: Register program.
         programs_.insert({ key_program, program });
 */
-#endif  // USE_OPENCL OR USE_CUDA
-    }
+#else  // USE_OPENCL OR USE_CUDA
+    CNN_UNREFERENCED_PARAMETER(device);
+    CNN_UNREFERENCED_PARAMETER(layer);
+#endif
+  }
 
-    // Returns the number of registered programs
-    serial_size_t num_programs() const {
+  // Returns the number of registered programs
+  serial_size_t num_programs() const {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-        return programs_.size();
+    return programs_.size();
 #else
-        return serial_size_t(0);
+    return serial_size_t(0);
 #endif
-    }
+  }
 
-    // Returns a CLCudaProgram given a key Program
-    // based on internal device and op.
+// Returns a CLCudaProgram given a key Program
+// based on internal device and op.
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    CLCudaAPI::Program program(const Program& program) {
-        auto p = programs_.find(program);
-        if (p == programs_.end()) {
-            throw nn_error("Cannot retrieve program.");
-        }
-        return p->second;
+  CLCudaAPI::Program program(const Program &program) {
+    auto p = programs_.find(program);
+    if (p == programs_.end()) {
+      throw nn_error("Cannot retrieve program.");
     }
+    return p->second;
+  }
 #endif
 
-    // Removes the current programs from the general state
-    void reset() {
+  // Removes the current programs from the general state
+  void reset() {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-        programs_.clear();
+    programs_.clear();
 #endif
-    }
+  }
 
  protected:
-    ProgramManager() = default;
-    ProgramManager(const ProgramManager&) = delete;
-    ProgramManager& operator=(const ProgramManager&) = delete;
-    
+  ProgramManager()                       = default;
+  ProgramManager(const ProgramManager &) = delete;
+  ProgramManager &operator=(const ProgramManager &) = delete;
+
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    /* Container holding compiled kernels */
-    std::unordered_map<Program, CLCudaAPI::Program, ProgramHash> programs_;
+  /* Container holding compiled kernels */
+  std::unordered_map<Program, CLCudaAPI::Program, ProgramHash> programs_;
 #endif
 };
 

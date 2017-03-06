@@ -1,45 +1,27 @@
 /*
     Copyright (c) 2016, Taiga Nomi
     All rights reserved.
-    
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
 
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY 
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND 
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
- #include "gtest/gtest.h"
+#include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(batchnorm, gradient_check) {
-    int num = 4;
-    int spatial_dim = 4;
-    int channels = 2;
-    batch_normalization_layer bn(spatial_dim, channels);
+  int num         = 4;
+  int spatial_dim = 4;
+  int channels    = 2;
+  batch_normalization_layer bn(spatial_dim, channels);
 
-    /* following values are extracted from caffe */
-    /* confirming that batch-norm layer is compatible with caffe's bn */
+  /* following values are extracted from caffe
+   * confirming that batch-norm layer is compatible with caffe's bn */
 
+  // clang-format off
     float_t top_diff[] = {
         0.554228544,
         -0.823364496,
@@ -151,41 +133,45 @@ TEST(batchnorm, gradient_check) {
         0.007226899
     };
 
-    tensor_t outd, ing, outg;
-    std::vector<tensor_t*> in_data, out_data, in_grad, out_grad;
+  // clang-format on
+  tensor_t outd, ing, outg;
+  std::vector<tensor_t *> in_data, out_data, in_grad, out_grad;
 
-    for (int i = 0; i < num; i++) {
-        int first = i*spatial_dim*channels;
-        int last = first + spatial_dim*channels;
+  for (int i = 0; i < num; i++) {
+    int first = i * spatial_dim * channels;
+    int last  = first + spatial_dim * channels;
 
-        ing.push_back(vec_t(spatial_dim*channels));
-        outg.push_back(vec_t(top_diff + first, top_diff + last));
-        outd.push_back(vec_t(top_data + first, top_data + last));
+    ing.push_back(vec_t(spatial_dim * channels));
+    outg.push_back(vec_t(top_diff + first, top_diff + last));
+    outd.push_back(vec_t(top_data + first, top_data + last));
+  }
+  in_grad.push_back(&ing);
+  out_grad.push_back(&outg);
+  out_data.push_back(&outd);
+
+  bn.set_context(net_phase::train);
+  bn.set_stddev(vec_t(stddev, stddev + 2));
+  bn.back_propagation(in_data, out_data, out_grad, in_grad);
+
+  for (int i = 0; i < num; i++) {
+    for (int j = 0; j < spatial_dim * channels; j++) {
+      EXPECT_NEAR(expected_gradients[i * spatial_dim * channels + j],
+                  (*in_grad[0])[i][j], 1e-4);
     }
-    in_grad.push_back(&ing);
-    out_grad.push_back(&outg);
-    out_data.push_back(&outd);
-
-    bn.set_context(net_phase::train);
-    bn.set_stddev(vec_t(stddev, stddev + 2));
-    bn.back_propagation(in_data, out_data, out_grad, in_grad);
-
-    for (int i = 0; i < num; i++) {
-        for (int j = 0; j < spatial_dim*channels; j++) {
-            EXPECT_NEAR(expected_gradients[i*spatial_dim*channels + j], (*in_grad[0])[i][j], 1e-4);
-        }
-    }
+  }
 }
 
 TEST(batchnorm, forward) {
-    batch_normalization_layer bn(/*spatial-size=*/4, /*channel=*/3);
+  batch_normalization_layer bn(/*spatial-size=*/4, /*channel=*/3);
 
-    /*
-          mean   var
-    ch0:  0.0    0.0
-    ch1: -1.0    6.0
-    ch2:  2.875 10.696
-    */
+  /*
+        mean   var
+  ch0:  0.0    0.0
+  ch1: -1.0    6.0
+  ch2:  2.875 10.696
+  */
+
+  // clang-format off
     tensor_t in = {
       {
          0.0f,  0.0f,  0.0f,  0.0f, // ch-0 of data#0
@@ -211,34 +197,35 @@ TEST(batchnorm, forward) {
         }
     };
 
-    auto result = bn.forward({ in });
+  // clang-format on
+  auto result = bn.forward({in});
 
-    for (size_t i = 0; i < 2; i++) {
-        for (size_t j = 0; j < 3 * 4; j++) {
-            EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
-        }
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 3 * 4; j++) {
+      EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
     }
+  }
 
-    bn.post_update();
+  bn.post_update();
 
-    // confirming that calculating the moving average doesn't affect the result
-    // while we feed the same data
-    result = bn.forward({ in });
-    for (size_t i = 0; i < 2; i++) {
-        for (size_t j = 0; j < 3 * 4; j++) {
-            EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
-        }
+  // confirming that calculating the moving average doesn't affect the result
+  // while we feed the same data
+  result = bn.forward({in});
+  for (size_t i = 0; i < 2; i++) {
+    for (size_t j = 0; j < 3 * 4; j++) {
+      EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
     }
+  }
 }
 
 TEST(batchnorm, read_write) {
-    batch_normalization_layer l1(100, 100);
-    batch_normalization_layer l2(100, 100);
+  batch_normalization_layer l1(100, 100);
+  batch_normalization_layer l2(100, 100);
 
-    l1.setup(true);
-    l2.setup(true);
+  l1.setup(true);
+  l2.setup(true);
 
-    serialization_test(l1, l2);
+  serialization_test(l1, l2);
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny-dnn

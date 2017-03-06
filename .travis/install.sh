@@ -17,3 +17,10 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     tar -czvf "${HOME}/homebrew-cache/homebrew-cache.tar.gz" --directory /usr/local/Cellar tbb cmake
   fi
 fi
+
+if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  curl http://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -;
+  echo "deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main" | sudo tee -a /etc/apt/sources.list;
+  sudo apt-get update -qq;
+  sudo apt-get install clang-format-4.0 -y;
+fi

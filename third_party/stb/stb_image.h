@@ -2834,7 +2834,7 @@ STBIDEF int stbi__decode_jpeg_image(stbi__jpeg *j)
    if (!stbi__decode_jpeg_header(j, STBI__SCAN_load)) return 0;
    m = stbi__get_marker(j);
    while (!stbi__EOI(m)) {
-      if (stbi__SOS(m)) {
+      if stbi__SOS(m) {
          if (!stbi__process_scan_header(j)) return 0;
          if (!stbi__parse_entropy_coded_data(j)) return 0;
          if (j->marker == STBI__MARKER_none ) {

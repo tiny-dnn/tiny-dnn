@@ -39,6 +39,7 @@ addons:
 branches:
   only:
     - master
+    - feat/tensor_integration
 env:
   global:
     - USE_TBB=ON
@@ -94,6 +95,9 @@ before_script:
 script:
   - make -j2
   - test/tiny_dnn_test
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      make clang-format-check;
+    fi
 
 after_success:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
@@ -102,5 +106,3 @@ after_success:
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
-  # coding style test
-  - bash -x .travis/cpplint_test.sh

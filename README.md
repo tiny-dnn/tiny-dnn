@@ -49,21 +49,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 
 ## Comparison with other libraries
 
-||tiny-dnn|[caffe](https://github.com/BVLC/caffe)|[Theano](https://github.com/Theano/Theano)|[TensorFlow](https://www.tensorflow.org/)|[Mxnet](http://mxnet.io/)|
-|---|---|---|---|---|---|
-|Prerequisites|__Nothing__(Optional:TBB,OpenMP)|BLAS,Boost,protobuf,glog,gflags,hdf5, (Optional:CUDA,OpenCV,lmdb,leveldb etc)|Numpy,Scipy,BLAS,(optional:nose,Sphinx,CUDA etc)|numpy,six,protobuf,(optional:CUDA,Bazel)|BLAS(optional:CUDA)|
-|Modeling By|C++ code|Config File|Python Code|Python Code|C++, Python, R, Julia ...|
-|Training|C++|C++, Python|Python|Python|C++, Python, R, Julia ...|
-|Execution|C++|C++, Python|Python|Python, C++<sup>2</sup>|C++<sup>4</sup>, Python, R, Julia ...|
-|GPU Support|No|Yes|Yes|Yes|Yes|
-|Installing|Unnecessary|Necessary|Necessary|Necessary|Necessary<sup>3</sup>|
-|Windows Support|Yes|No|Yes|Yes|Yes|
-|Pre-Trained Model|Yes(via caffe-converter)|Yes|No<sup>1</sup>|No<sup>1</sup>|Yes(via caffe-converter)|
-
-<sup>1</sup> unofficial version is available  
-<sup>2</sup> limited C++ API  
-<sup>3</sup> It is rumoured installation is unnecessary with the Mxnet amalgamation Api  
-<sup>4</sup> both full API and limited api via amalgamation  
+Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with-other-libraries).
 
 ## Supported networks
 ### layer-types
@@ -232,7 +218,7 @@ more sample, read examples/main.cpp or [MNIST example](https://github.com/tiny-d
 
 ## Contributing
 Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-dnn development!
-For a quick guide to contributing, take a look at the [Contribution Documents](docs/developer_guides/How-to-contribute.md).
+For a quick guide to contributing, take a look at the [Contribution Documents](CONTRIBUTING.md).
 
 ## References
 [1] Y. Bengio, [Practical Recommendations for Gradient-Based Training of Deep Architectures.](http://arxiv.org/pdf/1206.5533v2.pdf) 
