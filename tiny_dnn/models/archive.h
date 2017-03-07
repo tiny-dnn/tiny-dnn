@@ -28,7 +28,6 @@
 
 #include "tiny_dnn/tiny_dnn.h"
 #include "cereal/archives/portable_binary.hpp"
-#include <android/log.h>
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
