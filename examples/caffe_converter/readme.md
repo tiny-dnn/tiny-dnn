@@ -58,7 +58,7 @@ In the [pre-trained CaffeNet](https://github.com/BVLC/caffe/tree/master/examples
  synset_words.txt
 ```
 
-The archived file contains the converted tinydnn network, the mean file and the labels.  It can be used at a later time on your platform of choise (without caffe/protobuf dependencies) by doing something like,
+The archived file contains the converted tinydnn network, the mean file and the labels.  It can be used at a later time on your platform of choice (without caffe/protobuf dependencies) by doing something like,
 
 ```
 #include "tiny_dnn/models/archive.h"
