@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #define NO_STRICT
 #define CNN_USE_CAFFE_CONVERTER
-//#define DNN_USE_IMAGE_API
 #include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/models/archive.h"
 

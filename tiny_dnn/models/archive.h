@@ -27,7 +27,8 @@
 #pragma once
 
 #include "tiny_dnn/tiny_dnn.h"
-#include "cereal/archives/json.hpp"
+#include "cereal/archives/portable_binary.hpp"
+#include <android/log.h>
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
@@ -46,31 +47,33 @@ public:
 class archive {
  public:
     archive(const std::string& path_to_archive_file) {
-        
+
         std::ifstream ifs(path_to_archive_file, std::ios::binary | std::ios::in);
-        cereal::JSONInputArchive bi(ifs);
-        
+        cereal::BinaryInputArchive bi(ifs);
+
         try {
             this->net.from_archive(bi);
-            
-            size_t w, h, depth;
+
+            std::int32_t w, h, depth;
             image_type type;
             std::vector<float> data;
-            
+
             bi(cereal::make_nvp("width", w),
                cereal::make_nvp("height", h),
                cereal::make_nvp("depth", depth),
-               cereal::make_nvp("type", type),
-               cereal::make_nvp("data", data),
-               cereal::make_nvp("labels", this->labels)
-               );
-            
+               cereal::make_nvp("type", type)
+            );
+
+            bi(cereal::make_nvp("data", data));
+
             this->mean = image<float>(shape3d(w, h, depth), type);
             this->mean.from_rgb(data.begin(), data.end());
-            
+
+            bi(cereal::make_nvp("labels", this->labels));
+
         } catch (const std::exception &e) {
             // TODO what should we do?
-            std::cout << e.what() << std::endl;
+            std::cout << "archive::archive() : exception - " << e.what() << std::endl;
         }
     }
     
@@ -105,7 +108,7 @@ class archive {
     void save(const std::string &path_to_archive_file) const {
         
         std::ofstream ofs(path_to_archive_file, std::ios::binary | std::ios::out);
-        cereal::JSONOutputArchive bo(ofs, cereal::JSONOutputArchive::Options::NoIndent());
+        cereal::BinaryOutputArchive bo(ofs); 
         net.to_archive(bo);
         
         bo(cereal::make_nvp("width", mean.width()),
