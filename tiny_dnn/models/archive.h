@@ -110,9 +110,9 @@ class archive {
         cereal::BinaryOutputArchive bo(ofs); 
         net.to_archive(bo);
         
-        bo(cereal::make_nvp("width", mean.width()),
-           cereal::make_nvp("height", mean.height()),
-           cereal::make_nvp("depth", mean.depth()),
+        bo(cereal::make_nvp("width", (std::int32_t)mean.width()),
+           cereal::make_nvp("height", (std::int32_t)mean.height()),
+           cereal::make_nvp("depth", (std::int32_t)mean.depth()),
            cereal::make_nvp("type", mean.type()),
            cereal::make_nvp("data", mean.to_rgb<float>()),
            cereal::make_nvp("labels", labels)
