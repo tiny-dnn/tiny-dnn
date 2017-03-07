@@ -31,38 +31,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #define NO_STRICT
 #define CNN_USE_CAFFE_CONVERTER
-#include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/models/archive.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 using namespace std;
 
-image<float> compute_mean(const string& mean_file, int width, int height)
-{
-    caffe::BlobProto blob;
-    detail::read_proto_from_binary(mean_file, &blob);
+image<float> compute_mean(const string& mean_file, int width, int height) {
+  caffe::BlobProto blob;
+  detail::read_proto_from_binary(mean_file, &blob);
 
-    auto data = blob.mutable_data()->mutable_data();
+  auto data = blob.mutable_data()->mutable_data();
 
-    image<float> original(data, blob.width(), blob.height(), image_type::bgr);
+  image<float> original(data, blob.width(), blob.height(), image_type::bgr);
 
-    return mean_image(original);
+  return mean_image(original);
 }
 
-vector<string> get_label_list(const string& label_file)
-{
-    string line;
-    ifstream ifs(label_file.c_str());
+vector<string> get_label_list(const string& label_file) {
+  string line;
+  ifstream ifs(label_file.c_str());
 
-    if (ifs.fail() || ifs.bad())
-        throw runtime_error("failed to open:" + label_file);
+  if (ifs.fail() || ifs.bad())
+    throw runtime_error("failed to open:" + label_file);
 
-    vector<string> lines;
-    while (getline(ifs, line))
-        lines.push_back(line);
+  vector<string> lines;
+  while (getline(ifs, line)) lines.push_back(line);
 
-    return lines;
+  return lines;
 }
 
 void load_validation_data(const string& validation_file,
@@ -71,81 +68,76 @@ void load_validation_data(const string& validation_file,
   ifstream ifs(validation_file.c_str());
 
   if (ifs.fail() || ifs.bad()) {
-      throw runtime_error("failed to open:" + validation_file);
+    throw runtime_error("failed to open:" + validation_file);
   }
 
   vector<string> lines;
   while (getline(ifs, line)) {
-      lines.push_back(line);
+    lines.push_back(line);
   }
 }
 
-void test(models::archive &archive, const std::string image_file) {
-    
-    std::vector<std::pair<std::string, int>> validation(1);
-    load_validation_data(image_file, &validation);
-    
-    for (size_t i = 0; i < validation.size(); ++i) {
-        
-        image<float> img(image_file, image_type::bgr);
-        auto predictions(archive.predict(img));
-        
-        for (auto prediction : predictions) {
-            cout << prediction.label << "," << prediction.confidence << endl;
-        }
+void test(models::archive& archive, const std::string image_file) {
+  std::vector<std::pair<std::string, int>> validation(1);
+  load_validation_data(image_file, &validation);
+
+  for (size_t i = 0; i < validation.size(); ++i) {
+    image<float> img(image_file, image_type::bgr);
+    auto predictions(archive.predict(img));
+
+    for (auto prediction : predictions) {
+      cout << prediction.label << "," << prediction.confidence << endl;
     }
+  }
 }
 
 models::archive create_archive_from(const string& model_file,
                                     const string& trained_file,
                                     const string& mean_file,
                                     const string& label_file) {
+  auto labels = get_label_list(label_file);
+  auto net    = create_net_from_caffe_prototxt(model_file);
+  reload_weight_from_caffe_protobinary(trained_file, net.get());
 
-    auto labels = get_label_list(label_file);
-    auto net = create_net_from_caffe_prototxt(model_file);
-    reload_weight_from_caffe_protobinary(trained_file, net.get());
-    
-    auto mean = compute_mean(mean_file,
-                             (*net)[0]->in_data_shape()[0].width_,
-                             (*net)[0]->in_data_shape()[0].height_);
-    
-    return models::archive(*net, mean, labels);
+  auto mean = compute_mean(mean_file, (*net)[0]->in_data_shape()[0].width_,
+                           (*net)[0]->in_data_shape()[0].height_);
+
+  return models::archive(*net, mean, labels);
 }
 
 int main(int argc, char** argv) {
-    int arg_channel = 1;
-    
-    string mode = argv[arg_channel++];
-    string mode_file = argv[arg_channel++];
+  int arg_channel = 1;
 
-    if (mode.compare("archive") == 0 || mode.compare("test") == 0) {
+  string mode      = argv[arg_channel++];
+  string mode_file = argv[arg_channel++];
 
-        string model_file = argv[arg_channel++];
-        string trained_file = argv[arg_channel++];
-        string mean_file = argv[arg_channel++];
-        string label_file = argv[arg_channel++];
+  if (mode.compare("archive") == 0 || mode.compare("test") == 0) {
+    string model_file   = argv[arg_channel++];
+    string trained_file = argv[arg_channel++];
+    string mean_file    = argv[arg_channel++];
+    string label_file   = argv[arg_channel++];
 
-        try {
-            auto archive(create_archive_from(model_file, trained_file, mean_file, label_file));
-            if (mode.compare("archive") == 0) {
-                std::cout << "saving converted caffe network to " << mode_file << " ..." << std::endl;
-                archive.save(mode_file);
-                std::cout << "finished" << std::endl;
-            }
-            else {
-                test(archive, mode_file);
-            }
-        } catch (const nn_error& e) {
-            cout << e.what() << endl;
-        }
+    try {
+      auto archive(
+        create_archive_from(model_file, trained_file, mean_file, label_file));
+      if (mode.compare("archive") == 0) {
+        std::cout << "saving converted caffe network to " << mode_file << " ..."
+                  << std::endl;
+        archive.save(mode_file);
+        std::cout << "finished" << std::endl;
+      } else {
+        test(archive, mode_file);
+      }
+    } catch (const nn_error& e) {
+      cout << e.what() << endl;
     }
-    else if (mode.compare("archive-test") == 0) {
-        string test_file = argv[arg_channel++];
-        std::cout << "loading archive from " << mode_file << " ..." << std::endl;
-        models::archive archive(mode_file);
-        std::cout << "running inference on " << test_file << std::endl;
-        test(archive, test_file);
-    } else {
-        cout << "unsupported mode " << mode << std::endl;
-    }
+  } else if (mode.compare("archive-test") == 0) {
+    string test_file = argv[arg_channel++];
+    std::cout << "loading archive from " << mode_file << " ..." << std::endl;
+    models::archive archive(mode_file);
+    std::cout << "running inference on " << test_file << std::endl;
+    test(archive, test_file);
+  } else {
+    cout << "unsupported mode " << mode << std::endl;
+  }
 }
