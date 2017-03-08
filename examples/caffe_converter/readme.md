@@ -44,21 +44,18 @@ In the [pre-trained CaffeNet](https://github.com/BVLC/caffe/tree/master/examples
  imagenet_mean.binaryproto\
  synset_words.txt
 ```
+This creates the archived version of the network bvlc_reference_caffenet.tinydnn.  The archived file contains the converted tinydnn network, the mean file and the labels.  
 
 ### Testing an Archived Model
-In the [pre-trained CaffeNet](https://github.com/BVLC/caffe/tree/master/examples/cpp_classification) model,
+You can test an archived version of the network by running,
 ```
 ./caffe_converter.bin\
  archive-test\
  bvlc_reference_caffenet.tinydnn\
- cat.jpg\
- deploy.prototxt\
- bvlc_reference_caffenet.caffemodel\
- imagenet_mean.binaryproto\
- synset_words.txt
+ cat.jpg
 ```
 
-The archived file contains the converted tinydnn network, the mean file and the labels.  It can be used at a later time on your platform of choice (without caffe/protobuf dependencies) by doing something like,
+It can be used at a later time on your platform of choice (without caffe/protobuf dependencies) by doing something like, 
 
 ```
 #include "tiny_dnn/models/archive.h"
@@ -67,8 +64,8 @@ using namespace std;
 
 ...
 
-models::archive archive(mode_file);
-image<float> img(image_file, image_type::bgr);
+models::archive archive("/path/to/model_file");
+image<float> img("/path/to/image_file", image_type::bgr);
 auto predictions(archive.predict(img));
         
 for (auto prediction : predictions) {
