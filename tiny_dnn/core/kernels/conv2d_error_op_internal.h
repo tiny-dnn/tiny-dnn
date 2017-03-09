@@ -48,7 +48,8 @@
     OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
-
+#include "stdio.h"
+#include <cstdlib>
 namespace tiny_dnn {
 namespace kernels {
 
@@ -120,7 +121,7 @@ void conv2d_error_op_internal(const tensor_t &prev_out,
                         const core::conv_params &params,
                         const bool parallelize) {
   typedef typename vec_t::value_type float_t;
-
+  printf("conv2d_error_op_internal");
   for_i(parallelize, prev_out.size(), [&](int sample) {
     // propagate delta to previous layer
     for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {

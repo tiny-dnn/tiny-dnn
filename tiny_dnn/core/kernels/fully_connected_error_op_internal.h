@@ -8,9 +8,26 @@
 #pragma once
 
 #include "tiny_dnn/core/params/fully_params.h"
-
+#include <assert.h>
 namespace tiny_dnn {
 namespace kernels {
+//
+//template<size_t size>
+//typename std::bitset<size> random_bitset( double p = 0.5) {
+//	typename std::bitset<size> bits;
+//	std::random_device rd;
+//	std::mt19937 gen(rd());
+//	std::bernoulli_distribution d(p);
+//	for ( int n = 0; n < size; n++ ) {
+//		bits[n] = d(gen);
+//		//bits[n]= 0;
+//	}
+//	return bits;
+//}
+
+double genErrorDouble(double errorRate, double) {
+
+}
 
 inline void fully_connected_error_op_internal(const tensor_t &in_data,
                                         const vec_t &W,
@@ -19,6 +36,7 @@ inline void fully_connected_error_op_internal(const tensor_t &in_data,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](int sample) {
+    assert(false);
     const vec_t &in = in_data[sample];
     vec_t &out      = out_data[sample];
 
