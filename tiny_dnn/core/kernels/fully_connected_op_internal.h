@@ -9,6 +9,9 @@
 
 #include "tiny_dnn/core/params/fully_params.h"
 
+#include <bitset>
+#include <random>
+
 namespace tiny_dnn {
 namespace kernels {
 

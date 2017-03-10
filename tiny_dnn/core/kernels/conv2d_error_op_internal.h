@@ -50,8 +50,39 @@
 #pragma once
 #include "stdio.h"
 #include <cstdlib>
+#include <assert.h>
+#include <random>
+#include <bitset>
+#define ERROR_RATE 0.001
 namespace tiny_dnn {
 namespace kernels {
+
+template<size_t size>
+typename std::bitset<size> random_bitset_conv( double p = 0.5) {
+        typename std::bitset<size> bits;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::bernoulli_distribution d(p);
+        for ( int n = 0; n < size; n++ ) {
+                bits[n] = d(gen); 
+                //bits[n]= 0;
+        }
+        return bits;
+}        
+
+double genErrorDoubleConv(double errorRate, double orig) {
+        union Flip
+        {
+                double input;
+                long long output;
+        } data, ret;
+        data.input = orig;
+
+        auto mask = random_bitset_conv<sizeof(double)>(errorRate);
+        std::bitset<sizeof(double)> bits(data.output);
+        ret.output = ( bits ^ mask ).to_ullong();
+        return ret.input;
+}
 
 inline void conv2d_error_op_internal(const tensor_t &in_data,
                                const vec_t &W,
@@ -93,6 +124,8 @@ inline void conv2d_error_op_internal(const tensor_t &in_data,
                    wx++) {  // NOLINT
                 idx = wy * params.in_padded.width_ + wx;
                 sum += *ppw++ * ppi[idx];
+		double error = genErrorDoubleConv(ERROR_RATE, sum);
+		sum = error;
               }
             }
             pa[y * params.out.width_ + x] += sum;
@@ -103,7 +136,10 @@ inline void conv2d_error_op_internal(const tensor_t &in_data,
       if (params.has_bias) {
         float_t *pa  = &a[params.out.get_index(0, 0, o)];
         float_t *paa = pa + params.out.width_ * params.out.height_;
-        std::for_each(pa, paa, [&](float_t &f) { f += bias[o]; });
+        std::for_each(pa, paa, [&](float_t &f) { f += bias[o];
+		double error = genErrorDoubleConv(ERROR_RATE, f);
+		f = error;
+	});
       }
     }
   });
@@ -120,6 +156,7 @@ void conv2d_error_op_internal(const tensor_t &prev_out,
                         tensor_t &prev_delta,
                         const core::conv_params &params,
                         const bool parallelize) {
+  assert(false);
   typedef typename vec_t::value_type float_t;
   printf("conv2d_error_op_internal");
   for_i(parallelize, prev_out.size(), [&](int sample) {

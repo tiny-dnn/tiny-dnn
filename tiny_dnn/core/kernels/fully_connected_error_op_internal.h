@@ -6,27 +6,39 @@
     in the LICENSE file.
 */
 #pragma once
-
+#define ERROR_RATE 0.001
 #include "tiny_dnn/core/params/fully_params.h"
 #include <assert.h>
+#include <random>
+#include <bitset>
 namespace tiny_dnn {
 namespace kernels {
-//
-//template<size_t size>
-//typename std::bitset<size> random_bitset( double p = 0.5) {
-//	typename std::bitset<size> bits;
-//	std::random_device rd;
-//	std::mt19937 gen(rd());
-//	std::bernoulli_distribution d(p);
-//	for ( int n = 0; n < size; n++ ) {
-//		bits[n] = d(gen);
-//		//bits[n]= 0;
-//	}
-//	return bits;
-//}
 
-double genErrorDouble(double errorRate, double) {
+template<size_t size>
+typename std::bitset<size> random_bitset( double p = 0.5) {
+	typename std::bitset<size> bits;
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::bernoulli_distribution d(p);
+	for ( int n = 0; n < size; n++ ) {
+		bits[n] = d(gen);
+		//bits[n]= 0;
+	}
+	return bits;
+}
 
+double genErrorDouble(double errorRate, double orig) {
+	union Flip
+	{
+		double input;
+		long long output;
+	} data, ret;
+	data.input = orig;
+
+	auto mask = random_bitset<sizeof(double)>(errorRate);
+	std::bitset<sizeof(double)> bits(data.output);
+	ret.output = ( bits ^ mask ).to_ullong();
+	return ret.input;
 }
 
 inline void fully_connected_error_op_internal(const tensor_t &in_data,
@@ -36,7 +48,7 @@ inline void fully_connected_error_op_internal(const tensor_t &in_data,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](int sample) {
-    assert(false);
+    //assert(false);
     const vec_t &in = in_data[sample];
     vec_t &out      = out_data[sample];
 
@@ -44,10 +56,14 @@ inline void fully_connected_error_op_internal(const tensor_t &in_data,
       out[i] = float_t{0};
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         out[i] += W[c * params.out_size_ + i] * in[c];
+	double error = genErrorDouble(ERROR_RATE, out[i]);
+	out[i] = error;
       }
 
       if (params.has_bias_) {
         out[i] += bias[i];
+	double error = genErrorDouble(ERROR_RATE, out[i]);
+	out[i] = error;
       }
     }
   });
@@ -61,6 +77,7 @@ inline void fully_connected_error_op_internal(const tensor_t &prev_out,
                                         tensor_t &prev_delta,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
+  assert(false);
   for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
     for (serial_size_t c = 0; c < params.in_size_; c++) {
       // propagate delta to previous layer
