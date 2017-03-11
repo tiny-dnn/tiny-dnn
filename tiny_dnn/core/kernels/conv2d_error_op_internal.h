@@ -49,41 +49,53 @@
 */
 #pragma once
 #include "stdio.h"
+#include "tiny_dnn/core/kernels/bit_error.h"
 #include <cstdlib>
 #include <assert.h>
-#include <random>
-#include <bitset>
-#define ERROR_RATE 0.001
+//#include <random>
+//#include <bitset>
+//#define ERROR_RATE 0.00001
 namespace tiny_dnn {
 namespace kernels {
 
-template<size_t size>
-typename std::bitset<size> random_bitset_conv( double p = 0.5) {
-        typename std::bitset<size> bits;
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::bernoulli_distribution d(p);
-        for ( int n = 0; n < size; n++ ) {
-                bits[n] = d(gen); 
-                //bits[n]= 0;
-        }
-        return bits;
-}        
-
-double genErrorDoubleConv(double errorRate, double orig) {
-        union Flip
-        {
-                double input;
-                long long output;
-        } data, ret;
-        data.input = orig;
-
-        auto mask = random_bitset_conv<sizeof(double)>(errorRate);
-        std::bitset<sizeof(double)> bits(data.output);
-        ret.output = ( bits ^ mask ).to_ullong();
-        return ret.input;
-}
-
+//int count = 0;
+//int max_count = 100000;
+//std::poisson_distribution<> pd((int)(1.0/ERROR_RATE));
+//std::random_device rd1;
+//std::mt19937 gen1(rd1());
+//
+//template<size_t size>
+//typename std::bitset<size> random_bitset_conv( double p = 0.5) {
+//        typename std::bitset<size> bits;
+//        std::random_device rd;
+//        std::mt19937 gen(rd());
+//        std::bernoulli_distribution d(p);
+//        for ( int n = 0; n < size; n++ ) {
+//                bits[n] = d(gen); 
+//                //bits[n]= 0;
+//        }
+//        return bits;
+//}        
+//
+//int nextFlip() {
+//	return pd(gen1);
+//	//return 0;
+//}
+//
+//double genErrorDoubleConv(double errorRate, double orig) {
+//        union Flip
+//        {
+//                double input;
+//                long long output;
+//        } data, ret;
+//        data.input = orig;
+//
+//        auto mask = random_bitset_conv<sizeof(double)>(errorRate);
+//        std::bitset<sizeof(double)> bits(data.output);
+//        ret.output = ( bits ^ mask ).to_ullong();
+//        return ret.input;
+//}
+//
 inline void conv2d_error_op_internal(const tensor_t &in_data,
                                const vec_t &W,
                                const vec_t &bias,
@@ -124,11 +136,20 @@ inline void conv2d_error_op_internal(const tensor_t &in_data,
                    wx++) {  // NOLINT
                 idx = wy * params.in_padded.width_ + wx;
                 sum += *ppw++ * ppi[idx];
-		double error = genErrorDoubleConv(ERROR_RATE, sum);
-		sum = error;
+		sum = FlipMulti(sum);
+		sum = FlipAdder(sum);
+		//if (count > max_count) {
+		//	max_count = nextFlip();
+		//	//assert(false);
+		//	count = 0;
+		//	double error = genErrorDoubleConv(ERROR_RATE, sum);
+		//	sum = error;
+		//}
+		//count++;
               }
             }
             pa[y * params.out.width_ + x] += sum;
+	    pa[y * params.out.width_ + x] = FlipAdder(pa[y * params.out.width_ + x]);
           }
         }
       }
@@ -137,8 +158,15 @@ inline void conv2d_error_op_internal(const tensor_t &in_data,
         float_t *pa  = &a[params.out.get_index(0, 0, o)];
         float_t *paa = pa + params.out.width_ * params.out.height_;
         std::for_each(pa, paa, [&](float_t &f) { f += bias[o];
-		double error = genErrorDoubleConv(ERROR_RATE, f);
-		f = error;
+		f = FlipAdder(f);
+		//if ( count > max_count) {
+		//	max_count = nextFlip();
+		//	//assert(false);
+		//	count = 0;
+		//	double error = genErrorDoubleConv(ERROR_RATE, f);
+		//	f = error;
+		//}
+		//count++;
 	});
       }
     }

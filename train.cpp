@@ -80,7 +80,7 @@ static void train_lenet(const std::string& data_dir_path) {
   progress_display disp(static_cast<unsigned long>(train_images.size()));
   timer t;
   int minibatch_size = 16;
-  int num_epochs     = 30;
+  int num_epochs     = 5;
 
   optimizer.alpha *=
     std::min(tiny_dnn::float_t(4),

@@ -10,7 +10,7 @@
 
 #include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
 #include "tiny_dnn/core/kernels/fully_connected_error_op.h"
-
+//#include "tiny_dnn/core/kernels/bit_error.h"
 namespace tiny_dnn {
 
 /**

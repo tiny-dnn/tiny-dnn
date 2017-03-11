@@ -6,41 +6,52 @@
     in the LICENSE file.
 */
 #pragma once
-#define ERROR_RATE 0.001
+#define ERROR_RATE 0.00001
 #include "tiny_dnn/core/params/fully_params.h"
+#include "tiny_dnn/core/kernels/bit_error.h"
 #include <assert.h>
-#include <random>
-#include <bitset>
+//#include <random>
+//#include <bitset>
 namespace tiny_dnn {
 namespace kernels {
-
-template<size_t size>
-typename std::bitset<size> random_bitset( double p = 0.5) {
-	typename std::bitset<size> bits;
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::bernoulli_distribution d(p);
-	for ( int n = 0; n < size; n++ ) {
-		bits[n] = d(gen);
-		//bits[n]= 0;
-	}
-	return bits;
-}
-
-double genErrorDouble(double errorRate, double orig) {
-	union Flip
-	{
-		double input;
-		long long output;
-	} data, ret;
-	data.input = orig;
-
-	auto mask = random_bitset<sizeof(double)>(errorRate);
-	std::bitset<sizeof(double)> bits(data.output);
-	ret.output = ( bits ^ mask ).to_ullong();
-	return ret.input;
-}
-
+//int count_fc = 0;
+//int max_count_fc = 100000;
+//std::poisson_distribution<> pd_fc((int)(1.0/ERROR_RATE));
+//std::random_device rd1_fc;
+//std::mt19937 gen1_fc(rd1_fc());
+//
+//template<size_t size>
+//typename std::bitset<size> random_bitset( double p = 0.5) {
+//	typename std::bitset<size> bits;
+//	std::random_device rd;
+//	std::mt19937 gen(rd());
+//	std::bernoulli_distribution d(p);
+//	for ( int n = 0; n < size; n++ ) {
+//		bits[n] = d(gen);
+//		//bits[n]= 0;
+//	}
+//	return bits;
+//}
+//
+//int nextFlipFc() {
+//        return pd_fc(gen1_fc);
+//        //return 0;
+//}
+//
+//double genErrorDouble(double errorRate, double orig) {
+//	union Flip
+//	{
+//		double input;
+//		long long output;
+//	} data, ret;
+//	data.input = orig;
+//
+//	auto mask = random_bitset<sizeof(double)>(errorRate);
+//	std::bitset<sizeof(double)> bits(data.output);
+//	ret.output = ( bits ^ mask ).to_ullong();
+//	return ret.input;
+//}
+//
 inline void fully_connected_error_op_internal(const tensor_t &in_data,
                                         const vec_t &W,
                                         const vec_t &bias,
@@ -56,14 +67,33 @@ inline void fully_connected_error_op_internal(const tensor_t &in_data,
       out[i] = float_t{0};
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         out[i] += W[c * params.out_size_ + i] * in[c];
-	double error = genErrorDouble(ERROR_RATE, out[i]);
-	out[i] = error;
+	out[i]=FlipMulti(out[i]);
+	out[i]=FlipAdder(out[i]);
+        //if (count_fc > max_count_fc) {
+        //        max_count_fc = nextFlipFc();
+        //        //assert(false);
+        //        count_fc = 0;
+        //        double error = genErrorDouble(ERROR_RATE, out[i]);
+        //        out[i] = error;
+        //}
+        //count_fc++;
+	//double error = genErrorDouble(ERROR_RATE, out[i]);
+	//out[i] = error;
       }
 
       if (params.has_bias_) {
         out[i] += bias[i];
-	double error = genErrorDouble(ERROR_RATE, out[i]);
-	out[i] = error;
+	out[i] = FlipAdder(out[i]);
+        //if (count_fc > max_count_fc) {
+        //        max_count_fc = nextFlipFc();
+        //        //assert(false);
+        //        count_fc = 0;
+        //        double error = genErrorDouble(ERROR_RATE, out[i]);
+        //        out[i] = error;
+        //}
+        //count_fc++;
+	//double error = genErrorDouble(ERROR_RATE, out[i]);
+	//out[i] = error;
       }
     }
   });
