@@ -67,7 +67,7 @@ class max_unpooling_layer : public layer {
       out_(unpool_out_dim(in_width, unpooling_size, stride),
            unpool_out_dim(in_height, unpooling_size, stride),
            in_channels) {
-    // init_workers(CNN_TASK_SIZE);
+    worker_storage_.in2outmax_.resize(out_.size());
     init_connection();
   }
 
@@ -84,8 +84,7 @@ class max_unpooling_layer : public layer {
       const vec_t &in_vec = in[sample];
       vec_t &out_vec      = out[sample];
 
-      std::vector<serial_size_t> &max_idx =
-        max_unpooling_layer_worker_storage_[sample].in2outmax_;
+      std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (int i = r.begin(); i < r.end(); i++) {
@@ -107,8 +106,7 @@ class max_unpooling_layer : public layer {
       vec_t &prev_delta_vec = prev_delta[sample];
       vec_t &curr_delta_vec = curr_delta[sample];
 
-      std::vector<serial_size_t> &max_idx =
-        max_unpooling_layer_worker_storage_[sample].in2outmax_;
+      std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (int i = r.begin(); i != r.end(); i++) {
@@ -129,14 +127,6 @@ class max_unpooling_layer : public layer {
   std::string layer_type() const override { return "max-unpool"; }
   size_t unpool_size() const { return unpool_size_; }
 
-  void init_workers(serial_size_t sample_count) {
-    max_unpooling_layer_worker_storage_.resize(sample_count);
-    for (max_unpooling_layer_worker_specific_storage &mws :
-         max_unpooling_layer_worker_storage_) {
-      mws.in2outmax_.resize(out_.size());
-    }
-  }
-
 #ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
 #endif
@@ -147,13 +137,12 @@ class max_unpooling_layer : public layer {
   std::vector<serial_size_t> out2in_;               // mapping out => in (N:1)
   std::vector<std::vector<serial_size_t>> in2out_;  // mapping in => out (1:N)
 
-  struct max_unpooling_layer_worker_specific_storage {
+  struct worker_specific_storage {
     std::vector<serial_size_t>
       in2outmax_;  // mapping max_index(out) => in (1:1)
   };
 
-  std::vector<max_unpooling_layer_worker_specific_storage>
-    max_unpooling_layer_worker_storage_;
+  worker_specific_storage worker_storage_;
 
   index3d<serial_size_t> in_;
   index3d<serial_size_t> out_;
@@ -193,10 +182,7 @@ class max_unpooling_layer : public layer {
     in2out_.resize(in_.size());
     out2in_.resize(out_.size());
 
-    for (max_unpooling_layer_worker_specific_storage &mws :
-         max_unpooling_layer_worker_storage_) {
-      mws.in2outmax_.resize(in_.size());
-    }
+    worker_storage_.in2outmax_.resize(in_.size());
 
     for (serial_size_t c = 0; c < in_.depth_; ++c)
       for (serial_size_t y = 0; y < in_.height_; ++y)
