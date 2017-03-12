@@ -8,20 +8,22 @@
 <b>Step:2</b> Open Terminal (Press CMD+SpaceBar Enter Terminal)    
 <b>Step:3</b>
 
-1. Type cd ~  
+1. cd ~   
 2. cd Desktop  
-3. wget https://github.com/tiny-dnn/tiny-dnn/archive/master.zip  
-4. unzip master.zip  
-5. cd tiny-dnn-master/  
-6. cmake .  
-7. cd examples  
-8. cd mnist  
-9. Download [Mnist database](http://yann.lecun.com/exdb/mnist/) and copy to this directory  
-10. Cd terminal to this directory and type g++ -std=c++11 train.cpp -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/  
-11. In terminal type ./a.out .  
-12. Now training will start.
-13. Type g++ -std=c++11 -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/ test.cpp -DDNN_USE_IMAGE_API  
-14. In terminal type ./a.out [4.bmp] (https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp)
+3. git clone https://github.com/tiny-dnn/tiny-dnn.git
+4. cd tiny-dnn
+5. mkdir build
+6. cd build
+7. cmake .. -DBUILD_EXAMPLES=ON 
+8. make
+9. cd examples/
+10. cd mnist/
+11. Download [Mnist database](http://yann.lecun.com/exdb/mnist/) and copy to this directory  
+12. Cd terminal to this directory and type g++ -std=c++11 train.cpp -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/  
+13. In terminal type ./a.out .  
+14. Now training will start.
+15. Type g++ -std=c++11 -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/ test.cpp -DDNN_USE_IMAGE_API  
+16. In terminal type ./a.out [4.bmp] (https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp)
  
 Now you have succesfully installed tinydnn and also trained a mnist model.
 <p align="center"><b>Sky is the limit.Try adding more layers and improve the accuracy</b><p align="center">
