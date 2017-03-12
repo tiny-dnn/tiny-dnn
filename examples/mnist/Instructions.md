@@ -21,7 +21,7 @@
 11. After training is done,in terminal type ./example_mnist_test [4.bmp] (https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp)  
  
 Now you have succesfully installed tinydnn and also trained a mnist model.  
-<p align="center"><b>Sky is the limit.Try adding more layers and improve the accuracy</b><p align="center">  
+<p align="center"><b>The sky's the limit.Try adding more layers and improve the accuracy</b><p align="center">  
 
 
 
