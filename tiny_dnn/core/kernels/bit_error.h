@@ -1,8 +1,8 @@
 #include <assert.h>
 #include <random>
 #include <bitset>
-#define ADDER_ERROR_RATE 0.00001
-#define MULTI_ERROR_RATE 0.00001
+//#define ADDER_ERROR_RATE 0.00001
+//#define MULTI_ERROR_RATE 0.00001
 #ifndef BIT_ERROR
 #define BIT_ERROR
 namespace tiny_dnn {
