@@ -16,7 +16,7 @@
 6. cmake .. -DBUILD_EXAMPLES=ON  
 7. make  
 8. cd examples/  
-9. ./example_mnist_train ~/tiny-dnn/data/  
+9. ./example_mnist_train ../../data/ 
 10. Now training will start.  
 11. After training is done,in terminal type ./example_mnist_test [4.bmp] (https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp)  
  
