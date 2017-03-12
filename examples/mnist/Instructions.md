@@ -1,4 +1,4 @@
-<p align="center"><b>Setup, build and run tiny-ddn on various OS</b><p align="center">
+<p align="center"><b>Setup, build and run tiny-ddn on various operating systems</b><p align="center">
 
 <b>tiny-dnn</b> is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
