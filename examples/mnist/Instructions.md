@@ -7,9 +7,8 @@
 <b>Step:1</b> Install Cmake from https://cmake.org/install/  
 <b>Step:2</b> Open Terminal (Press CMD+SpaceBar Enter Terminal)    
 <b>Step:3</b>
-
-1. cd ~   
-2. cd Desktop  
+1. sudo yum install git-all #(For Linux),Install https://sourceforge.net/projects/git-osx-installer/files/ (For mac)
+2. cd ~    
 3. git clone https://github.com/tiny-dnn/tiny-dnn.git
 4. cd tiny-dnn
 5. mkdir build
