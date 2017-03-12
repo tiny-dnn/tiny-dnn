@@ -17,10 +17,10 @@
 7. cd examples  
 8. cd mnist  
 9. Download [Mnist database](http://yann.lecun.com/exdb/mnist/) and copy to this directory  
-10. Cd terminal to this directory and type g++ -std=c++11 train.cpp -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/  
+10. Cd terminal to this directory and type g++ train.cpp -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/  
 11. In terminal type ./a.out .  
 12. Now training will start.
-13. Type g++ -std=c++11  -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/ test.cpp -DDNN_USE_IMAGE_API  
+13. Type g++ -DCNN_USE_OMP=0 -I ~/Desktop/tiny-dnn-master/ test.cpp -DDNN_USE_IMAGE_API  
 14. In terminal type ./a.out [4.bmp] (https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp)
 ```  
 Now you have succesfully installed tinydnn and also trained a mnist model.
