@@ -8,7 +8,7 @@
 <b>Step:2</b> Open Terminal (Press CMD+SpaceBar Enter Terminal)    
 <b>Step:3</b>
 
-1. cd ~  
+1. cd [To the path you want to put tiny-dnn]
 2. git clone https://github.com/tiny-dnn/tiny-dnn.git  
 3. cd tiny-dnn  
 4. mkdir build  
