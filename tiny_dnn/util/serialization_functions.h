@@ -191,12 +191,11 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::max_unpooling_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::max_unpooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::max_unpooling_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::max_unpooling_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride, unpool_size;
 
@@ -372,9 +371,9 @@ struct specialize<Archive,
                   tiny_dnn::max_pooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::max_unpooling_layer<Activation>,
+                  tiny_dnn::max_unpooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -531,9 +530,9 @@ struct serialization_buddy {
        cereal::make_nvp("pad_type", params_.pad_type));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::max_unpooling_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("unpool_size", layer.unpool_size_),
@@ -649,8 +648,8 @@ void serialize(Archive &ar, tiny_dnn::max_pooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::max_unpooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
