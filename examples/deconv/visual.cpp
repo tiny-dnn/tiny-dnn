@@ -15,7 +15,7 @@ using namespace std;
 // rescale output to 0-100
 template <typename Activation>
 double rescale(double x) {
-  Activation a;
+  Activation a(1);
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
@@ -105,7 +105,8 @@ void recognize(const std::string &dictionary,
   vector<pair<double, int>> scores;
 
   // sort & print top-3
-  for (int i = 0; i < 10; i++) scores.emplace_back(rescale<tan_h>(res[i]), i);
+  for (int i = 0; i < 10; i++)
+    scores.emplace_back(rescale<tanh_layer>(res[i]), i);
 
   sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 
