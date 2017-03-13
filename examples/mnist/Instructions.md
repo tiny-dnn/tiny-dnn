@@ -1,6 +1,6 @@
 <p align="center"><b>Setup, build and run tiny-dnn on various operating systems</b><p align="center">
 
-<b>tiny-dnn</b> is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
+<b>tiny-dnn</b> is a C++11 implementation of deep learning. It is suitable for deep learning on the limited computational resource, embedded systems, and IoT devices.  
 
 
 <b>How to Install/Build Tiny-dnn On Mac/Linux</b>  
