@@ -8,18 +8,18 @@
 <b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
 ```
-1. cd ~/install_path # adjust `install_path` where you want to install tiny-dnn
-2. git clone https://github.com/tiny-dnn/tiny-dnn.git  
-3. cd tiny-dnn  
-4. mkdir build & cd build   
-5. cmake -DBUILD_EXAMPLES=ON .. & make  
-6. cd examples   
-7. ./example_mnist_train ../../data  
+cd ~/install_path # adjust `install_path` where you want to install tiny-dnn
+git clone https://github.com/tiny-dnn/tiny-dnn.git  
+cd tiny-dnn  
+mkdir build & cd build   
+cmake -DBUILD_EXAMPLES=ON .. & make  
+cd examples   
+./example_mnist_train ../../data  
 ```
 Now training will start.  
 After training is done, in terminal type  
 ```
-8. ./example_mnist_test sample_img.bmp   
+./example_mnist_test sample_img.bmp   
 ```
 Now you have succesfully installed tiny-dnn and also trained a mnist model.  
 
