@@ -14,7 +14,6 @@
 #include "tiny_dnn/layers/convolutional_layer.h"
 #include "tiny_dnn/layers/deconvolutional_layer.h"
 #include "tiny_dnn/layers/dropout_layer.h"
-#include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/linear_layer.h"

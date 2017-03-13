@@ -6,7 +6,6 @@
     in the LICENSE file.
 */
 #pragma once
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/util/util.h"
 
 #ifdef DNN_USE_IMAGE_API

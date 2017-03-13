@@ -9,8 +9,6 @@
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/util/util.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
 
 /**

@@ -24,7 +24,6 @@
 #include "tiny_dnn/layers/convolutional_layer.h"
 #include "tiny_dnn/layers/deconvolutional_layer.h"
 #include "tiny_dnn/layers/dropout_layer.h"
-#include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/layers/input_layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
@@ -48,7 +47,6 @@
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
 #endif  // CNN_USE_GEMMLOWP
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
@@ -70,11 +68,6 @@
 #include "tiny_dnn/util/deserialization_helper.h"
 #include "tiny_dnn/util/serialization_helper.h"
 #endif  // CNN_NO_SERIALIZATION
-
-#ifdef CNN_USE_CAFFE_CONVERTER
-// experimental / require google protobuf
-#include "tiny_dnn/io/caffe/layer_factory.h"
-#endif
 
 // shortcut version of layer names
 namespace tiny_dnn {
@@ -116,6 +109,26 @@ using ave_unpool = tiny_dnn::average_unpooling_layer;
 
 }  // namespace layers
 
+namespace activation {
+
+using sigmoid = tiny_dnn::sigmoid_layer;
+
+using tanh = tiny_dnn::tanh_layer;
+
+using relu = tiny_dnn::relu_layer;
+
+using rectified_linear = tiny_dnn::relu_layer;
+
+using softmax = tiny_dnn::softmax_layer;
+
+using leaky_relu = tiny_dnn::leaky_relu_layer;
+
+using elu = tiny_dnn::elu_layer;
+
+using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
+
+}  // namespace activation
+
 #include "tiny_dnn/models/alexnet.h"
 
 using batch_norm = tiny_dnn::batch_normalization_layer;
@@ -125,3 +138,8 @@ using slice = tiny_dnn::slice_layer;
 using power = tiny_dnn::power_layer;
 
 }  // namespace tiny_dnn
+
+#ifdef CNN_USE_CAFFE_CONVERTER
+// experimental / require google protobuf
+#include "tiny_dnn/io/caffe/layer_factory.h"
+#endif
