@@ -24,7 +24,6 @@
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/weight_init.h"
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
 #ifdef DNN_USE_IMAGE_API

@@ -16,7 +16,6 @@
 #include "tiny_dnn/core/backend_avx.h"
 #endif  // CNN_USE_AVX
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/util/util.h"
 
 #ifdef DNN_USE_IMAGE_API
