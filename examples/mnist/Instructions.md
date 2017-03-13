@@ -16,8 +16,8 @@
 6. cd examples   
 7. ./example_mnist_train ../../data  
 ```
-# Now training will start.  
-# After training is done, in terminal type  
+Now training will start.  
+After training is done, in terminal type  
 ```
 8. ./example_mnist_test sample_img.bmp   
 ```
