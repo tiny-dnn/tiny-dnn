@@ -5,7 +5,7 @@
 
 <b>How to Install/Build Tiny-dnn On Mac/Linux</b>  
 <b>Step:1</b> Install Cmake from https://cmake.org/install/  
-<b>Step:2</b> Open Terminal (Press CMD+SpaceBar Enter Terminal)    
+<b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
 ```
 1. cd ~/install_path # adjust `install_path` where you want to install tiny-dnn
