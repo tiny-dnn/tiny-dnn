@@ -7,7 +7,7 @@
 <b>Step:1</b> Install Cmake from https://cmake.org/install/  
 <b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
-```
+```bash
 cd ~/install_path # adjust `install_path` where you want to install tiny-dnn
 git clone https://github.com/tiny-dnn/tiny-dnn.git  
 cd tiny-dnn  
