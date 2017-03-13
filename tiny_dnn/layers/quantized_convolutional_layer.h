@@ -426,15 +426,6 @@ class quantized_convolutional_layer : public layer {
           return copy_and_unpad_delta(delta, dst);
         },
         &cws_);
-#ifdef CNN_USE_AVX
-    } else if (backend_type == backend_t::avx) {
-      backend = std::make_shared<core::avx_backend>(
-        &params_, [this](const tensor_t &in) { return copy_and_pad_input(in); },
-        [this](const tensor_t &delta, tensor_t &dst) {
-          return copy_and_unpad_delta(delta, dst);
-        },
-        &cws_);
-#endif
     } else {
       throw nn_error("Not supported backend type.");
     }
