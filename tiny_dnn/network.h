@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/nodes.h"
 #include "tiny_dnn/util/util.h"

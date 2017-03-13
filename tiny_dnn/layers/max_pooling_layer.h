@@ -14,7 +14,6 @@
 #include "tiny_dnn/core/kernels/maxpool_grad_op.h"
 #include "tiny_dnn/core/kernels/maxpool_op.h"
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/util/util.h"
 
 #ifdef DNN_USE_IMAGE_API
