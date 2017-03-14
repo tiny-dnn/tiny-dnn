@@ -346,9 +346,9 @@ inline void reduce_aligned(const typename T::value_type *src,
                            std::size_t size,
                            typename T::value_type *dst) {
   for (std::size_t i = 0; i < size / T::unroll_size; i++) {
-    typename T::register_type d = T::loadu(&dst[i * T::unroll_size]);
-    typename T::register_type s = T::loadu(&src[i * T::unroll_size]);
-    T::storeu(&dst[i * T::unroll_size], T::add(d, s));
+    typename T::register_type d = T::load(&dst[i * T::unroll_size]);
+    typename T::register_type s = T::load(&src[i * T::unroll_size]);
+    T::store(&dst[i * T::unroll_size], T::add(d, s));
   }
 
   for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
