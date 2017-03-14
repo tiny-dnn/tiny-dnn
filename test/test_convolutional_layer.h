@@ -555,7 +555,7 @@ TEST(convolutional, fprop_nnp) {
 
 TEST(convolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
