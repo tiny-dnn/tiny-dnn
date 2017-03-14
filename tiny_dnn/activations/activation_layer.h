@@ -15,14 +15,26 @@ namespace tiny_dnn {
 class activation_layer : public layer {
  public:
   /**
-   * @param in_shape [in] shape of input tensor
+   * Construct an activation layer which will take shape when connected to some
+   * layer. Connection happens like ( layer1 << act_layer1 ) and shape of this
+   * layer is inferred at that time.
    */
-  activation_layer(const shape3d &in_shape)
-    : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
+  activation_layer() : activation_layer(shape3d(0, 0, 0)) {}
 
   /**
+   * Construct a flat activation layer with specified number of neurons.
    * This constructor is suitable for adding an activation layer after
-   * 3D layers such as convolution / pooling layers.
+   * flat layers such as fully connected layers.
+   *
+   * @param in_dim      [in] number of elements of the input
+   */
+  activation_layer(serial_size_t in_dim)
+    : activation_layer(shape3d(in_dim, 1, 1)) {}
+
+  /**
+   * Construct an activation layer with specified width, height and channels.
+   * This constructor is suitable for adding an activation layer after spatial
+   * layers such as convolution / pooling layers.
    *
    * @param in_width    [in] number of input elements along width
    * @param in_height   [in] number of input elements along height
@@ -31,18 +43,15 @@ class activation_layer : public layer {
   activation_layer(serial_size_t in_width,
                    serial_size_t in_height,
                    serial_size_t in_channels)
-    : layer({vector_type::data}, {vector_type::data}),
-      in_shape_(in_width, in_height, in_channels) {}
+    : activation_layer(shape3d(in_width, in_height, in_channels)) {}
 
   /**
-   * This constructor is suitable for adding an activation layer after
-   * 1D layers such as fully connected layers.
+   * Construct an activation layer with specified input shape.
    *
-   * @param in_dim      [in] number of elements of the input
+   * @param in_shape [in] shape of input tensor
    */
-  activation_layer(serial_size_t in_dim)
-    : layer({vector_type::data}, {vector_type::data}),
-      in_shape_(in_dim, 1, 1) {}
+  activation_layer(const shape3d &in_shape)
+    : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
 
   activation_layer(const layer &prev_layer)
     : layer({vector_type::data}, {vector_type::data}),
@@ -51,6 +60,10 @@ class activation_layer : public layer {
   std::vector<shape3d> in_shape() const override { return {in_shape_}; }
 
   std::vector<shape3d> out_shape() const override { return {in_shape_}; }
+
+  void set_in_shape(const shape3d &in_shape) override {
+    this->in_shape_ = in_shape;
+  }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
