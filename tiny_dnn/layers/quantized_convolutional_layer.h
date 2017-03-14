@@ -32,11 +32,9 @@ namespace tiny_dnn {
  *
  * take input as two-dimensional *image* and applying filtering operation.
  **/
-template <typename Activation = activation::identity>
-class quantized_convolutional_layer : public feedforward_layer<Activation> {
+class quantized_convolutional_layer : public layer {
  public:
-  typedef feedforward_layer<Activation> Base;
-  CNN_USE_LAYER_MEMBERS;
+  using layer::parallelize_;
 
   /**
   * constructing convolutional layer
@@ -73,7 +71,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     serial_size_t w_stride = 1,
     serial_size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_size,
                     window_size, out_channels, pad_type, has_bias, w_stride,
                     h_stride);
@@ -117,7 +115,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     serial_size_t w_stride = 1,
     serial_size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                     window_height, out_channels, pad_type, has_bias, w_stride,
                     h_stride);
@@ -161,55 +159,9 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     serial_size_t w_stride = 1,
     serial_size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_size,
                     window_size, out_channels, pad_type, has_bias, w_stride,
-                    h_stride, connection_table);
-    init_backend(backend_type);
-  }
-
-  /**
-  * constructing convolutional layer
-  *
-  * @param in_width         [in] input image width
-  * @param in_height        [in] input image height
-  * @param window_width     [in] window_width(kernel) size of convolution
-  * @param window_height    [in] window_height(kernel) size of convolution
-  * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels     [in] output image channels
-  * @param connection_table [in] definition of connections between in-channels
-  *and out-channels
-  * @param pad_type         [in] rounding strategy
-  *                               valid: use valid pixels of input only.
-  *output-size = (in-width - window_size + 1) *
-  *(in-height - window_size + 1) * out_channels
-  *                               same: add zero-padding to keep same
-  *width/height. output-size = in-width * in-height *
-  *out_channels
-  * @param has_bias         [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride         [in] specify the horizontal interval at which to
-  *apply the filters to the input
-  * @param h_stride         [in] specify the vertical interval at which to
-  *apply
-  *the filters to the input
-  **/
-  quantized_convolutional_layer(
-    serial_size_t in_width,
-    serial_size_t in_height,
-    serial_size_t window_width,
-    serial_size_t window_height,
-    serial_size_t in_channels,
-    serial_size_t out_channels,
-    const connection_table &connection_table,
-    padding pad_type       = padding::valid,
-    bool has_bias          = true,
-    serial_size_t w_stride = 1,
-    serial_size_t h_stride = 1,
-    backend_t backend_type = core::backend_t::internal)
-    : Base(has_bias ? 3 : 2, 1, std_input_order(has_bias)) {
-    conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
-                    window_height, out_channels, pad_type, has_bias, w_stride,
                     h_stride, connection_table);
     init_backend(backend_type);
   }
@@ -217,7 +169,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
   // move constructor
   quantized_convolutional_layer(
     quantized_convolutional_layer &&other)  // NOLINT
-    : Base(std::move(other)),
+    : layer(std::move(other)),
       params_(std::move(other.params_)),
       cws_(std::move(other.cws_)) {
     init_backend(core::backend_t::internal);
@@ -242,12 +194,10 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                            std::vector<tensor_t *> &out_data) override {
     // launch convolutional kernel
     if (in_data.size() == 3) {
-      Base::backend_->conv2d_q(in_data, out_data);
+      layer::backend_->conv2d_q(in_data, out_data);
 
-      // activations
-      this->forward_activation(*out_data[0], *out_data[1]);
     } else if (in_data.size() == 6) {
-      Base::backend_->conv2d_eq(in_data, out_data);
+      layer::backend_->conv2d_eq(in_data, out_data);
     }
   }
 
@@ -267,7 +217,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    Base::backend_->conv2d_q(in_data, out_data, out_grad, in_grad);
+    layer::backend_->conv2d_q(in_data, out_data, out_grad, in_grad);
   }
 
   std::vector<index3d<serial_size_t>> in_shape() const override {
@@ -280,7 +230,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {params_.out, params_.out};
+    return {params_.out};
   }
 
   std::string layer_type() const override { return "q_conv"; }
@@ -293,7 +243,7 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
     const auto width  = params_.out.depth_ * pitch + border_width;
     const auto height = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const vec_t &W                      = *this->get_weights()[0];
+    const vec_t &W                      = *this->weights()[0];
 
     img.resize(width, height);
     img.fill(bg_color);
@@ -475,31 +425,14 @@ class quantized_convolutional_layer : public feedforward_layer<Activation> {
         [this](const tensor_t &delta, tensor_t &dst) {
           return copy_and_unpad_delta(delta, dst);
         },
-        [this](const tensor_t &p_delta, const tensor_t &out,
-               tensor_t &c_delta) {
-          return Base::backward_activation(p_delta, out, c_delta);
-        },
         &cws_);
-#ifdef CNN_USE_AVX
-    } else if (backend_type == backend_t::avx) {
-      backend = std::make_shared<core::avx_backend>(
-        &params_, [this](const tensor_t &in) { return copy_and_pad_input(in); },
-        [this](const tensor_t &delta, tensor_t &dst) {
-          return copy_and_unpad_delta(delta, dst);
-        },
-        [this](const tensor_t &p_delta, const tensor_t &out,
-               tensor_t &c_delta) {
-          return Base::backward_activation(p_delta, out, c_delta);
-        },
-        &cws_);
-#endif
     } else {
       throw nn_error("Not supported backend type.");
     }
 
     if (backend) {
-      Base::set_backend(backend);
-      Base::backend_->set_layer(this);
+      layer::set_backend(backend);
+      layer::backend_->set_layer(this);
     } else {
       throw nn_error("Could not allocate the backend.");
     }
