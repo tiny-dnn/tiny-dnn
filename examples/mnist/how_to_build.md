@@ -1,8 +1,8 @@
-<p align="center"><b>How to build MNIST example program.</b><p align="center">
+<p align="center"><b>How to build MNIST example programs.</b><p align="center">
 
 
 
-<b>Step:1</b> Install Cmake from https://cmake.org/install/  
+<b>Step:1</b> Install CMake from https://cmake.org/install/  
 <b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
 ```bash
@@ -17,9 +17,9 @@ cd examples
 Now training will start.  
 After training is finished, in terminal type  
 ```
-./example_mnist_test sample_img.bmp   
+./example_mnist_test IMAGE_TO_BE_TESTED.bmp 
 ```
-Now you have succesfully trained a mnist model.  
+Now you have successfully trained and tested a MNIST model. mnist model.  
 
 
 
