@@ -1,9 +1,7 @@
-<p align="center"><b>Setup, build and run tiny-dnn on Mac/Linux</b><p align="center">
+<p align="center"><b>How to test example MNIST train/test programs</b><p align="center">
 
 
 
-
-<b>How to Install/Build Tiny-dnn On Mac/Linux</b>  
 <b>Step:1</b> Install Cmake from https://cmake.org/install/  
 <b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
@@ -21,7 +19,7 @@ After training is finished, in terminal type
 ```
 ./example_mnist_test sample_img.bmp   
 ```
-Now you have succesfully installed tiny-dnn and also trained a mnist model.  
+Now you have succesfully trained a mnist model.  
 
 
 
