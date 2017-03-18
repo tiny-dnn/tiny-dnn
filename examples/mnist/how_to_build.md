@@ -1,4 +1,4 @@
-<p align="center"><b>How to test example MNIST train/test programs</b><p align="center">
+<p align="center"><b>How to build MNIST example program.</b><p align="center">
 
 
 
@@ -6,11 +6,11 @@
 <b>Step:2</b> Open Terminal.  
 <b>Step:3</b>
 ```bash
-cd ~/install_path # adjust `install_path` where you want to install tiny-dnn
+cd install_path # adjust `install_path` to where you want to install tiny-dnn
 git clone https://github.com/tiny-dnn/tiny-dnn.git  
 cd tiny-dnn  
 mkdir build & cd build   
-cmake -DBUILD_EXAMPLES=ON .. & make  
+CMake -DBUILD_EXAMPLES=ON .. & make  
 cd examples   
 ./example_mnist_train ../../data  
 ```
