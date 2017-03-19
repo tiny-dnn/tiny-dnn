@@ -17,9 +17,10 @@ cd examples
 Now training will start.  
 After training is finished, in terminal type  
 ```
-./example_mnist_test IMAGE_TO_BE_TESTED.bmp 
+wget https://github.com/tiny-dnn/tiny-dnn/wiki/4.bmp
+./example_mnist_test 4.bmp
 ```
-Now you have successfully trained and tested a MNIST model. mnist model.  
+Now you have successfully trained and tested a MNIST model.  
 
 
 
