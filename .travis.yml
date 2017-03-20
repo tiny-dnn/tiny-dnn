@@ -36,6 +36,26 @@ addons:
       - libprotobuf-dev
       - protobuf-compiler
 
+  coverity_scan:
+
+    project:
+      name: tiny-dnn/tiny-dnn
+      version: 1.0
+      description: Header only, dependency-free deep learning framework in C++11
+
+    notification_email: example@example.com
+
+    build_command_prepend: cmake -DUSE_TBB=ON
+            -DUSE_SSE=ON
+            -DUSE_AVX=ON
+            -DUSE_DOUBLE=OFF
+            -DBUILD_TESTS=ON
+            -DBUILD_EXAMPLES=ON .
+
+    build_command: make -j8
+
+    branch_pattern: master
+
 branches:
   only:
     - master
@@ -46,6 +66,7 @@ env:
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
     - COVERALLS=ON
+    - secure: "TOKEN"
 
   matrix:
     - USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
