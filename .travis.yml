@@ -66,7 +66,9 @@ env:
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
     - COVERALLS=ON
-    - secure: "TOKEN"
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+    - secure: "klsXQXZDTInfHtiqbDyUcM5VMpZWO1cWnwxc/253Y6foCIcgCV+vLzRQz0CzBl18e4+KQdQBXi1/FcpZMjdlvQF80bqisU/g6IKF7C5h29A62MbosSATSHKLelmRrNfEwvGthK2fc13akM8Z+FdKespbB7Q3ME+PaBl84y2Uq2UjAr48AzMFlCyEXa969oZwrV7B5qJvxL9PdTX2sXgFHGryFeffl7w2yb85cBJ/zDiGdMvPUTN+y9GtzmYbQFpMWaBd0jIQHlkY6SigSvzqt2fyj8ptU13MT+Big0XkMC1KrvClEKqVgZiCZ+CSxH1TUXj0WB54f8dabfCFR+YdysQp6jLJNjEOuovU+1dpm/JXJgZQ/05ZmeLQE+S6gc23ous3nTrlChTwE5YS9rX1Jc9NN5+LHv1DaMDzuM4Cagnexr6zXIAJsYsSL5co/rKpjtBqHrVczMLHHdrf1preipXOemusvOPFCYjkC92giz3Ry2BAIUVNz6LRfu6RnLMR7ca98n2F26k4v4jeBjkKWqSgBBvNNDAazzRQj7TIUcGNTc+4Biiqu7OrEvt1cMoGH0PeDbUrHkqUkc2kdjqTAEnomY3HcrjteNGNe6YBnihlDhIsGTHV6ZfNE6D0gKMVQOTDxpmLyqdWko6cOPaKrjmIe8k+JNWp0uVmVsXuN98="
 
   matrix:
     - USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
@@ -85,6 +87,7 @@ before_install:
     fi
   - gcc --version
   - g++ --version
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
   - bash -x .travis/install.sh
