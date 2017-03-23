@@ -39,20 +39,19 @@ addons:
   coverity_scan:
 
     project:
-      name: tiny-dnn/tiny-dnn
-      version: 1.0
-      description: Header only, dependency-free deep learning framework in C++11
+      name: "tiny-dnn/tiny-dnn"
+      description: "Header only, dependency-free deep learning framework in C++11"
 
     notification_email: example@example.com
 
-    build_command_prepend: cmake -DUSE_TBB=ON
+    build_command_prepend: "cmake -DUSE_TBB=ON
             -DUSE_SSE=ON
             -DUSE_AVX=ON
             -DUSE_DOUBLE=OFF
             -DBUILD_TESTS=ON
-            -DBUILD_EXAMPLES=ON .
+            -DBUILD_EXAMPLES=ON ."
 
-    build_command: make -j8
+    build_command: "make -j8"
 
     branch_pattern: master
 
