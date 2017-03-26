@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(convolutional, setup_internal) {
@@ -555,7 +557,7 @@ TEST(convolutional, fprop_nnp) {
 
 TEST(convolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh_layer();
+  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -565,7 +567,7 @@ TEST(convolutional, gradient_check) {  // tanh - mse
 
 TEST(convolutional, gradient_check2) {  // sigmoid - mse
   network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -576,7 +578,7 @@ TEST(convolutional, gradient_check2) {  // sigmoid - mse
 TEST(convolutional, gradient_check3) {  // rectified - mse
   network<sequential> nn;
 
-  nn << convolutional_layer(5, 5, 3, 1, 1) << relu_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << relu();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -598,7 +600,7 @@ TEST(convolutional, gradient_check4) {  // identity - mse
 TEST(convolutional, gradient_check5) {  // sigmoid - cross-entropy
   network<sequential> nn;
 
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -609,7 +611,7 @@ TEST(convolutional, gradient_check5) {  // sigmoid - cross-entropy
 TEST(convolutional, gradient_check6) {  // sigmoid - absolute
   network<sequential> nn;
 
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -620,7 +622,7 @@ TEST(convolutional, gradient_check6) {  // sigmoid - absolute
 TEST(convolutional, gradient_check7) {  // sigmoid - absolute eps
   network<sequential> nn;
 
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3, 1);
+  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -633,7 +635,7 @@ TEST(convolutional, gradient_check8_pad_same) {  // sigmoid - mse - padding same
 
   nn << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
                             core::backend_t::internal)
-     << sigmoid_layer(5, 5, 1);
+     << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -646,7 +648,7 @@ TEST(convolutional, gradient_check9_w_stride) {  // sigmoid - mse - w_stride > 1
 
   nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 2, 1,
                             core::backend_t::internal)
-     << sigmoid_layer(2, 3, 1);
+     << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
   nn.init_weight();
@@ -660,7 +662,7 @@ TEST(convolutional,
 
   nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 1, 2,
                             core::backend_t::internal)
-     << sigmoid_layer(3, 2, 1);
+     << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
   nn.init_weight();
@@ -677,7 +679,7 @@ TEST(convolutional,
 
   nn << convolutional_layer(7, 7, 3, 3, 1, connections, padding::valid, true, 1,
                             1, core::backend_t::internal)
-     << sigmoid_layer(5, 5, 1);
+     << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -692,7 +694,7 @@ TEST(convolutional,
   nn << fully_connected_layer(10, 5 * 5)
      << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
                             core::backend_t::internal)
-     << sigmoid_layer(5, 5, 1);
+     << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
