@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy

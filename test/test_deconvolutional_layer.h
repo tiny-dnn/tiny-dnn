@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(deconvolutional, setup_tiny) {
@@ -195,7 +197,7 @@ TEST(deconvolutional, fprop2) {
 /*
 TEST(deconvolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
-  nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh_layer(4, 4, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -205,7 +207,7 @@ TEST(deconvolutional, gradient_check) {  // tanh - mse
 
 TEST(deconvolutional, gradient_check2) {  // sigmoid - mse
   network<sequential> nn;
-  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid_layer(4, 4, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -216,7 +218,7 @@ TEST(deconvolutional, gradient_check2) {  // sigmoid - mse
 TEST(deconvolutional, gradient_check3) {  // rectified - mse
   network<sequential> nn;
 
-  nn << deconvolutional_layer(2, 2, 3, 1, 1) << relu_layer(4, 4, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << relu();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -238,7 +240,7 @@ TEST(deconvolutional, gradient_check4) {  // identity - mse
 TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   network<sequential> nn;
 
-  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid_layer(4, 4, 1);
+  nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
