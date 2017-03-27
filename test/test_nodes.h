@@ -11,14 +11,15 @@
 #include "tiny_dnn/tiny_dnn.h"
 
 using namespace tiny_dnn::layers;
+using namespace tiny_dnn::activation;
 
 namespace tiny_dnn {
 
 TEST(nodes, sequential) {
   network<sequential> nn;
 
-  nn << fully_connected_layer(10, 100) << tanh_layer(100)
-     << fully_connected_layer(100, 10) << softmax_layer(10);
+  nn << fully_connected_layer(10, 100) << tanh()
+     << fully_connected_layer(100, 10) << softmax();
 }
 
 TEST(nodes, graph_no_branch) {
@@ -44,7 +45,7 @@ TEST(nodes, graph_branch) {
   auto in2   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto added = std::make_shared<add>(2, 3);
   auto lin   = std::make_shared<linear_layer>(3);
-  auto out   = std::make_shared<relu_layer>(3);
+  auto out   = std::make_shared<relu>(3);
 
   // connect
   (in1, in2) << added;
