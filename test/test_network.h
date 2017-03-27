@@ -75,19 +75,18 @@ TEST(network, construct_multi_by_local_variables) {
   lrn_layer lrn(16, 16, 4, 12);
   dropout dp(16 * 16 * 12, 0.5);
   fc full(16 * 16 * 12, 1);
-  softmax_layer softmax(1);
+  softmax_layer sft(1);
 
   net << conv1 << tanh1 << conv2 << sgm2 << pool1 << relu1 << lrn << dp << full
-      << softmax;
+      << sft;
 }
 
 TEST(network, construct_multi_by_temporary_variables) {
   network<sequential> net;
-  net << conv(32, 32, 5, 1, 6, padding::same) << tanh_layer(32, 32, 6)
-      << conv(32, 32, 7, 6, 12, padding::same) << sigmoid_layer(32, 32, 12)
-      << max_pool(32, 32, 12, 2) << relu_layer(16, 16, 12)
-      << lrn_layer(16, 16, 4, 12) << dropout(16 * 16 * 12, 0.5)
-      << fc(16 * 16 * 12, 1) << softmax_layer(1);
+  net << conv(32, 32, 5, 1, 6, padding::same) << tanh()
+      << conv(32, 32, 7, 6, 12, padding::same) << sigmoid()
+      << max_pool(32, 32, 12, 2) << relu() << lrn_layer(16, 16, 4, 12)
+      << dropout(16 * 16 * 12, 0.5) << fc(16 * 16 * 12, 1) << softmax();
 }
 
 TEST(network, in_dim) {
@@ -127,7 +126,7 @@ TEST(network, manual_init) {
   // initializing weights directly
   network<sequential> net;
   net << convolutional_layer(3, 3, 3, 1, 1)
-      << fully_connected_layer(1, 2, false) << softmax_layer(2);
+      << fully_connected_layer(1, 2, false) << softmax();
 
   adagrad opt;
 
@@ -227,8 +226,8 @@ TEST(network, train_predict) {
     label.push_back((in[0] ^ in[1]) ? 1 : 0);
   }
 
-  net << fully_connected_layer(2, 10) << tanh_layer(10)
-      << fully_connected_layer(10, 2) << tanh_layer(2);
+  net << fully_connected_layer(2, 10) << tanh() << fully_connected_layer(10, 2)
+      << tanh();
 
   net.train<mse>(optimizer, data, label, 10, 10);
 
@@ -281,8 +280,8 @@ TEST(network, train_predict_different_batches) {
       label.push_back((in[0] ^ in[1]) ? 1 : 0);
     }
 
-    net << fully_connected_layer(2, 10) << tanh_layer(10)
-        << fully_connected_layer(10, 2) << tanh_layer(2);
+    net << fully_connected_layer(2, 10) << tanh()
+        << fully_connected_layer(10, 2) << tanh();
 
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 
@@ -445,15 +444,15 @@ TEST(network, bias_init_per_layer) {
 }
 
 TEST(network, gradient_check) {  // sigmoid - cross-entropy
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
-     << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
-     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
+  nn << fully_connected_layer(10, 14 * 14 * 3) << activation()
+     << convolutional_layer(14, 14, 5, 3, 6) << activation()
+     << average_pooling_layer(10, 10, 6, 2) << activation()
+     << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -462,15 +461,15 @@ TEST(network, gradient_check) {  // sigmoid - cross-entropy
 }
 
 TEST(network, gradient_check2) {  // tan_h - mse
-  using loss_func        = mse;
-  using network          = network<sequential>;
-  using activation_layer = tanh_layer;
+  using loss_func  = mse;
+  using network    = network<sequential>;
+  using activation = tanh;
 
   network nn;
-  nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
-     << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
-     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
+  nn << fully_connected_layer(10, 14 * 14 * 3) << activation()
+     << convolutional_layer(14, 14, 5, 3, 6) << activation()
+     << average_pooling_layer(10, 10, 6, 2) << activation()
+     << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -483,9 +482,9 @@ TEST(network, gradient_check3) {  // mixture - mse
   using network   = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(10, 14 * 14 * 3) << tanh_layer(14 * 14 * 3)
-     << convolutional_layer(14, 14, 5, 3, 6) << sigmoid_layer(10, 10, 6)
-     << average_pooling_layer(10, 10, 6, 2) << relu_layer(5, 5, 6)
+  nn << fully_connected_layer(10, 14 * 14 * 3) << tanh()
+     << convolutional_layer(14, 14, 5, 3, 6) << sigmoid()
+     << average_pooling_layer(10, 10, 6, 2) << relu()
      << fully_connected_layer(5 * 5 * 6, 3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -495,15 +494,15 @@ TEST(network, gradient_check3) {  // mixture - mse
 }
 
 TEST(network, gradient_check4) {  // sigmoid - cross-entropy
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
-     << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
-     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
+  nn << fully_connected_layer(10, 14 * 14 * 3) << activation()
+     << convolutional_layer(14, 14, 5, 3, 6) << activation()
+     << average_pooling_layer(10, 10, 6, 2) << activation()
+     << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -512,15 +511,15 @@ TEST(network, gradient_check4) {  // sigmoid - cross-entropy
 }
 
 TEST(network, gradient_check5) {  // softmax - cross-entropy
-  using loss_func        = cross_entropy;
-  using network          = network<sequential>;
-  using activation_layer = softmax_layer;
+  using loss_func  = cross_entropy;
+  using network    = network<sequential>;
+  using activation = softmax;
 
   network nn;
-  nn << fully_connected_layer(10, 14 * 14 * 3) << activation_layer(14 * 14 * 3)
-     << convolutional_layer(14, 14, 5, 3, 6) << activation_layer(10, 10, 6)
-     << average_pooling_layer(10, 10, 6, 2) << activation_layer(5, 5, 6)
-     << fully_connected_layer(5 * 5 * 6, 3) << activation_layer(3);
+  nn << fully_connected_layer(10, 14 * 14 * 3) << activation()
+     << convolutional_layer(14, 14, 5, 3, 6) << activation()
+     << average_pooling_layer(10, 10, 6, 2) << activation()
+     << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -529,13 +528,13 @@ TEST(network, gradient_check5) {  // softmax - cross-entropy
 }
 
 TEST(network, gradient_check6) {  // sigmoid - cross-entropy
-  using loss_func        = cross_entropy;
-  using network          = network<sequential>;
-  using activation_layer = sigmoid_layer;
+  using loss_func  = cross_entropy;
+  using network    = network<sequential>;
+  using activation = sigmoid;
 
   network nn;
-  nn << fully_connected_layer(3, 201) << activation_layer(201)
-     << fully_connected_layer(201, 2) << activation_layer(2);
+  nn << fully_connected_layer(3, 201) << activation()
+     << fully_connected_layer(201, 2) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -544,10 +543,10 @@ TEST(network, gradient_check6) {  // sigmoid - cross-entropy
 }
 
 TEST(network, gradient_check7) {  // leaky-relu - mse
-  using loss_func        = mse;
-  using activation_layer = leaky_relu_layer;
+  using loss_func  = mse;
+  using activation = leaky_relu;
 
-  auto nn = make_mlp<activation_layer>({3, 201, 2});
+  auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -563,10 +562,10 @@ TEST(network, gradient_check7) {  // leaky-relu - mse
 }
 
 TEST(network, gradient_check8) {  // elu - mse
-  using loss_func        = mse;
-  using activation_layer = elu_layer;
+  using loss_func  = mse;
+  using activation = elu;
 
-  auto nn = make_mlp<activation_layer>({3, 201, 2});
+  auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -583,10 +582,10 @@ TEST(network, gradient_check8) {  // elu - mse
 }
 
 TEST(network, gradient_check9) {  // tan_hp1m2 - mse
-  using loss_func        = mse;
-  using activation_layer = tanh_p1m2_layer;
+  using loss_func  = mse;
+  using activation = tanh_p1m2;
 
-  auto nn = make_mlp<activation_layer>({3, 201, 2});
+  auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -600,19 +599,19 @@ TEST(network, read_write) {
 
   network n1, n2;
 
-  n1 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
+  n1 << convolutional_layer(32, 32, 5, 1, 6) << tanh()
      << average_pooling_layer(28, 28, 6, 2)
-     << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
+     << convolutional_layer(14, 14, 5, 6, 16) << tanh()
      << average_pooling_layer(10, 10, 16, 2)
-     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
-     << fully_connected_layer(120, 10) << softmax_layer(10);
+     << convolutional_layer(5, 5, 5, 16, 120) << tanh()
+     << fully_connected_layer(120, 10) << softmax();
 
-  n2 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
+  n2 << convolutional_layer(32, 32, 5, 1, 6) << tanh()
      << average_pooling_layer(28, 28, 6, 2)
-     << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
+     << convolutional_layer(14, 14, 5, 6, 16) << tanh()
      << average_pooling_layer(10, 10, 16, 2)
-     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer(1, 1, 120)
-     << fully_connected_layer(120, 10) << softmax_layer(10);
+     << convolutional_layer(5, 5, 5, 16, 120) << tanh()
+     << fully_connected_layer(120, 10) << softmax();
 
   n1.init_weight();
   n2.init_weight();
@@ -640,8 +639,7 @@ TEST(network, read_write) {
 }
 
 TEST(network, trainable) {
-  auto net =
-    make_mlp<sigmoid_layer>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
+  auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
 
   // trainable=false, or "freeze" 2nd layer fc(3,2)
   net[2]->set_trainable(false);
