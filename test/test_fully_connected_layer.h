@@ -10,13 +10,15 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(fully_connected, train) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << fully_connected_layer(3, 2) << sigmoid_layer(2);
+  nn << fully_connected_layer(3, 2) << sigmoid();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -58,7 +60,7 @@ TEST(fully_connected, train_different_batches) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << fully_connected_layer(3, 2) << sigmoid_layer(2);
+    nn << fully_connected_layer(3, 2) << sigmoid();
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -97,8 +99,8 @@ TEST(fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << fully_connected_layer(4, 6) << tanh_layer(6)
-     << fully_connected_layer(6, 3) << tanh_layer(3);
+  nn << fully_connected_layer(4, 6) << tanh() << fully_connected_layer(6, 3)
+     << tanh();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -134,7 +136,7 @@ TEST(fully_connected, train2) {
 
 TEST(fully_connected, gradient_check) {
   network<sequential> nn;
-  nn << fully_connected_layer(50, 10) << tanh_layer(10);
+  nn << fully_connected_layer(50, 10) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
