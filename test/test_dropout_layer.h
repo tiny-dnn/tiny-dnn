@@ -12,6 +12,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(dropout, randomized) {
@@ -73,8 +75,8 @@ TEST(dropout, full_net) {
     train.push_back(t2);
   }
 
-  nn << fully_connected_layer(4, 10) << relu_layer(10) << dropout(10, 0.5)
-     << fully_connected_layer(10, 2) << sigmoid_layer(2);
+  nn << fully_connected_layer(4, 10) << relu() << dropout(10, 0.5)
+     << fully_connected_layer(10, 2) << sigmoid();
 
   nn.train<mse>(optimizer, data, train, 1, 10);
   // batch = 11,20,50
@@ -103,8 +105,8 @@ TEST(dropout, full_net_batch) {
     train.push_back(t2);
   }
 
-  nn << fully_connected_layer(4, 10) << relu_layer(10) << dropout(10, 0.5)
-     << fully_connected_layer(10, 2) << sigmoid_layer(2);
+  nn << fully_connected_layer(4, 10) << relu() << dropout(10, 0.5)
+     << fully_connected_layer(10, 2) << sigmoid();
 
   nn.train<mse>(optimizer, data, train, 20, 10);
 }
