@@ -57,11 +57,11 @@ std::string layer_type() const override {
 
 #### 2. Overriding ``forward_activation``
 
-This method consists the main logical of our activation function. It takes 
+This method contains the main logic of our activation function. It takes
 in two vectors passed by reference and fills the second one by applying 
 activation function to the first one.
 
-For example, let our activation function be simply a scalar multiplication. 
+For example, let our activation function be simply a scalar multiplication.
 The implementation would look like:
 
 ```cpp
@@ -78,3 +78,47 @@ neuron of the layer. **Calling a virtual function inside a tight for loop
 hurts performance.** Hence this is how the method is implemented.  
 Practically, each ``vec_t`` here will represent a single flattened image out 
 of the minibatch of a particular epoch. 
+
+#### 3. Overriding ``backward_activation``
+
+This method contains the backward gradient flow of our activation. Gradients
+of outputs are accepted as input, along with corresponding output and input
+vectors. Gradients of input are filled in-place.
+
+For example, the ``backward_activation`` method for our activation function
+would look like:
+
+```cpp
+void backward_activation(const vec_t &x,
+                         const vec_t &y,
+                         vec_t &dx,
+                         const vec_t &dy) override {
+  for (serial_size_t j = 0; j < x.size(); j++) {
+    // dx = dy * (gradient of my activation)
+    dx[j] = dy[j] * alpha;
+  }
+}
+```
+
+#### 4. Overriding ``scale``
+
+This method returns a pair of ``float_t``, denoting the range of target value
+for learning.
+
+```cpp
+std::pair<float_t, float_t> scale() const override {
+  return std::make_pair(float_t(0.1), float_t(0.9));
+};
+```
+
+That's it ! Your new activation is now ready as a layer of the network. You can
+use it easily as:
+
+```cpp
+network<sequential> net;
+
+net << fully_connected_layer(256, 64) << my_activation_layer(64);
+
+// specifying input dimensions is optional if activation layer is not the first
+// layer of our network
+```
