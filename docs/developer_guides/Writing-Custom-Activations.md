@@ -32,7 +32,9 @@ public:
         : alpha_(alpha), activation_layer(in_shape) {};
 
     // todo ...
-    
+
+    float_t get_alpha() { return alpha; }
+
 private:
     float_t alpha;
 ```
@@ -66,7 +68,7 @@ The implementation would look like:
 
 ```cpp
 void forward_activation(const vec_t &x, vec_t &y) override {
-  for (serial_size_t j = 0; j < x.size(); j++) {
+  for (size_t j = 0; j < x.size(); j++) {
     y[j] = alpha * x[j];
   }
 }
@@ -76,7 +78,7 @@ We could have easily accepted ``float_t`` arguments and applied activation
 function on one element. But this function would have been called for each 
 neuron of the layer. **Calling a virtual function inside a tight for loop 
 hurts performance.** Hence this is how the method is implemented.  
-Practically, each ``vec_t`` here will represent a single flattened image out 
+Practically, each ``vec_t`` here will represent a single flattened Tensor out
 of the minibatch of a particular epoch. 
 
 #### 3. Overriding ``backward_activation``
@@ -93,7 +95,7 @@ void backward_activation(const vec_t &x,
                          const vec_t &y,
                          vec_t &dx,
                          const vec_t &dy) override {
-  for (serial_size_t j = 0; j < x.size(); j++) {
+  for (size_t j = 0; j < x.size(); j++) {
     // dx = dy * (gradient of my activation)
     dx[j] = dy[j] * alpha;
   }
@@ -122,3 +124,70 @@ net << fully_connected_layer(256, 64) << my_activation_layer(64);
 // specifying input dimensions is optional if activation layer is not the first
 // layer of our network
 ```
+
+
+**Note: ** The information further is optional, if you wish to do some rough temporary
+prototyping, you can skip the following content.
+
+
+### Register for Serialization
+
+If you wish to serialize your activation layer, you must add these lines to your
+class implementation:
+
+```cpp
+#ifndef CNN_NO_SERIALIZATION
+  friend struct serialization_buddy;
+#endif
+```
+
+Register a macro at [tiny-dnn/util/serialization_layer_list.h](
+https://github.com/tiny-dnn/tiny-dnn/blob/master/tiny_dnn/util/serialization_layer_list.h)
+just like other layers are listed.
+
+#### 1. Create two structs in serialization_functions.h
+
+Both of these should go in ``cereal`` namespace.
+```cpp
+template <>
+struct LoadAndConstruct<tiny_dnn::my_activation_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::my_activation_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+    float_t alpha;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    ar(cereal::make_nvp("alpha", alpha);
+    construct(in_shape, alpha);
+  }
+};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::my_activation_layer,
+                  cereal::specialization::non_member_serialize> {};
+```
+
+#### 2. Add a method in ``serialization_buddy`` struct
+
+```cpp
+template <class Archive>
+static inline void serialize(Archive &ar, tiny_dnn::my_activation_layer &layer) {
+  layer.serialize_prolog(ar);
+  ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  ar(cereal::make_nvp("alpha", layer.get_alpha()));
+}
+```
+
+#### 3. Add a wrapper method in ``serialization_functions.h`` as well
+
+```cpp
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::my_activation_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+```
+
+Now you can get your layer represented in JSON structure of the network, if serialized
+by serialization helpers of tiny-dnn.
