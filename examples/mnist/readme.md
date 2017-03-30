@@ -2,6 +2,11 @@
 
 [MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture (see [[1]](#ref1)) for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
+This is [an example][id] reference-style link.
+
+This is [an example](http://example.com/ "Title") inline link.
+[id]: http://example.com/  "Optional Title Here"
+
 
 
 ## Constructing Model
