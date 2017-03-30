@@ -51,7 +51,7 @@ inline void read_proto_from_text(const std::string &prototxt,
                                  google::protobuf::Message *message) {
   int fd = CNN_OPEN_TXT(prototxt.c_str());
   if (fd == -1) {
-    throw nn_error("file not fonud: " + prototxt);
+    throw nn_error("file not found: " + prototxt);
   }
 
   google::protobuf::io::FileInputStream input(fd);
