@@ -46,7 +46,7 @@ What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specific
 Tiny-dnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
 
 ## Loading Dataset
-Tiny-dnn supports MNIST idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
+Tiny-dnn supports MNIST idx format, so all you have to do is calling `parse_mnist_images` and `parse_mnist_labels` functions.
 
 ```cpp
 // load MNIST dataset
