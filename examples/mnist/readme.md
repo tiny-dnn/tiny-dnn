@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
 >Note:
 >Each image has 32x32 values, so dimension of first layer must be equal to 1024.
 
-You'll be able to get LeNet-model binary file after calling train_lenet() function. You can also download this file from [here](https://www.dropbox.com/s/mixgjhdi65jm7dl/LeNet-weights?dl=1).
+You'll be able to get LeNet-model binary file after calling train_lenet() function. You can also download this file from [here](https://drive.google.com/file/d/0B1btWaLPGxOpbUNMa3VrNnQ0UzA/view?usp=sharing).
 
 ## Use Learned Nets
 Here is an example of CUI-based OCR tool.
