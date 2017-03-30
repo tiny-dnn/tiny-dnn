@@ -211,7 +211,7 @@ void predict_mnist(network<sequential>& net, const vec_t& in) {
 ```
 
 ### evaluate accuracy
-### caluculate the loss
+### calculate the loss
 
 ```cpp
 std::vector<vec_t> test_data;
