@@ -3,7 +3,7 @@
 [MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun<sup id="cit_ref1">[1](#ref1)</sup>, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
 ## Constructing Model
-Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by operator <<.
+Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by `operator<<`.
 
 ```cpp
 // specify loss-function and learning strategy
