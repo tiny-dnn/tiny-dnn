@@ -69,7 +69,7 @@ parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
 
 If you want to use another format for learning nets, see [Data Format](https://github.com/tiny-dnn/tiny-dnn/wiki/Data-Format) page.
 
-# Defining Callback
+## Defining Callback
 It's convenient if we can check recognition rate on test data, training time, and progress for each epoch while training. Tiny-dnn has callback mechanism for this purpose. We can use local variables (network, test-data, etc) in callback by using C++11's lambda.
 
 ```cpp
@@ -96,7 +96,7 @@ auto on_enumerate_minibatch = [&](){
 ```
 
 ## Saving/Loading models
-Just use ```network::save(filename)``` and ```network.load(filename)``` to write your whole model as binary file.
+Just use ```network::save(filename)``` and ```network::load(filename)``` to write your whole model as binary file.
 
 ```cpp
 nn.save("LeNet-model");
@@ -222,7 +222,7 @@ int main(int argc, char **argv) {
 >Note:
 >Each image has 32x32 values, so dimension of first layer must be equal to 1024.
 
-You'll be able to get LeNet-model binary file after calling train_lenet() function. You can also download this file from [here](https://www.dropbox.com/s/mixgjhdi65jm7dl/LeNet-weights?dl=1).
+You'll be able to get LeNet-model binary file after calling `train_lenet()` function. You can also download this file from [here](https://www.dropbox.com/s/mixgjhdi65jm7dl/LeNet-weights?dl=1).
 
 ## Use Learned Nets
 Here is an example of CUI-based OCR tool.
