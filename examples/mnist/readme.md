@@ -10,7 +10,7 @@ Let's define the LeNet network. At first, you have to specify loss-function and 
 network<sequential> nn;
 adagrad optimizer;
 
-// connection table [Y. Lecun, 1998 Table.1]
+// connection table [Y. LeCun, 1998 Table.1]<sup id="cit_ref1">[1](#ref1)</sup>
 #define O true
 #define X false
 static const bool tbl [] = {
