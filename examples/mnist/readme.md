@@ -2,10 +2,7 @@
 
 [MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture (see [[1]](#ref1)) for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
-This is [an example][id] reference-style link.
-
-This is [an example](http://example.com/ "Title") inline link.
-[id]: http://example.com/  "Optional Title Here"
+Bla bla <sup id="a1">[1](#f1)</sup>
 
 
 
@@ -344,6 +341,7 @@ You can also see some images like this:
 The first one is learned weights(filter) of first convolutional layer, and others are output values of each of the layers.
 
 ## References
+<b id="f1">1</b> Footnote content here. [↩](#a1)
 <a name="ref1"></a>[1] LeCun, Yann, et al. "Gradient-based learning applied to document recognition." *Proceedings of the IEEE* 86.11 (1998): 2278-2324.
 
 
