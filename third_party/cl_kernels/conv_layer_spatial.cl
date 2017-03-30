@@ -346,7 +346,7 @@ __kernel void CFMulti_6(__global const Dtype* restrict image_data, const int_tp 
 #endif
 
 // Each work-item computes a 4x6 region of one output map.
-// Each work-group (which will be mapped to 1 SIMD16 EU thread) will compute 16 different feature maps, but each feature map is for the same 4x6 region of the imput image.
+// Each work-group (which will be mapped to 1 SIMD16 EU thread) will compute 16 different feature maps, but each feature map is for the same 4x6 region of the input image.
 // NDRange:  (_OW+pad)/ OUT_BLOCK_WIDTH, (_OH+pad)/OUT_BLOCK_HEIGHT, _OD/OUT_BLOCK_DEPTH
 
 //#define SIMD_SIZE 16
