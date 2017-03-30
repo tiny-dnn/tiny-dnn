@@ -2,6 +2,8 @@
 
 [MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
+LeCun, Yann, et al. "Gradient-based learning applied to document recognition." *Proceedings of the IEEE* 86.11 (1998): 2278-2324.
+
 ## Constructing Model
 Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by operator <<.
 
@@ -42,7 +44,7 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-ou
         true, backend_type)
 ```
 
-What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each of the feature maps gets different set of inputs (and hopefully they become compelemtary feature extractors).
+What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each of the feature maps gets different set of inputs (and hopefully they become complementary feature extractors).
 Tiny-dnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
 
 ## Loading Dataset
