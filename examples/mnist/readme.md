@@ -70,7 +70,7 @@ parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
 If you want to use another format for learning nets, see [Data Format](https://github.com/tiny-dnn/tiny-dnn/wiki/Data-Format) page.
 
 # Defining Callback
-It's convenient if we can check recognition rate on test data, training time, and progress for each epoch while training. Tiny-dnn has callback mechanism for this purpose. We can use local variables(network, test-data, etc) in callback by using C++11's lambda.
+It's convenient if we can check recognition rate on test data, training time, and progress for each epoch while training. Tiny-dnn has callback mechanism for this purpose. We can use local variables (network, test-data, etc) in callback by using C++11's lambda.
 
 ```cpp
 progress_display disp(static_cast<unsigned long>(train_images.size()));
