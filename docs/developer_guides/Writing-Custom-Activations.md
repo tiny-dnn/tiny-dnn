@@ -126,7 +126,7 @@ net << fully_connected_layer(256, 64) << my_activation_layer(64);
 ```
 
 
-**Note: ** The information further is optional, if you wish to do some rough temporary
+**Note:** The information further is optional, if you wish to do some rough temporary
 prototyping, you can skip the following content.
 
 
