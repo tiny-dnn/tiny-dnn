@@ -113,7 +113,7 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
 static void construct_net(network<sequential>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
+    // connection table, see Table 1 in [LeCun1998]
 #define O true
 #define X false
     static const bool tbl[] = {
