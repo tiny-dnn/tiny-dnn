@@ -2,7 +2,7 @@
 
 [MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
-LeCun, Yann, et al. "Gradient-based learning applied to document recognition." *Proceedings of the IEEE* 86.11 (1998): 2278-2324.
+
 
 ## Constructing Model
 Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by operator <<.
@@ -337,3 +337,10 @@ You can also see some images like this:
 ![](https://github.com/tiny-dnn/tiny-dnn/wiki/layer5.bmp)
 
 The first one is learned weights(filter) of first convolutional layer, and others are output values of each of the layers.
+
+## Reference
+[1] LeCun, Yann, et al. "Gradient-based learning applied to document recognition." *Proceedings of the IEEE* 86.11 (1998): 2278-2324.
+
+[click on this link](#my-multi-word-header)
+
+### My Multi Word Header
