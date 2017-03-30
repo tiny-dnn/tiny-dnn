@@ -5,7 +5,7 @@
 ## Prerequisites for this example
 - OpenCV
 
-## Intruduction on Implementation Method
+## Introduction on Implementation Method
 
 We implement the forward pass of deconvolution as a typical upsampling process with convolutional kernels. The backward pass codes are implemented based on the fact that the result of deconvolution is the same as padded convolution with a reversed kernel which means that the element indexs are reversed in view of the result.
 
