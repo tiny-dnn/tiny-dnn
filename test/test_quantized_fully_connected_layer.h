@@ -10,13 +10,15 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(quantized_fully_connected, train) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << quantized_fully_connected_layer(3, 2) << sigmoid_layer(2);
+  nn << quantized_fully_connected_layer(3, 2) << sigmoid();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -54,27 +56,17 @@ TEST(quantized_fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << quantized_fully_connected_layer<tan_h>(4, 6) << tanh_layer(6)
-     << quantized_fully_connected_layer<tan_h>(6, 3) << tanh_layer(3);
+  nn << quantized_fully_connected_layer(4, 6) << tanh()
+     << quantized_fully_connected_layer(6, 3) << tanh();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
-  // clang-format on
-  a[0] = 3.0;
-  a[1] = 1.0;
-  a[2] = -1.0;
-  a[3] = 4.0;
-  t[0] = 0.3;
-  t[1] = 0.7;
-  t[2] = 0.3;
+  // clang-format off
+  a[0] = 3.0;  a[1] = 1.0;  a[2] = -1.0;  a[3] = 4.0;
+  t[0] = 0.3;  t[1] = 0.7;  t[2] = 0.3;
 
-  a2[0] = 1.0;
-  a2[1] = 0.0;
-  a2[2] = 4.0;
-  a2[3] = 2.0;
-  t2[0] = 0.6;
-  t2[1] = 0.0;
-  t2[2] = 0.1;
+  a2[0] = 1.0; a2[1] = 0.0; a2[2] = 4.0;  a2[3] = 2.0;
+  t2[0] = 0.6; t2[1] = 0.0; t2[2] = 0.1;
   // clang-format on
 
   std::vector<vec_t> data, train;
@@ -101,7 +93,7 @@ TEST(quantized_fully_connected, train2) {
 
 TEST(quantized_fully_connected, gradient_check) {
   network<sequential> nn;
-  nn << quantized_fully_connected_layer(50, 10) << tanh_layer(10);
+  nn << quantized_fully_connected_layer(50, 10) << tanh();
 
   vec_t a(50, 0.0);
   label_t t = 9;
@@ -115,8 +107,8 @@ TEST(quantized_fully_connected, gradient_check) {
 /*
 TEST(quantized_fully_connected, read_write)
 {
-    quantized_fully_connected_layer<tan_h> l1(100, 100);
-    quantized_fully_connected_layer<tan_h> l2(100, 100);
+    quantized_fully_connected_layer l1(100, 100);
+    quantized_fully_connected_layer l2(100, 100);
 
     l1.setup(true);
     l2.setup(true);
