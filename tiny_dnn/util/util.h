@@ -212,11 +212,6 @@ std::string to_string(T value) {
   return os.str();
 }
 
-// boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS \
-  using layer::parallelize_;  \
-  using feedforward_layer<Activation>::h_
-
 #define CNN_LOG_VECTOR(vec, name)
 /*
 void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
@@ -303,14 +298,6 @@ inline std::vector<vector_type> std_input_order(bool has_bias) {
     return {vector_type::data, vector_type::weight, vector_type::bias};
   } else {
     return {vector_type::data, vector_type::weight};
-  }
-}
-
-inline std::vector<vector_type> std_output_order(bool has_activation) {
-  if (has_activation) {
-    return {vector_type::data, vector_type::aux};
-  } else {
-    return {vector_type::data};
   }
 }
 
