@@ -99,8 +99,6 @@ using input = tiny_dnn::input_layer;
 template <class T>
 using lrn = tiny_dnn::lrn_layer<T>;
 
-using input = tiny_dnn::input_layer;
-
 using concat = tiny_dnn::concat_layer;
 
 template <class T>
