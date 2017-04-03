@@ -54,7 +54,7 @@ addons:
 
     build_command: "make -j8"
 
-    branch_pattern: master
+    branch_pattern: coverity_scan
 
 branches:
   only:
