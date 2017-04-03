@@ -59,6 +59,7 @@ addons:
 branches:
   only:
     - master
+    - coverity_scan
     - feat/tensor_integration
 env:
   global:
