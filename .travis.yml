@@ -5,11 +5,12 @@ language: cpp
 
 os:
   - linux
-  - osx
+  # use just one of the environments in coverity_scan branch in order not to consume too much API
+  # - osx
 
 compiler:
   - gcc
-  - clang
+  # - clang
 
 cache:
   pip: true
