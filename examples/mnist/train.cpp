@@ -11,7 +11,8 @@
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
-static void construct_net(network<sequential>& nn, core::backend_t backend_type) {
+static void construct_net(network<sequential> &nn,
+                          core::backend_t backend_type) {
 // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -51,7 +52,7 @@ static void construct_net(network<sequential>& nn, core::backend_t backend_type)
                                      true, backend_type);
 }
 
-static void train_lenet(std::string data_dir_path,
+static void train_lenet(const std::string &data_dir_path,
                         double learning_rate,
                         const int n_train_epochs,
                         const int n_minibatch,
@@ -131,7 +132,7 @@ static void usage(const char *argv0) {
             << " --backend_type internal" << std::endl;
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   double learning_rate         = 1;
   int epochs                   = 30;
   std::string data_path        = "";
@@ -196,8 +197,7 @@ int main(int argc, char** argv) {
             << "Backend type: " << backend_type << std::endl
             << std::endl;
   try {
-    train_lenet(data_path, learning_rate, epochs, minibatch_size,
-                backend_type);
+    train_lenet(data_path, learning_rate, epochs, minibatch_size, backend_type);
   } catch (tiny_dnn::nn_error &err) {
     std::cerr << "Exception: " << err.what() << std::endl;
   }
