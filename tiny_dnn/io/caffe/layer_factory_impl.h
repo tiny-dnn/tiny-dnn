@@ -603,7 +603,7 @@ inline std::shared_ptr<layer> create_convlayer(
   }
 
   // layer parameters
-  layer_size_t in_width = 0, in_height = 0, window_size = 0;
+  layer_size_t in_width = 0, in_height = 0, window_size_h = 0, window_size_w = 0;
   layer_size_t in_channels = 0, out_channels = 0;
   layer_size_t w_stride = 1, h_stride = 1;
   bool has_bias    = true;
@@ -618,7 +618,21 @@ inline std::shared_ptr<layer> create_convlayer(
   in_width     = bottom_shape.width_;
   in_height    = bottom_shape.height_;
   has_bias     = conv_param.bias_term();
-  window_size  = get_kernel_size_2d(conv_param);
+  //window_size  = get_kernel_size_2d(conv_param);
+  if (conv_param.has_kernel_w() && conv_param.has_kernel_h()){
+  	std::cout << "get param..." << std::endl;
+  	window_size_w = conv_param.kernel_h();
+	window_size_h = conv_param.kernel_w();
+  }
+  else{
+  	if (conv_param.kernel_size_size() > 1){
+      std::cout << "conv param error" << std::endl;
+  	}
+    else{
+  	  window_size_h = conv_param.kernel_size(0);
+	  window_size_w = conv_param.kernel_size(0);
+  	}
+  }
 
   // padding
   if (conv_param.pad_size() == 1 ||
@@ -634,7 +648,7 @@ inline std::shared_ptr<layer> create_convlayer(
     }
 
     // 0 ... valid, (window_size-1)/2 ... same
-    if (pad_w == (window_size - 1) / 2) {
+    if (pad_w == (window_size_w - 1) / 2) {
       pad_type = padding::same;
     } else if (pad_w == 0) {
       pad_type = padding::valid;
@@ -660,7 +674,7 @@ inline std::shared_ptr<layer> create_convlayer(
   }
 
   auto conv = std::make_shared<conv_layer>(
-    in_width, in_height, window_size, in_channels, out_channels, table,
+    in_width, in_height, window_size_h, window_size_w, in_channels, out_channels, table,
     pad_type, has_bias, w_stride, h_stride);
   // filler
   if (conv_param.has_weight_filler()) {
