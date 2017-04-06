@@ -5,11 +5,12 @@ language: cpp
 
 os:
   - linux
-  - osx
+  # use just one of the environments in coverity_scan branch in order not to consume too much API
+  # - osx
 
 compiler:
   - gcc
-  - clang
+  # - clang
 
 cache:
   pip: true
@@ -39,26 +40,26 @@ addons:
   coverity_scan:
 
     project:
-      name: tiny-dnn/tiny-dnn
-      version: 1.0
-      description: Header only, dependency-free deep learning framework in C++11
+      name: "tiny-dnn/tiny-dnn"
+      description: "Header only, dependency-free deep learning framework in C++11"
 
     notification_email: example@example.com
 
-    build_command_prepend: cmake -DUSE_TBB=ON
+    build_command_prepend: "cmake -DUSE_TBB=ON
             -DUSE_SSE=ON
             -DUSE_AVX=ON
             -DUSE_DOUBLE=OFF
             -DBUILD_TESTS=ON
-            -DBUILD_EXAMPLES=ON .
+            -DBUILD_EXAMPLES=ON ."
 
-    build_command: make -j8
+    build_command: "make -j8"
 
-    branch_pattern: master
+    branch_pattern: coverity_scan
 
 branches:
   only:
     - master
+    - coverity_scan
     - feat/tensor_integration
 env:
   global:
@@ -66,7 +67,9 @@ env:
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
     - COVERALLS=ON
-    - secure: "TOKEN"
+    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+    #   via the "travis encrypt" command using the project repo's public key
+    - secure: "glPl20nNNuLZdUokmCnXaoS0JrbvfYH/39w4fhPdb0qFha7fiqsUpgqX6zFndVfLXOEJiYD41SjdZPz3exXHuLhvO/hBVz8IAlM8Or+5lDc/76Cj6bZJ6UFVjlOzft++7Y8t3aksWiL4ultNg/xWvx9rfWLDPT2vMOUwIM3CX51ZsN0ag8gd+4N3hkLlk2wPn5JnEvDP5Ti5XV4apOMayxKyFf80cR4Z1tM/nhbnClsDq3bIEKXlUmoM4xnHR+aBwg0XrVwMAuTV2xqxQ7YPYH9FBAcRZE6OkSGP+ad9YQ1o2IiRSRCWimxFGrmZ/zuXktrsEyESDixlHM9OpXy5GShrV6iWmHlAzoQRUE6OMMv6822tA2TsSXWcWOqL5bPySwyQ5CUDztU/5GOgz4Fa0ilP6Ew55Fq8pW1BFoaccMhdqo2NyuFz9ln7e/8Q096PXS5dFCOM32RYHlH8wYMMEbpwAiKoYMiIa0U7OaU2F4UxcF2ED7Z36LPgxj78RN7mM3FrHYo25wWfI5dy0K2/KqJVzbcnvGih5OXTjuFV4uW48YGE42+/6e9JiM05DPYVlGeK8whpkoFFieb4uexvXe0Kx+AW4uhVakkJmvCJkKkwELPTtFYwVTI3/dPu/3i2N2DRdfI7q+vh4ynzvWiiULE8j3y7I7qaRMuso/FFDGg="
 
   matrix:
     - USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
@@ -85,6 +88,7 @@ before_install:
     fi
   - gcc --version
   - g++ --version
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install:
   - bash -x .travis/install.sh
