@@ -11,7 +11,8 @@
 using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
-static void construct_net(network<sequential>& nn) {
+static void construct_net(network<sequential> &nn,
+                          core::backend_t backend_type) {
 // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
@@ -27,10 +28,6 @@ static void construct_net(network<sequential>& nn) {
 // clang-format on
 #undef O
 #undef X
-
-  // by default will use backend_t::tiny_dnn unless you compiled
-  // with -DUSE_AVX=ON and your device supports AVX intrinsics
-  core::backend_t backend_type = core::default_engine();
 
   // construct nets
   //
@@ -55,12 +52,16 @@ static void construct_net(network<sequential>& nn) {
                                      true, backend_type);
 }
 
-static void train_lenet(const std::string& data_dir_path) {
+static void train_lenet(const std::string &data_dir_path,
+                        double learning_rate,
+                        const int n_train_epochs,
+                        const int n_minibatch,
+                        core::backend_t backend_type) {
   // specify loss-function and learning strategy
   network<sequential> nn;
   adagrad optimizer;
 
-  construct_net(nn);
+  construct_net(nn, backend_type);
 
   std::cout << "load models..." << std::endl;
 
@@ -77,46 +78,128 @@ static void train_lenet(const std::string& data_dir_path) {
 
   std::cout << "start training" << std::endl;
 
-  progress_display disp(static_cast<unsigned long>(train_images.size()));
+  progress_display disp(train_images.size());
   timer t;
-  int minibatch_size = 16;
-  int num_epochs     = 30;
 
   optimizer.alpha *=
     std::min(tiny_dnn::float_t(4),
-             static_cast<tiny_dnn::float_t>(std::sqrt(minibatch_size)));
+             static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate));
 
+  int epoch = 1;
   // create callback
   auto on_enumerate_epoch = [&]() {
-    std::cout << t.elapsed() << "s elapsed." << std::endl;
+    std::cout << "Epoch " << epoch << "/" << n_train_epochs << " finished. "
+              << t.elapsed() << "s elapsed." << std::endl;
+    ++epoch;
     tiny_dnn::result res = nn.test(test_images, test_labels);
     std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-    disp.restart(static_cast<unsigned long>(train_images.size()));
+    disp.restart(train_images.size());
     t.restart();
   };
 
-  auto on_enumerate_minibatch = [&]() { disp += minibatch_size; };
+  auto on_enumerate_minibatch = [&]() { disp += n_minibatch; };
 
   // training
-  nn.train<mse>(optimizer, train_images, train_labels, minibatch_size,
-                num_epochs, on_enumerate_minibatch, on_enumerate_epoch);
+  nn.train<mse>(optimizer, train_images, train_labels, n_minibatch,
+                n_train_epochs, on_enumerate_minibatch, on_enumerate_epoch);
 
   std::cout << "end training." << std::endl;
 
   // test and show results
   nn.test(test_images, test_labels).print_detail(std::cout);
-
   // save network model & trained weights
   nn.save("LeNet-model");
 }
 
-int main(int argc, char** argv) {
-  if (argc != 2) {
-    std::cerr << "Usage : " << argv[0] << " path_to_data (example:../data)"
+static core::backend_t parse_backend_name(const std::string &name) {
+  const std::array<const std::string, 5> names = {
+    "internal", "nnpack", "libdnn", "avx", "opencl",
+  };
+  for (size_t i = 0; i < names.size(); ++i) {
+    if (name.compare(names[i]) == 0) {
+      return static_cast<core::backend_t>(i);
+    }
+  }
+  return core::default_engine();
+}
+
+static void usage(const char *argv0) {
+  std::cout << "Usage: " << argv0 << " --data_path path_to_dataset_folder"
+            << " --learning_rate 1"
+            << " --epochs 30"
+            << " --minibatch_size 16"
+            << " --backend_type internal" << std::endl;
+}
+
+int main(int argc, char **argv) {
+  double learning_rate         = 1;
+  int epochs                   = 30;
+  std::string data_path        = "";
+  int minibatch_size           = 16;
+  core::backend_t backend_type = core::default_engine();
+
+  if (argc == 2) {
+    std::string argname(argv[1]);
+    if (argname == "--help" || argname == "-h") {
+      usage(argv[0]);
+      return 0;
+    }
+  }
+  for (int count = 1; count + 1 < argc; count += 2) {
+    std::string argname(argv[count]);
+    if (argname == "--learning_rate") {
+      learning_rate = atof(argv[count + 1]);
+    } else if (argname == "--epochs") {
+      epochs = atoi(argv[count + 1]);
+    } else if (argname == "--minibatch_size") {
+      minibatch_size = atoi(argv[count + 1]);
+    } else if (argname == "--backend_type") {
+      backend_type = parse_backend_name(argv[count + 1]);
+    } else if (argname == "--data_path") {
+      data_path = std::string(argv[count + 1]);
+    } else {
+      std::cerr << "Invalid parameter specified - \"" << argname << "\""
+                << std::endl;
+      usage(argv[0]);
+      return -1;
+    }
+  }
+  if (data_path == "") {
+    std::cerr << "Data path not specified." << std::endl;
+    usage(argv[0]);
+    return -1;
+  }
+  if (learning_rate <= 0) {
+    std::cerr
+      << "Invalid learning rate. The learning rate must be greater than 0."
+      << std::endl;
+    return -1;
+  }
+  if (epochs <= 0) {
+    std::cerr << "Invalid number of epochs. The number of epochs must be "
+                 "greater than 0."
               << std::endl;
     return -1;
   }
-  train_lenet(argv[1]);
+  if (minibatch_size <= 0 || minibatch_size > 60000) {
+    std::cerr
+      << "Invalid minibatch size. The minibatch size must be greater than 0"
+         " and less than dataset size (60000)."
+      << std::endl;
+    return -1;
+  }
+  std::cout << "Running with the following parameters:" << std::endl
+            << "Data path: " << data_path << std::endl
+            << "Learning rate: " << learning_rate << std::endl
+            << "Minibatch size: " << minibatch_size << std::endl
+            << "Number of epochs: " << epochs << std::endl
+            << "Backend type: " << backend_type << std::endl
+            << std::endl;
+  try {
+    train_lenet(data_path, learning_rate, epochs, minibatch_size, backend_type);
+  } catch (tiny_dnn::nn_error &err) {
+    std::cerr << "Exception: " << err.what() << std::endl;
+  }
   return 0;
 }
