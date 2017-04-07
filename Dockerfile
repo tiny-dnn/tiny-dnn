@@ -31,6 +31,7 @@ RUN cd /software && \
 # Download and configure NNPACK
 RUN apt-get install ninja-build && \
     pip install ninja-syntax && \
+    pip install confu && \
     cd /software && \
     git clone --recursive https://github.com/Maratyszcza/NNPACK.git && \
     cd /software/NNPACK && \
