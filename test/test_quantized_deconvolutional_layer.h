@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(quantized_deconvolutional, setup_internal) {
@@ -182,7 +184,7 @@ TEST(quantized_deconvolutional, fprop2) {
 /*
 TEST(quantized_deconvolutional, gradient_check) { // tanh - mse
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << tanh_layer(3, 3, 1);
+    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << tanh();
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -195,8 +197,7 @@ GRAD_CHECK_ALL));
 
 TEST(quantized_deconvolutional, gradient_check2) { // sigmoid - mse
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3,
-1);
+    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -209,7 +210,7 @@ GRAD_CHECK_ALL));
 
 TEST(quantized_deconvolutional, gradient_check3) { // rectified - mse
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << tanh_layer(3, 3, 1);
+    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << tanh();
 
     vec_t a(25, 0.0);
     label_t t = 3;
@@ -235,8 +236,7 @@ GRAD_CHECK_ALL));
 
 TEST(quantized_deconvolutional, gradient_check5) { // sigmoid - cross-entropy
     network<sequential> nn;
-    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << sigmoid_layer(3, 3,
-1);
+    nn << quantized_deconvolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
     vec_t a(25, 0.0);
     label_t t = 3;

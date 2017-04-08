@@ -10,16 +10,18 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(3, 8) << activation_layer(8)
-     << average_pooling_layer(4, 2, 1, 2) << activation_layer(2);  // 4x2 => 2x1
+  nn << fully_connected_layer(3, 8) << activation()
+     << average_pooling_layer(4, 2, 1, 2) << activation();  // 4x2 => 2x1
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -29,14 +31,14 @@ TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
 }
 
 TEST(ave_pool, gradient_check2) {  // x-stride
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(3, 8) << activation_layer(8)
+  nn << fully_connected_layer(3, 8) << activation()
      << average_pooling_layer(4, 2, 1, 2, 1, 2, 1)  // 4x2 => 2x2
-     << activation_layer(2, 2, 1);
+     << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -46,14 +48,14 @@ TEST(ave_pool, gradient_check2) {  // x-stride
 }
 
 TEST(ave_pool, gradient_check3) {  // y-stride
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
-  nn << fully_connected_layer(3, 8) << activation_layer(8)
+  nn << fully_connected_layer(3, 8) << activation()
      << average_pooling_layer(4, 2, 1, 1, 2, 1, 2)  // 4x2 => 4x1
-     << activation_layer(4);
+     << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -63,13 +65,13 @@ TEST(ave_pool, gradient_check3) {  // y-stride
 }
 
 TEST(ave_pool, gradient_check4) {  // padding-same
-  using loss_func        = cross_entropy;
-  using activation_layer = sigmoid_layer;
-  using network          = network<sequential>;
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
 
   network nn;
   nn << average_pooling_layer(4, 2, 1, 2, 2, 1, 1, padding::same)
-     << activation_layer(4, 2, 1);
+     << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();

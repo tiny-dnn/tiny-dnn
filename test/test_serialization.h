@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(serialization, serialize_conv) {
@@ -495,10 +497,10 @@ TEST(serialization, serialize_tanh_p1m2) {
 TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer(10, 100) << tanh_layer(100)
+  net1 << fully_connected_layer(10, 100) << tanh()
        << dropout_layer(100, 0.3f, net_phase::test)
-       << fully_connected_layer(100, 9) << softmax_layer(9)
-       << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer(1);
+       << fully_connected_layer(100, 9) << softmax()
+       << convolutional_layer(3, 3, 3, 1, 1) << tanh();
 
   auto json = net1.to_json();
 
@@ -528,8 +530,8 @@ TEST(serialization, sequential_to_json) {
 TEST(serialization, sequential_model) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer(10, 16) << tanh_layer(16)
-       << average_pooling_layer(4, 4, 1, 2) << relu_layer(2, 2, 1)
+  net1 << fully_connected_layer(10, 16) << tanh()
+       << average_pooling_layer(4, 4, 1, 2) << relu()
        << power_layer(shape3d(2, 2, 1), 0.5f);
 
   net1.init_weight();
@@ -550,10 +552,9 @@ TEST(serialization, sequential_weights) {
   network<sequential> net1, net2;
   vec_t data = {1, 2, 3, 4, 5, 6};
 
-  net1 << fully_connected_layer(6, 6) << sigmoid_layer(6)
-       << fully_connected_layer(6, 4) << tanh_layer(4)
-       << fully_connected_layer(4, 2) << relu_layer(2)
-       << fully_connected_layer(2, 2) << softmax_layer(2);
+  net1 << fully_connected_layer(6, 6) << sigmoid()
+       << fully_connected_layer(6, 4) << tanh() << fully_connected_layer(4, 2)
+       << relu() << fully_connected_layer(2, 2) << softmax();
 
   net1.init_weight();
   net1.set_netphase(net_phase::test);
@@ -578,8 +579,8 @@ TEST(serialization, sequential_weights2) {
   vec_t data = {1, 2, 3, 4, 5, 0};
 
   net1 << batch_normalization_layer(3, 2, 0.01f, 0.99f, net_phase::train)
-       << linear_layer(3 * 2, 2.0f, 0.5f) << elu_layer(6)
-       << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu_layer(6);
+       << linear_layer(3 * 2, 2.0f, 0.5f) << elu()
+       << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu();
 
   net1.init_weight();
   net1.at<batch_normalization_layer>(0).update_immidiately(true);
