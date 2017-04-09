@@ -414,7 +414,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
       const uint8_t *pi = &in_quantized[idx];
 
       idx                     = params.out.get_index(0, 0, o);
-      int32_t *pout_quantized = &pout_quantized[idx];
+      int32_t *pout_quantized = &out_quantized[idx];
 
       for (serial_size_t y = 0; y < params.in.height_; y++) {
         for (serial_size_t x = 0; x < params.in.width_; x++) {
@@ -434,7 +434,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
       }
     }
     if (params.has_bias) {
-      int32_t *pout_quantized = &pout_quantized[params.out.get_index(0, 0, o)];
+      int32_t *pout_quantized = &out_quantized[params.out.get_index(0, 0, o)];
       int32_t *poutout_quantized =
         pout_quantized + params.out.width_ * params.out.height_;
       std::for_each(pout_quantized, poutout_quantized, [&](int32_t &f) {
