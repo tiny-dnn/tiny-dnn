@@ -129,7 +129,7 @@ void construct_graph(network<graph> &graph,
  *     std::cout << net.name(); // "foo"
  *
  *     // simply stack layers by operator <<
- *     net << fc<tan_h>(50, 200) << fc<tan_h>(200, 10);
+ *     net << fc(50, 200) << tanh() << fc(200, 10) << tanh();
  *
  *     // prepare optimizer
  *     adagrad opt;
@@ -278,7 +278,8 @@ class network {
   * network<sequential> net;
   * adagrad opt;
   *
-  * net << layers::fc<tan_h>(2,3) << layers::fc<relu>(3,1);
+  * net << layers::fc(2, 3) << activation::tanh()
+  *     << layers::fc(3, 1) << activation::relu();
   *
   * // 2training data, each data is float_t[2]
   * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };

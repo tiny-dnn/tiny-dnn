@@ -65,12 +65,13 @@ namespace tiny_dnn {
  * (to avoid double-free).
  *
  *     sequential s;
- *     s.add(fc<tan_h>(100, 200));                   // rvalue, moved into nodes
+ *     s.add(fc(100, 200));                          // rvalue, moved into nodes
  *
- *     s.add(std::make_shared<fc<tan_h>>(200, 100)); // shared_ptr, shared by
+ *     s.add(std::make_shared<fc>(200, 100));        // shared_ptr, shared by
  *nodes
  *
- *     fc<softmax> out(100, 10);
+ *     fc out(100, 10);
+ *     softmax sft();
  *     s.add(out);                                   // lvalue, hold raw-pointer
  *only
  *

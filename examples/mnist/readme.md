@@ -290,7 +290,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 
     // sort & print top-3
     for (int i = 0; i < 10; i++)
-        scores.emplace_back(rescale<tan_h>(res[i]), i);
+        scores.emplace_back(rescale<tanh>(res[i]), i);
 
     sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 

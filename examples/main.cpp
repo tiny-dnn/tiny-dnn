@@ -187,7 +187,7 @@ void sample3_dae() {
 #if defined(_MSC_VER) && _MSC_VER < 1800
   // initializer-list is not supported
   int num_units[] = {100, 400, 100};
-  auto nn         = make_mlp<tan_h>(num_units, num_units + 3);
+  auto nn         = make_mlp<tanh>(num_units, num_units + 3);
 #else
   auto nn = make_mlp<tanh_layer>({100, 400, 100});
 #endif

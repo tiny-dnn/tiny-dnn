@@ -17,15 +17,13 @@ Declare the model as ```network```. There are 2 types of network: ```network<seq
 Stack layers:
 
 ```cpp
-    net << conv<tan_h>(32, 32, 5, 1, 6, padding::same)  // in:32x32x1, 5x5conv, 6fmaps
-        << max_pool<tan_h>(32, 32, 6, 2)                // in:32x32x6, 2x2pooling
-        << conv<tan_h>(16, 16, 5, 6, 16, padding::same) // in:16x16x6, 5x5conv, 16fmaps
-        << max_pool<tan_h>(16, 16, 16, 2)               // in:16x16x16, 2x2pooling
-        << fc<tan_h>(8*8*16, 100)                       // in:8x8x16, out:100
-        << fc<softmax>(100, 10);                        // in:100 out:10
+    net << conv(32, 32, 5, 1, 6, padding::same) << tanh()  // in:32x32x1, 5x5conv, 6fmaps
+        << max_pool(32, 32, 6, 2) << tanh()                // in:32x32x6, 2x2pooling
+        << conv(16, 16, 5, 6, 16, padding::same) << tanh() // in:16x16x6, 5x5conv, 16fmaps
+        << max_pool(16, 16, 16, 2) << tanh()               // in:16x16x16, 2x2pooling
+        << fc(8*8*16, 100) << tanh()                       // in:8x8x16, out:100
+        << fc(100, 10) << softmax();                       // in:100 out:10
 ```
-
-Some layer takes an activation as a template parameter : ```max_pool<relu>``` means "apply a relu activation after the pooling". if the layer has no successive activation, use ```max_pool<identity>``` instead.
 
 Declare the optimizer:
 
@@ -46,7 +44,7 @@ Now you can start the training:
 If you don't have the target vector but have the class-id, you can alternatively use ```train```.
 
 ```cpp
-    net.train<cross_entropy>(opt, x_data, y_label, batch, epochs);
+    net.train<cross_entropy, adagrad>(opt, x_data, y_label, batch, epochs);
 ```
 
 Validate the training result:
