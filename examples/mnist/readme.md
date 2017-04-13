@@ -38,7 +38,7 @@ nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-ou
    << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
    << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
         padding::valid, true, 1, 1, backend_type)
-   << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
+   << fully_connected_layer<softmax>(120, 10,        // F6, 120-in, 10-out
         true, backend_type)
 ```
 
@@ -145,7 +145,7 @@ static void construct_net(network<sequential>& nn) {
        << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
        << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
             padding::valid, true, 1, 1, backend_type)
-       << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
+       << fully_connected_layer<softmax>(120, 10,        // F6, 120-in, 10-out
             true, backend_type)
     ;
 }
@@ -274,7 +274,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 
     // sort & print top-3
     for (int i = 0; i < 10; i++)
-        scores.emplace_back(rescale<tan_h>(res[i]), i);
+        scores.emplace_back(rescale<softmax>(res[i]), i);
 
     sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 
@@ -313,12 +313,12 @@ Example image:
 Compile above code and try to pass 4.bmp, then you can get like:
 
 ```
-4,78.1403
-7,33.5718
-8,14.0017
+4,99.4535
+7,0.23164
+2,0.173432
 ```
 
-This means that the network predicted this image as "4", at confidence level of 78.1403%.
+This means that the network predicted this image as "4", at confidence level of 99.4535%.
 
 > Note:
 >

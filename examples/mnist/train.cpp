@@ -48,8 +48,8 @@ static void construct_net(network<sequential> &nn,
      << convolutional_layer<tan_h>(5, 5, 5, 16,
                                    120,  // C5, 16@5x5-in, 120@1x1-out
                                    padding::valid, true, 1, 1, backend_type)
-     << fully_connected_layer<tan_h>(120, 10,  // F6, 120-in, 10-out
-                                     true, backend_type);
+     << fully_connected_layer<softmax>(120, 10,  // F6, 120-in, 10-out
+                                       true, backend_type);
 }
 
 static void train_lenet(const std::string &data_dir_path,
