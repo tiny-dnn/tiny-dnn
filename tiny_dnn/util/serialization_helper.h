@@ -64,10 +64,10 @@ class serialization_helper {
     check_if_enabled();
 
     if (savers_.find(layer_name) == savers_.end()) {
-      throw nn_error("Failed to generate layer. Generator for " + layer_name +
+      throw nn_error("Failed to save layer. Saver for " + layer_name +
                      " is not found.\n"
                      "Please use CNN_REGISTER_LAYER macro to register "
-                     "appropriate generator");
+                     "appropriate saver.");
     }
 
     savers_[layer_name](reinterpret_cast<void *>(&ar), l);
