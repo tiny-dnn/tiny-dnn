@@ -65,10 +65,10 @@ class deserialization_helper {
     check_if_enabled();
 
     if (loaders_.find(layer_name) == loaders_.end()) {
-      throw nn_error("Failed to generate layer. Generator for " + layer_name +
+      throw nn_error("Failed to load layer. Loader for " + layer_name +
                      " is not found.\n"
                      "Please use CNN_REGISTER_LAYER macro to register "
-                     "appropriate generator");
+                     "appropriate loader.");
     }
 
     return loaders_[layer_name](reinterpret_cast<void *>(&ar));
