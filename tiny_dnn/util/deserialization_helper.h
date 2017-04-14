@@ -65,10 +65,10 @@ class deserialization_helper {
     check_if_enabled();
 
     if (loaders_.find(layer_name) == loaders_.end()) {
-      throw nn_error("Failed to generate layer. Generator for " + layer_name +
+      throw nn_error("Failed to load layer. Loader for " + layer_name +
                      " is not found.\n"
-                     "Please use CNN_REGISTER_LAYER_DESERIALIZER macro to "
-                     "register appropriate generator");
+                     "Please use CNN_REGISTER_LAYER macro to register "
+                     "appropriate loader.");
     }
 
     return loaders_[layer_name](reinterpret_cast<void *>(&ar));
@@ -114,29 +114,12 @@ class deserialization_helper {
 #define CNN_REGISTER_LAYER(layer_type, layer_name) \
   CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
 
-#define CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, activation_type, \
-                                           layer_name)                  \
-  CNN_REGISTER_LAYER_BODY(layer_type<activation::activation_type>,      \
-                          #layer_name "<" #activation_type ">")
-
-#define CNN_REGISTER_LAYER_WITH_ACTIVATIONS(layer_type, layer_name)       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_h, layer_name);      \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, softmax, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, identity, layer_name);   \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, sigmoid, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, relu, layer_name);       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, leaky_relu, layer_name); \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, elu, layer_name);        \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
-
   deserialization_helper() {
 #include "serialization_layer_list.h"
   }
 
 #undef CNN_REGISTER_LAYER_BODY
 #undef CNN_REGISTER_LAYER
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATION
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
 
 };  // class deserialization_helper
 
