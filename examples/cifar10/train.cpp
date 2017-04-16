@@ -49,17 +49,17 @@ void construct_net(N &nn, core::backend_t backend_type) {
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
-     << relu(16, 16, n_fmaps)                   // activation
+     << relu()                                  // activation
      << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
              backend_type)                      // C3
      << pool(16, 16, n_fmaps, 2, backend_type)  // P4
-     << relu(8, 8, n_fmaps)                     // activation
+     << relu()                                  // activation
      << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
              backend_type)                                // C5
      << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
-     << relu(4, 4, n_fmaps)                               // activation
+     << relu()                                            // activation
      << fc(4 * 4 * n_fmaps2, n_fc, true, backend_type)    // FC7
-     << relu(n_fc)                                        // activation
+     << relu()                                            // activation
      << fc(n_fc, 10, true, backend_type) << softmax(10);  // FC10
 }
 
