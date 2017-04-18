@@ -158,35 +158,47 @@ inline std::vector<node *> node::next_nodes() const {
 }
 
 template <typename T>
-struct node_tuple {
-  node_tuple(T l1, T l2) {
-    nodes_.push_back(l1);
-    nodes_.push_back(l2);
+struct layer_tuple {
+  layer_tuple(T l1, T l2) {
+    layers_.push_back(l1);
+    layers_.push_back(l2);
   }
-  std::vector<T> nodes_;
+  std::vector<T> layers_;
 };
 
-template <typename T>
-node_tuple<T *> operator,(T &l1, T &l2) {
-  return node_tuple<T *>(&l1, &l2);
+template <
+  typename T,
+  typename U,
+  typename std::enable_if<std::is_base_of<layer, T>::value &&
+                          std::is_base_of<layer, U>::value>::type * = nullptr>
+layer_tuple<layerptr_t> operator,(T &l1, U &l2) {
+  return layer_tuple<layerptr_t>(&l1, &l2);
 }
 
-template <typename T>
-node_tuple<std::shared_ptr<T>> operator,(std::shared_ptr<T> l1,
-                                         std::shared_ptr<T> l2) {
-  return node_tuple<std::shared_ptr<T>>(l1, l2);
+template <
+  typename T,
+  typename U,
+  typename std::enable_if<std::is_base_of<layer, T>::value &&
+                          std::is_base_of<layer, U>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(std::shared_ptr<T> l1,
+                                              std::shared_ptr<U> l2) {
+  return layer_tuple<std::shared_ptr<layer>>(l1, l2);
 }
 
-template <typename T>
-node_tuple<std::shared_ptr<T>> operator,(node_tuple<std::shared_ptr<T>> lhs,
-                                         std::shared_ptr<T> &rhs) {
-  lhs.nodes_.push_back(rhs);
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(
+  layer_tuple<std::shared_ptr<layer>> lhs, std::shared_ptr<T> &rhs) {
+  lhs.layers_.push_back(rhs);
   return lhs;
 }
 
-template <typename T>
-node_tuple<T *> operator,(node_tuple<T *> lhs, T &rhs) {
-  lhs.nodes_.push_back(&rhs);
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<layerptr_t> operator,(layer_tuple<layerptr_t> lhs, T &rhs) {
+  lhs.layers_.push_back(&rhs);
   return lhs;
 }
 
@@ -197,40 +209,37 @@ inline std::shared_ptr<U> &operator<<(std::shared_ptr<T> &lhs,
   return rhs;
 }
 
-template <typename T, typename U>
-inline U &operator<<(const node_tuple<T> &lhs, U &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size());
-       i++) {
-    connect(&*lhs.nodes_[i], &*rhs, 0, i);
+template <typename T>
+inline T &operator<<(const layer_tuple<std::shared_ptr<layer>> &lhs, T &rhs) {
+  for (size_t i = 0; i < static_cast<size_t>(lhs.layers_.size()); i++) {
+    connect(&*lhs.layers_[i], &*rhs, 0, i);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline node_tuple<T> &operator<<(U &lhs, const node_tuple<T> &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size());
-       i++) {
-    connect(&*lhs, &*rhs.nodes_[i], i, 0);
+template <typename T>
+inline layer_tuple<std::shared_ptr<layer>> &operator<<(
+  T &lhs, const layer_tuple<std::shared_ptr<layer>> &rhs) {
+  for (size_t i = 0; i < static_cast<size_t>(rhs.layers_.size()); i++) {
+    connect(&*lhs, &*rhs.layers_[i], i, 0);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline U &operator<<(const node_tuple<T *> &lhs, U &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size());
-       i++) {
-    connect(lhs.nodes_[i], &rhs, 0, i);
+template <typename T>
+inline T &operator<<(const layer_tuple<layerptr_t> &lhs, T &rhs) {
+  for (size_t i = 0; i < static_cast<size_t>(lhs.layers_.size()); i++) {
+    connect(lhs.layers_[i], &rhs, 0, i);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline node_tuple<T *> &operator<<(U &lhs, const node_tuple<T *> &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size());
-       i++) {
-    connect(&lhs, rhs.nodes_[i], i, 0);
+template <typename T>
+inline layer_tuple<layerptr_t> &operator<<(T &lhs,
+                                           const layer_tuple<layerptr_t> &rhs) {
+  for (size_t i = 0; i < static_cast<size_t>(rhs.layers_.size()); i++) {
+    connect(&lhs, rhs.layers_[i], i, 0);
   }
   return rhs;
 }
-
 }  // namespace tiny_dnn
