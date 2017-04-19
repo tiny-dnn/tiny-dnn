@@ -218,7 +218,7 @@ inline T &operator<<(const layer_tuple<std::shared_ptr<layer>> &lhs, T &rhs) {
 }
 
 template <typename T>
-inline layer_tuple<std::shared_ptr<layer>> &operator<<(
+inline const layer_tuple<std::shared_ptr<layer>> &operator<<(
   T &lhs, const layer_tuple<std::shared_ptr<layer>> &rhs) {
   for (size_t i = 0; i < static_cast<size_t>(rhs.layers_.size()); i++) {
     connect(&*lhs, &*rhs.layers_[i], i, 0);
@@ -235,8 +235,8 @@ inline T &operator<<(const layer_tuple<layerptr_t> &lhs, T &rhs) {
 }
 
 template <typename T>
-inline layer_tuple<layerptr_t> &operator<<(T &lhs,
-                                           const layer_tuple<layerptr_t> &rhs) {
+inline const layer_tuple<layerptr_t> &operator<<(
+  T &lhs, const layer_tuple<layerptr_t> &rhs) {
   for (size_t i = 0; i < static_cast<size_t>(rhs.layers_.size()); i++) {
     connect(&lhs, rhs.layers_[i], i, 0);
   }
