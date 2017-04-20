@@ -92,4 +92,73 @@ TEST(layer_tuple, comma_operator_layer_tuple2) {
   EXPECT_EQ(tuple_2.layers_.at(2)->layer_type(), "ave-pool");
 }
 
+TEST(layer_tuple, chain_operator_layer_layer1) {
+  fully_connected_layer fc1(2, 2);
+  fully_connected_layer fc2(2, 2);
+  sigmoid_layer sgm(2);
+
+  fc1 << fc2 << sgm;
+  EXPECT_EQ(fc1.next_nodes()[0], &fc2);
+  EXPECT_EQ(fc2.next_nodes()[0], &sgm);
+}
+
+TEST(layer_tuple, chain_operator_layer_layer2) {
+  auto fc1 = std::make_shared<fully_connected_layer>(2, 2);
+  auto fc2 = std::make_shared<fully_connected_layer>(2, 2);
+  auto sgm = std::make_shared<sigmoid_layer>(2);
+
+  fc1 << fc2 << sgm;
+  EXPECT_EQ(fc1->next_nodes()[0], fc2.get());
+  EXPECT_EQ(fc2->next_nodes()[0], sgm.get());
+}
+
+TEST(layer_tuple, chain_operator_tuple_layer1) {
+  fully_connected_layer fc1(2, 2);
+  fully_connected_layer fc2(2, 2);
+  concat_layer conc({shape3d(2, 1, 1), shape3d(2, 1, 1)});
+  sigmoid_layer sgm(4);
+
+  (fc1, fc2) << conc << sgm;
+  EXPECT_EQ(fc1.next_nodes()[0], &conc);
+  EXPECT_EQ(fc2.next_nodes()[0], &conc);
+  EXPECT_EQ(conc.next_nodes()[0], &sgm);
+}
+
+TEST(layer_tuple, chain_operator_tuple_layer2) {
+  auto fc1  = std::make_shared<fully_connected_layer>(2, 2);
+  auto fc2  = std::make_shared<fully_connected_layer>(2, 2);
+  auto conc = std::make_shared<concat_layer>(
+    std::vector<shape3d>({shape3d(2, 1, 1), shape3d(2, 1, 1)}));
+  auto sgm = std::make_shared<sigmoid_layer>(4);
+
+  (fc1, fc2) << conc << sgm;
+  EXPECT_EQ(fc1->next_nodes()[0], conc.get());
+  EXPECT_EQ(fc2->next_nodes()[0], conc.get());
+  EXPECT_EQ(conc->next_nodes()[0], sgm.get());
+}
+
+TEST(layer_tuple, chain_operator_layer_tuple1) {
+  convolutional_layer conv(5, 5, 3, 1, 6);
+  slice_layer slice(shape3d(3, 3, 6), slice_type::slice_channels, 2);
+  tanh_layer tanh(3, 3, 3);
+  relu_layer relu(3, 3, 3);
+
+  conv << slice << (tanh, relu);
+  EXPECT_EQ(slice.prev_nodes()[0], &conv);
+  EXPECT_EQ(tanh.prev_nodes()[0], &slice);
+  EXPECT_EQ(relu.prev_nodes()[0], &slice);
+}
+
+TEST(layer_tuple, chain_operator_layer_tuple2) {
+  auto conv  = std::make_shared<convolutional_layer>(5, 5, 3, 1, 6);
+  auto slice = std::make_shared<slice_layer>(shape3d(3, 3, 6),
+                                             slice_type::slice_channels, 2);
+  auto tanh = std::make_shared<tanh_layer>(3, 3, 3);
+  auto relu = std::make_shared<relu_layer>(3, 3, 3);
+
+  conv << slice << (tanh, relu);
+  EXPECT_EQ(slice->prev_nodes()[0], conv.get());
+  EXPECT_EQ(relu->prev_nodes()[0], slice.get());
+  EXPECT_EQ(tanh->prev_nodes()[0], slice.get());
+}
 }  // namespace tiny-dnn
