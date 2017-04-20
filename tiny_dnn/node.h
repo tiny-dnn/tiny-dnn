@@ -188,6 +188,14 @@ layer_tuple<std::shared_ptr<layer>> operator,(std::shared_ptr<T> l1,
 template <
   typename T,
   typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<layerptr_t> operator,(layer_tuple<layerptr_t> lhs, T &rhs) {
+  lhs.layers_.push_back(&rhs);
+  return lhs;
+}
+
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
 layer_tuple<std::shared_ptr<layer>> operator,(
   layer_tuple<std::shared_ptr<layer>> lhs, std::shared_ptr<T> &rhs) {
   lhs.layers_.push_back(rhs);
@@ -197,9 +205,18 @@ layer_tuple<std::shared_ptr<layer>> operator,(
 template <
   typename T,
   typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
-layer_tuple<layerptr_t> operator,(layer_tuple<layerptr_t> lhs, T &rhs) {
-  lhs.layers_.push_back(&rhs);
-  return lhs;
+layer_tuple<layerptr_t> operator,(T &lhs, layer_tuple<layerptr_t> rhs) {
+  rhs.layers_.insert(rhs.layers_.begin(), &lhs);
+  return rhs;
+}
+
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(
+  std::shared_ptr<T> &lhs, layer_tuple<std::shared_ptr<layer>> rhs) {
+  rhs.layers_.insert(rhs.layers_.begin(), lhs);
+  return rhs;
 }
 
 template <typename T, typename U>
