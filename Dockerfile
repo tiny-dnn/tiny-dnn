@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM ubuntu:17.04
 
 MAINTAINER Edgar Riba <edgar.riba@gmail.com>
 
@@ -20,13 +20,14 @@ RUN apt-get install -y    \
     libpthread-stubs0-dev \
     libtbb-dev
 
+# Upgrade pip
+RUN pip install --upgrade pip
+
 # Download and configure PeachPy
-RUN cd /software && \
-    git clone https://github.com/Maratyszcza/PeachPy.git && \
-    cd /software/PeachPy && \
-    pip install -r requirements.txt && \
-    python setup.py generate && \
-    pip install .
+RUN pip install --upgrade git+https://github.com/Maratyszcza/PeachPy
+
+# Download and configure confu
+RUN pip install --upgrade git+https://github.com/Maratyszcza/confu
 
 # Download and configure NNPACK
 RUN apt-get install ninja-build && \
@@ -34,6 +35,7 @@ RUN apt-get install ninja-build && \
     cd /software && \
     git clone --recursive https://github.com/Maratyszcza/NNPACK.git && \
     cd /software/NNPACK && \
+    confu setup && \
     python ./configure.py && \
     ninja
 
