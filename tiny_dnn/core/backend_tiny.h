@@ -297,7 +297,7 @@ class tiny_backend : public backend {
     for (serial_size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_fully_connected_kernel(
         *params_f_, in[i], W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
-        a[i], layer_->parallelize());
+        out[i], layer_->parallelize());
     }
 #else
     CNN_UNREFERENCED_PARAMETER(in_data);
