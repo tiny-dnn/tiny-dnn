@@ -60,17 +60,16 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                                const bool parallelize) {
   for_(parallelize, 0, in_data.size(),
        [&](const blocked_range &r) {
-         size_t out_area         = params.out.area();
-         serial_size_t iw        = params.in_padded.width_;
-         serial_size_t id        = params.in.depth_;
-         serial_size_t ow        = params.out.width_;
-         serial_size_t oh        = params.out.height_;
-         serial_size_t od        = params.out.depth_;
-         serial_size_t kw        = params.weight.width_;
-         serial_size_t kh        = params.weight.height_;
-         serial_size_t w_stride  = params.w_stride;
-         serial_size_t h_stride  = params.h_stride;
-         serial_size_t h_stride2 = iw * h_stride;
+         size_t out_area           = params.out.area();
+         serial_size_t iw          = params.in_padded.width_;
+         serial_size_t id          = params.in.depth_;
+         serial_size_t ow          = params.out.width_;
+         serial_size_t oh          = params.out.height_;
+         serial_size_t od          = params.out.depth_;
+         serial_size_t kw          = params.weight.width_;
+         serial_size_t kh          = params.weight.height_;
+         serial_size_t elem_stride = params.w_stride;
+         serial_size_t line_stride = iw * params.h_stride;
          for (int sample = r.begin(); sample < r.end(); sample++) {
            const vec_t &in = in_data[sample];
            vec_t &a        = out_data[sample];
@@ -79,29 +78,30 @@ inline void conv2d_op_internal(const tensor_t &in_data,
              for (serial_size_t inc = 0; inc < id; inc++) {
                if (!params.tbl.is_connected(o, inc)) continue;
                serial_size_t idx;
-               idx               = params.weight.get_index(0, 0, id * o + inc);
-               const float_t *pw = &W[idx];
-               idx               = params.in_padded.get_index(0, 0, inc);
-               const float_t *pi = &in[idx];
-               float_t *pa2      = pa;
+               idx                = params.weight.get_index(0, 0, id * o + inc);
+               const float_t *pw  = &W[idx];
+               idx                = params.in_padded.get_index(0, 0, inc);
+               const float_t *pin = &in[idx];
+               float_t *pout      = pa;
                for (serial_size_t y = 0; y < oh; y++) {
-                 const float_t *pi2 = pi;
+                 const float_t *pin_line = pin;
                  for (serial_size_t x = 0; x < ow; x++) {
-                   const float_t *pi3 = pi2;
-                   const float_t *pw2 = pw;
+                   const float_t *pin_element = pin_line;
+                   const float_t *pw_element  = pw;
                    float_t sum{0};
                    // should be optimized for small kernel(3x3,5x5)
                    for (serial_size_t wy = 0; wy < kh; wy++) {    // NOLINT
                      for (serial_size_t wx = 0; wx < kw; wx++) {  // NOLINT
-                       sum += *pw2++ * pi3[wx];
+                       sum += pw_element[wx] * pin_element[wx];
                      }
-                     pi3 += iw;
+                     pw_element += kw;
+                     pin_element += iw;
                    }
-                   pa2[x] += sum;
-                   pi2 += w_stride;
+                   pout[x] += sum;
+                   pin_line += elem_stride;
                  }
-                 pa2 += ow;
-                 pi += h_stride2;
+                 pout += ow;
+                 pin += line_stride;
                }
              }
              if (params.has_bias) {
