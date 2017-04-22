@@ -54,8 +54,7 @@ class softmax_layer : public activation_layer {
     return std::make_pair(float_t(0), float_t(1));
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 };
+
 }  // namespace tiny_dnn

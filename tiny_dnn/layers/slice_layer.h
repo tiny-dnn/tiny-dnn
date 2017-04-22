@@ -104,9 +104,7 @@ class slice_layer : public layer {
     }
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   void slice_data_forward(const tensor_t &in_data,

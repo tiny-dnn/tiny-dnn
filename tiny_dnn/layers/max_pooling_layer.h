@@ -165,9 +165,7 @@ class max_pooling_layer : public layer {
                              std::vector<serial_size_t>(params_.out.size()));
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   /* The Max Poling operation params */

@@ -89,9 +89,7 @@ class fully_connected_layer : public layer {
 
   std::string layer_type() const override { return "fully-connected"; }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  protected:
   void set_params(const serial_size_t in_size,

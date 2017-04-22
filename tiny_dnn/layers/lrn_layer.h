@@ -107,9 +107,7 @@ class lrn_layer : public layer {
     throw nn_error("not implemented");
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   void forward_across(const vec_t &in, vec_t &out) {

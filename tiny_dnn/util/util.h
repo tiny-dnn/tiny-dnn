@@ -18,6 +18,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "tiny_dnn/config.h"
+
 #ifndef CNN_NO_SERIALIZATION
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
@@ -27,7 +29,6 @@
 #include <cereal/types/vector.hpp>
 #endif
 
-#include "tiny_dnn/config.h"
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
