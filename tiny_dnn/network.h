@@ -896,7 +896,7 @@ class network {
 
     // clear previous results, if any
     for (vec_t &dw_sample : dw) {
-      std::fill(dw_sample.begin(), dw_sample.end(), float_t(0));
+      vectorize::fill(&dw_sample[0], dw_sample.size(), float_t(0));
     }
 
     // calculate dw/dE by numeric

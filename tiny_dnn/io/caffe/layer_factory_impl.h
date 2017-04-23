@@ -161,8 +161,8 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
   vec_t &w = *ap->weights()[0];
   vec_t &b = *ap->weights()[1];
 
-  std::fill(w.begin(), w.end(), weight);
-  std::fill(b.begin(), b.end(), float_t{0});
+  vectorize::fill(&w[0], w.size(), weight);
+  vectorize::fill(&b[0], b.size(), float_t{0});
 
   *top_shape = ap->out_shape()[0];
   ap->init_weight();
@@ -530,10 +530,10 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
     vec_t &b = *dst->weights()[1];
 
     if (!w.empty()) {
-      std::fill(w.begin(), w.end(), weight);
+      vectorize::fill(&w[0], w.size(), weight);
     }
     if (!b.empty()) {
-      std::fill(b.begin(), b.end(), float_t{0});
+      vectorize::fill(&b[0], b.size(), float_t{0});
       // dst->init_bias();
     }
   }
