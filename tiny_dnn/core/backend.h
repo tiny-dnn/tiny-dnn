@@ -10,6 +10,7 @@
 #include "tiny_dnn/core/params/conv_params.h"
 #include "tiny_dnn/core/params/deconv_params.h"
 #include "tiny_dnn/core/params/fully_params.h"
+#include "tiny_dnn/core/params/global_avepool_params.h"
 #include "tiny_dnn/core/params/maxpool_params.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/node.h"
