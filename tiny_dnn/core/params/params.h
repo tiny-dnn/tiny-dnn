@@ -13,6 +13,7 @@ namespace core {
 class conv_params;
 class fully_params;
 class maxpool_params;
+class global_avepool_params;
 
 /* Base class to model operation parameters */
 class Params {
@@ -22,6 +23,7 @@ class Params {
   conv_params conv() const;
   fully_params fully() const;
   maxpool_params &maxpool();
+  global_avepool_params &global_avepool();
 };
 
 }  // namespace core
