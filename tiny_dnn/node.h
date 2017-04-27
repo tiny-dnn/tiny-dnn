@@ -139,22 +139,24 @@ class edge {
 };
 
 inline std::vector<node *> node::prev_nodes() const {
-  std::set<node *> sets;
+  std::vector<node *> vecs;
   for (auto &e : prev_) {
-    if (e && e->prev()) sets.insert(e->prev());
+    if (e && e->prev()) {
+      vecs.insert(vecs.end(), e->prev());
+    }
   }
-  return std::vector<node *>(sets.begin(), sets.end());
+  return vecs;
 }
 
 inline std::vector<node *> node::next_nodes() const {
-  std::set<node *> sets;
+  std::vector<node *> vecs;
   for (auto &e : next_) {
     if (e) {
       auto n = e->next();
-      sets.insert(n.begin(), n.end());
+      vecs.insert(vecs.end(), n.begin(), n.end());
     }
   }
-  return std::vector<node *>(sets.begin(), sets.end());
+  return vecs;
 }
 
 template <typename T>
