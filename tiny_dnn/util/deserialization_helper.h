@@ -42,6 +42,7 @@
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/serialization_functions.h"
+#include "tiny_dnn/util/serialization_layer_list.h"
 
 namespace tiny_dnn {
 
@@ -107,19 +108,16 @@ class deserialization_helper {
   template <typename T>
   static std::shared_ptr<layer> load_layer_impl(InputArchive &ia);
 
-#define CNN_REGISTER_LAYER_BODY(layer_type, layer_name)     \
-  register_loader(layer_name, load_layer_impl<layer_type>); \
-  register_type<layer_type>(layer_name);
+  template <typename T>
+  friend void register_layers(T *h);
 
-#define CNN_REGISTER_LAYER(layer_type, layer_name) \
-  CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
-
-  deserialization_helper() {
-#include "serialization_layer_list.h"
+  template <typename T>
+  void register_layer(const char *layer_name) {
+    register_loader(layer_name, load_layer_impl<T>);
+    register_type<T>(layer_name);
   }
 
-#undef CNN_REGISTER_LAYER_BODY
-#undef CNN_REGISTER_LAYER
+  deserialization_helper() { register_layers(this); }
 
 };  // class deserialization_helper
 
