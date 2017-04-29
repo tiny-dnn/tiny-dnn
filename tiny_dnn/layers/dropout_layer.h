@@ -39,11 +39,9 @@ class dropout_layer : public layer {
   dropout_layer(const dropout_layer &obj) = default;
   virtual ~dropout_layer() {}
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
   dropout_layer(dropout_layer &&obj) = default;
   dropout_layer &operator=(const dropout_layer &obj) = default;
   dropout_layer &operator=(dropout_layer &&obj) = default;
-#endif
 
   void set_dropout_rate(float_t rate) {
     dropout_rate_ = rate;

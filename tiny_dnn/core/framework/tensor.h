@@ -160,14 +160,8 @@ class Tensor {
     //TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {}
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
     Tensor(Tensor&& other) = default;        // move ctor
     Tensor &operator = (Tensor&&) = default; // move assign
-#else
-
-    Tensor(Tensor&& other) {}
-    Tensor &operator = (Tensor&& other) {}
-#endif  // CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
 #endif
 
   /**

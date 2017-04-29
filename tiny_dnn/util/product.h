@@ -14,14 +14,6 @@
 #include <cstdint>
 #include <numeric>
 
-#if defined(_MSC_VER)
-#define VECTORIZE_ALIGN(x) __declspec(align(x))
-#elif defined(__GNUC__)
-#define VECTORIZE_ALIGN(x) __attribute__((aligned(x)))
-#else
-#define VECTORIZE_ALIGN(x) __attribute__((aligned(x)))
-#endif
-
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
 #endif
@@ -96,7 +88,7 @@ struct float_sse {
     _mm_storeu_ps(px, v);
   }
   static value_type resemble(const register_type &x) {
-    VECTORIZE_ALIGN(16) float tmp[4];
+    alignas(16) float tmp[4];
     _mm_store_ps(tmp, x);
     return tmp[0] + tmp[1] + tmp[2] + tmp[3];
   }
@@ -128,7 +120,7 @@ struct double_sse {
     _mm_storeu_pd(px, v);
   }
   static value_type resemble(const register_type &x) {
-    VECTORIZE_ALIGN(16) double tmp[2];
+    alignas(16) double tmp[2];
     _mm_store_pd(tmp, x);
     return tmp[0] + tmp[1];
   }
@@ -228,7 +220,7 @@ struct double_avx {
     _mm256_storeu_pd(px, v);
   }
   static value_type resemble(const register_type &x) {
-    VECTORIZE_ALIGN(32) double tmp[4];
+    alignas(32) double tmp[4];
     _mm256_store_pd(tmp, x);
     return std::accumulate(tmp, tmp + 4, 0.0);
   }

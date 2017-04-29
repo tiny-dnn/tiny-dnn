@@ -127,7 +127,7 @@ template <typename InputArchive>
 template <typename T>
 std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(
   InputArchive &ia) {
-  using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
+  using ST = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 
   std::unique_ptr<ST> bn(new ST());
 
