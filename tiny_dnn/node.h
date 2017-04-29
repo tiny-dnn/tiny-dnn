@@ -31,10 +31,7 @@ class node;
 class layer;
 class edge;
 
-typedef node *nodeptr_t;
 typedef std::shared_ptr<edge> edgeptr_t;
-
-typedef layer *layerptr_t;
 
 /**
  * base class of all kind of tinny-cnn data
@@ -68,8 +65,8 @@ class node : public std::enable_shared_from_this<node> {
  protected:
   node() = delete;
 
-  friend void connect(layerptr_t head,
-                      layerptr_t tail,
+  friend void connect(layer *head,
+                      layer *tail,
                       serial_size_t head_index,
                       serial_size_t tail_index);
 
@@ -173,8 +170,8 @@ template <
   typename U,
   typename std::enable_if<std::is_base_of<layer, T>::value &&
                           std::is_base_of<layer, U>::value>::type * = nullptr>
-layer_tuple<layerptr_t> operator,(T &l1, U &l2) {
-  return layer_tuple<layerptr_t>(&l1, &l2);
+layer_tuple<layer *> operator,(T &l1, U &l2) {
+  return layer_tuple<layer *>(&l1, &l2);
 }
 
 template <
@@ -190,7 +187,7 @@ layer_tuple<std::shared_ptr<layer>> operator,(std::shared_ptr<T> l1,
 template <
   typename T,
   typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
-layer_tuple<layerptr_t> operator,(layer_tuple<layerptr_t> lhs, T &rhs) {
+layer_tuple<layer *> operator,(layer_tuple<layer *> lhs, T &rhs) {
   lhs.layers_.push_back(&rhs);
   return lhs;
 }
@@ -207,7 +204,7 @@ layer_tuple<std::shared_ptr<layer>> operator,(
 template <
   typename T,
   typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
-layer_tuple<layerptr_t> operator,(T &lhs, layer_tuple<layerptr_t> rhs) {
+layer_tuple<layer *> operator,(T &lhs, layer_tuple<layer *> rhs) {
   rhs.layers_.insert(rhs.layers_.begin(), &lhs);
   return rhs;
 }
@@ -246,7 +243,7 @@ inline const layer_tuple<std::shared_ptr<layer>> &operator<<(
 }
 
 template <typename T>
-inline T &operator<<(const layer_tuple<layerptr_t> &lhs, T &rhs) {
+inline T &operator<<(const layer_tuple<layer *> &lhs, T &rhs) {
   for (size_t i = 0; i < lhs.layers_.size(); i++) {
     connect(lhs.layers_[i], &rhs, 0, i);
   }
@@ -254,8 +251,8 @@ inline T &operator<<(const layer_tuple<layerptr_t> &lhs, T &rhs) {
 }
 
 template <typename T>
-inline const layer_tuple<layerptr_t> &operator<<(
-  T &lhs, const layer_tuple<layerptr_t> &rhs) {
+inline const layer_tuple<layer *> &operator<<(T &lhs,
+                                              const layer_tuple<layer *> &rhs) {
   for (size_t i = 0; i < rhs.layers_.size(); i++) {
     connect(&lhs, rhs.layers_[i], i, 0);
   }

@@ -17,11 +17,11 @@ TEST(layer_tuple, comma_operator_layer_layer1) {
   average_pooling_layer avepool(4, 4, 1, 2, 1);
   sigmoid_layer sgm(4, 4, 1);
 
-  layer_tuple<layerptr_t> tuple_1 = (maxpool, avepool);
+  layer_tuple<layer *> tuple_1 = (maxpool, avepool);
   EXPECT_EQ(tuple_1.layers_.at(0)->layer_type(), "max-pool");
   EXPECT_EQ(tuple_1.layers_.at(1)->layer_type(), "ave-pool");
 
-  layer_tuple<layerptr_t> tuple_2 = (maxpool, sgm);
+  layer_tuple<layer *> tuple_2 = (maxpool, sgm);
   EXPECT_EQ(tuple_2.layers_.at(0)->layer_type(), "max-pool");
   EXPECT_EQ(tuple_2.layers_.at(1)->layer_type(), "sigmoid-activation");
 }
@@ -45,8 +45,8 @@ TEST(layer_tuple, comma_operator_tuple_layer1) {
   average_pooling_layer avepool(4, 4, 1, 2, 1);
   sigmoid_layer sgm(4, 4, 1);
 
-  layer_tuple<layerptr_t> tuple_1 = (maxpool, avepool);
-  layer_tuple<layerptr_t> tuple_2 = (tuple_1, sgm);
+  layer_tuple<layer *> tuple_1 = (maxpool, avepool);
+  layer_tuple<layer *> tuple_2 = (tuple_1, sgm);
 
   EXPECT_EQ(tuple_2.layers_.at(0)->layer_type(), "max-pool");
   EXPECT_EQ(tuple_2.layers_.at(1)->layer_type(), "ave-pool");
@@ -71,8 +71,8 @@ TEST(layer_tuple, comma_operator_layer_tuple1) {
   average_pooling_layer avepool(4, 4, 1, 2, 1);
   sigmoid_layer sgm(4, 4, 1);
 
-  layer_tuple<layerptr_t> tuple_1 = (maxpool, avepool);
-  layer_tuple<layerptr_t> tuple_2 = (sgm, tuple_1);
+  layer_tuple<layer *> tuple_1 = (maxpool, avepool);
+  layer_tuple<layer *> tuple_2 = (sgm, tuple_1);
 
   EXPECT_EQ(tuple_2.layers_.at(0)->layer_type(), "sigmoid-activation");
   EXPECT_EQ(tuple_2.layers_.at(1)->layer_type(), "max-pool");
