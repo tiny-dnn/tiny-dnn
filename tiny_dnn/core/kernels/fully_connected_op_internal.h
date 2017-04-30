@@ -63,7 +63,7 @@ inline void fully_connected_op_internal(const tensor_t &prev_out,
 
            if (params.has_bias_) {
              // vec_t& db = *in_grad[2];
-             for (int i = r.begin(); i < r.end(); i++) {
+             for (size_t i = r.begin(); i < r.end(); i++) {
                db[sample][i] += curr_delta[sample][i];
              }
            }

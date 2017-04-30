@@ -86,7 +86,7 @@ class max_unpooling_layer : public layer {
       std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i < r.end(); i++) {
+        for (size_t i = r.begin(); i < r.end(); i++) {
           const auto &in_index = out2in_[i];
           out_vec[i]           = (static_cast<int>(max_idx[in_index]) == i)
                          ? in_vec[in_index]
@@ -110,7 +110,7 @@ class max_unpooling_layer : public layer {
       std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i != r.end(); i++) {
+        for (size_t i = r.begin(); i != r.end(); i++) {
           serial_size_t outi = out2in_[i];
           prev_delta_vec[i]  = (static_cast<int>(max_idx[outi]) == i)
                                 ? curr_delta_vec[outi]
