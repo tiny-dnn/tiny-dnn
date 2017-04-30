@@ -85,7 +85,9 @@ using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
 
+#ifdef CNN_USE_GEMMLOWP
 using q_fc = tiny_dnn::quantized_fully_connected_layer;
+#endif
 
 using add = tiny_dnn::elementwise_add_layer;
 

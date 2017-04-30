@@ -78,9 +78,7 @@ class linear_layer : public layer {
     }
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  protected:
   serial_size_t dim_;

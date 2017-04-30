@@ -225,9 +225,7 @@ class average_pooling_layer : public partial_connected_layer {
                                      Base::in2wo_, Base::bias2out_);
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
   std::pair<serial_size_t, serial_size_t> pool_size() const {
     return std::make_pair(pool_size_x_, pool_size_y_);

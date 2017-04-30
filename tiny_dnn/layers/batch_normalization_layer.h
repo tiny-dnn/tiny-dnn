@@ -208,9 +208,7 @@ class batch_normalization_layer : public layer {
     calc_stddev(variance);
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
   float_t epsilon() const { return eps_; }
 

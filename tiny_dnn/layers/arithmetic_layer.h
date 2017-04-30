@@ -63,9 +63,7 @@ class elementwise_add_layer : public layer {
     for (serial_size_t i = 0; i < num_args_; i++) *in_grad[i] = *out_grad[0];
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   serial_size_t num_args_;

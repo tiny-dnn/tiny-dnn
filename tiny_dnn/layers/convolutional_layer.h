@@ -397,9 +397,7 @@ class convolutional_layer : public layer {
   }
 #endif  // DNN_USE_IMAGE_API
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   tensor_t *in_data_padded(const std::vector<tensor_t *> &in) {

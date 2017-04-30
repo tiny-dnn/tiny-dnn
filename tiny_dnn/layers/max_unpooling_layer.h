@@ -88,7 +88,9 @@ class max_unpooling_layer : public layer {
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (int i = r.begin(); i < r.end(); i++) {
           const auto &in_index = out2in_[i];
-          out_vec[i] = (max_idx[in_index] == i) ? in_vec[in_index] : float_t{0};
+          out_vec[i]           = (static_cast<int>(max_idx[in_index]) == i)
+                         ? in_vec[in_index]
+                         : float_t{0};
         }
       });
     }
@@ -110,8 +112,9 @@ class max_unpooling_layer : public layer {
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (int i = r.begin(); i != r.end(); i++) {
           serial_size_t outi = out2in_[i];
-          prev_delta_vec[i] =
-            (max_idx[outi] == i) ? curr_delta_vec[outi] : float_t{0};
+          prev_delta_vec[i]  = (static_cast<int>(max_idx[outi]) == i)
+                                ? curr_delta_vec[outi]
+                                : float_t{0};
         }
       });
     }
@@ -126,9 +129,7 @@ class max_unpooling_layer : public layer {
   std::string layer_type() const override { return "max-unpool"; }
   size_t unpool_size() const { return unpool_size_; }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   serial_size_t unpool_size_;

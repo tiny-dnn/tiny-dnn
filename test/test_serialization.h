@@ -541,7 +541,7 @@ TEST(serialization, sequential_model) {
 
   net2.load(path, content_type::model);
 
-  for (int i = 0; i < net1.layer_size(); i++) {
+  for (size_t i = 0; i < net1.layer_size(); i++) {
     ASSERT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
     ASSERT_EQ(net1[i]->out_shape(), net2[i]->out_shape());
     ASSERT_EQ(net1[i]->layer_type(), net2[i]->layer_type());

@@ -426,6 +426,7 @@ struct specialize<Archive,
 namespace tiny_dnn {
 
 struct serialization_buddy {
+#ifndef CNN_NO_SERIALIZATION
   template <class Archive>
   static inline void serialize(Archive &ar,
                                tiny_dnn::elementwise_add_layer &layer) {
@@ -596,6 +597,7 @@ struct serialization_buddy {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
   }
+#endif
 };
 
 template <class Archive>
