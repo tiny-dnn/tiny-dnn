@@ -74,10 +74,8 @@ class layer : public node {
   layer(const layer &) = default;
   layer &operator=(const layer &) = default;
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
   layer(layer &&) = default;
   layer &operator=(layer &&) = default;
-#endif
 
   void set_parallelize(bool parallelize) { parallelize_ = parallelize; }
 

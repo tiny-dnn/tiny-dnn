@@ -114,7 +114,7 @@ inline void accumulate_dw(const core::conv_params &params,
 
   if (out.width_ == 1 && out.height_ == 1) {
     const float *pprev_out = &prev_out[0];
-    VECTORIZE_ALIGN(32) float floats[28];
+    alignas(32) float floats[28];
     for (serial_size_t inc = 0; inc < in.depth_;
          ++inc, pprev_out += in_padded_area) {
       size_t in_padded_width = in_padded.width_;
