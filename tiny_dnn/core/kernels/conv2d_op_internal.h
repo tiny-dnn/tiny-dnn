@@ -70,7 +70,7 @@ inline void conv2d_op_internal(const tensor_t &in_data,
          serial_size_t kh          = params.weight.height_;
          serial_size_t elem_stride = params.w_stride;
          serial_size_t line_stride = iw * params.h_stride;
-         for (int sample = r.begin(); sample < r.end(); sample++) {
+         for (size_t sample = r.begin(); sample < r.end(); sample++) {
            const vec_t &in = in_data[sample];
            vec_t &a        = out_data[sample];
            for (serial_size_t o = 0; o < od; o++) {

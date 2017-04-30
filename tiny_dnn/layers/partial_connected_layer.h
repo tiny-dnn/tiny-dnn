@@ -104,7 +104,7 @@ class partial_connected_layer : public layer {
            sample_count = static_cast<serial_size_t>(prev_out.size());
          sample < sample_count; ++sample) {
       for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i != r.end(); i++) {
+        for (size_t i = r.begin(); i != r.end(); i++) {
           const wo_connections &connections = in2wo_[i];
           float_t delta{0};
 
@@ -117,7 +117,7 @@ class partial_connected_layer : public layer {
       });
 
       for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i < r.end(); i++) {
+        for (size_t i = r.begin(); i < r.end(); i++) {
           const io_connections &connections = weight2io_[i];
           float_t diff{0};
 
