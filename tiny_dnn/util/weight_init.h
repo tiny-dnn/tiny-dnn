@@ -99,7 +99,7 @@ class constant : public scalable {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
-    std::fill(weight->begin(), weight->end(), scale_);
+    vectorize::fill(&(*weight)[0], weight->size(), scale_);
   }
 };
 

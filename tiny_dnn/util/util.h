@@ -33,6 +33,7 @@
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
+#include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/random.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -304,7 +305,7 @@ inline std::vector<vector_type> std_input_order(bool has_bias) {
 
 inline void fill_tensor(tensor_t &tensor, float_t value) {
   for (auto &t : tensor) {
-    std::fill(t.begin(), t.end(), value);
+    vectorize::fill(&t[0], t.size(), value);
   }
 }
 

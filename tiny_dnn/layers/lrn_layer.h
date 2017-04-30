@@ -111,7 +111,7 @@ class lrn_layer : public layer {
 
  private:
   void forward_across(const vec_t &in, vec_t &out) {
-    std::fill(in_square_.begin(), in_square_.end(), float_t{0});
+    vectorize::fill(&in_square_[0], in_square_.size(), float_t{0});
 
     for (serial_size_t i = 0; i < size_ / 2; i++) {
       serial_size_t idx = in_shape_.get_index(0, 0, i);

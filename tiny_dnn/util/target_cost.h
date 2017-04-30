@@ -69,7 +69,7 @@ inline std::vector<vec_t> create_balanced_target_cost(
     const float_t unbalanced_weight = 1;
     const float_t sample_weight =
       w * balanced_weight + (1 - w) * unbalanced_weight;
-    std::fill(sample_cost.begin(), sample_cost.end(), sample_weight);
+    vectorize::fill(&sample_cost[0], sample_cost.size(), sample_weight);
   }
 
   return target_cost;
