@@ -294,6 +294,58 @@ inline typename T::value_type dot_product_aligned(
 }
 
 template <typename T>
+inline void add_aligned(typename T::value_type c,
+                        std::size_t size,
+                        typename T::value_type *dst) {
+  typename T::register_type c2 = T::set1(c);
+  for (std::size_t i = 0; i < size / T::unroll_size; i++) {
+    typename T::register_type d = T::load(&dst[i * T::unroll_size]);
+    T::store(&dst[i * T::unroll_size], T::add(c2, d));
+  }
+  for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
+    dst[i] += c;
+}
+
+template <typename T>
+inline void add_nonaligned(typename T::value_type c,
+                           std::size_t size,
+                           typename T::value_type *dst) {
+  typename T::register_type c2 = T::set1(c);
+  for (std::size_t i = 0; i < size / T::unroll_size; i++) {
+    typename T::register_type d = T::loadu(&dst[i * T::unroll_size]);
+    T::storeu(&dst[i * T::unroll_size], T::add(c2, d));
+  }
+  for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
+    dst[i] += c;
+}
+
+template <typename T>
+inline void add_aligned(const typename T::value_type *src,
+                        std::size_t size,
+                        typename T::value_type *dst) {
+  for (std::size_t i = 0; i < size / T::unroll_size; i++) {
+    typename T::register_type d = T::load(&dst[i * T::unroll_size]);
+    typename T::register_type s = T::load(&src[i * T::unroll_size]);
+    T::store(&dst[i * T::unroll_size], T::add(s, d));
+  }
+  for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
+    dst[i] += src[i];
+}
+
+template <typename T>
+inline void add_nonaligned(const typename T::value_type *src,
+                           std::size_t size,
+                           typename T::value_type *dst) {
+  for (std::size_t i = 0; i < size / T::unroll_size; i++) {
+    typename T::register_type d = T::loadu(&dst[i * T::unroll_size]);
+    typename T::register_type s = T::loadu(&src[i * T::unroll_size]);
+    T::storeu(&dst[i * T::unroll_size], T::add(s, d));
+  }
+  for (std::size_t i = (size / T::unroll_size) * T::unroll_size; i < size; i++)
+    dst[i] += src[i];
+}
+
+template <typename T>
 inline void muladd_aligned(const typename T::value_type *src,
                            typename T::value_type c,
                            std::size_t size,
@@ -364,6 +416,24 @@ inline void reduce_aligned(const typename T::value_type *src,
 #else
 #define VECTORIZE_TYPE(T) detail::generic_vec_type<T>
 #endif
+
+// dst[i] += c
+template <typename T>
+void add(T c, std::size_t size, T *dst) {
+  if (detail::is_aligned(VECTORIZE_TYPE(T)(), dst))
+    detail::add_aligned<VECTORIZE_TYPE(T)>(c, size, dst);
+  else
+    detail::add_nonaligned<VECTORIZE_TYPE(T)>(c, size, dst);
+}
+
+// dst[i] += src[i]
+template <typename T>
+void add(const T *src, std::size_t size, T *dst) {
+  if (detail::is_aligned(VECTORIZE_TYPE(T)(), src, dst))
+    detail::add_aligned<VECTORIZE_TYPE(T)>(src, size, dst);
+  else
+    detail::add_nonaligned<VECTORIZE_TYPE(T)>(src, size, dst);
+}
 
 // dst[i] += c * src[i]
 template <typename T>
