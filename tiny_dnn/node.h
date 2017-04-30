@@ -31,10 +31,7 @@ class node;
 class layer;
 class edge;
 
-typedef node *nodeptr_t;
 typedef std::shared_ptr<edge> edgeptr_t;
-
-typedef layer *layerptr_t;
 
 /**
  * base class of all kind of tinny-cnn data
@@ -68,8 +65,8 @@ class node : public std::enable_shared_from_this<node> {
  protected:
   node() = delete;
 
-  friend void connect(layerptr_t head,
-                      layerptr_t tail,
+  friend void connect(layer *head,
+                      layer *tail,
                       serial_size_t head_index,
                       serial_size_t tail_index);
 
@@ -139,55 +136,86 @@ class edge {
 };
 
 inline std::vector<node *> node::prev_nodes() const {
-  std::set<node *> sets;
+  std::vector<node *> vecs;
   for (auto &e : prev_) {
-    if (e && e->prev()) sets.insert(e->prev());
+    if (e && e->prev()) {
+      vecs.insert(vecs.end(), e->prev());
+    }
   }
-  return std::vector<node *>(sets.begin(), sets.end());
+  return vecs;
 }
 
 inline std::vector<node *> node::next_nodes() const {
-  std::set<node *> sets;
+  std::vector<node *> vecs;
   for (auto &e : next_) {
     if (e) {
       auto n = e->next();
-      sets.insert(n.begin(), n.end());
+      vecs.insert(vecs.end(), n.begin(), n.end());
     }
   }
-  return std::vector<node *>(sets.begin(), sets.end());
+  return vecs;
 }
 
 template <typename T>
-struct node_tuple {
-  node_tuple(T l1, T l2) {
-    nodes_.push_back(l1);
-    nodes_.push_back(l2);
+struct layer_tuple {
+  layer_tuple(T l1, T l2) {
+    layers_.push_back(l1);
+    layers_.push_back(l2);
   }
-  std::vector<T> nodes_;
+  std::vector<T> layers_;
 };
 
-template <typename T>
-node_tuple<T *> operator,(T &l1, T &l2) {
-  return node_tuple<T *>(&l1, &l2);
+template <
+  typename T,
+  typename U,
+  typename std::enable_if<std::is_base_of<layer, T>::value &&
+                          std::is_base_of<layer, U>::value>::type * = nullptr>
+layer_tuple<layer *> operator,(T &l1, U &l2) {
+  return layer_tuple<layer *>(&l1, &l2);
 }
 
-template <typename T>
-node_tuple<std::shared_ptr<T>> operator,(std::shared_ptr<T> l1,
-                                         std::shared_ptr<T> l2) {
-  return node_tuple<std::shared_ptr<T>>(l1, l2);
+template <
+  typename T,
+  typename U,
+  typename std::enable_if<std::is_base_of<layer, T>::value &&
+                          std::is_base_of<layer, U>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(std::shared_ptr<T> l1,
+                                              std::shared_ptr<U> l2) {
+  return layer_tuple<std::shared_ptr<layer>>(l1, l2);
 }
 
-template <typename T>
-node_tuple<std::shared_ptr<T>> operator,(node_tuple<std::shared_ptr<T>> lhs,
-                                         std::shared_ptr<T> &rhs) {
-  lhs.nodes_.push_back(rhs);
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<layer *> operator,(layer_tuple<layer *> lhs, T &rhs) {
+  lhs.layers_.push_back(&rhs);
   return lhs;
 }
 
-template <typename T>
-node_tuple<T *> operator,(node_tuple<T *> lhs, T &rhs) {
-  lhs.nodes_.push_back(&rhs);
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(
+  layer_tuple<std::shared_ptr<layer>> lhs, std::shared_ptr<T> &rhs) {
+  lhs.layers_.push_back(rhs);
   return lhs;
+}
+
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<layer *> operator,(T &lhs, layer_tuple<layer *> rhs) {
+  rhs.layers_.insert(rhs.layers_.begin(), &lhs);
+  return rhs;
+}
+
+template <
+  typename T,
+  typename std::enable_if<std::is_base_of<layer, T>::value>::type * = nullptr>
+layer_tuple<std::shared_ptr<layer>> operator,(
+  std::shared_ptr<T> &lhs, layer_tuple<std::shared_ptr<layer>> rhs) {
+  rhs.layers_.insert(rhs.layers_.begin(), lhs);
+  return rhs;
 }
 
 template <typename T, typename U>
@@ -197,40 +225,37 @@ inline std::shared_ptr<U> &operator<<(std::shared_ptr<T> &lhs,
   return rhs;
 }
 
-template <typename T, typename U>
-inline U &operator<<(const node_tuple<T> &lhs, U &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size());
-       i++) {
-    connect(&*lhs.nodes_[i], &*rhs, 0, i);
+template <typename T>
+inline T &operator<<(const layer_tuple<std::shared_ptr<layer>> &lhs, T &rhs) {
+  for (size_t i = 0; i < lhs.layers_.size(); i++) {
+    connect(&*lhs.layers_[i], &*rhs, 0, i);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline node_tuple<T> &operator<<(U &lhs, const node_tuple<T> &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size());
-       i++) {
-    connect(&*lhs, &*rhs.nodes_[i], i, 0);
+template <typename T>
+inline const layer_tuple<std::shared_ptr<layer>> &operator<<(
+  T &lhs, const layer_tuple<std::shared_ptr<layer>> &rhs) {
+  for (size_t i = 0; i < rhs.layers_.size(); i++) {
+    connect(&*lhs, &*rhs.layers_[i], i, 0);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline U &operator<<(const node_tuple<T *> &lhs, U &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(lhs.nodes_.size());
-       i++) {
-    connect(lhs.nodes_[i], &rhs, 0, i);
+template <typename T>
+inline T &operator<<(const layer_tuple<layer *> &lhs, T &rhs) {
+  for (size_t i = 0; i < lhs.layers_.size(); i++) {
+    connect(lhs.layers_[i], &rhs, 0, i);
   }
   return rhs;
 }
 
-template <typename T, typename U>
-inline node_tuple<T *> &operator<<(U &lhs, const node_tuple<T *> &rhs) {
-  for (serial_size_t i = 0; i < static_cast<serial_size_t>(rhs.nodes_.size());
-       i++) {
-    connect(&lhs, rhs.nodes_[i], i, 0);
+template <typename T>
+inline const layer_tuple<layer *> &operator<<(T &lhs,
+                                              const layer_tuple<layer *> &rhs) {
+  for (size_t i = 0; i < rhs.layers_.size(); i++) {
+    connect(&lhs, rhs.layers_[i], i, 0);
   }
   return rhs;
 }
-
 }  // namespace tiny_dnn

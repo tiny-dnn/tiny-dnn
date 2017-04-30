@@ -156,13 +156,13 @@ class backend {
 
   context *get_context() const { return ctx_; }
 
-  void set_layer(layerptr_t layer) { layer_ = layer; }
+  void set_layer(layer *layer) { layer_ = layer; }
 
   virtual backend_t type() const = 0;
 
  protected:
   context *ctx_;
-  layerptr_t layer_;
+  layer *layer_;
 };
 
 }  // namespace core

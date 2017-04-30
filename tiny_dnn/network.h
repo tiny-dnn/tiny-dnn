@@ -146,8 +146,8 @@ void construct_graph(network<graph> &graph,
 template <typename NetType>
 class network {
  public:
-  typedef typename std::vector<layerptr_t>::iterator iterator;
-  typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
+  typedef typename std::vector<layer *>::iterator iterator;
+  typedef typename std::vector<layer *>::const_iterator const_iterator;
 
   explicit network(const std::string &name = "")
     : name_(name), stop_training_(false) {}
