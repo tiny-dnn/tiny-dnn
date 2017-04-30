@@ -497,30 +497,9 @@ inline void reduce(const typename T::value_type *src,
   }
 }
 
-template <typename T, typename dst_aligned>
-inline void fill_impl(typename T::value_type *dst,
-                      std::size_t size,
-                      typename T::value_type value) {
-  auto vals   = T::set1(value);
-  auto sz     = T::unroll_size;
-  auto sz4    = T::unroll_size * 4;
-  auto n4     = size / sz4;
-  auto n1     = (size % sz4) / sz;
-  auto remain = size % sz;
-  for (size_t i = 0; i < n4; ++i) {
-    T::template store<dst_aligned>(&dst[i * sz4 + sz * 0], vals);
-    T::template store<dst_aligned>(&dst[i * sz4 + sz * 1], vals);
-    T::template store<dst_aligned>(&dst[i * sz4 + sz * 2], vals);
-    T::template store<dst_aligned>(&dst[i * sz4 + sz * 3], vals);
-  }
-  size_t idx = n4 * sz4;
-  for (size_t i = 0; i < n1; ++i) {
-    T::template store<dst_aligned>(&dst[idx + i * sz], vals);
-  }
-  idx += n1 * sz;
-  for (size_t i = 0; i < remain; ++i) {
-    dst[idx + i] += value;
-  }
+template <typename T>
+void fill(T *dst, size_t size, T value) {
+  std::fill(dst, dst + size, value);
 }
 
 #if defined(CNN_USE_AVX)
@@ -542,24 +521,6 @@ inline void fill_impl(typename T::value_type *dst,
 #define VECTORIZE_TYPE detail::scalar_generic<float>
 #endif
 #endif
-
-template <typename T>
-void fill(T *dst, size_t size, T value) {
-// On recent x86/x64 processors, stos instructions are faster
-// than SSE/AVX store instructions and recent compilers generates
-// stos instructions with std::fill
-#if 1
-  std::fill(dst, dst + size, value);
-#else
-  bool dst_aligned =
-    VECTORIZE_TYPE::is_aligned((VECTORIZE_TYPE::value_type *)dst);
-  if (dst_aligned) {
-    fill_impl<VECTORIZE_TYPE, std::true_type>(dst, size, value);
-  } else {
-    fill_impl<VECTORIZE_TYPE, std::false_type>(dst, size, value);
-  }
-#endif
-}
 
 }  // namespace detail
 
@@ -684,6 +645,9 @@ inline void fill(T *dst, std::size_t size, T value) {
 #if defined(_MSC_VER)
 #if defined(_M_AMD64)
 
+// On recent x86/x64 processors, REP string instructions are faster
+// than SSE/AVX store instructions.
+// CPUID feature flag (ERMSB) checking omitted
 #if defined(CNN_USE_DOUBLE)
   union {
     unsigned __int64 dat;
