@@ -100,7 +100,7 @@ void parallel_for(size_t begin, size_t end, const Func &f, size_t grainsize) {
 
   dispatch_apply(blockCount, dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0),
                  ^(size_t block) {
-                   size_t blockStart = static_cast<int>(block * blockSize);
+                   size_t blockStart = block * blockSize;
                    size_t blockEnd   = blockStart + blockSize;
                    if (blockEnd > end) {
                      blockEnd = end;
