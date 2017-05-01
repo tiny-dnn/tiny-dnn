@@ -45,7 +45,6 @@ class global_average_pooling_layer : public layer {
                               shape3d(in_channels, 1, 1));
 
     init_backend(backend_type);
-    layer::set_backend_type(backend_type);
   }
 
   // move constructor
@@ -96,9 +95,7 @@ class global_average_pooling_layer : public layer {
     return std::make_pair(params_.in.width_, params_.in.height_);
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   global_avepool_params params_;
@@ -111,8 +108,8 @@ class global_average_pooling_layer : public layer {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal ||
-        backend_type == backend_t::nnpack || backend_type == backend_t::avx) {
+    layer::set_backend_type(backend_type);
+    if (backend_type == backend_t::internal) {
       kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
       kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
       return;

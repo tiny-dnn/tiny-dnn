@@ -13,8 +13,8 @@ namespace core {
 
 class global_avepool_params : public Params {
  public:
-  index3d<serial_size_t> in;
-  index3d<serial_size_t> out;
+  shape3d in;
+  shape3d out;
 };
 
 inline global_avepool_params &Params::global_avepool() {
