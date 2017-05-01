@@ -456,7 +456,8 @@ TEST(serialization, serialize_leaky_relu) {
                     "width": 256,
                     "height" : 256,
                     "depth" : 1
-                }
+                },
+                "epsilon": 0.1
             }
         ]
     }
@@ -467,6 +468,7 @@ TEST(serialization, serialize_leaky_relu) {
   EXPECT_EQ(net[0]->layer_type(), "leaky-relu-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(256, 256, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(256, 256, 1));
+  EXPECT_FLOAT_EQ(net.at<leaky_relu_layer>(0).epsilon_value(), float_t{0.1});
 }
 
 TEST(serialization, serialize_elu) {
@@ -627,40 +629,39 @@ TEST(serialization, sequential_weights2) {
   }
 }
 
-// todo: (karandesai) run this test after error with comma operator is resolved
-// TEST(serialization, graph_model_and_weights) {
-//  network<graph> net1, net2;
-//  vec_t in = {1, 2, 3};
-//
-//  fully_connected_layer f1(3, 4);
-//  tanh_layer a1(4);
-//  slice_layer s1(shape3d(2, 1, 2), slice_type::slice_channels, 2);
-//  fully_connected_layer f2(2, 2);
-//  softmax_layer a2(2);
-//  fully_connected_layer f3(2, 2);
-//  elu_layer a3(2);
-//  elementwise_add_layer c4(2, 2);
-//
-//  f1 << a1 << s1;
-//  f2 << a2;
-//  f3 << a3;
-//  s1 << (f2, f3) << c4;
-//
-//  construct_graph(net1, {&f1}, {&c4});
-//
-//  net1.init_weight();
-//  auto res1 = net1.predict(in);
-//
-//  auto path = unique_path();
-//
-//  net1.save(path, content_type::weights_and_model);
-//
-//  net2.load(path, content_type::weights_and_model);
-//
-//  auto res2 = net2.predict(in);
-//
-//  EXPECT_FLOAT_EQ(res1[0], res2[0]);
-//  EXPECT_FLOAT_EQ(res1[1], res2[1]);
-//}
+TEST(serialization, graph_model_and_weights) {
+  network<graph> net1, net2;
+  vec_t in = {1, 2, 3};
+
+  fully_connected_layer f1(3, 4);
+  tanh_layer a1(4);
+  slice_layer s1(shape3d(2, 1, 2), slice_type::slice_channels, 2);
+  fully_connected_layer f2(2, 2);
+  softmax_layer a2(2);
+  fully_connected_layer f3(2, 2);
+  elu_layer a3(2);
+  elementwise_add_layer c4(2, 2);
+
+  f1 << a1 << s1;
+  f2 << a2;
+  f3 << a3;
+  s1 << (f2, f3) << c4;
+
+  construct_graph(net1, {&f1}, {&c4});
+
+  net1.init_weight();
+  auto res1 = net1.predict(in);
+
+  auto path = unique_path();
+
+  net1.save(path, content_type::weights_and_model);
+
+  net2.load(path, content_type::weights_and_model);
+
+  auto res2 = net2.predict(in);
+
+  EXPECT_FLOAT_EQ(res1[0], res2[0]);
+  EXPECT_FLOAT_EQ(res1[1], res2[1]);
+}
 
 }  // namespace tiny-dnn

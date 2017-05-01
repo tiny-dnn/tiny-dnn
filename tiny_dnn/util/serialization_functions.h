@@ -304,8 +304,10 @@ struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
   static void load_and_construct(
     Archive &ar, cereal::construct<tiny_dnn::leaky_relu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t epsilon;
 
-    ar(cereal::make_nvp("in_size", in_shape));
+    ar(cereal::make_nvp("in_size", in_shape),
+       cereal::make_nvp("epsilon", epsilon));
     construct(in_shape);
   }
 };
@@ -609,7 +611,8 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
     layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
+       cereal::make_nvp("epsilon", layer.epsilon_));
   }
 
   template <class Archive>

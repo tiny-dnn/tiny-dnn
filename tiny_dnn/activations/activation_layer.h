@@ -53,6 +53,10 @@ class activation_layer : public layer {
   activation_layer(const shape3d &in_shape)
     : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
 
+  /**
+   * Construct an activation layer given the previous layer.
+   * @param prev_layer previous layer
+   */
   activation_layer(const layer &prev_layer)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(prev_layer.out_shape()[0]) {}
