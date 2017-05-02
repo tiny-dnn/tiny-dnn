@@ -13,7 +13,8 @@ void register_layers(T* h) {
   h->template register_layer<convolutional_layer>("conv");
   h->template register_layer<dropout_layer>("dropout");
   h->template register_layer<fully_connected_layer>("fully_connected");
-  h->template register_layer<global_average_pooling_layer>("global_average_pooling");
+  h->template register_layer<global_average_pooling_layer>(
+    "global_average_pooling");
   h->template register_layer<linear_layer>("linear");
   h->template register_layer<lrn_layer>("lrn");
   h->template register_layer<max_pooling_layer>("maxpool");

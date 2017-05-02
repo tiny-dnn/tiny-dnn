@@ -15,6 +15,16 @@
 
 namespace tiny_dnn {
 
+TEST(global_ave_pool, read_write) {
+  global_average_pooling_layer l1(100, 100, 5);
+  global_average_pooling_layer l2(100, 100, 5);
+
+  l1.init_weight();
+  l2.init_weight();
+
+  serialization_test(l1, l2);
+}
+
 TEST(global_ave_pool, forward) {
   global_average_pooling_layer l(4, 4, 1);
 
