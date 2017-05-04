@@ -295,7 +295,7 @@ struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
 
     ar(cereal::make_nvp("in_size", in_shape),
        cereal::make_nvp("epsilon", epsilon));
-    construct(in_shape);
+    construct(in_shape, epsilon);
   }
 };
 
