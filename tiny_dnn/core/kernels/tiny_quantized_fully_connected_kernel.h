@@ -241,7 +241,7 @@ inline void tiny_quantized_fully_connected_back_kernel(
 
          if (params.has_bias_) {
            // vec_t& db = *in_grad[2];
-           for (int i = r.begin(); i < r.end(); i++) {
+           for (size_t i = r.begin(); i < r.end(); i++) {
              db[i] += curr_delta[i];
            }
          }
