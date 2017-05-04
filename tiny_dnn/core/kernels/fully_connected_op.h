@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include "tiny_dnn/util/util.h"
+
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
@@ -23,14 +25,16 @@ class FullyConnectedOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
-    // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &W       = context.input(1);
-    const tensor_t *bias    = params.has_bias_ ? &context.input(2) : nullptr;
-    tensor_t &out_data      = context.output(0);
+    // incoming/outcoming data
+    const xt::xarray<float_t> in_data = to_xtensor(context.input(0));
+    const xt::xarray<float_t> W       = to_xtensor(context.input(1));
+    const xt::xarray<float_t> B       = to_xtensor(context.input(2));
+
+    const xt::xarray<float_t> *bias = params.has_bias_ ? &B : nullptr;
+    xt::xarray<float_t> out_data    = to_xtensor(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data = xt::zeros<double>(out_data.shape());
 
     // call the algorithm depending  on the selected engine type
 
@@ -38,19 +42,23 @@ class FullyConnectedOp : public core::OpKernel {
 
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(
-        in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
-        params, context.parallelize());
+        in_data, xt::view(W, 0, xt::all()),
+        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        context.parallelize());
     } else if (engine == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(
-        in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
-        params, context.parallelize());
+        in_data, xt::view(W, 0, xt::all()),
+        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        context.parallelize());
     } else if (engine == core::backend_t::avx) {
-      kernels::fully_connected_op_avx(in_data, W[0],
-                                      params.has_bias_ ? (*bias)[0] : vec_t(),
-                                      out_data, params, context.parallelize());
+      kernels::fully_connected_op_avx(
+        in_data, xt::view(W, 0, xt::all()),
+        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
+    context.output(0) = from_xtensor(out_data);
   }
 };
 

@@ -13,10 +13,10 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void fully_connected_op_nnpack(const tensor_t &in_data,
-                                      const vec_t &W,
-                                      const vec_t &bias,
-                                      tensor_t &out_data,
+inline void fully_connected_op_nnpack(const xt::xarray<float_t> &in_data,
+                                      const xt::xarray<float_t> &W,
+                                      const xt::xarray<float_t> &bias,
+                                      xt::xarray<float_t> &out_data,
                                       const fully_params &params,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
