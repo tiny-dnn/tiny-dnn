@@ -140,6 +140,19 @@ struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::global_average_pooling_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar,
+    cereal::construct<tiny_dnn::global_average_pooling_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_shape", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::linear_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -358,6 +371,11 @@ struct specialize<Archive,
 
 template <class Archive>
 struct specialize<Archive,
+                  tiny_dnn::global_average_pooling_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
                   tiny_dnn::linear_layer,
                   cereal::specialization::non_member_serialize> {};
 
@@ -501,6 +519,14 @@ struct serialization_buddy {
   }
 
   template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::global_average_pooling_layer &layer) {
+    layer.serialize_prolog(ar);
+    auto &params_ = layer.params_;
+    ar(cereal::make_nvp("in_shape", params_.in));
+  }
+
+  template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.dim_),
@@ -632,6 +658,11 @@ void serialize(Archive &ar, tiny_dnn::dropout_layer &layer) {
 
 template <class Archive>
 void serialize(Archive &ar, tiny_dnn::fully_connected_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::global_average_pooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 

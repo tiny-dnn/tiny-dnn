@@ -233,6 +233,31 @@ TEST(serialization, serialize_fully) {
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
 }
 
+TEST(serialization, serialize_global_average_pooling) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "global_average_pooling",
+                "in_shape": {
+                    "width": 5,
+                    "height": 4,
+                    "depth": 6
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "global-ave-pool");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 4, 6));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(6, 1, 1));
+}
+
 TEST(serialization, serialize_lrn) {
   network<sequential> net;
 
