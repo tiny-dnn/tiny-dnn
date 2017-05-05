@@ -48,6 +48,35 @@ inline void global_avepool_op_avx(const tensor_t &in_data,
   });
 }
 
+inline void global_avepool_grad_op_avx(
+  tensor_t &prev_delta,
+  const tensor_t &curr_delta,
+  const core::global_avepool_params &params,
+  const bool layer_parallelize) {
+  const size_t pool_area           = params.in.width_ * params.in.height_;
+  const size_t nblocks_per_channel = pool_area / 8;
+
+  for_i(layer_parallelize, prev_delta.size(), [&](int sample) {
+    vec_t &prev       = prev_delta[sample];
+    const vec_t &curr = curr_delta[sample];
+
+    for (size_t i = 0; i < params.in.depth_; i++) {
+      const float_t pi = curr[i] / pool_area;
+      size_t j         = 0;
+
+      while (j < nblocks_per_channel) {
+        __m256 prev0 = _mm256_set1_ps(pi);
+        _mm256_store_ps(&prev[8 * j], prev0);
+        j++;
+      }
+
+      for (size_t k = 8 * j; k < pool_area; k++) {
+        prev[i * pool_area + k] = pi;
+      }
+    }
+  });
+}
+
 #endif  // CNN_USE_AVX
 
 }  // namespace kernels
