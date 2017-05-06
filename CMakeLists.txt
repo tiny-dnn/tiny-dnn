@@ -64,6 +64,8 @@ option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
 option(COVERALLS      "Set to ON to build with code coverage" OFF)
 option(PROFILE        "Set to ON to build with profiling"     OFF)
 
+option(THREAD_POOL_KIND "Thread Pool Kind (1-6)" 1)
+
 ####
 # Create the library target
 
@@ -262,11 +264,14 @@ elseif(MSVC)
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} /MP")
 endif()
 
+add_definitions(-DTHREAD_POOL_KIND=${THREAD_POOL_KIND})
+
 ####
 # Set compiler options
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${EXTRA_C_FLAGS}")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${EXTRA_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} ${EXTRA_C_FLAGS_DEBUG}")
+
 
 if(PROFILE AND (CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
     CMAKE_CXX_COMPILER_ID MATCHES "Clang"))

@@ -1,0 +1,43 @@
+1.3.0
+
+* Add method for clearing all currently queued tasks
+* Add methods to pause and resume the processing of tasks
+* Changed n_tasks() to return the number of queued tasks excluding the
+  number of currently running tasks
+
+1.2.0
+
+* changed the no-arg constructor to not launch any threads. In this case,
+  threads must be added and launched by calling add_threads()
+* fixed a race condition regarding waiting for tasks
+
+1.1.0
+
+* added new add_threads() method to the thread pool
+* fixed initilization of the task balance
+* use of push_back() in the wait/get functions
+
+1.0.1
+
+* fixed linking issue
+
+1.0.0
+
+* added various wait/get functions for dealing with containers of futures
+* added wait methods to the pool to wait until all tasks finished
+* added more tests and documentation
+
+0.3.0
+
+* added class and method documentation
+* improved test coverage
+
+0.2.0
+
+* fixed linking issue
+* made task counter non-static
+* code clean-up
+
+0.1.0
+
+* initial release

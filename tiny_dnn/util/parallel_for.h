@@ -10,6 +10,7 @@
 #include <cassert>
 #include <cstdio>
 #include <limits>
+#include <queue>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -27,8 +28,28 @@
 #endif
 
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
+
 #include <future>
-#include <thread>
+
+#define STRINGIFY(s) XSTRINGIFY(s)
+#define XSTRINGIFY(s) #s
+#pragma message("THREAD_POOL_KIND=" STRINGIFY(THREAD_POOL_KIND))
+
+#if THREAD_POOL_KIND == 1
+#include <third_party/thread_pool_lib_candidates/beru_thread_pool_4_parallel_for/thread_pool_4_parallel_for.h>
+#elif THREAD_POOL_KIND == 2
+#include <third_party/thread_pool_lib_candidates/bloomen_cxxpool/src/cxxpool.h>
+#elif THREAD_POOL_KIND == 3
+#include <third_party/thread_pool_lib_candidates/inkooboo_thread-pool-cpp/include/thread_pool.hpp>
+#elif THREAD_POOL_KIND == 4
+#include <third_party/thread_pool_lib_candidates/nbsdx_ThreadPool/ThreadPool.h>
+#elif THREAD_POOL_KIND == 5
+#include <third_party/thread_pool_lib_candidates/progschj_ThreadPool/ThreadPool.h>
+#elif THREAD_POOL_KIND == 6
+#include <third_party/thread_pool_lib_candidates/vit-vit_CTPL/ctpl_stl.h>
+#else
+#endif
+
 #endif
 
 #if defined(CNN_USE_GCD) && !defined(CNN_SINGLE_THREAD)
@@ -120,31 +141,122 @@ void parallel_for(int begin, int end, const Func &f, int /*grainsize*/) {
 
 #else
 
-template <typename Func>
-void parallel_for(int start, int end, const Func &f, int /*grainsize*/) {
-  int nthreads  = std::thread::hardware_concurrency();
-  int blockSize = (end - start) / nthreads;
-  if (blockSize * nthreads < end - start) blockSize++;
+namespace detail {
 
-  std::vector<std::future<void> > futures;
+template <typename T>
+class singleton {
+ private:
+  singleton()  = default;
+  ~singleton() = default;
 
-  int blockStart               = start;
-  int blockEnd                 = blockStart + blockSize;
-  if (blockEnd > end) blockEnd = end;
-
-  for (int i = 0; i < nthreads; i++) {
-    futures.push_back(
-      std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-        f(blocked_range(blockStart, blockEnd));
-      })));
-
-    blockStart += blockSize;
-    blockEnd = blockStart + blockSize;
-    if (blockStart >= end) break;
-    if (blockEnd > end) blockEnd = end;
+ public:
+  singleton(const singleton&) = delete;
+  singleton& operator=(const singleton&) = delete;
+  singleton(singleton&&)                 = delete;
+  singleton& operator=(singleton&&) = delete;
+  static T& get_instance() {
+    static T inst;
+    return inst;
   }
+};
 
-  for (auto &future : futures) future.wait();
+}  // namespace detail
+
+template <typename Func>
+void parallel_for(int begin, int end, const Func& f, int /*grainsize*/) {
+
+#if THREAD_POOL_KIND == 1
+  detail::singleton<
+    detail::thread_pool_4_parallel_for<blocked_range> >::get_instance()
+    .run(begin, end, f);
+#elif THREAD_POOL_KIND == 2
+  auto& tp    = detail::singleton<cxxpool::thread_pool>::get_instance();
+  size_t diff = std::thread::hardware_concurrency() - tp.n_threads();
+  if (diff) {
+    tp.add_threads(diff);
+  }
+  size_t nthreads = tp.n_threads();
+  static std::vector<std::future<void> > futures;
+  futures.clear();
+  int total_size     = end - begin;
+  int block_size     = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+  int nthrads_to_use = (total_size + block_size - 1) / block_size;
+  int block_begin    = begin;
+  for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+    int block_end = std::min(end, block_begin + block_size);
+    futures.emplace_back(tp.push(f, blocked_range(block_begin, block_end)));
+  }
+  for (auto& f : futures) {
+    f.wait();
+  }
+#elif THREAD_POOL_KIND == 3
+  auto& pool      = detail::singleton<tp::ThreadPool<> >::get_instance();
+  size_t nthreads = std::thread::hardware_concurrency();
+  static std::vector<std::future<void> > futures;
+  futures.clear();
+  int total_size     = end - begin;
+  int block_size     = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+  int nthrads_to_use = (total_size + block_size - 1) / block_size;
+  int block_begin    = begin;
+  for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+    int block_end = std::min(end, block_begin + block_size);
+    std::packaged_task<void()> t([&, block_begin, block_end]() {
+      f(blocked_range(block_begin, block_end));
+    });
+    futures.emplace_back(t.get_future());
+    pool.post(t);
+  }
+  for (auto& f : futures) {
+    f.wait();
+  }
+#elif THREAD_POOL_KIND == 4
+  nbsdx::concurrent::ThreadPool<> tp;
+  size_t nthreads    = tp.Size();
+  int total_size     = end - begin;
+  int block_size     = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+  int nthrads_to_use = (total_size + block_size - 1) / block_size;
+  int block_begin    = begin;
+  // printf("before\n");
+  for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+    int block_end = std::min(end, block_begin + block_size);
+    tp.AddJob([&, block_begin, block_end]() {
+      f(blocked_range(block_begin, block_end));
+      // printf("%d %d\n", block_begin, block_end);
+    });
+  }
+  tp.WaitAll();
+// printf("after\n");
+#elif THREAD_POOL_KIND == 5
+  static int nthreads = std::thread::hardware_concurrency();
+  static ThreadPool pool(nthreads);
+  std::vector<std::future<void> > futures;
+  int total_size     = end - begin;
+  int block_size     = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+  int nthrads_to_use = (total_size + block_size - 1) / block_size;
+  int block_begin    = begin;
+  for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+    int block_end = std::min(end, block_begin + block_size);
+    futures.emplace_back(pool.enqueue([block_begin, block_end, &f] {
+      f(blocked_range(block_begin, block_end));
+    }));
+  }
+  for (auto& future : futures) future.wait();
+#elif THREAD_POOL_KIND == 6
+  static int nthreads = std::thread::hardware_concurrency();
+  static ctpl::thread_pool pool(nthreads);
+  std::vector<std::future<void> > futures;
+  int total_size     = end - begin;
+  int block_size     = std::max<int>(1, (total_size + nthreads - 1) / nthreads);
+  int nthrads_to_use = (total_size + block_size - 1) / block_size;
+  int block_begin    = begin;
+  for (int i = 0; i < nthrads_to_use; ++i, block_begin += block_size) {
+    int block_end = std::min(end, block_begin + block_size);
+    futures.emplace_back(pool.push([&, block_begin, block_end](int id) {
+      f(blocked_range(block_begin, block_end));
+    }));
+  }
+  for (auto& future : futures) future.wait();
+#endif
 }
 
 #endif
