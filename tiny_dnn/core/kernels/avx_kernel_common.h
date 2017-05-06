@@ -56,17 +56,6 @@ inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
 }
 #endif
 
-// Horizontally add elements of __m128 type argument
-// x = ( x3, x2, x1, x0 )
-// use _mm_cvtss_f32 if you need a float result instead of a __m128
-inline __m128 hsum128_ps(__m128 x) {
-  // twoSum = ( x3+x2, x1+x0, x3+x2, x1+x0 )
-  const __m128 twoSum = _mm_hadd_ps(x, x);
-  // fourSum = ( x3+x2+x1+x0, x3+x2+x1+x0, x3+x2+x1+x0, x3+x2+x1+x0 )
-  const __m128 fourSum = _mm_hadd_ps(twoSum, twoSum);
-  return fourSum;
-}
-
 // Horizontally add elements of __m256 type argument (sadly, _mm256_hadd_ps
 // isn't good enough)
 // http://stackoverflow.com/a/13222410/4699324

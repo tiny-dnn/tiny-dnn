@@ -30,19 +30,12 @@ class GlobalAvePoolOp : public core::OpKernel {
 
     const core::backend_t engine = context.engine();
 
-    if (engine == core::backend_t::internal) {
-      kernels::global_avepool_op_internal(in_data, out_data, params,
-                                          context.parallelize());
-    } else if (engine == core::backend_t::avx) {
+    if (engine == core::backend_t::avx) {
       kernels::global_avepool_op_avx(in_data, out_data, params,
                                      context.parallelize());
-    } else if (engine == core::backend_t::nnpack) {
-      // fallback to internal implementation as nnpack implementation
-      // is not available
+    } else {
       kernels::global_avepool_op_internal(in_data, out_data, params,
                                           context.parallelize());
-    } else {
-      throw nn_error("Not supported engine: " + to_string(engine));
     }
   }
 };

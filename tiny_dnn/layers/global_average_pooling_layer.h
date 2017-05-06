@@ -113,15 +113,17 @@ class global_average_pooling_layer : public layer {
       core::OpKernelConstruction(layer::device(), &params_);
 
     layer::set_backend_type(backend_type);
-    if (backend_type == core::backend_t::internal ||
-        backend_type == core::backend_t::avx ||
-        backend_type == core::backend_t::nnpack) {
-      kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
-      kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
-      return;
-    } else {
-      throw nn_error("Not supported engine: " + to_string(backend_type));
+    if (backend_type == core::backend_t::avx) {
+#ifndef CNN_USE_AVX
+      nn_warn(
+        "tiny-dnn has not been compiled with AVX support, "
+        "fallback to internal backend for global avepool layer.\n");
+      layer::set_backend_type(core::backend_t::internal);
+#endif
     }
+    kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
+    kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
+    return;
   }
 
   void set_global_avepool_params(const shape3d &in, const shape3d &out) {

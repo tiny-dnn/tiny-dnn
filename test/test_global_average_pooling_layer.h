@@ -98,8 +98,6 @@ TEST(global_ave_pool, backward) {
                             1, 1, 1, 1,
                             1, 1, 1, 1};
   // clang-format on
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
   vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
@@ -122,8 +120,6 @@ TEST(global_ave_pool, backward_multichannel) {
                                   2, 2, 3, 3,
                                         3, 3};
   // clang-format on
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
   vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
