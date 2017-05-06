@@ -140,6 +140,8 @@ class partial_connected_layer : public layer {
     }
   }
 
+  friend struct serialization_buddy;
+
  protected:
   std::vector<io_connections> weight2io_;  // weight_id -> [(in_id, out_id)]
   std::vector<wi_connections> out2wi_;     // out_id -> [(weight_id, in_id)]

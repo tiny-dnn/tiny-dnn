@@ -165,6 +165,52 @@ class quantized_deconvolutional_layer : public layer {
     init_backend(backend_type);
   }
 
+  /**
+  * constructing deconvolutional layer
+  *
+  * @param in_width         [in] input image width
+  * @param in_height        [in] input image height
+  * @param window_width     [in] window_width(kernel) size of convolution
+  * @param window_height    [in] window_height(kernel) size of convolution
+  * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+  * @param out_channels     [in] output image channels
+  * @param connection_table [in] definition of connections between in-channels
+  *and out-channels
+  * @param pad_type         [in] rounding strategy
+  *                               valid: use valid pixels of input only.
+  *output-size = (in-width - window_size + 1) *
+  *(in-height - window_size + 1) * out_channels
+  *                               same: add zero-padding to keep same
+  *width/height. output-size = in-width * in-height *
+  *out_channels
+  * @param has_bias         [in] whether to add a bias vector to the filter
+  *outputs
+  * @param w_stride         [in] specify the horizontal interval at which to
+  *apply the filters to the input
+  * @param h_stride         [in] specify the vertical interval at which to
+  *apply
+  *the filters to the input
+  **/
+  quantized_deconvolutional_layer(
+    serial_size_t in_width,
+    serial_size_t in_height,
+    serial_size_t window_width,
+    serial_size_t window_height,
+    serial_size_t in_channels,
+    serial_size_t out_channels,
+    const connection_table &connection_table,
+    padding pad_type       = padding::valid,
+    bool has_bias          = true,
+    serial_size_t w_stride = 1,
+    serial_size_t h_stride = 1,
+    backend_t backend_type = core::backend_t::internal)
+    : layer(std_input_order(has_bias), {vector_type::data}) {
+    deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
+                      window_height, out_channels, pad_type, has_bias, w_stride,
+                      h_stride, connection_table);
+    init_backend(backend_type);
+  }
+
   // move constructor
   quantized_deconvolutional_layer(quantized_deconvolutional_layer &&other)
     : layer(std::move(other)),
@@ -269,6 +315,8 @@ class quantized_deconvolutional_layer : public layer {
     return img;
   }
 #endif  // DNN_USE_IMAGE_API
+
+  friend struct serialization_buddy;
 
  private:
   void init_backend(const backend_t backend_type) {

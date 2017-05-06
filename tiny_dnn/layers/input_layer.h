@@ -39,6 +39,8 @@ class input_layer : public layer {
     CNN_UNREFERENCED_PARAMETER(in_grad);
   }
 
+  friend struct serialization_buddy;
+
  private:
   shape3d shape_;
 };

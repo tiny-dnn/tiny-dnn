@@ -188,6 +188,8 @@ class average_unpooling_layer : public partial_connected_layer {
       Base::weight2io_, Base::in2wo_, Base::bias2out_);
   }
 
+  friend struct serialization_buddy;
+
  private:
   serial_size_t stride_;
   shape3d in_;
