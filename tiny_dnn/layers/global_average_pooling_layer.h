@@ -113,8 +113,9 @@ class global_average_pooling_layer : public layer {
       core::OpKernelConstruction(layer::device(), &params_);
 
     layer::set_backend_type(backend_type);
-    if (backend_type == backend_t::internal || backend_type == backend_t::avx ||
-        backend_type == backend_t::nnpack) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::avx ||
+        backend_type == core::backend_t::nnpack) {
       kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
       kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
       return;
