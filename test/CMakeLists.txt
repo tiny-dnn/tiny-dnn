@@ -62,3 +62,5 @@ endif()
 
 ### Clang-tidy check
 include(../cmake/clang-cxx-dev-tools.cmake)
+
+cotire(print_device tiny_dnn_test)
