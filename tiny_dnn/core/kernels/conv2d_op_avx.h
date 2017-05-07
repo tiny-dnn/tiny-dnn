@@ -457,7 +457,7 @@ inline void conv2d_op_avx(const tensor_t &in_data,
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
     // @todo consider better parallelization
-    for_i(layer_parallelize, in_data.size(), [&](int i) {
+    for_i(layer_parallelize, in_data.size(), [&](size_t i) {
       avx_conv2d_5x5_kernel(params, in_data[i], W, bias, out_data[i],
                             layer_parallelize);
     });

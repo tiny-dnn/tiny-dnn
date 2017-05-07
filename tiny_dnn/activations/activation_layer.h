@@ -85,7 +85,7 @@ class activation_layer : public layer {
     const tensor_t &x  = *in_data[0];
     const tensor_t &y  = *out_data[0];
     for_i(x.size(),
-          [&](int i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
+          [&](size_t i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
   }
 
   virtual std::string layer_type() const = 0;

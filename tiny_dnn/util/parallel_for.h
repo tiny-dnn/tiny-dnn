@@ -45,7 +45,8 @@ static tbb::task_scheduler_init tbbScheduler(
 typedef tbb::blocked_range<size_t> blocked_range;
 
 template <typename Func>
-void parallel_for(size_t begin, size_t end, const Func &f, int grainsize) {
+void parallel_for(size_t begin, size_t end, const Func &f, size_t grainsize) {
+  assert(end >= begin);
   tbb::parallel_for(
     blocked_range(begin, end, end - begin > grainsize ? grainsize : 1), f);
 }
@@ -81,7 +82,11 @@ void xparallel_for(size_t begin, size_t end, const Func &f) {
 #if defined(CNN_USE_OMP)
 
 template <typename Func>
-void parallel_for(size_t begin, size_t end, const Func &f, int /*grainsize*/) {
+void parallel_for(size_t begin,
+                  size_t end,
+                  const Func &f,
+                  size_t /*grainsize*/) {
+  assert(end >= begin);
 #pragma omp parallel for
   for (size_t i = begin; i < end; ++i) f(blocked_range(i, i + 1));
 }
@@ -90,12 +95,13 @@ void parallel_for(size_t begin, size_t end, const Func &f, int /*grainsize*/) {
 
 template <typename Func>
 void parallel_for(size_t begin, size_t end, const Func &f, size_t grainsize) {
+  assert(end >= begin);
   size_t count     = end - begin;
   size_t blockSize = grainsize;
   if (count < blockSize || blockSize == 0) {
     blockSize = 1;
   }
-  int blockCount = (count + blockSize - 1) / blockSize;
+  size_t blockCount = (count + blockSize - 1) / blockSize;
   assert(blockCount > 0);
 
   dispatch_apply(blockCount, dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0),
@@ -124,29 +130,30 @@ void parallel_for(size_t begin,
 #else
 
 template <typename Func>
-void parallel_for(size_t start,
+void parallel_for(size_t begin,
                   size_t end,
                   const Func &f,
                   size_t /*grainsize*/) {
+  assert(end >= start);
   size_t nthreads  = std::thread::hardware_concurrency();
-  size_t blockSize = (end - start) / nthreads;
-  if (blockSize * nthreads < end - start) blockSize++;
+  size_t blockSize = (end - begin) / nthreads;
+  if (blockSize * nthreads < end - begin) blockSize++;
 
   std::vector<std::future<void> > futures;
 
-  size_t blockStart            = start;
-  size_t blockEnd              = blockStart + blockSize;
+  size_t blockBegin            = begin;
+  size_t blockEnd              = blockBegin + blockSize;
   if (blockEnd > end) blockEnd = end;
 
   for (size_t i = 0; i < nthreads; i++) {
     futures.push_back(
-      std::move(std::async(std::launch::async, [blockStart, blockEnd, &f] {
-        f(blocked_range(blockStart, blockEnd));
+      std::move(std::async(std::launch::async, [blockBegin, blockEnd, &f] {
+        f(blocked_range(blockBegin, blockEnd));
       })));
 
-    blockStart += blockSize;
-    blockEnd = blockStart + blockSize;
-    if (blockStart >= end) break;
+    blockBegin += blockSize;
+    blockEnd = blockBegin + blockSize;
+    if (blockBegin >= end) break;
     if (blockEnd > end) blockEnd = end;
   }
 
@@ -187,7 +194,7 @@ inline void for_(std::false_type,
 
 template <typename T, typename Func>
 inline void for_(
-  bool parallelize, size_t begin, T end, Func f, int grainsize = 100) {
+  bool parallelize, size_t begin, T end, Func f, size_t grainsize = 100) {
   static_assert(std::is_integral<T>::value, "end must be integral type");
   for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f,
        grainsize);
