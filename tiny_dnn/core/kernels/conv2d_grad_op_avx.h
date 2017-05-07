@@ -876,7 +876,7 @@ void avx_conv2d_5x5_back_kernel(
   std::vector<std::vector<float, Allocator>> &db,
   std::vector<std::vector<float, Allocator>> &curr_delta,
   std::vector<std::vector<float, Allocator>> &prev_delta) {
-  for_i(prev_out.size(), [&](int sample) {
+  for_i(prev_out.size(), [&](size_t sample) {
     avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample],
                                    db[sample], curr_delta[sample],
                                    &prev_delta[sample]);
