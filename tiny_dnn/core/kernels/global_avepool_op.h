@@ -31,8 +31,10 @@ class GlobalAvePoolOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::avx) {
+#ifdef CNN_USE_AVX
       kernels::global_avepool_op_avx(in_data, out_data, params,
                                      context.parallelize());
+#endif
     } else {
       kernels::global_avepool_op_internal(in_data, out_data, params,
                                           context.parallelize());

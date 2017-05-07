@@ -31,8 +31,10 @@ class GlobalAvePoolGradOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::avx) {
+#ifdef CNN_USE_AVX
       kernels::global_avepool_grad_op_avx(prev_delta, curr_delta, params,
                                           context.parallelize());
+#endif
     } else {
       kernels::global_avepool_grad_op_internal(prev_delta, curr_delta, params,
                                                context.parallelize());
