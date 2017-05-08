@@ -79,21 +79,6 @@ vector<string> get_label_list(const string &label_file) {
   return lines;
 }
 
-void load_validation_data(const string &validation_file,
-                          vector<pair<string, int>> *validation) {
-  string line;
-  ifstream ifs(validation_file.c_str());
-
-  if (ifs.fail() || ifs.bad()) {
-    throw runtime_error("failed to open:" + validation_file);
-  }
-
-  vector<string> lines;
-  while (getline(ifs, line)) {
-    lines.push_back(line);
-  }
-}
-
 void test(const string &model_file,
           const string &trained_file,
           const string &mean_file,
@@ -107,37 +92,32 @@ void test(const string &model_file,
   int width  = (*net)[0]->in_data_shape()[0].width_;
   int height = (*net)[0]->in_data_shape()[0].height_;
 
-  std::vector<std::pair<std::string, int>> validation(1);
-  load_validation_data(img_file, &validation);
-
   auto mean = compute_mean(mean_file, width, height);
 
-  for (size_t i = 0; i < validation.size(); ++i) {
-    image<float> img(img_file, image_type::bgr);
+  image<float> img(img_file, image_type::bgr);
 
-    vec_t vec;
+  vec_t vec;
 
-    preprocess(img, mean, width, height, &vec);
+  preprocess(img, mean, width, height, &vec);
 
-    clock_t begin = clock();
+  clock_t begin = clock();
 
-    auto result = net->predict(vec);
+  auto result = net->predict(vec);
 
-    clock_t end         = clock();
-    double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-    cout << "Elapsed time(s): " << elapsed_secs << endl;
+  clock_t end         = clock();
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  cout << "Elapsed time(s): " << elapsed_secs << endl;
 
-    vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
+  vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
 
-    int top_n = 5;
-    partial_sort(sorted.begin(), sorted.begin() + top_n, sorted.end(),
-                 greater<tiny_dnn::float_t>());
+  int top_n = 5;
+  partial_sort(sorted.begin(), sorted.begin() + top_n, sorted.end(),
+                greater<tiny_dnn::float_t>());
 
-    for (int i = 0; i < top_n; i++) {
-      size_t idx =
-        distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
-      cout << labels[idx] << "," << sorted[i] << endl;
-    }
+  for (int i = 0; i < top_n; i++) {
+    size_t idx =
+      distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
+    cout << labels[idx] << "," << sorted[i] << endl;
   }
 }
 
