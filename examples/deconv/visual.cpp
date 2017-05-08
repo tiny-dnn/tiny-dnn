@@ -15,7 +15,7 @@ using namespace std;
 // rescale output to 0-100
 template <typename Activation>
 double rescale(double x) {
-  Activation a;
+  Activation a(1);
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
@@ -36,12 +36,12 @@ void convert_image(const std::string &imagefilename,
 
 void construct_net(network<sequential> &nn) {
   // construct nets
-  nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-     << average_pooling_layer<activation::identity>(28, 28, 6, 2)
-     << convolutional_layer<tan_h>(14, 14, 5, 6, 16)
-     << deconvolutional_layer<tan_h>(10, 10, 5, 16, 6)
-     << average_unpooling_layer<activation::identity>(14, 14, 6, 2)
-     << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+  nn << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer(28, 28, 6)
+     << average_pooling_layer(28, 28, 6, 2)
+     << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer(10, 10, 16)
+     << deconvolutional_layer(10, 10, 5, 16, 6) << tanh_layer(14, 14, 6)
+     << average_unpooling_layer(14, 14, 6, 2)
+     << deconvolutional_layer(28, 28, 5, 6, 1) << tanh_layer(32, 32, 1);
 }
 
 void train_network(network<sequential> nn, const string &train_dir_path) {
@@ -105,7 +105,8 @@ void recognize(const std::string &dictionary,
   vector<pair<double, int>> scores;
 
   // sort & print top-3
-  for (int i = 0; i < 10; i++) scores.emplace_back(rescale<tan_h>(res[i]), i);
+  for (int i = 0; i < 10; i++)
+    scores.emplace_back(rescale<tanh_layer>(res[i]), i);
 
   sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 
@@ -119,7 +120,7 @@ void recognize(const std::string &dictionary,
     out_img.save(filename);
   }
   // visualize filter shape of first convolutional layer
-  auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+  auto weightc = nn.at<convolutional_layer>(0).weight_to_image();
   weightc.save("weights.png");
 }
 

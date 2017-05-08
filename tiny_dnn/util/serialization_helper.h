@@ -41,6 +41,7 @@
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/serialization_functions.h"
+#include "tiny_dnn/util/serialization_layer_list.h"
 
 namespace tiny_dnn {
 
@@ -64,10 +65,10 @@ class serialization_helper {
     check_if_enabled();
 
     if (savers_.find(layer_name) == savers_.end()) {
-      throw nn_error("Failed to generate layer. Generator for " + layer_name +
+      throw nn_error("Failed to save layer. Saver for " + layer_name +
                      " is not found.\n"
-                     "Please use CNN_REGISTER_LAYER_DESERIALIZER macro to "
-                     "register appropriate generator");
+                     "Please use CNN_REGISTER_LAYER macro to register "
+                     "appropriate saver.");
     }
 
     savers_[layer_name](reinterpret_cast<void *>(&ar), l);
@@ -107,36 +108,16 @@ class serialization_helper {
   template <typename T>
   static void save_layer_impl(OutputArchive &oa, const layer *layer);
 
-#define CNN_REGISTER_LAYER_BODY(layer_type, layer_name) \
-  register_type<layer_type>(layer_name);                \
-  register_saver(layer_name, save_layer_impl<layer_type>)
+  template <typename T>
+  friend void register_layers(T *h);
 
-#define CNN_REGISTER_LAYER(layer_type, layer_name) \
-  CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
-
-#define CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, activation_type, \
-                                           layer_name)                  \
-  CNN_REGISTER_LAYER_BODY(layer_type<activation::activation_type>,      \
-                          #layer_name "<" #activation_type ">")
-
-#define CNN_REGISTER_LAYER_WITH_ACTIVATIONS(layer_type, layer_name)       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_h, layer_name);      \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, softmax, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, identity, layer_name);   \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, sigmoid, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, relu, layer_name);       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, leaky_relu, layer_name); \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, elu, layer_name);        \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
-
-  serialization_helper() {
-#include "serialization_layer_list.h"
+  template <typename T>
+  void register_layer(const char *layer_name) {
+    register_type<T>(layer_name);
+    register_saver(layer_name, save_layer_impl<T>);
   }
 
-#undef CNN_REGISTER_LAYER_BODY
-#undef CNN_REGISTER_LAYER
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATION
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
+  serialization_helper() { register_layers(this); }
 
 };  // class serialization_helper
 

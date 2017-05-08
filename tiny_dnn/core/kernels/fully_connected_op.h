@@ -69,7 +69,7 @@ class FullyConnectedOp : public core::OpKernel {
     const tensor_t &in_data = context.input(0);
     const tensor_t &W       = context.input(1);
     const tensor_t *bias    = params.has_bias_ ? &context.input(2) : nullptr;
-    tensor_t &out_data      = context.output(1);
+    tensor_t &out_data      = context.output(0);
 
     // initialize outputs
     fill_tensor(out_data, float_t{0});

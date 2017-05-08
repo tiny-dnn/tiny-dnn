@@ -61,6 +61,8 @@ branches:
     - master
     - coverity_scan
     - feat/tensor_integration
+    - feat/decouple_activations
+
 env:
   global:
     - USE_TBB=ON

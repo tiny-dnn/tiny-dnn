@@ -6,28 +6,25 @@
     in the LICENSE file.
 */
 #pragma once
-#include "tiny_dnn/layers/feedforward_layer.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
 
-template <typename Activation>
-class partial_connected_layer : public feedforward_layer<Activation> {
+class partial_connected_layer : public layer {
  public:
-  CNN_USE_LAYER_MEMBERS;
+  using layer::parallelize_;
 
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> io_connections;
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> wi_connections;
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> wo_connections;
-  typedef feedforward_layer<Activation> Base;
 
   partial_connected_layer(serial_size_t in_dim,
                           serial_size_t out_dim,
                           size_t weight_dim,
                           size_t bias_dim,
                           float_t scale_factor = float_t{1})
-    : Base(std_input_order(bias_dim > 0)),
+    : layer(std_input_order(bias_dim > 0), {vector_type::data}),
       weight2io_(weight_dim),
       out2wi_(out_dim),
       in2wo_(in_dim),
@@ -66,30 +63,28 @@ class partial_connected_layer : public feedforward_layer<Activation> {
     const tensor_t &in = *in_data[0];
     const vec_t &W     = (*in_data[1])[0];
     const vec_t &b     = (*in_data[2])[0];
-    tensor_t &a        = *out_data[1];
+    tensor_t &out      = *out_data[0];
 
     // @todo revise the parallelism strategy
     for (serial_size_t sample       = 0,
                        sample_count = static_cast<serial_size_t>(in.size());
          sample < sample_count; ++sample) {
-      vec_t &a_sample = a[sample];
+      vec_t &out_sample = out[sample];
 
       for_i(parallelize_, out2wi_.size(), [&](int i) {
         const wi_connections &connections = out2wi_[i];
 
-        float_t &a_element = a_sample[i];
+        float_t &out_element = out_sample[i];
 
-        a_element = float_t{0};
+        out_element = float_t{0};
 
         for (auto connection : connections)
-          a_element += W[connection.first] * in[sample][connection.second];
+          out_element += W[connection.first] * in[sample][connection.second];
 
-        a_element *= scale_factor_;
-        a_element += b[out2bias_[i]];
+        out_element *= scale_factor_;
+        out_element += b[out2bias_[i]];
       });
     }
-
-    this->forward_activation(*out_data[0], *out_data[1]);
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
@@ -103,15 +98,13 @@ class partial_connected_layer : public feedforward_layer<Activation> {
     tensor_t &prev_delta     = *in_grad[0];
     tensor_t &curr_delta     = *out_grad[0];
 
-    this->backward_activation(*out_grad[0], *out_data[0], curr_delta);
-
     // @todo revise the parallelism strategy
     for (serial_size_t
            sample       = 0,
            sample_count = static_cast<serial_size_t>(prev_out.size());
          sample < sample_count; ++sample) {
       for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i != r.end(); i++) {
+        for (size_t i = r.begin(); i != r.end(); i++) {
           const wo_connections &connections = in2wo_[i];
           float_t delta{0};
 
@@ -124,7 +117,7 @@ class partial_connected_layer : public feedforward_layer<Activation> {
       });
 
       for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range &r) {
-        for (int i = r.begin(); i < r.end(); i++) {
+        for (size_t i = r.begin(); i < r.end(); i++) {
           const io_connections &connections = weight2io_[i];
           float_t diff{0};
 

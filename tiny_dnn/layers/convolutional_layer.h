@@ -16,7 +16,6 @@
 #include "tiny_dnn/core/kernels/conv2d_op_libdnn.h"
 #include "tiny_dnn/core/kernels/conv2d_op_opencl.h"
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/util/util.h"
 
 #ifdef DNN_USE_IMAGE_API
@@ -32,11 +31,9 @@ namespace tiny_dnn {
  *
  * take input as two-dimensional *image* and applying filtering operation.
  **/
-template <typename Activation = activation::identity>
-class convolutional_layer : public feedforward_layer<Activation> {
+class convolutional_layer : public layer {
  public:
-  typedef feedforward_layer<Activation> Base;
-  CNN_USE_LAYER_MEMBERS;
+  using layer::parallelize_;
 
   /**
   * constructing convolutional layer
@@ -224,17 +221,17 @@ class convolutional_layer : public feedforward_layer<Activation> {
                       serial_size_t w_stride = 1,
                       serial_size_t h_stride = 1,
                       backend_t backend_type = core::default_engine())
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                     window_height, out_channels, pad_type, has_bias, w_stride,
                     h_stride, connection_table);
     init_backend(backend_type);
-    Base::set_backend_type(backend_type);
+    layer::set_backend_type(backend_type);
   }
 
   // move constructor
   convolutional_layer(convolutional_layer &&other)  // NOLINT
-    : Base(std::move(other)),
+    : layer(std::move(other)),
       params_(std::move(other.params_)),
       padding_op_(std::move(other.padding_op_)),
       kernel_fwd_(std::move(other.kernel_fwd_)),
@@ -276,10 +273,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
 
     // launch convolutional kernel
     kernel_fwd_->compute(ctx);
-
-    // activations
-    // TODO(edgar/nyanp): refactor and move activations outside
-    this->forward_activation(*out_data[0], *out_data[1]);
   }
 
   /**
@@ -298,10 +291,6 @@ class convolutional_layer : public feedforward_layer<Activation> {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    // activations
-    // TODO(edgar/nyanp): refactor and move activations outside
-    this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
-
     std::vector<tensor_t *> in_data_(in_data.size());
     in_data_[0] = in_data_padded(in_data);
     for (serial_size_t i = 1; i < in_data.size(); ++i) {
@@ -326,7 +315,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
   }
 
   void set_sample_count(serial_size_t sample_count) override {
-    Base::set_sample_count(sample_count);
+    layer::set_sample_count(sample_count);
     cws_.prev_delta_padded_.resize(sample_count,
                                    vec_t(params_.in_padded.size(), float_t(0)));
   }
@@ -341,7 +330,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {params_.out, params_.out};
+    return {params_.out};
   }
 
   std::string layer_type() const override { return std::string("conv"); }
@@ -408,9 +397,7 @@ class convolutional_layer : public feedforward_layer<Activation> {
   }
 #endif  // DNN_USE_IMAGE_API
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   tensor_t *in_data_padded(const std::vector<tensor_t *> &in) {

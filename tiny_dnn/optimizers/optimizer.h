@@ -21,14 +21,10 @@ namespace tiny_dnn {
 struct optimizer {
   optimizer()                  = default;
   optimizer(const optimizer &) = default;
-#ifndef CNN_DEFAULT_MOVE_CONSTRUCTOR_UNAVAILABLE
-  optimizer(optimizer &&) = default;
-#endif
+  optimizer(optimizer &&)      = default;
   optimizer &operator=(const optimizer &) = default;
-#ifndef CNN_DEFAULT_ASSIGNMENT_OPERATOR_UNAVAILABLE
   optimizer &operator=(optimizer &&) = default;
-#endif
-  virtual ~optimizer() = default;
+  virtual ~optimizer()               = default;
   virtual void update(const vec_t &dW, vec_t &W, bool parallelize) = 0;
   virtual void reset() {}  // override to implement pre-learning action
 };

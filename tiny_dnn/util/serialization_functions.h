@@ -25,12 +25,12 @@ struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::average_pooling_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive &ar,
-    cereal::construct<tiny_dnn::average_pooling_layer<Activation>> &construct) {
+    cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -81,12 +81,11 @@ struct LoadAndConstruct<tiny_dnn::concat_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::convolutional_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::convolutional_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::convolutional_layer> &construct) {
     tiny_dnn::serial_size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -124,12 +123,12 @@ struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::fully_connected_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive &ar,
-    cereal::construct<tiny_dnn::fully_connected_layer<Activation>> &construct) {
+    cereal::construct<tiny_dnn::fully_connected_layer> &construct) {
     tiny_dnn::serial_size_t in_dim, out_dim;
     bool has_bias;
 
@@ -140,12 +139,24 @@ struct LoadAndConstruct<tiny_dnn::fully_connected_layer<Activation>> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::linear_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::global_average_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive &ar,
-    cereal::construct<tiny_dnn::linear_layer<Activation>> &construct) {
+    cereal::construct<tiny_dnn::global_average_pooling_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_shape", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::linear_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::linear_layer> &construct) {
     tiny_dnn::serial_size_t dim;
     tiny_dnn::float_t scale, bias;
 
@@ -156,12 +167,11 @@ struct LoadAndConstruct<tiny_dnn::linear_layer<Activation>> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::lrn_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::lrn_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::lrn_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::lrn_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::serial_size_t size;
     tiny_dnn::float_t alpha, beta;
@@ -174,12 +184,11 @@ struct LoadAndConstruct<tiny_dnn::lrn_layer<Activation>> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::max_pooling_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::max_pooling_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::max_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -195,12 +204,11 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer<Activation>> {
   }
 };
 
-template <typename Activation>
-struct LoadAndConstruct<tiny_dnn::max_unpooling_layer<Activation>> {
+template <>
+struct LoadAndConstruct<tiny_dnn::max_unpooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::max_unpooling_layer<Activation>> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::max_unpooling_layer> &construct) {
     tiny_dnn::shape3d in;
     tiny_dnn::serial_size_t stride, unpool_size;
 
@@ -242,14 +250,100 @@ struct LoadAndConstruct<tiny_dnn::slice_layer> {
   }
 };
 
+template <>
+struct LoadAndConstruct<tiny_dnn::sigmoid_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::sigmoid_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::tanh_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::tanh_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::relu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::relu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::softmax_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::softmax_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::leaky_relu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t epsilon;
+
+    ar(cereal::make_nvp("in_size", in_shape),
+       cereal::make_nvp("epsilon", epsilon));
+    construct(in_shape, epsilon);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::elu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::tanh_p1m2_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::tanh_p1m2_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
 template <class Archive>
 struct specialize<Archive,
                   tiny_dnn::elementwise_add_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::average_pooling_layer<Activation>,
+                  tiny_dnn::average_pooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -262,9 +356,9 @@ struct specialize<Archive,
                   tiny_dnn::concat_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::convolutional_layer<Activation>,
+                  tiny_dnn::convolutional_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -272,29 +366,34 @@ struct specialize<Archive,
                   tiny_dnn::dropout_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::fully_connected_layer<Activation>,
+                  tiny_dnn::fully_connected_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::linear_layer<Activation>,
+                  tiny_dnn::global_average_pooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::lrn_layer<Activation>,
+                  tiny_dnn::linear_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::max_pooling_layer<Activation>,
+                  tiny_dnn::lrn_layer,
                   cereal::specialization::non_member_serialize> {};
 
-template <class Archive, typename Activation>
+template <class Archive>
 struct specialize<Archive,
-                  tiny_dnn::max_unpooling_layer<Activation>,
+                  tiny_dnn::max_pooling_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::max_unpooling_layer,
                   cereal::specialization::non_member_serialize> {};
 
 template <class Archive>
@@ -307,11 +406,47 @@ struct specialize<Archive,
                   tiny_dnn::slice_layer,
                   cereal::specialization::non_member_serialize> {};
 
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::sigmoid_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::tanh_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::relu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::softmax_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::leaky_relu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::elu_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::tanh_p1m2_layer,
+                  cereal::specialization::non_member_serialize> {};
+
 }  // namespace cereal
 
 namespace tiny_dnn {
 
 struct serialization_buddy {
+#ifndef CNN_NO_SERIALIZATION
   template <class Archive>
   static inline void serialize(Archive &ar,
                                tiny_dnn::elementwise_add_layer &layer) {
@@ -320,9 +455,9 @@ struct serialization_buddy {
        cereal::make_nvp("dim", layer.dim_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::average_pooling_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::average_pooling_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("pool_size_x", layer.pool_size_x_),
@@ -351,9 +486,9 @@ struct serialization_buddy {
     ar(layer.in_shapes_);
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::convolutional_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in),
@@ -375,9 +510,9 @@ struct serialization_buddy {
        cereal::make_nvp("phase", layer.phase_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::fully_connected_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::fully_connected_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in_size_),
@@ -385,18 +520,24 @@ struct serialization_buddy {
        cereal::make_nvp("has_bias", params_.has_bias_));
   }
 
-  template <class Archive, typename Activation>
+  template <class Archive>
   static inline void serialize(Archive &ar,
-                               tiny_dnn::linear_layer<Activation> &layer) {
+                               tiny_dnn::global_average_pooling_layer &layer) {
+    layer.serialize_prolog(ar);
+    auto &params_ = layer.params_;
+    ar(cereal::make_nvp("in_shape", params_.in));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.dim_),
        cereal::make_nvp("scale", layer.scale_),
        cereal::make_nvp("bias", layer.bias_));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(Archive &ar,
-                               tiny_dnn::lrn_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::lrn_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_shape", layer.in_shape_),
        cereal::make_nvp("size", layer.size_),
@@ -405,9 +546,9 @@ struct serialization_buddy {
        cereal::make_nvp("region", layer.region_));
   }
 
-  template <class Archive, typename Activation>
+  template <class Archive>
   static inline void serialize(Archive &ar,
-                               tiny_dnn::max_pooling_layer<Activation> &layer) {
+                               tiny_dnn::max_pooling_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     ar(cereal::make_nvp("in_size", params_.in),
@@ -418,9 +559,9 @@ struct serialization_buddy {
        cereal::make_nvp("pad_type", params_.pad_type));
   }
 
-  template <class Archive, typename Activation>
-  static inline void serialize(
-    Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::max_unpooling_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_),
        cereal::make_nvp("unpool_size", layer.unpool_size_),
@@ -442,6 +583,50 @@ struct serialization_buddy {
        cereal::make_nvp("slice_type", layer.slice_type_),
        cereal::make_nvp("num_outputs", layer.num_outputs_));
   }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
+       cereal::make_nvp("epsilon", layer.epsilon_));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
+#endif
 };
 
 template <class Archive>
@@ -449,9 +634,8 @@ void serialize(Archive &ar, tiny_dnn::elementwise_add_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar,
-               tiny_dnn::average_pooling_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::average_pooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
@@ -465,8 +649,8 @@ void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::convolutional_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::convolutional_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
@@ -475,29 +659,33 @@ void serialize(Archive &ar, tiny_dnn::dropout_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar,
-               tiny_dnn::fully_connected_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::fully_connected_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::linear_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::global_average_pooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::lrn_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::max_pooling_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::lrn_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
-template <class Archive, typename Activation>
-void serialize(Archive &ar, tiny_dnn::max_unpooling_layer<Activation> &layer) {
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::max_pooling_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::max_unpooling_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
@@ -508,6 +696,41 @@ void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
 
 template <class Archive>
 void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 

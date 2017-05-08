@@ -16,11 +16,9 @@ namespace tiny_dnn {
 /**
  * compute fully-connected(matmul) operation
  **/
-template <typename Activation>
-class fully_connected_layer : public feedforward_layer<Activation> {
+class fully_connected_layer : public layer {
  public:
-  typedef feedforward_layer<Activation> Base;
-  CNN_USE_LAYER_MEMBERS;
+  using layer::parallelize_;
 
   /**
    * @param in_dim [in] number of elements of the input
@@ -31,15 +29,15 @@ class fully_connected_layer : public feedforward_layer<Activation> {
                         serial_size_t out_dim,
                         bool has_bias          = true,
                         backend_t backend_type = core::default_engine())
-    : Base(std_input_order(has_bias)) {
+    : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
-    Base::set_backend_type(backend_type);
+    layer::set_backend_type(backend_type);
   }
 
   // move constructor
   fully_connected_layer(fully_connected_layer &&other)
-    : Base(std::move(other)),
+    : layer(std::move(other)),
       params_(std::move(other.params_)),
       kernel_fwd_(std::move(other.kernel_fwd_)),
       kernel_back_(std::move(other.kernel_back_)) {
@@ -62,46 +60,36 @@ class fully_connected_layer : public feedforward_layer<Activation> {
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1),
-            index3d<serial_size_t>(params_.out_size_, 1, 1)};
+    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    // forward convolutional op context
+    // forward fully connected op context
     auto ctx = OpKernelContext(in_data, out_data);
     ctx.setParallelize(layer::parallelize());
     ctx.setEngine(layer::engine());
 
-    // launch convolutional kernel
+    // launch fully connected kernel
     kernel_fwd_->compute(ctx);
-
-    // activations
-    this->forward_activation(*out_data[0], *out_data[1]);
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    // activations
-    // TODO(edgar/nyanp): refactor and move activations outside
-    this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
-
-    // backward convolutional op context
+    // backward fully connected op context
     auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
     ctx.setParallelize(layer::parallelize());
     ctx.setEngine(layer::engine());
 
-    // launch convolutional kernel
+    // launch fully connected kernel
     kernel_back_->compute(ctx);
   }
 
   std::string layer_type() const override { return "fully-connected"; }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  protected:
   void set_params(const serial_size_t in_size,

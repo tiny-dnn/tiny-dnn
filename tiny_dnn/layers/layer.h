@@ -24,7 +24,6 @@
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/weight_init.h"
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 
 #ifdef DNN_USE_IMAGE_API
@@ -75,10 +74,8 @@ class layer : public node {
   layer(const layer &) = default;
   layer &operator=(const layer &) = default;
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
   layer(layer &&) = default;
   layer &operator=(layer &&) = default;
-#endif
 
   void set_parallelize(bool parallelize) { parallelize_ = parallelize; }
 
@@ -205,7 +202,7 @@ class layer : public node {
   std::vector<edgeptr_t> outputs() const {
     std::vector<edgeptr_t> nodes(out_channels_);
     for (serial_size_t i = 0; i < out_channels_; i++) {
-      nodes[i] = const_cast<layerptr_t>(this)->ith_out_node(i);
+      nodes[i] = const_cast<layer *>(this)->ith_out_node(i);
     }
     return nodes;
   }
@@ -233,7 +230,7 @@ class layer : public node {
     for (serial_size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] == vector_type::data) {
         out.push_back(
-          *(const_cast<layerptr_t>(this))->ith_out_node(i)->get_data());
+          *(const_cast<layer *>(this))->ith_out_node(i)->get_data());
       }
     }
     return out;
@@ -261,6 +258,15 @@ class layer : public node {
    * array of input shapes (width x height x depth)
    **/
   virtual std::vector<shape3d> in_shape() const = 0;
+
+  /**
+   * set input shape of a layer (only used internally while shape inferring)
+   */
+  virtual void set_in_shape(const shape3d &in_shape) {
+    throw nn_error(
+      "Can't set shape. Shape inferring not applicable for this "
+      "layer (yet).");
+  };
 
   /**
    * array of output shapes (width x height x depth)
@@ -792,18 +798,25 @@ class layer : public node {
    */
   const vec_t *get_weight_data(serial_size_t i) const {
     assert(is_trainable_weight(in_type_[i]));
-    return &(*(const_cast<layerptr_t>(this)->ith_in_node(i)->get_data()))[0];
+    return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
   }
 };
 
-inline void connect(layerptr_t head,
-                    layerptr_t tail,
+inline void connect(layer *head,
+                    layer *tail,
                     serial_size_t head_index = 0,
                     serial_size_t tail_index = 0) {
   auto out_shape = head->out_shape()[head_index];
   auto in_shape  = tail->in_shape()[tail_index];
 
   head->setup(false);
+
+  // todo (karandesai) enable shape inferring for all layers
+  // currently only possible for activation layers.
+  if (in_shape.size() == 0) {
+    tail->set_in_shape(out_shape);
+    in_shape = out_shape;
+  }
 
   if (out_shape.size() != in_shape.size()) {
     connection_mismatch(*head, *tail);

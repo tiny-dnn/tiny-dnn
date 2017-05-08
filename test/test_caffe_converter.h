@@ -283,7 +283,7 @@ TEST(caffe_converter, lenet) {
   // relu
   EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
   EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
-  EXPECT_EQ((*model)[5]->layer_type(), "linear");
+  EXPECT_EQ((*model)[5]->layer_type(), "relu-activation");
 
   // fc
   EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
@@ -293,7 +293,7 @@ TEST(caffe_converter, lenet) {
   // softmax
   EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
   EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
-  EXPECT_EQ((*model)[7]->layer_type(), "linear");
+  EXPECT_EQ((*model)[7]->layer_type(), "softmax-activation");
 }
 
 TEST(caffe_converter, lenet_v1) {
@@ -453,7 +453,7 @@ TEST(caffe_converter, lenet_v1) {
   // relu
   EXPECT_EQ((*model)[5]->in_shape()[0], shape3d(500, 1, 1));
   EXPECT_EQ((*model)[5]->out_shape()[0], shape3d(500, 1, 1));
-  EXPECT_EQ((*model)[5]->layer_type(), "linear");
+  EXPECT_EQ((*model)[5]->layer_type(), "relu-activation");
 
   // fc
   EXPECT_EQ((*model)[6]->in_shape()[0], shape3d(500, 1, 1));
@@ -463,7 +463,7 @@ TEST(caffe_converter, lenet_v1) {
   // softmax
   EXPECT_EQ((*model)[7]->in_shape()[0], shape3d(10, 1, 1));
   EXPECT_EQ((*model)[7]->out_shape()[0], shape3d(10, 1, 1));
-  EXPECT_EQ((*model)[7]->layer_type(), "linear");
+  EXPECT_EQ((*model)[7]->layer_type(), "softmax-activation");
 }
 
 TEST(caffe_converter, dropout) {
@@ -687,14 +687,14 @@ TEST(caffe_converter, sigmoid) {
 
   vec_t in = {0.0f, 0.1f, 0.5f, 0.9f, 1.0f};
 
-  auto ret = model->predict(in);
-  sigmoid a;
+  vec_t ret  = model->predict(in);
+  vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  sigmoid_layer sig(5);
+  sig.forward_activation(in, ret2);
 
-  EXPECT_EQ(ret[0], a.f(in, 0));
-  EXPECT_EQ(ret[1], a.f(in, 1));
-  EXPECT_EQ(ret[2], a.f(in, 2));
-  EXPECT_EQ(ret[3], a.f(in, 3));
-  EXPECT_EQ(ret[4], a.f(in, 4));
+  for (serial_size_t i = 0; i < 5; i++) {
+    EXPECT_FLOAT_EQ(ret[i], ret2[i]);
+  }
 }
 
 TEST(caffe_converter, tanh) {
@@ -724,14 +724,14 @@ TEST(caffe_converter, tanh) {
 
   vec_t in = {-1.0f, -0.1f, 0.0f, 0.1f, 1.0f};
 
-  auto ret = model->predict(in);
-  tan_h a;
+  vec_t ret  = model->predict(in);
+  vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  tanh_layer tanh(5);
+  tanh.forward_activation(in, ret2);
 
-  EXPECT_EQ(ret[0], a.f(in, 0));
-  EXPECT_EQ(ret[1], a.f(in, 1));
-  EXPECT_EQ(ret[2], a.f(in, 2));
-  EXPECT_EQ(ret[3], a.f(in, 3));
-  EXPECT_EQ(ret[4], a.f(in, 4));
+  for (serial_size_t i = 0; i < 5; i++) {
+    EXPECT_FLOAT_EQ(ret[i], ret2[i]);
+  }
 }
 
 TEST(caffe_converter, power) {

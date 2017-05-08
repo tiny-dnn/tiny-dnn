@@ -42,6 +42,7 @@
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/serialization_functions.h"
+#include "tiny_dnn/util/serialization_layer_list.h"
 
 namespace tiny_dnn {
 
@@ -65,10 +66,10 @@ class deserialization_helper {
     check_if_enabled();
 
     if (loaders_.find(layer_name) == loaders_.end()) {
-      throw nn_error("Failed to generate layer. Generator for " + layer_name +
+      throw nn_error("Failed to load layer. Loader for " + layer_name +
                      " is not found.\n"
-                     "Please use CNN_REGISTER_LAYER_DESERIALIZER macro to "
-                     "register appropriate generator");
+                     "Please use CNN_REGISTER_LAYER macro to register "
+                     "appropriate loader.");
     }
 
     return loaders_[layer_name](reinterpret_cast<void *>(&ar));
@@ -107,36 +108,16 @@ class deserialization_helper {
   template <typename T>
   static std::shared_ptr<layer> load_layer_impl(InputArchive &ia);
 
-#define CNN_REGISTER_LAYER_BODY(layer_type, layer_name)     \
-  register_loader(layer_name, load_layer_impl<layer_type>); \
-  register_type<layer_type>(layer_name);
+  template <typename T>
+  friend void register_layers(T *h);
 
-#define CNN_REGISTER_LAYER(layer_type, layer_name) \
-  CNN_REGISTER_LAYER_BODY(layer_type, #layer_name)
-
-#define CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, activation_type, \
-                                           layer_name)                  \
-  CNN_REGISTER_LAYER_BODY(layer_type<activation::activation_type>,      \
-                          #layer_name "<" #activation_type ">")
-
-#define CNN_REGISTER_LAYER_WITH_ACTIVATIONS(layer_type, layer_name)       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_h, layer_name);      \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, softmax, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, identity, layer_name);   \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, sigmoid, layer_name);    \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, relu, layer_name);       \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, leaky_relu, layer_name); \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, elu, layer_name);        \
-  CNN_REGISTER_LAYER_WITH_ACTIVATION(layer_type, tan_hp1m2, layer_name)
-
-  deserialization_helper() {
-#include "serialization_layer_list.h"
+  template <typename T>
+  void register_layer(const char *layer_name) {
+    register_loader(layer_name, load_layer_impl<T>);
+    register_type<T>(layer_name);
   }
 
-#undef CNN_REGISTER_LAYER_BODY
-#undef CNN_REGISTER_LAYER
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATION
-#undef CNN_REGISTER_LAYER_WITH_ACTIVATIONS
+  deserialization_helper() { register_layers(this); }
 
 };  // class deserialization_helper
 
@@ -144,7 +125,7 @@ template <typename InputArchive>
 template <typename T>
 std::shared_ptr<layer> deserialization_helper<InputArchive>::load_layer_impl(
   InputArchive &ia) {
-  using ST = typename std::aligned_storage<sizeof(T), CNN_ALIGNOF(T)>::type;
+  using ST = typename std::aligned_storage<sizeof(T), alignof(T)>::type;
 
   std::unique_ptr<ST> bn(new ST());
 

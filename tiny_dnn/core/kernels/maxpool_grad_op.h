@@ -66,7 +66,7 @@ class MaxPoolGradOp : public core::OpKernel {
 
     // incoming/outcoming data
     tensor_t &prev_delta = context.input_grad(0);
-    tensor_t &curr_delta = context.output_grad(1);
+    tensor_t &curr_delta = context.output_grad(0);
 
     // initialize outputs
     fill_tensor(prev_delta, float_t{0});

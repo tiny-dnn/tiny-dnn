@@ -10,13 +10,15 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(fully_connected, train) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << fully_connected_layer<sigmoid>(3, 2);
+  nn << fully_connected_layer(3, 2) << sigmoid();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -58,7 +60,7 @@ TEST(fully_connected, train_different_batches) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << fully_connected_layer<sigmoid>(3, 2);
+    nn << fully_connected_layer(3, 2) << sigmoid();
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -97,8 +99,8 @@ TEST(fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << fully_connected_layer<tan_h>(4, 6)
-     << fully_connected_layer<tan_h>(6, 3);
+  nn << fully_connected_layer(4, 6) << tanh() << fully_connected_layer(6, 3)
+     << tanh();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -134,7 +136,7 @@ TEST(fully_connected, train2) {
 
 TEST(fully_connected, gradient_check) {
   network<sequential> nn;
-  nn << fully_connected_layer<tan_h>(50, 10);
+  nn << fully_connected_layer(50, 10) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -143,8 +145,8 @@ TEST(fully_connected, gradient_check) {
 }
 
 TEST(fully_connected, read_write) {
-  fully_connected_layer<tan_h> l1(100, 100);
-  fully_connected_layer<tan_h> l2(100, 100);
+  fully_connected_layer l1(100, 100);
+  fully_connected_layer l2(100, 100);
 
   l1.setup(true);
   l2.setup(true);
@@ -153,7 +155,7 @@ TEST(fully_connected, read_write) {
 }
 
 TEST(fully_connected, forward) {
-  fully_connected_layer<identity> l(4, 2);
+  fully_connected_layer l(4, 2);
   EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
@@ -171,7 +173,7 @@ TEST(fully_connected, forward) {
 #ifdef CNN_USE_NNPACK
 TEST(fully_connected, forward_nnp) {
   nnp_initialize();
-  fully_connected_layer<identity> l(4, 2, true, core::backend_t::nnpack);
+  fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
   EXPECT_EQ(l.in_channels(), size_t(3));  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
@@ -188,7 +190,7 @@ TEST(fully_connected, forward_nnp) {
 #endif
 
 TEST(fully_connected, forward_nobias) {
-  fully_connected_layer<identity> l(4, 2, false);
+  fully_connected_layer l(4, 2, false);
   EXPECT_EQ(l.in_channels(), serial_size_t(2));  // in and W
 
   l.weight_init(weight_init::constant(1.0));

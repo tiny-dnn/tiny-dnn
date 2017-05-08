@@ -4,6 +4,8 @@
 #include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/util/target_cost.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(target_cost, calculate_label_counts) {
@@ -156,8 +158,8 @@ TEST(target_cost, train_unbalanced_data_1dim) {
 
   auto create_net = []() {
     network<sequential> net;
-    net << fully_connected_layer<tan_h>(1, 10)
-        << fully_connected_layer<tan_h>(10, 2);
+    net << fully_connected_layer(1, 10) << tanh()
+        << fully_connected_layer(10, 2) << tanh();
     return net;
   };
 
@@ -244,8 +246,8 @@ TEST(target_cost, train_unbalanced_data) {
 
   auto create_net = []() {
     network<sequential> net;
-    net << fully_connected_layer<tan_h>(2, 10)
-        << fully_connected_layer<tan_h>(10, 2);
+    net << fully_connected_layer(2, 10) << tanh()
+        << fully_connected_layer(10, 2) << tanh();
     return net;
   };
 

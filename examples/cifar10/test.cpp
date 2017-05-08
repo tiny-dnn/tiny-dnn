@@ -8,7 +8,7 @@ using namespace std;
 // rescale output to 0-100
 template <typename Activation>
 double rescale(double x) {
-  Activation a;
+  Activation a(1);
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
@@ -33,20 +33,27 @@ void convert_image(const std::string &imagefilename,
 
 template <typename N>
 void construct_net(N &nn) {
-  typedef convolutional_layer<activation::identity> conv;
-  typedef max_pooling_layer<relu> pool;
+  using conv    = convolutional_layer;
+  using pool    = max_pooling_layer;
+  using fc      = fully_connected_layer;
+  using relu    = relu_layer;
+  using softmax = softmax_layer;
 
   const int n_fmaps  = 32;  ///< number of feature maps for upper layer
   const int n_fmaps2 = 64;  ///< number of feature maps for lower layer
   const int n_fc     = 64;  ///< number of hidden units in fully-connected layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, padding::same) << pool(32, 32, n_fmaps, 2)
-     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)
-     << pool(16, 16, n_fmaps, 2)
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)
-     << pool(8, 8, n_fmaps2, 2)
-     << fully_connected_layer<activation::identity>(4 * 4 * n_fmaps2, n_fc)
-     << fully_connected_layer<softmax>(n_fc, 10);
+  nn << conv(32, 32, 5, 3, n_fmaps, padding::same)        // C1
+     << pool(32, 32, n_fmaps, 2)                          // P2
+     << relu(16, 16, n_fmaps)                             // activation
+     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same)  // C3
+     << pool(16, 16, n_fmaps, 2)                          // P4
+     << relu(8, 8, n_fmaps)                               // activation
+     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)   // C5
+     << pool(8, 8, n_fmaps2, 2)                           // P6
+     << relu(4, 4, n_fmaps2)                              // activation
+     << fc(4 * 4 * n_fmaps2, n_fc)                        // FC7
+     << fc(n_fc, 10) << softmax(10);                      // FC10
 }
 
 void recognize(const std::string &dictionary, const std::string &src_filename) {
@@ -67,7 +74,8 @@ void recognize(const std::string &dictionary, const std::string &src_filename) {
   vector<pair<double, int>> scores;
 
   // sort & print top-3
-  for (int i = 0; i < 10; i++) scores.emplace_back(rescale<tan_h>(res[i]), i);
+  for (int i = 0; i < 10; i++)
+    scores.emplace_back(rescale<tanh_layer>(res[i]), i);
 
   sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 

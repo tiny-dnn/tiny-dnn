@@ -23,7 +23,7 @@
 namespace cereal {
 
 template <typename Archive>
-void save(Archive &ar, const std::vector<tiny_dnn::layerptr_t> &v) {
+void save(Archive &ar, const std::vector<tiny_dnn::layer *> &v) {
 #ifndef CNN_NO_SERIALIZATION
   ar(cereal::make_size_tag(static_cast<cereal::size_type>(v.size())));
   for (auto n : v) {
@@ -65,20 +65,21 @@ namespace tiny_dnn {
  * (to avoid double-free).
  *
  *     sequential s;
- *     s.add(fc<tan_h>(100, 200));                   // rvalue, moved into nodes
+ *     s.add(fc(100, 200));                          // rvalue, moved into nodes
  *
- *     s.add(std::make_shared<fc<tan_h>>(200, 100)); // shared_ptr, shared by
+ *     s.add(std::make_shared<fc>(200, 100));        // shared_ptr, shared by
  *nodes
  *
- *     fc<softmax> out(100, 10);
+ *     fc out(100, 10);
+ *     softmax sft();
  *     s.add(out);                                   // lvalue, hold raw-pointer
  *only
  *
  **/
 class nodes {
  public:
-  typedef std::vector<layerptr_t>::iterator iterator;
-  typedef std::vector<layerptr_t>::const_iterator const_iterator;
+  typedef std::vector<layer *>::iterator iterator;
+  typedef std::vector<layer *>::const_iterator const_iterator;
 
   /**
    * propagate gradient
@@ -266,7 +267,7 @@ class nodes {
   /* Nodes which this class has ownership */
   std::vector<std::shared_ptr<layer>> own_nodes_;
   /* List of all nodes which includes own_nodes */
-  std::vector<layerptr_t> nodes_;
+  std::vector<layer *> nodes_;
 };
 
 /**
@@ -409,18 +410,18 @@ class graph : public nodes {
     return merge_outs();
   }
 
-  void construct(const std::vector<layerptr_t> &input,
-                 const std::vector<layerptr_t> &output) {
-    std::vector<layerptr_t> sorted;
-    std::vector<nodeptr_t> input_nodes(input.begin(), input.end());
+  void construct(const std::vector<layer *> &input,
+                 const std::vector<layer *> &output) {
+    std::vector<layer *> sorted;
+    std::vector<node *> input_nodes(input.begin(), input.end());
     std::unordered_map<node *, std::vector<uint8_t>> removed_edge;
 
     // topological-sorting
     while (!input_nodes.empty()) {
-      sorted.push_back(dynamic_cast<layerptr_t>(input_nodes.back()));
+      sorted.push_back(dynamic_cast<layer *>(input_nodes.back()));
       input_nodes.pop_back();
 
-      layerptr_t curr          = sorted.back();
+      layer *curr              = sorted.back();
       std::vector<node *> next = curr->next_nodes();
 
       for (size_t i = 0; i < next.size(); i++) {
@@ -571,15 +572,14 @@ class graph : public nodes {
     return merged;
   }
 
-  serial_size_t find_index(const std::vector<node *> &nodes,
-                           layerptr_t target) {
+  serial_size_t find_index(const std::vector<node *> &nodes, layer *target) {
     for (serial_size_t i = 0; i < nodes.size(); i++) {
       if (nodes[i] == static_cast<node *>(&*target)) return i;
     }
     throw nn_error("invalid connection");
   }
-  std::vector<layerptr_t> input_layers_;
-  std::vector<layerptr_t> output_layers_;
+  std::vector<layer *> input_layers_;
+  std::vector<layer *> output_layers_;
 };
 
 template <typename OutputArchive>

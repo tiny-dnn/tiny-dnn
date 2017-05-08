@@ -19,9 +19,6 @@ namespace tiny_dnn {
  **/
 class dropout_layer : public layer {
  public:
-  typedef activation::identity Activation;
-  typedef layer Base;
-
   /**
    * @param in_dim       [in] number of elements of the input
    * @param dropout_rate [in] (0-1) fraction of the input units to be dropped
@@ -30,7 +27,7 @@ class dropout_layer : public layer {
   dropout_layer(serial_size_t in_dim,
                 float_t dropout_rate,
                 net_phase phase = net_phase::train)
-    : Base({vector_type::data}, {vector_type::data}),
+    : layer({vector_type::data}, {vector_type::data}),
       phase_(phase),
       dropout_rate_(dropout_rate),
       scale_(float_t(1) / (float_t(1) - dropout_rate_)),
@@ -42,11 +39,9 @@ class dropout_layer : public layer {
   dropout_layer(const dropout_layer &obj) = default;
   virtual ~dropout_layer() {}
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
   dropout_layer(dropout_layer &&obj) = default;
   dropout_layer &operator=(const dropout_layer &obj) = default;
   dropout_layer &operator=(dropout_layer &&obj) = default;
-#endif
 
   void set_dropout_rate(float_t rate) {
     dropout_rate_ = rate;
@@ -137,9 +132,7 @@ class dropout_layer : public layer {
     }
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   net_phase phase_;

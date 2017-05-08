@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include "tiny_dnn/activations/activation_function.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/nodes.h"
 #include "tiny_dnn/util/util.h"
@@ -130,7 +129,7 @@ void construct_graph(network<graph> &graph,
  *     std::cout << net.name(); // "foo"
  *
  *     // simply stack layers by operator <<
- *     net << fc<tan_h>(50, 200) << fc<tan_h>(200, 10);
+ *     net << fc(50, 200) << tanh() << fc(200, 10) << tanh();
  *
  *     // prepare optimizer
  *     adagrad opt;
@@ -147,8 +146,8 @@ void construct_graph(network<graph> &graph,
 template <typename NetType>
 class network {
  public:
-  typedef typename std::vector<layerptr_t>::iterator iterator;
-  typedef typename std::vector<layerptr_t>::const_iterator const_iterator;
+  typedef typename std::vector<layer *>::iterator iterator;
+  typedef typename std::vector<layer *>::const_iterator const_iterator;
 
   explicit network(const std::string &name = "")
     : name_(name), stop_training_(false) {}
@@ -279,7 +278,8 @@ class network {
   * network<sequential> net;
   * adagrad opt;
   *
-  * net << layers::fc<tan_h>(2,3) << layers::fc<relu>(3,1);
+  * net << layers::fc(2, 3) << activation::tanh()
+  *     << layers::fc(3, 1) << activation::relu();
   *
   * // 2training data, each data is float_t[2]
   * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
@@ -896,7 +896,7 @@ class network {
 
     // clear previous results, if any
     for (vec_t &dw_sample : dw) {
-      std::fill(dw_sample.begin(), dw_sample.end(), float_t(0));
+      vectorize::fill(&dw_sample[0], dw_sample.size(), float_t(0));
     }
 
     // calculate dw/dE by numeric

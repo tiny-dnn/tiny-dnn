@@ -70,7 +70,7 @@ class Conv2dGradOp : public core::OpKernel {
     tensor_t &dW             = context.input_grad(1);
     tensor_t &db             = context.input_grad(2);
     tensor_t &prev_delta     = context.input_grad(0);
-    tensor_t &curr_delta     = context.output_grad(1);
+    tensor_t &curr_delta     = context.output_grad(0);
 
     // initalize outputs
     fill_tensor(prev_delta, float_t{0});

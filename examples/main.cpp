@@ -61,15 +61,18 @@ void sample1_convnet(const string& data_dir) {
 #undef O
 #undef X
 
-  nn << convolutional_layer<tan_h>(32, 32, 5, 1,
-                                   6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
-     << average_pooling_layer<tan_h>(28, 28, 6,
-                                     2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
-     << convolutional_layer<tan_h>(14, 14, 5, 6, 16,
-                                   connection_table(connection, 6, 16))
-     << average_pooling_layer<tan_h>(10, 10, 16, 2)
-     << convolutional_layer<tan_h>(5, 5, 5, 16, 120)
-     << fully_connected_layer<tan_h>(120, 10);
+  nn << convolutional_layer(32, 32, 5, 1,
+                            6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
+     << tanh_layer(28, 28, 6)
+     << average_pooling_layer(28, 28, 6,
+                              2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
+     << tanh_layer(14, 14, 6)
+     << convolutional_layer(14, 14, 5, 6, 16,
+                            connection_table(connection, 6, 16))
+     << tanh_layer(10, 10, 16) << average_pooling_layer(10, 10, 16, 2)
+     << tanh_layer(5, 5, 16) << convolutional_layer(5, 5, 5, 16, 120)
+     << tanh_layer(1, 1, 120) << fully_connected_layer(120, 10)
+     << tanh_layer(10);
 
   std::cout << "load models..." << std::endl;
 
@@ -131,9 +134,9 @@ void sample2_mlp(const string& data_dir) {
 #if defined(_MSC_VER) && _MSC_VER < 1800
   // initializer-list is not supported
   int num_units[] = {28 * 28, num_hidden_units, 10};
-  auto nn         = make_mlp<tan_h>(num_units, num_units + 3);
+  auto nn         = make_mlp<tanh_layer>(num_units, num_units + 3);
 #else
-  auto nn = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
+  auto nn = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
 #endif
   gradient_descent optimizer;
 
@@ -184,9 +187,9 @@ void sample3_dae() {
 #if defined(_MSC_VER) && _MSC_VER < 1800
   // initializer-list is not supported
   int num_units[] = {100, 400, 100};
-  auto nn         = make_mlp<tan_h>(num_units, num_units + 3);
+  auto nn         = make_mlp<tanh>(num_units, num_units + 3);
 #else
-  auto nn = make_mlp<tan_h>({100, 400, 100});
+  auto nn = make_mlp<tanh_layer>({100, 400, 100});
 #endif
 
   std::vector<vec_t> train_data_original;
@@ -209,17 +212,19 @@ void sample3_dae() {
 // dropout-learning
 
 void sample4_dropout(const string& data_dir) {
-  typedef network<sequential> Network;
-  Network nn;
+  using network = network<sequential>;
+  network nn;
   serial_size_t input_dim    = 28 * 28;
   serial_size_t hidden_units = 800;
   serial_size_t output_dim   = 10;
   gradient_descent optimizer;
 
-  fully_connected_layer<tan_h> f1(input_dim, hidden_units);
+  fully_connected_layer f1(input_dim, hidden_units);
+  tanh_layer th1(hidden_units);
   dropout_layer dropout(hidden_units, 0.5);
-  fully_connected_layer<tan_h> f2(hidden_units, output_dim);
-  nn << f1 << dropout << f2;
+  fully_connected_layer f2(hidden_units, output_dim);
+  tanh_layer th2(output_dim);
+  nn << f1 << th1 << dropout << f2 << th2;
 
   optimizer.alpha  = 0.003;  // TODO(nyanp): not optimized
   optimizer.lambda = 0.0;
@@ -278,8 +283,8 @@ void sample4_dropout(const string& data_dir) {
 void sample5_unbalanced_training_data(const string& data_dir) {
   // keep the network relatively simple
   const serial_size_t num_hidden_units = 20;
-  auto nn_standard = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
-  auto nn_balanced = make_mlp<tan_h>({28 * 28, num_hidden_units, 10});
+  auto nn_standard = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
+  auto nn_balanced = make_mlp<tanh_layer>({28 * 28, num_hidden_units, 10});
   gradient_descent optimizer;
 
   // load MNIST dataset
@@ -378,7 +383,7 @@ void sample6_graph() {
   auto in1   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto in2   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto added = std::make_shared<add>(2, 3);
-  auto out   = std::make_shared<linear_layer<relu>>(3);
+  auto out   = std::make_shared<linear_layer>(3);
 
   // connect
   (in1, in2) << added;

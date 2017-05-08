@@ -98,7 +98,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 Nothing. All you need is a C++11 compiler.
 
 ## Build
-tiny-dnn is header-ony, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
+tiny-dnn is header-only, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
 
 ```
 cmake .
@@ -151,10 +151,10 @@ void construct_cnn() {
     network<sequential> net;
 
     // add layers
-    net << conv<tan_h>(32, 32, 5, 1, 6)  // in:32x32x1, 5x5conv, 6fmaps
-        << ave_pool<tan_h>(28, 28, 6, 2) // in:28x28x6, 2x2pooling
-        << fc<tan_h>(14 * 14 * 6, 120)   // in:14x14x6, out:120
-        << fc<identity>(120, 10);        // in:120,     out:10
+    net << conv(32, 32, 5, 1, 6) << tanh()  // in:32x32x1, 5x5conv, 6fmaps
+        << ave_pool(28, 28, 6, 2) << tanh() // in:28x28x6, 2x2pooling
+        << fc(14 * 14 * 6, 120) << tanh()   // in:14x14x6, out:120
+        << fc(120, 10);                     // in:120,     out:10
 
     assert(net.in_data_size() == 32 * 32);
     assert(net.out_data_size() == 10);
@@ -170,7 +170,7 @@ void construct_cnn() {
     adagrad optimizer;
 
     // train (50-epoch, 30-minibatch)
-    net.train<mse>(optimizer, train_images, train_labels, 30, 50);
+    net.train<mse, adagrad>(optimizer, train_images, train_labels, 30, 50);
 
     // save
     net.save("net");
@@ -191,8 +191,7 @@ using namespace tiny_dnn::layers;
 void construct_mlp() {
     network<sequential> net;
 
-    net << fc<sigmoid>(32 * 32, 300)
-        << fc<identity>(300, 10);
+    net << fc(32 * 32, 300) << sigmoid() << fc(300, 10);
 
     assert(net.in_data_size() == 32 * 32);
     assert(net.out_data_size() == 10);
@@ -207,7 +206,7 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
 void construct_mlp() {
-    auto mynet = make_mlp<tan_h>({ 32 * 32, 300, 10 });
+    auto mynet = make_mlp<tanh>({ 32 * 32, 300, 10 });
 
     assert(mynet.in_data_size() == 32 * 32);
     assert(mynet.out_data_size() == 10);

@@ -34,7 +34,10 @@ inline void accumulate_db(const index3d<serial_size_t> &out,
     }
   } else {
     auto area        = out.area();
-    size_t nblocks   = area / 8;
+    size_t n8        = area / 64;
+    size_t n4        = (area % 64) / 32;
+    size_t n2        = (area % 32) / 16;
+    size_t n1        = (area % 16) / 8;
     size_t remainder = area & 7;
     // prepare load-mask beforehand
     static const int32_t masks[] = {
@@ -46,15 +49,47 @@ inline void accumulate_db(const index3d<serial_size_t> &out,
       const float *delta = &curr_delta[idx];
       __m256 sum0        = _mm256_setzero_ps();
       __m256 sum1        = _mm256_setzero_ps();
-      for (size_t i = 0; i < nblocks / 2; ++i) {
-        sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + i * 16));
-        sum1 = _mm256_add_ps(sum1, _mm256_loadu_ps(delta + i * 16 + 8));
+      __m256 sum2        = _mm256_setzero_ps();
+      __m256 sum3        = _mm256_setzero_ps();
+      __m256 sum4        = _mm256_setzero_ps();
+      __m256 sum5        = _mm256_setzero_ps();
+      __m256 sum6        = _mm256_setzero_ps();
+      __m256 sum7        = _mm256_setzero_ps();
+      for (size_t i = 0; i < n8; ++i) {
+        sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + i * 64 + 0));
+        sum1 = _mm256_add_ps(sum1, _mm256_loadu_ps(delta + i * 64 + 8));
+        sum2 = _mm256_add_ps(sum2, _mm256_loadu_ps(delta + i * 64 + 16));
+        sum3 = _mm256_add_ps(sum3, _mm256_loadu_ps(delta + i * 64 + 24));
+        sum4 = _mm256_add_ps(sum4, _mm256_loadu_ps(delta + i * 64 + 32));
+        sum5 = _mm256_add_ps(sum5, _mm256_loadu_ps(delta + i * 64 + 40));
+        sum6 = _mm256_add_ps(sum6, _mm256_loadu_ps(delta + i * 64 + 48));
+        sum7 = _mm256_add_ps(sum7, _mm256_loadu_ps(delta + i * 64 + 56));
       }
-      if (nblocks & 1) {
-        sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + (nblocks - 1) * 8));
+      delta += n8 * 64;
+      if (n4) {
+        sum0 = _mm256_add_ps(sum0, _mm256_loadu_ps(delta + 0));
+        sum1 = _mm256_add_ps(sum1, _mm256_loadu_ps(delta + 8));
+        sum2 = _mm256_add_ps(sum2, _mm256_loadu_ps(delta + 16));
+        sum3 = _mm256_add_ps(sum3, _mm256_loadu_ps(delta + 24));
+        delta += 32;
+      }
+      if (n2) {
+        sum4 = _mm256_add_ps(sum4, _mm256_loadu_ps(delta + 0));
+        sum5 = _mm256_add_ps(sum5, _mm256_loadu_ps(delta + 8));
+        delta += 16;
+      }
+      if (n1) {
+        sum6 = _mm256_add_ps(sum6, _mm256_loadu_ps(delta));
+        delta += 8;
       }
       sum0 = _mm256_add_ps(sum0, sum1);
-      sum1 = _mm256_maskload_ps(delta + nblocks * 8, mask);
+      sum2 = _mm256_add_ps(sum2, sum3);
+      sum4 = _mm256_add_ps(sum4, sum5);
+      sum6 = _mm256_add_ps(sum6, sum7);
+      sum1 = _mm256_maskload_ps(delta, mask);
+      sum0 = _mm256_add_ps(sum0, sum2);
+      sum4 = _mm256_add_ps(sum4, sum6);
+      sum0 = _mm256_add_ps(sum0, sum4);
       sum0 = _mm256_add_ps(sum0, sum1);
       db[outc] += _mm_cvtss_f32(hsum256_ps(sum0));
     }
@@ -79,7 +114,7 @@ inline void accumulate_dw(const core::conv_params &params,
 
   if (out.width_ == 1 && out.height_ == 1) {
     const float *pprev_out = &prev_out[0];
-    VECTORIZE_ALIGN(32) float floats[28];
+    alignas(32) float floats[28];
     for (serial_size_t inc = 0; inc < in.depth_;
          ++inc, pprev_out += in_padded_area) {
       size_t in_padded_width = in_padded.width_;
@@ -841,7 +876,7 @@ void avx_conv2d_5x5_back_kernel(
   std::vector<std::vector<float, Allocator>> &db,
   std::vector<std::vector<float, Allocator>> &curr_delta,
   std::vector<std::vector<float, Allocator>> &prev_delta) {
-  for_i(prev_out.size(), [&](int sample) {
+  for_i(prev_out.size(), [&](size_t sample) {
     avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample],
                                    db[sample], curr_delta[sample],
                                    &prev_delta[sample]);

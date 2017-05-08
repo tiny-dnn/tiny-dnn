@@ -10,6 +10,8 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
+using namespace tiny_dnn::activation;
+
 namespace tiny_dnn {
 
 TEST(serialization, serialize_conv) {
@@ -19,7 +21,7 @@ TEST(serialization, serialize_conv) {
     {
         "nodes": [
             {
-                "type": "conv<sigmoid>",
+                "type": "conv",
                 "in_size" : {
                     "width": 20,
                     "height" : 20,
@@ -57,7 +59,7 @@ TEST(serialization, serialize_maxpool) {
     {
         "nodes": [
             {
-                "type": "maxpool<softmax>",
+                "type": "maxpool",
                 "in_size": {
                     "width": 10,
                     "height": 10,
@@ -87,7 +89,7 @@ TEST(serialization, serialize_avepool) {
     {
         "nodes": [
             {
-                "type": "avepool<relu>",
+                "type": "avepool",
                 "in_size": {
                     "width": 10,
                     "height": 10,
@@ -215,7 +217,7 @@ TEST(serialization, serialize_fully) {
     {
         "nodes": [
             {
-                "type": "fully_connected<elu>",
+                "type": "fully_connected",
                 "in_size": 100,
                 "out_size": 20,
                 "has_bias": false
@@ -231,6 +233,31 @@ TEST(serialization, serialize_fully) {
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
 }
 
+TEST(serialization, serialize_global_average_pooling) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "global_average_pooling",
+                "in_shape": {
+                    "width": 5,
+                    "height": 4,
+                    "depth": 6
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "global-ave-pool");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 4, 6));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(6, 1, 1));
+}
+
 TEST(serialization, serialize_lrn) {
   network<sequential> net;
 
@@ -238,7 +265,7 @@ TEST(serialization, serialize_lrn) {
     {
         "nodes": [
             {
-                "type": "lrn<elu>",
+                "type": "lrn",
                 "in_shape": {
                     "width": 5,
                     "height": 4,
@@ -317,13 +344,190 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(net[0]->out_shape()[1], shape3d(3, 2, 1));
 }
 
+TEST(serialization, serialize_sigmoid) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "sigmoid",
+                "in_size" : {
+                    "width": 3,
+                    "height" : 2,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "sigmoid-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 2, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 2, 1));
+}
+
+TEST(serialization, serialize_tanh) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "tanh",
+                "in_size" : {
+                    "width": 20,
+                    "height" : 20,
+                    "depth" : 10
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "tanh-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 20, 10));
+}
+
+TEST(serialization, serialize_relu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "relu",
+                "in_size" : {
+                    "width": 1,
+                    "height" : 128,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "relu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(1, 128, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(1, 128, 1));
+}
+
+TEST(serialization, serialize_softmax) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "softmax",
+                "in_size" : {
+                    "width": 1000,
+                    "height" : 1,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "softmax-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(1000, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(1000, 1, 1));
+}
+
+TEST(serialization, serialize_leaky_relu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "leaky_relu",
+                "in_size" : {
+                    "width": 256,
+                    "height" : 256,
+                    "depth" : 1
+                },
+                "epsilon": 0.1
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "leaky-relu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(256, 256, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(256, 256, 1));
+  EXPECT_FLOAT_EQ(net.at<leaky_relu_layer>(0).epsilon_value(), float_t(0.1));
+}
+
+TEST(serialization, serialize_elu) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "elu",
+                "in_size" : {
+                    "width": 10,
+                    "height" : 10,
+                    "depth" : 3
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "elu-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+}
+
+TEST(serialization, serialize_tanh_p1m2) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "tanh_scaled",
+                "in_size" : {
+                    "width": 5,
+                    "height" : 10,
+                    "depth" : 1
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "tanh-scaled-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
+}
+
 TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer<tan_h>(10, 100)
+  net1 << fully_connected_layer(10, 100) << tanh()
        << dropout_layer(100, 0.3f, net_phase::test)
-       << fully_connected_layer<softmax>(100, 9)
-       << convolutional_layer<tan_h>(3, 3, 3, 1, 1);
+       << fully_connected_layer(100, 9) << softmax()
+       << convolutional_layer(3, 3, 3, 1, 1) << tanh();
 
   auto json = net1.to_json();
 
@@ -336,21 +540,25 @@ TEST(serialization, sequential_to_json) {
   EXPECT_EQ(net1[1]->in_shape(), net2[1]->in_shape());
   EXPECT_EQ(net1[2]->in_shape(), net2[2]->in_shape());
   EXPECT_EQ(net1[3]->in_shape(), net2[3]->in_shape());
+  EXPECT_EQ(net1[4]->in_shape(), net2[4]->in_shape());
+  EXPECT_EQ(net1[5]->in_shape(), net2[5]->in_shape());
 
   EXPECT_EQ(net1[0]->layer_type(), net2[0]->layer_type());
   EXPECT_EQ(net1[1]->layer_type(), net2[1]->layer_type());
   EXPECT_EQ(net1[2]->layer_type(), net2[2]->layer_type());
   EXPECT_EQ(net1[3]->layer_type(), net2[3]->layer_type());
+  EXPECT_EQ(net1[4]->layer_type(), net2[4]->layer_type());
+  EXPECT_EQ(net1[5]->layer_type(), net2[5]->layer_type());
 
-  EXPECT_FLOAT_EQ(net1.at<dropout_layer>(1).dropout_rate(),
-                  net2.at<dropout_layer>(1).dropout_rate());
+  EXPECT_FLOAT_EQ(net1.at<dropout_layer>(2).dropout_rate(),
+                  net2.at<dropout_layer>(2).dropout_rate());
 }
 
 TEST(serialization, sequential_model) {
   network<sequential> net1, net2;
 
-  net1 << fully_connected_layer<tan_h>(10, 16)
-       << average_pooling_layer<relu>(4, 4, 1, 2)
+  net1 << fully_connected_layer(10, 16) << tanh()
+       << average_pooling_layer(4, 4, 1, 2) << relu()
        << power_layer(shape3d(2, 2, 1), 0.5f);
 
   net1.init_weight();
@@ -360,7 +568,7 @@ TEST(serialization, sequential_model) {
 
   net2.load(path, content_type::model);
 
-  for (int i = 0; i < 3; i++) {
+  for (size_t i = 0; i < net1.layer_size(); i++) {
     ASSERT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
     ASSERT_EQ(net1[i]->out_shape(), net2[i]->out_shape());
     ASSERT_EQ(net1[i]->layer_type(), net2[i]->layer_type());
@@ -369,10 +577,37 @@ TEST(serialization, sequential_model) {
 
 TEST(serialization, sequential_weights) {
   network<sequential> net1, net2;
+  vec_t data = {1, 2, 3, 4, 5, 6};
+
+  net1 << fully_connected_layer(6, 6) << sigmoid()
+       << fully_connected_layer(6, 4) << tanh() << fully_connected_layer(4, 2)
+       << relu() << fully_connected_layer(2, 2) << softmax();
+
+  net1.init_weight();
+  net1.set_netphase(net_phase::test);
+
+  auto path = unique_path();
+  net1.save(path, content_type::weights_and_model);
+
+  net2.load(path, content_type::weights_and_model);
+
+  auto res1 = net1.predict(data);
+  auto res2 = net2.predict(data);
+
+  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3f));
+
+  for (int i = 0; i < 2; i++) {
+    EXPECT_FLOAT_EQ(res1[i], res2[i]);
+  }
+}
+
+TEST(serialization, sequential_weights2) {
+  network<sequential> net1, net2;
   vec_t data = {1, 2, 3, 4, 5, 0};
 
   net1 << batch_normalization_layer(3, 2, 0.01f, 0.99f, net_phase::train)
-       << linear_layer<elu>(3 * 2, 2.0f, 0.5f);
+       << linear_layer(3 * 2, 2.0f, 0.5f) << elu()
+       << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu();
 
   net1.init_weight();
   net1.at<batch_normalization_layer>(0).update_immidiately(true);
@@ -398,13 +633,18 @@ TEST(serialization, graph_model_and_weights) {
   network<graph> net1, net2;
   vec_t in = {1, 2, 3};
 
-  fully_connected_layer<tan_h> f1(3, 4);
+  fully_connected_layer f1(3, 4);
+  tanh_layer a1(4);
   slice_layer s1(shape3d(2, 1, 2), slice_type::slice_channels, 2);
-  fully_connected_layer<softmax> f2(2, 2);
-  fully_connected_layer<elu> f3(2, 2);
+  fully_connected_layer f2(2, 2);
+  softmax_layer a2(2);
+  fully_connected_layer f3(2, 2);
+  elu_layer a3(2);
   elementwise_add_layer c4(2, 2);
 
-  f1 << s1;
+  f1 << a1 << s1;
+  f2 << a2;
+  f3 << a3;
   s1 << (f2, f3) << c4;
 
   construct_graph(net1, {&f1}, {&c4});

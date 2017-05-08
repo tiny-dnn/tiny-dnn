@@ -20,3 +20,5 @@ target_link_libraries( caffe_converter ${PROTOBUF_LIBRARY} )
 
 # Set C++11 mode 
 set_target_properties( caffe_converter PROPERTIES CXX_STANDARD 11 )
+
+cotire(caffe_converter)

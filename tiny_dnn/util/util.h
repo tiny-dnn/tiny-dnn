@@ -18,6 +18,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "tiny_dnn/config.h"
+
 #ifndef CNN_NO_SERIALIZATION
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
@@ -27,11 +29,11 @@
 #include <cereal/types/vector.hpp>
 #endif
 
-#include "tiny_dnn/config.h"
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parallel_for.h"
+#include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/random.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -212,11 +214,6 @@ std::string to_string(T value) {
   return os.str();
 }
 
-// boilerplate to resolve dependent name
-#define CNN_USE_LAYER_MEMBERS \
-  using layer::parallelize_;  \
-  using feedforward_layer<Activation>::h_
-
 #define CNN_LOG_VECTOR(vec, name)
 /*
 void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
@@ -306,17 +303,9 @@ inline std::vector<vector_type> std_input_order(bool has_bias) {
   }
 }
 
-inline std::vector<vector_type> std_output_order(bool has_activation) {
-  if (has_activation) {
-    return {vector_type::data, vector_type::aux};
-  } else {
-    return {vector_type::data};
-  }
-}
-
 inline void fill_tensor(tensor_t &tensor, float_t value) {
   for (auto &t : tensor) {
-    std::fill(t.begin(), t.end(), value);
+    vectorize::fill(&t[0], t.size(), value);
   }
 }
 

@@ -97,9 +97,7 @@ class concat_layer : public layer {
     }
   }
 
-#ifndef CNN_NO_SERIALIZATION
   friend struct serialization_buddy;
-#endif
 
  private:
   std::vector<shape3d> in_shapes_;
