@@ -112,7 +112,7 @@ void test(const string &model_file,
 
   int top_n = 5;
   partial_sort(sorted.begin(), sorted.begin() + top_n, sorted.end(),
-                greater<tiny_dnn::float_t>());
+               greater<tiny_dnn::float_t>());
 
   for (int i = 0; i < top_n; i++) {
     size_t idx =
