@@ -502,7 +502,7 @@ namespace xt
                 }
                 // insert j at end of number
                 std::size_t idx = s.find_last_not_of(" ");
-                s.insert(idx + 1, "j");
+                s.insert(idx + 1, "i");
                 out << s;
                 ++m_it;
                 return out;
@@ -631,6 +631,11 @@ namespace xt
         if (sz > print_options::print_options().threshold)
         {
             lim = print_options::print_options().edge_items;
+        }
+        if (sz == 0)
+        {
+            out << "{}";
+            return out;
         }
 
         precision_type temp_precision = (precision_type)out.precision();

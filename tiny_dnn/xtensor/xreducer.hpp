@@ -55,26 +55,23 @@ namespace xt
     template <class ST, class X>
     struct xreducer_shape_type;
 
-    namespace detail
-    {
-        template <class F, class CT, class X>
-        class reducing_iterator;
-    }
-
     template <class F, class CT, class X>
     class xreducer;
+
+    template <class F, class CT, class X>
+    class xreducer_stepper;
 
     template <class F, class CT, class X>
     struct xiterable_inner_types<xreducer<F, CT, X>>
     {
         using xexpression_type = std::decay_t<CT>;
         using inner_shape_type = typename xreducer_shape_type<typename xexpression_type::shape_type, X>::type;
-        using const_stepper = xindexed_stepper<xreducer<F, CT, X>>;
+        using const_stepper = xreducer_stepper<F, CT, X>;
         using stepper = const_stepper;
-        using const_broadcast_iterator = xiterator<const_stepper, inner_shape_type*>;
-        using broadcast_iterator = const_broadcast_iterator;
-        using const_iterator = const_broadcast_iterator;
+        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
         using iterator = const_iterator;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
     };
 
     /**
@@ -119,12 +116,6 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
-        using broadcast_iterator = typename iterable_base::broadcast_iterator;
-        using const_broadcast_iterator = typename iterable_base::const_broadcast_iterator;
-
-        using iterator = typename iterable_base::iterator;
-        using const_iterator = typename iterable_base::const_iterator;
-
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
@@ -161,11 +152,9 @@ namespace xt
         functor_type m_f;
         axes_type m_axes;
         inner_shape_type m_shape;
+        shape_type m_dim_mapping;
 
-        using index_type = xindex_type_t<typename xexpression_type::shape_type>;
-        mutable index_type m_index;
-
-        friend class detail::reducing_iterator<F, CT, X>;
+        friend class xreducer_stepper<F, CT, X>;
     };
 
     /*************************
@@ -218,6 +207,65 @@ namespace xt
     }
 #endif
 
+    /********************
+     * xreducer_stepper *
+     ********************/
+
+    template <class F, class CT, class X>
+    class xreducer_stepper
+    {
+
+    public:
+
+        using self_type = xreducer_stepper<F, CT, X>;
+        using xreducer_type = xreducer<F, CT, X>;
+
+        using value_type = typename xreducer_type::value_type;
+        using reference = typename xreducer_type::value_type;
+        using pointer = typename xreducer_type::const_pointer;
+        using size_type = typename xreducer_type::size_type;
+        using difference_type = typename xreducer_type::difference_type;
+
+        using xexpression_type = typename xreducer_type::xexpression_type;
+        using substepper_type = typename xexpression_type::const_stepper;
+        using shape_type = typename xreducer_type::shape_type;
+
+        xreducer_stepper(const xreducer_type& red, size_type offset, bool end = false);
+
+        reference operator*() const;
+
+        void step(size_type dim, size_type n = 1);
+        void step_back(size_type dim, size_type n = 1);
+        void reset(size_type dim);
+        void reset_back(size_type dim);
+
+        void to_begin();
+        void to_end();
+
+        bool equal(const self_type& rhs) const;
+
+    private:
+
+        reference aggregate(size_type dim) const;
+
+        substepper_type get_substepper_begin() const;
+        size_type get_dim(size_type dim) const noexcept;
+        size_type shape(size_type i) const noexcept;
+        size_type axis(size_type i) const noexcept;
+
+        const xreducer_type& m_reducer;
+        size_type m_offset;
+        mutable substepper_type m_stepper;
+    };
+
+    template <class F, class CT, class X>
+    bool operator==(const xreducer_stepper<F, CT, X>& lhs,
+                    const xreducer_stepper<F, CT, X>& rhs);
+
+    template <class F, class CT, class X>
+    bool operator!=(const xreducer_stepper<F, CT, X>& lhs,
+                    const xreducer_stepper<F, CT, X>& rhs);
+
     /******************
      * xreducer utils *
      ******************/
@@ -239,16 +287,18 @@ namespace xt
     {
         template <class InputIt, class ExcludeIt, class OutputIt>
         inline void excluding_copy(InputIt first, InputIt last,
-                                   ExcludeIt e_first, ExcludeIt e_last,
-                                   OutputIt d_first)
+            ExcludeIt e_first, ExcludeIt e_last,
+            OutputIt d_first, OutputIt map_first)
         {
             using difference_type = typename std::iterator_traits<InputIt>::difference_type;
             InputIt iter = first;
             while (iter != last && e_first != e_last)
             {
-                if (std::distance(first, iter) != difference_type(*e_first))
+                auto diff = std::distance(first, iter);
+                if (diff != difference_type(*e_first))
                 {
                     *d_first++ = *iter++;
+                    *map_first++ = diff;
                 }
                 else
                 {
@@ -256,155 +306,10 @@ namespace xt
                     ++e_first;
                 }
             }
+            auto diff = std::distance(first, iter);
+            auto end = std::distance(iter, last);
+            std::iota(map_first, map_first + end, diff);
             std::copy(iter, last, d_first);
-        }
-
-        template <class InputIt, class ExcludeIt, class OutputIt, class T>
-        inline void inject(InputIt first, InputIt last,
-                           ExcludeIt e_first, ExcludeIt e_last,
-                           OutputIt d_first, T default_value)
-        {
-            using difference_type = typename std::iterator_traits<InputIt>::difference_type;
-            OutputIt d_first_bu = d_first;
-            while (first != last && e_first != e_last)
-            {
-                if (std::distance(d_first_bu, d_first) != difference_type(*e_first))
-                {
-                    *d_first++ = *first++;
-                }
-                else
-                {
-                    *d_first++ = default_value;
-                    ++e_first;
-                }
-            }
-            std::copy(first, last, d_first);
-        }
-
-        // This is not a true iterator since two instances
-        // of reducing_iterator on the same xreducer share
-        // the same state. However this allows optimization
-        // and is not problematic since not in the public
-        // interface.
-        template <class F, class CT, class X>
-        class reducing_iterator
-        {
-
-        public:
-
-            using self_type = reducing_iterator<F, CT, X>;
-            using reducer_type = xreducer<F, CT, X>;
-            using value_type = typename reducer_type::value_type;
-            using reference = typename reducer_type::reference;
-            using pointer = typename reducer_type::pointer;
-            using difference_type = typename reducer_type::difference_type;
-            using size_type = typename reducer_type::size_type;
-            using iterator_category = std::forward_iterator_tag;
-
-            reducing_iterator() = default;
-            reducing_iterator(const reducer_type& reducer, bool end = false);
-
-            self_type& operator++();
-            self_type operator++(int);
-
-            reference operator*() const;
-
-            bool equal(const self_type& rhs) const;
-
-        private:
-
-            void increment();
-
-            size_type axes(size_type index) const;
-            size_type shape(size_type index) const;
-
-            const reducer_type& m_reducer;
-            bool m_end;
-        };
-
-        template <class F, class CT, class X>
-        inline bool operator==(const reducing_iterator<F, CT, X>& lhs,
-                               const reducing_iterator<F, CT, X>& rhs)
-        {
-            return lhs.equal(rhs);
-        }
-
-        template <class F, class CT, class X>
-        inline bool operator!=(const reducing_iterator<F, CT, X>& lhs,
-                               const reducing_iterator<F, CT, X>& rhs)
-        {
-            return !(lhs.equal(rhs));
-        }
-
-        /*************************************
-         * xreducing_iterator implementation *
-         *************************************/
-
-        template <class F, class CT, class X>
-        inline reducing_iterator<F, CT, X>::reducing_iterator(const reducer_type& reducer, bool end)
-            : m_reducer(reducer), m_end(end)
-        {
-        }
-
-        template <class F, class CT, class X>
-        inline auto reducing_iterator<F, CT, X>::operator++() -> self_type&
-        {
-            increment();
-            return *this;
-        }
-
-        template <class F, class CT, class X>
-        inline auto reducing_iterator<F, CT, X>::operator++(int) -> self_type
-        {
-            self_type tmp(*this);
-            ++(*this);
-            return tmp;
-        }
-
-        template <class F, class CT, class X>
-        inline auto reducing_iterator<F, CT, X>::operator*() const -> reference
-        {
-            return m_reducer.m_e.element(m_reducer.m_index.cbegin(), m_reducer.m_index.cend());
-        }
-
-        template <class F, class CT, class X>
-        inline bool reducing_iterator<F, CT, X>::equal(const self_type& rhs) const
-        {
-            return &m_reducer == &(rhs.m_reducer) && m_end == rhs.m_end;
-        }
-
-        template <class F, class CT, class X>
-        inline void reducing_iterator<F, CT, X>::increment()
-        {
-            size_type i = m_reducer.m_axes.size();
-            while (i != 0)
-            {
-                --i;
-                if (++(m_reducer.m_index[axes(i)]) != shape(axes(i)))
-                {
-                    return;
-                }
-                else
-                {
-                    m_reducer.m_index[axes(i)] = 0;
-                }
-            }
-            if (i == 0)
-            {
-                m_end = true;
-            }
-        }
-
-        template <class F, class CT, class X>
-        inline auto reducing_iterator<F, CT, X>::axes(size_type index) const -> size_type
-        {
-            return m_reducer.m_axes[index];
-        }
-
-        template <class F, class CT, class X>
-        inline auto reducing_iterator<F, CT, X>::shape(size_type index) const -> size_type
-        {
-            return m_reducer.m_e.shape()[index];
         }
     }
 
@@ -429,7 +334,7 @@ namespace xt
     inline xreducer<F, CT, X>::xreducer(Func&& func, CTA&& e, AX&& axes)
         : m_e(std::forward<CTA>(e)), m_f(std::forward<Func>(func)), m_axes(std::forward<AX>(axes)),
           m_shape(make_sequence<shape_type>(m_e.dimension() - m_axes.size(), 0)),
-          m_index(make_sequence<index_type>(m_e.dimension(), 0))
+          m_dim_mapping(make_sequence<shape_type>(m_e.dimension() - m_axes.size(), 0))
     {
         if (!std::is_sorted(m_axes.cbegin(), m_axes.cend()))
         {
@@ -437,7 +342,7 @@ namespace xt
         }
         detail::excluding_copy(m_e.shape().begin(), m_e.shape().end(),
                                m_axes.begin(), m_axes.end(),
-                               m_shape.begin());
+                               m_shape.begin(), m_dim_mapping.begin());
     }
     //@}
 
@@ -527,14 +432,13 @@ namespace xt
     template <class It>
     inline auto xreducer<F, CT, X>::element(It first, It last) const -> const_reference
     {
-        detail::inject(first, last, m_axes.cbegin(), m_axes.cend(),
-                       m_index.begin(), size_type(0));
-        using iter_type = detail::reducing_iterator<F, CT, X>;
-        iter_type iter = iter_type(*this);
-        iter_type iter_end = iter_type(*this, true);
-        value_type init_value = *iter;
-        value_type res = std::accumulate(++iter, iter_end, init_value, m_f);
-        return res;
+        auto stepper = const_stepper(*this, 0);
+        size_type dim = 0;
+        while (first != last)
+        {
+            stepper.step(dim++, *first++);
+        }
+        return *stepper;
     }
     //@}
 
@@ -572,7 +476,7 @@ namespace xt
     inline auto xreducer<F, CT, X>::stepper_begin(const S& shape) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(this, offset);
+        return const_stepper(*this, offset);
     }
 
     template <class F, class CT, class X>
@@ -580,7 +484,141 @@ namespace xt
     inline auto xreducer<F, CT, X>::stepper_end(const S& shape) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(this, offset, true);
+        return const_stepper(*this, offset, true);
+    }
+
+    /***********************************
+     * xreducer_stepper implementation *
+     ***********************************/
+
+    template <class F, class CT, class X>
+    inline xreducer_stepper<F, CT, X>::xreducer_stepper(const xreducer_type& red, size_type offset, bool end)
+        : m_reducer(red), m_offset(offset),
+          m_stepper(get_substepper_begin())
+    {
+        if (end)
+        {
+            to_end();
+        }
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::operator*() const -> reference
+    {
+        reference r = aggregate(0);
+        return r;
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::step(size_type dim, size_type n)
+    {
+        if (dim >= m_offset)
+            m_stepper.step(get_dim(dim), n);
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::step_back(size_type dim, size_type n)
+    {
+        if (dim >= m_offset)
+            m_stepper.step_back(get_dim(dim), n);
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::reset(size_type dim)
+    {
+        if (dim >= m_offset)
+            m_stepper.reset(get_dim(dim));
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::reset_back(size_type dim)
+    {
+        if (dim >= m_offset)
+            m_stepper.reset_back(get_dim(dim));
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::to_begin()
+    {
+        m_stepper.to_begin();
+    }
+
+    template <class F, class CT, class X>
+    inline void xreducer_stepper<F, CT, X>::to_end()
+    {
+        m_stepper.to_end();
+    }
+
+    template <class F, class CT, class X>
+    inline bool xreducer_stepper<F, CT, X>::equal(const self_type& rhs) const
+    {
+        return &m_reducer == &(rhs.m_reducer) && m_stepper.equal(rhs.m_stepper);
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::aggregate(size_type dim) const -> reference
+    {
+        size_type index = axis(dim);
+        size_type size = shape(index);
+        reference res;
+        if (dim != m_reducer.m_axes.size() - 1)
+        {
+            res = aggregate(dim + 1);
+            for (size_type i = 1; i != size; ++i)
+            {
+                m_stepper.step(index);
+                res = m_reducer.m_f(res, aggregate(dim + 1));
+            }
+        }
+        else
+        {
+            res = *m_stepper;
+            for (size_type i = 1; i != size; ++i)
+            {
+                m_stepper.step(index);
+                res = m_reducer.m_f(res, *m_stepper);
+            }
+        }
+        m_stepper.reset(index);
+        return res;
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::get_substepper_begin() const -> substepper_type
+    {
+        return m_reducer.m_e.stepper_begin(m_reducer.m_e.shape());
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::get_dim(size_type dim) const noexcept -> size_type
+    {
+        return m_reducer.m_dim_mapping[dim];
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::shape(size_type i) const noexcept -> size_type
+    {
+        return m_reducer.m_e.shape()[i];
+    }
+
+    template <class F, class CT, class X>
+    inline auto xreducer_stepper<F, CT, X>::axis(size_type i) const noexcept -> size_type
+    {
+        return m_reducer.m_axes[i];
+    }
+
+    template <class F, class CT, class X>
+    inline bool operator==(const xreducer_stepper<F, CT, X>& lhs,
+                           const xreducer_stepper<F, CT, X>& rhs)
+    {
+        return lhs.equal(rhs);
+    }
+
+    template <class F, class CT, class X>
+    inline bool operator!=(const xreducer_stepper<F, CT, X>& lhs,
+                           const xreducer_stepper<F, CT, X>& rhs)
+    {
+        return !lhs.equal(rhs);
     }
 }
 

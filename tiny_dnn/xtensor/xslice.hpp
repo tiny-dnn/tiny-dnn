@@ -232,21 +232,21 @@ namespace xt
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value && std::is_integral<MA>::value && std::is_integral<STEP>::value, xstepped_range<int>>
-        get(std::size_t size)
+        get(std::size_t size) const
         {
             return xstepped_range<int>(m_step > 0 ? 0 : int(size) - 1, m_max, m_step);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<std::is_integral<MI>::value && !std::is_integral<MA>::value && std::is_integral<STEP>::value, xstepped_range<int>>
-        get(std::size_t size)
+        get(std::size_t size) const
         {
             return xstepped_range<int>(m_min, m_step > 0 ? int(size) : -1, m_step);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value && !std::is_integral<MA>::value && std::is_integral<STEP>::value, xstepped_range<int>>
-        get(std::size_t size)
+        get(std::size_t size) const
         {
             int min_val_arg = m_step > 0 ? 0 : int(size) - 1;
             int max_val_arg = m_step > 0 ? int(size) : -1;
@@ -255,25 +255,24 @@ namespace xt
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<std::is_integral<MI>::value && !std::is_integral<MA>::value && !std::is_integral<STEP>::value, xrange<std::size_t>>
-        get(std::size_t size)
+        get(std::size_t size) const
         {
             return xrange<std::size_t>((std::size_t)m_min, size);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value && std::is_integral<MA>::value && !std::is_integral<STEP>::value, xrange<std::size_t>>
-            get(std::size_t /*size*/)
+        get(std::size_t /*size*/) const
         {
             return xrange<std::size_t>(0, (std::size_t)m_max);
         }
 
         template <class MI = A, class MA = B, class STEP = C>
         inline std::enable_if_t<!std::is_integral<MI>::value && !std::is_integral<MA>::value && !std::is_integral<STEP>::value, xall<std::size_t>>
-        get(std::size_t size)
+        get(std::size_t size) const
         {
             return xall<std::size_t>(size);
         }
-
     private:
         A m_min;
         B m_max;

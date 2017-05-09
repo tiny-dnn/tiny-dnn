@@ -79,7 +79,7 @@ namespace xt
      **********************************/
 
     inline transpose_error::transpose_error(const std::string& msg)
-        : m_message(msg){};
+        : m_message(msg){}
 
     inline const char* transpose_error::what() const noexcept
     {

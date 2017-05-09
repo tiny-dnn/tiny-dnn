@@ -44,6 +44,8 @@ namespace xt
     template <class... Args>
     constexpr layout_type compute_layout(Args... args) noexcept;
 
+    constexpr layout_type default_assignable_layout(layout_type l) noexcept;
+
     /******************
      * Implementation *
      ******************/
@@ -79,6 +81,11 @@ namespace xt
         return detail::compute_layout_impl(args...);
     }
 
+    constexpr layout_type default_assignable_layout(layout_type l) noexcept
+    {
+        return (l == layout_type::row_major || l == layout_type::column_major) ?
+            l : layout_type::row_major;
+    }
 
 }
 

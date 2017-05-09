@@ -71,6 +71,7 @@ namespace xt
         using temporary_type = typename xfunctorview_temporary_type<F, xexpression_type>::type;
     };
 
+#define DL DEFAULT_LAYOUT
     /**
      * @class xfunctorview
      * @brief View of an xexpression .
@@ -110,11 +111,31 @@ namespace xt
         using stepper = xfunctor_stepper<functor_type, typename xexpression_type::stepper>;
         using const_stepper = xfunctor_stepper<functor_type, typename xexpression_type::const_stepper>;
 
-        using broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::broadcast_iterator>;
-        using const_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::const_broadcast_iterator>;
-
         using iterator = xfunctor_iterator<functor_type, typename xexpression_type::iterator>;
         using const_iterator = xfunctor_iterator<functor_type, typename xexpression_type::const_iterator>;
+
+        template <layout_type L>
+        using broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template broadcast_iterator<L>>;
+        template <layout_type L>
+        using const_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template const_broadcast_iterator<L>>;
+
+        template <class S, layout_type L>
+        using shaped_xiterator = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S, L>>;
+        template <class S, layout_type L>
+        using const_shaped_xiterator = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S, L>>;
+
+        using reverse_iterator = xfunctor_iterator<functor_type, typename xexpression_type::reverse_iterator>;
+        using const_reverse_iterator = xfunctor_iterator<functor_type, typename xexpression_type::const_reverse_iterator>;
+
+        template <layout_type L>
+        using reverse_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template reverse_broadcast_iterator<L>>;
+        template <layout_type L>
+        using const_reverse_broadcast_iterator = xfunctor_iterator<functor_type, typename xexpression_type::template const_reverse_broadcast_iterator<L>>;
+
+        template <class S, layout_type L>
+        using reverse_shaped_xiterator = xfunctor_iterator<functor_type, typename xexpression_type::template reverse_shaped_xiterator<S, L>>;
+        template <class S, layout_type L>
+        using const_reverse_shaped_xiterator = xfunctor_iterator<functor_type, typename xexpression_type::template const_reverse_shaped_xiterator<S, L>>;
 
         static constexpr layout_type static_layout = xexpression_type::static_layout;
         static constexpr bool contiguous_layout = false;
@@ -157,44 +178,86 @@ namespace xt
         template <class S>
         bool is_trivial_broadcast(const S& strides) const;
 
-        iterator begin();
-        iterator end();
+        iterator begin() noexcept;
+        iterator end() noexcept;
 
-        const_iterator begin() const;
-        const_iterator end() const;
-        const_iterator cbegin() const;
-        const_iterator cend() const;
+        const_iterator begin() const noexcept;
+        const_iterator end() const noexcept;
+        const_iterator cbegin() const noexcept;
+        const_iterator cend() const noexcept;
 
-        broadcast_iterator xbegin();
-        broadcast_iterator xend();
+        template <layout_type L = DL>
+        broadcast_iterator<L> xbegin() noexcept;
+        template <layout_type L = DL>
+        broadcast_iterator<L> xend() noexcept;
 
-        const_broadcast_iterator xbegin() const;
-        const_broadcast_iterator xend() const;
-        const_broadcast_iterator cxbegin() const;
-        const_broadcast_iterator cxend() const;
+        template <layout_type L = DL>
+        const_broadcast_iterator<L> xbegin() const noexcept;
+        template <layout_type L = DL>
+        const_broadcast_iterator<L> xend() const noexcept;
+        template <layout_type L = DL>
+        const_broadcast_iterator<L> cxbegin() const noexcept;
+        template <layout_type L = DL>
+        const_broadcast_iterator<L> cxend() const noexcept;
+
+        template <class S, layout_type L = DL>
+        shaped_xiterator<S, L> xbegin(const S& shape) noexcept;
+        template <class S, layout_type L = DL>
+        shaped_xiterator<S, L> xend(const S& shape) noexcept;
+
+        template <class S, layout_type L = DL>
+        const_shaped_xiterator<S, L> xbegin(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_shaped_xiterator<S, L> xend(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_shaped_xiterator<S, L> cxbegin(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_shaped_xiterator<S, L> cxend(const S& shape) const noexcept;
+
+        reverse_iterator rbegin() noexcept;
+        reverse_iterator rend() noexcept;
+
+        const_reverse_iterator rbegin() const noexcept;
+        const_reverse_iterator rend() const noexcept;
+        const_reverse_iterator crbegin() const noexcept;
+        const_reverse_iterator crend() const noexcept;
+
+        template <layout_type L = DL>
+        reverse_broadcast_iterator<L> xrbegin() noexcept;
+        template <layout_type L = DL>
+        reverse_broadcast_iterator<L> xrend() noexcept;
+
+        template <layout_type L = DL>
+        const_reverse_broadcast_iterator<L> xrbegin() const noexcept;
+        template <layout_type L = DL>
+        const_reverse_broadcast_iterator<L> xrend() const noexcept;
+        template <layout_type L = DL>
+        const_reverse_broadcast_iterator<L> cxrbegin() const noexcept;
+        template <layout_type L = DL>
+        const_reverse_broadcast_iterator<L> cxrend() const noexcept;
+
+        template <class S, layout_type L = DL>
+        reverse_shaped_xiterator<S, L> xrbegin(const S& shape) noexcept;
+        template <class S, layout_type L = DL>
+        reverse_shaped_xiterator<S, L> xrend(const S& shape) noexcept;
+
+        template <class S, layout_type L = DL>
+        const_reverse_shaped_xiterator<S, L> xrbegin(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_reverse_shaped_xiterator<S, L> xrend(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_reverse_shaped_xiterator<S, L> cxrbegin(const S& shape) const noexcept;
+        template <class S, layout_type L = DL>
+        const_reverse_shaped_xiterator<S, L> cxrend(const S& shape) const noexcept;
 
         template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S>> xbegin(const S& shape);
+        stepper stepper_begin(const S& shape) noexcept;
         template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S>> xend(const S& shape);
-
+        stepper stepper_end(const S& shape) noexcept;
         template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>> xbegin(const S& shape) const;
+        const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>> xend(const S& shape) const;
-        template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>> cxbegin(const S& shape) const;
-        template <class S>
-        xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>> cxend(const S& shape) const;
-
-        template <class S>
-        stepper stepper_begin(const S& shape);
-        template <class S>
-        stepper stepper_end(const S& shape);
-        template <class S>
-        const_stepper stepper_begin(const S& shape) const;
-        template <class S>
-        const_stepper stepper_end(const S& shape) const;
+        const_stepper stepper_end(const S& shape) const noexcept;
 
     private:
 
@@ -205,6 +268,8 @@ namespace xt
         void assign_temporary_impl(temporary_type& tmp);
         friend class xview_semantic<xfunctorview<F, CT>>;
     };
+
+#undef DL
 
     /*********************************
      * xfunctor_iterator declaration *
@@ -294,6 +359,9 @@ namespace xt
         void step(size_type dim, size_type n = 1);
         void step_back(size_type dim, size_type n = 1);
         void reset(size_type dim);
+        void reset_back(size_type dim);
+
+        void to_begin();
         void to_end();
 
         bool equal(const xfunctor_stepper& rhs) const;
@@ -317,7 +385,7 @@ namespace xt
      *******************************/
 
     /**
-     * @name Constructor
+     * @name Constructors
      */
     //@{
 
@@ -329,6 +397,19 @@ namespace xt
     template <class F, class CT>
     inline xfunctorview<F, CT>::xfunctorview(CT e) noexcept
         : m_e(e), m_functor(functor_type())
+    {
+    }
+
+    /**
+    * Constructs an xfunctorview expression wrappering the specified \ref xexpression.
+    *
+    * @param func the functor to be applied to the elements of the underlying expression.
+    * @param e the underlying expression
+    */
+    template <class F, class CT>
+    template <class Func, class E>
+    inline xfunctorview<F, CT>::xfunctorview(Func&& func, E&& e) noexcept
+        : m_e(std::forward<E>(e)), m_functor(std::forward<Func>(func))
     {
     }
     //@}
@@ -535,14 +616,14 @@ namespace xt
     //@}
 
     /**
-     * @name ITerators
+     * @name Iterators
      */
     //@{
     /**
      * Returns an iterator to the first element of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::begin() -> iterator
+    inline auto xfunctorview<F, CT>::begin() noexcept -> iterator
     {
         return iterator(m_e.begin(), &m_functor);
     }
@@ -552,7 +633,7 @@ namespace xt
      * of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::end() -> iterator
+    inline auto xfunctorview<F, CT>::end() noexcept -> iterator
     {
         return iterator(m_e.end(), &m_functor);
     }
@@ -561,7 +642,7 @@ namespace xt
      * Returns a constant iterator to the first element of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::begin() const -> const_iterator
+    inline auto xfunctorview<F, CT>::begin() const noexcept -> const_iterator
     {
         return const_iterator(m_e.cbegin(), &m_functor);
     }
@@ -571,7 +652,7 @@ namespace xt
      * of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::end() const -> const_iterator
+    inline auto xfunctorview<F, CT>::end() const noexcept -> const_iterator
     {
         return const_iterator(m_e.cend(), &m_functor);
     }
@@ -580,7 +661,7 @@ namespace xt
      * Returns a constant iterator to the first element of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::cbegin() const -> const_iterator
+    inline auto xfunctorview<F, CT>::cbegin() const noexcept -> const_iterator
     {
         return const_iterator(m_e.cbegin(), &m_functor);
     }
@@ -590,149 +671,387 @@ namespace xt
      * of the expression.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::cend() const -> const_iterator
+    inline auto xfunctorview<F, CT>::cend() const noexcept -> const_iterator
     {
         return const_iterator(m_e.cend(), &m_functor);
     }
+    //@}
 
     /**
+     * @name Broadcast iterators
+     */
+    //@{
+    /**
      * Returns an iterator to the first element of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::xbegin() -> broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xbegin() noexcept -> broadcast_iterator<L>
     {
-        return broadcast_iterator(m_e.xbegin(), &m_functor);
+        return broadcast_iterator<L>(m_e.template xbegin<L>(), &m_functor);
     }
 
     /**
      * Returns an iterator to the element following the last element
      * of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::xend() -> broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xend() noexcept -> broadcast_iterator<L>
     {
-        return broadcast_iterator(m_e.xend(), &m_functor);
+        return broadcast_iterator<L>(m_e.template xend<L>(), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the first element of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::xbegin() const -> const_broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xbegin() const noexcept -> const_broadcast_iterator<L>
     {
-        return const_broadcast_iterator(m_e.cxend(), &m_functor);
+        return cxbegin<L>();
     }
 
     /**
      * Returns a constant iterator to the element following the last element
      * of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::xend() const -> const_broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xend() const noexcept -> const_broadcast_iterator<L>
     {
-        return const_broadcast_iterator(m_e.cxend(), &m_functor);
+        return cxend<L>();
     }
 
     /**
      * Returns a constant iterator to the first element of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::cxbegin() const -> const_broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::cxbegin() const noexcept -> const_broadcast_iterator<L>
     {
-        return const_broadcast_iterator(m_e.cxbegin(), &m_functor);
+        return const_broadcast_iterator<L>(m_e.template cxbegin<L>(), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the element following the last element
      * of the expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    inline auto xfunctorview<F, CT>::cxend() const -> const_broadcast_iterator
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::cxend() const noexcept -> const_broadcast_iterator<L>
     {
-        return const_broadcast_iterator(m_e.cxend(), &m_functor);
+        return const_broadcast_iterator<L>(m_e.template cxend<L>(), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the first element of the expression. The
      * iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::xbegin(const S& shape)
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xbegin(const S& shape) noexcept -> shaped_xiterator<S, L>
     {
-        return const_broadcast_iterator(m_e.xbegin(shape), &m_functor);
+        return shaped_xiterator<S, L>(m_e.template xbegin<S, L>(shape), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the element following the last element of the
      * expression. The iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::xend(const S& shape)
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xend(const S& shape) noexcept -> shaped_xiterator<S, L>
     {
-        using iterator_type = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::stepper, S>>;
-        return iterator_type(m_e.xend(shape), &m_functor);
+        return shaped_xiterator<S, L>(m_e.template xend<S, L>(shape), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the first element of the expression. The
      * iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::xbegin(const S& shape) const
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xbegin(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
     {
-        using iterator_type = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>;
-        return iteratoe_type(m_e.cxbegin(shape), &m_functor);
+        return cxbegin<S, L>(shape);
     }
 
     /**
      * Returns a constant iterator to the element following the last element of the
      * expression. The iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::xend(const S& shape) const
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xend(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
     {
-        using iterator_type = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>;
-        return iterator_type(m_e.cxend(shape), &m_functor);
+        return cxend<S, L>(shape);
     }
 
     /**
      * Returns a constant iterator to the first element of the expression. The
      * iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::cxbegin(const S& shape) const
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::cxbegin(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
     {
-        using iterator_type = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>;
-        return iterator_type(m_e.cxbegin(shape), &m_functor);
+        return const_shaped_xiterator<S, L>(m_e.template cxbegin<S, L>(shape), &m_functor);
     }
 
     /**
      * Returns a constant iterator to the element following the last element of the
      * expression. The iteration is broadcasted to the specified shape.
      * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
      */
     template <class F, class CT>
-    template <class S>
-    inline auto xfunctorview<F, CT>::cxend(const S& shape) const
-        -> xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::cxend(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
     {
-        using iterator_type = xfunctor_iterator<functor_type, xiterator<typename xexpression_type::const_stepper, S>>;
-        return iterator_type(m_e.cxend(shape), &m_functor);
+        return const_shaped_xiterator<S, L>(m_e.template cxend<S, L>(shape), &m_functor);
+    }
+    //@}
+
+    /**
+     * @name Reverse iterators
+     */
+    //@{
+    /**
+     * Returns an iterator to the first element of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::rbegin() noexcept -> reverse_iterator
+    {
+        return reverse_iterator(m_e.rbegin(), &m_functor);
+    }
+
+    /**
+     * Returns an iterator to the element following the last element
+     * of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::rend() noexcept -> reverse_iterator
+    {
+        return reverse_iterator(m_e.rend(), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::rbegin() const noexcept -> const_reverse_iterator
+    {
+        return crbegin();
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::rend() const noexcept -> const_reverse_iterator
+    {
+        return crend();
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::crbegin() const noexcept -> const_reverse_iterator
+    {
+        return const_reverse_iterator(m_e.crbegin(), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     */
+    template <class F, class CT>
+    inline auto xfunctorview<F, CT>::crend() const noexcept -> const_reverse_iterator
+    {
+        return const_reverse_iterator(m_e.crend(), &m_functor);
+    }
+    //@}
+
+    /**
+     * @name Reverse broadcast iterators
+     */
+    //@{
+    /**
+     * Returns an iterator to the first element of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xrbegin() noexcept -> reverse_broadcast_iterator<L>
+    {
+        return reverse_broadcast_iterator<L>(m_e.template xrbegin<L>(), &m_functor);
+    }
+
+    /**
+     * Returns an iterator to the element following the last element
+     * of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xrend() noexcept -> reverse_broadcast_iterator<L>
+    {
+        return reverse_broadcast_iterator<L>(m_e.template xrend<L>(), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xrbegin() const noexcept -> const_reverse_broadcast_iterator<L>
+    {
+        return cxrbegin<L>();
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::xrend() const noexcept -> const_reverse_broadcast_iterator<L>
+    {
+        return cxrend<L>();
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::cxrbegin() const noexcept -> const_reverse_broadcast_iterator<L>
+    {
+        return const_reverse_broadcast_iterator<L>(m_e.template cxrbegin<L>(), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <layout_type L>
+    inline auto xfunctorview<F, CT>::cxrend() const noexcept -> const_reverse_broadcast_iterator<L>
+    {
+        return const_reverse_broadcast_iterator<L>(m_e.template cxrend<L>(), &m_functor);
+    }
+
+    /**
+     * Returns an iterator to the first element of the expression. The
+     * iteration is broadcasted to the specified shape.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xrbegin(const S& shape) noexcept -> reverse_shaped_xiterator<S, L>
+    {
+        return reverse_shaped_xiterator<S, L>(m_e.template xrbegin<S, L>(shape), &m_functor);
+    }
+
+    /**
+     * Returns an iterator to the element following the last element of the
+     * reversed expression. The iteration is broadcasted to the specified shape.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xrend(const S& shape) noexcept -> reverse_shaped_xiterator<S, L>
+    {
+        return reverse_shaped_xiterator<S, L>(m_e.template xrend<S, L>(shape), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     * The iteration is broadcasted to the specified shape.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xrbegin(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
+    {
+        return cxrbegin<S, L>(shape);
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::xrend(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
+    {
+        return cxrend<S, L>();
+    }
+
+    /**
+     * Returns a constant iterator to the first element of the reversed expression.
+     * The iteration is broadcasted to the specified shape.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::cxrbegin(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
+    {
+        return const_reverse_shaped_xiterator<S, L>(m_e.template cxrbegin<S, L>(), &m_functor);
+    }
+
+    /**
+     * Returns a constant iterator to the element following the last element
+     * of the reversed expression.
+     * @param shape the shape used for broadcasting
+     * @tparam S type of the \c shape parameter.
+     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+     */
+    template <class F, class CT>
+    template <class S, layout_type L>
+    inline auto xfunctorview<F, CT>::cxrend(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
+    {
+        return const_reverse_shaped_xiterator<S, L>(m_e.template cxrend<S, L>(shape), &m_functor);
     }
     //@}
 
@@ -742,21 +1061,21 @@ namespace xt
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_begin(const S& shape) -> stepper
+    inline auto xfunctorview<F, CT>::stepper_begin(const S& shape) noexcept -> stepper
     {
         return stepper(m_e.stepper_begin(shape), &m_functor);
     }
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) -> stepper
+    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) noexcept -> stepper
     {
         return stepper(m_e.stepper_end(shape), &m_functor);
     }
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_begin(const S& shape) const -> const_stepper
+    inline auto xfunctorview<F, CT>::stepper_begin(const S& shape) const noexcept -> const_stepper
     {
         const xexpression_type& const_m_e = m_e;
         return const_stepper(const_m_e.stepper_begin(shape), &m_functor);
@@ -764,7 +1083,7 @@ namespace xt
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) const -> const_stepper
+    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) const noexcept -> const_stepper
     {
         const xexpression_type& const_m_e = m_e;
         return const_stepper(const_m_e.stepper_end(shape), &m_functor);
@@ -859,6 +1178,18 @@ namespace xt
     void xfunctor_stepper<F, ST>::reset(size_type dim)
     {
         m_stepper.reset(dim);
+    }
+
+    template <class F, class ST>
+    void xfunctor_stepper<F, ST>::reset_back(size_type dim)
+    {
+        m_stepper.reset_back(dim);
+    }
+
+    template <class F, class ST>
+    void xfunctor_stepper<F, ST>::to_begin()
+    {
+        m_stepper.to_begin();
     }
 
     template <class F, class ST>

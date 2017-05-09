@@ -89,6 +89,9 @@ namespace xt
         xarray_container(nested_initializer_list_t<value_type, 4> t);
         xarray_container(nested_initializer_list_t<value_type, 5> t);
 
+        template <class S = shape_type>
+        static xarray_container from_shape(S&& s);
+
         ~xarray_container() = default;
 
         xarray_container(const xarray_container&) = default;
@@ -358,6 +361,14 @@ namespace xt
     {
         base_type::reshape(xt::shape<shape_type>(t));
         L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+    }
+
+    template <class EC, layout_type L, class SC>
+    template <class S>
+    inline xarray_container<EC, L, SC> xarray_container<EC, L, SC>::from_shape(S&& s)
+    {
+        shape_type shape = forward_sequence<shape_type>(s);
+        return self_type(shape);
     }
     //@}
 

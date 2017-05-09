@@ -39,10 +39,10 @@ namespace xt
         using inner_shape_type = std::array<std::size_t, 1>;
         using const_stepper = xindexed_stepper<xindexview<CT, I>>;
         using stepper = xindexed_stepper<xindexview<CT, I>, false>;
-        using const_broadcast_iterator = xiterator<const_stepper, inner_shape_type*>;
-        using broadcast_iterator = xiterator<stepper, inner_shape_type*>;
-        using const_iterator = const_broadcast_iterator;
-        using iterator = broadcast_iterator;
+        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
+        using iterator = xiterator<stepper, inner_shape_type*, DEFAULT_LAYOUT>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
     };
 
     /**************
@@ -91,12 +91,6 @@ namespace xt
 
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
-
-        using broadcast_iterator = typename iterable_base::broadcast_iterator;
-        using const_broadcast_iterator = typename iterable_base::const_broadcast_iterator;
-
-        using iterator = typename iterable_base::iterator;
-        using const_iterator = typename iterable_base::const_iterator;
 
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         using base_index_type = xindex_type_t<shape_type>;

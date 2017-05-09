@@ -22,6 +22,22 @@
 
 namespace xt
 {
+    template <class T>
+    struct numeric_constants
+    {
+        static constexpr T PI =         3.141592653589793238463;
+        static constexpr T PI_2 =       1.57079632679489661923;
+        static constexpr T PI_4 =       0.785398163397448309616;
+        static constexpr T D_1_PI =     0.318309886183790671538;
+        static constexpr T D_2_PI =     0.636619772367581343076;
+        static constexpr T D_2_SQRTPI = 1.12837916709551257390;
+        static constexpr T SQRT2 =      1.41421356237309504880;
+        static constexpr T SQRT1_2 =    0.707106781186547524401;
+        static constexpr T E =          2.71828182845904523536;
+        static constexpr T LOG2E =      1.44269504088896340736;
+        static constexpr T LOG10E =     0.434294481903251827651;
+        static constexpr T LN2 =        0.693147180559945309417;
+    };
 
     /***********
      * Helpers *
@@ -41,6 +57,17 @@ namespace xt
         using argument_type = T;\
         using result_type = T;\
         constexpr T operator()(const T& arg) const {\
+            using std::NAME;\
+            return NAME(arg);\
+        }\
+    }
+
+#define UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(NAME)\
+    template <class T>\
+    struct NAME##_fun {\
+        using argument_type = T;\
+        using result_type = complex_value_type_t<T>;\
+        constexpr result_type operator()(const T& arg) const {\
             using std::NAME;\
             return NAME(arg);\
         }\
@@ -84,7 +111,7 @@ namespace xt
 
     namespace math
     {
-        UNARY_MATH_FUNCTOR(abs);
+        UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(abs);
         UNARY_MATH_FUNCTOR(fabs);
         BINARY_MATH_FUNCTOR(fmod);
         BINARY_MATH_FUNCTOR(remainder);
@@ -129,6 +156,7 @@ namespace xt
 #undef TERNARY_MATH_FUNCTOR
 #undef BINARY_MATH_FUNCTOR
 #undef UNARY_MATH_FUNCTOR
+#undef UNARY_MATH_FUNCTOR_COMPLEX_REDUCING
 
     /*******************
      * basic functions *
@@ -921,6 +949,92 @@ namespace xt
         -> detail::xfunction_type_t<math::isnan_fun, E>
     {
         return detail::make_xfunction<math::isnan_fun>(std::forward<E>(e));
+    }
+
+    namespace detail
+    {
+        template <class FUNCTOR, class T, std::size_t... Is>
+        inline auto get_functor(T&& args, std::index_sequence<Is...>)
+        {
+            return FUNCTOR(std::get<Is>(args)...);
+        }
+
+        template <template <class...> class F, class... A, class... E>
+        inline auto make_xfunction(std::tuple<A...>&& f_args, E&&... e) noexcept
+        {
+            using functor_type = F<common_value_type_t<std::decay_t<E>...>>;
+            using result_type = typename functor_type::result_type;
+            using type = xfunction<functor_type, result_type, const_xclosure_t<E>...>;
+            auto functor = get_functor<functor_type>(
+                std::forward<std::tuple<A...>>(f_args),
+                std::make_index_sequence<sizeof...(A)>{}
+            );
+            return type(std::move(functor), std::forward<E>(e)...);
+        }
+
+        template <class T>
+        struct isclose
+        {
+            using result_type = bool;
+            isclose(double rtol, double atol, bool equal_nan)
+                : m_rtol(rtol), m_atol(atol), m_equal_nan(equal_nan)
+            {}
+
+            bool operator()(const T& a, const T& b) const
+            {
+                if (m_equal_nan && std::isnan(a) && std::isnan(b))
+                {
+                    return true;
+                }
+                return std::abs(a - b) <= (m_atol + m_rtol * std::abs(b));
+            }
+
+        private:
+            double m_rtol;
+            double m_atol;
+            bool m_equal_nan;
+        };
+    }
+    /**
+     * @ingroup classif_functions
+     * @brief Element-wise closeness detection
+     *
+     * Returns an \ref xfunction that evaluates to
+     * true if the element in e1 and e2 are close to each other
+     * according to parameters ``atol`` and ``rtol``.
+     * The equation is: ``std::abs(a - b) <= (m_atol + m_rtol * std::abs(b))``.
+     *
+     * @param e1, @param e2 input arrays to compare
+     * @param rtol the relative tolerance parameter (default 1e-05)
+     * @param atol the absolute tolerance parameter (default 1e-08)
+     * @param equal_nan if true, isclose returns true if both elements of a and b are NaN
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto isclose(E1&& a, E2&& b, double rtol = 1e-05, double atol = 1e-08, bool equal_nan = false) noexcept
+    {
+        return detail::make_xfunction<detail::isclose>(std::make_tuple(rtol, atol, equal_nan),
+                                                       std::forward<E1>(a), std::forward<E2>(b));
+    }
+
+    /**
+     * @ingroup classif_functions
+     * @brief Check if all elements in \em a are close to the
+     * corresponding elements in \em b.
+     *
+     * Returns an \ref xfunction that evaluates to
+     * true if all elements in e1 and e2 are close to each other
+     * according to parameters ``atol`` and ``rtol``.
+     * @param e1, @param e2 input arrays to compare
+     * @param rtol the relative tolerance parameter (default 1e-05)
+     * @param atol the absolute tolerance parameter (default 1e-08)
+     * @param equal_nan if true, isclose returns true if both elements of a and b are NaN
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto allclose(E1&& a, E2&& b, double rtol = 1e-05, double atol = 1e-08) noexcept
+    {
+        return xt::all(isclose(std::forward<E1>(a), std::forward<E2>(b), rtol, atol));
     }
 
     /**********************

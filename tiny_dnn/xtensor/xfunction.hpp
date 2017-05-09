@@ -18,7 +18,7 @@
 #include <utility>
 
 #include "xexpression.hpp"
-#include "xiterator.hpp"
+#include "xiterable.hpp"
 #include "xlayout.hpp"
 #include "xscalar.hpp"
 #include "xutils.hpp"
@@ -87,6 +87,21 @@ namespace xt
     template <class F, class R, class... CT>
     class xfunction_stepper;
 
+    template <class F, class R, class... CT>
+    class xfunction;
+
+    template <class F, class R, class... CT>
+    struct xiterable_inner_types<xfunction<F, R, CT...>>
+    {
+        using inner_shape_type = promote_shape_t<typename std::decay_t<CT>::shape_type...>;
+        using const_iterator = xfunction_iterator<F, R, CT...>;
+        using iterator = const_iterator;
+        using const_stepper = xfunction_stepper<F, R, CT...>;
+        using stepper = const_stepper;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
+    };
+
     /*************
      * xfunction *
      *************/
@@ -103,7 +118,8 @@ namespace xt
      * @tparam CT the closure types for arguments of the function
      */
     template <class F, class R, class... CT>
-    class xfunction : public xexpression<xfunction<F, R, CT...>>
+    class xfunction : public xexpression<xfunction<F, R, CT...>>,
+                      public xconst_iterable<xfunction<F, R, CT...>>
     {
 
     public:
@@ -119,16 +135,18 @@ namespace xt
         using size_type = detail::common_size_type_t<std::decay_t<CT>...>;
         using difference_type = detail::common_difference_type_t<std::decay_t<CT>...>;
 
-        using shape_type = promote_shape_t<typename std::decay_t<CT>::shape_type...>;
+        using iterable_base = xconst_iterable<xfunction<F, R, CT...>>;
+        using inner_shape_type = typename iterable_base::inner_shape_type;
+        using shape_type = inner_shape_type;
 
-        using const_iterator = xfunction_iterator<F, R, CT...>;
-        using iterator = const_iterator;
+        using iterator = typename iterable_base::iterator;
+        using const_iterator = typename iterable_base::const_iterator;
 
-        using const_stepper = xfunction_stepper<F, R, CT...>;
-        using stepper = const_stepper;
+        using stepper = typename iterable_base::stepper;
+        using const_stepper = typename iterable_base::const_stepper;
 
-        using const_broadcast_iterator = xiterator<const_stepper, shape_type*>;
-        using broadcast_iterator = const_broadcast_iterator;
+        using reverse_iterator = typename iterable_base::reverse_iterator;
+        using const_reverse_iterator = typename iterable_base::const_reverse_iterator;
 
         static constexpr layout_type static_layout = compute_layout(std::decay_t<CT>::static_layout...);
         static constexpr bool contiguous_layout = and_c<std::decay_t<CT>::contiguous_layout...>::value;
@@ -161,19 +179,10 @@ namespace xt
         const_iterator cbegin() const noexcept;
         const_iterator cend() const noexcept;
 
-        const_broadcast_iterator xbegin() const noexcept;
-        const_broadcast_iterator xend() const noexcept;
-        const_broadcast_iterator cxbegin() const noexcept;
-        const_broadcast_iterator cxend() const noexcept;
-
-        template <class S>
-        xiterator<const_stepper, S> xbegin(const S& shape) const noexcept;
-        template <class S>
-        xiterator<const_stepper, S> xend(const S& shape) const noexcept;
-        template <class S>
-        xiterator<const_stepper, S> cxbegin(const S& shape) const noexcept;
-        template <class S>
-        xiterator<const_stepper, S> cxend(const S& shape) const noexcept;
+        const_reverse_iterator rbegin() const noexcept;
+        const_reverse_iterator rend() const noexcept;
+        const_reverse_iterator crbegin() const noexcept;
+        const_reverse_iterator crend() const noexcept;
 
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
@@ -212,6 +221,39 @@ namespace xt
      * xfunction_iterator *
      **********************/
 
+    template <class CT>
+    class xscalar;
+
+    namespace detail
+    {
+        template <class C>
+        struct get_iterator_impl
+        {
+            using type = typename C::iterator;
+        };
+
+        template <class C>
+        struct get_iterator_impl<const C>
+        {
+            using type = typename C::const_iterator;
+        };
+
+        template <class CT>
+        struct get_iterator_impl<xscalar<CT>>
+        {
+            using type = typename xscalar<CT>::dummy_iterator;
+        };
+
+        template <class CT>
+        struct get_iterator_impl<const xscalar<CT>>
+        {
+            using type = typename xscalar<CT>::const_dummy_iterator;
+        };
+    }
+
+    template <class C>
+    using get_iterator = typename detail::get_iterator_impl<C>::type;
+
     template <class F, class R, class... CT>
     class xfunction_iterator
     {
@@ -233,6 +275,9 @@ namespace xt
 
         self_type& operator++();
         self_type operator++(int);
+
+        self_type& operator--();
+        self_type operator--(int);
 
         reference operator*() const;
 
@@ -283,7 +328,9 @@ namespace xt
         void step(size_type dim, size_type n = 1);
         void step_back(size_type dim, size_type n = 1);
         void reset(size_type dim);
+        void reset_back(size_type dim);
 
+        void to_begin();
         void to_end();
 
         reference operator*() const;
@@ -500,93 +547,47 @@ namespace xt
     //@}
 
     /**
-     * @name Broadcast iterators
+     * @name Reverse iterators
      */
     //@{
     /**
-     * Returns a constant iterator to the first element of the function.
+     * Returns an iterator to the first element of the reversed buffer
+     * containing the elements of the function.
      */
     template <class F, class R, class... CT>
-    inline auto xfunction<F, R, CT...>::xbegin() const noexcept -> const_broadcast_iterator
+    inline auto xfunction<F, R, CT...>::rbegin() const noexcept -> const_reverse_iterator
     {
-        return const_broadcast_iterator(stepper_begin(shape()), &shape());
+        return crbegin();
     }
 
     /**
-     * Returns a constant iterator to the element following the last element
-     * of the function.
+     * Returns a constant iterator to the element following the last
+     * element of the reversed buffer containing the elements of the function.
      */
     template <class F, class R, class... CT>
-    inline auto xfunction<F, R, CT...>::xend() const noexcept -> const_broadcast_iterator
+    inline auto xfunction<F, R, CT...>::rend() const noexcept -> const_reverse_iterator
     {
-        return const_broadcast_iterator(stepper_end(shape()), &shape());
+        return crend();
     }
 
     /**
-     * Returns a constant iterator to the first element of the function.
+     * Returns an iterator to the first element of the reversed buffer
+     * containing the elements of the function.
      */
     template <class F, class R, class... CT>
-    inline auto xfunction<F, R, CT...>::cxbegin() const noexcept -> const_broadcast_iterator
+    inline auto xfunction<F, R, CT...>::crbegin() const noexcept -> const_reverse_iterator
     {
-        return xbegin();
+        return const_reverse_iterator(cend());
     }
 
     /**
-     * Returns a constant iterator to the element following the last element
-     * of the function.
+     * Returns a constant iterator to the element following the last
+     * element of the reversed buffer containing the elements of the function.
      */
     template <class F, class R, class... CT>
-    inline auto xfunction<F, R, CT...>::cxend() const noexcept -> const_broadcast_iterator
+    inline auto xfunction<F, R, CT...>::crend() const noexcept -> const_reverse_iterator
     {
-        return xend();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the function. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     */
-    template <class F, class R, class... CT>
-    template <class S>
-    inline auto xfunction<F, R, CT...>::xbegin(const S& shape) const noexcept -> xiterator<const_stepper, S>
-    {
-        return xiterator<const_stepper, S>(stepper_begin(shape), shape);
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element of the
-     * function. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     */
-    template <class F, class R, class... CT>
-    template <class S>
-    inline auto xfunction<F, R, CT...>::xend(const S& shape) const noexcept -> xiterator<const_stepper, S>
-    {
-        return xiterator<const_stepper, S>(stepper_end(shape), shape);
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the function. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     */
-    template <class F, class R, class... CT>
-    template <class S>
-    inline auto xfunction<F, R, CT...>::cxbegin(const S& shape) const noexcept -> xiterator<const_stepper, S>
-    {
-        return xbegin(shape);
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element of the
-     * function. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     */
-    template <class F, class R, class... CT>
-    template <class S>
-    inline auto xfunction<F, R, CT...>::cxend(const S& shape) const noexcept -> xiterator<const_stepper, S>
-    {
-        return xend(shape);
+        return const_reverse_iterator(cbegin());
     }
     //@}
 
@@ -671,8 +672,23 @@ namespace xt
     inline auto xfunction_iterator<F, R, CT...>::operator++(int) -> self_type
     {
         self_type tmp(*this);
-        auto f = [](auto& it) { ++it; };
+        ++(*this);
+        return tmp;
+    }
+
+    template <class F, class R, class... CT>
+    inline auto xfunction_iterator<F, R, CT...>::operator--() -> self_type&
+    {
+        auto f = [](auto& it) { return --it; };
         for_each(f, m_it);
+        return *this;
+    }
+
+    template <class F, class R, class... CT>
+    inline auto xfunction_iterator<F, R, CT...>::operator--(int) -> self_type
+    {
+        self_type tmp(*this);
+        --(*this);
         return tmp;
     }
 
@@ -738,6 +754,20 @@ namespace xt
     inline void xfunction_stepper<F, R, CT...>::reset(size_type dim)
     {
         auto f = [dim](auto& it) { it.reset(dim); };
+        for_each(f, m_it);
+    }
+
+    template <class F, class R, class... CT>
+    inline void xfunction_stepper<F, R, CT...>::reset_back(size_type dim)
+    {
+        auto f = [dim](auto& it) { it.reset_back(dim); };
+        for_each(f, m_it);
+    }
+
+    template <class F, class R, class... CT>
+    inline void xfunction_stepper<F, R, CT...>::to_begin()
+    {
+        auto f = [](auto& it) { it.to_begin(); };
         for_each(f, m_it);
     }
 

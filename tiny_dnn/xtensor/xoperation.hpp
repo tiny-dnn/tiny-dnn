@@ -616,8 +616,17 @@ namespace xt
     template <class E>
     inline bool any(E&& e)
     {
-        return std::any_of(e.cbegin(), e.cend(),
-                           [](const typename std::decay_t<E>::value_type& el) { return el; });
+        using xtype = std::decay_t<E>;
+        if (xtype::static_layout == layout_type::row_major || xtype::static_layout == layout_type::column_major)
+        {
+            return std::any_of(e.cbegin(), e.cend(),
+                               [](const typename std::decay_t<E>::value_type& el) { return el; });
+        }
+        else
+        {
+            return std::any_of(e.xbegin(), e.xend(),
+                               [](const typename std::decay_t<E>::value_type& el) { return el; });
+        }
     }
 
     /**
@@ -632,8 +641,17 @@ namespace xt
     template <class E>
     inline bool all(E&& e)
     {
-        return std::all_of(e.cbegin(), e.cend(),
-                           [](const typename std::decay_t<E>::value_type& el) { return el; });
+        using xtype = std::decay_t<E>;
+        if (xtype::static_layout == layout_type::row_major || xtype::static_layout == layout_type::column_major)
+        {
+            return std::all_of(e.cbegin(), e.cend(),
+                               [](const typename std::decay_t<E>::value_type& el) { return el; });
+        }
+        else
+        {
+            return std::all_of(e.xbegin(), e.xend(),
+                               [](const typename std::decay_t<E>::value_type& el) { return el; });
+        }
     }
 }
 

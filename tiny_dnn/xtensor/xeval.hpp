@@ -34,7 +34,7 @@ namespace xt
     inline auto eval(T&& t)
         -> std::enable_if_t<detail::is_container<std::decay_t<T>>::value, T&&>
     {
-        return t;
+        return std::forward<T>(t);
     }
 
     /// @cond DOXYGEN_INCLUDE_SFINAE

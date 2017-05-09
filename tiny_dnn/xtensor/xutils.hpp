@@ -650,6 +650,36 @@ namespace xt
     template <class S>
     using const_closure_t = typename const_closure<S>::type;
 
+    /******************************
+     * ptr_closure implementation *
+     ******************************/
+
+    template <class S>
+    struct ptr_closure
+    {
+        using underlying_type = std::conditional_t<std::is_const<std::remove_reference_t<S>>::value,
+                                                   const std::decay_t<S>,
+                                                   std::decay_t<S>>;
+        using type = std::conditional_t<std::is_lvalue_reference<S>::value,
+                                        underlying_type*,
+                                        underlying_type>;
+    };
+
+    template <class S>
+    using ptr_closure_t = typename ptr_closure<S>::type;
+
+    template <class S>
+    struct const_ptr_closure
+    {
+        using underlying_type = const std::decay_t<S>;
+        using type = std::conditional_t<std::is_lvalue_reference<S>::value,
+                                        underlying_type*,
+                                        underlying_type>;
+    };
+
+    template <class S>
+    using const_ptr_closure_t = typename const_ptr_closure<S>::type;
+
     /***************************
      * apply_cv implementation *
      ***************************/
@@ -737,6 +767,25 @@ namespace xt
     {
         static constexpr bool value = detail::is_complex<std::decay_t<T>>::value;
     };
+
+    /*************************************
+     * complex_value_type implementation *
+     *************************************/
+
+    template <typename T>
+    struct complex_value_type
+    {
+        using type = T;
+    };
+
+    template <typename T>
+    struct complex_value_type<std::complex<T>>
+    {
+        using type = T;
+    };
+
+    template <class T>
+    using complex_value_type_t = typename complex_value_type<T>::type;
 
     /*********************************
      * forward_offset implementation *
@@ -848,6 +897,23 @@ namespace xt
     {
         return N;
     }
+
+    /*****************************************
+     * has_raw_data_interface implementation *
+     *****************************************/
+
+    template <typename T>
+    class has_raw_data_interface
+    {
+        template <typename C>
+        static std::true_type test(decltype(std::declval<C>().raw_data_offset()));
+
+        template <typename C>
+        static std::false_type test(...);
+
+    public:
+        constexpr static bool value = decltype(test<T>(std::size_t(0)))::value == true;
+    };
 }
 
 #endif

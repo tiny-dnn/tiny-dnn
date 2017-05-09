@@ -31,7 +31,7 @@ namespace xt
      **************************************/
 
     template <class T>
-    class xoptional_sequence_inner_types;
+    struct xoptional_sequence_inner_types;
 
     template <class ITV, class ITB>
     class xoptional_iterator;
@@ -91,23 +91,24 @@ namespace xt
         reference back();
         const_reference back() const;
 
-        iterator begin();
-        iterator end();
+        iterator begin() noexcept;
+        iterator end() noexcept;
 
-        const_iterator begin() const;
-        const_iterator end() const;
-        const_iterator cbegin() const;
-        const_iterator cend() const;
+        const_iterator begin() const noexcept;
+        const_iterator end() const noexcept;
+        const_iterator cbegin() const noexcept;
+        const_iterator cend() const noexcept;
 
-        reverse_iterator rbegin();
-        reverse_iterator rend();
+        reverse_iterator rbegin() noexcept;
+        reverse_iterator rend() noexcept;
 
-        const_reverse_iterator rbegin() const;
-        const_reverse_iterator rend() const;
-        const_reverse_iterator crbegin() const;
-        const_reverse_iterator crend() const;
+        const_reverse_iterator rbegin() const noexcept;
+        const_reverse_iterator rend() const noexcept;
+        const_reverse_iterator crbegin() const noexcept;
+        const_reverse_iterator crend() const noexcept;
 
     protected:
+
         base_container_type m_values;
         flag_container_type m_flags;
     };
@@ -120,9 +121,8 @@ namespace xt
     class xoptional_array;
 
     template <class T, std::size_t I>
-    class xoptional_sequence_inner_types<xoptional_array<T, I>>
+    struct xoptional_sequence_inner_types<xoptional_array<T, I>>
     {
-    public:
         using base_container_type = std::array<T, I>;
         using flag_container_type = std::array<bool, I>;
     };
@@ -131,9 +131,8 @@ namespace xt
     class xoptional_vector;
 
     template <class T, class A, class BA>
-    class xoptional_sequence_inner_types<xoptional_vector<T, A, BA>>
+    struct xoptional_sequence_inner_types<xoptional_vector<T, A, BA>>
     {
-    public:
         using base_container_type = std::vector<T, A>;
         using flag_container_type = std::vector<bool, BA>;
     };
@@ -319,73 +318,73 @@ namespace xt
     }
 
     template <class D>
-    auto xoptional_sequence<D>::begin() -> iterator
+    auto xoptional_sequence<D>::begin() noexcept -> iterator
     {
         return iterator(m_values.begin(), m_flags.begin());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::end() -> iterator
+    auto xoptional_sequence<D>::end() noexcept -> iterator
     {
         return iterator(m_values.end(), m_flags.end());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::begin() const -> const_iterator
+    auto xoptional_sequence<D>::begin() const noexcept -> const_iterator
     {
         return cbegin();
     }
 
     template <class D>
-    auto xoptional_sequence<D>::end() const -> const_iterator
+    auto xoptional_sequence<D>::end() const noexcept -> const_iterator
     {
         return cend();
     }
 
     template <class D>
-    auto xoptional_sequence<D>::cbegin() const -> const_iterator
+    auto xoptional_sequence<D>::cbegin() const noexcept -> const_iterator
     {
         return const_iterator(m_values.cbegin(), m_flags.cbegin());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::cend() const -> const_iterator
+    auto xoptional_sequence<D>::cend() const noexcept -> const_iterator
     {
         return const_iterator(m_values.cend(), m_flags.cend());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::rbegin() -> reverse_iterator
+    auto xoptional_sequence<D>::rbegin() noexcept -> reverse_iterator
     {
         return reverse_iterator(m_values.rbegin(), m_flags.rbegin());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::rend() -> reverse_iterator
+    auto xoptional_sequence<D>::rend() noexcept -> reverse_iterator
     {
         return reverse_iterator(m_values.rend(), m_flags.rend());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::rbegin() const -> const_reverse_iterator
+    auto xoptional_sequence<D>::rbegin() const noexcept -> const_reverse_iterator
     {
         return crbegin();
     }
 
     template <class D>
-    auto xoptional_sequence<D>::rend() const -> const_reverse_iterator
+    auto xoptional_sequence<D>::rend() const noexcept -> const_reverse_iterator
     {
         return crend();
     }
 
     template <class D>
-    auto xoptional_sequence<D>::crbegin() const -> const_reverse_iterator
+    auto xoptional_sequence<D>::crbegin() const noexcept -> const_reverse_iterator
     {
         return const_reverse_iterator(m_values.crbegin(), m_flags.crbegin());
     }
 
     template <class D>
-    auto xoptional_sequence<D>::crend() const -> const_reverse_iterator
+    auto xoptional_sequence<D>::crend() const noexcept -> const_reverse_iterator
     {
         return const_reverse_iterator(m_values.crend(), m_flags.crend());
     }

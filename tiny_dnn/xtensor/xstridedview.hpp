@@ -23,28 +23,28 @@
 
 namespace xt
 {
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     class xstrided_view;
 
-    template <class CT, class CD>
-    struct xcontainer_inner_types<xstrided_view<CT, CD>>
+    template <class CT, class S, class CD>
+    struct xcontainer_inner_types<xstrided_view<CT, S, CD>>
     {
         using xexpression_type = std::decay_t<CT>;
         using temporary_type = xarray<typename xexpression_type::value_type>;
     };
 
-    template <class CT, class CD>
-    struct xiterable_inner_types<xstrided_view<CT, CD>>
+    template <class CT, class S, class CD>
+    struct xiterable_inner_types<xstrided_view<CT, S, CD>>
     {
-        using inner_shape_type = typename std::decay_t<CT>::shape_type;
+        using inner_shape_type = S;
         using inner_strides_type = inner_shape_type;
         using inner_backstrides_type_type = inner_shape_type;
-        using const_stepper = xindexed_stepper<xstrided_view<CT, CD>>;
-        using stepper = xindexed_stepper<xstrided_view<CT, CD>, false>;
-        using const_broadcast_iterator = xiterator<const_stepper, inner_shape_type*>;
-        using broadcast_iterator = xiterator<stepper, inner_shape_type*>;
-        using const_iterator = const_broadcast_iterator;
-        using iterator = broadcast_iterator;
+        using const_stepper = xstepper<const xstrided_view<CT, S, CD>>;
+        using stepper = xstepper<xstrided_view<CT, S, CD>>;
+        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
+        using iterator = xiterator<stepper, inner_shape_type*, DEFAULT_LAYOUT>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+        using reverse_iterator = std::reverse_iterator<iterator>;
     };
 
     /*****************
@@ -63,14 +63,14 @@ namespace xt
      * 
      * @sa stridedview, transpose
      */
-    template <class CT, class CD>
-    class xstrided_view : public xview_semantic<xstrided_view<CT, CD>>,
-                          public xexpression_iterable<xstrided_view<CT, CD>>
+    template <class CT, class S, class CD>
+    class xstrided_view : public xview_semantic<xstrided_view<CT, S, CD>>,
+                          public xexpression_iterable<xstrided_view<CT, S, CD>>
     {
 
     public:
 
-        using self_type = xstrided_view<CT, CD>;
+        using self_type = xstrided_view<CT, S, CD>;
         using xexpression_type = std::decay_t<CT>;
         using semantic_base = xview_semantic<self_type>;
 
@@ -94,17 +94,14 @@ namespace xt
         using stepper = typename iterable_base::stepper;
         using const_stepper = typename iterable_base::const_stepper;
 
-        using broadcast_iterator = typename iterable_base::broadcast_iterator;
-        using const_broadcast_iterator = typename iterable_base::const_broadcast_iterator;
-
-        using iterator = typename iterable_base::iterator;
-        using const_iterator = typename iterable_base::const_iterator;
+        static constexpr layout_type static_layout = layout_type::dynamic;
+        static constexpr bool contiguous_layout = false;
 
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
         using base_index_type = xindex_type_t<shape_type>;
 
-        template <class I>
-        xstrided_view(CT e, I&& shape, I&& strides, std::size_t offset) noexcept;
+        xstrided_view(CT e, S&& shape, S&& strides, std::size_t offset) noexcept;
+        xstrided_view(CT e, CD data, S&& shape, S&& strides, std::size_t offset) noexcept;
 
         template <class E>
         self_type& operator=(const xexpression<E>& e);
@@ -117,6 +114,7 @@ namespace xt
         const shape_type& shape() const noexcept;
         const strides_type& strides() const noexcept;
         const backstrides_type& backstrides() const noexcept;
+        layout_type layout() const noexcept;
 
         reference operator()();
         template <class... Args>
@@ -152,6 +150,15 @@ namespace xt
         template <class ST>
         const_stepper stepper_end(const ST& shape) const;
 
+        using container_iterator = typename std::decay_t<CD>::iterator;
+        using const_container_iterator = typename std::decay_t<CD>::const_iterator;
+
+        container_iterator data_xbegin() noexcept;
+        const_container_iterator data_xbegin() const noexcept;
+
+        container_iterator data_xend() noexcept;
+        const_container_iterator data_xend() const noexcept;
+
         underlying_container_type& data() noexcept;
         const underlying_container_type& data() const noexcept;
 
@@ -162,6 +169,14 @@ namespace xt
 
     private:
 
+        template <class It>
+        It data_xbegin_impl(It begin) const noexcept;
+
+        template <class It>
+        It data_xend_impl(It end) const noexcept;
+
+        void assign_temporary_impl(temporary_type& tmp);
+
         CT m_e;
         CD m_data;
         shape_type m_shape;
@@ -169,14 +184,12 @@ namespace xt
         backstrides_type m_backstrides;
         std::size_t m_offset;
 
-        void assign_temporary_impl(temporary_type& tmp);
-
-        friend class xview_semantic<xstrided_view<CT, CD>>;
+        friend class xview_semantic<xstrided_view<CT, S, CD>>;
     };
 
-    /*****************************
+    /********************************
      * xstrided_view implementation *
-     *****************************/
+     ********************************/
 
     /**
      * @name Constructor
@@ -189,10 +202,17 @@ namespace xt
      * @param e the underlying xexpression for this view
      * @param indices the indices to select
      */
-    template <class CT, class CD>
-    template <class I>
-    inline xstrided_view<CT, CD>::xstrided_view(CT e, I&& shape, I&& strides, std::size_t offset) noexcept
-        : m_e(e), m_data(m_e.data()), m_shape(std::forward<I>(shape)), m_strides(std::forward<I>(strides)), m_offset(offset)
+    template <class CT, class S, class CD>
+    inline xstrided_view<CT, S, CD>::xstrided_view(CT e, S&& shape, S&& strides, std::size_t offset) noexcept
+        : m_e(e), m_data(m_e.data()), m_shape(std::forward<S>(shape)), m_strides(std::forward<S>(strides)), m_offset(offset)
+    {
+        m_backstrides = make_sequence<backstrides_type>(m_shape.size(), 0);
+        adapt_strides(m_shape, m_strides, m_backstrides);
+    }
+
+    template <class CT, class S, class CD>
+    inline xstrided_view<CT, S, CD>::xstrided_view(CT e, CD data, S&& shape, S&& strides, std::size_t offset) noexcept
+        : m_e(e), m_data(data), m_shape(std::forward<S>(shape)), m_strides(std::forward<S>(strides)), m_offset(offset)
     {
         m_backstrides = make_sequence<backstrides_type>(m_shape.size(), 0);
         adapt_strides(m_shape, m_strides, m_backstrides);
@@ -206,24 +226,24 @@ namespace xt
     /**
      * The extended assignment operator.
      */
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class E>
-    inline auto xstrided_view<CT, CD>::operator=(const xexpression<E>& e) -> self_type&
+    inline auto xstrided_view<CT, S, CD>::operator=(const xexpression<E>& e) -> self_type&
     {
         return semantic_base::operator=(e);
     }
     //@}
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class E>
-    inline auto xstrided_view<CT, CD>::operator=(const E& e) -> disable_xexpression<E, self_type>&
+    inline auto xstrided_view<CT, S, CD>::operator=(const E& e) -> disable_xexpression<E, self_type>&
     {
         std::fill(this->begin(), this->end(), e);
         return *this;
     }
 
-    template <class CT, class CD>
-    inline void xstrided_view<CT, CD>::assign_temporary_impl(temporary_type& tmp)
+    template <class CT, class S, class CD>
+    inline void xstrided_view<CT, S, CD>::assign_temporary_impl(temporary_type& tmp)
     {
         std::copy(tmp.cbegin(), tmp.cend(), this->xbegin());
     }
@@ -235,8 +255,8 @@ namespace xt
     /**
      * Returns the size of the xstrided_view.
      */
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::size() const noexcept -> size_type
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::size() const noexcept -> size_type
     {
         return compute_size(shape());
     }
@@ -244,8 +264,8 @@ namespace xt
     /**
      * Returns the number of dimensions of the xstrided_view.
      */
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::dimension() const noexcept -> size_type
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::dimension() const noexcept -> size_type
     {
         return m_shape.size();
     }
@@ -253,50 +273,56 @@ namespace xt
     /**
      * Returns the shape of the xstrided_view.
      */
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::shape() const noexcept -> const shape_type&
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::shape() const noexcept -> const shape_type&
     {
         return m_shape;
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::strides() const noexcept -> const strides_type&
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::strides() const noexcept -> const strides_type&
     {
         return m_strides;
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::backstrides() const noexcept -> const backstrides_type&
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::backstrides() const noexcept -> const backstrides_type&
     {
         return m_backstrides;
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::data() noexcept -> underlying_container_type&
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::layout() const noexcept -> layout_type
+    {
+        return layout_type::row_major;
+    }
+
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data() noexcept -> underlying_container_type&
     {
         return m_e.data();
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::data() const noexcept -> const underlying_container_type&
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data() const noexcept -> const underlying_container_type&
     {
         return m_e.data();
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::raw_data() noexcept -> value_type*
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::raw_data() noexcept -> value_type*
     {
         return m_e.raw_data();
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::raw_data() const noexcept -> const value_type*
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::raw_data() const noexcept -> const value_type*
     {
         return m_e.raw_data();
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::raw_data_offset() const noexcept -> size_type
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::raw_data_offset() const noexcept -> size_type
     {
         return m_offset;
     }
@@ -305,21 +331,21 @@ namespace xt
     /**
      * @name Data
      */
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator()() -> reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator()() -> reference
     {
         return m_e();
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator()() const -> const_reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator()() const -> const_reference
     {
         return m_e();
     }
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class... Args>
-    inline auto xstrided_view<CT, CD>::operator()(Args... args) -> reference
+    inline auto xstrided_view<CT, S, CD>::operator()(Args... args) -> reference
     {
         XTENSOR_ASSERT(check_index(shape(), args...));
         size_type index = m_offset + data_offset<size_type>(strides(), static_cast<size_type>(args)...);
@@ -331,35 +357,35 @@ namespace xt
      * 
      * @param idx the position in the view
      */
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class... Args>
-    inline auto xstrided_view<CT, CD>::operator()(Args... args) const -> const_reference
+    inline auto xstrided_view<CT, S, CD>::operator()(Args... args) const -> const_reference
     {
         XTENSOR_ASSERT(check_index(shape(), args...));
         size_type index = m_offset + data_offset<size_type>(strides(), static_cast<size_type>(args)...);
         return m_data[index];
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator[](const xindex& index) -> reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator[](const xindex& index) -> reference
     {
         return element(index.cbegin(), index.cend());
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator[](size_type i) -> reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator[](size_type i) -> reference
     {
         return operator()(i);
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator[](const xindex& index) const -> const_reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator[](const xindex& index) const -> const_reference
     {
         return element(index.cbegin(), index.cend());
     }
 
-    template <class CT, class CD>
-    inline auto xstrided_view<CT, CD>::operator[](size_type i) const -> const_reference
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::operator[](size_type i) const -> const_reference
     {
         return operator()(i);
     }
@@ -369,16 +395,16 @@ namespace xt
      * @param first iterator starting the sequence of indices
      * The number of indices in the squence should be equal to or greater 1.
      */
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class It>
-    inline auto xstrided_view<CT, CD>::element(It first, It last) -> reference
+    inline auto xstrided_view<CT, S, CD>::element(It first, It last) -> reference
     {
         return m_data[m_offset + element_offset<size_type>(strides(), first, last)];
     }
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class It>
-    inline auto xstrided_view<CT, CD>::element(It first, It last) const -> const_reference
+    inline auto xstrided_view<CT, S, CD>::element(It first, It last) const -> const_reference
     {
         return m_data[m_offset + element_offset<size_type>(strides(), first, last)];
     }
@@ -393,9 +419,9 @@ namespace xt
      * @param shape the result shape
      * @return a boolean indicating whether the broadcasting is trivial
      */
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class O>
-    inline bool xstrided_view<CT, CD>::broadcast_shape(O& shape) const
+    inline bool xstrided_view<CT, S, CD>::broadcast_shape(O& shape) const
     {
         return xt::broadcast_shape(m_shape, shape);
     }
@@ -405,9 +431,9 @@ namespace xt
      * the broadcasting is trivial.
      * @return a boolean indicating whether the broadcasting is trivial
      */
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class O>
-    inline bool xstrided_view<CT, CD>::is_trivial_broadcast(const O& str) const noexcept
+    inline bool xstrided_view<CT, S, CD>::is_trivial_broadcast(const O& str) const noexcept
     {
         return str.size() == strides().size() &&
             std::equal(str.cbegin(), str.cend(), strides().begin());
@@ -418,36 +444,74 @@ namespace xt
      * stepper api *
      ***************/
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class ST>
-    inline auto xstrided_view<CT, CD>::stepper_begin(const ST& shape) -> stepper
+    inline auto xstrided_view<CT, S, CD>::stepper_begin(const ST& shape) -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(this, offset);
+        return stepper(this, data_xbegin(), offset);
     }
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class ST>
-    inline auto xstrided_view<CT, CD>::stepper_end(const ST& shape) -> stepper
+    inline auto xstrided_view<CT, S, CD>::stepper_end(const ST& shape) -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(this, offset, true);
+        return stepper(this, data_xend(), offset);
     }
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class ST>
-    inline auto xstrided_view<CT, CD>::stepper_begin(const ST& shape) const -> const_stepper
+    inline auto xstrided_view<CT, S, CD>::stepper_begin(const ST& shape) const -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(this, offset);
+        return const_stepper(this, data_xbegin(), offset);
     }
 
-    template <class CT, class CD>
+    template <class CT, class S, class CD>
     template <class ST>
-    inline auto xstrided_view<CT, CD>::stepper_end(const ST& shape) const -> const_stepper
+    inline auto xstrided_view<CT, S, CD>::stepper_end(const ST& shape) const -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(this, offset, true);
+        return const_stepper(this, data_xend(), offset);
+    }
+
+    template <class CT, class S, class CD>
+    template <class It>
+    inline It xstrided_view<CT, S, CD>::data_xbegin_impl(It begin) const noexcept
+    {
+        return begin + m_offset;
+    }
+
+    template <class CT, class S, class CD>
+    template <class It>
+    inline It xstrided_view<CT, S, CD>::data_xend_impl(It end) const noexcept
+    {
+        return m_offset + (strides().size() != 0 ? end - 1 + strides().back() : end);
+    }
+
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data_xbegin() noexcept -> container_iterator
+    {
+        return data_xbegin_impl(m_data.begin());
+    }
+
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data_xbegin() const noexcept -> const_container_iterator
+    {
+        return data_xbegin_impl(m_data.begin());
+    }
+
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data_xend() noexcept -> container_iterator
+    {
+        return data_xend_impl(m_data.end());
+    }
+
+    template <class CT, class S, class CD>
+    inline auto xstrided_view<CT, S, CD>::data_xend() const noexcept -> const_container_iterator
+    {
+        return data_xend_impl(m_data.end());
     }
 
     /**
@@ -466,7 +530,7 @@ namespace xt
     template <class E, class I>
     inline auto strided_view(E&& e, I&& shape, I&& strides, std::size_t offset = 0) noexcept
     {
-        using view_type = xstrided_view<xclosure_t<E>, decltype(e.data())>;
+        using view_type = xstrided_view<xclosure_t<E>, I, decltype(e.data())>;
         return view_type(std::forward<E>(e), std::forward<I>(shape), std::forward<I>(strides), offset);
     }
 
@@ -502,7 +566,7 @@ namespace xt
                 temp_shape[i] = e.shape()[permutation[i]];
                 temp_strides[i] = e.strides()[permutation[i]];
             }
-            using view_type = xstrided_view<xclosure_t<E>, decltype(e.data())>;
+            using view_type = xstrided_view<xclosure_t<E>, shape_type, decltype(e.data())>;
             return view_type(std::forward<E>(e), std::move(temp_shape), std::move(temp_strides), 0);
         }
 
@@ -537,7 +601,7 @@ namespace xt
         resize_container(strides, e.strides().size());
         std::copy(e.strides().rbegin(), e.strides().rend(), strides.begin());
 
-        using view_type = xstrided_view<xclosure_t<E>, decltype(e.data())>;
+        using view_type = xstrided_view<xclosure_t<E>, shape_type, decltype(e.data())>;
         return view_type(std::forward<E>(e), std::move(shape), std::move(strides), 0);
     }
 
@@ -568,6 +632,251 @@ namespace xt
     }
 #endif
 
+    namespace detail
+    {
+        template <class CT>
+        class expression_adaptor
+        {
+        public:
+            using xexpression_type = std::decay_t<CT>;
+            using shape_type = typename xexpression_type::shape_type;
+            using index_type = xindex_type_t<shape_type>;
+            using size_type = typename xexpression_type::size_type;
+            using value_type = typename xexpression_type::value_type;
+            using reference = typename xexpression_type::reference;
+
+            expression_adaptor(CT&& e) : m_e(e)
+            {
+                resize_container(m_index, m_e.dimension());
+                m_size = compute_size(m_e.shape());
+                compute_strides(m_e.shape(), layout_type::row_major, m_strides);
+            }
+
+            const reference operator[](std::size_t idx) const
+            {
+                std::div_t dv{};
+                for (size_type i = 0; i < m_strides.size(); ++i)
+                {
+                    dv = std::div((int) idx, (int) m_strides[i]);
+                    idx = dv.rem;
+                    m_index[i] = dv.quot;
+                }
+                return m_e.element(m_index.begin(), m_index.end());
+            }
+
+            size_type size() const
+            {
+                return m_size;
+            }
+
+        private:
+            CT m_e;
+            shape_type m_strides;
+            mutable index_type m_index;
+            size_type m_size;
+        };
+    }
+
+    class slice_vector : private std::vector<std::array<long int, 3>>
+    {
+
+    public:
+        using index_type = long int;
+        using base_type = std::vector<std::array<index_type, 3>>;
+
+        // propagating interface
+        using base_type::begin;
+        using base_type::cbegin;
+        using base_type::end;
+        using base_type::cend;
+        using base_type::size;
+        using base_type::operator[];
+        using base_type::push_back;
+
+        inline slice_vector() = default;
+
+        template <class E, class... Args>
+        inline slice_vector(const xexpression<E>& e, Args... args)
+        {
+            const auto& de = e.derived_cast();
+            m_shape.resize(de.shape().size());
+            std::copy(de.shape().begin(), de.shape().end(), m_shape.begin());
+            append(args...);
+        }
+
+        template <class... Args>
+        inline slice_vector(const std::vector<std::size_t>& shape, Args... args)
+        {
+            m_shape = shape;
+            append(args...);
+        }
+
+        template <class T, class... Args>
+        inline void append(const T& s, Args... args)
+        {
+            push_back(s);
+            append(args...);
+        }
+
+        inline void append()
+        {
+        }
+
+        template <class T>
+        inline void push_back(const xslice<T>& s)
+        {
+            auto ds = s.derived_cast();
+            base_type::push_back({ds(0), (index_type) ds.size(), (index_type) ds.step_size()});
+        }
+
+        template <class A, class B, class C>
+        inline void push_back(const xrange_adaptor<A, B, C>& s)
+        {
+            auto idx = size() - newaxis_count;
+            if (idx >= m_shape.size())
+            {
+                throw std::runtime_error("Too many slices in slice vector for shape");
+            }
+            auto ds = s.get(m_shape[idx]);
+            base_type::push_back({(index_type) ds(0), (index_type) ds.size(), (index_type) ds.step_size()});
+        }
+
+        inline void push_back(xall_tag /*s*/)
+        {
+            auto idx = size() - newaxis_count;
+            if (idx >= m_shape.size())
+            {
+                throw std::runtime_error("Too many slices in slice vector for shape");
+            }
+            base_type::push_back({0, (index_type) m_shape[idx], 1});
+        }
+
+        inline void push_back(xnewaxis_tag /*s*/)
+        {
+            ++newaxis_count;
+            base_type::push_back({-1, 0, 0});
+        }
+
+        inline void push_back(index_type i)
+        {
+            base_type::push_back({i, 0, 0});
+        }
+
+    private:
+         std::vector<std::size_t> m_shape;
+         std::size_t newaxis_count = 0;
+    };
+
+    namespace detail
+    {
+        template <class E, std::enable_if_t<has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline auto&& get_data(E&& e)
+        {
+            return e.data();
+        }
+
+        template <class E, std::enable_if_t<has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline std::size_t get_offset(E&& e)
+        {
+            return e.raw_data_offset();
+        }
+
+        template <class E, std::enable_if_t<has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline auto&& get_strides(E&& e)
+        {
+            return e.strides();
+        }
+
+        template <class E, std::enable_if_t<!has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline auto get_data(E&& e) -> expression_adaptor<xclosure_t<E>>
+        {
+            return std::move(expression_adaptor<xclosure_t<E>>(e));
+        }
+
+        template <class E, std::enable_if_t<!has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline std::size_t get_offset(E&& /*e*/)
+        {
+            return 0;
+        }
+
+        template <class E, std::enable_if_t<!has_raw_data_interface<std::decay_t<E>>::value>* = nullptr>
+        inline auto get_strides(E&& e)
+        {
+            std::vector<std::size_t> strides;
+            strides.resize(e.shape().size());
+            compute_strides(e.shape(), layout_type::row_major, strides);
+            return strides;
+        }
+    }
+
+    template <class E, class S>
+    inline auto dynamic_view(E&& e, S&& slices)
+    {
+        std::size_t offset = detail::get_offset(e);
+        using shape_type = typename std::vector<std::size_t>;
+
+        auto old_shape = e.shape();
+        auto&& old_strides = detail::get_strides(e);
+
+        shape_type new_shape;
+        shape_type new_strides;
+
+        std::size_t shape_size = old_shape.size();
+
+        for (const auto& el : slices)
+        {
+            if (el[0] >= 0 && el[1] == 0)
+            {
+                // treat this like a single int and remove from shape
+                shape_size = shape_size - 1;
+            }
+            else if (el[0] == -1 && el[1] == 0)
+            {
+                // treat this like a new axis
+                shape_size += 1;
+            }
+        }
+
+        new_shape.resize(shape_size);
+        new_strides.resize(shape_size);
+
+        std::size_t i = 0;
+        std::size_t idx = 0;
+        std::size_t newaxis_skip = 0;
+
+        for (; i < slices.size(); ++i) {
+            if (slices[i][0] >= 0)
+            {
+                offset += slices[i][0] * old_strides[i];
+            }
+
+            if (slices[i][1] != 0 && slices[i][2] != 0)
+            {
+                new_shape[idx] = slices[i][1];
+                new_strides[idx] = slices[i][2] * old_strides[i - newaxis_skip];
+                idx++;
+            }
+            else if (slices[i][0] == -1) // newaxis
+            {
+                new_shape[idx] = 1;
+                new_strides[idx] = 0;
+                newaxis_skip++;
+                idx++;
+            }
+        }
+
+        for (; i < old_shape.size(); ++i)
+        {
+            new_shape[idx] = old_shape[i];
+            new_strides[idx] = old_strides[i];
+            idx++;
+        }
+
+        auto data = detail::get_data(e);
+
+        using view_type = xstrided_view<xclosure_t<E>, shape_type, decltype(data)>;
+        return view_type(std::forward<E>(e), std::forward<decltype(data)>(data), std::move(new_shape), std::move(new_strides), offset);
+    }
 }
 
 #endif

@@ -200,7 +200,7 @@ namespace xt
         while (m_rhs != m_rhs_end)
         {
             *m_lhs = *m_rhs;
-            increment_stepper(*this, m_index, m_e1.shape());
+            stepper_tools<default_assignable_layout(E1::static_layout)>::increment_stepper(*this, m_index, m_e1.shape());
         }
     }
 

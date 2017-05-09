@@ -144,6 +144,12 @@ namespace xt
             {
             }
 
+            inline value_type operator()() const
+            {
+                size_type idx[1] = {0ul};
+                return access_impl(std::begin(idx), std::end(idx));
+            }
+
             template <class... Args>
             inline value_type operator()(Args... args) const
             {
