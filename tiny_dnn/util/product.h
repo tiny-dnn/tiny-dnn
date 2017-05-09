@@ -407,6 +407,17 @@ inline void add(const typename T::value_type *src,
   }
 }
 
+//TODO: documentation
+/**
+ *
+ * @tparam T
+ * @tparam src_aligned
+ * @tparam dst_aligned
+ * @param src
+ * @param c
+ * @param size
+ * @param dst
+ */
 template <typename T, typename src_aligned, typename dst_aligned>
 inline void muladd(const typename T::value_type *src,
                    typename T::value_type c,

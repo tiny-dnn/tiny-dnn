@@ -53,8 +53,9 @@ class FullyConnectedGradOp : public core::OpKernel {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
     context.input_grad(0) = from_xtensor(prev_delta);
-    context.input_grad(1) = from_xtensor(dB);
-    context.input_grad(2) = from_xtensor(dW);  // TODO: temporary
+    context.input_grad(1) = from_xtensor(dW);
+      if(params.has_bias_)
+        context.input_grad(2) = from_xtensor(dB); // TODO: temporary
   }
 };
 
