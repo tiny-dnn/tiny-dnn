@@ -192,12 +192,12 @@ inline void avx_fully_connected_back_kernel(
                               params, layer_parallelize);
 }
 
-#endif                 // CNN_USE_AVX
-template <typename T>  // TODO(Randl) ?
-inline void fully_connected_op_avx(const xt::xarray<float_t> &in_data,
-                                   T W,
-                                   const xt::xarray<float_t> &bias,
-                                   xt::xarray<float_t> &out_data,
+#endif  // CNN_USE_AVX
+template <class E1, class E2, class E3, class E4>
+inline void fully_connected_op_avx(E1 &in_data,
+                                   E2 W,
+                                   E3 bias,
+                                   E4 &out_data,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
@@ -214,13 +214,13 @@ inline void fully_connected_op_avx(const xt::xarray<float_t> &in_data,
 #endif
 }
 
-template <typename T>  // TODO(Randl) ?
-inline void fully_connected_op_avx(const xt::xarray<float_t> &prev_out,
-                                   T W,
-                                   xt::xarray<float_t> &dW,
-                                   xt::xarray<float_t> &db,
-                                   xt::xarray<float_t> &curr_delta,
-                                   xt::xarray<float_t> &prev_delta,
+template <class E1, class E2, class E3, class E4, class E5, class E6>
+inline void fully_connected_op_avx(E1 &prev_out,
+                                   E2 W,
+                                   E3 &dW,
+                                   E4 &db,
+                                   E5 &curr_delta,
+                                   E6 &prev_delta,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX

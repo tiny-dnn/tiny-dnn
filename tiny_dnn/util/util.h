@@ -60,6 +60,9 @@ typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 typedef std::vector<vec_t> tensor_t;
 
+template <typename T>
+using xtensor_t = xt::xexpression<T>;
+
 enum class net_phase { train, test };
 
 enum class padding {
@@ -387,7 +390,7 @@ std::unique_ptr<T> make_unique(Args &&... args) {
 // TODO(Randl): Remove after full integration of xtensor
 inline xt::xarray<float_t> to_xtensor(const tensor_t &t) {
   if (t.size() == 0) return xt::xarray<float_t>({0, 0});
-  xt::xarray<float_t> result = xt::zeros<double>({t.size(), t[0].size()});
+  xt::xarray<float_t> result = xt::zeros<float_t>({t.size(), t[0].size()});
   for (serial_size_t i = 0; i < t.size(); ++i)
     for (serial_size_t j = 0; j < t[0].size(); ++j) result(i, j) = t[i][j];
   return result;

@@ -34,7 +34,7 @@ class FullyConnectedOp : public core::OpKernel {
     xt::xarray<float_t> out_data    = to_xtensor(context.output(0));
 
     // initialize outputs
-    out_data = xt::zeros<double>(out_data.shape());
+    out_data = xt::zeros<float_t>(out_data.shape());
 
     // call the algorithm depending  on the selected engine type
 
