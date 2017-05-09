@@ -60,13 +60,13 @@ inline void fully_connected_op_internal(const E1 &prev_out,
         &curr_delta(sample, 0), &W[c * params.out_size_], params.out_size_);
     }
 
-    for (int i = 0; i < size_t(params.out_size_); ++i) {
+    for (int i = 0; i < params.out_size_; ++i) {
       // accumulate weight-step using delta
       // dW[c * out_size + i] += current_delta[i] * prev_out[c]
       //TODO now
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // TODO(Randl): return vectorization
-        dW[c * params.out_size_ + i] += curr_delta[i] * prev_out(i,c);
+        dW(sample,c * params.out_size_ + i) += curr_delta(sample,i) * prev_out(sample,c);
         // vectorize::muladd(&curr_delta(sample, r.begin()),
         //                  prev_out(sample, c), r.end() - r.begin(),
         //                  &dW(sample, c * params.out_size_ + r.begin()));
