@@ -134,7 +134,7 @@ void parallel_for(size_t begin,
                   size_t end,
                   const Func &f,
                   size_t /*grainsize*/) {
-  assert(end >= start);
+  assert(end >= begin);
   size_t nthreads  = std::thread::hardware_concurrency();
   size_t blockSize = (end - begin) / nthreads;
   if (blockSize * nthreads < end - begin) blockSize++;
