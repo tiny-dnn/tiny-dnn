@@ -39,7 +39,7 @@ addons:
 branches:
   only:
     - master
-    - feat/tensor_integration
+    - feat/xtensor_integration
     - feat/decouple_activations
 
 env:
