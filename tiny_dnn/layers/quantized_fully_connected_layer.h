@@ -78,6 +78,8 @@ class quantized_fully_connected_layer : public layer {
 
   std::string layer_type() const override { return "q_fully-connected"; }
 
+  friend struct serialization_buddy;
+
  protected:
   fully_params params_;
 

@@ -92,11 +92,11 @@ class power_layer : public layer {
     }
   }
 
-  friend struct serialization_buddy;
-
   float_t factor() const { return factor_; }
 
   float_t scale() const { return scale_; }
+
+  friend struct serialization_buddy;
 
  private:
   shape3d in_shape_;

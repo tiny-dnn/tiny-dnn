@@ -192,10 +192,15 @@ inline bool resolve_path(const std::string &filename, std::string &path) {
 }
 
 namespace {
-std::pair<std::vector<tensor_t>, std::vector<std::vector<label_t>>>
-generate_gradient_check_data(serial_size_t input_dimension,
-                             serial_size_t sample_count = 5,
-                             serial_size_t class_count  = 2) {
+
+std::pair<std::vector<tensor_t>,
+          std::vector<std::vector<
+            label_t>>> inline generate_gradient_check_data(serial_size_t
+                                                             input_dimension,
+                                                           serial_size_t
+                                                             sample_count = 5,
+                                                           serial_size_t
+                                                             class_count = 2) {
   const serial_size_t input_channel_count  = 1;
   const serial_size_t output_channel_count = 1;
   std::vector<tensor_t> a(

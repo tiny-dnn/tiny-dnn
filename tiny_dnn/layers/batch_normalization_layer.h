@@ -208,11 +208,11 @@ class batch_normalization_layer : public layer {
     calc_stddev(variance);
   }
 
-  friend struct serialization_buddy;
-
   float_t epsilon() const { return eps_; }
 
   float_t momentum() const { return momentum_; }
+
+  friend struct serialization_buddy;
 
  private:
   void calc_stddev(const vec_t &variance) {
