@@ -56,31 +56,27 @@ inline void fully_connected_op_internal(const E1 &prev_out,
     for (serial_size_t c = 0; c < params.in_size_; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-
-      for (serial_size_t r = 0; r < params.out_size_; r++) {
-        prev_delta(sample, c) +=
-          curr_delta(sample, r) * W(sample, c * params.out_size_ + r);
-      }
-      // prev_delta(sample, c) += vectorize::dot(
-      // &curr_delta(sample, 0), &W[c * params.out_size_], params.out_size_);
+      prev_delta(sample,c) += vectorize::dot(
+        &curr_delta(sample,0), &W(c * params.out_size_), params.out_size_);
     }
 
-    for (int i = 0; i < params.out_size_; ++i) {
-      // accumulate weight-step using delta
-      // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-      // TODO now
-      for (serial_size_t c = 0; c < params.in_size_; c++) {
-        // TODO(Randl): return vectorization
-        dW(sample, c * params.out_size_ + i) +=
-          curr_delta(sample, i) * prev_out(sample, c);
-        // vectorize::muladd(&curr_delta(sample, r.begin()),
-        //                  prev_out(sample, c), r.end() - r.begin(),
-        //                  &dW(sample, c * params.out_size_ + r.begin()));
-      }
-      if (params.has_bias_) {
-        db(sample, i) += curr_delta(sample, i);
-      }
-    }
+    for_(layer_parallelize, 0, size_t(params.out_size_),
+         [&](const blocked_range &r) {
+           // accumulate weight-step using delta
+           // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+           for (serial_size_t c = 0; c < params.in_size_; c++) {
+             vectorize::muladd(&curr_delta(sample,r.begin()),
+                               prev_out(sample,c), r.end() - r.begin(),
+                               &dW(sample,c * params.out_size_ + r.begin()));
+           }
+
+           if (params.has_bias_) {
+             // vec_t& db = *in_grad[2];
+             for (size_t i = r.begin(); i < r.end(); i++) {
+               db(sample,i) += curr_delta(sample,i);
+             }
+           }
+         });
   }
   // db = db+curr_delta;
   // FIXME: No tests found o_O
