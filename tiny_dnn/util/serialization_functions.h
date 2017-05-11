@@ -461,6 +461,18 @@ struct LoadAndConstruct<tiny_dnn::tanh_p1m2_layer> {
   }
 };
 
+template <>
+struct LoadAndConstruct<tiny_dnn::softplus_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::softplus_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ar(cereal::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
 template <class Archive>
 struct specialize<Archive,
                   tiny_dnn::elementwise_add_layer,
@@ -594,6 +606,11 @@ struct specialize<Archive,
 template <class Archive>
 struct specialize<Archive,
                   tiny_dnn::tanh_p1m2_layer,
+                  cereal::specialization::non_member_serialize> {};
+
+template <class Archive>
+struct specialize<Archive,
+                  tiny_dnn::softplus_layer,
                   cereal::specialization::non_member_serialize> {};
 
 }  // namespace cereal
@@ -854,6 +871,12 @@ struct serialization_buddy {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
   }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::softplus_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+  }
 #endif
 };
 
@@ -989,6 +1012,11 @@ void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
 
 template <class Archive>
 void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
+  serialization_buddy::serialize(ar, layer);
+}
+
+template <class Archive>
+void serialize(Archive &ar, tiny_dnn::softplus_layer &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
