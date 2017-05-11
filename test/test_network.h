@@ -581,7 +581,7 @@ TEST(network, gradient_check8) {  // elu - mse
                                            GRAD_CHECK_ALL));
 }
 
-TEST(network, gradient_check9) {  // tan_hp1m2 - mse
+TEST(network, gradient_check9) {  // tanh_p1m2 - mse
   using loss_func  = mse;
   using activation = tanh_p1m2;
 
@@ -593,7 +593,7 @@ TEST(network, gradient_check9) {  // tan_hp1m2 - mse
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(network, gradient_check10) {  // tan_hp1m2 - mse
+TEST(network, gradient_check10) {  // softplus - mse
   using loss_func  = mse;
   using activation = softplus;
 
