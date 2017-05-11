@@ -20,7 +20,6 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
-      - george-edison55-cmake-3.x
       - llvm-toolchain-precise-3.6
     packages:
       - gcc-4.9
