@@ -467,9 +467,13 @@ struct LoadAndConstruct<tiny_dnn::softplus_layer> {
   static void load_and_construct(
     Archive &ar, cereal::construct<tiny_dnn::softplus_layer> &construct) {
     tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t beta;
+    tiny_dnn::float_t threshold;
 
-    ar(cereal::make_nvp("in_size", in_shape));
-    construct(in_shape);
+    ar(cereal::make_nvp("in_size", in_shape),
+      cereal::make_nvp("beta", beta),
+      cereal::make_nvp("threshold", threshold));
+    construct(in_shape, beta, threshold);
   }
 };
 
@@ -875,7 +879,9 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::softplus_layer &layer) {
     layer.serialize_prolog(ar);
-    ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
+       cereal::make_nvp("beta", layer.beta_),
+       cereal::make_nvp("beta", layer.threshold_));
   }
 #endif
 };

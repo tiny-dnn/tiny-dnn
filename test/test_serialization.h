@@ -723,6 +723,8 @@ TEST(serialization, serialize_softplus) {
                     "height" : 10,
                     "depth" : 1
                 }
+                "beta": 1,
+                "threshold": 20
             }
         ]
     }
@@ -733,6 +735,8 @@ TEST(serialization, serialize_softplus) {
   EXPECT_EQ(net[0]->layer_type(), "softplus-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).beta_value(), float_t(1));
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).threshold_value(), float_t(20));
 }
 
 TEST(serialization, sequential_to_json) {
