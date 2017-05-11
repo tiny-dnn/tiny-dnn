@@ -28,10 +28,10 @@ class FullyConnectedOp : public core::OpKernel {
     // incoming/outcoming data
     const xt::xarray<float_t> in_data = to_xtensor(context.input(0));
     const xt::xarray<float_t> W       = to_xtensor(context.input(1));
-    const xt::xarray<float_t> B       = to_xtensor(context.input(2));
+    const xt::xarray<float_t> B =
+      params.has_bias_ ? to_xtensor(context.input(2)) : xt::xarray<float_t>();
 
-    const xt::xarray<float_t> *bias = params.has_bias_ ? &B : nullptr;
-    xt::xarray<float_t> out_data    = to_xtensor(context.output(0));
+    xt::xarray<float_t> out_data = to_xtensor(context.output(0));
 
     // initialize outputs
     out_data = xt::zeros<float_t>(out_data.shape());
@@ -43,17 +43,17 @@ class FullyConnectedOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
         context.parallelize());
     } else if (engine == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
         context.parallelize());
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? (*bias)[0] : xt::xarray<float_t>(), out_data, params,
+        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
         context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));

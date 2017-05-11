@@ -407,7 +407,7 @@ inline void add(const typename T::value_type *src,
   }
 }
 
-//TODO: documentation
+// TODO: documentation
 /**
  *
  * @tparam T
