@@ -493,21 +493,21 @@ class network {
 
       switch (mode) {
         case GRAD_CHECK_ALL:
-          for (int i = 0; i < static_cast<int>(w.size()); i++)
+          for (size_t i = 0; i < w.size(); i++)
             if (!calc_delta<E>(in, v, w, dw, i, eps)) {
               return false;
             }
-          for (int i = 0; i < static_cast<int>(b.size()); i++)
+          for (size_t i = 0; i < b.size(); i++)
             if (!calc_delta<E>(in, v, b, db, i, eps)) {
               return false;
             }
           break;
         case GRAD_CHECK_RANDOM:
-          for (int i = 0; i < 10; i++)
+          for (size_t i = 0; i < 10; i++)
             if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
               return false;
             }
-          for (int i = 0; i < 10; i++)
+          for (size_t i = 0; i < 10; i++)
             if (!calc_delta<E>(in, v, b, db, uniform_idx(b), eps)) {
               return false;
             }

@@ -56,8 +56,13 @@ inline void fully_connected_op_internal(const E1 &prev_out,
     for (serial_size_t c = 0; c < params.in_size_; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-      prev_delta(sample, c) += vectorize::dot(
-        &curr_delta(sample, 0), &W[c * params.out_size_], params.out_size_);
+
+      for (serial_size_t r = 0; r < params.out_size_; r++) {
+        prev_delta(sample, c) +=
+          curr_delta(sample, r) * W(sample, c * params.out_size_ + r);
+      }
+      // prev_delta(sample, c) += vectorize::dot(
+      // &curr_delta(sample, 0), &W[c * params.out_size_], params.out_size_);
     }
 
     for (int i = 0; i < params.out_size_; ++i) {
@@ -72,10 +77,13 @@ inline void fully_connected_op_internal(const E1 &prev_out,
         //                  prev_out(sample, c), r.end() - r.begin(),
         //                  &dW(sample, c * params.out_size_ + r.begin()));
       }
-
-      db(sample, i) += curr_delta(sample, i);
+      if (params.has_bias_) {
+        db(sample, i) += curr_delta(sample, i);
+      }
     }
   }
+  // db = db+curr_delta;
+  // FIXME: No tests found o_O
 }
 
 }  // namespace kernels
