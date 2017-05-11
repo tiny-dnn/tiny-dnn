@@ -470,9 +470,8 @@ struct LoadAndConstruct<tiny_dnn::softplus_layer> {
     tiny_dnn::float_t beta;
     tiny_dnn::float_t threshold;
 
-    ar(cereal::make_nvp("in_size", in_shape),
-      cereal::make_nvp("beta", beta),
-      cereal::make_nvp("threshold", threshold));
+    ar(cereal::make_nvp("in_size", in_shape), cereal::make_nvp("beta", beta),
+       cereal::make_nvp("threshold", threshold));
     construct(in_shape, beta, threshold);
   }
 };

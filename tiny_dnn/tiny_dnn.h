@@ -39,8 +39,8 @@
 #include "tiny_dnn/activations/leaky_relu_layer.h"
 #include "tiny_dnn/activations/relu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
-#include "tiny_dnn/activations/softplus_layer.h"
 #include "tiny_dnn/activations/softmax_layer.h"
+#include "tiny_dnn/activations/softplus_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/activations/tanh_p1m2_layer.h"
 

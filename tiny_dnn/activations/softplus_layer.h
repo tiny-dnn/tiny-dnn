@@ -29,7 +29,9 @@ class softplus_layer : public activation_layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  softplus_layer(serial_size_t in_dim, const float_t beta = 1, const float_t threshold = 20)
+  softplus_layer(serial_size_t in_dim,
+                 const float_t beta      = 1,
+                 const float_t threshold = 20)
     : softplus_layer(shape3d(in_dim, 1, 1), beta, threshold) {}
 
   /**
@@ -42,25 +44,30 @@ class softplus_layer : public activation_layer {
    * @param in_channels [in] number of channels (input elements along depth)
    */
   softplus_layer(serial_size_t in_width,
-                   serial_size_t in_height,
-                   serial_size_t in_channels,
-                   const float_t beta = 1,
-                   const float_t threshold = 20)
-    : softplus_layer(shape3d(in_width, in_height, in_channels), beta, threshold) {}
+                 serial_size_t in_height,
+                 serial_size_t in_channels,
+                 const float_t beta      = 1,
+                 const float_t threshold = 20)
+    : softplus_layer(
+        shape3d(in_width, in_height, in_channels), beta, threshold) {}
 
   /**
    * Construct a softplus layer with specified input shape.
    *
    * @param in_shape [in] shape of input tensor
    */
-  softplus_layer(const shape3d &in_shape, const float_t beta = 1, const float_t threshold = 20)
+  softplus_layer(const shape3d &in_shape,
+                 const float_t beta      = 1,
+                 const float_t threshold = 20)
     : activation_layer(in_shape), beta_(beta), threshold_(threshold) {}
 
   /**
    * Construct a softplus layer given the previous layer.
    * @param prev_layer previous layer
    */
-  softplus_layer(const layer &prev_layer, cconst float_t beta = 1, const float_t threshold = 20)
+  softplus_layer(const layer &prev_layer,
+                 const float_t beta      = 1,
+                 const float_t threshold = 20)
     : activation_layer(prev_layer), beta_(beta), threshold_(threshold) {}
 
   std::string layer_type() const override { return "softplus-activation"; }
@@ -72,7 +79,8 @@ class softplus_layer : public activation_layer {
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (serial_size_t j = 0; j < x.size(); j++) {
       float_t betain = beta_ * x[j];
-      y[j] = (betain > threshold_) ? x[j] : (1/beta_) *std::log1p(std::exp(betain));
+      y[j]           = (betain > threshold_) ? x[j]
+                                   : (1 / beta_) * std::log1p(std::exp(betain));
     }
   }
 
@@ -82,9 +90,9 @@ class softplus_layer : public activation_layer {
                            const vec_t &dy) override {
     for (serial_size_t j = 0; j < x.size(); j++) {
       float_t betaout = beta_ * x[j];
-      float_t exp_bo = std::exp(betaout);
+      float_t exp_bo  = std::exp(betaout);
       // dx = dy * (gradient of softplus)
-      dx[j] = (betaout > threshold_) ? dy[j] : dy[j] * (exp_bo - 1)/exp_bo;
+      dx[j] = (betaout > threshold_) ? dy[j] : dy[j] * (exp_bo - 1) / exp_bo;
     }
   }
 
