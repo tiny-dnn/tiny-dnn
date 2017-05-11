@@ -19,6 +19,8 @@ class softplus_layer : public activation_layer {
 
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (serial_size_t j = 0; j < x.size(); j++) {
+      // This is an approximation for numerical stability
+      // log1p(exp(30)) = 30.000000000000092 and log1p(exp(-30)) = 9.3576229688397368e-14
       if (x[j] >= float_t(30)) {
         y[j] = x[j];
       } else if (x[j] <= float_t(-30)) {
