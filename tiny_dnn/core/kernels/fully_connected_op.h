@@ -43,18 +43,18 @@ class FullyConnectedOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
-        context.parallelize());
+        params.has_bias_ ? xt::view(B, 0, xt::all()) : xt::xarray<float_t>(),
+        out_data, params, context.parallelize());
     } else if (engine == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
-        context.parallelize());
+        params.has_bias_ ? xt::view(B, 0, xt::all()) : xt::xarray<float_t>(),
+        out_data, params, context.parallelize());
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(
         in_data, xt::view(W, 0, xt::all()),
-        params.has_bias_ ? B[0] : xt::xarray<float_t>(), out_data, params,
-        context.parallelize());
+        params.has_bias_ ? xt::view(B, 0, xt::all()) : xt::xarray<float_t>(),
+        out_data, params, context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
