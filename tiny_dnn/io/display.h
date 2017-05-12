@@ -1,7 +1,6 @@
 // addapted from boost progress.hpp, made c++11 only //
 
-#ifndef PROGRESS_H
-#define PROGRESS_H
+#pragma once
 
 #include <chrono>
 #include <iostream>  // for ostream, cout, etc
@@ -103,5 +102,3 @@ class progress_display {
 };
 
 }  // namespace tiny_dnn
-
-#endif
