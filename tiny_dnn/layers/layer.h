@@ -435,8 +435,8 @@ class layer : public node {
   virtual void post_update() {}
 
   /**
-  * notify changing context (train <=> test)
-  **/
+   * notify changing context (train <=> test)
+   **/
   virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
   /* @brief Performs layer forward operation given an input tensor and
@@ -709,8 +709,8 @@ class layer : public node {
   }
 
   /**
-  * generate layer from cereal's Archive
-  **/
+   * generate layer from cereal's Archive
+   **/
   template <typename InputArchive>
   static std::shared_ptr<layer> load_layer(InputArchive &ia);
 

@@ -155,9 +155,9 @@ TEST(layer_tuple, chain_operator_layer_tuple2) {
   auto conv  = std::make_shared<convolutional_layer>(5, 5, 3, 1, 6);
   auto slice = std::make_shared<slice_layer>(shape3d(3, 3, 6),
                                              slice_type::slice_channels, 3);
-  auto tanh = std::make_shared<tanh_layer>(3, 3, 2);
-  auto relu = std::make_shared<relu_layer>(3, 3, 2);
-  auto elu  = std::make_shared<elu_layer>(3, 3, 2);
+  auto tanh  = std::make_shared<tanh_layer>(3, 3, 2);
+  auto relu  = std::make_shared<relu_layer>(3, 3, 2);
+  auto elu   = std::make_shared<elu_layer>(3, 3, 2);
 
   conv << slice << (tanh, relu, elu);
   EXPECT_EQ(slice->prev_nodes()[0], conv.get());
@@ -165,4 +165,4 @@ TEST(layer_tuple, chain_operator_layer_tuple2) {
   EXPECT_EQ(slice->next_nodes()[1], relu.get());
   EXPECT_EQ(slice->next_nodes()[2], elu.get());
 }
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

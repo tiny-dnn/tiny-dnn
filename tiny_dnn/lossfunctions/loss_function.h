@@ -120,7 +120,7 @@ class cross_entropy {
     vec_t d(t.size());
 
     for (serial_size_t i = 0; i < y.size(); ++i)
-      d[i]               = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+      d[i] = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
 
     return d;
   }
@@ -162,7 +162,7 @@ std::vector<vec_t> gradient(const std::vector<vec_t> &y,
   assert(y.size() == t.size());
 
   for (serial_size_t i = 0; i < y.size(); i++)
-    grads[i]           = gradient<E>(y[i], t[i]);
+    grads[i] = gradient<E>(y[i], t[i]);
 
   return grads;
 }

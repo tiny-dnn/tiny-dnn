@@ -25,12 +25,12 @@ class batch_normalization_layer : public layer {
   typedef layer Base;
 
   /**
-  * @param prev_layer      [in] previous layer to be connected with this layer
-  * @param epsilon         [in] small positive value to avoid zero-division
-  * @param momentum        [in] momentum in the computation of the exponential
-  *average of the mean/stddev of the data
-  * @param phase           [in] specify the current context (train/test)
-  **/
+   * @param prev_layer      [in] previous layer to be connected with this layer
+   * @param epsilon         [in] small positive value to avoid zero-division
+   * @param momentum        [in] momentum in the computation of the exponential
+   *average of the mean/stddev of the data
+   * @param phase           [in] specify the current context (train/test)
+   **/
   batch_normalization_layer(const layer &prev_layer,
                             float_t epsilon  = 1e-5,
                             float_t momentum = 0.999,
@@ -46,13 +46,13 @@ class batch_normalization_layer : public layer {
   }
 
   /**
-  * @param in_spatial_size [in] spatial size (WxH) of the input data
-  * @param in_channels     [in] channels of the input data
-  * @param epsilon         [in] small positive value to avoid zero-division
-  * @param momentum        [in] momentum in the computation of the exponential
-  *average of the mean/stddev of the data
-  * @param phase           [in] specify the current context (train/test)
-  **/
+   * @param in_spatial_size [in] spatial size (WxH) of the input data
+   * @param in_channels     [in] channels of the input data
+   * @param epsilon         [in] small positive value to avoid zero-division
+   * @param momentum        [in] momentum in the computation of the exponential
+   *average of the mean/stddev of the data
+   * @param phase           [in] specify the current context (train/test)
+   **/
   batch_normalization_layer(serial_size_t in_spatial_size,
                             serial_size_t in_channels,
                             float_t epsilon  = 1e-5,
@@ -193,7 +193,7 @@ class batch_normalization_layer : public layer {
 
   void load(const std::vector<float_t> &src, int &idx) override {
     Base::load(src, idx);
-    for (auto &m : mean_) m     = src[idx++];
+    for (auto &m : mean_) m = src[idx++];
     for (auto &v : variance_) v = src[idx++];
   }
 

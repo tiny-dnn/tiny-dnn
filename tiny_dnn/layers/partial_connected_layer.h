@@ -97,9 +97,8 @@ class partial_connected_layer : public layer {
     tensor_t &curr_delta     = *out_grad[0];
 
     // @todo revise the parallelism strategy
-    for (serial_size_t
-           sample       = 0,
-           sample_count = static_cast<serial_size_t>(prev_out.size());
+    for (serial_size_t sample = 0, sample_count = static_cast<serial_size_t>(
+                                     prev_out.size());
          sample < sample_count; ++sample) {
       for_i(in2wo_.size(), [&](size_t i) {
         const wo_connections &connections = in2wo_[i];

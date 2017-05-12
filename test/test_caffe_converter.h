@@ -1026,4 +1026,4 @@ TEST(caffe_converter, batchnorm_load_weight_from_caffe_protobinary) {
   EXPECT_EQ(ser_buf.str(), "0 -1 1 0 1 1 ");
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -173,8 +173,8 @@ class network {
   tensor_t predict(const tensor_t &in) { return fprop(in); }
 
   /**
-  * executes forward-propagation and returns output
-  **/
+   * executes forward-propagation and returns output
+   **/
   std::vector<tensor_t> predict(const std::vector<tensor_t> &in) {
     return fprop(in);
   }
@@ -258,57 +258,57 @@ class network {
   }
 
   /**
-  * trains the network for a fixed number of epochs to generate desired
-  * output.
-  *
-  * This method executes fixed number of training steps and invoke callbacks
-  * for
-  * each mini-batch/epochs.
-  * The network is trained to minimize given loss function(specified by
-  * template
-  * parameter).
-  *
-  * Shape of inputs and desired_outputs must be same to network inputs. For
-  * example, if your network
-  * has 2 input layers that takes N dimensional array, for each element of
-  * inputs must be [2xN]
-  * array.
-  *
-  * @code
-  * network<sequential> net;
-  * adagrad opt;
-  *
-  * net << layers::fc(2, 3) << activation::tanh()
-  *     << layers::fc(3, 1) << activation::relu();
-  *
-  * // 2training data, each data is float_t[2]
-  * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
-  * std::vector<vec_t> out  {    { 2 },    { 1 } };
-  *
-  * net.fit<mse>(opt, data, out, 1, 1);
-  *
-  * // 2training data, each data is float_t[1][2]
-  * // this form is also valid
-  * std::vector<tensor_t> data2{ { { 1, 0 } }, { { 0, 2 } } };
-  * std::vector<tensor_t> out2 { {    { 2 } }, {    { 1 } } };
-  *
-  * net.fit<mse>(opt, data2, out2, 1, 1);
-  * @endcode
-  *
-  *
-  * @param optimizer          optimizing algorithm for training
-  * @param inputs             array of input data
-  * @param desired_outputs    array of desired output
-  * @param batch_size         number of samples per parameter update
-  * @param epoch              number of training epochs
-  * @param on_batch_enumerate callback for each mini-batch enumerate
-  * @param on_epoch_enumerate callback for each epoch
-  * @param reset_weights      set true if reset current network weights
-  * @param n_threads          number of tasks
-  * @param t_cost             target costs (leave to nullptr in order to
-  * assume
-  * equal cost for every target)
-  */
+   * trains the network for a fixed number of epochs to generate desired
+   * output.
+   *
+   * This method executes fixed number of training steps and invoke callbacks
+   * for
+   * each mini-batch/epochs.
+   * The network is trained to minimize given loss function(specified by
+   * template
+   * parameter).
+   *
+   * Shape of inputs and desired_outputs must be same to network inputs. For
+   * example, if your network
+   * has 2 input layers that takes N dimensional array, for each element of
+   * inputs must be [2xN]
+   * array.
+   *
+   * @code
+   * network<sequential> net;
+   * adagrad opt;
+   *
+   * net << layers::fc(2, 3) << activation::tanh()
+   *     << layers::fc(3, 1) << activation::relu();
+   *
+   * // 2training data, each data is float_t[2]
+   * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
+   * std::vector<vec_t> out  {    { 2 },    { 1 } };
+   *
+   * net.fit<mse>(opt, data, out, 1, 1);
+   *
+   * // 2training data, each data is float_t[1][2]
+   * // this form is also valid
+   * std::vector<tensor_t> data2{ { { 1, 0 } }, { { 0, 2 } } };
+   * std::vector<tensor_t> out2 { {    { 2 } }, {    { 1 } } };
+   *
+   * net.fit<mse>(opt, data2, out2, 1, 1);
+   * @endcode
+   *
+   *
+   * @param optimizer          optimizing algorithm for training
+   * @param inputs             array of input data
+   * @param desired_outputs    array of desired output
+   * @param batch_size         number of samples per parameter update
+   * @param epoch              number of training epochs
+   * @param on_batch_enumerate callback for each mini-batch enumerate
+   * @param on_epoch_enumerate callback for each epoch
+   * @param reset_weights      set true if reset current network weights
+   * @param n_threads          number of tasks
+   * @param t_cost             target costs (leave to nullptr in order to
+   * assume
+   * equal cost for every target)
+   */
   template <typename Error,
             typename Optimizer,
             typename OnBatchEnumerate,
@@ -463,10 +463,10 @@ class network {
   }
 
   /**
-  * checking gradients calculated by bprop
-  * detail information:
-  * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
-  **/
+   * checking gradients calculated by bprop
+   * detail information:
+   * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
+   **/
   template <typename E>
   bool gradient_check(const std::vector<tensor_t> &in,
                       const std::vector<std::vector<label_t>> &t,
@@ -563,8 +563,8 @@ class network {
   serial_size_t in_data_size() const { return net_.in_data_size(); }
 
   /**
-  * set weight initializer to all layers
-  **/
+   * set weight initializer to all layers
+   **/
   template <typename WeightInit>
   network &weight_init(const WeightInit &f) {
     auto ptr = std::make_shared<WeightInit>(f);
@@ -573,8 +573,8 @@ class network {
   }
 
   /**
-  * set bias initializer to all layers
-  **/
+   * set bias initializer to all layers
+   **/
   template <typename BiasInit>
   network &bias_init(const BiasInit &f) {
     auto ptr = std::make_shared<BiasInit>(f);
@@ -692,9 +692,9 @@ class network {
   }
 
   /**
-  * load network weights from filepath, 30 times faster than stream reading
-  * @deprecated use load_weights instead.
-  **/
+   * load network weights from filepath, 30 times faster than stream reading
+   * @deprecated use load_weights instead.
+   **/
   void fast_load(const char *filepath) {
     FILE *stream = fopen(filepath, "r");
     std::vector<float_t> data;

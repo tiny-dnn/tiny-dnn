@@ -34,12 +34,12 @@ class lrn_layer : public layer {
       in_square_(in_shape_.area()) {}
 
   /**
-  * @param layer       [in] the previous layer connected to this
-  * @param local_size  [in] the number of channels(depths) to sum over
-  * @param in_channels [in] the number of channels of input data
-  * @param alpha       [in] the scaling parameter (same to caffe's LRN)
-  * @param beta        [in] the scaling parameter (same to caffe's LRN)
-  **/
+   * @param layer       [in] the previous layer connected to this
+   * @param local_size  [in] the number of channels(depths) to sum over
+   * @param in_channels [in] the number of channels of input data
+   * @param alpha       [in] the scaling parameter (same to caffe's LRN)
+   * @param beta        [in] the scaling parameter (same to caffe's LRN)
+   **/
   lrn_layer(layer *prev,
             serial_size_t local_size,
             float_t alpha      = 1.0,
@@ -134,7 +134,7 @@ class lrn_layer : public layer {
       float_t *dst       = &out[in_shape_.get_index(0, 0, i)];
       const float_t *src = &in[in_shape_.get_index(0, 0, i)];
       for (serial_size_t j = 0; j < wxh; j++)
-        dst[j]             = src[j] *
+        dst[j] = src[j] *
                  std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
     }
   }

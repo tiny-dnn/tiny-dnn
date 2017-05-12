@@ -51,7 +51,7 @@ class max_unpooling_layer : public layer {
    * @param unpooling_size [in] factor by which to upscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   max_unpooling_layer(serial_size_t in_width,
                       serial_size_t in_height,
                       serial_size_t in_channels,
