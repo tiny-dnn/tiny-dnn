@@ -16,7 +16,11 @@
 namespace tiny_dnn {
 namespace kernels {
 
-template <class E1, class E2, class E3, class E4>
+template <class E1,
+          class E2,
+          class E3,
+          class E4,
+          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
 inline void fully_connected_op_internal(const E1 &in_data,
                                         const E2 &W,
                                         const E3 &bias,
@@ -41,9 +45,14 @@ inline void fully_connected_op_internal(const E1 &in_data,
   });
 }
 
-// TODO(Randl): enable on xexpressions and views?
 // TODO(Randl): rvalue?
-template <class E1, class E2, class E3, class E4, class E5, class E6>
+template <class E1,
+          class E2,
+          class E3,
+          class E4,
+          class E5,
+          class E6,
+          are_all_xexpr<E1, E2, E3, E4, E5, E6> * = nullptr>
 inline void fully_connected_op_internal(const E1 &prev_out,
                                         const E2 &W,
                                         E3 &dW,

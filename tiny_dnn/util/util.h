@@ -407,4 +407,33 @@ inline tensor_t from_xtensor(const xt::xarray<float_t> &t) {
   return result;
 }
 
+// check for value type being some particular type
+template <class ValType, class T>
+using value_type_is =
+  std::enable_if_t<std::is_same<T, typename ValType::value_type>::value>;
+
+template <class ValType>
+using value_is_float = value_type_is<ValType, float>;
+
+template <class ValType>
+using value_is_double = value_type_is<ValType, double>;
+
+// check that whole tuple are xexpressions
+template <typename>
+struct is_xexpression : std::false_type {};
+
+template <typename T>
+struct is_xexpression<xt::xexpression<T>> : std::true_type {};
+
+template <template <typename> class checker, typename... Ts>
+struct are_all : std::true_type {};
+
+template <template <typename> class checker, typename T0, typename... Ts>
+struct are_all<checker, T0, Ts...>
+  : std::integral_constant<bool,
+                           checker<T0>::value &&
+                             are_all<checker, Ts...>::value> {};
+
+template <typename... Ts>
+using are_all_xexpr = are_all<is_xexpression, Ts...>;
 }  // namespace tiny_dnn
