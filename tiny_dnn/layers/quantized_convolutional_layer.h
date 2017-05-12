@@ -419,7 +419,7 @@ class quantized_convolutional_layer : public layer {
         // make padded version in order to avoid corner-case in
         // fprop/bprop
         for (serial_size_t c = 0; c < params_.in.depth_; c++) {
-          float_t *pimg      = &(*dst)[params_.in_padded.get_index(
+          float_t *pimg = &(*dst)[params_.in_padded.get_index(
             params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
           const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
 

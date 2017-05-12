@@ -239,7 +239,7 @@ TEST(network, train_predict) {
     const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
     const vec_t input      = {static_cast<float_t>(in[0]),
                          static_cast<float_t>(in[1])};
-    const label_t actual   = net.predict_label(input);
+    const label_t actual = net.predict_label(input);
     EXPECT_EQ(expected, actual);
 
     const auto actual_vec = net.predict(input);
@@ -293,7 +293,7 @@ TEST(network, train_predict_different_batches) {
       const label_t expected = (in[0] ^ in[1]) ? 1 : 0;
       const vec_t input      = {static_cast<float_t>(in[0]),
                            static_cast<float_t>(in[1])};
-      const label_t actual   = net.predict_label(input);
+      const label_t actual = net.predict_label(input);
       EXPECT_EQ(expected, actual);
 
       const auto actual_vec = net.predict(input);

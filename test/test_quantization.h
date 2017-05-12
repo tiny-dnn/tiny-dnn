@@ -232,7 +232,7 @@ TEST(quantization_utils, float_tensor_to_quantized) {
   const float input_max = 255.0f;
   const vec_t input     = {1.0f,   -1.0f,  10.0f, 10.25f, 127.0f,
                        255.0f, 512.0f, 0.0f,  23.0f};
-  uint8_t expected[9]   = {1, 0, 10, 10, 127, 255, 255, 0, 23};
+  uint8_t expected[9] = {1, 0, 10, 10, 127, 255, 255, 0, 23};
   std::vector<uint8_t> output =
     core::kernels::float_tensor_to_quantized<uint8_t>(input, input_min,
                                                       input_max);

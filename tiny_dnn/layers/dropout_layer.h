@@ -103,10 +103,10 @@ class dropout_layer : public layer {
 
       if (phase_ == net_phase::train) {
         for (size_t i = 0; i < in_vec.size(); i++)
-          mask[i] = bernoulli(dropout_rate_);
+          mask[i]     = bernoulli(dropout_rate_);
 
         for (size_t i = 0; i < in_vec.size(); i++)
-          out_vec[i] = mask[i] * scale_ * in_vec[i];
+          out_vec[i]  = mask[i] * scale_ * in_vec[i];
       } else {
         for (size_t i = 0, end = in_vec.size(); i < end; i++)
           out_vec[i] = in_vec[i];
