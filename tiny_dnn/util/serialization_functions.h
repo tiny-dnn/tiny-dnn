@@ -880,7 +880,7 @@ struct serialization_buddy {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
        cereal::make_nvp("beta", layer.beta_),
-       cereal::make_nvp("beta", layer.threshold_));
+       cereal::make_nvp("threshold", layer.threshold_));
   }
 #endif
 };

@@ -722,7 +722,7 @@ TEST(serialization, serialize_softplus) {
                     "width": 5,
                     "height" : 10,
                     "depth" : 1
-                }
+                },
                 "beta": 1,
                 "threshold": 20
             }
