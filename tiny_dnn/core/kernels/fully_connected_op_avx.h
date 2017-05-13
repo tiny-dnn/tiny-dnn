@@ -213,7 +213,8 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
 }
 
 #endif  // CNN_USE_AVX
-template <class E1, class E2, class E3, class E4>
+template <class E1, class E2, class E3, class E4,
+    are_all_xexpr<E1, E2, E3, E4> * = nullptr>
 inline void fully_connected_op_avx(E1 &in_data,
                                    E2 W,
                                    E3 bias,

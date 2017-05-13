@@ -986,7 +986,7 @@ TEST(caffe_converter, batchnorm_load_weight_from_caffe_protobinary) {
   auto model       = create_net_from_json(json);
 
   // there should be two tiny_dnn layers
-  EXPECT_EQ(model->depth(), 2);
+  EXPECT_EQ(model->depth(), 2u);
 
   EXPECT_EQ((*model)[0]->layer_type(), "conv");
   EXPECT_EQ((*model)[1]->layer_type(), "batch-norm");
