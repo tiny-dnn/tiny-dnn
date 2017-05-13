@@ -224,8 +224,8 @@ template <class E1,
           class E4,
           are_all_xexpr<E1, E2, E3, E4> * = nullptr>
 inline void fully_connected_op_avx(E1 &in_data,
-                                   E2 &W,
-                                   E3 &bias,
+                                   E2 W,
+                                   E3 bias, //TODO
                                    E4 &out_data,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
