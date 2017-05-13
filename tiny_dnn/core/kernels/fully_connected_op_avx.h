@@ -26,6 +26,9 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
                                                E4 &out_data,
                                                const fully_params &params,
                                                const bool layer_parallelize) {
+  auto in_shape = in_data.shape();
+  auto num_samples = in_shape[0];
+
   if (params.has_bias_) {
     size_t nblocks  = params.out_size_ / 8;
     size_t nremains = params.out_size_ & 7;
@@ -35,7 +38,7 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
       };
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+      for_i(layer_parallelize, num_samples, [&](int sample) {
         const auto in = xt::view(in_data, sample, xt::all());
         auto out      = xt::view(out_data, sample, xt::all());
         {
@@ -72,7 +75,7 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
         }
       });
     } else {
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+      for_i(layer_parallelize, num_samples, [&](int sample) {
         const auto in = xt::view(in_data, sample, xt::all());
         auto out      = xt::view(out_data, sample, xt::all());
         for (size_t i = 0; i < nblocks; ++i) {
@@ -92,7 +95,7 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
       });
     }
   } else {
-    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+    for_i(layer_parallelize, num_samples, [&](int sample) {
       const auto in = xt::view(in_data, sample, xt::all());
       auto out      = xt::view(out_data, sample, xt::all());
       for (serial_size_t i = 0; i < params.out_size_; i++) {
@@ -139,8 +142,10 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
                                             E6 &prev_delta,
                                             const fully_params &params,
                                             const bool layer_parallelize) {
+  auto prev_out_shape = prev_out.shape();
+  auto num_samples = prev_out_shape[0];
   if (params.has_bias_) {
-    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+    for (serial_size_t sample = 0; sample < num_samples; sample++) {
       auto prev_delta2     = xt::view(prev_delta, sample, xt::all());
       auto curr_delta2     = xt::view(curr_delta, sample, xt::all());
       const auto prev_out2 = xt::view(prev_out, sample, xt::all());
@@ -166,7 +171,7 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
            });
     }
   } else {
-    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+    for (serial_size_t sample = 0; sample < num_samples; sample++) {
       auto prev_delta2     = xt::view(prev_delta, sample, xt::all());
       auto curr_delta2     = xt::view(curr_delta, sample, xt::all());
       const auto prev_out2 = xt::view(prev_out, sample, xt::all());
@@ -216,8 +221,8 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
 template <class E1, class E2, class E3, class E4,
     are_all_xexpr<E1, E2, E3, E4> * = nullptr>
 inline void fully_connected_op_avx(E1 &in_data,
-                                   E2 W,
-                                   E3 bias,
+                                   E2 &W,
+                                   E3 &bias,
                                    E4 &out_data,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
