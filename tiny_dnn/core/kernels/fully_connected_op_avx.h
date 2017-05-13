@@ -26,7 +26,7 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
                                                E4 &out_data,
                                                const fully_params &params,
                                                const bool layer_parallelize) {
-  auto in_shape = in_data.shape();
+  auto in_shape    = in_data.shape();
   auto num_samples = in_shape[0];
 
   if (params.has_bias_) {
@@ -143,7 +143,7 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
                                             const fully_params &params,
                                             const bool layer_parallelize) {
   auto prev_out_shape = prev_out.shape();
-  auto num_samples = prev_out_shape[0];
+  auto num_samples    = prev_out_shape[0];
   if (params.has_bias_) {
     for (serial_size_t sample = 0; sample < num_samples; sample++) {
       auto prev_delta2     = xt::view(prev_delta, sample, xt::all());
@@ -218,8 +218,11 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
 }
 
 #endif  // CNN_USE_AVX
-template <class E1, class E2, class E3, class E4,
-    are_all_xexpr<E1, E2, E3, E4> * = nullptr>
+template <class E1,
+          class E2,
+          class E3,
+          class E4,
+          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
 inline void fully_connected_op_avx(E1 &in_data,
                                    E2 &W,
                                    E3 &bias,
