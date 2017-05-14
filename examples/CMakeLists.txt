@@ -78,5 +78,5 @@ if(PROTO_CPP_AVAILABLE)
 endif()
 
 if(PROTO_CPP_GENERATE)
-    add_dependencies(example_caffe_converter example_caffe_convert_model generated_proto)
+    add_dependencies(example_caffe_converter generated_proto)
 endif()
