@@ -51,6 +51,10 @@ add_executable(example_cifar_test cifar10/test.cpp ${tiny_dnn_headers})
 target_link_libraries(example_cifar_test
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
+add_executable(example_imagenet_test imagenet/test.cpp ${tiny_dnn_headers})
+target_link_libraries(example_imagenet_test
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
 cotire(example_deconv_visual example_cifar_train example_cifar_test)
 
 if(PROTO_CPP_AVAILABLE)
@@ -62,6 +66,16 @@ if(PROTO_CPP_AVAILABLE)
             ${project_library_target_name}
             ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
     cotire(example_caffe_converter)
+
+    include_directories(${PROTOBUF_INCLUDE_DIRS})
+    set_source_files_properties(${proto_file} PROPERTIES GENERATED TRUE)
+    add_executable(example_caffe_convert_model
+                   caffe_converter/caffe_convert_model.cpp ${proto_file} ${tiny_dnn_headers})
+    target_link_libraries(example_caffe_convert_model
+            ${project_library_target_name}
+            ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
+    cotire(example_caffe_convert_model)
+
 endif()
 
 if(PROTO_CPP_GENERATE)
