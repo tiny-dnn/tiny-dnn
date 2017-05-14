@@ -12,7 +12,9 @@ double rescale(double x) {
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-void convert_image(const std::string &imagefilename, int w, int h,
+void convert_image(const std::string &imagefilename,
+                   int w,
+                   int h,
                    vec_t &data) {
   image<> img(imagefilename, image_type::bgr);
   image<> resized = resize_image(img, w, h);
@@ -22,7 +24,7 @@ void convert_image(const std::string &imagefilename, int w, int h,
     for (size_t y = 0; y < resized.height(); ++y) {
       for (size_t x = 0; x < resized.width(); ++x) {
         data[c * resized.width() * resized.height() + y * resized.width() + x] =
-            resized[y * resized.width() + x + c] - imageNetMeans[c];
+          resized[y * resized.width() + x + c] - imageNetMeans[c];
       }
     }
   }
