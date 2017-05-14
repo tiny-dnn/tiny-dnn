@@ -275,21 +275,14 @@ if(PROFILE AND (CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
 endif()
 
 if (USE_ASAN)
-    CHECK_CXX_COMPILER_FLAG(-fsanitize=address HasAsan)
-    if (HasAsan)
-        #enable ASan
-        set(ENV{ASAN_OPTIONS} "strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:symbolize=1")
-        CHECK_CXX_COMPILER_FLAG(-fsanitize-address-use-after-scope HasUseAfterScope)
-        set(ASAN_FLAGS "-fsanitize=address -fno-omit-frame-pointer")
-        if (HasUseAfterScope)
-            set(ASAN_FLAGS "${ASAN_FLAGS} -fsanitize-address-use-after-scope")
-        endif()
+    #enable ASan
+    set(ENV{ASAN_OPTIONS} "strict_string_checks=1:detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1:symbolize=1")
+    CHECK_CXX_COMPILER_FLAG(-fsanitize-address-use-after-scope HasUseAfterScope)
+    set(ASAN_FLAGS "-fsanitize=address -fno-omit-frame-pointer")
+    if (HasUseAfterScope)
+        set(ASAN_FLAGS "${ASAN_FLAGS} -fsanitize-address-use-after-scope")
     endif()
-    set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} ${ASAN_FLAGS}")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${ASAN_FLAGS}")
-    set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG} ${ASAN_FLAGS}")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} ${ASAN_FLAGS}")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} ${ASAN_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ASAN_FLAGS}")
 endif()
 ####
 # Write the config.h
