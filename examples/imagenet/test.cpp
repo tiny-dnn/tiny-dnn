@@ -12,24 +12,25 @@ double rescale(double x) {
   return 100.0 * (x - a.scale().first) / (a.scale().second - a.scale().first);
 }
 
-void convert_image(const std::string &imagefilename,
-                   int w,
-                   int h,
+void convert_image(const std::string &imagefilename, int w, int h,
                    vec_t &data) {
   image<> img(imagefilename, image_type::bgr);
   image<> resized = resize_image(img, w, h);
   data.resize(resized.width() * resized.height() * resized.depth());
-  float imageNetMeans[] = {103.939, 116.779, 123.68}; // BGR
+  float imageNetMeans[] = {103.939, 116.779, 123.68};  // BGR
   for (size_t c = 0; c < resized.depth(); ++c) {
     for (size_t y = 0; y < resized.height(); ++y) {
       for (size_t x = 0; x < resized.width(); ++x) {
-        data[c * resized.width() * resized.height() + y * resized.width() + x] = resized[y * resized.width() + x + c] - imageNetMeans[c];
+        data[c * resized.width() * resized.height() + y * resized.width() + x] =
+            resized[y * resized.width() + x + c] - imageNetMeans[c];
       }
     }
   }
 }
 
-void recognize(const std::string &model_name, const std::string &class_labels_file_name, const std::string &src_filename) {
+void recognize(const std::string &model_name,
+               const std::string &class_labels_file_name,
+               const std::string &src_filename) {
   network<sequential> nn;
 
   // Load the model
@@ -44,11 +45,10 @@ void recognize(const std::string &model_name, const std::string &class_labels_fi
   vector<pair<double, int>> scores;
 
   // Load class labels
-  ifstream class_labels_file (class_labels_file_name, ios::in);
+  ifstream class_labels_file(class_labels_file_name, ios::in);
   string line;
   vector<string> class_labels;
-  while (getline(class_labels_file, line))
-  {
+  while (getline(class_labels_file, line)) {
     class_labels.push_back(line);
   }
 
@@ -58,15 +58,17 @@ void recognize(const std::string &model_name, const std::string &class_labels_fi
 
   sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 
-  for (int i = 0; i < 5; i++)
-  {
-    cout << "Predicted class: " << class_labels[scores[i].second] << " (" << scores[i].second << ") | Confidence: " << scores[i].first << " %" << endl;
+  for (int i = 0; i < 5; i++) {
+    cout << "Predicted class: " << class_labels[scores[i].second] << " ("
+         << scores[i].second << ") | Confidence: " << scores[i].first << " %"
+         << endl;
   }
 }
 
 int main(int argc, char **argv) {
   if (argc != 4) {
-    cout << "Usage: " << argv[0] << " <Model file> <Classes label file> <Input image file>" << endl;
+    cout << "Usage: " << argv[0]
+         << " <Model file> <Classes label file> <Input image file>" << endl;
     return 0;
   }
   recognize(argv[1], argv[2], argv[3]);

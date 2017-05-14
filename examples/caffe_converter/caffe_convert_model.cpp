@@ -16,28 +16,28 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 using namespace std;
 
-void convert(const string& model_file,
-          const string& trained_file ) {
+void convert(const string& model_file, const string& trained_file) {
+  // load model and weights
+  auto net = create_net_from_caffe_prototxt(model_file);
+  reload_weight_from_caffe_protobinary(trained_file, net.get());
 
-    // load model and weights
-    auto net = create_net_from_caffe_prototxt(model_file);
-    reload_weight_from_caffe_protobinary(trained_file, net.get());
-
-    // save model, weights, architecture
-    net->save("tiny-model"); // Saves both the architecture and weights
-    // net->save("tiny-weights-json", content_type::weights, file_format::json);
-    // net->save("tiny-weights-binary", content_type::weights, file_format::binary);
-    // net->save("tiny-architecture", content_type::model, file_format::json);
+  // save model, weights, architecture
+  net->save("tiny-model");  // Saves both the architecture and weights
+  // net->save("tiny-weights-json", content_type::weights, file_format::json);
+  // net->save("tiny-weights-binary", content_type::weights,
+  // file_format::binary);
+  // net->save("tiny-architecture", content_type::model, file_format::json);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   if (argc != 3) {
-    cout << "Usage: " << argv[0] << " <Prototxt file> <Caffemodel file>" << endl;
+    cout << "Usage: " << argv[0] << " <Prototxt file> <Caffemodel file>"
+         << endl;
     return 0;
   }
   try {
     convert(argv[1], argv[2]);
-  } catch (const nn_error &e) {
+  } catch (const nn_error& e) {
     cout << e.what() << endl;
   }
 }
