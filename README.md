@@ -114,13 +114,19 @@ Some cmake options are available:
 |USE_OMP|Use OpenMP for parallelization|OFF<sup>1</sup>|[OpenMP Compiler](http://openmp.org/wp/openmp-compilers/)|
 |USE_SSE|Use Intel SSE instruction set|ON|Intel CPU which supports SSE|
 |USE_AVX|Use Intel AVX instruction set|ON|Intel CPU which supports AVX|
+|USE_AVX2|Build tiny-dnn with AVX2 library support|OFF|Intel CPU which supports AVX2|
 |USE_NNPACK|Use NNPACK for convolution operation|OFF|[Acceleration package for neural networks on multi-core CPUs](https://github.com/Maratyszcza/NNPACK)|
 |USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
 |USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
 |USE_SERIALIZER|Enable model serialization|ON<sup>2</sup>|-|
+|USE_DOUBLE|Use double precision computations instead of single precision|OFF|-|
+|USE_ASAN|Use Address Sanitizer|OFF|clang or gcc compiler|
+|USE_IMAGE_API|Enable Image API support|ON|-|
+|USE_GEMMLOWP|Enable gemmlowp support|OFF|-|
 |BUILD_TESTS|Build unit tests|OFF<sup>3</sup>|-|
 |BUILD_EXAMPLES|Build example projects|OFF|-|
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
+|PROFILE|Build unit tests|OFF|gprof|
 
 <sup>1</sup> tiny-dnn use c++11 standard library for parallelization by default
 
