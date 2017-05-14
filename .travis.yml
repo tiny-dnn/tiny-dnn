@@ -80,12 +80,12 @@ before_script:
             -DUSE_DOUBLE=$USE_DOUBLE
             -DBUILD_TESTS=$BUILD_TESTS
             -DCOVERALLS=$COVERALLS
+            -DUSE_ASAN=ON
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
       cmake -DUSE_SSE=$USE_SSE
             -DUSE_AVX=$USE_AVX
-            -DUSE_ASAN=ON
             -DBUILD_TESTS=$BUILD_TESTS
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
