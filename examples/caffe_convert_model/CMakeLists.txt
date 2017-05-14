@@ -8,7 +8,7 @@ find_package( Protobuf REQUIRED )
 PROTOBUF_GENERATE_CPP( PROTO_SRC PROTO_HDR ${CMAKE_CURRENT_SOURCE_DIR}/../../tiny_dnn/io/caffe/caffe.proto )
 
 # set the executable (main cpp + protobuf generated caffe.pb.h/caffe.pb.cc )
-add_executable( caffe_converter caffe_converter.cpp ${PROTO_SRC} ${PROTO_HDR} )
+add_executable( caffe_convert_model caffe_convert_model.cpp ${PROTO_SRC} ${PROTO_HDR} )
 
 # Set the include dir (binary for caffe.pb.h, protobuf and location of tiny-dnn source)
 target_include_directories( caffe_converter PRIVATE ${CMAKE_CURRENT_BINARY_DIR}

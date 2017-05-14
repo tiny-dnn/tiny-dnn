@@ -70,14 +70,13 @@ if(PROTO_CPP_AVAILABLE)
     include_directories(${PROTOBUF_INCLUDE_DIRS})
     set_source_files_properties(${proto_file} PROPERTIES GENERATED TRUE)
     add_executable(example_caffe_convert_model
-                   caffe_converter/caffe_convert_model.cpp ${proto_file} ${tiny_dnn_headers})
+                   caffe_convert_model/caffe_convert_model.cpp ${proto_file} ${tiny_dnn_headers})
     target_link_libraries(example_caffe_convert_model
             ${project_library_target_name}
             ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
     cotire(example_caffe_convert_model)
-
 endif()
 
 if(PROTO_CPP_GENERATE)
-    add_dependencies(example_caffe_converter generated_proto)
+    add_dependencies(example_caffe_converter example_caffe_convert_model generated_proto)
 endif()
