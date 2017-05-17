@@ -31,17 +31,16 @@ namespace tiny_dnn {
  * Data is held by a std::vector with 64 bytes alignment.
  * Unmutable if kConst == true
  */
-template <typename U = float_t>
+template <typename U = float_t, typename Storage = xt::xarray<U>>
 class Tensor {
-  typedef U* UPtr;
+  typedef U *UPtr;
+
  public:
   /**
    * Initializes an empty tensor.
    * @return
    */
-  Tensor() {
-    storage_ = xt::xarray<U>();
-  }
+  Tensor() { storage_ = xt::xarray<U>(); }
 
   /**
    * Constructor that assepts an array of shape and create a Tensor with that
@@ -65,7 +64,9 @@ class Tensor {
     storage_ = xt::xarray<U>(shape);
   }
 
-  //~Tensor() = default;
+  Tensor<U> &operator=(const Tensor<U> &T) { storage_(T.storage_); }
+
+//~Tensor() = default;
 
 // TODO(Randl): implement copy and move constructors
 #if 0
@@ -95,8 +96,8 @@ class Tensor {
    *
    * @return the size of first dimension
    */
-//TODO: is needed? ill-formed
-  const auto shape() const { return storage_.size(); }
+  // TODO: is needed? ill-formed
+  const auto size() const { return storage_.shape()[0]; }
 
   /**
    * Checked version of access to indexes in tensor (throw exceptions
@@ -143,7 +144,8 @@ class Tensor {
    */
   template <typename... Args>
   size_t host_pos(const size_t d, const Args... args) const {
-    //static_assert(sizeof...(args) < kDimensions, "Wrong number of dimensions");
+    // static_assert(sizeof...(args) < kDimensions, "Wrong number of
+    // dimensions");
     size_t dim = storage_.dim() - sizeof...(args) - 1;
     if (d >= storage_.shape()[dim]) {
       throw nn_error("Access tensor out of range.");
@@ -162,18 +164,17 @@ class Tensor {
 
   template <typename... Args>
   auto host_iter(const Args... args) const {
-    //static_assert(!kConst, "Non-constant operation on constant Tensor");
-    //static_assert(sizeof...(args) == kDimensions, "Wrong number of dimensions");
+    // static_assert(!kConst, "Non-constant operation on constant Tensor");
+    // static_assert(sizeof...(args) == kDimensions, "Wrong number of
+    // dimensions");
     return storage_.xbegin() + host_pos(args...);
   }
 
-  auto host_begin() const {
-    return storage_.xbegin();
-  }
+  auto host_begin() const { return storage_.xbegin(); }
 
   auto host_data() const {
     // fromDevice();
-    return storage_.xbegin();
+    return storage_;
   }
 
 // TODO: should we enable this again?
@@ -201,7 +202,7 @@ class Tensor {
 #endif
 
   Tensor &fill(U value) {
-    //static_assert(!kConst, "Non-constant operation on constant Tensor");
+    // static_assert(!kConst, "Non-constant operation on constant Tensor");
     // data_is_on_host_ = true;
     // data_dirty_ = true;
     std::fill(storage_.xbegin(), storage_.xend(), value);
@@ -210,19 +211,13 @@ class Tensor {
 
   // TODO(Randl): variadic template version of reshape
   // TODO(Randl): checked version
-  void reshape(const std::vector<size_t> &sz) {
-    storage_.reshape(sz);
-  }
+  void reshape(const std::vector<size_t> &sz) { storage_.reshape(sz); }
 
-  void resize(const std::vector<size_t> &sz) {
-    storage_.reshape(sz);
-  }
+  void resize(const std::vector<size_t> &sz) { storage_.reshape(sz); }
 
-  //size_t size() const { return size_; }
+  // size_t size() const { return size_; }
 
-  Tensor operator[](size_t index) {
-    return Tensor(storage_[index]);
-  }
+  Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
   /**
    * @brief Returns a sub view from the current tensor with a given size.
@@ -243,11 +238,26 @@ class Tensor {
    * with offset zero
    *
    */
-//TODO
-  /*Tensor subView(std::initializer_list<size_t> const &new_shape) {
-    return subview_impl({}, new_shape);
-  }*/
+  // TODO
+  Tensor subView(std::initializer_list<size_t> const &new_shape) {
+    return Tensor(xt::broadcast(storage_, new_shape));
+  }
 
+  // TODO
+  /**
+   * Convert pair to xt::range
+   * @param p
+   * @return
+   */
+  template <class T>
+  auto from_pairs(std::pair<T, T> p) {
+    return xt::range(p.first, p.second);
+  }
+
+  template <class T>
+  auto from_init_lists(std::vector<T> p) {
+    return p[1] == -1 ? xt::range(p[0], p[1]) : xt::newaxis();  // TODO: ?
+  }
   /**
    * @brief Returns a sub view from the current tensor with a given size.
    * The new tensor will share data with its parent tensor so that each time
@@ -267,17 +277,20 @@ class Tensor {
    * matrix view from
    *                                                     // offset 4.
    */
-  /*Tensor subView(std::initializer_list<size_t> const &start,
-                 std::initializer_list<size_t> const &new_shape) {
-    return subview_impl(start, new_shape);
-  }*/
+  template <class... Ranges>
+  Tensor subView(Ranges... ranges) {
+    return Tensor(xt::view(storage_, from_init_lists(ranges)...));
+    // return subview_impl(start, new_shape);
+  }
 
   /**
    * @brief Returns whether the tensor is a view of another tensor
    *
    */
-//TODO
-  //bool isSubView() const { return size_ != storage_ptr_->size(); }
+  // TODO
+  bool isSubView() const {
+    return true; /*std::is_same(Storage, xt::xview<U>);*/
+  }
 
  private:
   /**
@@ -288,9 +301,9 @@ class Tensor {
    * @param shape shape of the Tensor
    * @return
    */
-  template<class T>
-  explicit Tensor(const xt::xexpression<T> storage) {
-    storage_ = storage;
+  template <class T>
+  explicit Tensor(const xt::xexpression<T> &storage) {
+    storage_(storage.derived_cast());
   }
 
   /*
@@ -299,7 +312,7 @@ class Tensor {
    * are bigger than the current dimensions number. Also raises an exception
    * when the requested view size is not feasible.
    */
-  //TODO
+  // TODO
   /*Tensor subview_impl(std::initializer_list<size_t> const &start,
                       std::initializer_list<size_t> const &new_shape) {
     if (start.size() > kDimensions || new_shape.size() > kDimensions) {
@@ -317,10 +330,12 @@ class Tensor {
     return Tensor(storage_ptr_, new_offset, new_shape);
   }*/
 
-  xt::xexpression<U> storage_;
+  Storage storage_;
+  // xt::xexpression<Storage> xepr_stotrage_;
 
   template <class T>
-  friend inline std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor);
+  friend inline std::ostream &operator<<(std::ostream &os,
+                                         const Tensor<T> &tensor);
 };
 
 }  // namespace tiny_dnn
