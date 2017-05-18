@@ -19,31 +19,27 @@ inline void global_avepool_op_avx(const tensor_t &in_data,
                                   const core::global_avepool_params &params,
                                   const bool layer_parallelize) {
   const size_t pool_area            = params.in.width_ * params.in.height_;
-  const double pool_area_inv        = 1.0 / pool_area;
   const size_t nblocks_per_channel  = pool_area / 4;
   const size_t nremains_per_channel = pool_area & 3;
 
-  int64_t mask_src[] = {-1, -1, -1, -1, 0, 0, 0, 0};
+  static const int64_t mask_src[] = {-1, -1, -1, -1, 0, 0, 0, 0};
   __m256i imask =
     _mm256_loadu_si256((__m256i const *)(mask_src + 4 - nremains_per_channel));
+  __m128d one_m           = _mm_cvtsi64_sd(_mm_setzero_pd(), 1);
+  __m128d pool_area_m     = _mm_cvtsi64_sd(_mm_setzero_pd(), pool_area);
+  __m128d pool_area_inv_m = _mm_div_sd(one_m, pool_area_m);
 
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
     const vec_t &in = in_data[sample];
     vec_t &out      = out_data[sample];
-
     for (size_t i = 0; i < params.in.depth_; i++) {
-      __m256d sum_m            = _mm256_setzero_pd();
-      const size_t depth_index = i * pool_area;
-      for (size_t j = 0; j < nblocks_per_channel; j++) {
-        __m256d in_m = _mm256_loadu_pd(&in[depth_index + 4 * j]);
-        sum_m        = _mm256_add_pd(sum_m, in_m);
-      }
-      __m256d in_m =
-        _mm256_maskload_pd(&in[depth_index + 4 * nblocks_per_channel], imask);
-      sum_m = _mm256_add_pd(sum_m, in_m);
-
-      out[i] = _mm_cvtsd_f64(hsum256_pd(sum_m));
-      out[i] *= pool_area_inv;
+      const double *pin = &in[i * pool_area];
+      __m256d sum0 =
+        vectorize::accumulate<std::false_type>(pin, nblocks_per_channel);
+      sum0 = _mm256_add_pd(
+        sum0,
+        _mm256_maskload_pd(pin + pool_area - nremains_per_channel, imask));
+      _mm_store_sd(&out[i], _mm_mul_sd(hsum256_pd(sum0), pool_area_inv_m));
     }
   });
 }
@@ -90,33 +86,29 @@ inline void global_avepool_op_avx(const tensor_t &in_data,
                                   const core::global_avepool_params &params,
                                   const bool layer_parallelize) {
   const size_t pool_area            = params.in.width_ * params.in.height_;
-  const float pool_area_inv         = 1.0f / static_cast<float>(pool_area);
   const size_t nblocks_per_channel  = pool_area / 8;
   const size_t nremains_per_channel = pool_area & 7;
 
-  int32_t mask_src[] = {
+  static const int32_t mask_src[] = {
     -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,
   };
   __m256i imask =
     _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains_per_channel));
-  __m128 pool_area_inv_m = _mm_set1_ps(pool_area_inv);
+  __m128 one_m           = _mm_cvtsi32_ss(_mm_setzero_ps(), 1);
+  __m128 pool_area_m     = _mm_cvtsi32_ss(_mm_setzero_ps(), pool_area);
+  __m128 pool_area_inv_m = _mm_div_ss(one_m, pool_area_m);
 
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
     const vec_t &in = in_data[sample];
     vec_t &out      = out_data[sample];
-
     for (size_t i = 0; i < params.in.depth_; i++) {
-      __m256 sum_m             = _mm256_setzero_ps();
-      const size_t depth_index = i * pool_area;
-      for (size_t j = 0; j < nblocks_per_channel; j++) {
-        __m256 in_m = _mm256_load_ps(&in[depth_index + 8 * j]);
-        sum_m       = _mm256_add_ps(sum_m, in_m);
-      }
-      __m256 in_m =
-        _mm256_maskload_ps(&in[depth_index + 8 * nblocks_per_channel], imask);
-      sum_m = _mm256_add_ps(sum_m, in_m);
-
-      _mm_store_ss(&out[i], _mm_mul_ss(hsum256_ps(sum_m), pool_area_inv_m));
+      const float *pin = &in[i * pool_area];
+      __m256 sum0 =
+        vectorize::accumulate<std::false_type>(pin, nblocks_per_channel);
+      sum0 = _mm256_add_ps(
+        sum0,
+        _mm256_maskload_ps(pin + pool_area - nremains_per_channel, imask));
+      _mm_store_ss(&out[i], _mm_mul_ss(hsum256_ps(sum0), pool_area_inv_m));
     }
   });
 }

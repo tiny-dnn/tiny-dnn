@@ -18,6 +18,12 @@
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
 #endif
 
+#ifdef _MSC_VER
+#define CNN_MUSTINLINE __forceinline
+#else
+#define CNN_MUSTINLINE __attribute__((always_inline)) inline
+#endif
+
 namespace vectorize {
 namespace detail {
 
@@ -27,32 +33,36 @@ struct scalar_generic {
   typedef T register_type;
   typedef T value_type;
   enum { unroll_size = 1 };
-  static register_type set1(const value_type &x) { return x; }
-  static register_type zero() { return register_type(0); }
-  static register_type mul(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type set1(const value_type &x) { return x; }
+  static CNN_MUSTINLINE register_type zero() { return register_type(0); }
+  static CNN_MUSTINLINE register_type mul(const register_type &v1,
+                                          const register_type &v2) {
     return v1 * v2;
   }
-  static register_type add(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type add(const register_type &v1,
+                                          const register_type &v2) {
     return v1 + v2;
   }
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return v1 * v2 + v3;
   }
 
   template <typename aligned>
-  static register_type load(const value_type *px) {
+  static CNN_MUSTINLINE register_type load(const value_type *px) {
     return *px;
   }
   template <typename aligned>
-  static void store(value_type *px, const register_type &v) {
+  static CNN_MUSTINLINE void store(value_type *px, const register_type &v) {
     *px = v;
   }
 
-  static value_type resemble(const register_type &x) { return x; }
+  static CNN_MUSTINLINE value_type resemble(const register_type &x) {
+    return x;
+  }
 
-  static bool is_aligned(value_type *p) { return true; }
+  static CNN_MUSTINLINE bool is_aligned(value_type *p) { return true; }
 };
 
 #ifdef CNN_USE_SSE
@@ -61,51 +71,57 @@ struct float_sse {
   typedef __m128 register_type;
   typedef float value_type;
   enum { unroll_size = 4 };
-  static register_type set1(const value_type &x) { return _mm_set1_ps(x); }
-  static register_type zero() { return _mm_setzero_ps(); }
-  static register_type mul(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type set1(const value_type &x) {
+    return _mm_set1_ps(x);
+  }
+  static CNN_MUSTINLINE register_type zero() { return _mm_setzero_ps(); }
+  static CNN_MUSTINLINE register_type mul(const register_type &v1,
+                                          const register_type &v2) {
     return _mm_mul_ps(v1, v2);
   }
-  static register_type add(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type add(const register_type &v1,
+                                          const register_type &v2) {
     return _mm_add_ps(v1, v2);
   }
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm_add_ps(_mm_mul_ps(v1, v2), v3);
   }
 
   template <typename aligned>
-  static register_type load(const value_type *px);
+  static CNN_MUSTINLINE register_type load(const value_type *px);
 
   template <typename aligned>
-  static void store(value_type *px, const register_type &v);
+  static CNN_MUSTINLINE void store(value_type *px, const register_type &v);
 
-  static value_type resemble(const register_type &x) {
+  static CNN_MUSTINLINE value_type resemble(const register_type &x) {
     alignas(16) float tmp[4];
     _mm_store_ps(tmp, x);
     return tmp[0] + tmp[1] + tmp[2] + tmp[3];
   }
-  static bool is_aligned(value_type *p) {
+  static CNN_MUSTINLINE bool is_aligned(value_type *p) {
     return reinterpret_cast<uintptr_t>(p) % 16 == 0;
   }
 };
 
 template <>
-inline __m128 float_sse::load<std::true_type>(const float *px) {
+CNN_MUSTINLINE __m128 float_sse::load<std::true_type>(const float *px) {
   return _mm_load_ps(px);
 }
 template <>
-inline __m128 float_sse::load<std::false_type>(const float *px) {
+CNN_MUSTINLINE __m128 float_sse::load<std::false_type>(const float *px) {
   return _mm_loadu_ps(px);
 }
 
 template <>
-inline void float_sse::store<std::true_type>(float *px, const __m128 &v) {
+CNN_MUSTINLINE void float_sse::store<std::true_type>(float *px,
+                                                     const __m128 &v) {
   _mm_store_ps(px, v);
 }
 template <>
-inline void float_sse::store<std::false_type>(float *px, const __m128 &v) {
+CNN_MUSTINLINE void float_sse::store<std::false_type>(float *px,
+                                                      const __m128 &v) {
   _mm_storeu_ps(px, v);
 }
 
@@ -113,52 +129,58 @@ struct double_sse {
   typedef __m128d register_type;
   typedef double value_type;
   enum { unroll_size = 2 };
-  static register_type set1(const value_type &x) { return _mm_set1_pd(x); }
-  static register_type zero() { return _mm_setzero_pd(); }
-  static register_type mul(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type set1(const value_type &x) {
+    return _mm_set1_pd(x);
+  }
+  static CNN_MUSTINLINE register_type zero() { return _mm_setzero_pd(); }
+  static CNN_MUSTINLINE register_type mul(const register_type &v1,
+                                          const register_type &v2) {
     return _mm_mul_pd(v1, v2);
   }
-  static register_type add(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type add(const register_type &v1,
+                                          const register_type &v2) {
     return _mm_add_pd(v1, v2);
   }
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm_add_pd(_mm_mul_pd(v1, v2), v3);
   }
 
   template <typename aligned>
-  static register_type load(const value_type *px);
+  static CNN_MUSTINLINE register_type load(const value_type *px);
 
   template <typename aligned>
-  static void store(value_type *px, const register_type &v);
+  static CNN_MUSTINLINE void store(value_type *px, const register_type &v);
 
-  static value_type resemble(const register_type &x) {
+  static CNN_MUSTINLINE value_type resemble(const register_type &x) {
     alignas(16) double tmp[2];
     _mm_store_pd(tmp, x);
     return tmp[0] + tmp[1];
   }
 
-  static bool is_aligned(value_type *p) {
+  static CNN_MUSTINLINE bool is_aligned(value_type *p) {
     return reinterpret_cast<uintptr_t>(p) % 16 == 0;
   }
 };
 
 template <>
-inline __m128d double_sse::load<std::true_type>(const double *px) {
+CNN_MUSTINLINE __m128d double_sse::load<std::true_type>(const double *px) {
   return _mm_load_pd(px);
 }
 template <>
-inline __m128d double_sse::load<std::false_type>(const double *px) {
+CNN_MUSTINLINE __m128d double_sse::load<std::false_type>(const double *px) {
   return _mm_loadu_pd(px);
 }
 
 template <>
-inline void double_sse::store<std::true_type>(double *px, const __m128d &v) {
+CNN_MUSTINLINE void double_sse::store<std::true_type>(double *px,
+                                                      const __m128d &v) {
   _mm_store_pd(px, v);
 }
 template <>
-inline void double_sse::store<std::false_type>(double *px, const __m128d &v) {
+CNN_MUSTINLINE void double_sse::store<std::false_type>(double *px,
+                                                       const __m128d &v) {
   _mm_storeu_pd(px, v);
 }
 
@@ -170,57 +192,63 @@ struct float_avx {
   typedef __m256 register_type;
   typedef float value_type;
   enum { unroll_size = 8 };
-  static register_type set1(const value_type &x) { return _mm256_set1_ps(x); }
-  static register_type zero() { return _mm256_setzero_ps(); }
-  static register_type mul(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type set1(const value_type &x) {
+    return _mm256_set1_ps(x);
+  }
+  static CNN_MUSTINLINE register_type zero() { return _mm256_setzero_ps(); }
+  static CNN_MUSTINLINE register_type mul(const register_type &v1,
+                                          const register_type &v2) {
     return _mm256_mul_ps(v1, v2);
   }
-  static register_type add(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type add(const register_type &v1,
+                                          const register_type &v2) {
     return _mm256_add_ps(v1, v2);
   }
 #ifdef CNN_USE_AVX2
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm256_fmadd_ps(v1, v2, v3);
   }
 #else
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm256_add_ps(_mm256_mul_ps(v1, v2), v3);
   }
 #endif
 
   template <typename aligned>
-  static register_type load(const value_type *px);
+  static CNN_MUSTINLINE register_type load(const value_type *px);
 
   template <typename aligned>
-  static void store(value_type *px, const register_type &v);
+  static CNN_MUSTINLINE void store(value_type *px, const register_type &v);
 
-  static value_type resemble(const register_type &x) {
+  static CNN_MUSTINLINE value_type resemble(const register_type &x) {
     return _mm_cvtss_f32(hsum256_ps(x));
   }
-  static bool is_aligned(value_type *p) {
+  static CNN_MUSTINLINE bool is_aligned(value_type *p) {
     return reinterpret_cast<uintptr_t>(p) % 32 == 0;
   }
 };
 
 template <>
-inline __m256 float_avx::load<std::true_type>(const float *px) {
+CNN_MUSTINLINE __m256 float_avx::load<std::true_type>(const float *px) {
   return _mm256_load_ps(px);
 }
 template <>
-inline __m256 float_avx::load<std::false_type>(const float *px) {
+CNN_MUSTINLINE __m256 float_avx::load<std::false_type>(const float *px) {
   return _mm256_loadu_ps(px);
 }
 
 template <>
-inline void float_avx::store<std::true_type>(float *px, const __m256 &v) {
+CNN_MUSTINLINE void float_avx::store<std::true_type>(float *px,
+                                                     const __m256 &v) {
   _mm256_store_ps(px, v);
 }
 template <>
-inline void float_avx::store<std::false_type>(float *px, const __m256 &v) {
+CNN_MUSTINLINE void float_avx::store<std::false_type>(float *px,
+                                                      const __m256 &v) {
   _mm256_storeu_ps(px, v);
 }
 
@@ -228,59 +256,65 @@ struct double_avx {
   typedef __m256d register_type;
   typedef double value_type;
   enum { unroll_size = 4 };
-  static register_type set1(const value_type &x) { return _mm256_set1_pd(x); }
-  static register_type zero() { return _mm256_setzero_pd(); }
-  static register_type mul(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type set1(const value_type &x) {
+    return _mm256_set1_pd(x);
+  }
+  static CNN_MUSTINLINE register_type zero() { return _mm256_setzero_pd(); }
+  static CNN_MUSTINLINE register_type mul(const register_type &v1,
+                                          const register_type &v2) {
     return _mm256_mul_pd(v1, v2);
   }
-  static register_type add(const register_type &v1, const register_type &v2) {
+  static CNN_MUSTINLINE register_type add(const register_type &v1,
+                                          const register_type &v2) {
     return _mm256_add_pd(v1, v2);
   }
 #ifdef CNN_USE_AVX2
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm256_fmadd_pd(v1, v2, v3);
   }
 #else
-  static register_type madd(const register_type &v1,
-                            const register_type &v2,
-                            const register_type &v3) {
+  static CNN_MUSTINLINE register_type madd(const register_type &v1,
+                                           const register_type &v2,
+                                           const register_type &v3) {
     return _mm256_add_pd(_mm256_mul_pd(v1, v2), v3);
   }
 #endif
 
   template <typename aligned>
-  static register_type load(const value_type *px);
+  static CNN_MUSTINLINE register_type load(const value_type *px);
 
   template <typename aligned>
-  static void store(value_type *px, const register_type &v);
+  static CNN_MUSTINLINE void store(value_type *px, const register_type &v);
 
-  static value_type resemble(const register_type &x) {
+  static CNN_MUSTINLINE value_type resemble(const register_type &x) {
     alignas(32) double tmp[4];
     _mm256_store_pd(tmp, x);
     return std::accumulate(tmp, tmp + 4, 0.0);
   }
-  static bool is_aligned(value_type *p) {
+  static CNN_MUSTINLINE bool is_aligned(value_type *p) {
     return reinterpret_cast<uintptr_t>(p) % 32 == 0;
   }
 };
 
 template <>
-inline __m256d double_avx::load<std::true_type>(const double *px) {
+CNN_MUSTINLINE __m256d double_avx::load<std::true_type>(const double *px) {
   return _mm256_load_pd(px);
 }
 template <>
-inline __m256d double_avx::load<std::false_type>(const double *px) {
+CNN_MUSTINLINE __m256d double_avx::load<std::false_type>(const double *px) {
   return _mm256_loadu_pd(px);
 }
 
 template <>
-inline void double_avx::store<std::true_type>(double *px, const __m256d &v) {
+CNN_MUSTINLINE void double_avx::store<std::true_type>(double *px,
+                                                      const __m256d &v) {
   _mm256_store_pd(px, v);
 }
 template <>
-inline void double_avx::store<std::false_type>(double *px, const __m256d &v) {
+CNN_MUSTINLINE void double_avx::store<std::false_type>(double *px,
+                                                       const __m256d &v) {
   _mm256_storeu_pd(px, v);
 }
 
@@ -288,9 +322,10 @@ inline void double_avx::store<std::false_type>(double *px, const __m256d &v) {
 
 // generic dot-product
 template <typename T, typename f1_aligned, typename f2_aligned>
-inline typename T::value_type dot_product(const typename T::value_type *f1,
-                                          const typename T::value_type *f2,
-                                          std::size_t size) {
+CNN_MUSTINLINE typename T::value_type dot_product(
+  const typename T::value_type *f1,
+  const typename T::value_type *f2,
+  std::size_t size) {
   typename T::register_type r0 = T::zero();
   typename T::register_type r1 = T::zero();
   typename T::register_type r2 = T::zero();
@@ -332,9 +367,9 @@ inline typename T::value_type dot_product(const typename T::value_type *f1,
 }
 
 template <typename T, typename dst_aligned>
-inline void add(typename T::value_type c,
-                std::size_t size,
-                typename T::value_type *dst) {
+CNN_MUSTINLINE void add(typename T::value_type c,
+                        std::size_t size,
+                        typename T::value_type *dst) {
   typename T::register_type c2 = T::set1(c);
   auto sz                      = T::unroll_size;
   auto sz4                     = T::unroll_size * 4;
@@ -368,9 +403,9 @@ inline void add(typename T::value_type c,
 }
 
 template <typename T, typename src_aligned, typename dst_aligned>
-inline void add(const typename T::value_type *src,
-                std::size_t size,
-                typename T::value_type *dst) {
+CNN_MUSTINLINE void add(const typename T::value_type *src,
+                        std::size_t size,
+                        typename T::value_type *dst) {
   auto sz     = T::unroll_size;
   auto sz4    = T::unroll_size * 4;
   auto n4     = size / sz4;
@@ -408,10 +443,10 @@ inline void add(const typename T::value_type *src,
 }
 
 template <typename T, typename src_aligned, typename dst_aligned>
-inline void muladd(const typename T::value_type *src,
-                   typename T::value_type c,
-                   std::size_t size,
-                   typename T::value_type *dst) {
+CNN_MUSTINLINE void muladd(const typename T::value_type *src,
+                           typename T::value_type c,
+                           std::size_t size,
+                           typename T::value_type *dst) {
   auto factor = T::set1(c);
   auto sz     = T::unroll_size;
   auto sz4    = T::unroll_size * 4;
@@ -450,9 +485,9 @@ inline void muladd(const typename T::value_type *src,
 }
 
 template <typename T, typename src_aligned, typename dst_aligned>
-inline void reduce(const typename T::value_type *src,
-                   std::size_t size,
-                   typename T::value_type *dst) {
+CNN_MUSTINLINE void reduce(const typename T::value_type *src,
+                           std::size_t size,
+                           typename T::value_type *dst) {
   auto sz     = T::unroll_size;
   auto sz4    = T::unroll_size * 4;
   auto n4     = size / sz4;
@@ -515,6 +550,65 @@ void fill(T *dst, size_t size, T value) {
 #endif
 
 }  // namespace detail
+
+#ifdef CNN_USE_AVX
+// vertically accumulate 'n' AVX registers into single register.
+template <typename aligned>
+#ifdef CNN_USE_DOUBLE
+CNN_MUSTINLINE VECTORIZE_TYPE::register_type accumulate(const double *start,
+                                                        const size_t &nblocks) {
+#else
+CNN_MUSTINLINE VECTORIZE_TYPE::register_type accumulate(const float *start,
+                                                        const size_t &nblocks) {
+#endif
+  const size_t n4 = nblocks / 4;
+  const size_t n2 = (nblocks % 4) / 2;
+  const size_t n1 = nblocks % 2;
+  VECTORIZE_TYPE::register_type v0 =
+    VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 0);
+  VECTORIZE_TYPE::register_type v1 =
+    VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 1);
+  VECTORIZE_TYPE::register_type v2 =
+    VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 2);
+  VECTORIZE_TYPE::register_type v3 =
+    VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 3);
+  VECTORIZE_TYPE::register_type sum0 = VECTORIZE_TYPE::zero();
+  VECTORIZE_TYPE::register_type sum1 = VECTORIZE_TYPE::zero();
+  VECTORIZE_TYPE::register_type sum2 = VECTORIZE_TYPE::zero();
+  VECTORIZE_TYPE::register_type sum3 = VECTORIZE_TYPE::zero();
+  for (size_t j = 0; j < n4; ++j) {
+    VECTORIZE_TYPE::register_type n0 =
+      VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 4);
+    VECTORIZE_TYPE::register_type n1 =
+      VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 5);
+    VECTORIZE_TYPE::register_type n2 =
+      VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 6);
+    VECTORIZE_TYPE::register_type n3 =
+      VECTORIZE_TYPE::load<aligned>(start + VECTORIZE_TYPE::unroll_size * 7);
+    sum0 = VECTORIZE_TYPE::add(sum0, v0);
+    sum1 = VECTORIZE_TYPE::add(sum1, v1);
+    sum2 = VECTORIZE_TYPE::add(sum2, v2);
+    sum3 = VECTORIZE_TYPE::add(sum3, v3);
+    v0   = n0;
+    v1   = n1;
+    v2   = n2;
+    v3   = n3;
+    start += VECTORIZE_TYPE::unroll_size * 4;
+  }
+  if (n2) {
+    sum0 = VECTORIZE_TYPE::add(sum0, v0);
+    sum1 = VECTORIZE_TYPE::add(sum1, v1);
+    start += VECTORIZE_TYPE::unroll_size * 2;
+  }
+  if (n1) {
+    sum2 = VECTORIZE_TYPE::add(sum2, VECTORIZE_TYPE::load<aligned>(start + 0));
+    start += VECTORIZE_TYPE::unroll_size * 1;
+  }
+  sum0 = VECTORIZE_TYPE::add(sum0, sum1);
+  sum2 = VECTORIZE_TYPE::add(sum2, sum3);
+  return VECTORIZE_TYPE::add(sum0, sum2);
+}
+#endif  // CNN_USE_AVX
 
 // dst[i] += c
 template <typename T>
@@ -633,7 +727,7 @@ void reduce(const T *src, std::size_t size, T *dst) {
 }
 
 template <typename T>
-inline void fill(T *dst, std::size_t size, T value) {
+CNN_MUSTINLINE void fill(T *dst, std::size_t size, T value) {
 #if defined(_MSC_VER)
 #if defined(_M_AMD64)
 
