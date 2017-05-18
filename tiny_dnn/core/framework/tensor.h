@@ -243,21 +243,6 @@ class Tensor {
     return Tensor(xt::broadcast(storage_, new_shape));
   }
 
-  // TODO
-  /**
-   * Convert pair to xt::range
-   * @param p
-   * @return
-   */
-  template <class T>
-  auto from_pairs(std::pair<T, T> p) {
-    return xt::range(p.first, p.second);
-  }
-
-  template <class T>
-  auto from_init_lists(std::vector<T> p) {
-    return p[1] == -1 ? xt::range(p[0], p[1]) : xt::newaxis();  // TODO: ?
-  }
   /**
    * @brief Returns a sub view from the current tensor with a given size.
    * The new tensor will share data with its parent tensor so that each time
@@ -279,7 +264,7 @@ class Tensor {
    */
   template <class... Ranges>
   Tensor subView(Ranges... ranges) {
-    return Tensor(xt::view(storage_, from_init_lists(ranges)...));
+    return Tensor(xt::view(storage_, xt::range(*(ranges.begin()), *(ranges.begin()+1))...)); //FIXME: doesn't compile
     // return subview_impl(start, new_shape);
   }
 
