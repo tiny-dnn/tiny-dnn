@@ -40,6 +40,7 @@
 #include "tiny_dnn/activations/relu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
 #include "tiny_dnn/activations/softmax_layer.h"
+#include "tiny_dnn/activations/softplus_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/activations/tanh_p1m2_layer.h"
 
@@ -126,6 +127,8 @@ using leaky_relu = tiny_dnn::leaky_relu_layer;
 using elu = tiny_dnn::elu_layer;
 
 using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
+
+using softplus = tiny_dnn::softplus_layer;
 
 }  // namespace activation
 

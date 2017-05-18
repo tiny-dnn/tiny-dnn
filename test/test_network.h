@@ -581,9 +581,21 @@ TEST(network, gradient_check8) {  // elu - mse
                                            GRAD_CHECK_ALL));
 }
 
-TEST(network, gradient_check9) {  // tan_hp1m2 - mse
+TEST(network, gradient_check9) {  // tanh_p1m2 - mse
   using loss_func  = mse;
   using activation = tanh_p1m2;
+
+  auto nn = make_mlp<activation>({3, 201, 2});
+
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
+                                           epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
+TEST(network, gradient_check10) {  // softplus - mse
+  using loss_func  = mse;
+  using activation = softplus;
 
   auto nn = make_mlp<activation>({3, 201, 2});
 

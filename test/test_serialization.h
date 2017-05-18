@@ -694,9 +694,9 @@ TEST(serialization, serialize_tanh_p1m2) {
             {
                 "type": "tanh_scaled",
                 "in_size" : {
-                    "width": 5,
+                    "width": 10,
                     "height" : 10,
-                    "depth" : 1
+                    "depth" : 3
                 }
             }
         ]
@@ -706,8 +706,37 @@ TEST(serialization, serialize_tanh_p1m2) {
   net.from_json(json);
 
   EXPECT_EQ(net[0]->layer_type(), "tanh-scaled-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+}
+
+TEST(serialization, serialize_softplus) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "softplus",
+                "in_size" : {
+                    "width": 5,
+                    "height" : 10,
+                    "depth" : 1
+                },
+                "beta": 1,
+                "threshold": 20
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "softplus-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).beta_value(), float_t(1));
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).threshold_value(), float_t(20));
 }
 
 TEST(serialization, sequential_to_json) {
