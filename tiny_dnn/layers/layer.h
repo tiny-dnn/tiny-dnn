@@ -20,6 +20,7 @@
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/node.h"
 
+#include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/weight_init.h"
@@ -709,6 +710,11 @@ class layer : public node {
    * frequent
    * memory allocation */
   vec_t weights_diff_;
+
+  template <typename T, typename Func>
+  inline void for_i(T size, Func f, size_t grainsize = 100) {
+    tiny_dnn::for_i(parallelize_, size, f, grainsize);
+  }
 
  private:
   /** Flag indicating whether the layer/node parameters are trainable */

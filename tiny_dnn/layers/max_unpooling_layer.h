@@ -19,8 +19,6 @@ namespace tiny_dnn {
  **/
 class max_unpooling_layer : public layer {
  public:
-  using layer::parallelize_;
-
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
@@ -85,11 +83,9 @@ class max_unpooling_layer : public layer {
 
       std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
 
-      for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
-        for (size_t i = r.begin(); i < r.end(); i++) {
-          const auto &in_index = out2in_[i];
-          out_vec[i] = (max_idx[in_index] == i) ? in_vec[in_index] : float_t{0};
-        }
+      for_i(in2out_.size(), [&](size_t i) {
+        const auto &in_index = out2in_[i];
+        out_vec[i] = (max_idx[in_index] == i) ? in_vec[in_index] : float_t{0};
       });
     }
   }

@@ -20,8 +20,6 @@ enum class norm_region { across_channels, within_channels };
  */
 class lrn_layer : public layer {
  public:
-  using layer::parallelize_;
-
   lrn_layer(const shape3d &in_shape,
             serial_size_t local_size,
             float_t alpha      = 1.0,

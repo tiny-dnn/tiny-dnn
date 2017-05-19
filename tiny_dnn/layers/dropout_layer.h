@@ -74,14 +74,14 @@ class dropout_layer : public layer {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
 
-    for (size_t sample = 0; sample < prev_delta.size(); ++sample) {
+    for_i(prev_delta.size(), [&](size_t sample) {
       // assert(prev_delta[sample].size() == curr_delta[sample].size());
       // assert(mask_[sample].size() == prev_delta[sample].size());
       size_t sz = prev_delta[sample].size();
       for (size_t i = 0; i < sz; ++i) {
         prev_delta[sample][i] = mask_[sample][i] * curr_delta[sample][i];
       }
-    }
+    });
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
@@ -95,7 +95,7 @@ class dropout_layer : public layer {
       mask_.resize(sample_count, mask_[0]);
     }
 
-    for (size_t sample = 0; sample < sample_count; ++sample) {
+    for_i(sample_count, [&](size_t sample) {
       std::vector<uint8_t> &mask = mask_[sample];
 
       const vec_t &in_vec = in[sample];
@@ -111,7 +111,7 @@ class dropout_layer : public layer {
         for (size_t i = 0, end = in_vec.size(); i < end; i++)
           out_vec[i] = in_vec[i];
       }
-    }
+    });
   }
 
   /**

@@ -864,9 +864,11 @@ void avx_conv2d_5x5_back_kernel(
   std::vector<std::vector<double, Allocator>> &dW,
   std::vector<std::vector<double, Allocator>> &db,
   std::vector<std::vector<double, Allocator>> &curr_delta,
-  std::vector<std::vector<double, Allocator>> &prev_delta) {
+  std::vector<std::vector<double, Allocator>> &prev_delta,
+  bool layer_parallelize) {
   // backward-pass fallbacks to tiny-backend when float_t is double
-  conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params, true);
+  conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params,
+                     layer_parallelize);
 }
 
 // float ver
@@ -878,8 +880,9 @@ void avx_conv2d_5x5_back_kernel(
   std::vector<std::vector<float, Allocator>> &dW,
   std::vector<std::vector<float, Allocator>> &db,
   std::vector<std::vector<float, Allocator>> &curr_delta,
-  std::vector<std::vector<float, Allocator>> &prev_delta) {
-  for_i(prev_out.size(), [&](size_t sample) {
+  std::vector<std::vector<float, Allocator>> &prev_delta,
+  bool layer_parallelize) {
+  for_i(layer_parallelize, prev_out.size(), [&](size_t sample) {
     avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample],
                                    db[sample], curr_delta[sample],
                                    &prev_delta[sample]);
@@ -899,7 +902,7 @@ inline void conv2d_grad_op_avx(const tensor_t &prev_out,
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
     avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db, curr_delta,
-                               prev_delta);
+                               prev_delta, layer_parallelize);
     return;
   }
 #endif

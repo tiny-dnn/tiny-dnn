@@ -201,22 +201,27 @@ inline void for_(
 }
 
 template <typename T, typename Func>
-void for_i(bool parallelize, T size, Func f, size_t grainsize = 100) {
+inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100) {
 #ifdef CNN_SINGLE_THREAD
-  parallelize = false;
-#endif
+  for (size_t i = 0; i < size; ++i) {
+    f(i);
+  }
+#else  // #ifdef CNN_SINGLE_THREAD
   for_(parallelize, 0, size,
        [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
 #endif
-         for (size_t i = r.begin(); i < r.end(); i++) f(i);
+         for (size_t i = r.begin(); i < r.end(); i++) {
+           f(i);
+         }
        },
        grainsize);
+#endif  // #ifdef CNN_SINGLE_THREAD
 }
 
 template <typename T, typename Func>
-void for_i(T size, Func f, size_t grainsize = 100) {
+inline void for_i(T size, Func f, size_t grainsize = 100) {
   for_i(true, size, f, grainsize);
 }
 

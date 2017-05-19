@@ -65,7 +65,7 @@ class concat_layer : public layer {
     serial_size_t num_samples =
       static_cast<serial_size_t>((*out_data[0]).size());
 
-    for (serial_size_t s = 0; s < num_samples; s++) {
+    for_i(num_samples, [&](size_t s) {
       float_t *outs = &(*out_data[0])[s][0];
 
       for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
@@ -73,7 +73,7 @@ class concat_layer : public layer {
         serial_size_t dim  = in_shapes_[i].size();
         outs               = std::copy(ins, ins + dim, outs);
       }
-    }
+    });
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
@@ -85,7 +85,7 @@ class concat_layer : public layer {
 
     size_t num_samples = (*out_grad[0]).size();
 
-    for (size_t s = 0; s < num_samples; s++) {
+    for_i(num_samples, [&](size_t s) {
       const float_t *outs = &(*out_grad[0])[s][0];
 
       for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
@@ -94,7 +94,7 @@ class concat_layer : public layer {
         std::copy(outs, outs + dim, ins);
         outs += dim;
       }
-    }
+    });
   }
 
   friend struct serialization_buddy;

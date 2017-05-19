@@ -13,8 +13,6 @@ namespace tiny_dnn {
 
 class partial_connected_layer : public layer {
  public:
-  using layer::parallelize_;
-
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> io_connections;
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> wi_connections;
   typedef std::vector<std::pair<serial_size_t, serial_size_t>> wo_connections;
@@ -71,7 +69,7 @@ class partial_connected_layer : public layer {
          sample < sample_count; ++sample) {
       vec_t &out_sample = out[sample];
 
-      for_i(parallelize_, out2wi_.size(), [&](int i) {
+      for_i(out2wi_.size(), [&](size_t i) {
         const wi_connections &connections = out2wi_[i];
 
         float_t &out_element = out_sample[i];
@@ -103,30 +101,25 @@ class partial_connected_layer : public layer {
            sample       = 0,
            sample_count = static_cast<serial_size_t>(prev_out.size());
          sample < sample_count; ++sample) {
-      for_(parallelize_, 0, in2wo_.size(), [&](const blocked_range &r) {
-        for (size_t i = r.begin(); i != r.end(); i++) {
-          const wo_connections &connections = in2wo_[i];
-          float_t delta{0};
+      for_i(in2wo_.size(), [&](size_t i) {
+        const wo_connections &connections = in2wo_[i];
+        float_t delta{0};
 
-          for (auto connection : connections)
-            delta +=
-              W[connection.first] * curr_delta[sample][connection.second];
+        for (auto connection : connections)
+          delta += W[connection.first] * curr_delta[sample][connection.second];
 
-          prev_delta[sample][i] = delta * scale_factor_;
-        }
+        prev_delta[sample][i] = delta * scale_factor_;
       });
 
-      for_(parallelize_, 0, weight2io_.size(), [&](const blocked_range &r) {
-        for (size_t i = r.begin(); i < r.end(); i++) {
-          const io_connections &connections = weight2io_[i];
-          float_t diff{0};
+      for_i(weight2io_.size(), [&](size_t i) {
+        const io_connections &connections = weight2io_[i];
+        float_t diff{0};
 
-          for (auto connection : connections)
-            diff += prev_out[sample][connection.first] *
-                    curr_delta[sample][connection.second];
+        for (auto connection : connections)
+          diff += prev_out[sample][connection.first] *
+                  curr_delta[sample][connection.second];
 
-          dW[i] += diff * scale_factor_;
-        }
+        dW[i] += diff * scale_factor_;
       });
 
       for (size_t i = 0; i < bias2out_.size(); i++) {

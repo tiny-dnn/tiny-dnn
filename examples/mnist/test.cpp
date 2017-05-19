@@ -72,7 +72,7 @@ void recognize(const std::string &dictionary, const std::string &src_filename) {
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    cout << "please specify image file";
+    cout << "please specify image file" << std::endl;
     return 0;
   }
   recognize("LeNet-model", argv[1]);

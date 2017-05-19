@@ -33,8 +33,6 @@ namespace tiny_dnn {
  **/
 class quantized_convolutional_layer : public layer {
  public:
-  using layer::parallelize_;
-
   /**
   * constructing convolutional layer
   *

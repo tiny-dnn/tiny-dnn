@@ -143,7 +143,7 @@ class batch_normalization_layer : public layer {
     // y = (x - mean) ./ sqrt(variance + eps)
     calc_stddev(variance);
 
-    for_i(parallelize_, in_data[0]->size(), [&](int i) {
+    for_i(in_data[0]->size(), [&](int i) {
       const float_t *inptr = &in[i][0];
       float_t *outptr      = &out[i][0];
 
