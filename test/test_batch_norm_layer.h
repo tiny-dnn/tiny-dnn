@@ -13,9 +13,9 @@
 namespace tiny_dnn {
 
 TEST(batchnorm, gradient_check) {
-  int num         = 4;
-  int spatial_dim = 4;
-  int channels    = 2;
+  size_t num         = 4;
+  size_t spatial_dim = 4;
+  size_t channels    = 2;
   batch_normalization_layer bn(spatial_dim, channels);
 
   /* following values are extracted from caffe
@@ -137,9 +137,9 @@ TEST(batchnorm, gradient_check) {
   tensor_t outd, ing, outg;
   std::vector<tensor_t *> in_data, out_data, in_grad, out_grad;
 
-  for (int i = 0; i < num; i++) {
-    int first = i * spatial_dim * channels;
-    int last  = first + spatial_dim * channels;
+  for (size_t i = 0; i < num; i++) {
+    size_t first = i * spatial_dim * channels;
+    size_t last  = first + spatial_dim * channels;
 
     ing.push_back(vec_t(spatial_dim * channels));
     outg.push_back(vec_t(top_diff + first, top_diff + last));
@@ -153,8 +153,8 @@ TEST(batchnorm, gradient_check) {
   bn.set_stddev(vec_t(stddev, stddev + 2));
   bn.back_propagation(in_data, out_data, out_grad, in_grad);
 
-  for (int i = 0; i < num; i++) {
-    for (int j = 0; j < spatial_dim * channels; j++) {
+  for (size_t i = 0; i < num; i++) {
+    for (size_t j = 0; j < spatial_dim * channels; j++) {
       EXPECT_NEAR(expected_gradients[i * spatial_dim * channels + j],
                   (*in_grad[0])[i][j], 1e-4);
     }
@@ -198,11 +198,12 @@ TEST(batchnorm, forward) {
     };
 
   // clang-format on
-  auto result = bn.forward({in});
+  std::vector<const tensor_t *> result;
+  bn.forward({in}, result);
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 3 * 4; j++) {
-      EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
+      EXPECT_NEAR(expect[i][j], (*result[0])[i][j], 1e-3);
     }
   }
 
@@ -210,10 +211,10 @@ TEST(batchnorm, forward) {
 
   // confirming that calculating the moving average doesn't affect the result
   // while we feed the same data
-  result = bn.forward({in});
+  bn.forward({in}, result);
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 3 * 4; j++) {
-      EXPECT_NEAR(expect[i][j], result[0][i][j], 1e-3);
+      EXPECT_NEAR(expect[i][j], (*result[0])[i][j], 1e-3);
     }
   }
 }

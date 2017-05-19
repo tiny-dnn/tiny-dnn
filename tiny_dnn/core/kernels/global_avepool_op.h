@@ -17,7 +17,7 @@ class GlobalAvePoolOp : public core::OpKernel {
   explicit GlobalAvePoolOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     auto &params = OpKernel::params_->global_avepool();
 
     // incomimg / outcoming data

@@ -19,7 +19,7 @@ class FullyConnectedGradOp : public core::OpKernel {
   explicit FullyConnectedGradOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
     // incoming/outcoming data

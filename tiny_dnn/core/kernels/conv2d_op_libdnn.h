@@ -32,7 +32,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
     }
   }
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
 #ifdef CNN_USE_LIBDNN
     // incoming/outcoming datm
     const tensor_t &in_data = context.input(0);
@@ -254,7 +254,7 @@ class Conv2dLibDNNBackwardOp : public core::OpKernel {
   explicit Conv2dLibDNNBackwardOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     CNN_UNREFERENCED_PARAMETER(context);
     throw nn_error("Not implemented yet.");
   }

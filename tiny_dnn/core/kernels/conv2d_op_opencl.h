@@ -16,7 +16,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
   explicit Conv2dOpenCLForwardOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     auto params = OpKernel::params_->conv();
 
@@ -128,7 +128,7 @@ class Conv2dOpenCLBackwardOp : public core::OpKernel {
   explicit Conv2dOpenCLBackwardOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     CNN_UNREFERENCED_PARAMETER(context);
     nn_error("Not implemented yet.");
   }

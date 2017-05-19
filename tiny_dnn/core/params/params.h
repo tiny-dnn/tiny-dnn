@@ -20,8 +20,8 @@ class Params {
  public:
   Params() {}
 
-  conv_params conv() const;
-  fully_params fully() const;
+  conv_params &conv();
+  fully_params &fully();
   maxpool_params &maxpool();
   global_avepool_params &global_avepool();
 };

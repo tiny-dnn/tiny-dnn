@@ -100,7 +100,9 @@ TEST(ave_pool, forward) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  vec_t res = l.forward({{in}})[0][0];
+  std::vector<const tensor_t*> out;
+  l.forward({{in}}, out);
+  vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -128,7 +130,9 @@ TEST(ave_pool, forward_stride) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  vec_t res = l.forward({{in}})[0][0];
+  std::vector<const tensor_t*> out;
+  l.forward({{in}}, out);
+  vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);

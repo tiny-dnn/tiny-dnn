@@ -83,8 +83,8 @@ class conv_params : public Params {
   }
 };
 
-inline conv_params Params::conv() const {
-  return *(static_cast<const conv_params *>(this));
+inline conv_params &Params::conv() {
+  return *(static_cast<conv_params *>(this));
 }
 
 class Conv2dPadding {

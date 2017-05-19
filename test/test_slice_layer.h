@@ -37,20 +37,25 @@ TEST(slice, forward_data) {
     };
   // clang-format on
 
-  auto out = sl.forward({in});
+  {
+    std::vector<const tensor_t*> out;
+    sl.forward({in}, out);
 
-  for (serial_size_t i = 0; i < 6; i++) {
-    EXPECT_FLOAT_EQ(out0_expected[0][i], out[0][0][i]);
-    EXPECT_FLOAT_EQ(out1_expected[0][i], out[1][0][i]);
-    EXPECT_FLOAT_EQ(out2_expected[0][i], out[2][0][i]);
-    EXPECT_FLOAT_EQ(out2_expected[1][i], out[2][1][i]);
+    for (serial_size_t i = 0; i < 6; i++) {
+      EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0])[0][i]);
+      EXPECT_FLOAT_EQ(out1_expected[0][i], (*out[1])[0][i]);
+      EXPECT_FLOAT_EQ(out2_expected[0][i], (*out[2])[0][i]);
+      EXPECT_FLOAT_EQ(out2_expected[1][i], (*out[2])[1][i]);
+    }
   }
 
-  out = sl.backward({out0_expected, out1_expected, out2_expected});
+  {
+    auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-  for (serial_size_t i = 0; i < 4; i++) {
-    for (serial_size_t j = 0; j < 6; j++) {
-      EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+    for (serial_size_t i = 0; i < 4; i++) {
+      for (serial_size_t j = 0; j < 6; j++) {
+        EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+      }
     }
   }
 }
@@ -88,21 +93,26 @@ TEST(slice, forward_channels) {
     };
   // clang-format on
 
-  auto out = sl.forward({in});
+  {
+    std::vector<const tensor_t*> out;
+    sl.forward({in}, out);
 
-  for (serial_size_t i = 0; i < 4; i++) {
-    for (serial_size_t j = 0; j < 2; j++) {
-      EXPECT_FLOAT_EQ(out0_expected[i][j], out[0][i][j]);
-      EXPECT_FLOAT_EQ(out1_expected[i][j], out[1][i][j]);
-      EXPECT_FLOAT_EQ(out2_expected[i][j], out[2][i][j]);
+    for (serial_size_t i = 0; i < 4; i++) {
+      for (serial_size_t j = 0; j < 2; j++) {
+        EXPECT_FLOAT_EQ(out0_expected[i][j], (*out[0])[i][j]);
+        EXPECT_FLOAT_EQ(out1_expected[i][j], (*out[1])[i][j]);
+        EXPECT_FLOAT_EQ(out2_expected[i][j], (*out[2])[i][j]);
+      }
     }
   }
 
-  out = sl.backward({out0_expected, out1_expected, out2_expected});
+  {
+    auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-  for (serial_size_t i = 0; i < 4; i++) {
-    for (serial_size_t j = 0; j < 6; j++) {
-      EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+    for (serial_size_t i = 0; i < 4; i++) {
+      for (serial_size_t j = 0; j < 6; j++) {
+        EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+      }
     }
   }
 }

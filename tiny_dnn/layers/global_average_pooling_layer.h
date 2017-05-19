@@ -61,22 +61,22 @@ class global_average_pooling_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    auto ctx = OpKernelContext(in_data, out_data);
-    ctx.setParallelize(layer::parallelize());
-    ctx.setEngine(layer::engine());
+    fwd_ctx_.set_in_out(in_data, out_data);
+    fwd_ctx_.setParallelize(layer::parallelize());
+    fwd_ctx_.setEngine(layer::engine());
 
-    kernel_fwd_->compute(ctx);
+    kernel_fwd_->compute(fwd_ctx_);
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
-    ctx.setParallelize(layer::parallelize());
-    ctx.setEngine(layer::engine());
+    bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
+    bwd_ctx_.setParallelize(layer::parallelize());
+    bwd_ctx_.setEngine(layer::engine());
 
-    kernel_back_->compute(ctx);
+    kernel_back_->compute(bwd_ctx_);
   }
 
   std::vector<index3d<serial_size_t>> in_shape() const override {
@@ -99,6 +99,12 @@ class global_average_pooling_layer : public layer {
 
  private:
   global_avepool_params params_;
+
+  /* forward op context */
+  OpKernelContext fwd_ctx_;
+
+  /* backward op context */
+  OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
