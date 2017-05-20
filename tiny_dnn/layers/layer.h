@@ -914,7 +914,7 @@ void graph_traverse(layer *root_node, T &&node_callback, U &&edge_callback) {
     node_callback(*curr);
 
     auto edges = curr->next();
-    for (auto e : edges) {
+    for (auto& e : edges) {
       if (e != nullptr) edge_callback(*e);
     }
 
