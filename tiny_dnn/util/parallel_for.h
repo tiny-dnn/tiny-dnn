@@ -26,6 +26,10 @@
 #include <tbb/tbb.h>
 #endif
 
+#ifdef CNN_USE_OMP
+#include <omp.h>
+#endif
+
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
 #include <future>
 #include <thread>
@@ -87,8 +91,15 @@ void parallel_for(size_t begin,
                   const Func &f,
                   size_t /*grainsize*/) {
   assert(end >= begin);
-#pragma omp parallel for
-  for (size_t i = begin; i < end; ++i) f(blocked_range(i, i + 1));
+
+#pragma omp parallel
+  {
+    size_t threadNum = omp_get_num_threads();
+    size_t threadId = omp_get_thread_num();
+    size_t rangeSize = end - begin;
+
+    f(blocked_range(begin + (rangeSize * threadId) / threadNum, (rangeSize * (threadId + 1)) / threadNum));
+  }
 }
 
 #elif defined(CNN_USE_GCD)
