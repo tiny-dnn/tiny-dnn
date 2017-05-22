@@ -64,7 +64,7 @@ class Tensor {
     storage_ = xt::xarray<U>(shape);
   }
 
-  Tensor<U> &operator=(const Tensor<U> &T) { storage_(T.storage_); }
+  Tensor<U> &operator=(const Tensor<U> &T) { storage_ = T.storage_; }
 
 //~Tensor() = default;
 
@@ -163,14 +163,29 @@ class Tensor {
   }
 
   template <typename... Args>
-  auto host_iter(const Args... args) const {
+  UPtr host_ptr(const Args... args) {
+    return &(*host_iter(args...));
+  }
+
+  template <typename... Args>
+  const auto host_iter(const Args... args) const {
     // static_assert(!kConst, "Non-constant operation on constant Tensor");
     // static_assert(sizeof...(args) == kDimensions, "Wrong number of
     // dimensions");
     return std::next(storage_.xbegin(), host_pos(args...));
   }
 
-  auto host_begin() const { return storage_.xbegin(); }
+  template <typename... Args>
+  auto host_iter(const Args... args) {
+    // static_assert(!kConst, "Non-constant operation on constant Tensor");
+    // static_assert(sizeof...(args) == kDimensions, "Wrong number of
+    // dimensions");
+    return std::next(storage_.xbegin(), host_pos(args...));
+  }
+
+  auto host_begin() { return storage_.xbegin(); }
+
+  const auto host_begin() const { return storage_.cxbegin(); }
 
   auto host_data() const {
     // fromDevice();

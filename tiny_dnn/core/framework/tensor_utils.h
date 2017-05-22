@@ -46,7 +46,7 @@ void binary_tensor_tensor_elementwise_operation(Tensor<TD> &dst,
   auto psrc2 = src2.host_begin();
 
   for_i(true, dst.size(), [pdst, psrc1, psrc2, &f](size_t i) {
-    pdst[i] = f(psrc1[i], psrc2[i]);
+    *std::next(pdst, i) = f(*std::next(psrc1, i), *std::next(psrc2, i));
   });
 }
 
@@ -59,7 +59,9 @@ void unary_tensor_elementwise_operation(Tensor<TD> &dst,
   auto pdst = dst.host_begin();
   auto psrc = src.host_begin();
 
-  for_i(true, dst.size(), [pdst, psrc, &f](size_t i) { pdst[i] = f(psrc[i]); });
+  for_i(true, dst.size(), [pdst, psrc, &f](size_t i) {
+    *std::next(pdst, i) = f(*std::next(psrc, i));
+  });
 }
 
 template <typename TD, typename TS1, typename TS2, typename F>
@@ -72,8 +74,9 @@ void binary_tensor_scalar_operation(Tensor<TD> &dst,
   auto pdst  = dst.host_begin();
   auto psrc1 = src1.host_begin();
 
-  for_i(true, dst.size(),
-        [pdst, psrc1, src2, &f](size_t i) { pdst[i] = f(psrc1[i], src2); });
+  for_i(true, dst.size(), [pdst, psrc1, src2, &f](size_t i) {
+    *std::next(pdst, i) = f(*std::next(psrc1, i), src2);
+  });
 }
 
 template <typename TD, typename TS1, typename TS2, typename F>
@@ -86,8 +89,9 @@ void binary_scalar_tensor_operation(Tensor<TD> &dst,
   auto pdst  = dst.host_begin();
   auto psrc2 = src2.host_begin();
 
-  for_i(true, dst.size(),
-        [pdst, src1, psrc2, &f](size_t i) { pdst[i] = f(src1, psrc2[i]); });
+  for_i(true, dst.size(), [pdst, src1, psrc2, &f](size_t i) {
+    *std::next(pdst, i) = f(src1, *std::next(psrc2, i));
+  });
 }
 
 // implementation of
