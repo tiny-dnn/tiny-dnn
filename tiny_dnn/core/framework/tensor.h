@@ -146,19 +146,19 @@ class Tensor {
   size_t host_pos(const size_t d, const Args... args) const {
     // static_assert(sizeof...(args) < kDimensions, "Wrong number of
     // dimensions");
-    size_t dim = storage_.dim() - sizeof...(args) - 1;
+    size_t dim = storage_.dimension() - sizeof...(args) - 1;
     if (d >= storage_.shape()[dim]) {
       throw nn_error("Access tensor out of range.");
     }
     size_t shift = 1;
-    for (size_t i = dim + 1; i < storage_.dim(); ++i)
+    for (size_t i = dim + 1; i < storage_.dimension(); ++i)
       shift *= storage_.shape()[i];  // TODO(Randl): optimize. Reverse argumets?
 
     return (d * shift + host_pos(args...));
   }
 
   template <typename... Args>
-  UPtr host_ptr(const Args... args) const {
+  const UPtr host_ptr(const Args... args) const {
     return &(*host_iter(args...));
   }
 
@@ -167,7 +167,7 @@ class Tensor {
     // static_assert(!kConst, "Non-constant operation on constant Tensor");
     // static_assert(sizeof...(args) == kDimensions, "Wrong number of
     // dimensions");
-    return storage_.xbegin() + host_pos(args...);
+    return std::next(storage_.xbegin(), host_pos(args...));
   }
 
   auto host_begin() const { return storage_.xbegin(); }
@@ -262,9 +262,24 @@ class Tensor {
    * matrix view from
    *                                                     // offset 4.
    */
-  template <class... Ranges>
-  Tensor subView(Ranges... ranges) {
-    return Tensor(xt::view(storage_, xt::range(*(ranges.begin()), *(ranges.begin()+1))...)); //FIXME: doesn't compile
+  // TODO(Randl) variadic version
+  Tensor subView(std::initializer_list<size_t> const &dim1,
+                 std::initializer_list<size_t> const &dim2) {
+    return Tensor(xt::view(storage_,
+                           xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
+                           xt::range(*(dim2.begin()), *(dim2.begin()) + 1)));
+    // return subview_impl(start, new_shape);
+  }
+
+  Tensor subView(std::initializer_list<size_t> const &dim1,
+                 std::initializer_list<size_t> const &dim2,
+                 std::initializer_list<size_t> const &dim3,
+                 std::initializer_list<size_t> const &dim4) {
+    return Tensor(xt::view(storage_,
+                           xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
+                           xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
+                           xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
+                           xt::range(*(dim4.begin()), *(dim4.begin()) + 1)));
     // return subview_impl(start, new_shape);
   }
 

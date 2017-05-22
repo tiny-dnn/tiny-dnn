@@ -146,13 +146,13 @@ TEST(tensor, view4) {
 }
 
 TEST(tensor, view5) {
-  Tensor<float_t, 2> t1({3, 3});
+  Tensor<float_t> t1({3, 3});
 
   // we create a sub view tensor with size @2x2.
   // Ideally it should represent the top-left matrix.
   // However, since we assume continous memory, it will
   // mask the first four elements from the root view.
-  Tensor<float_t, 2> t2 = t1.subView({0}, {2, 2});
+  Tensor<float_t> t2 = t1.subView({0}, {2, 2});
 
   // modify sub view tensor
   for (size_t i = 0; i < t2.size(); ++i) {
@@ -179,7 +179,7 @@ TEST(tensor, view5) {
 TEST(tensor, access_data1) {
   Tensor<float_t> tensor({1, 2, 2, 1});
 
-  const std::array<size_t, 4> &shape = tensor.shape();
+  const std::vector<size_t> &shape = tensor.shape();
 
   for (serial_size_t n = 0; n < shape[0]; ++n) {
     for (serial_size_t w = 0; w < shape[1]; ++w) {
@@ -248,7 +248,7 @@ TEST(tensor, access_data4) {
   }
 
   // check data using .at() accessor
-  const std::array<float_t> vals1 = {0, 2, 0, 6}, vals2 = {1, 3, 3, 9};
+  const std::array<float_t, 4> vals1 = {0, 2, 0, 6}, vals2 = {1, 3, 3, 9};
   for (size_t i = 0; i < 2; ++i) {
     for (serial_size_t j = 0; j < 2; ++j) {
       EXPECT_EQ(tensor.host_at(0, i, j, 0), vals1[i * 2 + j]);
@@ -871,7 +871,7 @@ TEST(tensor, sqrt2) {
 }
 
 TEST(tensor, nd1) {
-  Tensor<float_t, 3> t({3, 3, 3});
+  Tensor<float_t> t({3, 3, 3});
 
   // TODO(Randl): static assert tests
   /*EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
@@ -891,7 +891,7 @@ std::ostream &print_tester(std::ostream &os) {
   std::vector<size_t> shape(N, 2);
   shape.back() = 3;
 
-  Tensor<float_t, N> t(shape);
+  Tensor<float_t> t(shape);
   t.fill(float_t{1.0});
   os << t;
   print_tester<N - 1>(os);
