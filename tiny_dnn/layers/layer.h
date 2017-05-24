@@ -19,6 +19,7 @@
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/node.h"
+#include "tiny_dnn/parameter.h"
 
 #include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/product.h"
@@ -50,7 +51,7 @@ class layer : public node {
   virtual ~layer() = default;
 
   /**
-   * @brief Defaul layer constructor that instantiates a N-input, M-output
+   * @brief Default layer constructor that instantiates a N-input, M-output
    *layer
    *
    * @param in_type[N] type of input vector (data, weight, bias...)
@@ -708,6 +709,42 @@ class layer : public node {
     }
   }
 
+  /// getters setters for parameters /////////////////////////////////////////
+
+  std::vector<const std::shared_ptr<parameter>> get_parameters(
+    bool trainable_only = false) {
+    std::vector<const std::shared_ptr<parameter>> p;
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (!trainable_only ||
+          (parameters[i]->is_trainable() && trainable_only)) {
+        p.push_back(get_ith_parameter(i));
+      }
+    }
+    return p;
+  }
+
+  std::vector<std::shared_ptr<parameter>> get_parameters(
+    bool trainable_only = false) {
+    std::vector<std::shared_ptr<parameter>> p;
+    for (size_t i = 0; i < parameters.size(); i++) {
+      if (!trainable_only ||
+          (parameters[i]->is_trainable() && trainable_only)) {
+        p.push_back(get_ith_parameter(i));
+      }
+    }
+    return p;
+  }
+
+  std::shared_ptr<parameter> get_ith_parameter(size_t i) {
+    return parameters[i];
+  }
+
+  const std::shared_ptr<parameter> get_ith_parameter(size_t i) const {
+    return const_cast<std::shared_ptr<parameter>>(parameter[i]);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////
+
   /**
    * generate layer from cereal's Archive
    **/
@@ -763,6 +800,8 @@ class layer : public node {
   std::vector<tensor_t *> bwd_in_grad_;
   std::vector<tensor_t *> bwd_out_data_;
   std::vector<tensor_t *> bwd_out_grad_;
+
+  std::vector<std::shared_ptr<parameter>> parameters;
 
   /* @brief Allocates the necessary edge memory in a specific
    * incoming connection.
