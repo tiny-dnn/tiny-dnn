@@ -20,8 +20,8 @@ class fully_params : public Params {
 };
 
 // TODO(nyanp): can we do better here?
-inline fully_params Params::fully() const {
-  return *(static_cast<const fully_params *>(this));
+inline fully_params &Params::fully() {
+  return *(static_cast<fully_params *>(this));
 }
 
 }  // namespace core

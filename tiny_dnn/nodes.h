@@ -231,24 +231,23 @@ class nodes {
   // transform indexing so that it's more suitable for per-layer operations
   // input:  [sample][channel][feature]
   // output: [channel][sample][feature]
-  std::vector<tensor_t> reorder_for_layerwise_processing(
-    const std::vector<tensor_t> &input) {
-    const serial_size_t sample_count = static_cast<serial_size_t>(input.size());
-    const serial_size_t channel_count =
-      static_cast<serial_size_t>(input[0].size());
+  void reorder_for_layerwise_processing(
+    const std::vector<tensor_t> &input,
+    std::vector<std::vector<const vec_t *>> &output) {
+    size_t sample_count  = input.size();
+    size_t channel_count = input[0].size();
 
-    // @todo we could perhaps pass pointers to underlying vec_t objects, in
-    // order to avoid copying
-    std::vector<tensor_t> output(channel_count, tensor_t(sample_count));
-
-    for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-      assert(input[sample].size() == channel_count);
-      for (serial_size_t channel = 0; channel < channel_count; ++channel) {
-        output[channel][sample] = input[sample][channel];
-      }
+    output.resize(channel_count);
+    for (size_t i = 0; i < channel_count; ++i) {
+      output[i].resize(sample_count);
     }
 
-    return output;
+    for (size_t sample = 0; sample < sample_count; ++sample) {
+      assert(input[sample].size() == channel_count);
+      for (size_t channel = 0; channel < channel_count; ++channel) {
+        output[channel][sample] = &input[sample][channel];
+      }
+    }
   }
 
   template <typename T>
@@ -276,11 +275,11 @@ class nodes {
 class sequential : public nodes {
  public:
   void backward(const std::vector<tensor_t> &first) override {
-    const std::vector<tensor_t> reordered_grad =
-      reorder_for_layerwise_processing(first);
+    std::vector<std::vector<const vec_t *>> reordered_grad;
+    reorder_for_layerwise_processing(first, reordered_grad);
     assert(reordered_grad.size() == 1);
 
-    nodes_.back()->set_out_grads({reordered_grad[0]});
+    nodes_.back()->set_out_grads(&reordered_grad[0], 1);
 
     for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
       (*l)->backward();
@@ -288,17 +287,18 @@ class sequential : public nodes {
   }
 
   std::vector<tensor_t> forward(const std::vector<tensor_t> &first) override {
-    const std::vector<tensor_t> reordered_data =
-      reorder_for_layerwise_processing(first);
+    std::vector<std::vector<const vec_t *>> reordered_data;
+    reorder_for_layerwise_processing(first, reordered_data);
     assert(reordered_data.size() == 1);
 
-    nodes_.front()->set_in_data({reordered_data[0]});
+    nodes_.front()->set_in_data(&reordered_data[0], 1);
 
     for (auto l : nodes_) {
       l->forward();
     }
 
-    const std::vector<tensor_t> out = nodes_.back()->output();
+    std::vector<const tensor_t *> out;
+    nodes_.back()->output(out);
 
     return normalize_out(out);
   }
@@ -344,15 +344,16 @@ class sequential : public nodes {
  private:
   friend class nodes;
 
-  std::vector<tensor_t> normalize_out(const std::vector<tensor_t> &out) {
+  std::vector<tensor_t> normalize_out(
+    const std::vector<const tensor_t *> &out) {
     // normalize indexing back to [sample][layer][feature]
     std::vector<tensor_t> normalized_output;
 
-    const size_t sample_count = out[0].size();
+    const size_t sample_count = out[0]->size();
     normalized_output.resize(sample_count, tensor_t(1));
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      normalized_output[sample][0] = out[0][sample];
+      normalized_output[sample][0] = (*out[0])[sample];
     }
 
     return normalized_output;
@@ -366,19 +367,18 @@ class sequential : public nodes {
 class graph : public nodes {
  public:
   void backward(const std::vector<tensor_t> &out_grad) override {
-    serial_size_t output_channel_count =
-      static_cast<serial_size_t>(out_grad[0].size());
+    size_t output_channel_count = out_grad[0].size();
 
     if (output_channel_count != output_layers_.size()) {
       throw nn_error("input size mismatch");
     }
 
-    const std::vector<tensor_t> reordered_grad =
-      reorder_for_layerwise_processing(out_grad);
+    std::vector<std::vector<const vec_t *>> reordered_grad;
+    reorder_for_layerwise_processing(out_grad, reordered_grad);
     assert(reordered_grad.size() == output_channel_count);
 
-    for (serial_size_t i = 0; i < output_channel_count; i++) {
-      output_layers_[i]->set_out_grads({reordered_grad[i]});
+    for (size_t i = 0; i < output_channel_count; i++) {
+      output_layers_[i]->set_out_grads(&reordered_grad[i], 1);
     }
 
     for (auto l = nodes_.rbegin(); l != nodes_.rend(); l++) {
@@ -387,21 +387,20 @@ class graph : public nodes {
   }
 
   std::vector<tensor_t> forward(const std::vector<tensor_t> &in_data) override {
-    serial_size_t input_data_channel_count =
-      static_cast<serial_size_t>(in_data[0].size());
+    size_t input_data_channel_count = in_data[0].size();
 
     if (input_data_channel_count != input_layers_.size()) {
       throw nn_error("input size mismatch");
     }
 
-    const std::vector<tensor_t> reordered_data =
-      reorder_for_layerwise_processing(in_data);
+    std::vector<std::vector<const vec_t *>> reordered_data;
+    reorder_for_layerwise_processing(in_data, reordered_data);
     assert(reordered_data.size() == input_data_channel_count);
 
-    for (serial_size_t channel_index = 0;
-         channel_index < input_data_channel_count; channel_index++) {
-      input_layers_[channel_index]->set_in_data(
-        {reordered_data[channel_index]});
+    for (size_t channel_index = 0; channel_index < input_data_channel_count;
+         channel_index++) {
+      input_layers_[channel_index]->set_in_data(&reordered_data[channel_index],
+                                                1);
     }
 
     for (auto l : nodes_) {
@@ -551,13 +550,13 @@ class graph : public nodes {
   // normalize indexing back to [sample][layer][feature]
   std::vector<tensor_t> merge_outs() {
     std::vector<tensor_t> merged;
-    serial_size_t output_channel_count =
-      static_cast<serial_size_t>(output_layers_.size());
-    for (serial_size_t output_channel = 0;
-         output_channel < output_channel_count; ++output_channel) {
-      std::vector<tensor_t> out = output_layers_[output_channel]->output();
+    std::vector<const tensor_t *> out;
+    size_t output_channel_count = output_layers_.size();
+    for (size_t output_channel = 0; output_channel < output_channel_count;
+         ++output_channel) {
+      output_layers_[output_channel]->output(out);
 
-      serial_size_t sample_count = static_cast<serial_size_t>(out[0].size());
+      size_t sample_count = out[0]->size();
       if (output_channel == 0) {
         assert(merged.empty());
         merged.resize(sample_count, tensor_t(output_channel_count));
@@ -565,8 +564,8 @@ class graph : public nodes {
 
       assert(merged.size() == sample_count);
 
-      for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-        merged[sample][output_channel] = out[0][sample];
+      for (size_t sample = 0; sample < sample_count; ++sample) {
+        merged[sample][output_channel] = (*out[0])[sample];
       }
     }
     return merged;

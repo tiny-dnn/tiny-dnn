@@ -23,8 +23,9 @@ TEST(lrn, cross) {
     2.0f / 400.0f,        //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
     5.0f / 15.5f / 15.5f  // 5.0 / (1+0.5*(2*2+5*5))^2
   };
-
-  auto out = lrn.forward({{vec_t(in, in + 4)}})[0][0];
+  std::vector<const tensor_t*> o;
+  lrn.forward({{vec_t(in, in + 4)}}, o);
+  auto out = (*o[0])[0];
 
   EXPECT_NEAR(expected[0], out[0], epsilon<float_t>());
   EXPECT_NEAR(expected[1], out[1], epsilon<float_t>());

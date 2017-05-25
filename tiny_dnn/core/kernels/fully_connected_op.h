@@ -20,7 +20,7 @@ class FullyConnectedOp : public core::OpKernel {
   explicit FullyConnectedOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
     // incomimg/outcoming data

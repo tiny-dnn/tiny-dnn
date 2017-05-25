@@ -61,7 +61,9 @@ vec_t forward_pass(layer &src, const vec_t &vec) {
   src.setup(false);
   (*src.inputs()[0]->get_data())[0] = vec;
   src.forward();
-  return src.output()[0][0];
+  std::vector<const tensor_t *> out;
+  src.output(out);
+  return (*out[0])[0];
 }
 
 template <typename N>

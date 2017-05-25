@@ -20,7 +20,7 @@ class MaxPoolOp : public core::OpKernel {
   explicit MaxPoolOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
-  void compute(const core::OpKernelContext &context) override {
+  void compute(core::OpKernelContext &context) override {
     auto &params = OpKernel::params_->maxpool();
 
     // incomimg/outcoming data

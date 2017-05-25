@@ -260,19 +260,17 @@ class convolutional_layer : public layer {
     // apply padding to the input tensor
     padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
-    std::vector<tensor_t *> in_data_(in_data.size());
-    in_data_[0] = in_data_padded(in_data);
-    for (serial_size_t i = 1; i < in_data.size(); ++i) {
-      in_data_[i] = in_data[i];
-    }
+    fwd_in_data_.resize(in_data.size());
+    std::copy(in_data.begin(), in_data.end(), fwd_in_data_.begin());
+    fwd_in_data_[0] = in_data_padded(in_data);
 
     // forward convolutional op context
-    auto ctx = OpKernelContext(in_data_, out_data);
-    ctx.setParallelize(layer::parallelize());
-    ctx.setEngine(layer::engine());
+    fwd_ctx_.set_in_out(fwd_in_data_, out_data);
+    fwd_ctx_.setParallelize(layer::parallelize());
+    fwd_ctx_.setEngine(layer::engine());
 
     // launch convolutional kernel
-    kernel_fwd_->compute(ctx);
+    kernel_fwd_->compute(fwd_ctx_);
   }
 
   /**
@@ -291,24 +289,23 @@ class convolutional_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    std::vector<tensor_t *> in_data_(in_data.size());
-    in_data_[0] = in_data_padded(in_data);
-    for (serial_size_t i = 1; i < in_data.size(); ++i) {
-      in_data_[i] = in_data[i];
-    }
+    bwd_in_data_.resize(in_data.size());
+    std::copy(in_data.begin(), in_data.end(), bwd_in_data_.begin());
+    bwd_in_data_[0] = in_data_padded(in_data);
 
-    std::vector<tensor_t *> in_grad_ = in_grad;
+    bwd_in_grad_.resize(in_grad.size());
+    std::copy(in_grad.begin(), in_grad.end(), bwd_in_grad_.begin());
     if (params_.pad_type == padding::same) {
-      in_grad_[0] = &cws_.prev_delta_padded_;
+      bwd_in_grad_[0] = &cws_.prev_delta_padded_;
     }
 
-    auto ctx = OpKernelContext(in_data_, out_data, out_grad, in_grad_);
-    ctx.setParams(&params_);
-    ctx.setParallelize(layer::parallelize());
-    ctx.setEngine(layer::engine());
+    bwd_ctx_.set_in_out(bwd_in_data_, out_data, out_grad, bwd_in_grad_);
+    bwd_ctx_.setParams(&params_);
+    bwd_ctx_.setParallelize(layer::parallelize());
+    bwd_ctx_.setEngine(layer::engine());
 
     // launch convolutional kernel
-    kernel_back_->compute(ctx);
+    kernel_back_->compute(bwd_ctx_);
 
     // unpad deltas
     padding_op_.copy_and_unpad_delta(cws_.prev_delta_padded_, *in_grad[0]);
@@ -499,9 +496,19 @@ class convolutional_layer : public layer {
   /* Padding operation */
   Conv2dPadding padding_op_;
 
+  /* forward op context */
+  OpKernelContext fwd_ctx_;
+
+  /* backward op context */
+  OpKernelContext bwd_ctx_;
+
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
+
+  std::vector<tensor_t *> fwd_in_data_;
+  std::vector<tensor_t *> bwd_in_data_;
+  std::vector<tensor_t *> bwd_in_grad_;
 
   /* Buffer to store padded data */
   struct conv_layer_worker_specific_storage {
