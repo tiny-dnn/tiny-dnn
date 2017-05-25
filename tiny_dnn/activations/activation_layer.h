@@ -121,4 +121,5 @@ class activation_layer : public layer {
  private:
   shape3d in_shape_;
 };
+
 }  // namespace tiny_dnn

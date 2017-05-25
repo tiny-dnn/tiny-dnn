@@ -18,8 +18,6 @@ namespace tiny_dnn {
  **/
 class fully_connected_layer : public layer {
  public:
-  using layer::parallelize_;
-
   /**
    * @param in_dim [in] number of elements of the input
    * @param out_dim [in] number of elements of the output

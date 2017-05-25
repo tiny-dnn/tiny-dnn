@@ -18,8 +18,6 @@ namespace tiny_dnn {
  */
 class linear_layer : public layer {
  public:
-  using layer::parallelize_;
-
   /**
    * @param dim   [in] number of elements
    * @param scale [in] factor by which to multiply
@@ -52,7 +50,7 @@ class linear_layer : public layer {
     CNN_UNREFERENCED_PARAMETER(out);
 
     // @todo revise the parallelism strategy
-    for_i(parallelize_, dim_, [&](int i) {
+    for_i(dim_, [&](size_t i) {
       for (serial_size_t sample       = 0,
                          sample_count = static_cast<serial_size_t>(in.size());
            sample < sample_count; ++sample)
@@ -72,7 +70,7 @@ class linear_layer : public layer {
     // @todo revise parallelism strategy
     for (serial_size_t sample = 0;
          sample < static_cast<serial_size_t>(prev_delta.size()); ++sample) {
-      for_i(parallelize_, dim_, [&](int i) {
+      for_i(dim_, [&](size_t i) {
         prev_delta[sample][i] = curr_delta[sample][i] * scale_;
       });
     }

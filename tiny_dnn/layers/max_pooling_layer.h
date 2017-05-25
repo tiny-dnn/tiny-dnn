@@ -27,8 +27,6 @@ namespace tiny_dnn {
  **/
 class max_pooling_layer : public layer {
  public:
-  using layer::parallelize_;
-
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image

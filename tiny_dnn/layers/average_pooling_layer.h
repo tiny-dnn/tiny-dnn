@@ -28,8 +28,7 @@ inline void tiny_average_pooling_kernel(
   const shape3d &out_dim,
   float_t scale_factor,
   std::vector<typename partial_connected_layer::wi_connections> &out2wi) {
-  CNN_UNREFERENCED_PARAMETER(parallelize);
-  for_i(in_data[0]->size(), [&](size_t sample) {
+  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
     const vec_t &in = (*in_data[0])[sample];
     const vec_t &W  = (*in_data[1])[0];
     const vec_t &b  = (*in_data[2])[0];
@@ -56,6 +55,7 @@ inline void tiny_average_pooling_kernel(
 
 // back_propagation
 inline void tiny_average_pooling_back_kernel(
+  bool parallelize,
   const std::vector<tensor_t *> &in_data,
   const std::vector<tensor_t *> &out_data,
   std::vector<tensor_t *> &out_grad,
@@ -66,7 +66,7 @@ inline void tiny_average_pooling_back_kernel(
   std::vector<typename partial_connected_layer::wo_connections> &in2wo,
   std::vector<std::vector<serial_size_t>> &bias2out) {
   CNN_UNREFERENCED_PARAMETER(out_data);
-  for_i(in_data[0]->size(), [&](size_t sample) {
+  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
     const vec_t &prev_out = (*in_data[0])[sample];
     const vec_t &W        = (*in_data[1])[0];
     vec_t &dW             = (*in_grad[1])[sample];
@@ -110,7 +110,6 @@ inline void tiny_average_pooling_back_kernel(
 class average_pooling_layer : public partial_connected_layer {
  public:
   using Base = partial_connected_layer;
-  using layer::parallelize_;
 
   /**
    * @param in_width     [in] width of input image
@@ -220,9 +219,9 @@ class average_pooling_layer : public partial_connected_layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tiny_average_pooling_back_kernel(in_data, out_data, out_grad, in_grad, in_,
-                                     Base::scale_factor_, Base::weight2io_,
-                                     Base::in2wo_, Base::bias2out_);
+    tiny_average_pooling_back_kernel(
+      parallelize_, in_data, out_data, out_grad, in_grad, in_,
+      Base::scale_factor_, Base::weight2io_, Base::in2wo_, Base::bias2out_);
   }
 
   std::pair<serial_size_t, serial_size_t> pool_size() const {

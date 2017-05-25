@@ -24,8 +24,6 @@ namespace tiny_dnn {
  **/
 class global_average_pooling_layer : public layer {
  public:
-  using layer::parallelize_;
-
   global_average_pooling_layer(const shape3d &in_shape,
                                backend_t backend_type = core::default_engine())
     : global_average_pooling_layer(

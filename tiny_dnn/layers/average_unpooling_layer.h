@@ -29,7 +29,7 @@ inline void tiny_average_unpooling_kernel(
   float_t scale_factor,
   std::vector<typename partial_connected_layer::wi_connections> &out2wi) {
   CNN_UNREFERENCED_PARAMETER(scale_factor);
-  for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
+  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
     const vec_t &in = (*in_data[0])[sample];
     const vec_t &W  = (*in_data[1])[0];
     const vec_t &b  = (*in_data[2])[0];
@@ -51,11 +51,12 @@ inline void tiny_average_unpooling_kernel(
     }
 
     assert(out.size() == out2wi.size());
-  }
+  });
 }
 
 // back_propagation
 inline void tiny_average_unpooling_back_kernel(
+  bool parallelize,
   const std::vector<tensor_t *> &in_data,
   const std::vector<tensor_t *> &out_data,
   std::vector<tensor_t *> &out_grad,
@@ -67,7 +68,7 @@ inline void tiny_average_unpooling_back_kernel(
   std::vector<std::vector<serial_size_t>> &bias2out) {
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(scale_factor);
-  for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
+  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
     const vec_t &prev_out = (*in_data[0])[sample];
     const vec_t &W        = (*in_data[1])[0];
     vec_t &dW             = (*in_grad[1])[sample];
@@ -102,7 +103,7 @@ inline void tiny_average_unpooling_back_kernel(
 
       db[i] += diff;
     }
-  }
+  });
 }
 
 /**
@@ -111,7 +112,6 @@ inline void tiny_average_unpooling_back_kernel(
 class average_unpooling_layer : public partial_connected_layer {
  public:
   using Base = partial_connected_layer;
-  using layer::parallelize_;
 
   /**
    * @param in_width     [in] width of input image
@@ -184,8 +184,8 @@ class average_unpooling_layer : public partial_connected_layer {
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
     tiny_average_unpooling_back_kernel(
-      in_data, out_data, out_grad, in_grad, in_, Base::scale_factor_,
-      Base::weight2io_, Base::in2wo_, Base::bias2out_);
+      parallelize_, in_data, out_data, out_grad, in_grad, in_,
+      Base::scale_factor_, Base::weight2io_, Base::in2wo_, Base::bias2out_);
   }
 
   friend struct serialization_buddy;
