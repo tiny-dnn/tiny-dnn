@@ -56,12 +56,24 @@ class Tensor {
   /**
    * Constructor that assepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
-   * will be of size 2x3x4x5x6
+   * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
    * @param shape array containing N integers, sizes of dimensions
    * @return
    */
   explicit Tensor(std::initializer_list<size_t> const &shape) {
     storage_ = xt::xarray<U>(shape);
+  }
+
+  /**
+   * Constructor that assepts an initializer list of shape and create a
+   * Tensor with that shape and filling it with value. For example,
+   * given shape = {2,3,4,5,6}, tensor will be of size 2x3x4x5x6
+   * @param shape  shape array containing N integers, sizes of dimensions
+   * @param value value to fill
+   */
+  explicit Tensor(std::initializer_list<size_t> const &shape, U value) {
+    storage_ = xt::xarray<U>(shape);
+    fill(value);
   }
 
   Tensor<U> &operator=(const Tensor<U> &T) {
@@ -197,16 +209,17 @@ class Tensor {
 
   const auto host_end() const { return storage_.cxend(); }
 
-  // TODO(Randl) wrong
-  const auto host_data() const {
-    // fromDevice();
-    return xt::broadcast(storage_, {size()});
-  }
+// TODO(Randl)
+/*
+const auto host_flatten() const {
+  // fromDevice();
+  return xt::broadcast(storage_, {size()});
+}
 
-  auto host_data() {
-    // fromDevice();
-    return xt::broadcast(storage_, {size()});
-  }
+auto host_data() {
+  // fromDevice();
+  return xt::broadcast(storage_, {size()});
+}*/
 // TODO(ּּRandl): should we enable this again?
 #if 0
     U* mutable_host_data() {
@@ -268,9 +281,10 @@ class Tensor {
    * with offset zero
    *
    */
-  // TODO
   Tensor subView(std::initializer_list<size_t> const &new_shape) {
-    return Tensor(xt::broadcast(storage_, new_shape));
+    Tensor res = Tensor(xt::broadcast(storage_, storage_.shape()));
+    res.storage_.reshape(new_shape);
+    return res;
   }
 
   /**
@@ -317,7 +331,7 @@ class Tensor {
    * @brief Returns whether the tensor is a view of another tensor
    *
    */
-  // TODO
+  // TODO: is needed?
   bool isSubView() const {
     return true; /*std::is_same(Storage, xt::xview<U>);*/
   }

@@ -25,14 +25,14 @@ TEST(tensor, constructors) {
 
   // check that t2 values has been copyied to t1
   for (size_t i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(t1.host_data()[i], float_t(2.0));
+    EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(2.0));
   }
 
-  t1 = Tensor<float_t>({1, 1, 1, 1});  // invoke copy ctor
+  t1 = Tensor<float_t>({1, 1, 1, 1}, 0);  // invoke copy ctor
 
   // check that t1 have default values
   for (size_t i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(t1.host_data()[i], float_t(0.0));
+    EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(0.0));
   }
 
   // TODO
@@ -43,8 +43,7 @@ TEST(tensor, constructors) {
   // EXPECT_EQ(t1.size(), serial_size_t(16));
 
   // expecting something here is wrong. t2 is in a valid but undefined state,
-  // no
-  // need to test it.
+  // no need to test it.
 
   // invoke move ctor
   // Tensor<float_t> t3(std::move(t1));
@@ -94,10 +93,11 @@ TEST(tensor, check_bounds) {
   EXPECT_THROW(tensor.host_ptr(1, 0, 0, 1), nn_error);
 }
 
+/*
 TEST(tensor, view1) {
   Tensor<float_t> t1({2, 2, 2, 2});
   Tensor<float_t> t2 = t1.subView({2, 4});
-  Tensor<float_t> t3 = t1.subView({0, 2}, {0, 4});
+  Tensor<float_t> t3 = t1.subView({0, 2}, {0, 4}, {0, 0}, {0, 0});
 
   EXPECT_TRUE(!t1.isSubView());
   EXPECT_TRUE(t2.isSubView());
@@ -106,6 +106,7 @@ TEST(tensor, view1) {
   EXPECT_EQ(t1.size(), size_t(2 * 2 * 2 * 2));
   EXPECT_EQ(t2.size(), size_t(2 * 4));
   EXPECT_EQ(t3.size(), size_t(2 * 4));
+  EXPECT_EQ(t1.size(), size_t(2 * 2 * 2 * 2));
 }
 
 TEST(tensor, view2) {
@@ -140,8 +141,8 @@ TEST(tensor, view4) {
 
   // check that root tensor has also been modified
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_EQ(t1.host_data()[i], float_t(i + 1));
-    EXPECT_EQ(t2.host_data()[i], float_t(i + 1));
+    EXPECT_EQ(*std::next(t1.host_begin(),i), float_t(i + 1));
+    EXPECT_EQ(*std::next(t2.host_begin(),i), float_t(i + 1));
   }
 }
 
@@ -175,9 +176,9 @@ TEST(tensor, view5) {
   EXPECT_FALSE(t1.host_at(1, 0) == float_t(3.0));
   EXPECT_FALSE(t1.host_at(1, 1) == float_t(4.0));
 }
-
+*/
 TEST(tensor, access_data1) {
-  Tensor<float_t> tensor({1, 2, 2, 1});
+  Tensor<float_t> tensor({1, 2, 2, 1}, 0);
 
   const std::vector<size_t> &shape = tensor.shape();
 
@@ -187,6 +188,8 @@ TEST(tensor, access_data1) {
         for (serial_size_t d = 0; d < shape[3]; ++d) {
           EXPECT_NEAR(tensor.host_at(n, w, h, d), float_t(0.0), 1e-5);
           EXPECT_NEAR(*tensor.host_ptr(n, w, h, d), float_t(0.0), 1e-5);
+          if (*tensor.host_ptr(n, w, h, d) != float_t(0.0))
+            std::cout << n << " " << w << " " << h << " " << d << "\n";
         }
       }
     }
@@ -194,10 +197,10 @@ TEST(tensor, access_data1) {
 }
 
 TEST(tensor, access_data2) {
-  Tensor<float_t> tensor({1, 2, 2, 1});
+  Tensor<float_t> tensor({1, 2, 2, 1}, 0);
 
   for (size_t i = 0; i < tensor.size(); ++i) {
-    EXPECT_EQ(tensor.host_data()[i], float_t(0.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(0.0));
   }
 }
 
@@ -281,11 +284,11 @@ TEST(tensor, access_data5) {
   // check data using operator[] accessor
 
   for (size_t i = 0; i < 4; ++i) {
-    EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(1.0));
   }
 
   for (serial_size_t i = 0; i < 4; ++i) {
-    EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), 4 + i), float_t(2.0));
   }
 }
 
@@ -366,11 +369,11 @@ TEST(tensor, access_data8) {
   // check data using operator[] accessor
 
   for (size_t i = 0; i < 4; ++i) {
-    EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(1.0));
   }
 
   for (size_t i = 0; i < 4; ++i) {
-    EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), 4 + i), float_t(2.0));
   }
 }
 
@@ -390,11 +393,11 @@ TEST(tensor, access_data8) {
     // check data using operator[] accessor
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
+        EXPECT_EQ(*std::next(tensor.host_begin(),i), float_t(1.0));
     }
 
     for (serial_size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(tensor.host_data()[4 + i], float_t(2.0));
+        EXPECT_EQ(*std::next(tensor.host_begin(),4 + i), float_t(2.0));
     }
 }*/
 
@@ -461,7 +464,7 @@ TEST(tensor, fill) {
   tensor.fill(float_t(1.0));
 
   for (size_t i = 0; i < tensor.size(); ++i) {
-    EXPECT_EQ(tensor.host_data()[i], float_t(1.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(1.0));
   }
 
   // fill all tensor values with twos
@@ -469,7 +472,7 @@ TEST(tensor, fill) {
   tensor.fill(float_t(2.0));
 
   for (size_t i = 0; i < tensor.size(); ++i) {
-    EXPECT_EQ(tensor.host_data()[i], float_t(2.0));
+    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(2.0));
   }
 }
 
@@ -513,7 +516,7 @@ TEST(tensor, add1) {
   // check that sum is okay
 
   for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(t3.host_data()[i], float_t(4.0), 1e-5);
+    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(4.0), 1e-5);
   }
 }
 
@@ -533,7 +536,7 @@ TEST(tensor, add2a) {
   layer_add(t2, float_t(2.0), t);
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(3.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(3.0), 1e-5);
   }
 }
 
@@ -553,7 +556,7 @@ TEST(tensor, add2b) {
   layer_add(t2, t, float_t(2.0));
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(3.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(3.0), 1e-5);
   }
 }
 
@@ -586,7 +589,7 @@ TEST(tensor, sub1) {
   // check that sum is okay
 
   for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(t3.host_data()[i], float_t(-2.0), 1e-5);
+    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(-2.0), 1e-5);
   }
 }
 
@@ -606,7 +609,7 @@ TEST(tensor, sub2a) {
   // check that subtraction is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(-1.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(-1.0), 1e-5);
   }
 }
 
@@ -626,7 +629,7 @@ TEST(tensor, sub2b) {
   // check that subtraction is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(-1.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(-1.0), 1e-5);
   }
 }
 
@@ -660,7 +663,7 @@ TEST(tensor, mul1) {
   // check that subtraction is okay
 
   for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(t3.host_data()[i], float_t(6.0), 1e-5);
+    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(6.0), 1e-5);
   }
 }
 
@@ -680,7 +683,7 @@ TEST(tensor, mul2a) {
   // check that multiplication is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(4.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(4.0), 1e-5);
   }
 }
 
@@ -700,7 +703,7 @@ TEST(tensor, mul2b) {
   // check that multiplication is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(4.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(4.0), 1e-5);
   }
 }
 
@@ -734,7 +737,7 @@ TEST(tensor, div1) {
   // check that division is okay
 
   for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(t3.host_data()[i], float_t(0.5), 1e-5);
+    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(0.5), 1e-5);
   }
 }
 
@@ -754,7 +757,7 @@ TEST(tensor, div2a) {
   // check that division is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(0.5), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(0.5), 1e-5);
   }
 }
 
@@ -774,7 +777,7 @@ TEST(tensor, div2b) {
   // check that division is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(0.5), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(0.5), 1e-5);
   }
 }
 
@@ -808,7 +811,7 @@ TEST(tensor, div4) {
   // check that division is NaN
 
   for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_TRUE(std::isnan(t3.host_data()[i]));
+    EXPECT_TRUE(std::isnan(*std::next(t3.host_begin(), i)));
   }
 }
 
@@ -828,7 +831,7 @@ TEST(tensor, div5) {
   // check that division is NaN
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_TRUE(std::isnan(t2.host_data()[i]));
+    EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
   }
 }
 
@@ -847,7 +850,7 @@ TEST(tensor, sqrt1) {
   // check that root is okay
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(t2.host_data()[i], float_t(2.0), 1e-5);
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(2.0), 1e-5);
   }
 }
 
@@ -866,7 +869,7 @@ TEST(tensor, sqrt2) {
   // check that division is NaN
 
   for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_TRUE(std::isnan(t2.host_data()[i]));
+    EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
   }
 }
 
