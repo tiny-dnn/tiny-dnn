@@ -134,8 +134,8 @@ TEST(tensor, view4) {
   Tensor<float_t> t2 = t1.subView({2, 4});
 
   // modify sub view tensor
-  for (size_t i = 0; i < t2.size(); ++i) {
-    t2.host_data()[i] = float_t(i + 1);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    *it = float_t(std::distance(t2.host_begin(), it) + 1);
   }
 
   // check that root tensor has also been modified
@@ -150,18 +150,18 @@ TEST(tensor, view5) {
 
   // we create a sub view tensor with size @2x2.
   // Ideally it should represent the top-left matrix.
-  // However, since we assume continous memory, it will
+  // However, since we assume continuous memory, it will
   // mask the first four elements from the root view.
   Tensor<float_t> t2 = t1.subView({0}, {2, 2});
 
   // modify sub view tensor
-  for (size_t i = 0; i < t2.size(); ++i) {
-    t2.host_data()[i] = float_t(i + 1);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    *it = float_t(std::distance(t2.host_begin(), it) + 1);
   }
 
   // check that root tensor has been modified assuming
-  // continous memory. The ideal case would be that the
-  // new sub ºview can handle non continous memory pointing
+  // continuous memory. The ideal case would be that the
+  // new sub view can handle non continuous memory pointing
   // to the top-left matrix from the root tensor.
   EXPECT_EQ(t1.host_at(0, 0), float_t(1.0));
   EXPECT_EQ(t1.host_at(0, 1), float_t(2.0));

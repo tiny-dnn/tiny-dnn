@@ -11,6 +11,8 @@
 #include <cmath>      // sqrt
 #include <numeric>    // std::accumulate
 
+#include "tiny_dnn/xtensor/xio.hpp"
+
 #include "tiny_dnn/core/framework/tensor.h"
 
 namespace tiny_dnn {

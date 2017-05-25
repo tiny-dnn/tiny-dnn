@@ -64,7 +64,10 @@ class Tensor {
     storage_ = xt::xarray<U>(shape);
   }
 
-  Tensor<U> &operator=(const Tensor<U> &T) { storage_ = T.storage_; }
+  Tensor<U> &operator=(const Tensor<U> &T) {
+    storage_ = T.storage_;
+    return *this;
+  }
 
 //~Tensor() = default;
 
@@ -94,10 +97,13 @@ class Tensor {
 
   /**
    *
-   * @return the size of first dimension
+   * @return the size of Tensor
    */
-  // TODO: is needed? ill-formed
-  const auto size() const { return storage_.shape()[0]; }
+  const size_t size() const {
+    auto shape = storage_.shape();
+    return std::accumulate(shape.begin(), shape.end(), 1,
+                           std::multiplies<size_t>());
+  }
 
   /**
    * Checked version of access to indexes in tensor (throw exceptions
@@ -187,12 +193,21 @@ class Tensor {
 
   const auto host_begin() const { return storage_.cxbegin(); }
 
-  auto host_data() const {
+  auto host_end() { return storage_.xend(); }
+
+  const auto host_end() const { return storage_.cxend(); }
+
+  // TODO(Randl) wrong
+  const auto host_data() const {
     // fromDevice();
-    return storage_;
+    return xt::broadcast(storage_, {size()});
   }
 
-// TODO: should we enable this again?
+  auto host_data() {
+    // fromDevice();
+    return xt::broadcast(storage_, {size()});
+  }
+// TODO(ּּRandl): should we enable this again?
 #if 0
     U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
@@ -318,7 +333,7 @@ class Tensor {
    */
   template <class T>
   explicit Tensor(const xt::xexpression<T> &storage) {
-    storage_(storage.derived_cast());
+    storage_ = storage.derived_cast();
   }
 
   /*
