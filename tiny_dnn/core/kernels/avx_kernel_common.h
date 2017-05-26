@@ -7,9 +7,68 @@
 */
 #pragma once
 
-#ifndef CNN_USE_AVX
-#error Advanced Vector Extensions required.
+#if defined(CNN_USE_SSE) || defined(CNN_USE_AVX)
+
+#ifdef CNN_USE_AVX2
+inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
+  return _mm_fmadd_pd(a, b, c);
+}
+inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
+  return _mm_fmadd_sd(a, b, c);
+}
+inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
+  return _mm_fmadd_ps(a, b, c);
+}
+inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
+  return _mm_fmadd_ss(a, b, c);
+}
+#else
+inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
+  return _mm_add_pd(_mm_mul_pd(a, b), c);
+}
+inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
+  return _mm_add_sd(_mm_mul_sd(a, b), c);
+}
+inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
+  return _mm_add_ps(_mm_mul_ps(a, b), c);
+}
+inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
+  return _mm_add_ss(_mm_mul_ss(a, b), c);
+}
 #endif
+
+// in  : ( x3, x2, x1, x0 )
+// out : (  -,  -,  -, x3+x2+x1+x0 )
+inline __m128 hsum128_ps(__m128 x) {
+  // loDual = ( -, -, x1, x0 )
+  const __m128 loDual = x;
+  // hiDual = ( -, -, x3, x2 )
+  const __m128 hiDual = _mm_movehl_ps(x, x);
+  // sumDual = ( -, -, x1+x3, x0+x2 )
+  const __m128 sumDual = _mm_add_ps(loDual, hiDual);
+  // lo = ( -, -, -, x0+x2 )
+  const __m128 lo = sumDual;
+  // hi = ( -, -, -, x1+x3 )
+  const __m128 hi = _mm_shuffle_ps(sumDual, sumDual, 0x1);
+  // sum = ( -, -, -, x0+x1+x2+x3 )
+  const __m128 sum = _mm_add_ss(lo, hi);
+  return sum;
+}
+// in  : ( x3, x2, x1, x0 )
+// out : (  -,  -,  -, x3+x2+x1+x0 )
+inline __m128d hsum128_pd(__m128d x) {
+  // loDual = ( -, x0 )
+  const __m128d lo = x;
+  // hiDual = ( -, x1 )
+  const __m128d hi = _mm_shuffle_pd(x, x, 1);
+  // sumDual = ( -, x1+x0 )
+  const __m128d sum = _mm_add_pd(lo, hi);
+  return sum;
+}
+
+#endif // #if defined(CNN_USE_SSE) && defined(CNN_USE_AVX)
+
+#ifdef CNN_USE_AVX
 
 #ifndef _mm256_set_m128
 #define _mm256_set_m128(va, vb) \
@@ -20,39 +79,15 @@
 inline __m256 madd256_ps(__m256 a, __m256 b, __m256 c) {
   return _mm256_fmadd_ps(a, b, c);
 }
-inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
-  return _mm_fmadd_ps(a, b, c);
-}
-inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
-  return _mm_fmadd_ss(a, b, c);
-}
 inline __m256d madd256_pd(__m256d a, __m256d b, __m256d c) {
   return _mm256_fmadd_pd(a, b, c);
-}
-inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
-  return _mm_fmadd_pd(a, b, c);
-}
-inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
-  return _mm_fmadd_sd(a, b, c);
 }
 #else
 inline __m256 madd256_ps(__m256 a, __m256 b, __m256 c) {
   return _mm256_add_ps(_mm256_mul_ps(a, b), c);
 }
-inline __m128 madd128_ps(__m128 a, __m128 b, __m128 c) {
-  return _mm_add_ps(_mm_mul_ps(a, b), c);
-}
-inline __m128 madd128_ss(__m128 a, __m128 b, __m128 c) {
-  return _mm_add_ss(_mm_mul_ss(a, b), c);
-}
 inline __m256d madd256_pd(__m256d a, __m256d b, __m256d c) {
   return _mm256_add_pd(_mm256_mul_pd(a, b), c);
-}
-inline __m128d madd128_pd(__m128d a, __m128d b, __m128d c) {
-  return _mm_add_pd(_mm_mul_pd(a, b), c);
-}
-inline __m128d madd128_sd(__m128d a, __m128d b, __m128d c) {
-  return _mm_add_sd(_mm_mul_sd(a, b), c);
 }
 #endif
 
@@ -440,3 +475,5 @@ inline __m256 rightShift<28>(__m256 x) {
   __m256 y = _mm256_blend_ps(t1, _mm256_setzero_ps(), 0xFE /* 0b11111110 */);
   return y;
 }
+
+#endif // #ifdef CNN_USE_AVX
