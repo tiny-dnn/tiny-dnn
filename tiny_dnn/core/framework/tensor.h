@@ -25,11 +25,9 @@ namespace tiny_dnn {
 
 /**
  * A tensor of the given dimension.
- * A tensor holds data in C-style nD array, i.e row-major order:
- * the rightmost index “varies the fastest”.
  *
- * Data is held by a std::vector with 64 bytes alignment.
- * Unmutable if kConst == true
+ * U is type of the data stored
+ * Storage is type of underlying storage
  */
 template <typename U = float_t, typename Storage = xt::xarray<U>>
 class Tensor {
@@ -43,13 +41,13 @@ class Tensor {
   Tensor() { storage_ = xt::xarray<U>(); }
 
   /**
-   * Constructor that assepts an array of shape and create a Tensor with that
-   * shape. For example, given shape = {2,3,4,5,6}, tensor
-   * will be of size 2x3x4x5x6
+   * Constructor that assepts an initializer list of shape and create a
+   * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
+   * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
    * @param shape array containing N integers, sizes of dimensions
    * @return
    */
-  explicit Tensor(const std::vector<size_t> &shape) {
+  explicit Tensor(std::vector<size_t> const &shape) {
     storage_ = xt::xarray<U>(shape);
   }
 
@@ -67,7 +65,8 @@ class Tensor {
   /**
    * Constructor that assepts an initializer list of shape and create a
    * Tensor with that shape and filling it with value. For example,
-   * given shape = {2,3,4,5,6}, tensor will be of size 2x3x4x5x6
+   * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
+   * filled with zeros
    * @param shape  shape array containing N integers, sizes of dimensions
    * @param value value to fill
    */
@@ -76,6 +75,11 @@ class Tensor {
     fill(value);
   }
 
+  /**
+   *
+   * @param T
+   * @return
+   */
   Tensor<U> &operator=(const Tensor<U> &T) {
     storage_ = T.storage_;
     return *this;
@@ -109,7 +113,7 @@ class Tensor {
 
   /**
    *
-   * @return the size of Tensor
+   * @return the total number of elements in Tensor
    */
   const size_t size() const {
     auto shape = storage_.shape();
@@ -118,8 +122,7 @@ class Tensor {
   }
 
   /**
-   * Checked version of access to indexes in tensor (throw exceptions
-   * for out-of-range error)
+   * Access to indexes in tensor
    * @param args indexes in tensor
    * @return the value of a specified index in the tensor
    */
@@ -129,8 +132,7 @@ class Tensor {
   }
 
   /**
-   * Checked version of access to indexes in tensor (throw exceptions
-   * for out-of-range error)
+   * Constant access to indexes in tensor
    * @param args indexes in tensor
    * @return the value of a specified index in the tensor
    */
@@ -140,67 +142,9 @@ class Tensor {
   }
 
   /**
-   * Calculate an offset for last dimension.
-   * @param d an index of last dimension
-   * @return offest from the beginning of the dimesion
+   *
+   * @return Iterator pointing to the beginning of Tensor
    */
-  size_t host_pos(const size_t d) const {  // TODO(Randl): unchecked version
-    if (d >= storage_.shape().back()) {
-      throw nn_error("Access tensor out of range.");
-    }
-    return d;
-  }
-
-  /**
-   * Calculate an offest in 1D representation of nD Tensor. Parameters are
-   * indexes of k last dimensions. If k is less than n, function returns an
-   * offset from the first index of (n-k+1)th dimension. This allows recursive
-   * call to acquire offset for generic number of dimensions
-   * @param d index of (k-n)th dimension. For external call, n=k usually holds
-   * @param args index of rest (k-1) dimensions.
-   * @return offset from the first index of (n-k)th dimension
-   */
-  template <typename... Args>
-  size_t host_pos(const size_t d, const Args... args) const {
-    // static_assert(sizeof...(args) < kDimensions, "Wrong number of
-    // dimensions");
-    size_t dim = storage_.dimension() - sizeof...(args) - 1;
-    if (d >= storage_.shape()[dim]) {
-      throw nn_error("Access tensor out of range.");
-    }
-    size_t shift = 1;
-    for (size_t i = dim + 1; i < storage_.dimension(); ++i)
-      shift *= storage_.shape()[i];  // TODO(Randl): optimize. Reverse argumets?
-
-    return (d * shift + host_pos(args...));
-  }
-
-  template <typename... Args>
-  const UPtr host_ptr(const Args... args) const {
-    return &(*host_iter(args...));
-  }
-
-  template <typename... Args>
-  UPtr host_ptr(const Args... args) {
-    return &(*host_iter(args...));
-  }
-
-  template <typename... Args>
-  const auto host_iter(const Args... args) const {
-    // static_assert(!kConst, "Non-constant operation on constant Tensor");
-    // static_assert(sizeof...(args) == kDimensions, "Wrong number of
-    // dimensions");
-    return std::next(storage_.xbegin(), host_pos(args...));
-  }
-
-  template <typename... Args>
-  auto host_iter(const Args... args) {
-    // static_assert(!kConst, "Non-constant operation on constant Tensor");
-    // static_assert(sizeof...(args) == kDimensions, "Wrong number of
-    // dimensions");
-    return std::next(storage_.xbegin(), host_pos(args...));
-  }
-
   auto host_begin() { return storage_.xbegin(); }
 
   const auto host_begin() const { return storage_.cxbegin(); }
@@ -244,6 +188,11 @@ auto host_data() {
   }
 #endif
 
+  /**
+   * Fill tensor with particular value
+   * @param value
+   * @return
+   */
   Tensor &fill(U value) {
     // static_assert(!kConst, "Non-constant operation on constant Tensor");
     // data_is_on_host_ = true;
@@ -252,8 +201,11 @@ auto host_data() {
     return *this;
   }
 
-  // TODO(Randl): variadic template version of reshape
   // TODO(Randl): checked version
+  /**
+   * Reshape tensor
+   * @param sz
+   */
   void reshape(const std::vector<size_t> &sz) { storage_.reshape(sz); }
 
   void resize(const std::vector<size_t> &sz) { storage_.reshape(sz); }
@@ -263,120 +215,101 @@ auto host_data() {
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
   /**
-   * @brief Returns a sub view from the current tensor with a given size.
-   * The new tensor will share data with its parent tensor so that each time
-   * that data is modified, it will be updated in both directions.
+   * Returns new Tensor which has shared storage with current, but different
+   * shape
    *
-   * The new sub view tensor will be extracted assuming continuous data.
-   * The offset to shared data is assumed to be 0.
-   *
-   * @param new_shape The size for the new tensor
-   * @return An instance to the new tensor
-   *
-   * Usage:
-   *
-   *  Tensor<float_t, 4> t({2,2,2,2});            // we create a 4D tensor
-   *  Tensor<float_t, 4> t_view = t.view({2,2});  // we create a 2x2 matrix
-   * view
-   * with offset zero
-   *
-   */
-  Tensor subView(std::initializer_list<size_t> const &new_shape) {
-    Tensor res = Tensor(xt::broadcast(storage_, storage_.shape()));
-    res.storage_.reshape(new_shape);
-    return res;
-  }
-
-  /**
-   * @brief Returns a sub view from the current tensor with a given size.
-   * The new tensor will share data with its parent tensor so that each time
-   * that data is modified, it will be updated in both directions.
-   *
-   * The new sub view tensor will be extracted assuming continuous data.
-   *
-   * @param start The offset from the parent tensor
-   * @param new_shape The size for the new tensor
-   * @return An instance to the new tensor
-   *
-   * Usage:
-   *
-   *  Tensor<float_t, 4> t({2,2,2,2});                   // we create a 4D
-   * tensor
-   *  Tensor<float_t, 4> t_view = t.view({2,2}, {2,2});  // we create a 2x2
-   * matrix view from
-   *                                                     // offset 4.
-   */
-  // TODO(Randl) variadic version
-  Tensor subView(std::initializer_list<size_t> const &dim1,
-                 std::initializer_list<size_t> const &dim2) {
-    return Tensor(xt::view(storage_,
-                           xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
-                           xt::range(*(dim2.begin()), *(dim2.begin()) + 1)));
-    // return subview_impl(start, new_shape);
-  }
-
-  Tensor subView(std::initializer_list<size_t> const &dim1,
-                 std::initializer_list<size_t> const &dim2,
-                 std::initializer_list<size_t> const &dim3,
-                 std::initializer_list<size_t> const &dim4) {
-    return Tensor(xt::view(storage_,
-                           xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
-                           xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
-                           xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
-                           xt::range(*(dim4.begin()), *(dim4.begin()) + 1)));
-    // return subview_impl(start, new_shape);
-  }
-
-  /**
-   * @brief Returns whether the tensor is a view of another tensor
-   *
-   */
-  // TODO: is needed?
-  bool isSubView() const {
-    return true; /*std::is_same(Storage, xt::xview<U>);*/
-  }
-
- private:
-  /**
-   * Constructor that accepts a pointer to existing TensorStorage, together
-   * with shape and offset.
-   * @param storage pointer to TensorStorage
-   * @param offset offset from first element of storage
-   * @param shape shape of the Tensor
+   * Example:
+   * @code
+   * Tensor b({4,2});
+   * a = b.subView({2,2,2};
+   * @endcode
+   * b is Tensor of shape 4x2 and a is Tensor of shape 2x2x2. Changing a(0,0,0)
+   * will change b(0,0) too.
+   * @param new_shape
    * @return
    */
-  template <class T>
-  explicit Tensor(const xt::xexpression<T> &storage) {
-    storage_ = storage.derived_cast();
+  /*
+ Tensor<U,xt::xbroadcast<Storage, std::vector<size_t>>>
+ subView(std::initializer_list<size_t> const &new_shape) {
+   auto res = Tensor<U,xt::xbroadcast<Storage,
+ std::vector<size_t>>>(xt::broadcast(storage_, storage_.shape()));
+   res.storage_.reshape(new_shape);
+   return res;
+ }*/
+
+  // TODO(Randl) variadic version
+  /**
+   * Rutruns sub-Tensor of the current Tensor which shares storage with it.
+   * @param dim1
+   * @param dim2
+   * @return
+   */
+  Tensor<U, xt::xview<Storage>> subView(
+    std::initializer_list<size_t> const &dim1,
+    std::initializer_list<size_t> const &dim2) {
+    return Tensor<U, xt::xview<Storage>>(
+      xt::view(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
+               xt::range(*(dim2.begin()), *(dim2.begin()) + 1)));
+    // return subview_impl(start, new_shape);
+  }
+
+  Tensor<U,
+         xt::xview<Storage &,
+                   xt::xrange<long unsigned int>,
+                   xt::xrange<long unsigned int>,
+                   xt::xrange<long unsigned int>,
+                   xt::xrange<long unsigned int>>>
+  subView(std::initializer_list<size_t> const &dim1,
+          std::initializer_list<size_t> const &dim2,
+          std::initializer_list<size_t> const &dim3,
+          std::initializer_list<size_t> const &dim4) {
+    using TensNew = Tensor<
+      U, xt::xview<Storage &, xt::xrange<long unsigned int>,
+                   xt::xrange<long unsigned int>, xt::xrange<long unsigned int>,
+                   xt::xrange<long unsigned int>>>;
+    // auto t = xt::view(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) +
+    // 1), xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
+    // xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
+    // xt::range(*(dim4.begin()), *(dim4.begin()) + 1));
+    return TensNew(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
+                   xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
+                   xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
+                   xt::range(*(dim4.begin()), *(dim4.begin()) + 1));
+
+    // return subview_impl(start, new_shape);
   }
 
   /*
-   * Implementation method to extract a view from a tensor
-   * Raises an exception when sizes of the starting offset and new_shape
-   * are bigger than the current dimensions number. Also raises an exception
-   * when the requested view size is not feasible.
+  // TODO: is needed?
+  bool isSubView() const {
+    return true; //std::is_same(Storage, xt::xview<U>);
+  }
+*/
+
+  /**
+   * Creates Tensor given the storage
+   * @tparam T
+   * @param storage
    */
-  // TODO
-  /*Tensor subview_impl(std::initializer_list<size_t> const &start,
-                      std::initializer_list<size_t> const &new_shape) {
-    if (start.size() > kDimensions || new_shape.size() > kDimensions) {
-      throw nn_error("Overpassed number of existing dimensions.");
-    }
+  template <class T>
+  explicit Tensor(T &storage,
+                  xt::xrange<long unsigned int> r1,
+                  xt::xrange<long unsigned int> r2,
+                  xt::xrange<long unsigned int> r3,
+                  xt::xrange<long unsigned int> r4)
+    : storage_(xt::view(storage, r1, r2, r3, r4)) {}
 
-    // compute the new offset and check that it's feasible to create
-    // the new view.
-    // TODO(edgarriba/randl): add proper tests to this
-    const size_t new_offset = offset_ + compute_offset(start, shape_);
-    if (new_offset + product(new_shape) > size_) {
-      throw nn_error("Cannot create a view from this tensor");
-    }
-
-    return Tensor(storage_ptr_, new_offset, new_shape);
-  }*/
-
+ private:
   Storage storage_;
   // xt::xexpression<Storage> xepr_stotrage_;
 
+  /**
+   *
+   * @tparam T
+   * @param os
+   * @param tensor
+   * @return
+   */
   template <class T>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T> &tensor);

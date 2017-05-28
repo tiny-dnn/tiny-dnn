@@ -34,22 +34,6 @@ TEST(tensor, constructors) {
   for (size_t i = 0; i < t1.size(); ++i) {
     EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(0.0));
   }
-
-  // TODO
-  // invoke move assign cto
-  // t1 = std::move(t2);
-
-  // check that we moved data
-  // EXPECT_EQ(t1.size(), serial_size_t(16));
-
-  // expecting something here is wrong. t2 is in a valid but undefined state,
-  // no need to test it.
-
-  // invoke move ctor
-  // Tensor<float_t> t3(std::move(t1));
-
-  // check that we moved data
-  // EXPECT_EQ(t3.size(), serial_size_t(16));
 }
 
 TEST(tensor, shape) {
@@ -66,117 +50,40 @@ TEST(tensor, size) {
 
   EXPECT_EQ(tensor.size(), size_t(2 * 2 * 2 * 2));
 }
-
-TEST(tensor, check_bounds) {
-  Tensor<float_t> tensor({1, 2, 2, 1});
-
-  // check bounds with .at() accessor
-
-  EXPECT_NO_THROW(tensor.host_at(0, 0, 0, 0));
-  EXPECT_NO_THROW(tensor.host_at(0, 0, 1, 0));
-  EXPECT_NO_THROW(tensor.host_at(0, 1, 0, 0));
-  EXPECT_NO_THROW(tensor.host_at(0, 1, 1, 0));
-
-  EXPECT_THROW(tensor.host_at(0, 0, 0, 1), nn_error);
-  EXPECT_THROW(tensor.host_at(1, 0, 0, 0), nn_error);
-  EXPECT_THROW(tensor.host_at(1, 0, 0, 1), nn_error);
-
-  // check bounds with .ptr() accessor
-
-  EXPECT_NO_THROW(tensor.host_ptr(0, 0, 0, 0));
-  EXPECT_NO_THROW(tensor.host_ptr(0, 0, 1, 0));
-  EXPECT_NO_THROW(tensor.host_ptr(0, 1, 0, 0));
-  EXPECT_NO_THROW(tensor.host_ptr(0, 1, 1, 0));
-
-  EXPECT_THROW(tensor.host_ptr(0, 0, 0, 1), nn_error);
-  EXPECT_THROW(tensor.host_ptr(1, 0, 0, 0), nn_error);
-  EXPECT_THROW(tensor.host_ptr(1, 0, 0, 1), nn_error);
-}
-
 /*
 TEST(tensor, view1) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2 = t1.subView({2, 4});
-  Tensor<float_t> t3 = t1.subView({0, 2}, {0, 4}, {0, 0}, {0, 0});
+  Tensor<float_t> tensor({1, 2, 2, 2}, 2);
+  auto t_view= tensor.subView({1,4,2});
+  t_view.host_at(0,0,0) = -1;
+  t_view.host_at(0,2,1) = 3;
+  std::cout << tensor;
+  // std::cout << t_view;
+  EXPECT_EQ(tensor.host_at(0,0,0,0), -1);
 
-  EXPECT_TRUE(!t1.isSubView());
-  EXPECT_TRUE(t2.isSubView());
-  EXPECT_TRUE(t3.isSubView());
-
-  EXPECT_EQ(t1.size(), size_t(2 * 2 * 2 * 2));
-  EXPECT_EQ(t2.size(), size_t(2 * 4));
-  EXPECT_EQ(t3.size(), size_t(2 * 4));
-  EXPECT_EQ(t1.size(), size_t(2 * 2 * 2 * 2));
-}
+}*/
 
 TEST(tensor, view2) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-
-  EXPECT_NO_THROW(t1.subView({2, 4, 0, 0}));
-  EXPECT_NO_THROW(t1.subView({0, 2}, {0, 4}, {0, 0}, {0, 0}));
-
-  // test that num parameters exceed to num of dimensions
-  // EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}), nn_error);
-  // EXPECT_THROW(t1.subView({0, 0, 0, 0}, {2, 4, 0, 0, 0}), nn_error);
-  // EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}, {1, 2, 0, 0}), nn_error);
-  // EXPECT_THROW(t1.subView({2, 4, 0, 0, 0}, {1, 2, 0, 0, 0}), nn_error);
+  Tensor<float_t> tensor({3, 3, 3, 3}, 2);
+  auto t_view = tensor.subView({0, 1}, {0, 0}, {0, 2}, {0, 2});
+  EXPECT_EQ(t_view.shape()[0], size_t(2));
+  EXPECT_EQ(t_view.shape()[1], size_t(1));
+  EXPECT_EQ(t_view.shape()[2], size_t(3));
+  EXPECT_EQ(t_view.shape()[3], size_t(3));
+  t_view.host_at(0, 0, 0) = -1;
+  t_view.host_at(0, 2, 1) = 3;
+  std::cout << tensor;
+  // std::cout << t_view;
+  EXPECT_EQ(tensor.host_at(0, 0, 0, 0), -1);
 }
 
-TEST(tensor, view3) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-
-  // test that cannot generate view bigger than current tensor
-  EXPECT_THROW(t1.subView({4, 5}), nn_error);
-  EXPECT_THROW(t1.subView({1}, {4, 4}), nn_error);
+TEST(tensor, reshape) {
+  Tensor<float_t> tensor({1, 2, 2, 2}, 2);
+  tensor.reshape({4, 1, 2});
+  EXPECT_EQ(tensor.shape()[0], size_t(4));
+  EXPECT_EQ(tensor.shape().size(), size_t(3));
+  EXPECT_EQ(tensor.host_at(2, 0, 1), size_t(2));
 }
-
-TEST(tensor, view4) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2 = t1.subView({2, 4});
-
-  // modify sub view tensor
-  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
-    *it = float_t(std::distance(t2.host_begin(), it) + 1);
-  }
-
-  // check that root tensor has also been modified
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_EQ(*std::next(t1.host_begin(),i), float_t(i + 1));
-    EXPECT_EQ(*std::next(t2.host_begin(),i), float_t(i + 1));
-  }
-}
-
-TEST(tensor, view5) {
-  Tensor<float_t> t1({3, 3});
-
-  // we create a sub view tensor with size @2x2.
-  // Ideally it should represent the top-left matrix.
-  // However, since we assume continuous memory, it will
-  // mask the first four elements from the root view.
-  Tensor<float_t> t2 = t1.subView({0}, {2, 2});
-
-  // modify sub view tensor
-  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
-    *it = float_t(std::distance(t2.host_begin(), it) + 1);
-  }
-
-  // check that root tensor has been modified assuming
-  // continuous memory. The ideal case would be that the
-  // new sub view can handle non continuous memory pointing
-  // to the top-left matrix from the root tensor.
-  EXPECT_EQ(t1.host_at(0, 0), float_t(1.0));
-  EXPECT_EQ(t1.host_at(0, 1), float_t(2.0));
-  EXPECT_EQ(t1.host_at(0, 2), float_t(3.0));
-  EXPECT_EQ(t1.host_at(1, 0), float_t(4.0));
-
-  // check that the new sub view does not assume the ideal
-  // case with non continuous memory.
-  EXPECT_TRUE(t1.host_at(0, 0) == float_t(1.0));
-  EXPECT_TRUE(t1.host_at(0, 1) == float_t(2.0));
-  EXPECT_FALSE(t1.host_at(1, 0) == float_t(3.0));
-  EXPECT_FALSE(t1.host_at(1, 1) == float_t(4.0));
-}
-*/
+/*
 TEST(tensor, access_data1) {
   Tensor<float_t> tensor({1, 2, 2, 1}, 0);
 
@@ -376,7 +283,7 @@ TEST(tensor, access_data8) {
     EXPECT_EQ(*std::next(tensor.host_begin(), 4 + i), float_t(2.0));
   }
 }
-
+*/
 /*TEST(tensor, access_data9) {
     Tensor<float_t> tensor({1,2,2,2});
 
@@ -872,20 +779,20 @@ TEST(tensor, sqrt2) {
     EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
   }
 }
-
+/*
 TEST(tensor, nd1) {
   Tensor<float_t> t({3, 3, 3});
 
   // TODO(Randl): static assert tests
-  /*EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
-  EXPECT_THROW(t.host_at(1,2), nn_error);*/
+  EXPECT_THROW(t.host_at(0,1,1,0), nn_error);
+  EXPECT_THROW(t.host_at(1,2), nn_error);
   EXPECT_THROW(t.host_at(4, 1, 1), nn_error);
   EXPECT_NO_THROW(t.host_at(2, 2, 2));
 
   for (size_t i = 0; i < 3; ++i) {
     t.host_at(i, i, i) = float_t(i * 0.5);
   }
-}
+}*/
 
 template <size_t N>
 std::ostream &print_tester(std::ostream &os) {
