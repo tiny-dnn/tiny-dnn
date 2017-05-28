@@ -2,7 +2,7 @@ include(../cmake/DownloadProject/DownloadProject.cmake)
 download_project(
         PROJ benchmark
         GIT_REPOSITORY https://github.com/google/benchmark.git
-        GIT_TAG master
+        GIT_TAG v1.1.0
         UPDATE_DISCONNECTED 1
 )
 
