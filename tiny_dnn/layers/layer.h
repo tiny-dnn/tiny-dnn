@@ -155,36 +155,6 @@ class layer : public node {
   ///! @deprecated use out_data_size() instead
   serial_size_t out_size() const { return out_data_size(); }
 
-  std::vector<const vec_t *> weights() const {
-    std::vector<const vec_t *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(get_weight_data(i));
-      }
-    }
-    return v;
-  }
-
-  std::vector<vec_t *> weights() {
-    std::vector<vec_t *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(get_weight_data(i));
-      }
-    }
-    return v;
-  }
-
-  std::vector<tensor_t *> weights_grads() {
-    std::vector<tensor_t *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(ith_in_node(i)->get_gradient());
-      }
-    }
-    return v;
-  }
-
   std::vector<edgeptr_t> inputs() {
     std::vector<edgeptr_t> nodes(in_channels_);
     for (size_t i = 0; i < in_channels_; i++) {
@@ -342,9 +312,8 @@ class layer : public node {
   // save/load
   template <typename Archive>
   void serialize(Archive &ar) {
-    auto all_weights = weights();
-    for (auto weight : all_weights) {
-      ar(*weight);
+    for (auto p : parameters) {
+      ar(p->get_data());
     }
     initialized_ = true;
   }
@@ -359,9 +328,9 @@ class layer : public node {
        throw nn_error("failed to save weights because of infinite weight");
     }*/
     os << std::setprecision(precision);
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto w : *weight) os << w << " ";
+    for (auto p : parameters) {
+      size_t psize = p->size();
+      for (size_t i = 0; i < psize; i++) os << *p->data_at(i) << " ";
     }
   }
 
@@ -370,17 +339,18 @@ class layer : public node {
     const int precision = std::numeric_limits<float_t>::digits10 + 2
     /*by default, we want there to be enough precision*/) {  // NOLINT
     is >> std::setprecision(precision);
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto &w : *weight) is >> w;
+    for (auto p : parameters) {
+      size_t psize = p->size();
+      for (size_t i = 0; i < psize; i++) is >> *p->data_at(i);
     }
     initialized_ = true;
   }
 
   virtual void load(const std::vector<float_t> &src, int &idx) {  // NOLINT
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto &w : *weight) w = src[idx++];
+    for (auto p : parameters) {
+      auto temp_p                 = p->get_data();
+      for (auto &tp : *temp_p) tp = src[idx++];
+      p->set_data(temp_p);
     }
     initialized_ = true;
   }
@@ -631,11 +601,13 @@ class layer : public node {
       switch (in_type_[i]) {
         // fill vectors of weight type
         case vector_type::weight:
-          weight_init_->fill(get_weight_data(i), fan_in_size(), fan_out_size());
+          weight_init_->fill(get_ith_parameter(i)->get_data(), fan_in_size(),
+                             fan_out_size());
           break;
         // fill vector of bias type
         case vector_type::bias:
-          bias_init_->fill(get_weight_data(i), fan_in_size(), fan_out_size());
+          bias_init_->fill(get_ith_parameter(i)->get_data(), fan_in_size(),
+                           fan_out_size());
           break;
         default: break;
       }
@@ -658,7 +630,7 @@ class layer : public node {
     for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size());
          i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
-        vec_t &target = *get_weight_data(i);
+        vec_t &target = *get_ith_parameter(i)->get_data();
         ith_in_node(i)->merge_grads(&diff);
         for (size_t j = 0; j < diff.size(); ++j) {
           diff[j] *= rcp_batch_size;
@@ -674,15 +646,15 @@ class layer : public node {
   }
 
   bool has_same_weights(const layer &rhs, float_t eps) const {
-    auto w1 = weights();
-    auto w2 = rhs.weights();
+    auto w1 = parameters;
+    auto w2 = rhs.get_parameters();
     if (w1.size() != w2.size()) return false;
 
     for (size_t i = 0; i < w1.size(); i++) {
       if (w1[i]->size() != w2[i]->size()) return false;
 
       for (size_t j = 0; j < w1[i]->size(); j++) {
-        if (std::abs(w1[i]->at(j) - w2[i]->at(j)) > eps) return false;
+        if (std::abs(w1[i]->data_at(j) - w2[i]->data_at(j)) > eps) return false;
       }
     }
     return true;
@@ -711,9 +683,9 @@ class layer : public node {
 
   /// getters setters for parameters /////////////////////////////////////////
 
-  std::vector<const std::shared_ptr<parameter>> get_parameters(
+  std::vector<std::shared_ptr<parameter>> get_parameters(
     bool trainable_only = false) {
-    std::vector<const std::shared_ptr<parameter>> p;
+    std::vector<std::shared_ptr<parameter>> p;
     for (size_t i = 0; i < parameters.size(); i++) {
       if (!trainable_only ||
           (parameters[i]->is_trainable() && trainable_only)) {
@@ -723,8 +695,8 @@ class layer : public node {
     return p;
   }
 
-  std::vector<std::shared_ptr<parameter>> get_parameters(
-    bool trainable_only = false) {
+  const std::vector<std::shared_ptr<parameter>> get_parameters(
+    bool trainable_only = false) const {
     std::vector<std::shared_ptr<parameter>> p;
     for (size_t i = 0; i < parameters.size(); i++) {
       if (!trainable_only ||
@@ -739,8 +711,8 @@ class layer : public node {
     return parameters[i];
   }
 
-  const std::shared_ptr<parameter> get_ith_parameter(size_t i) const {
-    return const_cast<std::shared_ptr<parameter>>(parameter[i]);
+  std::shared_ptr<parameter> get_ith_parameter(size_t i) const {
+    return static_cast<std::shared_ptr<parameter>>(parameters[i]);
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -866,26 +838,6 @@ class layer : public node {
     return next()[i];
   }
   edgeptr_t ith_out_node(serial_size_t i) const { return next()[i]; }
-
-  /* @brief Retrieves weight vector from incoming edge
-   * @param i The position of incoming edge.
-   *
-   * Returns the mutable pointer to the edge raw data.
-   */
-  vec_t *get_weight_data(serial_size_t i) {
-    assert(is_trainable_weight(in_type_[i]));
-    return &(*(ith_in_node(i)->get_data()))[0];
-  }
-
-  /* @brief Retrieves weight vector from incoming edge
-   * @param i The position of incoming edge.
-   *
-   * Returns the non mutable pointer to the edge raw data.
-   */
-  const vec_t *get_weight_data(serial_size_t i) const {
-    assert(is_trainable_weight(in_type_[i]));
-    return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
-  }
 };
 
 inline void connect(layer *head,

@@ -15,16 +15,21 @@ class parameter : public std::enable_shared_from_this<parameter> {
   enum class param_type : int8_t { weight = 0x0001, bias = 0x0002 };
 
   parameter(serial_size_t width,
-            serial_size_t in_height,
-            serial_size_t in_depth,
+            serial_size_t height,
+            serial_size_t depth,
             serial_size_t n_fmaps,
             param_type type,
             bool trainable = true)
-    : set_dims(width, height, depth, n_fmaps),
-      param_type_(type),
-      trainable_(trainable) {}
+    : param_type_(type),
+      shape_(width, height, depth),
+      n_fmaps_(n_fmaps),
+      trainable_(trainable),
+      data_(size()),
+      grad_(size()) {}
 
   shape3d get_shape() { return shape_; }
+
+  size_t size() { return shape_.size() * n_fmaps_; }
 
   param_type get_param_type() { return param_type_; }
 
@@ -58,7 +63,7 @@ class parameter : public std::enable_shared_from_this<parameter> {
 
   void set_data(const vec_t &data) { data_ = data; }
 
-  void set_data(const vec_t *data) { &data_ = data; }
+  void set_data(const vec_t *data) { data_ = *data; }
 
   vec_t *get_grad() { return &grad_; }
 
@@ -66,19 +71,20 @@ class parameter : public std::enable_shared_from_this<parameter> {
 
   void set_grad(const vec_t &grad) { grad_ = grad; }
 
-  void set_grad(const vec_t *grad) { &grad_ = grad; }
+  void set_grad(const vec_t *grad) { grad_ = *grad; }
 
   void merge_grads(vec_t *dst) {
-    size_t sz = grad_.size();
-    dst->resize(sz);
+    dst->resize(grad_.size());
     float_t *pdst = &(*dst)[0];
     std::copy(grad_.begin(), grad_.end(), pdst);
-    vectorize::reduce<float_t>(grad_.begin(), sz, pdst);
+    vectorize::reduce<float_t>(&grad_[0], grad_.size(), pdst);
   }
 
-  void clear_grads() {
-    vectorize::fill(grad_.begin(), grad_.size(), float_t{0});
-  }
+  void clear_grads() { vectorize::fill(&grad_[0], grad_.size(), float_t{0}); }
+
+  float_t *data_at(size_t i) { return &data_[i]; }
+
+  float_t *grad_at(size_t i) { return &grad_[i]; }
 
  private:
   param_type param_type_;
