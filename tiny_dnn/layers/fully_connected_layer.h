@@ -27,10 +27,14 @@ class fully_connected_layer : public layer {
                         serial_size_t out_dim,
                         bool has_bias          = true,
                         backend_t backend_type = core::default_engine())
-    : layer(std_input_order(has_bias), {vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
+    layer::add_parameter(in_dim, out_dim, 1, 1, param_type::weight);
+    if (has_bias) {
+      layer::add_parameter(out_dim, 1, 1, 1, param_type::bias);
+    }
   }
 
   // move constructor
@@ -46,25 +50,20 @@ class fully_connected_layer : public layer {
 
   serial_size_t fan_out_size() const override { return params_.out_size_; }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
-    if (params_.has_bias_) {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),
-              index3d<serial_size_t>(params_.out_size_, 1, 1)};
-    } else {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1)};
-    }
+  std::vector<shape3d> in_shape() const override {
+    return {shape3d(params_.in_size_, 1, 1)};
   }
 
   std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
+    return {shape3d(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
+    std::vector<std::shared_ptr<parameter>> p = layer::get_parameters();
     // forward fully connected op context
     fwd_ctx_.set_in_out(in_data, out_data);
+    fwd_ctx_.set_parameters(p);
     fwd_ctx_.setParallelize(layer::parallelize());
     fwd_ctx_.setEngine(layer::engine());
 
@@ -76,8 +75,10 @@ class fully_connected_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
+    std::vector<std::shared_ptr<parameter>> p = layer::get_parameters();
     // backward fully connected op context
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
+    bwd_ctx_.set_parameters(p);
     bwd_ctx_.setParallelize(layer::parallelize());
     bwd_ctx_.setEngine(layer::engine());
 

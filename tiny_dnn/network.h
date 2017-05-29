@@ -481,13 +481,13 @@ class network {
     }
 
     for (auto current : net_) {  // ignore first input layer
-      if (current->weights().size() < 2) {
+      if (current->get_parameters().size() < 2) {
         continue;
       }
-      vec_t &w     = *current->weights()[0];
-      vec_t &b     = *current->weights()[1];
-      tensor_t &dw = (*current->weights_grads()[0]);
-      tensor_t &db = (*current->weights_grads()[1]);
+      vec_t &w     = *current->get_ith_parameter(0)->get_data();
+      vec_t &b     = *current->get_ith_parameter(1)->get_data();
+      tensor_t &dw = *current->get_ith_parameter(0)->get_grad();
+      tensor_t &db = *current->get_ith_parameter(1)->get_grad();
 
       if (w.empty()) continue;
 

@@ -24,9 +24,10 @@ class FullyConnectedGradOp : public core::OpKernel {
 
     // incoming/outcoming data
     const tensor_t &prev_out = context.input(0);
-    const tensor_t &W        = context.input(1);
-    tensor_t &dW             = context.input_grad(1);
-    tensor_t *db         = params.has_bias_ ? &context.input_grad(2) : nullptr;
+    const vec_t *W           = context.get_parameter(0).get_data();
+    tensor_t *dW             = context.get_parameter(0).get_grad();
+    tensor_t *db =
+      params.has_bias_ ? context.get_parameter(1).get_grad() : nullptr;
     tensor_t &prev_delta = context.input_grad(0);
     tensor_t &curr_delta = context.output_grad(0);
     tensor_t dummy;  // need lvalue for non-const reference
@@ -40,11 +41,11 @@ class FullyConnectedGradOp : public core::OpKernel {
 
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(
-        prev_out, W[0], dW, params.has_bias_ ? *db : dummy, curr_delta,
+        prev_out, *W, *dW, params.has_bias_ ? *db : dummy, curr_delta,
         prev_delta, params, context.parallelize());
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(
-        prev_out, W[0], dW, params.has_bias_ ? *db : dummy, curr_delta,
+        prev_out, *W, *dW, params.has_bias_ ? *db : dummy, curr_delta,
         prev_delta, params, context.parallelize());
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));

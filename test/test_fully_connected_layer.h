@@ -10,9 +10,9 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
+
+using namespace activation;
 
 TEST(fully_connected, train) {
   network<sequential> nn;
@@ -156,7 +156,7 @@ TEST(fully_connected, read_write) {
 
 TEST(fully_connected, forward) {
   fully_connected_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), serial_size_t(1));  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -193,7 +193,7 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), serial_size_t(2));  // in and W
+  EXPECT_EQ(l.in_channels(), serial_size_t(1));  // in and W
 
   l.weight_init(weight_init::constant(1.0));
 
