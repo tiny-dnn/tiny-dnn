@@ -20,12 +20,13 @@ namespace tiny_dnn {
 /**
  *
  * @tparam T
+ * @tparam S
  * @param os
  * @param tensor
  * @return
  */
-template <typename T>
-inline std::ostream &operator<<(std::ostream &os, const Tensor<T> &tensor) {
+template <typename T, typename S>
+inline std::ostream &operator<<(std::ostream &os, const Tensor<T, S> &tensor) {
   os << tensor.storage_;
   return os;
 }

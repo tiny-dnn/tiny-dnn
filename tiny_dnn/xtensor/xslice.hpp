@@ -300,13 +300,13 @@ namespace xt
     inline disable_xslice<S, std::size_t> get_size(const S&) noexcept
     {
         return 1;
-    };
+    }
 
     template <class S>
     inline auto get_size(const xslice<S>& slice) noexcept
     {
         return slice.derived_cast().size();
-    };
+    }
 
     /*******************************************************
      * homogeneous step_size for integral types and slices *

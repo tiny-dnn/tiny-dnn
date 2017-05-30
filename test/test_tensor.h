@@ -64,15 +64,13 @@ TEST(tensor, view1) {
 
 TEST(tensor, view2) {
   Tensor<float_t> tensor({3, 3, 3, 3}, 2);
-  auto t_view = tensor.subView({0, 1}, {0, 0}, {0, 2}, {0, 2});
+  auto t_view = tensor.subView({0, 2}, {0, 1}, {0, 3}, {0, 3});
   EXPECT_EQ(t_view.shape()[0], size_t(2));
   EXPECT_EQ(t_view.shape()[1], size_t(1));
   EXPECT_EQ(t_view.shape()[2], size_t(3));
   EXPECT_EQ(t_view.shape()[3], size_t(3));
-  t_view.host_at(0, 0, 0) = -1;
-  t_view.host_at(0, 2, 1) = 3;
-  std::cout << tensor;
-  // std::cout << t_view;
+  t_view.host_at(0, 0, 0, 0) = -1;
+  t_view.host_at(1, 0, 1, 1) = 3;
   EXPECT_EQ(tensor.host_at(0, 0, 0, 0), -1);
 }
 
@@ -311,7 +309,7 @@ TEST(tensor, access_data8) {
 /*TEST(tensor, access_data10) {
     Tensor<float_t> tensor({1,2,2,2});
 
-    // modify data using operator[] accessor
+    //tensor.host_at(0, 0, 0, 0) modify data using operator[] accessor
 
     for (serial_size_t i = 0; i < 4; ++i) {
         tensor.mutable_host_data()[i] = float_t(1.0);
@@ -383,27 +381,27 @@ TEST(tensor, fill) {
   }
 }
 
-// TEST(tensor, linspace) {
-//    Tensor<float_t> tensor(2,2,2,2);
-//
-//    // fill all tensor values with values from 1 to 16
-//
-//    tensor.linspace(float_t(1.0), float_t(16.0));
-//
-//    for (size_t i = 0; i < tensor.size(); ++i) {
-//        EXPECT_EQ(tensor[i], float_t(1.0+i));
-//    }
-//
-//    Tensor<float_t> tensor2(101,1,1,1);
-//
-//    // fill all tensor values with from 0 to 1
-//
-//    tensor2.linspace(float_t(0.0), float_t(1.0));
-//
-//    for (size_t i = 0; i < tensor2.size(); ++i) {
-//        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 1e-5);
-//    }
-//}
+/* TEST(tensor, linspace) {
+    Tensor<float_t> tensor(2,2,2,2);
+
+    // fill all tensor values with values from 1 to 16
+
+    tensor.linspace(float_t(1.0), float_t(16.0));
+
+    for (size_t i = 0; i < tensor.size(); ++i) {
+        EXPECT_EQ(tensor[i], float_t(1.0+i));
+    }
+
+    Tensor<float_t> tensor2(101,1,1,1);
+
+    // fill all tensor values with from 0 to 1
+
+    tensor2.linspace(float_t(0.0), float_t(1.0));
+
+    for (size_t i = 0; i < tensor2.size(); ++i) {
+        EXPECT_NEAR(tensor2[i], float_t(0.01*i), 1e-5);
+    }
+}*/
 
 TEST(tensor, add1) {
   Tensor<float_t> t1({2, 2, 2, 2});
@@ -815,21 +813,31 @@ std::ostream &print_tester<0>(std::ostream &os) {
 
 TEST(tensor, print) { print_tester<5>(std::cout); }
 
-// TEST(tensor, exp) {
-//    Tensor<float_t> t(2, 2, 2, 2);
-//
-//    // fill tensor with initial values
-//    t.linspace(float_t(1.0), float_t(16.0));
-//
-//    // compute element-wise exponent along all tensor values
-//
-//    Tensor<float_t> t2 = t.exp();
-//
-//    // check that exponent is okay
-//
-//    for (size_t i = 0; i < t2.size(); ++i) {
-//        EXPECT_NEAR(t2[i], float_t(exp(float_t(i+1))), 1e-5);
-//    }
-//}
+TEST(tensor, print_view) {
+  Tensor<float_t> tensor({3, 3, 3, 3}, 2);
+  auto t_view = tensor.subView({0, 2}, {0, 1}, {0, 3}, {0, 3});
+  t_view.host_at(0, 0, 0, 0) = -1;
+  t_view.host_at(1, 0, 1, 1) = 3;
+  std::cout << tensor << std::endl << t_view << std::endl;
+}
+
+/*
+ TEST(tensor, exp) {
+    Tensor<float_t> t(2, 2, 2, 2);
+
+    // fill tensor with initial values
+    t.linspace(float_t(1.0), float_t(16.0));
+
+    // compute element-wise exponent along all tensor values
+
+    Tensor<float_t> t2 = t.exp();
+
+    // check that exponent is okay
+
+    for (size_t i = 0; i < t2.size(); ++i) {
+        EXPECT_NEAR(t2[i], float_t(exp(float_t(i+1))), 1e-5);
+    }
+}
+*/
 
 }  // namespace tiny_dnn

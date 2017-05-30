@@ -271,10 +271,10 @@ auto host_data() {
     // 1), xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
     // xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
     // xt::range(*(dim4.begin()), *(dim4.begin()) + 1));
-    return TensNew(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
-                   xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
-                   xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
-                   xt::range(*(dim4.begin()), *(dim4.begin()) + 1));
+    return TensNew(storage_, xt::range(*(dim1.begin()), *(dim1.begin() + 1)),
+                   xt::range(*(dim2.begin()), *(dim2.begin() + 1)),
+                   xt::range(*(dim3.begin()), *(dim3.begin() + 1)),
+                   xt::range(*(dim4.begin()), *(dim4.begin() + 1)));
 
     // return subview_impl(start, new_shape);
   }
@@ -299,20 +299,13 @@ auto host_data() {
                   xt::xrange<long unsigned int> r4)
     : storage_(xt::view(storage, r1, r2, r3, r4)) {}
 
+  template <typename T, typename S>
+  friend inline std::ostream &operator<<(std::ostream &os,
+                                         const Tensor<T, S> &tensor);
+
  private:
   Storage storage_;
   // xt::xexpression<Storage> xepr_stotrage_;
-
-  /**
-   *
-   * @tparam T
-   * @param os
-   * @param tensor
-   * @return
-   */
-  template <class T>
-  friend inline std::ostream &operator<<(std::ostream &os,
-                                         const Tensor<T> &tensor);
 };
 
 }  // namespace tiny_dnn
