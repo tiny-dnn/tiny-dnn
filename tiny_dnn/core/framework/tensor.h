@@ -237,46 +237,16 @@ auto host_data() {
    return res;
  }*/
 
-  // TODO(Randl) variadic version
   /**
-   * Rutruns sub-Tensor of the current Tensor which shares storage with it.
-   * @param dim1
-   * @param dim2
-   * @return
+   * Returns view of current Tensor
+   * @tparam Values index type
    */
-  Tensor<U, xt::xview<Storage>> subView(
-    std::initializer_list<size_t> const &dim1,
-    std::initializer_list<size_t> const &dim2) {
-    return Tensor<U, xt::xview<Storage>>(
-      xt::view(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) + 1),
-               xt::range(*(dim2.begin()), *(dim2.begin()) + 1)));
-    // return subview_impl(start, new_shape);
-  }
-
-  Tensor<U,
-         xt::xview<Storage &,
-                   xt::xrange<long unsigned int>,
-                   xt::xrange<long unsigned int>,
-                   xt::xrange<long unsigned int>,
-                   xt::xrange<long unsigned int>>>
-  subView(std::initializer_list<size_t> const &dim1,
-          std::initializer_list<size_t> const &dim2,
-          std::initializer_list<size_t> const &dim3,
-          std::initializer_list<size_t> const &dim4) {
-    using TensNew = Tensor<
-      U, xt::xview<Storage &, xt::xrange<long unsigned int>,
-                   xt::xrange<long unsigned int>, xt::xrange<long unsigned int>,
-                   xt::xrange<long unsigned int>>>;
-    // auto t = xt::view(storage_, xt::range(*(dim1.begin()), *(dim1.begin()) +
-    // 1), xt::range(*(dim2.begin()), *(dim2.begin()) + 1),
-    // xt::range(*(dim3.begin()), *(dim3.begin()) + 1),
-    // xt::range(*(dim4.begin()), *(dim4.begin()) + 1));
-    return TensNew(storage_, xt::range(*(dim1.begin()), *(dim1.begin() + 1)),
-                   xt::range(*(dim2.begin()), *(dim2.begin() + 1)),
-                   xt::range(*(dim3.begin()), *(dim3.begin() + 1)),
-                   xt::range(*(dim4.begin()), *(dim4.begin() + 1)));
-
-    // return subview_impl(start, new_shape);
+  template <typename... Values>
+  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
+    std::initializer_list<Values>... lists) {
+    using TensNew = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
+    return TensNew(storage_,
+                   xt::range(*(lists.begin()), *(lists.begin() + 1))...);
   }
 
   /*
@@ -291,13 +261,9 @@ auto host_data() {
    * @tparam T
    * @param storage
    */
-  template <class T>
-  explicit Tensor(T &storage,
-                  xt::xrange<long unsigned int> r1,
-                  xt::xrange<long unsigned int> r2,
-                  xt::xrange<long unsigned int> r3,
-                  xt::xrange<long unsigned int> r4)
-    : storage_(xt::view(storage, r1, r2, r3, r4)) {}
+  template <class T, class S, class... Args>
+  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
+    : storage_(xt::view(storage, r1, args...)) {}
 
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
