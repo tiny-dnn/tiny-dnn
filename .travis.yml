@@ -1,5 +1,6 @@
 sudo: required
 dist: trusty
+osx_image: xcode8
 
 language: cpp
 
