@@ -35,7 +35,7 @@ TEST(tensor, constructors) {
     EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(0.0));
   }
 
-  t2 = Tensor<float_t>({1, 1, 1, 1, 1}, 1.1); //corner case
+  t2 = Tensor<float_t>({1, 1, 1, 1, 1}, 1.1);  // corner case
   EXPECT_EQ(*t2.host_begin(), float_t(1.1));
 }
 

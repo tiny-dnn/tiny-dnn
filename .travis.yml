@@ -24,7 +24,7 @@ addons:
     packages:
       - gcc-4.9
       - g++-4.9
-      - clang-3.6 #TODO: 3.6+
+      - clang-3.6
       - cmake
       - git
       # Optional dependencies
