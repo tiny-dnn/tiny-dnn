@@ -41,4 +41,4 @@ TEST(test_large_thread_count, test_large_thread_count) {
   net.train<mse>(optimizer, data, labels, 300, 1, nop, nop, true, n_threads);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

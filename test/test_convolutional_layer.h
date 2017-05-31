@@ -813,4 +813,4 @@ TEST(convolutional, copy_and_unpad_delta_same) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

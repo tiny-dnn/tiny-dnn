@@ -26,6 +26,7 @@ TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
 
+  // TODO: gradient check in tests might make it easier to debug
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -149,4 +150,4 @@ TEST(ave_pool, read_write) {
   serialization_test(l1, l2);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

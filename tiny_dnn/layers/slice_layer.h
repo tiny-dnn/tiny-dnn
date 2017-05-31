@@ -44,7 +44,7 @@ class slice_layer : public layer {
    *   output[0]: 4x2x2x2
    *   output[1]: 4x2x2x2
    *   output[2]: 4x2x2x2
-  **/
+   **/
   slice_layer(const shape3d &in_shape,
               slice_type slice_type,
               serial_size_t num_outputs)

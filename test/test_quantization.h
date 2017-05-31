@@ -278,4 +278,4 @@ TEST(quantization_utils, quantize_down_and_shrink_range) {
   EXPECT_NEAR(1.0f, output_max, 1E-5);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

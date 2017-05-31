@@ -48,4 +48,4 @@ TEST(power, gradient_check) {
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn
