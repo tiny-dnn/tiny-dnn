@@ -33,10 +33,16 @@ inline std::ostream &operator<<(std::ostream &os, const Tensor<T, S> &tensor) {
 
 // utilities for element-wise and tensor-scalar/scalar-tensor operations
 
-template <typename TD, typename TS1, typename TS2, typename F>
-void binary_tensor_tensor_elementwise_operation(Tensor<TD> &dst,
-                                                const Tensor<TS1> &src1,
-                                                const Tensor<TS2> &src2,
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename TS2S,
+          typename F>
+void binary_tensor_tensor_elementwise_operation(Tensor<TD, TDS> &dst,
+                                                const Tensor<TS1, TS1S> &src1,
+                                                const Tensor<TS2, TS2S> &src2,
                                                 F f) {
   if (src1.shape() != src2.shape()) {
     throw nn_error("Tensor must have same shape");
@@ -53,9 +59,9 @@ void binary_tensor_tensor_elementwise_operation(Tensor<TD> &dst,
   });
 }
 
-template <typename TD, typename TS, typename F>
-void unary_tensor_elementwise_operation(Tensor<TD> &dst,
-                                        const Tensor<TS> &src,
+template <typename TD, typename TDS, typename TS, typename TSS, typename F>
+void unary_tensor_elementwise_operation(Tensor<TD, TDS> &dst,
+                                        const Tensor<TS, TSS> &src,
                                         F f) {
   dst.resize(src.shape());
 
@@ -67,9 +73,14 @@ void unary_tensor_elementwise_operation(Tensor<TD> &dst,
   });
 }
 
-template <typename TD, typename TS1, typename TS2, typename F>
-void binary_tensor_scalar_operation(Tensor<TD> &dst,
-                                    const Tensor<TS1> &src1,
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename F>
+void binary_tensor_scalar_operation(Tensor<TD, TDS> &dst,
+                                    const Tensor<TS1, TS1S> &src1,
                                     TS2 src2,
                                     F f) {
   dst.resize(src1.shape());
@@ -82,10 +93,15 @@ void binary_tensor_scalar_operation(Tensor<TD> &dst,
   });
 }
 
-template <typename TD, typename TS1, typename TS2, typename F>
-void binary_scalar_tensor_operation(Tensor<TD> &dst,
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS2,
+          typename TS2S,
+          typename F>
+void binary_scalar_tensor_operation(Tensor<TD, TDS> &dst,
                                     TS1 src1,
-                                    const Tensor<TS2> &src2,
+                                    const Tensor<TS2, TS2S> &src2,
                                     F f) {
   dst.resize(src2.shape());
 
@@ -142,70 +158,85 @@ T exp(T s1) {
 
 }  // namespace details
 
-template <typename TD, typename TS1, typename TS2>
-void layer_add(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+template <typename TD, typename TDS, typename TS1, typename TS2, typename TS2S>
+void layer_add(Tensor<TD, TDS> &dst, TS1 src1, const Tensor<TS2, TS2S> &src2) {
   binary_scalar_tensor_operation(dst, src1, src2, details::plus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_add(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+template <typename TD, typename TDS, typename TS1, typename TS1S, typename TS2>
+void layer_add(Tensor<TD, TDS> &dst, const Tensor<TS1, TS1S> &src1, TS2 src2) {
   binary_tensor_scalar_operation(dst, src1, src2, details::plus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_add(Tensor<TD> &dst,
-               const Tensor<TS1> &src1,
-               const Tensor<TS2> &src2) {
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename TS2S>
+void layer_add(Tensor<TD, TDS> &dst,
+               const Tensor<TS1, TS1S> &src1,
+               const Tensor<TS2, TS2S> &src2) {
   binary_tensor_tensor_elementwise_operation(dst, src1, src2,
                                              details::plus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_sub(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+template <typename TD, typename TDS, typename TS1, typename TS2, typename TS2S>
+void layer_sub(Tensor<TD, TDS> &dst, TS1 src1, const Tensor<TS2, TS2S> &src2) {
   binary_scalar_tensor_operation(dst, src1, src2, details::minus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_sub(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+template <typename TD, typename TDS, typename TS1, typename TS1S, typename TS2>
+void layer_sub(Tensor<TD, TDS> &dst, const Tensor<TS1, TS1S> &src1, TS2 src2) {
   binary_tensor_scalar_operation(dst, src1, src2, details::minus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_sub(Tensor<TD> &dst,
-               const Tensor<TS1> &src1,
-               const Tensor<TS2> &src2) {
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename TS2S>
+void layer_sub(Tensor<TD, TDS> &dst,
+               const Tensor<TS1, TS1S> &src1,
+               const Tensor<TS2, TS2S> &src2) {
   binary_tensor_tensor_elementwise_operation(dst, src1, src2,
                                              details::minus<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_mul(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+template <typename TD, typename TDS, typename TS1, typename TS2, typename TS2S>
+void layer_mul(Tensor<TD, TDS> &dst, TS1 src1, const Tensor<TS2, TS2S> &src2) {
   binary_scalar_tensor_operation(dst, src1, src2,
                                  details::multiplies<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_mul(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+template <typename TD, typename TDS, typename TS1, typename TS1S, typename TS2>
+void layer_mul(Tensor<TD, TDS> &dst, const Tensor<TS1, TS1S> &src1, TS2 src2) {
   binary_tensor_scalar_operation(dst, src1, src2,
                                  details::multiplies<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_mul(Tensor<TD> &dst,
-               const Tensor<TS1> &src1,
-               const Tensor<TS2> &src2) {
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename TS2S>
+void layer_mul(Tensor<TD, TDS> &dst,
+               const Tensor<TS1, TS1S> &src1,
+               const Tensor<TS2, TS2S> &src2) {
   binary_tensor_tensor_elementwise_operation(dst, src1, src2,
                                              details::multiplies<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_div(Tensor<TD> &dst, TS1 src1, const Tensor<TS2> &src2) {
+template <typename TD, typename TDS, typename TS1, typename TS2, typename TS2S>
+void layer_div(Tensor<TD, TDS> &dst, TS1 src1, const Tensor<TS2, TS2S> &src2) {
   binary_scalar_tensor_operation(dst, src1, src2,
                                  details::divides_checked<TS1, TS2>);
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_div(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
+template <typename TD, typename TDS, typename TS1, typename TS1S, typename TS2>
+void layer_div(Tensor<TD, TDS> &dst, const Tensor<TS1, TS1S> &src1, TS2 src2) {
   if (src2 == TS2(0.0)) {
     dst.resize(src1.shape());
     dst.fill(std::numeric_limits<TD>::quiet_NaN());
@@ -215,22 +246,27 @@ void layer_div(Tensor<TD> &dst, const Tensor<TS1> &src1, TS2 src2) {
   }
 }
 
-template <typename TD, typename TS1, typename TS2>
-void layer_div(Tensor<TD> &dst,
-               const Tensor<TS1> &src1,
-               const Tensor<TS2> &src2) {
+template <typename TD,
+          typename TDS,
+          typename TS1,
+          typename TS1S,
+          typename TS2,
+          typename TS2S>
+void layer_div(Tensor<TD, TDS> &dst,
+               const Tensor<TS1, TS1S> &src1,
+               const Tensor<TS2, TS2S> &src2) {
   binary_tensor_tensor_elementwise_operation(
     dst, src1, src2, details::divides_checked<TS1, TS2>);
 }
 
-template <typename TD, typename TS>
-void layer_sqrt(Tensor<TD> &dst, const Tensor<TS> &src1) {
+template <typename TD, typename TDS, typename TS, typename TSS>
+void layer_sqrt(Tensor<TD, TDS> &dst, const Tensor<TS, TSS> &src1) {
   return unary_tensor_elementwise_operation(dst, src1,
                                             details::sqrt_checked<TS>);
 }
 
-template <typename TD, typename TS>
-void layer_exp(Tensor<TD> &dst, const Tensor<TS> &src1) {
+template <typename TD, typename TDS, typename TS, typename TSS>
+void layer_exp(Tensor<TD, TDS> &dst, const Tensor<TS, TSS> &src1) {
   return unary_tensor_elementwise_operation(dst, src1, details::exp<TS>);
 }
 

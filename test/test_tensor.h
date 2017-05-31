@@ -168,6 +168,24 @@ TEST(tensor, add3) {
   EXPECT_THROW(layer_add(t3, t1, t2);, nn_error);
 }
 
+TEST(tensor, add4) {
+  Tensor<float_t> t1({2, 2, 2, 2}, 5);
+  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+
+  // compute element-wise sum along all tensor values.
+
+  Tensor<float_t> t4;
+
+  // check that sum is okay
+
+  layer_add(t4, t1, t3);
+
+  for (size_t i = 0; i < t4.size(); ++i) {
+    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(8.0), 1e-5);
+  }
+}
+
 TEST(tensor, sub1) {
   Tensor<float_t> t1({2, 2, 2, 2});
   Tensor<float_t> t2({2, 2, 2, 2});
@@ -240,7 +258,23 @@ TEST(tensor, sub3) {
 
   EXPECT_THROW(layer_sub(t3, t1, t2), nn_error);
 }
+TEST(tensor, sub4) {
+  Tensor<float_t> t1({2, 2, 2, 2}, 5);
+  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
 
+  // compute element-wise sum along all tensor values.
+
+  Tensor<float_t> t4;
+
+  // check that diffrence is okay
+
+  layer_sub(t4, t1, t3);
+
+  for (size_t i = 0; i < t4.size(); ++i) {
+    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(2.0), 1e-5);
+  }
+}
 TEST(tensor, mul1) {
   Tensor<float_t> t1({2, 2, 2, 2});
   Tensor<float_t> t2({2, 2, 2, 2});
@@ -256,7 +290,7 @@ TEST(tensor, mul1) {
 
   layer_mul(t3, t1, t2);
 
-  // check that subtraction is okay
+  // check that product is okay
 
   for (size_t i = 0; i < t3.size(); ++i) {
     EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(6.0), 1e-5);
@@ -313,6 +347,24 @@ TEST(tensor, mul3) {
   Tensor<float_t> t3;
 
   EXPECT_THROW(layer_mul(t3, t1, t2), nn_error);
+}
+
+TEST(tensor, mul4) {
+  Tensor<float_t> t1({2, 2, 2, 2}, 5);
+  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+
+  // compute element-wise sum along all tensor values.
+
+  Tensor<float_t> t4;
+
+  // check that product is okay
+
+  layer_mul(t4, t1, t3);
+
+  for (size_t i = 0; i < t4.size(); ++i) {
+    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(15.0), 1e-5);
+  }
 }
 
 TEST(tensor, div1) {
@@ -431,6 +483,24 @@ TEST(tensor, div5) {
   }
 }
 
+TEST(tensor, div6) {
+  Tensor<float_t> t1({2, 2, 2, 2}, 5);
+  Tensor<float_t> t2({4, 4, 4, 4}, 2);
+  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+
+  // compute element-wise sum along all tensor values.
+
+  Tensor<float_t> t4;
+
+  // check that result is okay
+
+  layer_div(t4, t1, t3);
+
+  for (size_t i = 0; i < t4.size(); ++i) {
+    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(2.5), 1e-5);
+  }
+}
+
 TEST(tensor, sqrt1) {
   Tensor<float_t> t({2, 2, 2, 2});
 
@@ -466,6 +536,25 @@ TEST(tensor, sqrt2) {
 
   for (size_t i = 0; i < t2.size(); ++i) {
     EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
+  }
+}
+
+TEST(tensor, exp) {
+  Tensor<float_t> t({2, 2, 2, 2});
+
+  // fill tensor with initial values
+  t.fill(float_t(-1.0));
+
+  // compute element-wise exponent along all tensor values
+
+  Tensor<float_t> t2;
+
+  layer_exp(t2, t);
+
+  // check that exponent calculated right
+
+  for (size_t i = 0; i < t2.size(); ++i) {
+    EXPECT_NEAR(*std::next(t2.host_begin(), i), std::exp(float_t(-1.0)), 1e-5);
   }
 }
 
