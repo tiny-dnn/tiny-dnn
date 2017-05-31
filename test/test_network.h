@@ -577,7 +577,7 @@ TEST(network, gradient_check8) {  // elu - mse
   //       caffe's GradientChecker (they have kink/kink-range parameter to
   //       handle it)
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
-                                           epsilon<float_t>(),
+                                           10 * epsilon<float_t>(),
                                            GRAD_CHECK_ALL));
 }
 
@@ -614,7 +614,7 @@ TEST(network, gradient_check11) {  // softsign - mse
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
-                                           10 * epsilon<float_t>(), GRAD_CHECK_ALL));
+                                           epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
 TEST(network, read_write) {

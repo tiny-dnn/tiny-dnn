@@ -30,7 +30,7 @@ class softsign_layer : public activation_layer {
     for (serial_size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of softsign)
       auto d = 1.0 + std::abs(x[j]);
-      dx[j] = dy[j] / (d * d);
+      dx[j]  = dy[j] / (d * d);
     }
   }
 
