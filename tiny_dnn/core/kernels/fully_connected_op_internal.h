@@ -7,30 +7,20 @@
 */
 #pragma once
 
-#include "tiny_dnn/xtensor/xarray.hpp"
-#include "tiny_dnn/xtensor/xexpression.hpp"
-#include "tiny_dnn/xtensor/xview.hpp"
-
 #include "tiny_dnn/core/params/fully_params.h"
 
 namespace tiny_dnn {
 namespace kernels {
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
-inline void fully_connected_op_internal(const E1 &in_data,
-                                        const E2 &W,
-                                        const E3 &bias,
-                                        E4 &out_data,
+inline void fully_connected_op_internal(const tensor_t &in_data,
+                                        const vec_t &W,
+                                        const vec_t &bias,
+                                        tensor_t &out_data,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
-  for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-
-    auto const in = xt::view(in_data, sample, xt::all());
-    auto out      = xt::view(out_data, sample, xt::all());
+  for_i(layer_parallelize, in_data.size(), [&](int sample) {
+    const vec_t &in = in_data[sample];
+    vec_t &out      = out_data[sample];
 
     for (serial_size_t i = 0; i < params.out_size_; i++) {
       out[i] = float_t{0};
@@ -45,28 +35,20 @@ inline void fully_connected_op_internal(const E1 &in_data,
   });
 }
 
-// TODO(Randl): rvalue?
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          class E5,
-          class E6,
-          are_all_xexpr<E1, E2, E3, E4, E5, E6> * = nullptr>
-inline void fully_connected_op_internal(const E1 &prev_out,
-                                        const E2 &W,
-                                        E3 &dW,
-                                        E4 &db,
-                                        E5 &curr_delta,
-                                        E6 &prev_delta,
+inline void fully_connected_op_internal(const tensor_t &prev_out,
+                                        const vec_t &W,
+                                        tensor_t &dW,
+                                        tensor_t &db,
+                                        tensor_t &curr_delta,
+                                        tensor_t &prev_delta,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
-  for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
+  for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
     for (serial_size_t c = 0; c < params.in_size_; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-      prev_delta(sample, c) += vectorize::dot(
-        &curr_delta(sample, 0), &W(c * params.out_size_), params.out_size_);
+      prev_delta[sample][c] += vectorize::dot(
+        &curr_delta[sample][0], &W[c * params.out_size_], params.out_size_);
     }
 
     for_(layer_parallelize, 0, size_t(params.out_size_),
@@ -74,21 +56,19 @@ inline void fully_connected_op_internal(const E1 &prev_out,
            // accumulate weight-step using delta
            // dW[c * out_size + i] += current_delta[i] * prev_out[c]
            for (serial_size_t c = 0; c < params.in_size_; c++) {
-             vectorize::muladd(&curr_delta(sample, r.begin()),
-                               prev_out(sample, c), r.end() - r.begin(),
-                               &dW(sample, c * params.out_size_ + r.begin()));
+             vectorize::muladd(&curr_delta[sample][r.begin()],
+                               prev_out[sample][c], r.end() - r.begin(),
+                               &dW[sample][c * params.out_size_ + r.begin()]);
            }
 
            if (params.has_bias_) {
              // vec_t& db = *in_grad[2];
              for (size_t i = r.begin(); i < r.end(); i++) {
-               db(sample, i) += curr_delta(sample, i);
+               db[sample][i] += curr_delta[sample][i];
              }
            }
          });
   }
-  // db = db+curr_delta;
-  // FIXME: No tests found o_O
 }
 
 }  // namespace kernels

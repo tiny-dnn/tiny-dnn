@@ -14,21 +14,14 @@ namespace kernels {
 
 #ifdef CNN_USE_AVX
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          value_is_float<E1> * = nullptr,
-          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
-inline void avx_fully_connected_forward_kernel(const E1 &in_data,
-                                               const E2 &W,
-                                               const E3 &bias,
-                                               E4 &out_data,
-                                               const fully_params &params,
-                                               const bool layer_parallelize) {
-  auto in_shape    = in_data.shape();
-  auto num_samples = in_shape[0];
-
+template <typename Allocator>
+inline void avx_fully_connected_forward_kernel(
+  const std::vector<std::vector<float, Allocator>> &in_data,
+  const std::vector<float, Allocator> &W,
+  const std::vector<float, Allocator> &bias,
+  std::vector<std::vector<float, Allocator>> &out_data,
+  const fully_params &params,
+  const bool layer_parallelize) {
   if (params.has_bias_) {
     size_t nblocks  = params.out_size_ / 8;
     size_t nremains = params.out_size_ & 7;
@@ -38,9 +31,9 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
       };
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
-      for_i(layer_parallelize, num_samples, [&](int sample) {
-        const auto in = xt::view(in_data, sample, xt::all());
-        auto out      = xt::view(out_data, sample, xt::all());
+      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+        const auto &in = in_data[sample];
+        auto &out      = out_data[sample];
         {
           for (size_t i = 0; i < nblocks; ++i) {
             __m256 b = _mm256_loadu_ps(&bias[8 * i]);
@@ -75,9 +68,9 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
         }
       });
     } else {
-      for_i(layer_parallelize, num_samples, [&](int sample) {
-        const auto in = xt::view(in_data, sample, xt::all());
-        auto out      = xt::view(out_data, sample, xt::all());
+      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+        const auto &in = in_data[sample];
+        auto &out      = out_data[sample];
         for (size_t i = 0; i < nblocks; ++i) {
           __m256 b = _mm256_loadu_ps(&bias[8 * i]);
           _mm256_storeu_ps(&out[8 * i], b);
@@ -95,9 +88,9 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
       });
     }
   } else {
-    for_i(layer_parallelize, num_samples, [&](int sample) {
-      const auto in = xt::view(in_data, sample, xt::all());
-      auto out      = xt::view(out_data, sample, xt::all());
+    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+      const auto &in = in_data[sample];
+      auto &out      = out_data[sample];
       for (serial_size_t i = 0; i < params.out_size_; i++) {
         float sum = 0.0f;
         for (serial_size_t c = 0; c < params.in_size_; c++) {
@@ -109,48 +102,36 @@ inline void avx_fully_connected_forward_kernel(const E1 &in_data,
   }
 }
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          value_is_double<E1> * = nullptr,
-          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
-inline void avx_fully_connected_forward_kernel(const E1 &in_data,
-                                               const E2 &W,
-                                               const E3 &bias,
-                                               E4 &out_data,
-                                               const fully_params &params,
-                                               const bool layer_parallelize) {
+template <typename Allocator>
+inline void avx_fully_connected_forward_kernel(
+  const std::vector<std::vector<double, Allocator>> &in_data,
+  const std::vector<double, Allocator> &W,
+  const std::vector<double, Allocator> &bias,
+  std::vector<std::vector<double, Allocator>> &out_data,
+  const fully_params &params,
+  const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(in_data, W, bias, out_data, params,
                               layer_parallelize);
 }
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          class E5,
-          class E6,
-          value_is_float<E1> * = nullptr,
-          are_all_xexpr<E1, E2, E3, E4, E5, E6> * = nullptr>
-inline void avx_fully_connected_back_kernel(const E1 &prev_out,
-                                            const E2 &W,
-                                            E3 &dW,
-                                            E4 &db,
-                                            E5 &curr_delta,
-                                            E6 &prev_delta,
-                                            const fully_params &params,
-                                            const bool layer_parallelize) {
-  auto prev_out_shape = prev_out.shape();
-  auto num_samples    = prev_out_shape[0];
+template <typename Allocator>
+inline void avx_fully_connected_back_kernel(
+  const std::vector<std::vector<float, Allocator>> &prev_out,
+  const std::vector<float, Allocator> &W,
+  std::vector<std::vector<float, Allocator>> &dW,
+  std::vector<std::vector<float, Allocator>> &db,
+  std::vector<std::vector<float, Allocator>> &curr_delta,
+  std::vector<std::vector<float, Allocator>> &prev_delta,
+  const fully_params &params,
+  const bool layer_parallelize) {
   if (params.has_bias_) {
-    for (serial_size_t sample = 0; sample < num_samples; sample++) {
-      auto prev_delta2     = xt::view(prev_delta, sample, xt::all());
-      auto curr_delta2     = xt::view(curr_delta, sample, xt::all());
-      const auto prev_out2 = xt::view(prev_out, sample, xt::all());
-      auto dW2             = xt::view(dW, sample, xt::all());
-      auto db2             = xt::view(db, sample, xt::all());
+    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+      auto &prev_delta2 = prev_delta[sample];
+      auto &curr_delta2 = curr_delta[sample];
+      auto &prev_out2   = prev_out[sample];
+      auto &dW2         = dW[sample];
+      auto &db2         = db[sample];
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
@@ -171,11 +152,11 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
            });
     }
   } else {
-    for (serial_size_t sample = 0; sample < num_samples; sample++) {
-      auto prev_delta2     = xt::view(prev_delta, sample, xt::all());
-      auto curr_delta2     = xt::view(curr_delta, sample, xt::all());
-      const auto prev_out2 = xt::view(prev_out, sample, xt::all());
-      auto dW2             = xt::view(dW, sample, xt::all());
+    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+      auto &prev_delta2 = prev_delta[sample];
+      auto &curr_delta2 = curr_delta[sample];
+      auto &prev_out2   = prev_out[sample];
+      auto &dW2         = dW[sample];
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
@@ -196,37 +177,27 @@ inline void avx_fully_connected_back_kernel(const E1 &prev_out,
   }
 }
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          class E5,
-          class E6,
-          value_is_double<E1> * = nullptr,
-          are_all_xexpr<E1, E2, E3, E4, E5, E6> * = nullptr>
-inline void avx_fully_connected_back_kernel(const E1 &prev_out,
-                                            const E2 &W,
-                                            E3 &dW,
-                                            E4 &db,
-                                            E5 &curr_delta,
-                                            E6 &prev_delta,
-                                            const fully_params &params,
-                                            const bool layer_parallelize) {
+template <typename Allocator>
+inline void avx_fully_connected_back_kernel(
+  const std::vector<std::vector<double, Allocator>> &prev_out,
+  const std::vector<double, Allocator> &W,
+  std::vector<std::vector<double, Allocator>> &dW,
+  std::vector<std::vector<double, Allocator>> &db,
+  std::vector<std::vector<double, Allocator>> &curr_delta,
+  std::vector<std::vector<double, Allocator>> &prev_delta,
+  const fully_params &params,
+  const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(prev_out, W, dW, db, curr_delta, prev_delta,
                               params, layer_parallelize);
 }
 
 #endif  // CNN_USE_AVX
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          are_all_xexpr<E1, E2, E3, E4> * = nullptr>
-inline void fully_connected_op_avx(E1 &in_data,
-                                   E2 W,
-                                   E3 bias,  // TODO
-                                   E4 &out_data,
+
+inline void fully_connected_op_avx(const tensor_t &in_data,
+                                   const vec_t &W,
+                                   const vec_t &bias,
+                                   tensor_t &out_data,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
@@ -243,19 +214,12 @@ inline void fully_connected_op_avx(E1 &in_data,
 #endif
 }
 
-template <class E1,
-          class E2,
-          class E3,
-          class E4,
-          class E5,
-          class E6,
-          are_all_xexpr<E1, E2, E3, E4, E5, E6> * = nullptr>
-inline void fully_connected_op_avx(E1 &prev_out,
-                                   E2 W,
-                                   E3 &dW,
-                                   E4 &db,
-                                   E5 &curr_delta,
-                                   E6 &prev_delta,
+inline void fully_connected_op_avx(const tensor_t &prev_out,
+                                   const vec_t &W,
+                                   tensor_t &dW,
+                                   tensor_t &db,
+                                   tensor_t &curr_delta,
+                                   tensor_t &prev_delta,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
