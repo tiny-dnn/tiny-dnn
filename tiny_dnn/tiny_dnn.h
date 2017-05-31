@@ -41,6 +41,7 @@
 #include "tiny_dnn/activations/sigmoid_layer.h"
 #include "tiny_dnn/activations/softmax_layer.h"
 #include "tiny_dnn/activations/softplus_layer.h"
+#include "tiny_dnn/activations/softsign_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/activations/tanh_p1m2_layer.h"
 
@@ -129,6 +130,8 @@ using elu = tiny_dnn::elu_layer;
 using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
 
 using softplus = tiny_dnn::softplus_layer;
+
+using softsign = tiny_dnn::softsign_layer;
 
 }  // namespace activation
 
