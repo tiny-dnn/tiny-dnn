@@ -605,6 +605,18 @@ TEST(network, gradient_check10) {  // softplus - mse
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+TEST(network, gradient_check11) {  // softsign - mse
+  using loss_func  = mse;
+  using activation = softsign;
+
+  auto nn = make_mlp<activation>({3, 201, 2});
+
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+  EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
+                                           epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
 TEST(network, read_write) {
   using loss_func = mse;
   using network   = network<sequential>;

@@ -739,6 +739,30 @@ TEST(serialization, serialize_softplus) {
   EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).threshold_value(), float_t(20));
 }
 
+TEST(serialization, serialize_softsign) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "softsign",
+                "in_size" : {
+                    "width": 10,
+                    "height" : 10,
+                    "depth" : 3
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+  EXPECT_EQ(net[0]->layer_type(), "softsign-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+}
+
 TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
