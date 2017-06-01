@@ -13,13 +13,11 @@ namespace tiny_dnn {
 
 template <typename T>
 void register_layers(T* h) {
-  
 #define IMPLEMENT_REGISTER_LAYER(CLASS, NAME) \
-h->template register_layer<CLASS>(NAME);
+  h->template register_layer<CLASS>(NAME);
 #define TINYDNN_LAYER(CLASS, NAME) IMPLEMENT_REGISTER_LAYER(CLASS, NAME)
 #include "layers.inc"
 #undef TINYDNN_LAYER
-
 }
 
 }  // namespace tiny_dnn

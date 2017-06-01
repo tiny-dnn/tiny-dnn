@@ -488,11 +488,10 @@ struct LoadAndConstruct<tiny_dnn::softsign_layer> {
   }
 };
 
-#define CREATE_SPECIALIZE(CLASS) \
-template <class Archive> \
-struct specialize<Archive, \
-                  tiny_dnn::CLASS, \
-                  cereal::specialization::non_member_serialize> {}; 
+#define CREATE_SPECIALIZE(CLASS)              \
+  template <class Archive>                    \
+  struct specialize<Archive, tiny_dnn::CLASS, \
+                    cereal::specialization::non_member_serialize> {};
 
 #define TINYDNN_LAYER(CLASS, NAME) CREATE_SPECIALIZE(CLASS)
 #include "layers.inc"
@@ -773,11 +772,11 @@ struct serialization_buddy {
 #endif
 };
 
-#define IMPLEMENT_SERIALIZE(CLASS) \
-template <class Archive> \
-void serialize(Archive &ar, tiny_dnn::CLASS &layer) { \
-  serialization_buddy::serialize(ar, layer); \
-}
+#define IMPLEMENT_SERIALIZE(CLASS)                      \
+  template <class Archive>                              \
+  void serialize(Archive &ar, tiny_dnn::CLASS &layer) { \
+    serialization_buddy::serialize(ar, layer);          \
+  }
 
 #define TINYDNN_LAYER(CLASS, NAME) IMPLEMENT_SERIALIZE(CLASS)
 #include "layers.inc"
