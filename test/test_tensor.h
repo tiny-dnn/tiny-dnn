@@ -24,15 +24,15 @@ TEST(tensor, constructors) {
   t1 = t2;  // invoke assign copy ctor
 
   // check that t2 values has been copyied to t1
-  for (size_t i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(2.0));
+  for (auto it = t1.host_begin(); it != t1.host_end(); ++it) {
+    EXPECT_EQ(*it, float_t(2.0));
   }
 
   t1 = Tensor<float_t>({2, 2, 3, 4, 2}, 0);  // invoke copy ctor
 
   // check that t1 have default values
-  for (size_t i = 0; i < t1.size(); ++i) {
-    EXPECT_EQ(*std::next(t1.host_begin(), i), float_t(0.0));
+  for (auto it = t1.host_begin(); it != t1.host_end(); ++it) {
+    EXPECT_EQ(*it, float_t(0.0));
   }
 
   t2 = Tensor<float_t>({1, 1, 1, 1, 2}, 1.1);
@@ -81,16 +81,16 @@ TEST(tensor, fill) {
 
   tensor.fill(float_t(1.0));
 
-  for (size_t i = 0; i < tensor.size(); ++i) {
-    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(1.0));
+  for (auto it = tensor.host_begin(); it != tensor.host_end(); ++it) {
+    EXPECT_EQ(*it, float_t(1.0));
   }
 
   // fill all tensor values with twos
 
   tensor.fill(float_t(2.0));
 
-  for (size_t i = 0; i < tensor.size(); ++i) {
-    EXPECT_EQ(*std::next(tensor.host_begin(), i), float_t(2.0));
+  for (auto it = tensor.host_begin(); it != tensor.host_end(); ++it) {
+    EXPECT_EQ(*it, float_t(2.0));
   }
 }
 
@@ -111,8 +111,8 @@ TEST(tensor, add1) {
 
   // check that sum is okay
 
-  for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(4.0), 1e-5);
+  for (auto it = t3.host_begin(); it != t3.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(4.0), 1e-5);
   }
 }
 
@@ -131,8 +131,8 @@ TEST(tensor, add2a) {
 
   layer_add(t2, float_t(2.0), t);
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(3.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(3.0), 1e-5);
   }
 }
 
@@ -151,8 +151,8 @@ TEST(tensor, add2b) {
 
   layer_add(t2, t, float_t(2.0));
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(3.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(3.0), 1e-5);
   }
 }
 
@@ -181,8 +181,8 @@ TEST(tensor, add4) {
 
   layer_add(t4, t1, t3);
 
-  for (size_t i = 0; i < t4.size(); ++i) {
-    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(8.0), 1e-5);
+  for (auto it = t4.host_begin(); it != t4.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(8.0), 1e-5);
   }
 }
 
@@ -200,10 +200,10 @@ TEST(tensor, sub1) {
   Tensor<float_t> t3;
   layer_sub(t3, t1, t2);
 
-  // check that sum is okay
+  // check that difference is okay
 
-  for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(-2.0), 1e-5);
+  for (auto it = t3.host_begin(); it != t3.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(-2.0), 1e-5);
   }
 }
 
@@ -222,8 +222,8 @@ TEST(tensor, sub2a) {
 
   // check that subtraction is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(-1.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(-1.0), 1e-5);
   }
 }
 
@@ -242,8 +242,8 @@ TEST(tensor, sub2b) {
 
   // check that subtraction is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(-1.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(-1.0), 1e-5);
   }
 }
 
@@ -271,8 +271,8 @@ TEST(tensor, sub4) {
 
   layer_sub(t4, t1, t3);
 
-  for (size_t i = 0; i < t4.size(); ++i) {
-    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(2.0), 1e-5);
+  for (auto it = t4.host_begin(); it != t4.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(2.0), 1e-5);
   }
 }
 TEST(tensor, mul1) {
@@ -292,8 +292,8 @@ TEST(tensor, mul1) {
 
   // check that product is okay
 
-  for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(6.0), 1e-5);
+  for (auto it = t3.host_begin(); it != t3.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(6.0), 1e-5);
   }
 }
 
@@ -312,8 +312,8 @@ TEST(tensor, mul2a) {
 
   // check that multiplication is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(4.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(4.0), 1e-5);
   }
 }
 
@@ -330,10 +330,10 @@ TEST(tensor, mul2b) {
 
   layer_mul(t2, float_t(2.0), t);
 
-  // check that multiplication is okay
+  // check that product is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(4.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(4.0), 1e-5);
   }
 }
 
@@ -358,12 +358,11 @@ TEST(tensor, mul4) {
 
   Tensor<float_t> t4;
 
-  // check that product is okay
-
   layer_mul(t4, t1, t3);
 
-  for (size_t i = 0; i < t4.size(); ++i) {
-    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(15.0), 1e-5);
+  // check that product is okay
+  for (auto it = t4.host_begin(); it != t4.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(15.0), 1e-5);
   }
 }
 
@@ -384,8 +383,8 @@ TEST(tensor, div1) {
 
   // check that division is okay
 
-  for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_NEAR(*std::next(t3.host_begin(), i), float_t(0.5), 1e-5);
+  for (auto it = t3.host_begin(); it != t3.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(0.5), 1e-5);
   }
 }
 
@@ -404,8 +403,8 @@ TEST(tensor, div2a) {
 
   // check that division is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(0.5), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(0.5), 1e-5);
   }
 }
 
@@ -424,8 +423,8 @@ TEST(tensor, div2b) {
 
   // check that division is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(0.5), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(0.5), 1e-5);
   }
 }
 
@@ -458,8 +457,8 @@ TEST(tensor, div4) {
 
   // check that division is NaN
 
-  for (size_t i = 0; i < t3.size(); ++i) {
-    EXPECT_TRUE(std::isnan(*std::next(t3.host_begin(), i)));
+  for (auto it = t3.host_begin(); it != t3.host_end(); ++it) {
+    EXPECT_TRUE(std::isnan(*it));
   }
 }
 
@@ -478,8 +477,8 @@ TEST(tensor, div5) {
 
   // check that division is NaN
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_TRUE(std::isnan(*it));
   }
 }
 
@@ -496,8 +495,8 @@ TEST(tensor, div6) {
 
   layer_div(t4, t1, t3);
 
-  for (size_t i = 0; i < t4.size(); ++i) {
-    EXPECT_NEAR(*std::next(t4.host_begin(), i), float_t(2.5), 1e-5);
+  for (auto it = t4.host_begin(); it != t4.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(2.5), 1e-5);
   }
 }
 
@@ -515,8 +514,8 @@ TEST(tensor, sqrt1) {
 
   // check that root is okay
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), float_t(2.0), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, float_t(2.0), 1e-5);
   }
 }
 
@@ -534,8 +533,8 @@ TEST(tensor, sqrt2) {
 
   // check that division is NaN
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_TRUE(std::isnan(*std::next(t2.host_begin(), i)));
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_TRUE(std::isnan(*it));
   }
 }
 
@@ -553,8 +552,8 @@ TEST(tensor, exp) {
 
   // check that exponent calculated right
 
-  for (size_t i = 0; i < t2.size(); ++i) {
-    EXPECT_NEAR(*std::next(t2.host_begin(), i), std::exp(float_t(-1.0)), 1e-5);
+  for (auto it = t2.host_begin(); it != t2.host_end(); ++it) {
+    EXPECT_NEAR(*it, std::exp(float_t(-1.0)), 1e-5);
   }
 }
 

@@ -41,7 +41,7 @@ class Tensor {
   Tensor() { storage_ = xt::xarray<U>(); }
 
   /**
-   * Constructor that assepts an initializer list of shape and create a
+   * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
    * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
    * @param shape array containing N integers, sizes of dimensions
@@ -52,7 +52,7 @@ class Tensor {
   }
 
   /**
-   * Constructor that assepts an initializer list of shape and create a
+   * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
    * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
    * @param shape array containing N integers, sizes of dimensions
@@ -63,7 +63,7 @@ class Tensor {
   }
 
   /**
-   * Constructor that assepts an initializer list of shape and create a
+   * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape and filling it with value. For example,
    * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
    * filled with zeros
@@ -204,13 +204,15 @@ auto host_data() {
   // TODO(Randl): checked version
   /**
    * Reshape tensor
-   * @param sz
+   * @param shape new shape
    */
-  void reshape(const std::vector<size_t> &sz) { storage_.reshape(sz); }
+  void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
-  void resize(const std::vector<size_t> &sz) { storage_.reshape(sz); }
-
-  // size_t size() const { return size_; }
+  /**
+   * Reshape tensor
+   * @param shape new shape
+   */
+  void resize(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
@@ -244,9 +246,9 @@ auto host_data() {
   template <typename... Values>
   Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
     std::initializer_list<Values>... lists) {
-    using TensNew = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return TensNew(storage_,
-                   xt::range(*(lists.begin()), *(lists.begin() + 1))...);
+    using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
+    return SharedTensor(storage_,
+                        xt::range(*(lists.begin()), *(lists.begin() + 1))...);
   }
 
   /*
@@ -271,7 +273,6 @@ auto host_data() {
 
  private:
   Storage storage_;
-  // xt::xexpression<Storage> xepr_stotrage_;
 };
 
 }  // namespace tiny_dnn
