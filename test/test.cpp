@@ -40,21 +40,7 @@ using namespace tiny_dnn::activation;
 #include "test_target_cost.h"
 #include "test_tensor.h"
 
-#ifndef CNN_NO_SERIALIZATION
-#include "test_serialization.h"
-#endif  // CNN_NO_SERIALIZATION
-
-#ifdef CNN_USE_GEMMLOWP
-#include "test_quantized_fully_connected_layer.h"
-#endif  // CNN_USE_GEMMLOOP
-
-#ifdef CNN_USE_CAFFE_CONVERTER
-#include "test_caffe_converter.h"
-#endif  // CNN_USE_CAFFE_CONVERTER
-
-#ifdef DNN_USE_IMAGE_API
-#include "test_image.h"
-#endif  // DNN_USE_IMAGE_API
+#include "test_parameter.h"
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
