@@ -16,6 +16,22 @@ enum class parameter_type : int8_t { weight = 0x0001, bias = 0x0002 };
 
 class parameter {
  public:
+  /**
+   * Initializes an empty parameter taking in the dimensions of weights and
+   * biases of a layer. Currently supported for maximum 4-dimensions, and
+   * stored as a flat ``Tensor``.
+   *
+   * todo (karandesai) : generalize to n-dimensions
+   * todo (karandesai) : add an n-dimensional view for easy indexing
+   *
+   * @param width      [in] filter width
+   * @param height     [in] filter height
+   * @param depth      [in] filter depth / input channels
+   * @param n_fmaps    [in] number of output feature maps
+   * @param type       [in] whether parameter is a weight or a bias
+   * @param trainable  [in] whether parameter will be updated while training or
+   * not
+   */
   parameter(serial_size_t width,
             serial_size_t height,
             serial_size_t depth,
