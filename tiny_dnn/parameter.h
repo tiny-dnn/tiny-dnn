@@ -19,7 +19,8 @@ class parameter {
   /**
    * Initializes an empty parameter taking in the dimensions of weights and
    * biases of a layer. Currently supported for maximum 4-dimensions, and
-   * stored as a flat ``Tensor``.
+   * stored as a flat ``Tensor``. Parameters are flat and represented in NCHW
+   * format.
    *
    * todo (karandesai) : generalize to n-dimensions
    * todo (karandesai) : add an n-dimensional view for easy indexing
@@ -32,36 +33,24 @@ class parameter {
    * @param trainable  [in] whether parameter will be updated while training or
    * not
    */
-  parameter(serial_size_t width,
-            serial_size_t height,
-            serial_size_t depth,
-            serial_size_t n_fmaps,
+  parameter(size_t width,
+            size_t height,
+            size_t depth,
+            size_t n_fmaps,
             parameter_type type,
             bool trainable = true)
     : type_(type),
       shape_(width, height, depth),
       n_fmaps_(n_fmaps),
       trainable_(trainable),
-      data_({size()}),
-      grad_({1, size()}) {}
+      data_({shape_.size() * n_fmaps}),
+      grad_({1, shape_.size() * n_fmaps}) {}
 
   shape3d shape() { return shape_; }
 
-  size_t size() { return shape_.size() * n_fmaps_; }
+  size_t size() { return data_.size(); }
 
   parameter_type type() { return type_; }
-
-  void set_dims(serial_size_t width,
-                serial_size_t height,
-                serial_size_t depth,
-                serial_size_t n_fmaps) {
-    shape_.width_  = width;
-    shape_.height_ = height;
-    shape_.depth_  = depth;
-    n_fmaps_       = n_fmaps;
-    data_.reshape({size()});
-    grad_.reshape({grad_.shape()[0], size()});
-  }
 
   bool is_trainable() { return trainable_; }
 
@@ -115,11 +104,17 @@ class parameter {
 
  private:
   parameter_type type_;
+
+  // todo (karandesai) : replace with vector<size_t> for n-dimensional
+  // parameters
   shape3d shape_;
   size_t n_fmaps_;
+
   bool trainable_;
 
   Tensor<float_t> data_;
   Tensor<float_t> grad_;
-};
+
+};  // class parameter
+
 }  // namespace tiny_dnn

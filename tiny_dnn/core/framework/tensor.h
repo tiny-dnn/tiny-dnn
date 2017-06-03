@@ -46,7 +46,7 @@ class Tensor {
    * @param storage object, can be xtarray.
    * @return
    */
-  explicit Tensor(Storage s) : storage_(s) {}
+  explicit Tensor(const Storage &storage) : storage_(storage) {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a

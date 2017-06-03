@@ -26,9 +26,7 @@ TEST(parameter, init) {
 
 TEST(parameter, getter_setter) {
   parameter p(4, 1, 1, 1, parameter_type::bias, false);
-
-  xt::xarray<float_t> xr = {1.0, 2.0, 3.0, 4.0};
-  Tensor<float_t> t{xr};
+  Tensor<float_t> t{{1.0, 2.0, 3.0, 4.0}};
 
   p.set_data(t);
   Tensor<float_t> *pt = p.data();
@@ -39,16 +37,14 @@ TEST(parameter, getter_setter) {
 }
 
 TEST(parameter, merge_grads) {
-  xt::xarray<float_t> xgrad = {{1.0, 2.0, 3.0, 4.0}, {4.0, 3.0, 2.0, 1.0}};
-  Tensor<float_t> grad0{xgrad};
-  Tensor<float_t> gradp{xgrad * 2};
+  Tensor<float_t> grad0{{{1.0, 2.0}, {2.0, 1.0}}};
+  Tensor<float_t> gradp{{{2.0, 4.0}, {4.0, 2.0}}};
 
-  parameter p(4, 1, 1, 1, parameter_type::bias, false);
+  parameter p(2, 1, 1, 1, parameter_type::bias, false);
   p.set_grad(gradp);
   p.merge_grads(&grad0);
 
-  Tensor<float_t> expected{
-    {{10.0, 10.0, 10.0, 10.0}, {10.0, 10.0, 10.0, 10.0}}};
+  Tensor<float_t> expected{{{6.0, 6.0}, {6.0, 6.0}}};
 
   for (unsigned int i = 0; i < p.size(); i++) {
     ASSERT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
