@@ -20,7 +20,7 @@ class elementwise_add_layer : public layer {
    * @param num_args [in] number of inputs
    * @param dim      [in] number of elements for each input
    */
-  elementwise_add_layer(serial_size_t num_args, serial_size_t dim)
+  elementwise_add_layer(size_t num_args, size_t dim)
     : layer(std::vector<vector_type>(num_args, vector_type::data),
             {vector_type::data}),
       num_args_(num_args),
@@ -45,7 +45,7 @@ class elementwise_add_layer : public layer {
 
     // @todo parallelize
     for (size_t sample = 0; sample < in1.size(); ++sample) {
-      for (serial_size_t i = 1; i < num_args_; i++) {
+      for (size_t i = 1; i < num_args_; i++) {
         std::transform((*in_data[i])[sample].begin(),
                        (*in_data[i])[sample].end(), out[sample].begin(),
                        out[sample].begin(),
@@ -60,14 +60,14 @@ class elementwise_add_layer : public layer {
                         std::vector<tensor_t *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
-    for (serial_size_t i = 0; i < num_args_; i++) *in_grad[i] = *out_grad[0];
+    for (size_t i = 0; i < num_args_; i++) *in_grad[i] = *out_grad[0];
   }
 
   friend struct serialization_buddy;
 
  private:
-  serial_size_t num_args_;
-  serial_size_t dim_;
+  size_t num_args_;
+  size_t dim_;
 };
 
 }  // namespace tiny_dnn

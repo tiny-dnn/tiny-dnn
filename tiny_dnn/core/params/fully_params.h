@@ -14,8 +14,8 @@ namespace core {
 
 class fully_params : public Params {
  public:
-  serial_size_t in_size_;
-  serial_size_t out_size_;
+  size_t in_size_;
+  size_t out_size_;
   bool has_bias_;
 };
 

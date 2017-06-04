@@ -23,7 +23,7 @@ class linear_layer : public layer {
    * @param scale [in] factor by which to multiply
    * @param bias  [in] bias term
    **/
-  explicit linear_layer(serial_size_t dim,
+  explicit linear_layer(size_t dim,
                         float_t scale = float_t{1},
                         float_t bias  = float_t{0})
     : layer({vector_type::data}, {vector_type::data}),
@@ -51,8 +51,8 @@ class linear_layer : public layer {
 
     // @todo revise the parallelism strategy
     for_i(dim_, [&](size_t i) {
-      for (serial_size_t sample       = 0,
-                         sample_count = static_cast<serial_size_t>(in.size());
+      for (size_t sample       = 0,
+                         sample_count = static_cast<size_t>(in.size());
            sample < sample_count; ++sample)
         out[sample][i] = scale_ * in[sample][i] + bias_;
     });
@@ -68,8 +68,8 @@ class linear_layer : public layer {
     CNN_UNREFERENCED_PARAMETER(in_data);
 
     // @todo revise parallelism strategy
-    for (serial_size_t sample = 0;
-         sample < static_cast<serial_size_t>(prev_delta.size()); ++sample) {
+    for (size_t sample = 0;
+         sample < static_cast<size_t>(prev_delta.size()); ++sample) {
       for_i(dim_, [&](size_t i) {
         prev_delta[sample][i] = curr_delta[sample][i] * scale_;
       });
@@ -79,7 +79,7 @@ class linear_layer : public layer {
   friend struct serialization_buddy;
 
  protected:
-  serial_size_t dim_;
+  size_t dim_;
   float_t scale_, bias_;
 };
 

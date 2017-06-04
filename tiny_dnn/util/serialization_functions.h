@@ -10,6 +10,14 @@
 #include <cereal/access.hpp>  // For LoadAndConstruct
 #include "tiny_dnn/tiny_dnn.h"
 
+static tiny_dnn::serial_size_t cast_size_t(const size_t &src) {
+	return static_cast<tiny_dnn::serial_size_t>(src);
+}
+
+static size_t cast_size_t(const tiny_dnn::serial_size_t &src) {
+	return static_cast<size_t>(src);
+}
+
 namespace cereal {
 
 template <>
@@ -20,8 +28,9 @@ struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
       cereal::construct<tiny_dnn::elementwise_add_layer> &construct) {
     tiny_dnn::serial_size_t num_args, dim;
 
-    ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
-    construct(num_args, dim);
+    ar(cereal::make_nvp("num_args", num_args),
+       cereal::make_nvp("dim", dim));
+    construct(cast_size_t(num_args), cast_size_t(dim));
   }
 };
 
@@ -41,8 +50,10 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
        cereal::make_nvp("stride_x", stride_x),
        cereal::make_nvp("stride_y", stride_y),
        cereal::make_nvp("pad_type", pad_type));
-    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-              stride_x, stride_y, pad_type);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
+              cast_size_t(in.depth_), cast_size_t(pool_size_x),
+              cast_size_t(pool_size_y), cast_size_t(stride_x),
+              cast_size_t(stride_y), pad_type);
   }
 };
 
@@ -58,7 +69,9 @@ struct LoadAndConstruct<tiny_dnn::average_unpooling_layer> {
     ar(cereal::make_nvp("in_size", in),
        cereal::make_nvp("pool_size", pool_size),
        cereal::make_nvp("stride", stride));
-    construct(in.width_, in.height_, in.depth_, pool_size, stride);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
+              cast_size_t(in.depth_), cast_size_t(pool_size),
+              cast_size_t(stride));
   }
 };
 
@@ -79,7 +92,8 @@ struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
        cereal::make_nvp("epsilon", eps), cereal::make_nvp("momentum", momentum),
        cereal::make_nvp("phase", phase), cereal::make_nvp("mean", mean),
        cereal::make_nvp("variance", variance));
-    construct(in_spatial_size, in_channels, eps, momentum, phase);
+    construct(cast_size_t(in_spatial_size), cast_size_t(in_channels), 
+              eps, momentum, phase);
     construct->set_mean(mean);
     construct->set_variance(variance);
   }
@@ -119,8 +133,11 @@ struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl,
-              pad_type, has_bias, w_stride, h_stride);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
+              cast_size_t(w_width), cast_size_t(w_height),
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
+              pad_type, has_bias, cast_size_t(w_stride),
+              cast_size_t(h_stride));
   }
 };
 
@@ -146,8 +163,11 @@ struct LoadAndConstruct<tiny_dnn::deconvolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl,
-              pad_type, has_bias, w_stride, h_stride);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+              cast_size_t(w_width), cast_size_t(w_height),
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
+              pad_type, has_bias, cast_size_t(w_stride),
+              cast_size_t(h_stride));
   }
 };
 
@@ -179,7 +199,7 @@ struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
     ar(cereal::make_nvp("in_size", in_dim),
        cereal::make_nvp("out_size", out_dim),
        cereal::make_nvp("has_bias", has_bias));
-    construct(in_dim, out_dim, has_bias);
+    construct(cast_size_t(in_dim), cast_size_t(out_dim), has_bias);
   }
 };
 
@@ -219,7 +239,7 @@ struct LoadAndConstruct<tiny_dnn::linear_layer> {
     ar(cereal::make_nvp("in_size", dim), cereal::make_nvp("scale", scale),
        cereal::make_nvp("bias", bias));
 
-    construct(dim, scale, bias);
+    construct(cast_size_t(dim), scale, bias);
   }
 };
 
@@ -236,7 +256,7 @@ struct LoadAndConstruct<tiny_dnn::lrn_layer> {
     ar(cereal::make_nvp("in_shape", in_shape), cereal::make_nvp("size", size),
        cereal::make_nvp("alpha", alpha), cereal::make_nvp("beta", beta),
        cereal::make_nvp("region", region));
-    construct(in_shape, size, alpha, beta, region);
+    construct(in_shape, cast_size_t(size), alpha, beta, region);
   }
 };
 
@@ -255,8 +275,10 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
        cereal::make_nvp("stride_x", stride_x),
        cereal::make_nvp("stride_y", stride_y),
        cereal::make_nvp("pad_type", pad_type));
-    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-              stride_x, stride_y, pad_type);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+              cast_size_t(in.depth_), cast_size_t(pool_size_x),
+              cast_size_t(pool_size_y), cast_size_t(stride_x), 
+              cast_size_t(stride_y), pad_type);
   }
 };
 
@@ -272,7 +294,7 @@ struct LoadAndConstruct<tiny_dnn::max_unpooling_layer> {
     ar(cereal::make_nvp("in_size", in),
        cereal::make_nvp("unpool_size", unpool_size),
        cereal::make_nvp("stride", stride));
-    construct(in, unpool_size, stride);
+    construct(in, cast_size_t(unpool_size), cast_size_t(stride));
   }
 };
 
@@ -313,8 +335,11 @@ struct LoadAndConstruct<tiny_dnn::quantized_convolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl,
-              pad_type, has_bias, w_stride, h_stride);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
+              cast_size_t(w_width), cast_size_t(w_height),
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
+              pad_type, has_bias, cast_size_t(w_stride),
+              cast_size_t(h_stride));
   }
 };
 
@@ -340,8 +365,11 @@ struct LoadAndConstruct<tiny_dnn::quantized_deconvolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(in.width_, in.height_, w_width, w_height, in.depth_, out_ch, tbl,
-              pad_type, has_bias, w_stride, h_stride);
+    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+              cast_size_t(w_width), cast_size_t(w_height),
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
+              pad_type, has_bias, cast_size_t(w_stride),
+              cast_size_t(h_stride));
   }
 };
 
@@ -357,7 +385,7 @@ struct LoadAndConstruct<tiny_dnn::quantized_fully_connected_layer> {
     ar(cereal::make_nvp("in_size", in_dim),
        cereal::make_nvp("out_size", out_dim),
        cereal::make_nvp("has_bias", has_bias));
-    construct(in_dim, out_dim, has_bias);
+    construct(cast_size_t(in_dim), cast_size_t(out_dim), has_bias);
   }
 };
 
@@ -393,7 +421,7 @@ struct LoadAndConstruct<tiny_dnn::slice_layer> {
     ar(cereal::make_nvp("in_size", in_shape),
        cereal::make_nvp("slice_type", slice_type),
        cereal::make_nvp("num_outputs", num_outputs));
-    construct(in_shape, slice_type, num_outputs);
+    construct(in_shape, slice_type, cast_size_t(num_outputs));
   }
 };
 

@@ -58,15 +58,15 @@ class quantized_deconvolutional_layer : public layer {
    *filters to the input
    **/
   quantized_deconvolutional_layer(
-    serial_size_t in_width,
-    serial_size_t in_height,
-    serial_size_t window_size,
-    serial_size_t in_channels,
-    serial_size_t out_channels,
+    size_t in_width,
+    size_t in_height,
+    size_t window_size,
+    size_t in_channels,
+    size_t out_channels,
     padding pad_type       = padding::valid,
     bool has_bias          = true,
-    serial_size_t w_stride = 1,
-    serial_size_t h_stride = 1,
+    size_t w_stride = 1,
+    size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
@@ -101,16 +101,16 @@ class quantized_deconvolutional_layer : public layer {
    *filters to the input
    **/
   quantized_deconvolutional_layer(
-    serial_size_t in_width,
-    serial_size_t in_height,
-    serial_size_t window_width,
-    serial_size_t window_height,
-    serial_size_t in_channels,
-    serial_size_t out_channels,
+    size_t in_width,
+    size_t in_height,
+    size_t window_width,
+    size_t window_height,
+    size_t in_channels,
+    size_t out_channels,
     padding pad_type       = padding::valid,
     bool has_bias          = true,
-    serial_size_t w_stride = 1,
-    serial_size_t h_stride = 1,
+    size_t w_stride = 1,
+    size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
@@ -145,16 +145,16 @@ class quantized_deconvolutional_layer : public layer {
    *the filters to the input
    **/
   quantized_deconvolutional_layer(
-    serial_size_t in_width,
-    serial_size_t in_height,
-    serial_size_t window_size,
-    serial_size_t in_channels,
-    serial_size_t out_channels,
+    size_t in_width,
+    size_t in_height,
+    size_t window_size,
+    size_t in_channels,
+    size_t out_channels,
     const connection_table &connection_table,
     padding pad_type       = padding::valid,
     bool has_bias          = true,
-    serial_size_t w_stride = 1,
-    serial_size_t h_stride = 1,
+    size_t w_stride = 1,
+    size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
@@ -190,17 +190,17 @@ class quantized_deconvolutional_layer : public layer {
    *the filters to the input
    **/
   quantized_deconvolutional_layer(
-    serial_size_t in_width,
-    serial_size_t in_height,
-    serial_size_t window_width,
-    serial_size_t window_height,
-    serial_size_t in_channels,
-    serial_size_t out_channels,
+    size_t in_width,
+    size_t in_height,
+    size_t window_width,
+    size_t window_height,
+    size_t in_channels,
+    size_t out_channels,
     const connection_table &connection_table,
     padding pad_type       = padding::valid,
     bool has_bias          = true,
-    serial_size_t w_stride = 1,
-    serial_size_t h_stride = 1,
+    size_t w_stride = 1,
+    size_t h_stride = 1,
     backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
@@ -220,12 +220,12 @@ class quantized_deconvolutional_layer : public layer {
   }
 
   ///< number of incoming connections for each output unit
-  serial_size_t fan_in_size() const override {
+  size_t fan_in_size() const override {
     return params_.weight.width_ * params_.weight.height_ * params_.in.depth_;
   }
 
   ///< number of outgoing connections for each input unit
-  serial_size_t fan_out_size() const override {
+  size_t fan_out_size() const override {
     return (params_.weight.width_ * params_.w_stride) *
            (params_.weight.height_ * params_.h_stride) * params_.out.depth_;
   }
@@ -260,16 +260,16 @@ class quantized_deconvolutional_layer : public layer {
     layer::backend_->deconv2d_q(in_data, out_data, out_grad, in_grad);
   }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     if (params_.has_bias) {
       return {params_.in, params_.weight,
-              index3d<serial_size_t>(1, 1, params_.out.depth_)};
+              index3d<size_t>(1, 1, params_.out.depth_)};
     } else {
       return {params_.in, params_.weight};
     }
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
+  std::vector<index3d<size_t>> out_shape() const override {
     return {params_.out_unpadded};
   }
 
@@ -278,7 +278,7 @@ class quantized_deconvolutional_layer : public layer {
 #ifdef DNN_USE_IMAGE_API
   image<> weightto_image() const {
     image<> img;
-    const serial_size_t border_width = 1;
+    const size_t border_width = 1;
     const auto pitch                 = params_.weight.width_ + border_width;
     const auto width  = params_.out.depth_ * pitch + border_width;
     const auto height = params_.in.depth_ * pitch + border_width;
@@ -290,17 +290,17 @@ class quantized_deconvolutional_layer : public layer {
 
     auto minmax = std::minmax_element(W.begin(), W.end());
 
-    for (serial_size_t r = 0; r < params_.in.depth_; ++r) {
-      for (serial_size_t c = 0; c < params_.out.depth_; ++c) {
+    for (size_t r = 0; r < params_.in.depth_; ++r) {
+      for (size_t c = 0; c < params_.out.depth_; ++c) {
         if (!params_.tbl.is_connected(c, r)) continue;
 
         const auto top  = r * pitch + border_width;
         const auto left = c * pitch + border_width;
 
-        serial_size_t idx = 0;
+        size_t idx = 0;
 
-        for (serial_size_t y = 0; y < params_.weight.height_; ++y) {
-          for (serial_size_t x = 0; x < params_.weight.width_; ++x) {
+        for (size_t y = 0; y < params_.weight.height_; ++y) {
+          for (size_t x = 0; x < params_.weight.width_; ++x) {
             idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
             const float_t w = W[idx];
 
@@ -342,13 +342,13 @@ class quantized_deconvolutional_layer : public layer {
   }
 
   void deconv_set_params(const shape3d &in,
-                         serial_size_t w_width,
-                         serial_size_t w_height,
-                         serial_size_t outc,
+                         size_t w_width,
+                         size_t w_height,
+                         size_t outc,
                          padding ptype,
                          bool has_bias,
-                         serial_size_t w_stride,
-                         serial_size_t h_stride,
+                         size_t w_stride,
+                         size_t h_stride,
                          const connection_table &tbl = connection_table()) {
     params_.in = in;
     params_.out =
@@ -376,33 +376,33 @@ class quantized_deconvolutional_layer : public layer {
     }
   }
 
-  serial_size_t in_length(serial_size_t in_length,
-                          serial_size_t window_size,
+  size_t in_length(size_t in_length,
+                          size_t window_size,
                           padding pad_type) const {
     return in_length;
   }
 
-  static serial_size_t deconv_out_length(serial_size_t in_length,
-                                         serial_size_t window_size,
-                                         serial_size_t stride) {
-    return (serial_size_t)ceil((float_t)(in_length)*stride + window_size - 1);
+  static size_t deconv_out_length(size_t in_length,
+                                         size_t window_size,
+                                         size_t stride) {
+    return (size_t)ceil((float_t)(in_length)*stride + window_size - 1);
   }
 
-  static serial_size_t deconv_out_unpadded_length(serial_size_t in_length,
-                                                  serial_size_t window_size,
-                                                  serial_size_t stride,
+  static size_t deconv_out_unpadded_length(size_t in_length,
+                                                  size_t window_size,
+                                                  size_t stride,
                                                   padding pad_type) {
     return pad_type == padding::same
-             ? (serial_size_t)ceil((float_t)in_length * stride)
-             : (serial_size_t)ceil((float_t)(in_length)*stride + window_size -
+             ? (size_t)ceil((float_t)in_length * stride)
+             : (size_t)ceil((float_t)(in_length)*stride + window_size -
                                    1);
   }
 
-  static serial_size_t deconv_out_dim(serial_size_t in_width,
-                                      serial_size_t in_height,
-                                      serial_size_t window_size,
-                                      serial_size_t w_stride,
-                                      serial_size_t h_stride,
+  static size_t deconv_out_dim(size_t in_width,
+                                      size_t in_height,
+                                      size_t window_size,
+                                      size_t w_stride,
+                                      size_t h_stride,
                                       padding pad_type) {
     return deconv_out_unpadded_length(in_width, window_size, w_stride,
                                       pad_type) *
@@ -410,12 +410,12 @@ class quantized_deconvolutional_layer : public layer {
                                       pad_type);
   }
 
-  serial_size_t deconv_out_dim(serial_size_t in_width,
-                               serial_size_t in_height,
-                               serial_size_t window_width,
-                               serial_size_t window_height,
-                               serial_size_t w_stride,
-                               serial_size_t h_stride,
+  size_t deconv_out_dim(size_t in_width,
+                               size_t in_height,
+                               size_t window_width,
+                               size_t window_height,
+                               size_t w_stride,
+                               size_t h_stride,
                                padding pad_type) const {
     return deconv_out_unpadded_length(in_width, window_width, w_stride,
                                       pad_type) *
@@ -427,15 +427,15 @@ class quantized_deconvolutional_layer : public layer {
     if (params_.pad_type == padding::valid) {
       delta_padded = delta;
     } else {
-      for (serial_size_t sample = 0; sample < delta.size(); sample++) {
+      for (size_t sample = 0; sample < delta.size(); sample++) {
         vec_t &dst       = delta_padded[sample];
         const vec_t &src = delta[sample];
 
-        for (serial_size_t c = 0; c < params_.in.depth_; c++) {
+        for (size_t c = 0; c < params_.in.depth_; c++) {
           float_t *pdst      = &dst[params_.in.get_index(0, 0, c)];
           const float_t *pin = &src[params_.in.get_index(0, 0, c)];
 
-          for (serial_size_t y = 0; y < params_.in.height_;
+          for (size_t y = 0; y < params_.in.height_;
                y++, pdst += params_.in.width_, pin += params_.in.width_) {
             std::copy(pin, pin + params_.in.width_, pdst);
           }
@@ -455,23 +455,23 @@ class quantized_deconvolutional_layer : public layer {
       dws.curr_out_unpadded_ = &out;
     } else {
       // make unpadded version in order to restore scale in fprop/bprop
-      for (serial_size_t sample = 0; sample < out.size(); sample++) {
-        serial_size_t idx = 0;
+      for (size_t sample = 0; sample < out.size(); sample++) {
+        size_t idx = 0;
         vec_t &dst        = (*dst_tensor)[sample];
 
-        for (serial_size_t c = 0; c < params_.out_unpadded.depth_; c++) {
+        for (size_t c = 0; c < params_.out_unpadded.depth_; c++) {
           float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
           idx           = params_.out.get_index(
-            static_cast<serial_size_t>(floor(params_.weight.width_ / 2)),
-            static_cast<serial_size_t>(floor(params_.weight.height_ / 2)), c);
+            static_cast<size_t>(floor(params_.weight.width_ / 2)),
+            static_cast<size_t>(floor(params_.weight.height_ / 2)), c);
 
           const float_t *pout = &out[sample][idx];
 
-          for (serial_size_t y = static_cast<serial_size_t>(
+          for (size_t y = static_cast<size_t>(
                                floor(params_.weight.height_ / 2));
                y <
                params_.out_unpadded.height_ +
-                 static_cast<serial_size_t>(floor(params_.weight.height_ / 2));
+                 static_cast<size_t>(floor(params_.weight.height_ / 2));
                y++, pout += params_.out.width_,
                              pimg += params_.out_unpadded.width_) {
             std::copy(pout, pout + params_.out_unpadded.width_, pimg);

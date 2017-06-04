@@ -59,8 +59,8 @@ class layer : public node {
    **/
   layer(const std::vector<vector_type> &in_type,
         const std::vector<vector_type> &out_type)
-    : node(static_cast<serial_size_t>(in_type.size()),
-           static_cast<serial_size_t>(out_type.size())),
+    : node(static_cast<size_t>(in_type.size()),
+           static_cast<size_t>(out_type.size())),
       initialized_(false),
       parallelize_(true),
       in_channels_(in_type.size()),
@@ -120,17 +120,17 @@ class layer : public node {
   ///< number of outgoing edges in this layer
   size_t out_channels() const { return out_channels_; }
 
-  serial_size_t in_data_size() const {
+  size_t in_data_size() const {
     return sumif(in_shape(),
-                 [&](serial_size_t i) {  // NOLINT
+                 [&](size_t i) {  // NOLINT
                    return in_type_[i] == vector_type::data;
                  },
                  [](const shape3d &s) { return s.size(); });
   }
 
-  serial_size_t out_data_size() const {
+  size_t out_data_size() const {
     return sumif(out_shape(),
-                 [&](serial_size_t i) {  // NOLINT
+                 [&](size_t i) {  // NOLINT
                    return out_type_[i] == vector_type::data;
                  },
                  [](const shape3d &s) { return s.size(); });
@@ -149,10 +149,10 @@ class layer : public node {
   }
 
   ///! @deprecated use in_data_size() instead
-  serial_size_t in_size() const { return in_data_size(); }
+  size_t in_size() const { return in_data_size(); }
 
   ///! @deprecated use out_data_size() instead
-  serial_size_t out_size() const { return out_data_size(); }
+  size_t out_size() const { return out_data_size(); }
 
   std::vector<const vec_t *> weights() const {
     std::vector<const vec_t *> v;
@@ -298,7 +298,7 @@ class layer : public node {
    *is
    *important
    **/
-  virtual serial_size_t fan_in_size() const { return in_shape()[0].width_; }
+  virtual size_t fan_in_size() const { return in_shape()[0].width_; }
   // override to allow initialization of multiple size weight matrices.
   virtual serial_size_t fan_in_size(serial_size_t) const {
     return fan_in_size();  // fallback to single weight matrix.
@@ -313,7 +313,7 @@ class layer : public node {
    *is
    *important
    **/
-  virtual serial_size_t fan_out_size() const { return out_shape()[0].width_; }
+  virtual size_t fan_out_size() const { return out_shape()[0].width_; }
   // override to allow initialization of multiple size weight vectors.
   virtual serial_size_t fan_out_size(serial_size_t) const {
     return fan_out_size();  // fallback to single weight matrix
@@ -527,13 +527,13 @@ class layer : public node {
 
     // resize outs and stuff to have room for every input sample in
     // the batch
-    set_sample_count(static_cast<serial_size_t>(fwd_in_data_[0]->size()));
+    set_sample_count(static_cast<size_t>(fwd_in_data_[0]->size()));
 
     // Internally ith_out_node() will create a connection/edge to the
     // computational graph and will allocate memory in case that it's not
     // done yet. In addition, gradient vector are initialized to default
     // values.
-    for (serial_size_t i = 0; i < out_channels_; i++) {
+    for (size_t i = 0; i < out_channels_; i++) {
       fwd_out_data_[i] = ith_out_node(i)->get_data();
       ith_out_node(i)->clear_grads();
     }
@@ -554,7 +554,7 @@ class layer : public node {
       bwd_in_data_[i] = nd->get_data();
       bwd_in_grad_[i] = nd->get_gradient();
     }
-    for (serial_size_t i = 0; i < out_channels_; i++) {
+    for (size_t i = 0; i < out_channels_; i++) {
       const auto &nd   = ith_out_node(i);
       bwd_out_data_[i] = nd->get_data();
       bwd_out_grad_[i] = nd->get_gradient();
@@ -643,16 +643,16 @@ class layer : public node {
   }
 
   void clear_grads() {
-    for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size());
+    for (size_t i = 0; i < static_cast<size_t>(in_type_.size());
          i++) {
       ith_in_node(i)->clear_grads();
     }
   }
 
-  void update_weight(optimizer *o, serial_size_t batch_size) {
+  void update_weight(optimizer *o, size_t batch_size) {
     float_t rcp_batch_size = float_t(1) / float_t(batch_size);
     auto &diff             = weights_diff_;
-    for (serial_size_t i = 0; i < static_cast<serial_size_t>(in_type_.size());
+    for (size_t i = 0; i < static_cast<size_t>(in_type_.size());
          i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
         vec_t &target = *get_weight_data(i);
@@ -685,7 +685,7 @@ class layer : public node {
     return true;
   }
 
-  virtual void set_sample_count(serial_size_t sample_count) {
+  virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
     auto resize = [sample_count](tensor_t *tensor) {
       tensor->resize(sample_count, (*tensor)[0]);
@@ -698,7 +698,7 @@ class layer : public node {
       resize(ith_in_node(i)->get_gradient());
     }
 
-    for (serial_size_t i = 0; i < out_channels_; i++) {
+    for (size_t i = 0; i < out_channels_; i++) {
       if (!is_trainable_weight(out_type_[i])) {
         resize(ith_out_node(i)->get_data());
       }
@@ -774,7 +774,7 @@ class layer : public node {
    *     nullptr -- |edge| -- prev(i) ---- |layer|
    *               nullptr -- prev(i+1) -´
    */
-  void alloc_input(serial_size_t i) const {
+  void alloc_input(size_t i) const {
     // the created incoming edge won't have a previous connection,
     // for this reason first parameter is a nullptr.
     prev_[i] = std::make_shared<edge>(nullptr, in_shape()[i], in_type_[i]);
@@ -790,7 +790,7 @@ class layer : public node {
    *     |layer| -- next(i) ---- |edge|
    *             `- next(i+1) -- nullptr
    */
-  void alloc_output(serial_size_t i) const {
+  void alloc_output(size_t i) const {
     // the created outcoming will have the current layer as the
     // previous node.
     next_[i] = std::make_shared<edge>(const_cast<layer *>(this), out_shape()[i],
@@ -806,7 +806,7 @@ class layer : public node {
    * and the necessary memory it's allocated. The method returns the pointer
    * to the previous edge.
    */
-  edgeptr_t ith_in_node(serial_size_t i) {
+  edgeptr_t ith_in_node(size_t i) {
     // in case that the  edge doesn't exist, we create it
     if (!prev_[i]) alloc_input(i);
     return prev()[i];
@@ -821,19 +821,19 @@ class layer : public node {
    * and the necessary memory it's allocated. The method returns the pointer
    * to the next edge.
    */
-  edgeptr_t ith_out_node(serial_size_t i) {
+  edgeptr_t ith_out_node(size_t i) {
     // in case that the  edge doesn't exist, we create it
     if (!next_[i]) alloc_output(i);
     return next()[i];
   }
-  edgeptr_t ith_out_node(serial_size_t i) const { return next()[i]; }
+  edgeptr_t ith_out_node(size_t i) const { return next()[i]; }
 
   /* @brief Retrieves weight vector from incoming edge
    * @param i The position of incoming edge.
    *
    * Returns the mutable pointer to the edge raw data.
    */
-  vec_t *get_weight_data(serial_size_t i) {
+  vec_t *get_weight_data(size_t i) {
     assert(is_trainable_weight(in_type_[i]));
     return &(*(ith_in_node(i)->get_data()))[0];
   }
@@ -843,7 +843,7 @@ class layer : public node {
    *
    * Returns the non mutable pointer to the edge raw data.
    */
-  const vec_t *get_weight_data(serial_size_t i) const {
+  const vec_t *get_weight_data(size_t i) const {
     assert(is_trainable_weight(in_type_[i]));
     return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
   }
@@ -851,8 +851,8 @@ class layer : public node {
 
 inline void connect(layer *head,
                     layer *tail,
-                    serial_size_t head_index = 0,
-                    serial_size_t tail_index = 0) {
+                    size_t head_index = 0,
+                    size_t tail_index = 0) {
   auto out_shape = head->out_shape()[head_index];
   auto in_shape  = tail->in_shape()[tail_index];
 
@@ -931,10 +931,10 @@ inline void data_mismatch(const layer &layer, const vec_t &data) {
   throw nn_error("input dimension mismatch!" + detail_info);
 }
 
-inline void pooling_size_mismatch(serial_size_t in_width,
-                                  serial_size_t in_height,
-                                  serial_size_t pooling_size_x,
-                                  serial_size_t pooling_size_y) {
+inline void pooling_size_mismatch(size_t in_width,
+                                  size_t in_height,
+                                  size_t pooling_size_x,
+                                  size_t pooling_size_y) {
   std::ostringstream os;
 
   os << std::endl;

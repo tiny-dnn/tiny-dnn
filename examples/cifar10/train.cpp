@@ -21,9 +21,9 @@ void construct_net(N &nn, core::backend_t backend_type) {
   using relu    = relu_layer;
   using softmax = softmax_layer;
 
-  const serial_size_t n_fmaps  = 32;  // number of feature maps for upper layer
-  const serial_size_t n_fmaps2 = 64;  // number of feature maps for lower layer
-  const serial_size_t n_fc     = 64;  // number of hidden units in fc layer
+  const size_t n_fmaps  = 32;  // number of feature maps for upper layer
+  const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
+  const size_t n_fc     = 64;  // number of hidden units in fc layer
 
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
              backend_type)                      // C1
@@ -109,7 +109,7 @@ static core::backend_t parse_backend_name(const std::string &name) {
   const std::array<const std::string, 5> names = {
     "internal", "nnpack", "libdnn", "avx", "opencl",
   };
-  for (size_t i = 0; i < names.size(); ++i) {
+  for (std::size_t i = 0; i < names.size(); ++i) {
     if (name.compare(names[i]) == 0) {
       return static_cast<core::backend_t>(i);
     }

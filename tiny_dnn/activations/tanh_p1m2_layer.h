@@ -19,7 +19,7 @@ class tanh_p1m2_layer : public activation_layer {
 
   void forward_activation(const vec_t &x, vec_t &y) override {
     float_t ep;
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       ep   = std::exp(x[j]);
       y[j] = ep / (ep + (float_t(1) / ep));
     }
@@ -29,7 +29,7 @@ class tanh_p1m2_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of tanh-scaled)
       dx[j] = dy[j] * (2 * y[j] * (float_t(1) - y[j]));
     }

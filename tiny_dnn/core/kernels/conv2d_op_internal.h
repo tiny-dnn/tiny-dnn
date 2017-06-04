@@ -19,37 +19,37 @@ inline void conv2d_op_internal(const tensor_t &in_data,
   for_(parallelize, 0, in_data.size(),
        [&](const blocked_range &r) {
          size_t out_area           = params.out.area();
-         serial_size_t iw          = params.in_padded.width_;
-         serial_size_t id          = params.in.depth_;
-         serial_size_t ow          = params.out.width_;
-         serial_size_t oh          = params.out.height_;
-         serial_size_t od          = params.out.depth_;
-         serial_size_t kw          = params.weight.width_;
-         serial_size_t kh          = params.weight.height_;
-         serial_size_t elem_stride = params.w_stride;
-         serial_size_t line_stride = iw * params.h_stride;
+         size_t iw          = params.in_padded.width_;
+         size_t id          = params.in.depth_;
+         size_t ow          = params.out.width_;
+         size_t oh          = params.out.height_;
+         size_t od          = params.out.depth_;
+         size_t kw          = params.weight.width_;
+         size_t kh          = params.weight.height_;
+         size_t elem_stride = params.w_stride;
+         size_t line_stride = iw * params.h_stride;
          for (size_t sample = r.begin(); sample < r.end(); sample++) {
            const vec_t &in = in_data[sample];
            vec_t &a        = out_data[sample];
-           for (serial_size_t o = 0; o < od; o++) {
+           for (size_t o = 0; o < od; o++) {
              float_t *pa = &a[params.out.get_index(0, 0, o)];
-             for (serial_size_t inc = 0; inc < id; inc++) {
+             for (size_t inc = 0; inc < id; inc++) {
                if (!params.tbl.is_connected(o, inc)) continue;
-               serial_size_t idx;
+               size_t idx;
                idx                = params.weight.get_index(0, 0, id * o + inc);
                const float_t *pw  = &W[idx];
                idx                = params.in_padded.get_index(0, 0, inc);
                const float_t *pin = &in[idx];
                float_t *pout      = pa;
-               for (serial_size_t y = 0; y < oh; y++) {
+               for (size_t y = 0; y < oh; y++) {
                  const float_t *pin_line = pin;
-                 for (serial_size_t x = 0; x < ow; x++) {
+                 for (size_t x = 0; x < ow; x++) {
                    const float_t *pin_element = pin_line;
                    const float_t *pw_element  = pw;
                    float_t sum{0};
                    // should be optimized for small kernel(3x3,5x5)
-                   for (serial_size_t wy = 0; wy < kh; wy++) {    // NOLINT
-                     for (serial_size_t wx = 0; wx < kw; wx++) {  // NOLINT
+                   for (size_t wy = 0; wy < kh; wy++) {    // NOLINT
+                     for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
                        sum += pw_element[wx] * pin_element[wx];
                      }
                      pw_element += kw;
@@ -86,11 +86,11 @@ void conv2d_op_internal(const tensor_t &prev_out,
 
   for_i(parallelize, prev_out.size(), [&](int sample) {
     // propagate delta to previous layer
-    for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
-      for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
+    for (size_t inc = 0; inc < params.in.depth_; inc++) {
+      for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
 
-        serial_size_t idx = 0;
+        size_t idx = 0;
         idx               = params.in.depth_ * outc + inc;
         idx               = params.weight.get_index(0, 0, idx);
         const float_t *pw = &W[idx];
@@ -102,8 +102,8 @@ void conv2d_op_internal(const tensor_t &prev_out,
         // float_t* pdelta_dst = &(*prev_delta)[sample][idx];
         float_t *pdelta_dst = &prev_delta[sample][idx];
 
-        for (serial_size_t y = 0; y < params.out.height_; y++) {
-          for (serial_size_t x = 0; x < params.out.width_; x++) {
+        for (size_t y = 0; y < params.out.height_; y++) {
+          for (size_t x = 0; x < params.out.width_; x++) {
             const float_t *ppw = pw;
 
             idx                       = y * params.out.width_ + x;
@@ -113,9 +113,9 @@ void conv2d_op_internal(const tensor_t &prev_out,
               pdelta_dst + y * params.h_stride * params.in_padded.width_ +
               x * params.w_stride;
 
-            for (serial_size_t wy = 0; wy < params.weight.height_;
+            for (size_t wy = 0; wy < params.weight.height_;
                  wy++) {  // NOLINT
-              for (serial_size_t wx = 0; wx < params.weight.width_;
+              for (size_t wx = 0; wx < params.weight.width_;
                    wx++) {  // NOLINT
                 idx = wy * params.in_padded.width_ + wx;
                 ppdelta_dst[idx] += *ppw++ * ppdelta_src;
@@ -127,15 +127,15 @@ void conv2d_op_internal(const tensor_t &prev_out,
     }
 
     // accumulate dw
-    for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
-      for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
+    for (size_t inc = 0; inc < params.in.depth_; inc++) {
+      for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
 
-        for (serial_size_t wy = 0; wy < params.weight.height_; wy++) {
-          for (serial_size_t wx = 0; wx < params.weight.width_; wx++) {
+        for (size_t wy = 0; wy < params.weight.height_; wy++) {
+          for (size_t wx = 0; wx < params.weight.width_; wx++) {
             float_t dst{0};
 
-            serial_size_t idx    = 0;
+            size_t idx    = 0;
             idx                  = params.in_padded.get_index(wx, wy, inc);
             const float_t *prevo = &prev_out[sample][idx];
 
@@ -143,18 +143,18 @@ void conv2d_op_internal(const tensor_t &prev_out,
             const float_t *delta = &curr_delta[sample][idx];
 
             if (params.w_stride > 1) {
-              for (serial_size_t y = 0; y < params.out.height_; y++) {
-                serial_size_t prevo_idx =
+              for (size_t y = 0; y < params.out.height_; y++) {
+                size_t prevo_idx =
                   y * params.in_padded.width_ * params.h_stride;
-                serial_size_t delta_idx = y * params.out.width_;
+                size_t delta_idx = y * params.out.width_;
 
-                for (serial_size_t x = 0; x < params.out.width_; x++) {
+                for (size_t x = 0; x < params.out.width_; x++) {
                   dst += prevo[prevo_idx + x * params.w_stride] *
                          delta[delta_idx + x];
                 }
               }
             } else {
-              for (serial_size_t y = 0; y < params.out.height_; y++) {
+              for (size_t y = 0; y < params.out.height_; y++) {
                 dst += vectorize::dot(
                   prevo + y * params.in_padded.width_ * params.h_stride,
                   delta + y * params.out.width_, params.out.width_);
@@ -170,8 +170,8 @@ void conv2d_op_internal(const tensor_t &prev_out,
 
     // accumulate db
     if (params.has_bias) {
-      for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
-        serial_size_t idx     = params.out.get_index(0, 0, outc);
+      for (size_t outc = 0; outc < params.out.depth_; outc++) {
+        size_t idx     = params.out.get_index(0, 0, outc);
         const float_t *delta  = &curr_delta[sample][idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});

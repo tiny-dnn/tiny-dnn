@@ -58,7 +58,7 @@ class power_layer : public layer {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
 
-    for (serial_size_t i = 0; i < x.size(); i++) {
+    for (size_t i = 0; i < x.size(); i++) {
       std::transform(x[i].begin(), x[i].end(), y[i].begin(),
                      [=](float_t x) { return scale_ * std::pow(x, factor_); });
     }
@@ -73,8 +73,8 @@ class power_layer : public layer {
     const tensor_t &x  = *in_data[0];
     const tensor_t &y  = *out_data[0];
 
-    for (serial_size_t i = 0; i < x.size(); i++) {
-      for (serial_size_t j = 0; j < x[i].size(); j++) {
+    for (size_t i = 0; i < x.size(); i++) {
+      for (size_t j = 0; j < x[i].size(); j++) {
         // f(x) = (scale*x)^factor
         // ->
         //   dx = dy * df(x)

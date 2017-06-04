@@ -65,8 +65,8 @@ class avx_backend : public backend {
       backward_activation(f3) {}
 
   // maxpooling
-  avx_backend(std::vector<std::vector<serial_size_t>> *out2in,
-              std::vector<serial_size_t> *in2out,
+  avx_backend(std::vector<std::vector<size_t>> *out2in,
+              std::vector<size_t> *in2out,
               max_pooling_layer_worker_specific_storage *ptr)
     : max_pooling_layer_worker_storage_(ptr),
       out2in_(out2in),
@@ -214,8 +214,8 @@ class avx_backend : public backend {
   conv_layer_worker_specific_storage *conv_layer_worker_storage_;
   deconv_layer_worker_specific_storage *deconv_layer_worker_storage_;
   max_pooling_layer_worker_specific_storage *max_pooling_layer_worker_storage_;
-  std::vector<std::vector<serial_size_t>> *out2in_;
-  std::vector<serial_size_t> *in2out_;
+  std::vector<std::vector<size_t>> *out2in_;
+  std::vector<size_t> *in2out_;
 
   /* Pointers to parent class functions */
   std::function<void(const tensor_t &)> copy_and_pad_input;

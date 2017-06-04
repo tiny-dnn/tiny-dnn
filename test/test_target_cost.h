@@ -19,26 +19,26 @@ TEST(target_cost, calculate_label_counts) {
   const std::vector<label_t> t = {0, 1, 4,
                                   0, 1, 2};  // note that there's no class "3"
 
-  const std::vector<serial_size_t> label_counts = calculate_label_counts(t);
+  const std::vector<size_t> label_counts = calculate_label_counts(t);
 
-  EXPECT_EQ(label_counts.size(), serial_size_t(5));
-  EXPECT_EQ(label_counts[0], serial_size_t(2));
-  EXPECT_EQ(label_counts[1], serial_size_t(2));
-  EXPECT_EQ(label_counts[2], serial_size_t(1));
-  EXPECT_EQ(label_counts[3], serial_size_t(0));
-  EXPECT_EQ(label_counts[4], serial_size_t(1));
+  EXPECT_EQ(label_counts.size(), size_t(5));
+  EXPECT_EQ(label_counts[0], size_t(2));
+  EXPECT_EQ(label_counts[1], size_t(2));
+  EXPECT_EQ(label_counts[2], size_t(1));
+  EXPECT_EQ(label_counts[3], size_t(0));
+  EXPECT_EQ(label_counts[4], size_t(1));
 }
 
 TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
-  const std::vector<serial_size_t> class_sample_counts = {1000, 100, 10, 1};
-  const serial_size_t class_count =
-    static_cast<serial_size_t>(class_sample_counts.size());
-  const serial_size_t total_samples =
+  const std::vector<size_t> class_sample_counts = {1000, 100, 10, 1};
+  const size_t class_count =
+    static_cast<size_t>(class_sample_counts.size());
+  const size_t total_samples =
     std::accumulate(class_sample_counts.begin(), class_sample_counts.end(),
-                    static_cast<serial_size_t>(0));
+                    static_cast<size_t>(0));
 
   std::vector<float_t> class_weights;
-  for (serial_size_t class_sample_count : class_sample_counts) {
+  for (size_t class_sample_count : class_sample_counts) {
     class_weights.push_back(get_sample_weight_for_balanced_target_cost(
       class_count, total_samples, class_sample_count));
   }
@@ -73,7 +73,7 @@ TEST(target_cost, create_balanced_target_cost_0) {
 
   for (size_t sample = 0; sample < t.size(); ++sample) {
     const vec_t &sample_cost = target_cost[sample];
-    EXPECT_EQ(sample_cost.size(), serial_size_t(5));
+    EXPECT_EQ(sample_cost.size(), size_t(5));
 
     for (size_t i = 0; i < sample_cost.size(); ++i) {
       EXPECT_NEAR(sample_cost[i], 1.0, 1e-6);
@@ -89,13 +89,13 @@ TEST(target_cost, create_balanced_target_cost_1) {
 
   const auto target_cost = create_balanced_target_cost(t, w);
 
-  const std::vector<serial_size_t> label_counts = calculate_label_counts(t);
+  const std::vector<size_t> label_counts = calculate_label_counts(t);
 
   EXPECT_EQ(target_cost.size(), t.size());
 
   for (size_t sample = 0; sample < t.size(); ++sample) {
     const vec_t &sample_cost = target_cost[sample];
-    EXPECT_EQ(sample_cost.size(), serial_size_t(5));
+    EXPECT_EQ(sample_cost.size(), size_t(5));
     EXPECT_GE(label_counts[t[sample]], 1U);
 
     float_t expected_weight =
@@ -116,13 +116,13 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
 
   const auto target_cost = create_balanced_target_cost(t, w);
 
-  const std::vector<serial_size_t> label_counts = calculate_label_counts(t);
+  const std::vector<size_t> label_counts = calculate_label_counts(t);
 
   EXPECT_EQ(target_cost.size(), t.size());
 
   for (size_t sample = 0; sample < t.size(); ++sample) {
     const vec_t &sample_cost = target_cost[sample];
-    EXPECT_EQ(sample_cost.size(), serial_size_t(5));
+    EXPECT_EQ(sample_cost.size(), size_t(5));
     EXPECT_GE(label_counts[t[sample]], 1U);
 
     const float_t expected_weight_w_0 = 1;
@@ -189,8 +189,8 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     const float_t p_label1 =
       p0 * (1 - p) + p1 * p;  // p(label == 1) = p(label == 1 | in == 0) * p(in
                               // == 0) + p(label == 1 | in == 1) * p(in == 1)
-    const serial_size_t n_label1 = std::accumulate(
-      labels.begin(), labels.end(), static_cast<serial_size_t>(0));
+    const size_t n_label1 = std::accumulate(
+      labels.begin(), labels.end(), static_cast<size_t>(0));
 
     EXPECT_NEAR(n_label1 / static_cast<float_t>(tnum), p_label1, 0.05);
     EXPECT_GE(n_label1, 1600U);
@@ -224,7 +224,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
       net_equal_class_cost.predict_label(input);
 
     // the first net always guesses the majority class
-    EXPECT_EQ(actual_equal_sample_cost, serial_size_t(1));
+    EXPECT_EQ(actual_equal_sample_cost, size_t(1));
 
     // count errors
     errors_equal_sample_cost += (expected == actual_equal_sample_cost) ? 0 : 1;
@@ -234,7 +234,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
   EXPECT_GE(errors_equal_sample_cost,
             0.25 * tnum);  // should have plenty of errors
   EXPECT_EQ(errors_equal_class_cost,
-            serial_size_t(0));  // should have learned the desired function
+            size_t(0));  // should have learned the desired function
 }
 
 TEST(target_cost, train_unbalanced_data) {
@@ -309,7 +309,7 @@ TEST(target_cost, train_unbalanced_data) {
       net_equal_class_cost.predict_label(input);
 
     // the first net always guesses the majority class
-    EXPECT_EQ(actual_equal_sample_cost, serial_size_t(1));
+    EXPECT_EQ(actual_equal_sample_cost, size_t(1));
 
     // count errors
     errors_equal_sample_cost += (expected == actual_equal_sample_cost) ? 0 : 1;
@@ -319,7 +319,7 @@ TEST(target_cost, train_unbalanced_data) {
   EXPECT_GE(errors_equal_sample_cost,
             0.25 * tnum);  // should have plenty of errors
   EXPECT_EQ(errors_equal_class_cost,
-            serial_size_t(0));  // should have learned the desired function
+            size_t(0));  // should have learned the desired function
 }
 
 }  // namespace tiny_dnn

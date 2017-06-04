@@ -24,7 +24,7 @@ class dropout_layer : public layer {
    * @param dropout_rate [in] (0-1) fraction of the input units to be dropped
    * @param phase        [in] initial state of the dropout
    **/
-  dropout_layer(serial_size_t in_dim,
+  dropout_layer(size_t in_dim,
                 float_t dropout_rate,
                 net_phase phase = net_phase::train)
     : layer({vector_type::data}, {vector_type::data}),
@@ -51,17 +51,17 @@ class dropout_layer : public layer {
   float_t dropout_rate() const { return dropout_rate_; }
 
   ///< number of incoming connections for each output unit
-  serial_size_t fan_in_size() const override { return 1; }
+  size_t fan_in_size() const override { return 1; }
 
   ///< number of outgoing connections for each input unit
-  serial_size_t fan_out_size() const override { return 1; }
+  size_t fan_out_size() const override { return 1; }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
-    return {index3d<serial_size_t>(in_size_, 1, 1)};
+  std::vector<index3d<size_t>> in_shape() const override {
+    return {index3d<size_t>(in_size_, 1, 1)};
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(in_size_, 1, 1)};
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(in_size_, 1, 1)};
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
@@ -122,7 +122,7 @@ class dropout_layer : public layer {
   std::string layer_type() const override { return "dropout"; }
 
   // currently used by tests only
-  const std::vector<uint8_t> &get_mask(serial_size_t sample_index) const {
+  const std::vector<uint8_t> &get_mask(size_t sample_index) const {
     return mask_[sample_index];
   }
 
@@ -138,7 +138,7 @@ class dropout_layer : public layer {
   net_phase phase_;
   float_t dropout_rate_;
   float_t scale_;
-  serial_size_t in_size_;
+  size_t in_size_;
   std::vector<std::vector<uint8_t>> mask_;
 };
 

@@ -25,10 +25,10 @@ class max_unpooling_layer : public layer {
    * @param in_channels  [in] the number of input image channels(depth)
    * @param unpooling_size [in] factor by which to upscale
    **/
-  max_unpooling_layer(serial_size_t in_width,
-                      serial_size_t in_height,
-                      serial_size_t in_channels,
-                      serial_size_t unpooling_size)
+  max_unpooling_layer(size_t in_width,
+                      size_t in_height,
+                      size_t in_channels,
+                      size_t unpooling_size)
     : max_unpooling_layer(in_width,
                           in_height,
                           in_channels,
@@ -36,8 +36,8 @@ class max_unpooling_layer : public layer {
                           (in_height == 1 ? 1 : unpooling_size)) {}
 
   max_unpooling_layer(const shape3d &in_size,
-                      serial_size_t unpooling_size,
-                      serial_size_t stride)
+                      size_t unpooling_size,
+                      size_t stride)
     : max_unpooling_layer(in_size.width_,
                           in_size.height_,
                           in_size.depth_,
@@ -51,12 +51,12 @@ class max_unpooling_layer : public layer {
    * @param unpooling_size [in] factor by which to upscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-   **/
-  max_unpooling_layer(serial_size_t in_width,
-                      serial_size_t in_height,
-                      serial_size_t in_channels,
-                      serial_size_t unpooling_size,
-                      serial_size_t stride)
+  **/
+  max_unpooling_layer(size_t in_width,
+                      size_t in_height,
+                      size_t in_channels,
+                      size_t unpooling_size,
+                      size_t stride)
     : layer({vector_type::data}, {vector_type::data}),
       unpool_size_(unpooling_size),
       stride_(stride),
@@ -68,9 +68,9 @@ class max_unpooling_layer : public layer {
     init_connection();
   }
 
-  serial_size_t fan_in_size() const override { return 1; }
+  size_t fan_in_size() const override { return 1; }
 
-  serial_size_t fan_out_size() const override { return in2out_[0].size(); }
+  size_t fan_out_size() const override { return in2out_[0].size(); }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
@@ -81,7 +81,7 @@ class max_unpooling_layer : public layer {
       const vec_t &in_vec = in[sample];
       vec_t &out_vec      = out[sample];
 
-      std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
+      std::vector<size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_i(in2out_.size(), [&](size_t i) {
         const auto &in_index = out2in_[i];
@@ -97,15 +97,15 @@ class max_unpooling_layer : public layer {
     tensor_t &prev_delta = *in_grad[0];
     tensor_t &curr_delta = *out_grad[0];
 
-    for (serial_size_t sample = 0; sample < in_data[0]->size(); sample++) {
+    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
       vec_t &prev_delta_vec = prev_delta[sample];
       vec_t &curr_delta_vec = curr_delta[sample];
 
-      std::vector<serial_size_t> &max_idx = worker_storage_.in2outmax_;
+      std::vector<size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (size_t i = r.begin(); i != r.end(); i++) {
-          serial_size_t outi = out2in_[i];
+          size_t outi = out2in_[i];
           prev_delta_vec[i] =
             (max_idx[outi] == i) ? curr_delta_vec[outi] : float_t{0};
         }
@@ -113,10 +113,10 @@ class max_unpooling_layer : public layer {
     }
   }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     return {in_};
   }
-  std::vector<index3d<serial_size_t>> out_shape() const override {
+  std::vector<index3d<size_t>> out_shape() const override {
     return {out_};
   }
   std::string layer_type() const override { return "max-unpool"; }
@@ -125,43 +125,43 @@ class max_unpooling_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  serial_size_t unpool_size_;
-  serial_size_t stride_;
-  std::vector<serial_size_t> out2in_;               // mapping out => in (N:1)
-  std::vector<std::vector<serial_size_t>> in2out_;  // mapping in => out (1:N)
+  size_t unpool_size_;
+  size_t stride_;
+  std::vector<size_t> out2in_;               // mapping out => in (N:1)
+  std::vector<std::vector<size_t>> in2out_;  // mapping in => out (1:N)
 
   struct worker_specific_storage {
-    std::vector<serial_size_t>
+    std::vector<size_t>
       in2outmax_;  // mapping max_index(out) => in (1:1)
   };
 
   worker_specific_storage worker_storage_;
 
-  index3d<serial_size_t> in_;
-  index3d<serial_size_t> out_;
+  index3d<size_t> in_;
+  index3d<size_t> out_;
 
-  static serial_size_t unpool_out_dim(serial_size_t in_size,
-                                      serial_size_t unpooling_size,
-                                      serial_size_t stride) {
-    return static_cast<serial_size_t>(static_cast<int64_t>(in_size) * stride +
+  static size_t unpool_out_dim(size_t in_size,
+                                      size_t unpooling_size,
+                                      size_t stride) {
+    return static_cast<size_t>(static_cast<int64_t>(in_size) * stride +
                                       unpooling_size - 1);
   }
 
-  void connect_kernel(serial_size_t unpooling_size,
-                      serial_size_t inx,
-                      serial_size_t iny,
-                      serial_size_t c) {
-    serial_size_t dxmax = static_cast<serial_size_t>(
+  void connect_kernel(size_t unpooling_size,
+                      size_t inx,
+                      size_t iny,
+                      size_t c) {
+    size_t dxmax = static_cast<size_t>(
       std::min(unpooling_size, inx * stride_ - out_.width_));
-    serial_size_t dymax = static_cast<serial_size_t>(
+    size_t dymax = static_cast<size_t>(
       std::min(unpooling_size, iny * stride_ - out_.height_));
 
-    for (serial_size_t dy = 0; dy < dymax; dy++) {
-      for (serial_size_t dx = 0; dx < dxmax; dx++) {
-        serial_size_t out_index =
-          out_.get_index(static_cast<serial_size_t>(inx * stride_ + dx),
-                         static_cast<serial_size_t>(iny * stride_ + dy), c);
-        serial_size_t in_index = in_.get_index(inx, iny, c);
+    for (size_t dy = 0; dy < dymax; dy++) {
+      for (size_t dx = 0; dx < dxmax; dx++) {
+        size_t out_index =
+          out_.get_index(static_cast<size_t>(inx * stride_ + dx),
+                         static_cast<size_t>(iny * stride_ + dy), c);
+        size_t in_index = in_.get_index(inx, iny, c);
 
         if (in_index >= in2out_.size()) throw nn_error("index overflow");
         if (out_index >= out2in_.size()) throw nn_error("index overflow");
@@ -177,10 +177,10 @@ class max_unpooling_layer : public layer {
 
     worker_storage_.in2outmax_.resize(in_.size());
 
-    for (serial_size_t c = 0; c < in_.depth_; ++c)
-      for (serial_size_t y = 0; y < in_.height_; ++y)
-        for (serial_size_t x = 0; x < in_.width_; ++x)
-          connect_kernel(static_cast<serial_size_t>(unpool_size_), x, y, c);
+    for (size_t c = 0; c < in_.depth_; ++c)
+      for (size_t y = 0; y < in_.height_; ++y)
+        for (size_t x = 0; x < in_.width_; ++x)
+          connect_kernel(static_cast<size_t>(unpool_size_), x, y, c);
   }
 };
 

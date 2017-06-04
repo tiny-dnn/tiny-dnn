@@ -15,8 +15,8 @@ namespace weight_init {
 class function {
  public:
   virtual void fill(vec_t *weight,
-                    serial_size_t fan_in,
-                    serial_size_t fan_out) = 0;
+                    size_t fan_in,
+                    size_t fan_out) = 0;
 };
 
 class scalable : public function {
@@ -42,8 +42,8 @@ class xavier : public scalable {
   explicit xavier(float_t value) : scalable(value) {}
 
   void fill(vec_t *weight,
-            serial_size_t fan_in,
-            serial_size_t fan_out) override {
+            size_t fan_in,
+            size_t fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
     uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
@@ -63,8 +63,8 @@ class lecun : public scalable {
   explicit lecun(float_t value) : scalable(value) {}
 
   void fill(vec_t *weight,
-            serial_size_t fan_in,
-            serial_size_t fan_out) override {
+            size_t fan_in,
+            size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
     const float_t weight_base = scale_ / std::sqrt(float_t(fan_in));
@@ -79,8 +79,8 @@ class gaussian : public scalable {
   explicit gaussian(float_t sigma) : scalable(sigma) {}
 
   void fill(vec_t *weight,
-            serial_size_t fan_in,
-            serial_size_t fan_out) override {
+            size_t fan_in,
+            size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -94,8 +94,8 @@ class constant : public scalable {
   explicit constant(float_t value) : scalable(value) {}
 
   void fill(vec_t *weight,
-            serial_size_t fan_in,
-            serial_size_t fan_out) override {
+            size_t fan_in,
+            size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -109,8 +109,8 @@ class he : public scalable {
   explicit he(float_t value) : scalable(value) {}
 
   void fill(vec_t *weight,
-            serial_size_t fan_in,
-            serial_size_t fan_out) override {
+            size_t fan_in,
+            size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
     const float_t sigma = std::sqrt(scale_ / fan_in);

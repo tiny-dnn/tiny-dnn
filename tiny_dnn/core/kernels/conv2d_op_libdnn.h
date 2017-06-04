@@ -51,7 +51,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
     CLCudaAPI::Context ctx = OpKernel::device_->context();
     CLCudaAPI::Queue queue = OpKernel::device_->queue();
 
-    for (serial_size_t i = 0; i < in_data.size(); ++i) {
+    for (size_t i = 0; i < in_data.size(); ++i) {
       // allocate data to GPU
 
       auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue, in_data[i].begin(),
@@ -103,7 +103,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
       // FOR DEBUG ONLY
       nn_warn("W kernel");
-      for (serial_size_t j = 0; j < W.size(); ++j) {
+      for (size_t j = 0; j < W.size(); ++j) {
           std::cout << dev_W_shadow[j] << " ";
       }
       std::cout << std::endl;
@@ -114,7 +114,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
       // FOR DEBUG ONLY
       nn_warn("input kernel");
-      for (serial_size_t j = 0; j < in_data_padded[i].size(); ++j) {
+      for (size_t j = 0; j < in_data_padded[i].size(); ++j) {
           std::cout << dev_in_shadow[j] << " ";
       }
       std::cout << std::endl;*/
@@ -127,7 +127,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
       /*
       // FOR DEBUG ONLY
       nn_warn("output kernel");
-      for (serial_size_t j = 0; j < out.size(); ++j) {
+      for (size_t j = 0; j < out.size(); ++j) {
           std::cout << out[j] << " ";
       }
       std::cout << std::endl;

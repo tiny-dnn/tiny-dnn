@@ -47,7 +47,7 @@ class slice_layer : public layer {
    **/
   slice_layer(const shape3d &in_shape,
               slice_type slice_type,
-              serial_size_t num_outputs)
+              size_t num_outputs)
     : layer(std::vector<vector_type>(1, vector_type::data),
             std::vector<vector_type>(num_outputs, vector_type::data)),
       in_shape_(in_shape),
@@ -58,7 +58,7 @@ class slice_layer : public layer {
 
   slice_layer(const layer &prev_layer,
               slice_type slice_type,
-              serial_size_t num_outputs)
+              size_t num_outputs)
     : layer(std::vector<vector_type>(1, vector_type::data),
             std::vector<vector_type>(num_outputs, vector_type::data)),
       in_shape_(prev_layer.out_shape()[0]),
@@ -111,7 +111,7 @@ class slice_layer : public layer {
                           std::vector<tensor_t *> &out_data) {
     const vec_t *in = &in_data[0];
 
-    for (serial_size_t i = 0; i < num_outputs_; i++) {
+    for (size_t i = 0; i < num_outputs_; i++) {
       tensor_t &out = *out_data[i];
 
       std::copy(in, in + slice_size_[i], &out[0]);
@@ -124,7 +124,7 @@ class slice_layer : public layer {
                            tensor_t &in_grad) {
     vec_t *in = &in_grad[0];
 
-    for (serial_size_t i = 0; i < num_outputs_; i++) {
+    for (size_t i = 0; i < num_outputs_; i++) {
       tensor_t &out = *out_grad[i];
 
       std::copy(&out[0], &out[0] + slice_size_[i], in);
@@ -135,12 +135,12 @@ class slice_layer : public layer {
 
   void slice_channels_forward(const tensor_t &in_data,
                               std::vector<tensor_t *> &out_data) {
-    serial_size_t num_samples = static_cast<serial_size_t>(in_data.size());
-    serial_size_t channel_idx = 0;
-    serial_size_t spatial_dim = in_shape_.area();
+    size_t num_samples = static_cast<size_t>(in_data.size());
+    size_t channel_idx = 0;
+    size_t spatial_dim = in_shape_.area();
 
-    for (serial_size_t i = 0; i < num_outputs_; i++) {
-      for (serial_size_t s = 0; s < num_samples; s++) {
+    for (size_t i = 0; i < num_outputs_; i++) {
+      for (size_t s = 0; s < num_samples; s++) {
         float_t *out      = &(*out_data[i])[s][0];
         const float_t *in = &in_data[s][0] + channel_idx * spatial_dim;
 
@@ -152,12 +152,12 @@ class slice_layer : public layer {
 
   void slice_channels_backward(std::vector<tensor_t *> &out_grad,
                                tensor_t &in_grad) {
-    serial_size_t num_samples = static_cast<serial_size_t>(in_grad.size());
-    serial_size_t channel_idx = 0;
-    serial_size_t spatial_dim = in_shape_.area();
+    size_t num_samples = static_cast<size_t>(in_grad.size());
+    size_t channel_idx = 0;
+    size_t spatial_dim = in_shape_.area();
 
-    for (serial_size_t i = 0; i < num_outputs_; i++) {
-      for (serial_size_t s = 0; s < num_samples; s++) {
+    for (size_t i = 0; i < num_outputs_; i++) {
+      for (size_t s = 0; s < num_samples; s++) {
         const float_t *out = &(*out_grad[i])[s][0];
         float_t *in        = &in_grad[s][0] + channel_idx * spatial_dim;
 
@@ -167,12 +167,12 @@ class slice_layer : public layer {
     }
   }
 
-  void set_sample_count(serial_size_t sample_count) override {
+  void set_sample_count(size_t sample_count) override {
     if (slice_type_ == slice_type::slice_samples) {
       if (num_outputs_ == 0)
         throw nn_error("num_outputs must be positive integer");
 
-      serial_size_t sample_per_out = sample_count / num_outputs_;
+      size_t sample_per_out = sample_count / num_outputs_;
 
       slice_size_.resize(num_outputs_, sample_per_out);
       slice_size_.back() = sample_count - (sample_per_out * (num_outputs_ - 1));
@@ -191,11 +191,11 @@ class slice_layer : public layer {
   void set_shape_data() { out_shapes_.resize(num_outputs_, in_shape_); }
 
   void set_shape_channels() {
-    serial_size_t channel_per_out = in_shape_.depth_ / num_outputs_;
+    size_t channel_per_out = in_shape_.depth_ / num_outputs_;
 
     out_shapes_.resize(num_outputs_);
-    for (serial_size_t i = 0; i < num_outputs_; i++) {
-      serial_size_t ch = channel_per_out;
+    for (size_t i = 0; i < num_outputs_; i++) {
+      size_t ch = channel_per_out;
 
       if (i == num_outputs_ - 1) {
         assert(in_shape_.depth_ >= i * channel_per_out);
@@ -209,9 +209,9 @@ class slice_layer : public layer {
 
   shape3d in_shape_;
   slice_type slice_type_;
-  serial_size_t num_outputs_;
+  size_t num_outputs_;
   std::vector<shape3d> out_shapes_;
-  std::vector<serial_size_t> slice_size_;
+  std::vector<size_t> slice_size_;
 };
 
 }  // namespace tiny_dnn

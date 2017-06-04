@@ -197,26 +197,26 @@ namespace {
 
 std::pair<std::vector<tensor_t>,
           std::vector<std::vector<
-            label_t>>> inline generate_gradient_check_data(serial_size_t
+            label_t>>> inline generate_gradient_check_data(size_t
                                                              input_dimension,
-                                                           serial_size_t
+                                                           size_t
                                                              sample_count = 5,
-                                                           serial_size_t
+                                                           size_t
                                                              class_count = 2) {
-  const serial_size_t input_channel_count  = 1;
-  const serial_size_t output_channel_count = 1;
+  const size_t input_channel_count  = 1;
+  const size_t output_channel_count = 1;
   std::vector<tensor_t> a(
     sample_count, tensor_t(input_channel_count, vec_t(input_dimension, 0.0)));
   std::vector<std::vector<label_t>> t(
     sample_count, std::vector<label_t>(output_channel_count));
 
-  for (serial_size_t sample = 0; sample < sample_count; ++sample) {
-    for (serial_size_t input_channel = 0; input_channel < input_channel_count;
+  for (size_t sample = 0; sample < sample_count; ++sample) {
+    for (size_t input_channel = 0; input_channel < input_channel_count;
          ++input_channel) {
       vec_t &v = a[sample][input_channel];
       uniform_rand(v.begin(), v.end(), -1, 1);
     }
-    for (serial_size_t output_channel = 0;
+    for (size_t output_channel = 0;
          output_channel < output_channel_count; ++output_channel) {
       t[sample][output_channel] = sample % class_count;
     }

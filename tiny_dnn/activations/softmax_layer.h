@@ -20,11 +20,11 @@ class softmax_layer : public activation_layer {
   void forward_activation(const vec_t &x, vec_t &y) override {
     const float_t alpha = *std::max_element(x.begin(), x.end());
     float_t denominator(0);
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] = std::exp(x[j] - alpha);
       denominator += y[j];
     }
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] /= denominator;
     }
   }
@@ -33,7 +33,7 @@ class softmax_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    const serial_size_t len = static_cast<serial_size_t>(dy.size());
+    const size_t len = static_cast<size_t>(dy.size());
 
 // auxilliary vector to store element wise softmax gradients of all elements
 
@@ -41,8 +41,8 @@ class softmax_layer : public activation_layer {
     thread_local
 #endif
       vec_t df(len, 0);
-    for (serial_size_t j = 0; j < x.size(); j++) {
-      for (serial_size_t k = 0; k < x.size(); k++) {
+    for (size_t j = 0; j < x.size(); j++) {
+      for (size_t k = 0; k < x.size(); k++) {
         df[k] = (k == j) ? y[j] * (float_t(1) - y[j]) : -y[k] * y[j];
       }
       // dx = dy * (gradient of softmax)

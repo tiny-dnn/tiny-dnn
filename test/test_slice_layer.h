@@ -41,7 +41,7 @@ TEST(slice, forward_data) {
     std::vector<const tensor_t*> out;
     sl.forward({in}, out);
 
-    for (serial_size_t i = 0; i < 6; i++) {
+    for (size_t i = 0; i < 6; i++) {
       EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0])[0][i]);
       EXPECT_FLOAT_EQ(out1_expected[0][i], (*out[1])[0][i]);
       EXPECT_FLOAT_EQ(out2_expected[0][i], (*out[2])[0][i]);
@@ -52,8 +52,8 @@ TEST(slice, forward_data) {
   {
     auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 6; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 6; j++) {
         EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
       }
     }
@@ -97,8 +97,8 @@ TEST(slice, forward_channels) {
     std::vector<const tensor_t*> out;
     sl.forward({in}, out);
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 2; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 2; j++) {
         EXPECT_FLOAT_EQ(out0_expected[i][j], (*out[0])[i][j]);
         EXPECT_FLOAT_EQ(out1_expected[i][j], (*out[1])[i][j]);
         EXPECT_FLOAT_EQ(out2_expected[i][j], (*out[2])[i][j]);
@@ -109,8 +109,8 @@ TEST(slice, forward_channels) {
   {
     auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 6; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 6; j++) {
         EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
       }
     }

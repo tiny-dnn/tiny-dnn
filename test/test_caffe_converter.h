@@ -692,7 +692,7 @@ TEST(caffe_converter, sigmoid) {
   sigmoid_layer sig(5);
   sig.forward_activation(in, ret2);
 
-  for (serial_size_t i = 0; i < 5; i++) {
+  for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], ret2[i]);
   }
 }
@@ -729,7 +729,7 @@ TEST(caffe_converter, tanh) {
   tanh_layer tanh(5);
   tanh.forward_activation(in, ret2);
 
-  for (serial_size_t i = 0; i < 5; i++) {
+  for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], ret2[i]);
   }
 }
