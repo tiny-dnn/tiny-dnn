@@ -38,7 +38,7 @@ class Tensor {
    * Initializes an empty tensor.
    * @return
    */
-  Tensor() { storage_ = xt::xarray<U>(); }
+  Tensor() { storage_ = Storage(); }
 
   /**
    * Constructor that accepts an initializer list of shape and create a
@@ -48,7 +48,7 @@ class Tensor {
    * @return
    */
   explicit Tensor(std::vector<size_t> const &shape) {
-    storage_ = xt::xarray<U>(shape);
+    storage_ = Storage(shape);
   }
 
   /**
@@ -59,7 +59,7 @@ class Tensor {
    * @return
    */
   explicit Tensor(std::initializer_list<size_t> const &shape) {
-    storage_ = xt::xarray<U>(shape);
+    storage_ = Storage(shape);
   }
 
   /**
@@ -71,7 +71,7 @@ class Tensor {
    * @param value value to fill
    */
   explicit Tensor(std::initializer_list<size_t> const &shape, U value) {
-    storage_ = xt::xarray<U>(shape, value);
+    storage_ = Storage(shape, value);
   }
 
   /**
@@ -208,12 +208,6 @@ auto host_data() {
    * @param shape new shape
    */
   void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
-
-  /**
-   * Reshape tensor
-   * @param shape new shape
-   */
-  void resize(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
