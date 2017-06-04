@@ -557,6 +557,15 @@ TEST(tensor, exp) {
   }
 }
 
+TEST(tensor, dim) {
+  Tensor<float_t> t({2, 2, 2, 2});
+  EXPECT_EQ(t.dim(), 4u);
+  Tensor<float_t> t2({4, 2});
+  EXPECT_EQ(t2.dim(), 2u);
+  auto t3 = t2.subView({0, 2}, {0, 1});
+  EXPECT_EQ(t3.dim(), 2u);
+}
+
 template <size_t N>
 std::ostream &print_tester(std::ostream &os) {
   os << "\nPrinting " << N << "-dimensional Tensor"

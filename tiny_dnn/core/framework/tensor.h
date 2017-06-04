@@ -71,8 +71,7 @@ class Tensor {
    * @param value value to fill
    */
   explicit Tensor(std::initializer_list<size_t> const &shape, U value) {
-    storage_ = xt::xarray<U>(shape);
-    fill(value);
+    storage_ = xt::xarray<U>(shape, value);
   }
 
   /**
@@ -113,13 +112,15 @@ class Tensor {
 
   /**
    *
+   * @return Tensor's number of dimensions
+   */
+  const auto dim() const { return storage_.dimension(); }
+
+  /**
+   *
    * @return the total number of elements in Tensor
    */
-  const size_t size() const {
-    auto shape = storage_.shape();
-    return std::accumulate(shape.begin(), shape.end(), 1,
-                           std::multiplies<size_t>());
-  }
+  const size_t size() const { return storage_.size(); }
 
   /**
    * Access to indexes in tensor
