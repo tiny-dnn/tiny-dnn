@@ -101,7 +101,17 @@ Nothing. All you need is a C++11 compiler.
 tiny-dnn is header-only, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
 
 ```
-cmake .
+cmake . -DBUILD_EXAMPLES=ON
+make
+```
+
+Then change to `examples` directory and run executable files.
+
+If you would like to use IDE like Visual Studio or Xcode, you can also use cmake to generate corresponding files:
+
+```
+cmake . -G "Xcode"            # for Xcode users
+cmake . -G "NMake Makefiles"  # for Windows Visual Studio users
 ```
 
 Then open .sln file in visual studio and build(on windows/msvc), or type ```make``` command(on linux/mac/windows-mingw).
