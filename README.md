@@ -95,7 +95,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * adam
 
 ## Dependencies
-Nothing. All you need is a C++14 compiler.
+Nothing. All you need is a C++14 compiler (gcc 4.9+, clang 3.6+ or VS 2015+).
 
 ## Build
 tiny-dnn is header-only, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:

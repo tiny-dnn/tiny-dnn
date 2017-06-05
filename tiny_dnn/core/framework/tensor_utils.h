@@ -48,7 +48,7 @@ void binary_tensor_tensor_elementwise_operation(Tensor<TD, TDS> &dst,
     throw nn_error("Tensor must have same shape");
   }
 
-  dst.resize(src1.shape());
+  dst.reshape(src1.shape());
 
   auto pdst  = dst.host_begin();
   auto psrc1 = src1.host_begin();
@@ -63,7 +63,7 @@ template <typename TD, typename TDS, typename TS, typename TSS, typename F>
 void unary_tensor_elementwise_operation(Tensor<TD, TDS> &dst,
                                         const Tensor<TS, TSS> &src,
                                         F f) {
-  dst.resize(src.shape());
+  dst.reshape(src.shape());
 
   auto pdst = dst.host_begin();
   auto psrc = src.host_begin();
@@ -83,7 +83,7 @@ void binary_tensor_scalar_operation(Tensor<TD, TDS> &dst,
                                     const Tensor<TS1, TS1S> &src1,
                                     TS2 src2,
                                     F f) {
-  dst.resize(src1.shape());
+  dst.reshape(src1.shape());
 
   auto pdst  = dst.host_begin();
   auto psrc1 = src1.host_begin();
@@ -103,7 +103,7 @@ void binary_scalar_tensor_operation(Tensor<TD, TDS> &dst,
                                     TS1 src1,
                                     const Tensor<TS2, TS2S> &src2,
                                     F f) {
-  dst.resize(src2.shape());
+  dst.reshape(src2.shape());
 
   auto pdst  = dst.host_begin();
   auto psrc2 = src2.host_begin();
@@ -238,7 +238,7 @@ void layer_div(Tensor<TD, TDS> &dst, TS1 src1, const Tensor<TS2, TS2S> &src2) {
 template <typename TD, typename TDS, typename TS1, typename TS1S, typename TS2>
 void layer_div(Tensor<TD, TDS> &dst, const Tensor<TS1, TS1S> &src1, TS2 src2) {
   if (src2 == TS2(0.0)) {
-    dst.resize(src1.shape());
+    dst.reshape(src1.shape());
     dst.fill(std::numeric_limits<TD>::quiet_NaN());
   } else {
     binary_tensor_scalar_operation(dst, src1, src2,
