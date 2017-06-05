@@ -234,6 +234,10 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
         set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -mavx2 -mfma -march=core-avx2")
     endif(USE_AVX2 AND COMPILER_HAS_AVX2_FLAG)
 
+    if(GCC_VERSION_MAJIOR LESS 5)
+        list(APPEND CMAKE_CXX_FLAGS "-fabi-version=6")
+    endif()
+
     # include extra flags to the compiler
     # TODO: add info about those flags.
     set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")

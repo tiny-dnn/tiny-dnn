@@ -1,7 +1,6 @@
 include(CTest)
 enable_testing()
 
-
 include(../cmake/DownloadProject/DownloadProject.cmake)
 #set(gtest_disable_pthreads on) #TODO(randl): Windows?
 download_project(
@@ -14,6 +13,10 @@ download_project(
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
 enable_testing()
+
+if(GCC_VERSION_MAJIOR LESS 5)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fabi-version=6")
+endif()
 
 # in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
 if(MSVC)

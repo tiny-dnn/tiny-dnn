@@ -12,3 +12,10 @@
 #if defined _WIN32 && !defined(__MINGW32__)
 #define CNN_WINDOWS
 #endif
+
+#ifdef _MSC_VER
+#define CNN_MUSTINLINE __forceinline
+#else
+#define CNN_MUSTINLINE __attribute__((always_inline)) inline
+#endif
+
