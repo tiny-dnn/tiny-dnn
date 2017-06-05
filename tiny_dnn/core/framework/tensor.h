@@ -38,7 +38,7 @@ class Tensor {
    * Initializes an empty tensor.
    * @return
    */
-  Tensor() { storage_ = Storage(); }
+  Tensor() {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a
@@ -47,9 +47,7 @@ class Tensor {
    * @param shape array containing N integers, sizes of dimensions
    * @return
    */
-  explicit Tensor(std::vector<size_t> const &shape) {
-    storage_ = Storage(shape);
-  }
+  explicit Tensor(std::vector<size_t> const &shape) : storage_(shape) {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a
@@ -58,9 +56,8 @@ class Tensor {
    * @param shape array containing N integers, sizes of dimensions
    * @return
    */
-  explicit Tensor(std::initializer_list<size_t> const &shape) {
-    storage_ = Storage(shape);
-  }
+  explicit Tensor(std::initializer_list<size_t> const &shape)
+    : storage_(shape) {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a
@@ -70,9 +67,8 @@ class Tensor {
    * @param shape  shape array containing N integers, sizes of dimensions
    * @param value value to fill
    */
-  explicit Tensor(std::initializer_list<size_t> const &shape, U value) {
-    storage_ = Storage(shape, value);
-  }
+  explicit Tensor(std::initializer_list<size_t> const &shape, U value)
+    : storage_(shape, value) {}
 
   /**
    *
