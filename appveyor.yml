@@ -15,6 +15,7 @@ os: Visual Studio 2015
 branches:
   only:
     - master
+    - feat/xtensor_integration
 
 install:
   # Clone submodule

@@ -883,4 +883,4 @@ TEST(serialization, graph_model_and_weights) {
   EXPECT_FLOAT_EQ(res1[1], res2[1]);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

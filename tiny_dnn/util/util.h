@@ -18,6 +18,9 @@
 #include <type_traits>
 #include <vector>
 
+#include "tiny_dnn/xtensor/xarray.hpp"
+#include "tiny_dnn/xtensor/xview.hpp"
+
 #include "tiny_dnn/config.h"
 
 #ifndef CNN_NO_SERIALIZATION
@@ -56,6 +59,9 @@ typedef serial_size_t layer_size_t;  // for backward compatibility
 typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 typedef std::vector<vec_t> tensor_t;
+
+template <typename T>
+using xtensor_t = xt::xexpression<T>;
 
 enum class net_phase { train, test };
 
@@ -381,4 +387,53 @@ std::unique_ptr<T> make_unique(Args &&... args) {
   return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
+// TODO(Randl): Remove after full integration of xtensor
+inline xt::xarray<float_t> to_xtensor(const tensor_t &t) {
+  if (t.size() == 0) return xt::xarray<float_t>({0, 0});
+  xt::xarray<float_t> result = xt::zeros<float_t>({t.size(), t[0].size()});
+  for (serial_size_t i = 0; i < t.size(); ++i)
+    for (serial_size_t j = 0; j < t[0].size(); ++j) result(i, j) = t[i][j];
+  return result;
+}
+
+// TODO(Randl): Remove after full integration
+inline tensor_t from_xtensor(const xt::xarray<float_t> &t) {
+  tensor_t result;
+  for (serial_size_t i = 0; i < t.shape()[0]; ++i) {
+    result.push_back(vec_t());
+    for (serial_size_t j = 0; j < t.shape()[1]; ++j)
+      result.back().push_back(t(i, j));
+  }
+  return result;
+}
+
+// check for value type being some particular type
+template <class ValType, class T>
+using value_type_is =
+  std::enable_if_t<std::is_same<T, typename ValType::value_type>::value>;
+
+template <class ValType>
+using value_is_float = value_type_is<ValType, float>;
+
+template <class ValType>
+using value_is_double = value_type_is<ValType, double>;
+
+// check that whole tuple are xexpressions
+template <typename>
+struct is_xexpression : std::false_type {};
+
+template <typename T>
+struct is_xexpression<xt::xexpression<T>> : std::true_type {};
+
+template <template <typename> class checker, typename... Ts>
+struct are_all : std::true_type {};
+
+template <template <typename> class checker, typename T0, typename... Ts>
+struct are_all<checker, T0, Ts...>
+  : std::integral_constant<bool,
+                           checker<T0>::value &&
+                             are_all<checker, Ts...>::value> {};
+
+template <typename... Ts>
+using are_all_xexpr = are_all<is_xexpression, Ts...>;
 }  // namespace tiny_dnn
