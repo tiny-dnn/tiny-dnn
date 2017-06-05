@@ -23,7 +23,7 @@
 namespace tiny_dnn {
 
 /**
- * applies max-pooing operaton to the spatial data
+ * applies max-pooling operaton to the spatial data
  **/
 class max_pooling_layer : public layer {
  public:
