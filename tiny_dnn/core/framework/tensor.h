@@ -33,7 +33,6 @@ namespace tiny_dnn {
  * Unmutable if kConst == true
  */
 template <typename U         = float_t,
-          size_t kDimensions = 4,
           bool kConst        = false,
           typename Allocator = aligned_allocator<U, 64>>
 class Tensor {
@@ -56,22 +55,8 @@ class Tensor {
    * @return
    */
   Tensor() {
-    offset_ = size_ = size_t(0);
-    storage_ptr_    = std::make_shared<TensorStorageType>();
-  }
-
-  /**
-   * Constructor that assepts an array of shape and create a Tensor with that
-   * shape. For example, given shape = {2,3,4,5,6}, tensor
-   * will be of size 2x3x4x5x6
-   * @param shape array containing N integers, sizes of dimensions
-   * @return
-   */
-  explicit Tensor(const std::array<size_t, kDimensions> &shape) {
-    offset_      = size_t(0);
-    shape_       = shape;
-    size_        = product(shape);
-    storage_ptr_ = std::make_shared<TensorStorageType>(shape);
+    offset_ = size_ = stride_ = size_t(0);
+    storage_ptr_              = std::make_shared<TensorStorageType>();
   }
 
   /**
@@ -82,23 +67,10 @@ class Tensor {
    * @return
    */
   explicit Tensor(const std::vector<size_t> &shape) {
-    offset_ = size_t(0);
-    size_   = product(shape);
-    std::copy(shape.begin(), shape.end(), shape_.begin());
-    storage_ptr_ = std::make_shared<TensorStorageType>(shape);
-  }
-
-  /**
-   * Constructor that assepts an initializer list of shape and create a
-   * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
-   * will be of size 2x3x4x5x6
-   * @param shape array containing N integers, sizes of dimensions
-   * @return
-   */
-  explicit Tensor(std::initializer_list<size_t> const &shape) {
-    offset_ = size_t(0);
-    size_   = product(shape);
-    std::copy(shape.begin(), shape.end(), shape_.begin());
+    offset_      = size_t(0);
+    stride_      = size_t(0);
+    size_        = product(shape);
+    shape_       = shape;
     storage_ptr_ = std::make_shared<TensorStorageType>(shape);
   }
 
@@ -126,7 +98,7 @@ class Tensor {
    *
    * @return the tensor shape
    */
-  const std::array<size_t, kDimensions> &shape() const { return shape_; }
+  const std::vector<size_t> &shape() const { return shape_; }
 
   /**
    * Checked version of access to indexes in tensor (throw exceptions
@@ -152,6 +124,42 @@ class Tensor {
   }
 
   /**
+   * Access to indexes in tensor with or mixed vector/indices
+   * @param vec first indices
+   * @param args rest of indices
+   * @return the value of a specified index in the tensor
+   */
+  template <typename... Args>
+  U host_at(std::vector<size_t> vec, const Args... args) const {
+    std::vector<size_t> rest = {args...};
+    vec.insert(vec.end(), rest.begin(), rest.end());
+    return host_at(vec);
+  }
+
+  /**
+   * Access to indexes in tensor with vector
+   * @param vec vector with first indices
+   * @return the value of a specified index in the tensor
+   */
+  U host_at(std::vector<size_t> vec) const {
+    if (vec.size() != dims())
+      throw nn_error(
+        "Number of indices is different from number "
+        "of dimensions");
+    size_t pos = 0;
+    for (auto it_vec = vec.cbegin(), it_shape = shape_.cbegin();
+         it_vec != vec.cend(); ++it_vec, ++it_shape) {
+      pos *= *it_shape;
+      pos += *it_vec;
+    }
+
+    // TODO(Randl, edgarriba) stride
+    // const size_t total_shift = (dim > 2) ? shift : shift + stride_;
+
+    return *(storage_ptr_->host_data(offset_) + pos);
+  }
+
+  /**
    * Calculate an offset for last dimension.
    * @param d an index of last dimension
    * @return offest from the beginning of the dimesion
@@ -174,16 +182,20 @@ class Tensor {
    */
   template <typename... Args>
   size_t host_pos(const size_t d, const Args... args) const {
-    static_assert(sizeof...(args) < kDimensions, "Wrong number of dimensions");
-    size_t dim = kDimensions - sizeof...(args) - 1;
+    const size_t dim = dims() - sizeof...(args) - 1;
     if (d >= shape_[dim]) {
       throw nn_error("Access tensor out of range.");
     }
-    size_t shift = 1;
-    for (size_t i = dim + 1; i < kDimensions; ++i)
-      shift *= shape_[i];  // TODO(Randl): optimize. Reverse argumets?
 
-    return (d * shift + host_pos(args...));
+    size_t shift = 1;
+    for (size_t i = dim + 1; i < dims(); ++i) {
+      shift *= shape_[i];  // TODO(Randl): optimize. Reverse argumets?
+    }
+
+    // apply stride in case that we are in the last two dimensions
+    const size_t total_shift = (dim > 2) ? shift : shift + stride_;
+
+    return (d * total_shift + host_pos(args...));
   }
 
   template <typename... Args>
@@ -194,7 +206,6 @@ class Tensor {
   template <typename... Args>
   StorageIterator host_iter(const Args... args) const {
     static_assert(!kConst, "Non-constant operation on constant Tensor");
-    static_assert(sizeof...(args) == kDimensions, "Wrong number of dimensions");
     return storage_ptr_->host_data(offset_) + host_pos(args...);
   }
 
@@ -202,10 +213,10 @@ class Tensor {
     return storage_ptr_->host_data(offset_);
   }
 
-  StorageIterator host_data() const {
-    // fromDevice();
-    return storage_ptr_->host_data(offset_);
-  }
+/*StorageIterator host_data() const {
+  // fromDevice();
+  return storage_ptr_->host_data(offset_);
+}*/
 
 // TODO: should we enable this again?
 #if 0
@@ -242,30 +253,34 @@ class Tensor {
 
   // TODO(Randl): variadic template version of reshape
   // TODO(Randl): non-checked version
-  void reshape(const std::array<size_t, kDimensions> &sz) {
+  /*void reshape(const std::array<size_t, kDimensions> &sz) {
     static_assert(!kConst, "Non-constant operation on constant Tensor");
     // No size change for reshape
     if (calcSize() != product(sz)) {
       throw nn_error("Reshape to Tensor of different size.");
     }
     shape_ = sz;
-  }
+  }*/
 
-  void resize(const std::array<size_t, kDimensions> &sz) {
+  void resize(const std::vector<size_t> &shape) {
     if (offset_ != 0 || size_ != storage_ptr_->size()) {
       throw nn_error("Resize of partial view is impossible.");
     }
-    shape_ = sz;
-    storage_ptr_->resize(std::vector<size_t>(sz.begin(), sz.end()));
+    shape_ = shape;
+    storage_ptr_->resize(std::vector<size_t>(shape.begin(), shape.end()));
   }
 
   size_t size() const { return size_; }
 
-  Tensor operator[](size_t index) {
+  size_t stride() const { return stride_; }
+
+  size_t dims() const { return shape_.size(); }
+
+  /*Tensor operator[](size_t index) {
     return Tensor(
       storage_ptr_, offset_ + index * size_ / shape_[0],
       std::array<size_t, kDimensions - 1>(shape_.begin() + 1, shape_.end()));
-  }
+  }*/
 
   /**
    * @brief Returns a sub view from the current tensor with a given size.
@@ -286,7 +301,7 @@ class Tensor {
    * with offset zero
    *
    */
-  Tensor subView(std::initializer_list<size_t> const &new_shape) {
+  Tensor subView(const std::vector<size_t> &new_shape) {
     return subview_impl({}, new_shape);
   }
 
@@ -309,8 +324,8 @@ class Tensor {
    * matrix view from
    *                                                     // offset 4.
    */
-  Tensor subView(std::initializer_list<size_t> const &start,
-                 std::initializer_list<size_t> const &new_shape) {
+  Tensor subView(const std::vector<size_t> &start,
+                 const std::vector<size_t> &new_shape) {
     return subview_impl(start, new_shape);
   }
 
@@ -319,6 +334,8 @@ class Tensor {
    *
    */
   bool isSubView() const { return size_ != storage_ptr_->size(); }
+
+  bool isContiguous() const { return stride_ == size_t(0); }
 
  private:
   /**
@@ -331,11 +348,13 @@ class Tensor {
    */
   explicit Tensor(const TensorStoragePointer storage,
                   const size_t offset,
-                  std::initializer_list<size_t> const &shape) {
+                  const size_t stride,
+                  const std::vector<size_t> &shape) {
     offset_      = offset;
+    stride_      = stride;
     size_        = product(shape);
     storage_ptr_ = storage;
-    std::copy(shape.begin(), shape.end(), shape_.begin());
+    shape_       = shape;
   }
 
   /*
@@ -344,21 +363,23 @@ class Tensor {
    * are bigger than the current dimensions number. Also raises an exception
    * when the requested view size is not feasible.
    */
-  Tensor subview_impl(std::initializer_list<size_t> const &start,
-                      std::initializer_list<size_t> const &new_shape) {
-    if (start.size() > kDimensions || new_shape.size() > kDimensions) {
+  Tensor subview_impl(const std::vector<size_t> &start,
+                      const std::vector<size_t> &new_shape) {
+    if (start.size() > dims() || new_shape.size() > dims()) {
       throw nn_error("Overpassed number of existing dimensions.");
     }
 
     // compute the new offset and check that it's feasible to create
     // the new view.
-    // TODO(edgarriba/randl): add proper tests to this
     const size_t new_offset = offset_ + compute_offset(start, shape_);
     if (new_offset + product(new_shape) > size_) {
       throw nn_error("Cannot create a view from this tensor");
     }
 
-    return Tensor(storage_ptr_, new_offset, new_shape);
+    // computes the stride
+    const size_t new_stride = std::abs(static_cast<int>(shape_.back() - new_shape[1]));
+
+    return Tensor(storage_ptr_, new_offset, new_stride, new_shape);
   }
 
   size_t calcSize() const { return product(shape_); }
@@ -367,11 +388,14 @@ class Tensor {
    * A tensor holds data in C-style nD array, i.e row-major order:
    * the rightmost index “varies the fastest”.
    */
-  std::array<size_t, kDimensions> shape_;
+  std::vector<size_t> shape_;
 
   /* Offset from the beginning of TensorStorage */
   size_t offset_;
   size_t size_;
+
+  /* Offset in case of non-contiguous memory */
+  size_t stride_;
 
   /* pointer to TensorStorage */
   TensorStoragePointer storage_ptr_;

@@ -60,16 +60,6 @@ class TensorStorage {
   explicit TensorStorage(const std::vector<size_t> &shape) { resize(shape); }
 
   /**
-   * Constructor that assepts an initializer list  of shape and create a
-   * TensorStorage with a size equivalent to that shape.
-   * @param shape array containing N integers, sizes of dimensions
-   * @return
-   */
-  explicit TensorStorage(std::initializer_list<size_t> const &shape) {
-    resize(shape);
-  }
-
-  /**
    * Sychronizes data on host and device
    */
   void sync() {
@@ -97,10 +87,6 @@ class TensorStorage {
   }
 
   void resize(const std::vector<size_t> &sz) { host_data_.resize(product(sz)); }
-
-  void resize(std::initializer_list<size_t> const &sz) {
-    host_data_.resize(product(sz), U(0));
-  }
 
   size_t size() const { return host_data_.size(); }
 
