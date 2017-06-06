@@ -12,7 +12,7 @@
 
 namespace tiny_dnn {
 
-enum class parameter_type : int8_t { weight = 0x0001, bias = 0x0002 };
+enum class parameter_type : int8_t { weight = 0x1, bias = 0x2 };
 
 class parameter {
  public:
@@ -54,9 +54,7 @@ class parameter {
 
   bool is_trainable() { return trainable_; }
 
-  void set_trainable() { trainable_ = true; }
-
-  void freeze_trainable() { trainable_ = false; }
+  void set_trainable(bool trainable) { trainable_ = trainable; }
 
   Tensor<float_t> *data() { return &data_; }
 
@@ -64,15 +62,11 @@ class parameter {
 
   void set_data(const Tensor<float_t> &data) { data_ = data; }
 
-  void set_data(const Tensor<float_t> *data) { data_ = *data; }
-
   Tensor<float_t> *grad() { return &grad_; }
 
   const Tensor<float_t> *grad() const { return &grad_; }
 
   void set_grad(const Tensor<float_t> &grad) { grad_ = grad; }
-
-  void set_grad(const Tensor<float_t> *grad) { grad_ = *grad; }
 
   void resize_grad(size_t sample_count) {
     grad_.reshape({sample_count, size()});

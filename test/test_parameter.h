@@ -31,7 +31,7 @@ TEST(parameter, getter_setter) {
   p.set_data(t);
   Tensor<float_t> *pt = p.data();
 
-  for (unsigned int i = 0; i < t.size(); i++) {
+  for (size_t i = 0; i < t.size(); i++) {
     ASSERT_EQ(pt->host_at(i), t.host_at(i));
   }
 }
@@ -46,7 +46,7 @@ TEST(parameter, merge_grads) {
 
   Tensor<float_t> expected{{{6.0, 6.0}, {6.0, 6.0}}};
 
-  for (unsigned int i = 0; i < p.size(); i++) {
+  for (size_t i = 0; i < p.size(); i++) {
     ASSERT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
     ASSERT_EQ(grad0.host_at(1, i), expected.host_at(1, i));
   }
