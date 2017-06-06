@@ -642,8 +642,7 @@ class layer : public node {
   }
 
   void clear_grads() {
-    for (size_t i = 0; i < in_type_.size();
-         i++) {
+    for (size_t i = 0; i < in_type_.size(); i++) {
       ith_in_node(i)->clear_grads();
     }
   }
@@ -651,8 +650,7 @@ class layer : public node {
   void update_weight(optimizer *o, size_t batch_size) {
     float_t rcp_batch_size = float_t(1) / float_t(batch_size);
     auto &diff             = weights_diff_;
-    for (size_t i = 0; i < in_type_.size();
-         i++) {
+    for (size_t i = 0; i < in_type_.size(); i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
         vec_t &target = *get_weight_data(i);
         ith_in_node(i)->merge_grads(&diff);

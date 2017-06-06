@@ -38,8 +38,7 @@ typedef std::shared_ptr<edge> edgeptr_t;
  **/
 class node : public std::enable_shared_from_this<node> {
  public:
-  node(size_t in_size, size_t out_size)
-    : prev_(in_size), next_(out_size) {}
+  node(size_t in_size, size_t out_size) : prev_(in_size), next_(out_size) {}
   virtual ~node() {}
 
   const std::vector<edgeptr_t> &prev() const { return prev_; }

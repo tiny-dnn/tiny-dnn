@@ -48,7 +48,7 @@ void construct_net(N &nn) {
 
   const size_t n_fmaps  = 32;  ///< number of feature maps for upper layer
   const size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
-  const size_t n_fc     = 64;  ///< number of hidden units in fully-connected layer
+  const size_t n_fc = 64;  ///< number of hidden units in fully-connected layer
 
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same)        // C1
      << pool(32, 32, n_fmaps, 2)                          // P2

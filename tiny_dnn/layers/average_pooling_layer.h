@@ -203,9 +203,7 @@ class average_pooling_layer : public partial_connected_layer {
     return {in_, w_, index3d<size_t>(1, 1, out_.depth_)};
   }
 
-  std::vector<index3d<size_t>> out_shape() const override {
-    return {out_};
-  }
+  std::vector<index3d<size_t>> out_shape() const override { return {out_}; }
 
   std::string layer_type() const override { return "ave-pool"; }
 
@@ -241,17 +239,15 @@ class average_pooling_layer : public partial_connected_layer {
   shape3d w_;
 
   static size_t pool_out_dim(size_t in_size,
-                                    size_t pooling_size,
-                                    size_t stride) {
+                             size_t pooling_size,
+                             size_t stride) {
     return static_cast<int>(
       std::ceil((static_cast<float_t>(in_size) - pooling_size) / stride) + 1);
   }
 
-  void init_connection(size_t pooling_size_x,
-                       size_t pooling_size_y) {
+  void init_connection(size_t pooling_size_x, size_t pooling_size_y) {
     for (size_t c = 0; c < in_.depth_; ++c) {
-      for (size_t y = 0; y < in_.height_ - pooling_size_y + 1;
-           y += stride_y_) {
+      for (size_t y = 0; y < in_.height_ - pooling_size_y + 1; y += stride_y_) {
         for (size_t x = 0; x < in_.width_ - pooling_size_x + 1;
              x += stride_x_) {
           connect_kernel(pooling_size_x, pooling_size_y, x, y, c);

@@ -64,9 +64,8 @@ class partial_connected_layer : public layer {
     tensor_t &out      = *out_data[0];
 
     // @todo revise the parallelism strategy
-    for (size_t sample       = 0,
-                       sample_count = in.size();
-         sample < sample_count; ++sample) {
+    for (size_t sample = 0, sample_count = in.size(); sample < sample_count;
+         ++sample) {
       vec_t &out_sample = out[sample];
 
       for_i(out2wi_.size(), [&](size_t i) {
@@ -97,9 +96,7 @@ class partial_connected_layer : public layer {
     tensor_t &curr_delta     = *out_grad[0];
 
     // @todo revise the parallelism strategy
-    for (size_t
-           sample       = 0,
-           sample_count = prev_out.size();
+    for (size_t sample = 0, sample_count = prev_out.size();
          sample < sample_count; ++sample) {
       for_i(in2wo_.size(), [&](size_t i) {
         const wo_connections &connections = in2wo_[i];

@@ -28,8 +28,7 @@ class activation_layer : public layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  activation_layer(size_t in_dim)
-    : activation_layer(shape3d(in_dim, 1, 1)) {}
+  activation_layer(size_t in_dim) : activation_layer(shape3d(in_dim, 1, 1)) {}
 
   /**
    * Construct an activation layer with specified width, height and channels.
@@ -40,9 +39,7 @@ class activation_layer : public layer {
    * @param in_height   [in] number of input elements along height
    * @param in_channels [in] number of channels (input elements along depth)
    */
-  activation_layer(size_t in_width,
-                   size_t in_height,
-                   size_t in_channels)
+  activation_layer(size_t in_width, size_t in_height, size_t in_channels)
     : activation_layer(shape3d(in_width, in_height, in_channels)) {}
 
   /**

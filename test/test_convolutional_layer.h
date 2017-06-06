@@ -17,26 +17,21 @@ namespace tiny_dnn {
 TEST(convolutional, setup_internal) {
   convolutional_layer l(5, 5, 3, 1, 2);
 
-  EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), size_t(3));  // num of input tensors
+  EXPECT_EQ(l.parallelize(), true);          // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), size_t(3));     // num of input tensors
   EXPECT_EQ(l.out_channels(), size_t(1));    // num of output tensors
   EXPECT_EQ(l.in_data_size(), size_t(25));   // size of input tensors
   EXPECT_EQ(l.out_data_size(), size_t(18));  // size of output tensors
-  EXPECT_EQ(l.in_data_shape().size(),
-            size_t(1));  // number of inputs shapes
-  EXPECT_EQ(l.out_data_shape().size(),
-            size_t(1));                      // num of output shapes
-  EXPECT_EQ(l.weights().size(), size_t(2));  // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(),
-            size_t(2));                       // the wieghts vector size
-  EXPECT_EQ(l.inputs().size(), size_t(3));    // num of input edges
-  EXPECT_EQ(l.outputs().size(), size_t(1));   // num of outpus edges
-  EXPECT_EQ(l.in_types().size(), size_t(3));  // num of input data types
-  EXPECT_EQ(l.out_types().size(),
-            size_t(1));                   // num of output data types
-  EXPECT_EQ(l.fan_in_size(), size_t(9));  // num of incoming connections
-  EXPECT_EQ(l.fan_out_size(),
-            size_t(18));                  // num of outgoing connections
+  EXPECT_EQ(l.in_data_shape().size(), size_t(1));   // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), size_t(1));  // num of output shapes
+  EXPECT_EQ(l.weights().size(), size_t(2));         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), size_t(2));   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), size_t(3));          // num of input edges
+  EXPECT_EQ(l.outputs().size(), size_t(1));         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), size_t(3));        // num of input data types
+  EXPECT_EQ(l.out_types().size(), size_t(1));       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), size_t(9));         // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), size_t(18));       // num of outgoing connections
   EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
 }
 

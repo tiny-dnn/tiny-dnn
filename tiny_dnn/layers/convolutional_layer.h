@@ -65,8 +65,8 @@ class convolutional_layer : public layer {
                       size_t out_channels,
                       padding pad_type       = padding::valid,
                       bool has_bias          = true,
-                      size_t w_stride = 1,
-                      size_t h_stride = 1,
+                      size_t w_stride        = 1,
+                      size_t h_stride        = 1,
                       backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -114,8 +114,8 @@ class convolutional_layer : public layer {
                       size_t out_channels,
                       padding pad_type       = padding::valid,
                       bool has_bias          = true,
-                      size_t w_stride = 1,
-                      size_t h_stride = 1,
+                      size_t w_stride        = 1,
+                      size_t h_stride        = 1,
                       backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -164,8 +164,8 @@ class convolutional_layer : public layer {
                       const connection_table &connection_table,
                       padding pad_type       = padding::valid,
                       bool has_bias          = true,
-                      size_t w_stride = 1,
-                      size_t h_stride = 1,
+                      size_t w_stride        = 1,
+                      size_t h_stride        = 1,
                       backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -216,8 +216,8 @@ class convolutional_layer : public layer {
                       const connection_table &connection_table,
                       padding pad_type       = padding::valid,
                       bool has_bias          = true,
-                      size_t w_stride = 1,
-                      size_t h_stride = 1,
+                      size_t w_stride        = 1,
+                      size_t h_stride        = 1,
                       backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
@@ -356,9 +356,9 @@ class convolutional_layer : public layer {
   image<> weight_to_image() const {
     image<> img;
     const size_t border_width = 1;
-    const auto pitch                 = params_.weight.width_ + border_width;
-    const auto width  = params_.out.depth_ * pitch + border_width;
-    const auto height = params_.in.depth_ * pitch + border_width;
+    const auto pitch          = params_.weight.width_ + border_width;
+    const auto width          = params_.out.depth_ * pitch + border_width;
+    const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
     const vec_t &W                      = *this->weights()[0];
 
@@ -434,29 +434,29 @@ class convolutional_layer : public layer {
   }
 
   size_t in_length(size_t in_length,
-                          size_t window_size,
-                          padding pad_type) const {
+                   size_t window_size,
+                   padding pad_type) const {
     return pad_type == padding::same ? (in_length + window_size - 1)
                                      : in_length;
   }
 
   static size_t conv_out_dim(size_t in_width,
-                                    size_t in_height,
-                                    size_t window_size,
-                                    size_t w_stride,
-                                    size_t h_stride,
-                                    padding pad_type) {
+                             size_t in_height,
+                             size_t window_size,
+                             size_t w_stride,
+                             size_t h_stride,
+                             padding pad_type) {
     return conv_out_length(in_width, window_size, w_stride, pad_type) *
            conv_out_length(in_height, window_size, h_stride, pad_type);
   }
 
   size_t conv_out_dim(size_t in_width,
-                             size_t in_height,
-                             size_t window_width,
-                             size_t window_height,
-                             size_t w_stride,
-                             size_t h_stride,
-                             padding pad_type) const {
+                      size_t in_height,
+                      size_t window_width,
+                      size_t window_height,
+                      size_t w_stride,
+                      size_t h_stride,
+                      padding pad_type) const {
     return conv_out_length(in_width, window_width, w_stride, pad_type) *
            conv_out_length(in_height, window_height, h_stride, pad_type);
   }

@@ -48,7 +48,7 @@ inline void accumulate_db(const index3d<size_t> &out,
     };
     __m256i mask = _mm256_loadu_si256((const __m256i *)(masks + 8 - remainder));
     for (size_t outc = 0; outc < out.depth_; ++outc) {
-      size_t idx = out.get_index(0, 0, outc);
+      size_t idx         = out.get_index(0, 0, outc);
       const float *delta = &curr_delta[idx];
       __m256 sum0        = _mm256_setzero_ps();
       __m256 sum1        = _mm256_setzero_ps();
@@ -118,8 +118,7 @@ inline void accumulate_dw(const core::conv_params &params,
   if (out.width_ == 1 && out.height_ == 1) {
     const float *pprev_out = &prev_out[0];
     alignas(32) float floats[28];
-    for (size_t inc = 0; inc < in.depth_;
-         ++inc, pprev_out += in_padded_area) {
+    for (size_t inc = 0; inc < in.depth_; ++inc, pprev_out += in_padded_area) {
       size_t in_padded_width = in_padded.width_;
       _mm256_store_ps(&floats[0],
                       _mm256_loadu_ps(pprev_out + in_padded_width * 0));
@@ -131,15 +130,14 @@ inline void accumulate_dw(const core::conv_params &params,
                        _mm256_loadu_ps(pprev_out + in_padded_width * 3));
       _mm256_storeu_ps(&floats[20], _mm256_maskload_ps(
                                       pprev_out + in_padded_width * 4, imask));
-      __m256 prevos0           = _mm256_load_ps(&floats[0]);
-      __m256 prevos1           = _mm256_load_ps(&floats[8]);
-      __m256 prevos2           = _mm256_load_ps(&floats[16]);
-      __m128 prevos3           = _mm_load_ss(&floats[24]);
+      __m256 prevos0    = _mm256_load_ps(&floats[0]);
+      __m256 prevos1    = _mm256_load_ps(&floats[8]);
+      __m256 prevos2    = _mm256_load_ps(&floats[16]);
+      __m128 prevos3    = _mm_load_ss(&floats[24]);
       size_t widx       = 25 * inc;
       size_t widx_delta = 25 * in.depth_;
-      float *pdW               = &dW[widx];
-      for (size_t outc = 0; outc < out.depth_;
-           outc++, pdW += widx_delta) {
+      float *pdW        = &dW[widx];
+      for (size_t outc = 0; outc < out.depth_; outc++, pdW += widx_delta) {
         if (!tbl.is_connected(outc, inc)) {
           continue;
         }
@@ -185,9 +183,8 @@ inline void accumulate_dw(const core::conv_params &params,
           for (size_t wy = 0; wy < 5; ++wy) {
             // weight.width_
             for (size_t wx = 0; wx < 5; ++wx, ++widx) {
-              size_t prev_out_idx =
-                in_padded.get_index(wx, wy, inc);
-              const float *prevo = &prev_out[prev_out_idx];
+              size_t prev_out_idx = in_padded.get_index(wx, wy, inc);
+              const float *prevo  = &prev_out[prev_out_idx];
               float_t dst{0};
               for (size_t y = 0, prevo_idx = 0, delta_idx = 0; y < out_height;
                    ++y, prevo_idx += prevo_delta, delta_idx += out_width) {
@@ -208,14 +205,13 @@ inline void accumulate_dw(const core::conv_params &params,
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-          size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+          size_t widx        = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
-            size_t prev_out_idx =
-              in_padded.get_index(0, wy, inc);
-            const float *pa = &prev_out[prev_out_idx];
-            const float *pb = delta;
+            size_t prev_out_idx = in_padded.get_index(0, wy, inc);
+            const float *pa     = &prev_out[prev_out_idx];
+            const float *pb     = delta;
             // y = 0
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
             for (size_t y = 0; y < out_height; ++y) {
@@ -261,14 +257,13 @@ inline void accumulate_dw(const core::conv_params &params,
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-          size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+          size_t widx        = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
-            size_t prev_out_idx =
-              in_padded.get_index(0, wy, inc);
-            const float *pa = &prev_out[prev_out_idx];
-            const float *pb = delta;
+            size_t prev_out_idx = in_padded.get_index(0, wy, inc);
+            const float *pa     = &prev_out[prev_out_idx];
+            const float *pb     = delta;
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
             for (size_t y = 0; y < out_height;
                  ++y, pa += prevo_delta, pb += out_width) {
@@ -337,14 +332,13 @@ inline void accumulate_dw(const core::conv_params &params,
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-          size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+          size_t widx        = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
-            size_t prev_out_idx =
-              in_padded.get_index(0, wy, inc);
-            const float *pa = &prev_out[prev_out_idx];
-            const float *pb = delta;
+            size_t prev_out_idx = in_padded.get_index(0, wy, inc);
+            const float *pa     = &prev_out[prev_out_idx];
+            const float *pb     = delta;
             // vectorize::dot
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
             for (size_t y = 0; y < out_height; ++y) {
@@ -380,14 +374,13 @@ inline void accumulate_dw(const core::conv_params &params,
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-          size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+          size_t widx        = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
-            size_t prev_out_idx =
-              in_padded.get_index(0, wy, inc);
-            const float *pa = &prev_out[prev_out_idx];
-            const float *pb = delta;
+            size_t prev_out_idx = in_padded.get_index(0, wy, inc);
+            const float *pa     = &prev_out[prev_out_idx];
+            const float *pb     = delta;
             // vectorize::dot
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
             for (size_t y = 0; y < out_height; ++y) {
@@ -424,14 +417,13 @@ inline void accumulate_dw(const core::conv_params &params,
             continue;
           }
           const float *delta = &curr_delta[out.get_index(0, 0, outc)];
-          size_t widx = weight.get_index(0, 0, in.depth_ * outc + inc);
+          size_t widx        = weight.get_index(0, 0, in.depth_ * outc + inc);
           float *pdw         = &dW[widx];
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
-            size_t prev_out_idx =
-              in_padded.get_index(0, wy, inc);
-            const float *pa = &prev_out[prev_out_idx];
-            const float *pb = delta;
+            size_t prev_out_idx = in_padded.get_index(0, wy, inc);
+            const float *pa     = &prev_out[prev_out_idx];
+            const float *pb     = delta;
             // vectorize::dot
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
             for (size_t y = 0; y < out_height; ++y) {
@@ -623,34 +615,34 @@ void avx_conv2d_5x5_back_kernel_one(
           const float *pw         = &W[25 * (in.depth_ * outc + inc)];
           const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
           float *pdelta_dst       = pdelta_dst_org;
-          __m256 w0a      = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
-          __m256 w1a      = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
-          __m256 w2a      = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
-          __m256 w3a      = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-          __m256 w4a      = _mm256_maskload_ps(pw + 20, imask);
-          __m256 w0b      = leftShift<4>(w0a);
-          __m256 w1b      = leftShift<4>(w1a);
-          __m256 w2b      = leftShift<4>(w2a);
-          __m256 w3b      = leftShift<4>(w3a);
-          __m256 w4b      = leftShift<4>(w4a);
-          __m256 w0c      = leftShift<8>(w0a);
-          __m256 w1c      = leftShift<8>(w1a);
-          __m256 w2c      = leftShift<8>(w2a);
-          __m256 w3c      = leftShift<8>(w3a);
-          __m256 w4c      = leftShift<8>(w4a);
-          __m256 w0d      = leftShift<12>(w0a);
-          __m256 w1d      = leftShift<12>(w1a);
-          __m256 w2d      = leftShift<12>(w2a);
-          __m256 w3d      = leftShift<12>(w3a);
-          __m256 w4d      = leftShift<12>(w4a);
-          size_t y = 0;
+          __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+          __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+          __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+          __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+          __m256 w4a = _mm256_maskload_ps(pw + 20, imask);
+          __m256 w0b = leftShift<4>(w0a);
+          __m256 w1b = leftShift<4>(w1a);
+          __m256 w2b = leftShift<4>(w2a);
+          __m256 w3b = leftShift<4>(w3a);
+          __m256 w4b = leftShift<4>(w4a);
+          __m256 w0c = leftShift<8>(w0a);
+          __m256 w1c = leftShift<8>(w1a);
+          __m256 w2c = leftShift<8>(w2a);
+          __m256 w3c = leftShift<8>(w3a);
+          __m256 w4c = leftShift<8>(w4a);
+          __m256 w0d = leftShift<12>(w0a);
+          __m256 w1d = leftShift<12>(w1a);
+          __m256 w2d = leftShift<12>(w2a);
+          __m256 w3d = leftShift<12>(w3a);
+          __m256 w4d = leftShift<12>(w4a);
+          size_t y   = 0;
           do {
             float *delta_dst0 = pdelta_dst;
             float *delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
             float *delta_dst2 = &pdelta_dst[in_padded.width_ * 2];
             float *delta_dst3 = &pdelta_dst[in_padded.width_ * 3];
             float *delta_dst4 = &pdelta_dst[in_padded.width_ * 4];
-            size_t n   = 0;
+            size_t n          = 0;
             do {
               __m256 delta_src =
                 _mm256_broadcast_ps((const __m128 *)(pdelta_src + n * 4));

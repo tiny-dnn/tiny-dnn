@@ -113,12 +113,8 @@ class max_unpooling_layer : public layer {
     }
   }
 
-  std::vector<index3d<size_t>> in_shape() const override {
-    return {in_};
-  }
-  std::vector<index3d<size_t>> out_shape() const override {
-    return {out_};
-  }
+  std::vector<index3d<size_t>> in_shape() const override { return {in_}; }
+  std::vector<index3d<size_t>> out_shape() const override { return {out_}; }
   std::string layer_type() const override { return "max-unpool"; }
   size_t unpool_size() const { return unpool_size_; }
 
@@ -131,8 +127,7 @@ class max_unpooling_layer : public layer {
   std::vector<std::vector<size_t>> in2out_;  // mapping in => out (1:N)
 
   struct worker_specific_storage {
-    std::vector<size_t>
-      in2outmax_;  // mapping max_index(out) => in (1:1)
+    std::vector<size_t> in2outmax_;  // mapping max_index(out) => in (1:1)
   };
 
   worker_specific_storage worker_storage_;
@@ -141,26 +136,19 @@ class max_unpooling_layer : public layer {
   index3d<size_t> out_;
 
   static size_t unpool_out_dim(size_t in_size,
-                                      size_t unpooling_size,
-                                      size_t stride) {
-    return static_cast<int64_t>(in_size) * stride +
-                                      unpooling_size - 1;
+                               size_t unpooling_size,
+                               size_t stride) {
+    return static_cast<int64_t>(in_size) * stride + unpooling_size - 1;
   }
 
-  void connect_kernel(size_t unpooling_size,
-                      size_t inx,
-                      size_t iny,
-                      size_t c) {
-    const size_t dxmax = 
-      std::min(unpooling_size, inx * stride_ - out_.width_);
-    const size_t dymax =
-      std::min(unpooling_size, iny * stride_ - out_.height_);
+  void connect_kernel(size_t unpooling_size, size_t inx, size_t iny, size_t c) {
+    const size_t dxmax = std::min(unpooling_size, inx * stride_ - out_.width_);
+    const size_t dymax = std::min(unpooling_size, iny * stride_ - out_.height_);
 
     for (size_t dy = 0; dy < dymax; dy++) {
       for (size_t dx = 0; dx < dxmax; dx++) {
         size_t out_index =
-          out_.get_index(inx * stride_ + dx,
-                         iny * stride_ + dy, c);
+          out_.get_index(inx * stride_ + dx, iny * stride_ + dy, c);
         size_t in_index = in_.get_index(inx, iny, c);
 
         if (in_index >= in2out_.size()) throw nn_error("index overflow");

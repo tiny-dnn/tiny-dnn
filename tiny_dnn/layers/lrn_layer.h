@@ -116,10 +116,10 @@ class lrn_layer : public layer {
       add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
     }
 
-    size_t head     = size_ / 2;
-    long tail              = static_cast<long>(head) - static_cast<long>(size_);
-    size_t channels = in_shape_.depth_;
-    const size_t wxh      = in_shape_.area();
+    size_t head      = size_ / 2;
+    long tail        = static_cast<long>(head) - static_cast<long>(size_);
+    size_t channels  = in_shape_.depth_;
+    const size_t wxh = in_shape_.area();
     const float_t alpha_div_size = alpha_ / size_;
 
     for (size_t i = 0; i < channels; i++, head++, tail++) {
@@ -134,7 +134,7 @@ class lrn_layer : public layer {
       float_t *dst       = &out[in_shape_.get_index(0, 0, i)];
       const float_t *src = &in[in_shape_.get_index(0, 0, i)];
       for (size_t j = 0; j < wxh; j++)
-        dst[j]             = src[j] *
+        dst[j]      = src[j] *
                  std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
     }
   }

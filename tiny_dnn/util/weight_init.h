@@ -14,9 +14,7 @@ namespace weight_init {
 
 class function {
  public:
-  virtual void fill(vec_t *weight,
-                    size_t fan_in,
-                    size_t fan_out) = 0;
+  virtual void fill(vec_t *weight, size_t fan_in, size_t fan_out) = 0;
 };
 
 class scalable : public function {
@@ -41,9 +39,7 @@ class xavier : public scalable {
   xavier() : scalable(float_t(6)) {}
   explicit xavier(float_t value) : scalable(value) {}
 
-  void fill(vec_t *weight,
-            size_t fan_in,
-            size_t fan_out) override {
+  void fill(vec_t *weight, size_t fan_in, size_t fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
     uniform_rand(weight->begin(), weight->end(), -weight_base, weight_base);
@@ -62,9 +58,7 @@ class lecun : public scalable {
   lecun() : scalable(float_t{1}) {}
   explicit lecun(float_t value) : scalable(value) {}
 
-  void fill(vec_t *weight,
-            size_t fan_in,
-            size_t fan_out) override {
+  void fill(vec_t *weight, size_t fan_in, size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
     const float_t weight_base = scale_ / std::sqrt(float_t(fan_in));
@@ -78,9 +72,7 @@ class gaussian : public scalable {
   gaussian() : scalable(float_t{1}) {}
   explicit gaussian(float_t sigma) : scalable(sigma) {}
 
-  void fill(vec_t *weight,
-            size_t fan_in,
-            size_t fan_out) override {
+  void fill(vec_t *weight, size_t fan_in, size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -93,9 +85,7 @@ class constant : public scalable {
   constant() : scalable(float_t{0}) {}
   explicit constant(float_t value) : scalable(value) {}
 
-  void fill(vec_t *weight,
-            size_t fan_in,
-            size_t fan_out) override {
+  void fill(vec_t *weight, size_t fan_in, size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
@@ -108,9 +98,7 @@ class he : public scalable {
   he() : scalable(float_t{2}) {}
   explicit he(float_t value) : scalable(value) {}
 
-  void fill(vec_t *weight,
-            size_t fan_in,
-            size_t fan_out) override {
+  void fill(vec_t *weight, size_t fan_in, size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_out);
 
     const float_t sigma = std::sqrt(scale_ / fan_in);

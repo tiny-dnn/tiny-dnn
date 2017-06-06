@@ -19,25 +19,23 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
                                  const vec_t &bias,
                                  tensor_t &out,
                                  const bool layer_parallelize) {
-  for_i(layer_parallelize, in.size(), [&](int sample) {
+  for_i(layer_parallelize, in.size(), [&](size_t sample) {
     for (size_t o = 0; o < params.out.depth_; o++) {
       for (size_t inc = 0; inc < params.in.depth_; inc++) {
         if (!params.tbl.is_connected(o, inc)) continue;
 
         size_t idx = 0;
-        idx               = params.in.depth_ * o + inc;
-        idx               = params.weight.get_index(0, 0, idx);
+        idx        = params.in.depth_ * o + inc;
+        idx        = params.weight.get_index(0, 0, idx);
         assert(idx < W.size());
         const float_t *pw = &W[idx];
 
         idx = params.in.get_index(0, 0, inc);
-        assert(sample < in.size() &&
-               idx <= in[sample].size());
+        assert(sample < in.size() && idx <= in[sample].size());
         const float_t *pi = &in[sample][idx];
 
         idx = params.out.get_index(0, 0, o);
-        assert(sample < out.size() &&
-               idx <= out[sample].size());
+        assert(sample < out.size() && idx <= out[sample].size());
         float_t *pout = &out[sample][idx];
 
         for (size_t y = 0; y < params.in.height_; y++) {

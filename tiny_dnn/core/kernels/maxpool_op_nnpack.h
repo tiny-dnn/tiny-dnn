@@ -28,8 +28,7 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
 
   const nnp_size pooling_size = {params.pool_size_x, params.pool_size_y};
 
-  const nnp_size pooling_stride = {params.stride_x,
-                                   params.stride_y};
+  const nnp_size pooling_stride = {params.stride_x, params.stride_y};
 
   const float *input_ptr = in_data[0].data();
   float *output_ptr      = out_data[0].data();

@@ -64,8 +64,8 @@ class deconvolutional_layer : public layer {
                         size_t out_channels,
                         padding pad_type       = padding::valid,
                         bool has_bias          = true,
-                        size_t w_stride = 1,
-                        size_t h_stride = 1,
+                        size_t w_stride        = 1,
+                        size_t h_stride        = 1,
                         backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
@@ -107,8 +107,8 @@ class deconvolutional_layer : public layer {
                         size_t out_channels,
                         padding pad_type       = padding::valid,
                         bool has_bias          = true,
-                        size_t w_stride = 1,
-                        size_t h_stride = 1,
+                        size_t w_stride        = 1,
+                        size_t h_stride        = 1,
                         backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
@@ -150,8 +150,8 @@ class deconvolutional_layer : public layer {
                         const connection_table &connection_table,
                         padding pad_type       = padding::valid,
                         bool has_bias          = true,
-                        size_t w_stride = 1,
-                        size_t h_stride = 1,
+                        size_t w_stride        = 1,
+                        size_t h_stride        = 1,
                         backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
@@ -195,8 +195,8 @@ class deconvolutional_layer : public layer {
                         const connection_table &connection_table,
                         padding pad_type       = padding::valid,
                         bool has_bias          = true,
-                        size_t w_stride = 1,
-                        size_t h_stride = 1,
+                        size_t w_stride        = 1,
+                        size_t h_stride        = 1,
                         backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
@@ -271,9 +271,9 @@ class deconvolutional_layer : public layer {
   image<> weight_to_image() const {
     image<> img;
     const size_t border_width = 1;
-    const auto pitch                 = params_.weight.width_ + border_width;
-    const auto width  = params_.out.depth_ * pitch + border_width;
-    const auto height = params_.in.depth_ * pitch + border_width;
+    const auto pitch          = params_.weight.width_ + border_width;
+    const auto width          = params_.out.depth_ * pitch + border_width;
+    const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
     const vec_t &W                      = *this->weights()[0];
 
@@ -381,33 +381,32 @@ class deconvolutional_layer : public layer {
   }
 
   size_t in_length(size_t in_length,
-                          size_t window_size,
-                          padding pad_type) const {
+                   size_t window_size,
+                   padding pad_type) const {
     return in_length;
   }
 
   static size_t deconv_out_length(size_t in_length,
-                                         size_t window_size,
-                                         size_t stride) {
+                                  size_t window_size,
+                                  size_t stride) {
     return (size_t)ceil((float_t)(in_length)*stride + window_size - 1);
   }
 
   static size_t deconv_out_unpadded_length(size_t in_length,
-                                                  size_t window_size,
-                                                  size_t stride,
-                                                  padding pad_type) {
+                                           size_t window_size,
+                                           size_t stride,
+                                           padding pad_type) {
     return pad_type == padding::same
              ? (size_t)ceil((float_t)in_length * stride)
-             : (size_t)ceil((float_t)(in_length)*stride + window_size -
-                                   1);
+             : (size_t)ceil((float_t)(in_length)*stride + window_size - 1);
   }
 
   static size_t deconv_out_dim(size_t in_width,
-                                      size_t in_height,
-                                      size_t window_size,
-                                      size_t w_stride,
-                                      size_t h_stride,
-                                      padding pad_type) {
+                               size_t in_height,
+                               size_t window_size,
+                               size_t w_stride,
+                               size_t h_stride,
+                               padding pad_type) {
     return deconv_out_unpadded_length(in_width, window_size, w_stride,
                                       pad_type) *
            deconv_out_unpadded_length(in_height, window_size, h_stride,
@@ -415,12 +414,12 @@ class deconvolutional_layer : public layer {
   }
 
   size_t deconv_out_dim(size_t in_width,
-                               size_t in_height,
-                               size_t window_width,
-                               size_t window_height,
-                               size_t w_stride,
-                               size_t h_stride,
-                               padding pad_type) const {
+                        size_t in_height,
+                        size_t window_width,
+                        size_t window_height,
+                        size_t w_stride,
+                        size_t h_stride,
+                        padding pad_type) const {
     return deconv_out_unpadded_length(in_width, window_width, w_stride,
                                       pad_type) *
            deconv_out_unpadded_length(in_height, window_height, h_stride,
@@ -461,7 +460,7 @@ class deconvolutional_layer : public layer {
       // make unpadded version in order to restore scale in fprop/bprop
       for (size_t sample = 0; sample < out.size(); sample++) {
         size_t idx           = 0;
-        vec_t &dst                  = (*dst_tensor)[sample];
+        vec_t &dst           = (*dst_tensor)[sample];
         size_t wieght_w_half = params_.weight.width_ / 2;
         size_t wieght_h_half = params_.weight.height_ / 2;
 
@@ -473,7 +472,7 @@ class deconvolutional_layer : public layer {
           for (size_t y = wieght_h_half;
                y < params_.out_unpadded.height_ + wieght_h_half;
                y++, pout += params_.out.width_,
-                             pimg += params_.out_unpadded.width_) {
+                      pimg += params_.out_unpadded.width_) {
             std::copy(pout, pout + params_.out_unpadded.width_, pimg);
           }
         }

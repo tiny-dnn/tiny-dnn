@@ -24,9 +24,7 @@ struct connection_table {
     : connected_(rows * cols), rows_(rows), cols_(cols) {
     std::copy(ar, ar + rows * cols, connected_.begin());
   }
-  connection_table(size_t ngroups,
-                   size_t rows,
-                   size_t cols)
+  connection_table(size_t ngroups, size_t rows, size_t cols)
     : connected_(rows * cols, false), rows_(rows), cols_(cols) {
     if (rows % ngroups || cols % ngroups) {
       throw nn_error("invalid group size");

@@ -109,9 +109,7 @@ class max_pooling_layer : public layer {
     init_backend(std::move(layer::engine()));
   }
 
-  size_t fan_in_size() const override {
-    return params_.out2in[0].size();
-  }
+  size_t fan_in_size() const override { return params_.out2in[0].size(); }
 
   size_t fan_out_size() const override { return 1; }
 
@@ -184,19 +182,16 @@ class max_pooling_layer : public layer {
                       size_t outx,
                       size_t outy,
                       size_t c) {
-    size_t dxmax = 
-      std::min(pooling_size_x,
-               params_.in.width_ - outx * params_.stride_x);
+    size_t dxmax =
+      std::min(pooling_size_x, params_.in.width_ - outx * params_.stride_x);
 
-    size_t dymax = 
-      std::min(pooling_size_y,
-               params_.in.height_ - outy * params_.stride_y);
+    size_t dymax =
+      std::min(pooling_size_y, params_.in.height_ - outy * params_.stride_y);
 
     for (size_t dy = 0; dy < dymax; dy++) {
       for (size_t dx = 0; dx < dxmax; dx++) {
-        size_t in_index = params_.in.get_index(
-          outx * params_.stride_x + dx,
-          outy * params_.stride_y + dy, c);
+        size_t in_index = params_.in.get_index(outx * params_.stride_x + dx,
+                                               outy * params_.stride_y + dy, c);
         size_t out_index = params_.out.get_index(outx, outy, c);
 
         if (in_index >= params_.in2out.size()) {

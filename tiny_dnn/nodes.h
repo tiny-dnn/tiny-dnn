@@ -175,9 +175,7 @@ class nodes {
     }
   }
 
-  void label2vec(const label_t *t,
-                 size_t num,
-                 std::vector<vec_t> &vec) const {
+  void label2vec(const label_t *t, size_t num, std::vector<vec_t> &vec) const {
     size_t outdim = out_data_size();
 
     vec.reserve(num);
@@ -190,8 +188,7 @@ class nodes {
 
   void label2vec(const std::vector<label_t> &labels,
                  std::vector<vec_t> &vec) const {
-    return label2vec(&labels[0], labels.size(),
-                     vec);
+    return label2vec(&labels[0], labels.size(), vec);
   }
 
   template <typename OutputArchive>
@@ -482,9 +479,7 @@ class graph : public nodes {
 #endif  // CNN_NO_SERIALIZATION
     }
 
-    std::vector<
-      std::tuple<size_t, size_t, size_t, size_t>>
-      connections;
+    std::vector<std::tuple<size_t, size_t, size_t, size_t>> connections;
     std::vector<size_t> in_nodes, out_nodes;
   };
 
@@ -508,7 +503,7 @@ class graph : public nodes {
     for (auto l : input_layers_) {
       graph_traverse(l, [=](layer &l) { CNN_UNREFERENCED_PARAMETER(l); },
                      [&](edge &e) {
-                       auto next                = e.next();
+                       auto next         = e.next();
                        size_t head_index = e.prev()->next_port(e);
 
                        for (auto n : next) {

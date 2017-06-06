@@ -30,7 +30,8 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
 
   // input data passed by convolution layer has been padded already
   // set input_size to padded size
-  const nnp_size input_size = {params.in_padded.width_, params.in_padded.height_};
+  const nnp_size input_size = {params.in_padded.width_,
+                               params.in_padded.height_};
 
   const nnp_size kernel_size = {params.weight.width_, params.weight.height_};
 

@@ -783,8 +783,8 @@ class network {
            i += batch_size) {
         train_once<Error>(
           optimizer, &inputs[i], &desired_outputs[i],
-          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)), n_threads,
-          get_target_cost_sample_pointer(t_cost, i));
+          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)),
+          n_threads, get_target_cost_sample_pointer(t_cost, i));
         on_batch_enumerate();
 
         /* if (i % 100 == 0 && layers_.is_exploded()) {

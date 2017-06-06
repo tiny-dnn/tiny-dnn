@@ -24,11 +24,10 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   float_t min_input(in[0]);
   float_t max_input(in[0]);
   for (size_t inc = 0; inc < params.in.depth_; inc++) {
-    for (size_t ins = 0; ins < params.in.height_ * params.in.height_;
-         ins++) {
+    for (size_t ins = 0; ins < params.in.height_ * params.in.height_; ins++) {
       size_t idx = params.in.get_index(0, 0, inc);
-      min_input         = std::min(min_input, (&in[idx])[ins]);
-      max_input         = std::max(max_input, (&in[idx])[ins]);
+      min_input  = std::min(min_input, (&in[idx])[ins]);
+      max_input  = std::max(max_input, (&in[idx])[ins]);
     }
   }
   std::vector<uint8_t> in_quantized =
@@ -37,11 +36,11 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   float_t min_filter(W[0]);
   float_t max_filter(W[0]);
   for (size_t inc = 0; inc < params.in.depth_; inc++) {
-    for (size_t ins = 0;
-         ins < params.weight.height_ * params.weight.height_; ins++) {
+    for (size_t ins = 0; ins < params.weight.height_ * params.weight.height_;
+         ins++) {
       size_t idx = params.in.get_index(0, 0, inc);
-      min_filter        = std::min(min_filter, (&W[idx])[ins]);
-      max_filter        = std::max(max_filter, (&W[idx])[ins]);
+      min_filter = std::min(min_filter, (&W[idx])[ins]);
+      max_filter = std::max(max_filter, (&W[idx])[ins]);
     }
   }
   if (min_filter == max_filter) {
@@ -88,7 +87,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       if (!params.tbl.is_connected(o, inc)) continue;
 
-      size_t idx = 0;
+      size_t idx        = 0;
       idx               = params.in.depth_ * o + inc;
       idx               = params.weight.get_index(0, 0, idx);
       const uint8_t *pw = &W_quantized[idx];
@@ -153,11 +152,10 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
   float_t min_prev_out(prev_out[0]);
   float_t max_prev_out(prev_out[0]);
   for (size_t inc = 0; inc < params.in.depth_; inc++) {
-    for (size_t ins = 0; ins < params.in.height_ * params.in.height_;
-         ins++) {
-      size_t idx = params.in.get_index(0, 0, inc);
-      min_prev_out      = std::min(min_prev_out, (&prev_out[idx])[ins]);
-      max_prev_out      = std::max(min_prev_out, (&prev_out[idx])[ins]);
+    for (size_t ins = 0; ins < params.in.height_ * params.in.height_; ins++) {
+      size_t idx   = params.in.get_index(0, 0, inc);
+      min_prev_out = std::min(min_prev_out, (&prev_out[idx])[ins]);
+      max_prev_out = std::max(min_prev_out, (&prev_out[idx])[ins]);
     }
   }
   std::vector<uint8_t> prev_out_quantized =
@@ -167,11 +165,11 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
   float_t min_filter(W[0]);
   float_t max_filter(W[0]);
   for (size_t inc = 0; inc < params.in.depth_; inc++) {
-    for (size_t ins = 0;
-         ins < params.weight.height_ * params.weight.height_; ins++) {
+    for (size_t ins = 0; ins < params.weight.height_ * params.weight.height_;
+         ins++) {
       size_t idx = params.in.get_index(0, 0, inc);
-      min_filter        = std::min(min_filter, (&W[idx])[ins]);
-      max_filter        = std::max(max_filter, (&W[idx])[ins]);
+      min_filter = std::min(min_filter, (&W[idx])[ins]);
+      max_filter = std::max(max_filter, (&W[idx])[ins]);
     }
   }
   if (min_filter == max_filter) {
@@ -185,11 +183,10 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
   float_t min_curr_delta(curr_delta[0]);
   float_t max_curr_delta(curr_delta[0]);
   for (size_t inc = 0; inc < params.out.depth_; inc++) {
-    for (size_t ins = 0; ins < params.out.height_ * params.out.height_;
-         ins++) {
-      size_t idx = params.out.get_index(0, 0, inc);
-      min_curr_delta    = std::min(min_curr_delta, (&curr_delta[idx])[ins]);
-      max_curr_delta    = std::max(max_curr_delta, (&curr_delta[idx])[ins]);
+    for (size_t ins = 0; ins < params.out.height_ * params.out.height_; ins++) {
+      size_t idx     = params.out.get_index(0, 0, inc);
+      min_curr_delta = std::min(min_curr_delta, (&curr_delta[idx])[ins]);
+      max_curr_delta = std::max(max_curr_delta, (&curr_delta[idx])[ins]);
     }
   }
   std::vector<uint8_t> curr_delta_quantized =
@@ -233,7 +230,7 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
     for (size_t outc = 0; outc < params.out.depth_; outc++) {
       if (!params.tbl.is_connected(outc, inc)) continue;
 
-      size_t idx = 0;
+      size_t idx        = 0;
       idx               = params.in.depth_ * outc + inc;
       idx               = params.weight.get_index(0, 0, idx);
       const uint8_t *pw = &W_quantized[idx];
@@ -295,7 +292,7 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
         for (size_t wx = 0; wx < params.weight.width_; wx++) {
           int32_t dst = int32_t(0);
 
-          size_t idx    = 0;
+          size_t idx           = 0;
           idx                  = params.in.get_index(0, 0, inc);
           const uint8_t *prevo = &prev_out_quantized[idx];
 
@@ -339,7 +336,7 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
     // vec_t& db = *in_grad[2];
 
     for (size_t outc = 0; outc < params.out.depth_; outc++) {
-      size_t idx     = params.out.get_index(0, 0, outc);
+      size_t idx            = params.out.get_index(0, 0, outc);
       const float_t *delta  = &curr_delta[idx];
       const float_t *deltaa = delta + params.out.width_ * params.out.height_;
       db[outc] += std::accumulate(delta, deltaa, float_t{0});
@@ -405,7 +402,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       if (!params.tbl.is_connected(o, inc)) continue;
 
-      size_t idx = 0;
+      size_t idx        = 0;
       idx               = params.in.depth_ * o + inc;
       idx               = params.weight.get_index(0, 0, idx);
       const uint8_t *pw = &W_quantized[idx];

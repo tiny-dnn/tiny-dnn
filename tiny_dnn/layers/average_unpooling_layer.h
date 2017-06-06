@@ -167,9 +167,7 @@ class average_unpooling_layer : public partial_connected_layer {
     return {in_, w_, index3d<size_t>(1, 1, out_.depth_)};
   }
 
-  std::vector<index3d<size_t>> out_shape() const override {
-    return {out_};
-  }
+  std::vector<index3d<size_t>> out_shape() const override { return {out_}; }
 
   std::string layer_type() const override { return "ave-unpool"; }
 
@@ -197,8 +195,8 @@ class average_unpooling_layer : public partial_connected_layer {
   shape3d w_;
 
   static size_t unpool_out_dim(size_t in_size,
-                                      size_t pooling_size,
-                                      size_t stride) {
+                               size_t pooling_size,
+                               size_t stride) {
     return static_cast<int>((in_size - 1) * stride + pooling_size);
   }
 
@@ -220,10 +218,7 @@ class average_unpooling_layer : public partial_connected_layer {
     }
   }
 
-  void connect_kernel(size_t pooling_size,
-                      size_t x,
-                      size_t y,
-                      size_t inc) {
+  void connect_kernel(size_t pooling_size, size_t x, size_t y, size_t inc) {
     size_t dymax = std::min(pooling_size, out_.height_ - y);
     size_t dxmax = std::min(pooling_size, out_.width_ - x);
     size_t dstx  = x * stride_;

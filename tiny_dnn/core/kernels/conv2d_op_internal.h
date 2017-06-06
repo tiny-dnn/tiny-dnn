@@ -18,7 +18,7 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                                const bool parallelize) {
   for_(parallelize, 0, in_data.size(),
        [&](const blocked_range &r) {
-         size_t out_area           = params.out.area();
+         size_t out_area    = params.out.area();
          size_t iw          = params.in_padded.width_;
          size_t id          = params.in.depth_;
          size_t ow          = params.out.width_;
@@ -90,7 +90,7 @@ void conv2d_op_internal(const tensor_t &prev_out,
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
 
-        size_t idx = 0;
+        size_t idx        = 0;
         idx               = params.in.depth_ * outc + inc;
         idx               = params.weight.get_index(0, 0, idx);
         const float_t *pw = &W[idx];
@@ -113,10 +113,8 @@ void conv2d_op_internal(const tensor_t &prev_out,
               pdelta_dst + y * params.h_stride * params.in_padded.width_ +
               x * params.w_stride;
 
-            for (size_t wy = 0; wy < params.weight.height_;
-                 wy++) {  // NOLINT
-              for (size_t wx = 0; wx < params.weight.width_;
-                   wx++) {  // NOLINT
+            for (size_t wy = 0; wy < params.weight.height_; wy++) {   // NOLINT
+              for (size_t wx = 0; wx < params.weight.width_; wx++) {  // NOLINT
                 idx = wy * params.in_padded.width_ + wx;
                 ppdelta_dst[idx] += *ppw++ * ppdelta_src;
               }
@@ -135,7 +133,7 @@ void conv2d_op_internal(const tensor_t &prev_out,
           for (size_t wx = 0; wx < params.weight.width_; wx++) {
             float_t dst{0};
 
-            size_t idx    = 0;
+            size_t idx           = 0;
             idx                  = params.in_padded.get_index(wx, wy, inc);
             const float_t *prevo = &prev_out[sample][idx];
 
@@ -171,7 +169,7 @@ void conv2d_op_internal(const tensor_t &prev_out,
     // accumulate db
     if (params.has_bias) {
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
-        size_t idx     = params.out.get_index(0, 0, outc);
+        size_t idx            = params.out.get_index(0, 0, outc);
         const float_t *delta  = &curr_delta[sample][idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});

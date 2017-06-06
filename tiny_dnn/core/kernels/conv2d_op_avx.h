@@ -38,7 +38,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 
   const size_t out_area = out.area();
   size_t oidx           = 0;
-  float bias_scale             = params.has_bias ? 1.0f : 0.0f;
+  float bias_scale      = params.has_bias ? 1.0f : 0.0f;
   const size_t stride   = params.h_stride * in_padded.width_;
   const size_t inarea   = in_padded.area();
 
@@ -297,7 +297,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const size_t out_area      = out.area();
   double bias_scale          = params.has_bias ? 1.0 : 0.0;
   const __m128d y_bias_scale = _mm_set_sd(bias_scale);
-  size_t oidx         = 0;
+  size_t oidx                = 0;
 
   const size_t in_stride      = params.h_stride * in_padded.width_;
   const size_t in_padded_area = in_padded.area();

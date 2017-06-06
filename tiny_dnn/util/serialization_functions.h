@@ -11,11 +11,11 @@
 #include "tiny_dnn/tiny_dnn.h"
 
 static tiny_dnn::serial_size_t cast_size_t(const size_t &src) {
-	return static_cast<tiny_dnn::serial_size_t>(src);
+  return static_cast<tiny_dnn::serial_size_t>(src);
 }
 
 /*static size_t cast_size_t(const tiny_dnn::serial_size_t &src) {
-	return static_cast<size_t>(src);
+  return static_cast<size_t>(src);
 }*/
 
 namespace cereal {
@@ -28,8 +28,7 @@ struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
       cereal::construct<tiny_dnn::elementwise_add_layer> &construct) {
     tiny_dnn::serial_size_t num_args, dim;
 
-    ar(cereal::make_nvp("num_args", num_args),
-       cereal::make_nvp("dim", dim));
+    ar(cereal::make_nvp("num_args", num_args), cereal::make_nvp("dim", dim));
     construct(cast_size_t(num_args), cast_size_t(dim));
   }
 };
@@ -92,8 +91,8 @@ struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
        cereal::make_nvp("epsilon", eps), cereal::make_nvp("momentum", momentum),
        cereal::make_nvp("phase", phase), cereal::make_nvp("mean", mean),
        cereal::make_nvp("variance", variance));
-    construct(cast_size_t(in_spatial_size), cast_size_t(in_channels), 
-              eps, momentum, phase);
+    construct(cast_size_t(in_spatial_size), cast_size_t(in_channels), eps,
+              momentum, phase);
     construct->set_mean(mean);
     construct->set_variance(variance);
   }
@@ -135,9 +134,8 @@ struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
 
     construct(cast_size_t(in.width_), cast_size_t(in.height_),
               cast_size_t(w_width), cast_size_t(w_height),
-              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
-              pad_type, has_bias, cast_size_t(w_stride),
-              cast_size_t(h_stride));
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl, pad_type,
+              has_bias, cast_size_t(w_stride), cast_size_t(h_stride));
   }
 };
 
@@ -163,11 +161,10 @@ struct LoadAndConstruct<tiny_dnn::deconvolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
               cast_size_t(w_width), cast_size_t(w_height),
-              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
-              pad_type, has_bias, cast_size_t(w_stride),
-              cast_size_t(h_stride));
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl, pad_type,
+              has_bias, cast_size_t(w_stride), cast_size_t(h_stride));
   }
 };
 
@@ -275,9 +272,9 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
        cereal::make_nvp("stride_x", stride_x),
        cereal::make_nvp("stride_y", stride_y),
        cereal::make_nvp("pad_type", pad_type));
-    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
               cast_size_t(in.depth_), cast_size_t(pool_size_x),
-              cast_size_t(pool_size_y), cast_size_t(stride_x), 
+              cast_size_t(pool_size_y), cast_size_t(stride_x),
               cast_size_t(stride_y), pad_type);
   }
 };
@@ -337,9 +334,8 @@ struct LoadAndConstruct<tiny_dnn::quantized_convolutional_layer> {
 
     construct(cast_size_t(in.width_), cast_size_t(in.height_),
               cast_size_t(w_width), cast_size_t(w_height),
-              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
-              pad_type, has_bias, cast_size_t(w_stride),
-              cast_size_t(h_stride));
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl, pad_type,
+              has_bias, cast_size_t(w_stride), cast_size_t(h_stride));
   }
 };
 
@@ -365,11 +361,10 @@ struct LoadAndConstruct<tiny_dnn::quantized_deconvolutional_layer> {
        cereal::make_nvp("w_stride", w_stride),
        cereal::make_nvp("h_stride", h_stride));
 
-    construct(cast_size_t(in.width_), cast_size_t(in.height_), 
+    construct(cast_size_t(in.width_), cast_size_t(in.height_),
               cast_size_t(w_width), cast_size_t(w_height),
-              cast_size_t(in.depth_), cast_size_t(out_ch), tbl,
-              pad_type, has_bias, cast_size_t(w_stride),
-              cast_size_t(h_stride));
+              cast_size_t(in.depth_), cast_size_t(out_ch), tbl, pad_type,
+              has_bias, cast_size_t(w_stride), cast_size_t(h_stride));
   }
 };
 

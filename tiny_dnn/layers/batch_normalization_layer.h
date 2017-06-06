@@ -88,9 +88,9 @@ class batch_normalization_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tensor_t &prev_delta      = *in_grad[0];
-    tensor_t &curr_delta      = *out_grad[0];
-    const tensor_t &curr_out  = *out_data[0];
+    tensor_t &prev_delta     = *in_grad[0];
+    tensor_t &curr_delta     = *out_grad[0];
+    const tensor_t &curr_out = *out_data[0];
     const size_t num_samples = curr_out.size();
 
     CNN_UNREFERENCED_PARAMETER(in_data);

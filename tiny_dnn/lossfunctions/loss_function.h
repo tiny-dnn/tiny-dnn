@@ -17,8 +17,7 @@ class mse {
     assert(y.size() == t.size());
     float_t d{0.0};
 
-    for (size_t i = 0; i < y.size(); ++i)
-      d += (y[i] - t[i]) * (y[i] - t[i]);
+    for (size_t i = 0; i < y.size(); ++i) d += (y[i] - t[i]) * (y[i] - t[i]);
 
     return d / static_cast<float_t>(y.size());
   }
@@ -120,7 +119,7 @@ class cross_entropy {
     vec_t d(t.size());
 
     for (size_t i = 0; i < y.size(); ++i)
-      d[i]               = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+      d[i]        = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
 
     return d;
   }
@@ -161,8 +160,7 @@ std::vector<vec_t> gradient(const std::vector<vec_t> &y,
 
   assert(y.size() == t.size());
 
-  for (size_t i = 0; i < y.size(); i++)
-    grads[i]           = gradient<E>(y[i], t[i]);
+  for (size_t i = 0; i < y.size(); i++) grads[i] = gradient<E>(y[i], t[i]);
 
   return grads;
 }

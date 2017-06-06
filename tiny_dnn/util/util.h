@@ -323,9 +323,9 @@ inline void fill_tensor(tensor_t &tensor, float_t value, size_t size) {
 }
 
 inline size_t conv_out_length(size_t in_length,
-                                     size_t window_size,
-                                     size_t stride,
-                                     padding pad_type) {
+                              size_t window_size,
+                              size_t stride,
+                              padding pad_type) {
   size_t output_length;
 
   if (pad_type == padding::same) {

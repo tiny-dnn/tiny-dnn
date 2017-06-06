@@ -219,9 +219,7 @@ class image {
   size_t height() const { return height_; }
   size_t depth() const { return depth_; }
   image_type type() const { return type_; }
-  shape3d shape() const {
-    return shape3d(width_, height_, depth_);
-  }
+  shape3d shape() const { return shape3d(width_, height_, depth_); }
   const std::vector<intensity_t> &data() const { return data_; }
   vec_t to_vec() const { return vec_t(begin(), end()); }
 
@@ -248,8 +246,7 @@ class image {
       std::copy(begin, end, data_.begin());
     } else {
       auto order = depth_order(type_);
-      assert(std::distance(begin, end) ==
-             data_.size());
+      assert(std::distance(begin, end) == static_cast<int>(data_.size()));
 
       for (size_t y = 0; y < height_; y++)
         for (size_t x = 0; x < width_; x++)
@@ -299,10 +296,7 @@ image<float_t> mean_image(const image<T> &src) {
  */
 template <typename T>
 inline image<T> resize_image(const image<T> &src, int width, int height) {
-  image<T> resized(shape3d(width,
-                           height,
-                           src.depth()),
-                   src.type());
+  image<T> resized(shape3d(width, height, src.depth()), src.type());
   std::vector<T> src_rgb = src.template to_rgb<T>();
   std::vector<T> dst_rgb(resized.shape().size());
 
@@ -381,15 +375,14 @@ inline image<T> vec2image(const vec_t &vec,
 
   image<T> img;
   const size_t border_width = 1;
-  const auto cols                  = vec.size() >= (size_t)max_cols
-                      ? (size_t)max_cols
-                      : vec.size();
+  const auto cols =
+    vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
   const auto rows                               = (vec.size() - 1) / cols + 1;
   const auto pitch                              = block_size + border_width;
   const auto width                              = pitch * cols + border_width;
   const auto height                             = pitch * rows + border_width;
   const typename image<T>::intensity_t bg_color = 255;
-  size_t current_idx                     = 0;
+  size_t current_idx                            = 0;
 
   img.resize(width, height);
   img.fill(bg_color);
@@ -400,7 +393,7 @@ inline image<T> vec2image(const vec_t &vec,
     size_t topy = pitch * r + border_width;
 
     for (unsigned int c = 0; c < cols; c++, current_idx++) {
-      size_t leftx      = pitch * c + border_width;
+      size_t leftx             = pitch * c + border_width;
       const float_t src        = vec[current_idx];
       image<>::intensity_t dst = static_cast<typename image<T>::intensity_t>(
         rescale(src, *minmax.first, *minmax.second, 0, 255));
@@ -430,16 +423,15 @@ inline image<T> vec2image(const vec_t &vec,
  *  -------
  **/
 template <typename T>
-inline image<T> vec2image(const vec_t &vec,
-                          const index3d<size_t> &maps) {
+inline image<T> vec2image(const vec_t &vec, const index3d<size_t> &maps) {
   if (vec.empty()) throw nn_error("failed to visualize image: vector is empty");
   if (vec.size() != maps.size())
     throw nn_error("failed to visualize image: vector size invalid");
 
   const size_t border_width = 1;
-  const auto pitch                 = maps.width_ + border_width;
-  const auto width                 = maps.depth_ * pitch + border_width;
-  const auto height                = maps.height_ + 2 * border_width;
+  const auto pitch          = maps.width_ + border_width;
+  const auto width          = maps.depth_ * pitch + border_width;
+  const auto height         = maps.height_ + 2 * border_width;
   const typename image<T>::intensity_t bg_color = 255;
   image<T> img;
 

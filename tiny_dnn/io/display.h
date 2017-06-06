@@ -86,8 +86,7 @@ class progress_display {
     // use of floating point ensures that both large and small counts
     // work correctly.  static_cast<>() is also used several places
     // to suppress spurious compiler warnings.
-    size_t tics_needed = 
-      (static_cast<double>(_count) / _expected_count) * 50.0;
+    size_t tics_needed = (static_cast<double>(_count) / _expected_count) * 50.0;
     do {
       m_os << '*' << std::flush;
     } while (++_tic < tics_needed);

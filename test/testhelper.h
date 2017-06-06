@@ -195,14 +195,12 @@ inline bool resolve_path(const std::string &filename, std::string &path) {
 
 namespace {
 
-std::pair<std::vector<tensor_t>,
-          std::vector<std::vector<
-            label_t>>> inline generate_gradient_check_data(size_t
-                                                             input_dimension,
-                                                           size_t
-                                                             sample_count = 5,
-                                                           size_t
-                                                             class_count = 2) {
+std::pair<
+  std::vector<tensor_t>,
+  std::vector<std::vector<
+    label_t>>> inline generate_gradient_check_data(size_t input_dimension,
+                                                   size_t sample_count = 5,
+                                                   size_t class_count  = 2) {
   const size_t input_channel_count  = 1;
   const size_t output_channel_count = 1;
   std::vector<tensor_t> a(
@@ -216,8 +214,8 @@ std::pair<std::vector<tensor_t>,
       vec_t &v = a[sample][input_channel];
       uniform_rand(v.begin(), v.end(), -1, 1);
     }
-    for (size_t output_channel = 0;
-         output_channel < output_channel_count; ++output_channel) {
+    for (size_t output_channel = 0; output_channel < output_channel_count;
+         ++output_channel) {
       t[sample][output_channel] = sample % class_count;
     }
   }

@@ -69,7 +69,7 @@ class concat_layer : public layer {
 
       for (size_t i = 0; i < in_shapes_.size(); i++) {
         const float_t *ins = &(*in_data[i])[s][0];
-        size_t dim  = in_shapes_[i].size();
+        size_t dim         = in_shapes_[i].size();
         outs               = std::copy(ins, ins + dim, outs);
       }
     });
@@ -88,8 +88,8 @@ class concat_layer : public layer {
       const float_t *outs = &(*out_grad[0])[s][0];
 
       for (size_t i = 0; i < in_shapes_.size(); i++) {
-        size_t dim = in_shapes_[i].size();
-        float_t *ins      = &(*in_grad[i])[s][0];
+        size_t dim   = in_shapes_[i].size();
+        float_t *ins = &(*in_grad[i])[s][0];
         std::copy(outs, outs + dim, ins);
         outs += dim;
       }

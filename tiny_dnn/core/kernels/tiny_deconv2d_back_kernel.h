@@ -26,7 +26,7 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
 
-        size_t idx = 0;
+        size_t idx        = 0;
         idx               = params.in.depth_ * outc + inc;
         idx               = params.weight.get_index(0, 0, idx);
         const float_t *pw = &W[idx];
@@ -66,7 +66,7 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
           for (size_t wx = 0; wx < params.weight.width_; wx++) {
             float_t dst{0};
 
-            size_t idx    = 0;
+            size_t idx           = 0;
             idx                  = params.in.get_index(0, 0, inc);
             const float_t *prevo = &prev_out[sample][idx];
 
@@ -91,7 +91,7 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
       // vec_t& db = *in_grad[2];
 
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
-        size_t idx     = params.out.get_index(0, 0, outc);
+        size_t idx            = params.out.get_index(0, 0, outc);
         const float_t *delta  = &curr_delta[sample][idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});

@@ -81,9 +81,7 @@ class quantized_fully_connected_layer : public layer {
  protected:
   fully_params params_;
 
-  void set_params(const size_t in_size,
-                  const size_t out_size,
-                  bool has_bias) {
+  void set_params(const size_t in_size, const size_t out_size, bool has_bias) {
     params_.in_size_  = in_size;
     params_.out_size_ = out_size;
     params_.has_bias_ = has_bias;

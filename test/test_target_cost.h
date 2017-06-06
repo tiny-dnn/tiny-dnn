@@ -31,7 +31,7 @@ TEST(target_cost, calculate_label_counts) {
 
 TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
   const std::vector<size_t> class_sample_counts = {1000, 100, 10, 1};
-  const size_t class_count = class_sample_counts.size();
+  const size_t class_count                      = class_sample_counts.size();
   const size_t total_samples =
     std::accumulate(class_sample_counts.begin(), class_sample_counts.end(), 0);
 
@@ -187,8 +187,7 @@ TEST(target_cost, train_unbalanced_data_1dim) {
     const float_t p_label1 =
       p0 * (1 - p) + p1 * p;  // p(label == 1) = p(label == 1 | in == 0) * p(in
                               // == 0) + p(label == 1 | in == 1) * p(in == 1)
-    const size_t n_label1 = std::accumulate(
-      labels.begin(), labels.end(), 0);
+    const size_t n_label1 = std::accumulate(labels.begin(), labels.end(), 0);
 
     EXPECT_NEAR(n_label1 / static_cast<float_t>(tnum), p_label1, 0.05);
     EXPECT_GE(n_label1, 1600U);
