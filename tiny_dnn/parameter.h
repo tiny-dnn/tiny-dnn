@@ -25,26 +25,25 @@ class parameter {
    * todo (karandesai) : generalize to n-dimensions
    * todo (karandesai) : add an n-dimensional view for easy indexing
    *
-   * @param width      [in] filter width
-   * @param height     [in] filter height
-   * @param depth      [in] filter depth / input channels
-   * @param n_fmaps    [in] number of output feature maps
-   * @param type       [in] whether parameter is a weight or a bias
-   * @param trainable  [in] whether parameter will be updated while training or
-   * not
+   * @param in_channels  filter depth / input channels
+   * @param out_channels number of feature maps in next layer
+   * @param height       filter height
+   * @param width        filter width
+   * @param type         whether parameter is a weight or a bias
+   * @param trainable    whether parameter will be updated while training
    */
-  parameter(size_t width,
+  parameter(size_t out_channels,
+            size_t in_channels,
             size_t height,
-            size_t depth,
-            size_t n_fmaps,
+            size_t width,
             parameter_type type,
             bool trainable = true)
     : type_(type),
-      shape_(width, height, depth),
-      n_fmaps_(n_fmaps),
+      shape_(width, height, in_channels),
+      out_channels_(out_channels),
       trainable_(trainable),
-      data_({shape_.size() * n_fmaps}),
-      grad_({1, shape_.size() * n_fmaps}) {}
+      data_({shape_.size() * out_channels}),
+      grad_({1, shape_.size() * out_channels}) {}
 
   shape3d shape() { return shape_; }
 
@@ -102,7 +101,7 @@ class parameter {
   // todo (karandesai) : replace with vector<size_t> for n-dimensional
   // parameters
   shape3d shape_;
-  size_t n_fmaps_;
+  size_t out_channels_;
 
   bool trainable_;
 

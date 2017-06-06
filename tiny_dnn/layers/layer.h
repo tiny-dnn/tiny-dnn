@@ -19,6 +19,7 @@
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/node.h"
+#include "tiny_dnn/parameter.h"
 
 #include "tiny_dnn/util/parallel_for.h"
 #include "tiny_dnn/util/product.h"
@@ -346,6 +347,70 @@ class layer : public node {
     bias_init_ = f;
     return *this;
   }
+
+  /**
+   * @name Parameter Getters and Setters
+   * @{
+   */
+
+  /** @brief Add new parameter to this layer, to be called in constructor. */
+  void add_parameter(size_t out_channels,
+                     size_t in_channels,
+                     size_t height,
+                     size_t width,
+                     parameter_type type,
+                     bool trainable = true) {
+    parameters_.push_back(
+      new parameter(out_features, in_features, height, width, type, trainable));
+  }
+
+  /**
+   * @brief Get pointers to parameters of this layer.
+   *
+   * This can be used during training phase when parameter update is
+   * required.
+   *
+   * @param trainable_only flag to return only the trainable parameters.
+   * @return std::vector of pointers to parameters
+   */
+  std::vector<parameter *> parameters(bool trainable_only = false) {
+    std::vector<parameter *> vp;
+    for (size_t i = 0; i < parameters_.size(); i++) {
+      if (!trainable_only ||
+          (parameters_[i]->is_trainable() && trainable_only)) {
+        vp.push_back(ith_parameter(i));
+      }
+    }
+    return vp;
+  }
+
+  /**
+   * @brief Get const pointers to parameters of this layer.
+   *
+   * This can be used during inference phase when parameter update is not
+   * required.
+   *
+   * @param trainable_only flag to return only the trainable parameters.
+   * @return const std::vector of const pointers to parameters
+   */
+  const std::vector<const parameter *> parameters(
+    bool trainable_only = false) const {
+    std::vector<const parameter *> vp;
+    for (size_t i = 0; i < parameters_.size(); i++) {
+      if (!trainable_only ||
+          (parameters_[i]->is_trainable() && trainable_only)) {
+        vp.push_back(ith_parameter(i));
+      }
+    }
+    return vp;
+  }
+
+  parameter *ith_parameter(size_t i) { return parameters_[i]; }
+
+  const parameter *ith_parameter(size_t i) const { return parameters_[i]; }
+
+  void set_ith_parameter(size_t i, parameter &p) { parameters_[i] = &p; }
+  /** @} */  // Parameter Getters and Setters
 
   virtual void save(
     std::ostream &os,
@@ -750,6 +815,8 @@ class layer : public node {
   friend struct serialization_buddy;
 
  private:
+  /** A vector of trainable and constant parameters. */
+  std::vector<parameter *> parameters_;
   /** Flag indicating whether the layer/node parameters are trainable */
   bool trainable_;
   /** Pointer to the function for weights initialization */
