@@ -59,8 +59,7 @@ class layer : public node {
    **/
   layer(const std::vector<vector_type> &in_type,
         const std::vector<vector_type> &out_type)
-    : node(static_cast<size_t>(in_type.size()),
-           static_cast<size_t>(out_type.size())),
+    : node(in_type.size(), out_type.size()),
       initialized_(false),
       parallelize_(true),
       in_channels_(in_type.size()),
@@ -527,7 +526,7 @@ class layer : public node {
 
     // resize outs and stuff to have room for every input sample in
     // the batch
-    set_sample_count(static_cast<size_t>(fwd_in_data_[0]->size()));
+    set_sample_count(fwd_in_data_[0]->size());
 
     // Internally ith_out_node() will create a connection/edge to the
     // computational graph and will allocate memory in case that it's not
@@ -643,7 +642,7 @@ class layer : public node {
   }
 
   void clear_grads() {
-    for (size_t i = 0; i < static_cast<size_t>(in_type_.size());
+    for (size_t i = 0; i < in_type_.size();
          i++) {
       ith_in_node(i)->clear_grads();
     }
@@ -652,7 +651,7 @@ class layer : public node {
   void update_weight(optimizer *o, size_t batch_size) {
     float_t rcp_batch_size = float_t(1) / float_t(batch_size);
     auto &diff             = weights_diff_;
-    for (size_t i = 0; i < static_cast<size_t>(in_type_.size());
+    for (size_t i = 0; i < in_type_.size();
          i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
         vec_t &target = *get_weight_data(i);

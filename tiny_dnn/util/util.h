@@ -123,7 +123,7 @@ size_t max_size(const Container &c) {
       return left.size() < right.size();
     })->size();
   assert(max_size <= std::numeric_limits<size_t>::max());
-  return static_cast<size_t>(max_size);
+  return max_size;
 }
 
 inline std::string format_str(const char *fmt, ...) {
@@ -242,7 +242,7 @@ void CNN_LOG_VECTOR(const vec_t& vec, const std::string& name) {
 template <typename T, typename Pred, typename Sum>
 size_t sumif(const std::vector<T> &vec, Pred p, Sum s) {
   size_t sum = 0;
-  for (size_t i = 0; i < static_cast<size_t>(vec.size()); i++) {
+  for (size_t i = 0; i < vec.size(); i++) {
     if (p(i)) sum += s(vec[i]);
   }
   return sum;

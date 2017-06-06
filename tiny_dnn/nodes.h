@@ -30,7 +30,7 @@ void save(Archive &ar, const std::vector<tiny_dnn::layer *> &v) {
     tiny_dnn::layer::save_layer(ar, *n);
   }
 #else
-  throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+  throw tiny_dnn::nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
 }
 
@@ -44,7 +44,7 @@ void load(Archive &ar, std::vector<std::shared_ptr<tiny_dnn::layer>> &v) {
     v.emplace_back(tiny_dnn::layer::load_layer(ar));
   }
 #else
-  throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+  throw tiny_dnn::nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
 }
 
@@ -190,7 +190,7 @@ class nodes {
 
   void label2vec(const std::vector<label_t> &labels,
                  std::vector<vec_t> &vec) const {
-    return label2vec(&labels[0], static_cast<size_t>(labels.size()),
+    return label2vec(&labels[0], labels.size(),
                      vec);
   }
 

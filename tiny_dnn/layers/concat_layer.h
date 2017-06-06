@@ -62,8 +62,7 @@ class concat_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    size_t num_samples =
-      static_cast<size_t>((*out_data[0]).size());
+    const size_t num_samples = (*out_data[0]).size();
 
     for_i(num_samples, [&](size_t s) {
       float_t *outs = &(*out_data[0])[s][0];

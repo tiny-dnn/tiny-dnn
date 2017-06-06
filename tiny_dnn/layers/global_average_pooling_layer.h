@@ -52,7 +52,7 @@ class global_average_pooling_layer : public layer {
   }
 
   size_t fan_in_size() const override {
-    return static_cast<size_t>(params_.in.width_ * params_.in.height_);
+    return params_.in.width_ * params_.in.height_;
   }
 
   size_t fan_out_size() const override { return 1; }

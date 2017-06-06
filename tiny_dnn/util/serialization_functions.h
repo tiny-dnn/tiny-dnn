@@ -14,9 +14,9 @@ static tiny_dnn::serial_size_t cast_size_t(const size_t &src) {
 	return static_cast<tiny_dnn::serial_size_t>(src);
 }
 
-static size_t cast_size_t(const tiny_dnn::serial_size_t &src) {
+/*static size_t cast_size_t(const tiny_dnn::serial_size_t &src) {
 	return static_cast<size_t>(src);
-}
+}*/
 
 namespace cereal {
 

@@ -51,7 +51,7 @@ inline void maxpool_grad_op_internal(
     for (size_t i = 0; i < in2out.size(); i++) {
       size_t outi = in2out[i];
       prev[i] =
-        (max[outi] == static_cast<size_t>(i)) ? curr[outi] : float_t{0};
+        (max[outi] == i) ? curr[outi] : float_t{0};
     }
   });
 }

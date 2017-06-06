@@ -171,8 +171,7 @@ inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
                                   const std::vector<vec_t> &sample_cost) {
   if (sample_gradient.size() == sample_cost.size()) {
     // @todo consider adding parallelism
-    const size_t channel_count =
-      static_cast<size_t>(sample_gradient.size());
+    const size_t channel_count = sample_gradient.size();
     for (size_t channel = 0; channel < channel_count; ++channel) {
       if (sample_gradient[channel].size() == sample_cost[channel].size()) {
         const size_t element_count = sample_gradient[channel].size();
@@ -191,8 +190,8 @@ template <typename E>
 std::vector<tensor_t> gradient(const std::vector<tensor_t> &y,
                                const std::vector<tensor_t> &t,
                                const std::vector<tensor_t> &t_cost) {
-  const size_t sample_count  = static_cast<size_t>(y.size());
-  const size_t channel_count = static_cast<size_t>(y[0].size());
+  const size_t sample_count  = y.size();
+  const size_t channel_count = y[0].size();
 
   std::vector<tensor_t> gradients(sample_count);
 

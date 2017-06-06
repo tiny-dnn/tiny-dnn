@@ -63,7 +63,7 @@ struct blocked_range {
 
   blocked_range(size_t begin, size_t end) : begin_(begin), end_(end) {}
   blocked_range(int begin, int end)
-    : begin_(static_cast<size_t>(begin)), end_(static_cast<size_t>(end)) {}
+    : begin_(begin), end_(end) {}
 
   const_iterator begin() const { return begin_; }
   const_iterator end() const { return end_; }
@@ -177,8 +177,8 @@ inline void for_(std::true_type,
                  Func f,
                  int grainsize = 100) {
   parallelize = parallelize && value_representation<size_t>(end);
-  parallelize ? parallel_for(begin, static_cast<size_t>(end), f, grainsize)
-              : xparallel_for(begin, static_cast<size_t>(end), f);
+  parallelize ? parallel_for(begin, end, f, grainsize)
+              : xparallel_for(begin, end, f);
 }
 
 template <typename T, typename Func>
@@ -188,7 +188,7 @@ inline void for_(std::false_type,
                  T end,
                  Func f,
                  int grainsize = 100) {
-  parallelize ? parallel_for(begin, static_cast<size_t>(end), f, grainsize)
+  parallelize ? parallel_for(begin, end, f, grainsize)
               : xparallel_for(begin, end, f);
 }
 

@@ -48,7 +48,7 @@ inline void accumulate_db(const index3d<size_t> &out,
     };
     __m256i mask = _mm256_loadu_si256((const __m256i *)(masks + 8 - remainder));
     for (size_t outc = 0; outc < out.depth_; ++outc) {
-      size_t idx = out.get_index(0, 0, static_cast<size_t>(outc));
+      size_t idx = out.get_index(0, 0, outc);
       const float *delta = &curr_delta[idx];
       __m256 sum0        = _mm256_setzero_ps();
       __m256 sum1        = _mm256_setzero_ps();
@@ -186,8 +186,7 @@ inline void accumulate_dw(const core::conv_params &params,
             // weight.width_
             for (size_t wx = 0; wx < 5; ++wx, ++widx) {
               size_t prev_out_idx =
-                in_padded.get_index(static_cast<size_t>(wx),
-                                    static_cast<size_t>(wy), inc);
+                in_padded.get_index(wx, wy, inc);
               const float *prevo = &prev_out[prev_out_idx];
               float_t dst{0};
               for (size_t y = 0, prevo_idx = 0, delta_idx = 0; y < out_height;
@@ -214,7 +213,7 @@ inline void accumulate_dw(const core::conv_params &params,
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
-              in_padded.get_index(0, static_cast<size_t>(wy), inc);
+              in_padded.get_index(0, wy, inc);
             const float *pa = &prev_out[prev_out_idx];
             const float *pb = delta;
             // y = 0
@@ -267,7 +266,7 @@ inline void accumulate_dw(const core::conv_params &params,
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
-              in_padded.get_index(0, static_cast<size_t>(wy), inc);
+              in_padded.get_index(0, wy, inc);
             const float *pa = &prev_out[prev_out_idx];
             const float *pb = delta;
             sum0 = sum1 = sum2 = sum3 = sum4 = _mm256_setzero_ps();
@@ -343,7 +342,7 @@ inline void accumulate_dw(const core::conv_params &params,
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
-              in_padded.get_index(0, static_cast<size_t>(wy), inc);
+              in_padded.get_index(0, wy, inc);
             const float *pa = &prev_out[prev_out_idx];
             const float *pb = delta;
             // vectorize::dot
@@ -386,7 +385,7 @@ inline void accumulate_dw(const core::conv_params &params,
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
-              in_padded.get_index(0, static_cast<size_t>(wy), inc);
+              in_padded.get_index(0, wy, inc);
             const float *pa = &prev_out[prev_out_idx];
             const float *pb = delta;
             // vectorize::dot
@@ -430,7 +429,7 @@ inline void accumulate_dw(const core::conv_params &params,
           // weight.height_
           for (size_t wy = 0; wy < 5; ++wy) {
             size_t prev_out_idx =
-              in_padded.get_index(0, static_cast<size_t>(wy), inc);
+              in_padded.get_index(0, wy, inc);
             const float *pa = &prev_out[prev_out_idx];
             const float *pb = delta;
             // vectorize::dot

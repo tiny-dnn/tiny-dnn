@@ -33,7 +33,7 @@ class softmax_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    const size_t len = static_cast<size_t>(dy.size());
+    const size_t len = dy.size();
 
 // auxilliary vector to store element wise softmax gradients of all elements
 

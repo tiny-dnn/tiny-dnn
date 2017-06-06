@@ -69,7 +69,7 @@ inline void moments(const tensor_t &in,
                     size_t spatial_dim,
                     size_t channels,
                     vec_t &mean) {
-  const size_t num_examples = static_cast<size_t>(in.size());
+  const size_t num_examples = in.size();
   assert(in[0].size() == spatial_dim * channels);
 
   mean.resize(channels);
@@ -83,7 +83,7 @@ inline void moments(const tensor_t &in,
                     size_t channels,
                     vec_t &mean,
                     vec_t &variance) {
-  const size_t num_examples = static_cast<size_t>(in.size());
+  const size_t num_examples = in.size();
   assert(in[0].size() == spatial_dim * channels);
 
   // calc mean

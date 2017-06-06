@@ -52,7 +52,7 @@ class linear_layer : public layer {
     // @todo revise the parallelism strategy
     for_i(dim_, [&](size_t i) {
       for (size_t sample       = 0,
-                         sample_count = static_cast<size_t>(in.size());
+                         sample_count = in.size();
            sample < sample_count; ++sample)
         out[sample][i] = scale_ * in[sample][i] + bias_;
     });
@@ -69,7 +69,7 @@ class linear_layer : public layer {
 
     // @todo revise parallelism strategy
     for (size_t sample = 0;
-         sample < static_cast<size_t>(prev_delta.size()); ++sample) {
+         sample < prev_delta.size(); ++sample) {
       for_i(dim_, [&](size_t i) {
         prev_delta[sample][i] = curr_delta[sample][i] * scale_;
       });

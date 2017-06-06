@@ -475,7 +475,7 @@ class network {
     assert(in.size() == t.size());
 
     std::vector<tensor_t> v(t.size());
-    const size_t sample_count = static_cast<size_t>(t.size());
+    const size_t sample_count = t.size();
     for (size_t sample = 0; sample < sample_count; ++sample) {
       net_.label2vec(t[sample], v[sample]);
     }
@@ -886,7 +886,7 @@ class network {
 
     assert(in.size() == v.size());
 
-    const size_t sample_count = static_cast<size_t>(in.size());
+    const size_t sample_count = in.size();
 
     assert(sample_count > 0);
 

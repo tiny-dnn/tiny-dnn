@@ -143,24 +143,24 @@ class max_unpooling_layer : public layer {
   static size_t unpool_out_dim(size_t in_size,
                                       size_t unpooling_size,
                                       size_t stride) {
-    return static_cast<size_t>(static_cast<int64_t>(in_size) * stride +
-                                      unpooling_size - 1);
+    return static_cast<int64_t>(in_size) * stride +
+                                      unpooling_size - 1;
   }
 
   void connect_kernel(size_t unpooling_size,
                       size_t inx,
                       size_t iny,
                       size_t c) {
-    size_t dxmax = static_cast<size_t>(
-      std::min(unpooling_size, inx * stride_ - out_.width_));
-    size_t dymax = static_cast<size_t>(
-      std::min(unpooling_size, iny * stride_ - out_.height_));
+    const size_t dxmax = 
+      std::min(unpooling_size, inx * stride_ - out_.width_);
+    const size_t dymax =
+      std::min(unpooling_size, iny * stride_ - out_.height_);
 
     for (size_t dy = 0; dy < dymax; dy++) {
       for (size_t dx = 0; dx < dxmax; dx++) {
         size_t out_index =
-          out_.get_index(static_cast<size_t>(inx * stride_ + dx),
-                         static_cast<size_t>(iny * stride_ + dy), c);
+          out_.get_index(inx * stride_ + dx,
+                         iny * stride_ + dy, c);
         size_t in_index = in_.get_index(inx, iny, c);
 
         if (in_index >= in2out_.size()) throw nn_error("index overflow");
@@ -180,7 +180,7 @@ class max_unpooling_layer : public layer {
     for (size_t c = 0; c < in_.depth_; ++c)
       for (size_t y = 0; y < in_.height_; ++y)
         for (size_t x = 0; x < in_.width_; ++x)
-          connect_kernel(static_cast<size_t>(unpool_size_), x, y, c);
+          connect_kernel(unpool_size_, x, y, c);
   }
 };
 

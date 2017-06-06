@@ -65,7 +65,7 @@ class partial_connected_layer : public layer {
 
     // @todo revise the parallelism strategy
     for (size_t sample       = 0,
-                       sample_count = static_cast<size_t>(in.size());
+                       sample_count = in.size();
          sample < sample_count; ++sample) {
       vec_t &out_sample = out[sample];
 
@@ -99,7 +99,7 @@ class partial_connected_layer : public layer {
     // @todo revise the parallelism strategy
     for (size_t
            sample       = 0,
-           sample_count = static_cast<size_t>(prev_out.size());
+           sample_count = prev_out.size();
          sample < sample_count; ++sample) {
       for_i(in2wo_.size(), [&](size_t i) {
         const wo_connections &connections = in2wo_[i];

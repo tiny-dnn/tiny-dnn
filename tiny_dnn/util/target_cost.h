@@ -26,7 +26,7 @@ inline std::vector<size_t> calculate_label_counts(
     label_counts[label]++;
   }
   assert(std::accumulate(label_counts.begin(), label_counts.end(),
-                         static_cast<size_t>(0)) == t.size());
+                         0) == t.size());
   return label_counts;
 }
 
@@ -61,9 +61,8 @@ inline float_t get_sample_weight_for_balanced_target_cost(
 inline std::vector<vec_t> create_balanced_target_cost(
   const std::vector<label_t> &t, float_t w = 1.0) {
   const auto label_counts                = calculate_label_counts(t);
-  const size_t total_sample_count = static_cast<size_t>(t.size());
-  const size_t class_count =
-    static_cast<size_t>(label_counts.size());
+  const size_t total_sample_count = t.size();
+  const size_t class_count = label_counts.size();
 
   std::vector<vec_t> target_cost(t.size());
 

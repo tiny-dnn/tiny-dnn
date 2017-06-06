@@ -374,7 +374,7 @@ class quantized_convolutional_layer : public layer {
     } else {
       throw nn_error("Not recognized pad_type.");
     }
-    return static_cast<size_t>(ceil(tmp));
+    return ceil(tmp);
   }
 
   static size_t conv_out_dim(size_t in_width,
@@ -401,7 +401,7 @@ class quantized_convolutional_layer : public layer {
   void copy_and_pad_input(const tensor_t &in) {
     conv_layer_worker_specific_storage &cws = cws_;
 
-    size_t sample_count = static_cast<size_t>(in.size());
+    const size_t sample_count = in.size();
 
     cws.prev_out_padded_.resize(sample_count);
 

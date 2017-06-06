@@ -138,8 +138,8 @@ TEST(max_pool, forward_stride_x) {
     };
   // clang-format on
 
-  EXPECT_EQ(l.out_shape()[0].width_, static_cast<size_t>(2));
-  EXPECT_EQ(l.out_shape()[0].height_, static_cast<size_t>(4));
+  EXPECT_EQ(l.out_shape()[0].width_, 2);
+  EXPECT_EQ(l.out_shape()[0].height_, 4);
 
   std::vector<const tensor_t*> out;
   l.forward({{in}}, out);
@@ -166,8 +166,8 @@ TEST(max_pool, forward_stride_y) {
     };
   // clang-format on
 
-  EXPECT_EQ(l.out_shape()[0].width_, static_cast<size_t>(4));
-  EXPECT_EQ(l.out_shape()[0].height_, static_cast<size_t>(2));
+  EXPECT_EQ(l.out_shape()[0].width_, 4);
+  EXPECT_EQ(l.out_shape()[0].height_, 2);
 
   std::vector<const tensor_t*> out;
   l.forward({{in}}, out);

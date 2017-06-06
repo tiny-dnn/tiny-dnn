@@ -150,8 +150,8 @@ class image {
                      std::string(stbi_failure_reason()));
     }
 
-    width_  = static_cast<size_t>(w);
-    height_ = static_cast<size_t>(h);
+    width_  = w;
+    height_ = h;
     depth_  = type == image_type::grayscale ? 1 : 3;
     type_   = type;
 
@@ -220,9 +220,7 @@ class image {
   size_t depth() const { return depth_; }
   image_type type() const { return type_; }
   shape3d shape() const {
-    return shape3d(static_cast<size_t>(width_),
-                   static_cast<size_t>(height_),
-                   static_cast<size_t>(depth_));
+    return shape3d(width_, height_, depth_);
   }
   const std::vector<intensity_t> &data() const { return data_; }
   vec_t to_vec() const { return vec_t(begin(), end()); }
@@ -250,7 +248,7 @@ class image {
       std::copy(begin, end, data_.begin());
     } else {
       auto order = depth_order(type_);
-      assert(static_cast<size_t>(std::distance(begin, end)) ==
+      assert(std::distance(begin, end) ==
              data_.size());
 
       for (size_t y = 0; y < height_; y++)
@@ -301,9 +299,9 @@ image<float_t> mean_image(const image<T> &src) {
  */
 template <typename T>
 inline image<T> resize_image(const image<T> &src, int width, int height) {
-  image<T> resized(shape3d(static_cast<size_t>(width),
-                           static_cast<size_t>(height),
-                           static_cast<size_t>(src.depth())),
+  image<T> resized(shape3d(width,
+                           height,
+                           src.depth()),
                    src.type());
   std::vector<T> src_rgb = src.template to_rgb<T>();
   std::vector<T> dst_rgb(resized.shape().size());

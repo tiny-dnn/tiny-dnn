@@ -462,16 +462,15 @@ class quantized_deconvolutional_layer : public layer {
         for (size_t c = 0; c < params_.out_unpadded.depth_; c++) {
           float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
           idx           = params_.out.get_index(
-            static_cast<size_t>(floor(params_.weight.width_ / 2)),
-            static_cast<size_t>(floor(params_.weight.height_ / 2)), c);
+            floor(params_.weight.width_ / 2),
+            floor(params_.weight.height_ / 2), c);
 
           const float_t *pout = &out[sample][idx];
 
-          for (size_t y = static_cast<size_t>(
-                               floor(params_.weight.height_ / 2));
+          for (size_t y = floor(params_.weight.height_ / 2);
                y <
                params_.out_unpadded.height_ +
-                 static_cast<size_t>(floor(params_.weight.height_ / 2));
+                floor(params_.weight.height_ / 2);
                y++, pout += params_.out.width_,
                              pimg += params_.out_unpadded.width_) {
             std::copy(pout, pout + params_.out_unpadded.width_, pimg);

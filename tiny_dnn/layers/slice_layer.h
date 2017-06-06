@@ -135,9 +135,9 @@ class slice_layer : public layer {
 
   void slice_channels_forward(const tensor_t &in_data,
                               std::vector<tensor_t *> &out_data) {
-    size_t num_samples = static_cast<size_t>(in_data.size());
     size_t channel_idx = 0;
-    size_t spatial_dim = in_shape_.area();
+    const size_t num_samples = in_data.size();
+    const size_t spatial_dim = in_shape_.area();
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
@@ -152,9 +152,9 @@ class slice_layer : public layer {
 
   void slice_channels_backward(std::vector<tensor_t *> &out_grad,
                                tensor_t &in_grad) {
-    size_t num_samples = static_cast<size_t>(in_grad.size());
     size_t channel_idx = 0;
-    size_t spatial_dim = in_shape_.area();
+    const size_t num_samples = in_grad.size();
+    const size_t spatial_dim = in_shape_.area();
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
