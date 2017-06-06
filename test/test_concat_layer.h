@@ -74,4 +74,4 @@ TEST(concat, forward_data) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

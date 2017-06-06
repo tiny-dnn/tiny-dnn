@@ -5,7 +5,7 @@
 
 [![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)
 
-**tiny-dnn** is a C++11 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
+**tiny-dnn** is a C++14 implementation of deep learning. It is suitable for deep learning on limited computational resource, embedded systems and IoT devices.
 
 | **`Linux/Mac OS`** | **`Windows`** |
 |------------------|-------------|
@@ -37,7 +37,7 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
     - with TBB threading and SSE/AVX vectorization
     - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
 - portable & header-only
-    - Run anywhere as long as you have a compiler which supports C++11
+    - Run anywhere as long as you have a compiler which supports C++14
     - Just include tiny_dnn.h and write your model in C++. There is nothing to install.
 - easy to integrate with real applications
     - no output to stdout/stderr
@@ -95,7 +95,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * adam
 
 ## Dependencies
-Nothing. All you need is a C++11 compiler.
+Nothing. All you need is a C++14 compiler (gcc 4.9+, clang 3.6+ or VS 2015+).
 
 ## Build
 tiny-dnn is header-only, so *there's nothing to build*. If you want to execute sample program or unit tests, you need to install [cmake](https://cmake.org/) and type the following commands:
@@ -138,7 +138,7 @@ Some cmake options are available:
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 |PROFILE|Build unit tests|OFF|gprof|
 
-<sup>1</sup> tiny-dnn use c++11 standard library for parallelization by default
+<sup>1</sup> tiny-dnn use C++14 standard library for parallelization by default
 
 <sup>2</sup> If you don't use serialization, you can switch off to speedup compilation time.
 
