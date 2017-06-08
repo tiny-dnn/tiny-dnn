@@ -138,7 +138,7 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
     pool_size_h, stride_w, stride_h, pad_type);
 
   *top_shape = mp->out_shape()[0];
-  mp->init_weight();
+  mp->init_parameters();
 
   return mp;
 }
@@ -158,14 +158,14 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
   // tiny-dnn has trainable parameter in average-pooling layer
   float_t weight = float_t{1} / (pool_size_w * pool_size_h);
 
-  vec_t &w = *ap->weights()[0];
-  vec_t &b = *ap->weights()[1];
+  vec_t &w = *ap->get_ith_parameter(0)->get_data();
+  vec_t &b = *ap->get_ith_parameter(1)->get_data();
 
   vectorize::fill(&w[0], w.size(), weight);
   vectorize::fill(&b[0], b.size(), float_t{0});
 
   *top_shape = ap->out_shape()[0];
-  ap->init_weight();
+  ap->init_parameters();
   ap->set_trainable(false);
 
   return ap;
@@ -175,7 +175,7 @@ inline std::shared_ptr<layer> create_softmax(const caffe::LayerParameter &layer,
                                              const shape_t &bottom_shape,
                                              shape_t *) {
   auto sm = std::make_shared<softmax_layer>(bottom_shape.size());
-  sm->init_weight();
+  sm->init_parameters();
   return sm;
 }
 
@@ -353,11 +353,12 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
       static_cast<serial_size_t>(weights.data_size())) {
     throw nn_error(std::string("layer size mismatch!") + "caffe(" + src.name() +
                    "):" + to_string(weights.data_size()) + "\n" + "tiny-dnn(" +
-                   dst->layer_type() + "):" + to_string(dst->weights().size()));
+                   dst->layer_type() +
+                   "):" + to_string(dst->get_parameters().size()));
   }
 
-  vec_t &w = *dst->weights()[0];
-  vec_t &b = *dst->weights()[1];
+  vec_t &w = *dst->get_ith_parameter(0)->get_data();
+  vec_t &b = *dst->get_ith_parameter(1)->get_data();
 
   // fill weights
   for (size_t o = 0; o < dst_out_size; o++) {
@@ -440,8 +441,8 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
     table = connection_table(conv_param.group(), in_channels, out_channels);
   }
 
-  vec_t &w = *dst->weights()[0];
-  vec_t &b = *dst->weights()[1];
+  vec_t &w = *dst->get_ith_parameter(0)->get_data();
+  vec_t &b = *dst->get_ith_parameter(1)->get_data();
 
   // fill weights
   for (int o = 0; o < out_channels; o++) {
@@ -507,7 +508,7 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
 
   // TODO
   // if (dst->weight().size()) {
-  if (dst->weights().size()) {
+  if (dst->get_parameters().size()) {
     layer_size_t pool_size = 0;
 
     if (!get_kernel_size_2d(pool_param, &pool_size)) {
@@ -526,8 +527,8 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
         dst->init_bias();
     }*/
 
-    vec_t &w = *dst->weights()[0];
-    vec_t &b = *dst->weights()[1];
+    vec_t &w = *dst->get_ith_parameter(0)->get_data();
+    vec_t &b = *dst->get_ith_parameter(1)->get_data();
 
     if (!w.empty()) {
       vectorize::fill(&w[0], w.size(), weight);

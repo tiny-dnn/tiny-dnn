@@ -84,7 +84,10 @@ class edge {
       vtype_(vtype),
       data_({vec_t(shape.size())}),
       grad_({vec_t(shape.size())}),
-      prev_(prev) {}
+      prev_(prev) {
+    if (vtype == vector_type::weight || vtype == vector_type::bias)
+      nn_warn("Nahi chalega bhai yeh...");
+  }
 
   void merge_grads(vec_t *dst) {
     assert(!grad_.empty());

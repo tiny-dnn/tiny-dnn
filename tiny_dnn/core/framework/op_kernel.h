@@ -57,7 +57,8 @@ class OpKernelContext {
     : in_data_(nullptr),
       out_data_(nullptr),
       out_grad_(nullptr),
-      in_grad_(nullptr) {
+      in_grad_(nullptr),
+      parameters_(nullptr) {
     op_params_ = std::unique_ptr<OpParams>(new OpParams());
   }
 
@@ -91,6 +92,15 @@ class OpKernelContext {
     return *(*out_grad_)[idx];
   }
 
+  void set_parameters(std::vector<std::shared_ptr<parameter>> &parameters) {
+    parameters_ = &parameters;
+  }
+
+  parameter &get_parameter(const int idx) { return *(*parameters_)[idx]; }
+  const parameter &get_parameter(const int idx) const {
+    return *(*parameters_)[idx];
+  }
+
   void setParams(Params *params) { op_params_->params_ptr_ = params; }
 
   Params *params() const { return op_params_->params_ptr_; }
@@ -118,6 +128,7 @@ class OpKernelContext {
   std::vector<tensor_t *> *out_data_;
   std::vector<tensor_t *> *out_grad_;
   std::vector<tensor_t *> *in_grad_;
+  std::vector<std::shared_ptr<parameter>> *parameters_;
 
   std::unique_ptr<OpParams> op_params_;
 };
