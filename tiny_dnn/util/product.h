@@ -286,7 +286,16 @@ inline void double_avx::store<std::false_type>(double *px, const __m256d &v) {
 
 #endif  // CNN_USE_AVX
 
-// generic dot-product
+/**
+ * generic dot-product
+ * @tparam T
+ * @tparam f1_aligned
+ * @tparam f2_aligned
+ * @param f1
+ * @param f2
+ * @param size
+ * @return
+ */
 template <typename T, typename f1_aligned, typename f2_aligned>
 inline typename T::value_type dot_product(const typename T::value_type *f1,
                                           const typename T::value_type *f2,
@@ -565,7 +574,14 @@ void add(const T *src, std::size_t size, T *dst) {
   }
 }
 
-// dst[i] += c * src[i]
+/**
+ * dst[i] += c * src[i]
+ * @tparam T
+ * @param src
+ * @param c
+ * @param size
+ * @param dst
+ */
 template <typename T>
 void muladd(const T *src, T c, std::size_t size, T *dst) {
   bool src_aligned =
@@ -591,7 +607,14 @@ void muladd(const T *src, T c, std::size_t size, T *dst) {
   }
 }
 
-// sum(s1[i] * s2[i])
+/**
+ * sum(s1[i] * s2[i])
+ * @tparam T
+ * @param s1
+ * @param s2
+ * @param size
+ * @return
+ */
 template <typename T>
 T dot(const T *s1, const T *s2, std::size_t size) {
   bool s1_aligned =
@@ -614,6 +637,26 @@ T dot(const T *s1, const T *s2, std::size_t size) {
       return detail::dot_product<VECTORIZE_TYPE, std::false_type,
                                  std::false_type>(s1, s2, size);
     }
+  }
+}
+
+// TODO(Randl)
+template <typename Iter1, typename Iter2>
+typename std::iterator_traits<Iter1>::value_type dot(Iter1 s1,
+                                                     Iter2 s2,
+                                                     std::size_t size) {
+  typename std::iterator_traits<Iter1>::value_type res = 0;
+  for (size_t i = 0; i < size; ++i, ++s1, ++s2) {
+    res += *s1 * *s2;
+  }
+  return res;
+}
+
+// TODO(Randl)
+template <typename Iter1, typename Iter2, typename T>
+void muladd(Iter1 src, T c, std::size_t size, Iter2 dst) {
+  for (size_t i = 0; i < size; ++i, ++dst, ++src) {
+    *dst += (*src) * c;
   }
 }
 

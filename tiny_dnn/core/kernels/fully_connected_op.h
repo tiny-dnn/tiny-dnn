@@ -35,6 +35,7 @@ class FullyConnectedOp : public core::OpKernel {
     Tensor<float_t> out_data_t(out_data);
 
     // initialize outputs
+    fill_tensor(out_data, float_t{0});
     out_data_t.fill(0);
 
     // call the algorithm depending  on the selected engine type
