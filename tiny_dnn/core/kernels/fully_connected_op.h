@@ -23,19 +23,12 @@ class FullyConnectedOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
-    // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &W       = context.input(1);
-    const tensor_t *bias    = params.has_bias_ ? &context.input(2) : nullptr;
-    tensor_t &out_data      = context.output(0);
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> in_data_t(in_data), weights_t(W),
-      bias_t = params.has_bias_ ? Tensor<float_t>(*bias) : Tensor<float_t>();
-    Tensor<float_t> out_data_t(out_data);
+    const Tensor<float_t> in_data_t(context.input(0)), weights_t(context.input(1)), bias_t = params.has_bias_ ? Tensor<float_t>(context.input(2)) : Tensor<float_t>();
+    Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
     out_data_t.fill(0);
 
     // call the algorithm depending  on the selected engine type

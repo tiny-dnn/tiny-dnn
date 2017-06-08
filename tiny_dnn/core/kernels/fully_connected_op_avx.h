@@ -102,11 +102,7 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
   }
 }
 
-template <typename Allocator,
-          typename S1,
-          typename S2,
-          typename S3,
-          typename S4>
+template <typename S1, typename S2, typename S3, typename S4>
 inline void avx_fully_connected_forward_kernel(
   const Tensor<double, S1> &in_data,
   const Tensor<double, S2> &W,
@@ -119,28 +115,28 @@ inline void avx_fully_connected_forward_kernel(
                               layer_parallelize);
 }
 
-template <typename Allocator>
-inline void avx_fully_connected_back_kernel(
-  const std::vector<std::vector<float, Allocator>> &prev_out,
-  const std::vector<float, Allocator> &W,
-  std::vector<std::vector<float, Allocator>> &dW,
-  std::vector<std::vector<float, Allocator>> &db,
-  std::vector<std::vector<float, Allocator>> &curr_delta,
-  std::vector<std::vector<float, Allocator>> &prev_delta,
-  const fully_params &params,
-  const bool layer_parallelize) {
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
+                                            const Tensor<float, S2> &W,
+                                            Tensor<float, S3> &dW,
+                                            Tensor<float, S4> &db,
+                                            Tensor<float, S5> &curr_delta,
+                                            Tensor<float, S6> &prev_delta,
+                                            const fully_params &params,
+                                            const bool layer_parallelize) {
   if (params.has_bias_) {
-    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
-      auto &prev_delta2 = prev_delta[sample];
-      auto &curr_delta2 = curr_delta[sample];
-      auto &prev_out2   = prev_out[sample];
-      auto &dW2         = dW[sample];
-      auto &db2         = db[sample];
+    for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta2[c] += vectorize::dot(
-          &curr_delta2[0], &W[c * params.out_size_], params.out_size_);
+        prev_delta(sample, c) += vectorize::dot(
+          curr_delta.host_iter(sample, 0),
+          W.host_iterator(0, c * params.out_size_), params.out_size_);
       }
       for_(layer_parallelize, 0, size_t(params.out_size_),
            [&](const blocked_range &r) {
@@ -148,15 +144,18 @@ inline void avx_fully_connected_back_kernel(
              // dW[c * out_size + i] += current_delta[i] * prev_out[c]
              size_t len = r.end() - r.begin();
              for (serial_size_t c = 0; c < params.in_size_; c++) {
-               vectorize::muladd(&curr_delta2[r.begin()], prev_out2[c], len,
-                                 &dW2[c * params.out_size_ + r.begin()]);
+               vectorize::muladd(
+                 curr_delta.host_iter(sample, r.begin()),
+                 prev_out.host_iter(sample, c), len,
+                 dW.host_iter(sample, c * params.out_size_ + r.begin()));
              }
              // vec_t& db = *in_grad[2];
-             vectorize::reduce(&curr_delta2[r.begin()], len, &db2[r.begin()]);
+             vectorize::reduce(curr_delta.host_iter(sample, r.begin()), len,
+                               db.host_iter(sample, r.begin()));
            });
     }
   } else {
-    for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+    for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
       auto &prev_delta2 = prev_delta[sample];
       auto &curr_delta2 = curr_delta[sample];
       auto &prev_out2   = prev_out[sample];
@@ -164,8 +163,9 @@ inline void avx_fully_connected_back_kernel(
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta2[c] += vectorize::dot(
-          &curr_delta2[0], &W[c * params.out_size_], params.out_size_);
+        prev_delta(sample, c) += vectorize::dot(
+          curr_delta.host_iter(sample, 0),
+          W.host_iterator(0, c * params.out_size_), params.out_size_);
       }
       for_(layer_parallelize, 0, size_t(params.out_size_),
            [&](const blocked_range &r) {
@@ -173,16 +173,17 @@ inline void avx_fully_connected_back_kernel(
              // dW[c * out_size + i] += current_delta[i] * prev_out[c]
              size_t len = r.end() - r.begin();
              for (serial_size_t c = 0; c < params.in_size_; c++) {
-               vectorize::muladd(&curr_delta2[r.begin()], prev_out2[c], len,
-                                 &dW2[c * params.out_size_ + r.begin()]);
+               vectorize::muladd(
+                 curr_delta.host_iter(sample, r.begin()),
+                 prev_out.host_iter(sample, c), len,
+                 dW.host_iter(sample, c * params.out_size_ + r.begin()));
              }
            });
     }
   }
 }
 
-template <typename Allocator,
-          typename S1,
+template <typename S1,
           typename S2,
           typename S3,
           typename S4,
@@ -202,7 +203,10 @@ inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
 }
 
 #endif  // CNN_USE_AVX
-template <typename S1, typename S2, typename S3, typename S4>
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4>
 inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    const Tensor<float_t, S2> &W,
                                    const Tensor<float_t, S3> &bias,
@@ -222,13 +226,18 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
-
-inline void fully_connected_op_avx(const tensor_t &prev_out,
-                                   const vec_t &W,
-                                   tensor_t &dW,
-                                   tensor_t &db,
-                                   tensor_t &curr_delta,
-                                   tensor_t &prev_delta,
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void fully_connected_op_avx(const Tensor<float_t, S1> &prev_out,
+                                   const Tensor<float_t, S2> &W,
+                                   Tensor<float_t, S3> &dW,
+                                   Tensor<float_t, S4> &db,
+                                   Tensor<float_t, S5> &curr_delta,
+                                   Tensor<float_t, S6> &prev_delta,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX

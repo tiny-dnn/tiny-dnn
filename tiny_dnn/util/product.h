@@ -660,7 +660,19 @@ void muladd(Iter1 src, T c, std::size_t size, Iter2 dst) {
   }
 }
 
-/// dst[i] += src[i]
+/**
+ * dst[i] += src[i]
+ */
+template <typename Iter1, typename Iter2>
+void reduce(Iter1 src, std::size_t size, Iter2 dst) {
+  for (size_t i = 0; i < size; ++i, ++dst, ++src) {
+    *dst += *src;
+  }
+}
+
+/**
+ * dst[i] += src[i]
+ */
 template <typename T>
 void reduce(const T *src, std::size_t size, T *dst) {
   bool src_aligned =
