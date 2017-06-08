@@ -30,7 +30,10 @@ class FullyConnectedOp : public core::OpKernel {
     tensor_t &out_data      = context.output(0);
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> in_data_t(context.input(0)), weights_t(context.input(1)), bias_t = params.has_bias_ ? Tensor<float_t>(context.input(2)) : Tensor<float_t>();
+    const Tensor<float_t> in_data_t(context.input(0)),
+      weights_t(context.input(1)),
+      bias_t = params.has_bias_ ? Tensor<float_t>(context.input(2))
+                                : Tensor<float_t>();
     Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs

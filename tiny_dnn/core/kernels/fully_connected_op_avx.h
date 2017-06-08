@@ -134,9 +134,9 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta(sample, c) += vectorize::dot(
-          curr_delta.host_iter(sample, 0),
-          W.host_iterator(0, c * params.out_size_), params.out_size_);
+        prev_delta.host_at(sample, c) += vectorize::dot(
+          curr_delta.host_iter(sample, 0), W.host_iter(0, c * params.out_size_),
+          params.out_size_);
       }
       for_(layer_parallelize, 0, size_t(params.out_size_),
            [&](const blocked_range &r) {
@@ -146,7 +146,7 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
              for (serial_size_t c = 0; c < params.in_size_; c++) {
                vectorize::muladd(
                  curr_delta.host_iter(sample, r.begin()),
-                 prev_out.host_iter(sample, c), len,
+                 *prev_out.host_iter(sample, c), len,
                  dW.host_iter(sample, c * params.out_size_ + r.begin()));
              }
              // vec_t& db = *in_grad[2];
@@ -156,16 +156,12 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
     }
   } else {
     for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
-      auto &prev_delta2 = prev_delta[sample];
-      auto &curr_delta2 = curr_delta[sample];
-      auto &prev_out2   = prev_out[sample];
-      auto &dW2         = dW[sample];
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta(sample, c) += vectorize::dot(
-          curr_delta.host_iter(sample, 0),
-          W.host_iterator(0, c * params.out_size_), params.out_size_);
+        prev_delta.host_at(sample, c) += vectorize::dot(
+          curr_delta.host_iter(sample, 0), W.host_iter(0, c * params.out_size_),
+          params.out_size_);
       }
       for_(layer_parallelize, 0, size_t(params.out_size_),
            [&](const blocked_range &r) {
@@ -175,7 +171,7 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
              for (serial_size_t c = 0; c < params.in_size_; c++) {
                vectorize::muladd(
                  curr_delta.host_iter(sample, r.begin()),
-                 prev_out.host_iter(sample, c), len,
+                 *prev_out.host_iter(sample, c), len,
                  dW.host_iter(sample, c * params.out_size_ + r.begin()));
              }
            });
@@ -203,10 +199,7 @@ inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
 }
 
 #endif  // CNN_USE_AVX
-template <typename S1,
-          typename S2,
-          typename S3,
-          typename S4>
+template <typename S1, typename S2, typename S3, typename S4>
 inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    const Tensor<float_t, S2> &W,
                                    const Tensor<float_t, S3> &bias,
