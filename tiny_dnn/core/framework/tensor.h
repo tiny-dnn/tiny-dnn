@@ -161,9 +161,48 @@ class Tensor {
 
   const auto host_begin() const { return storage_.cxbegin(); }
 
+  template <typename... Args>
+  auto host_iter(const Args... args) {
+    return std::next(storage_.xbegin(), host_offset(args...));
+  }
+
+  template <typename... Args>
+  auto host_iter(const Args... args) const {
+    return std::next(storage_.cxbegin(), host_offset(args...));
+  }
+
   auto host_end() { return storage_.xend(); }
 
   const auto host_end() const { return storage_.cxend(); }
+
+  /**
+   * Calculate an offset for last dimension.
+   * @param d an index of last dimension
+   * @return offest from the beginning of the dimesion
+   */
+  size_t host_offset(const size_t d) const { return d; }
+
+  /**
+   * Calculate an offest in 1D representation of nD Tensor. Parameters are
+   * indexes of k last dimensions. If k is less than n, function returns an
+   * offset from the first index of (n-k+1)th dimension. This allows recursive
+   * call to acquire offset for generic number of dimensions
+   * @param d index of (k-n)th dimension. For external call, n=k usually holds
+   * @param args index of rest (k-1) dimensions.
+   * @return offset from the first index of (n-k)th dimension
+   */
+  template <typename... Args>
+  size_t host_offset(const size_t d, const Args... args) const {
+    size_t dim = storage_.dimension() - sizeof...(args) - 1;
+    /*if (d >= storage.shape()[dim]) {
+      throw nn_error("Access tensor out of range.");
+    }*/
+    size_t shift = 1;
+    for (size_t i = dim + 1; i < storage_.dimension(); ++i)
+      shift *= storage_.shape()[i];  // TODO(Randl): optimize. Reverse argumets?
+
+    return (d * shift + host_offset(args...));
+  }
 
 // TODO(Randl)
 /*
