@@ -586,6 +586,8 @@ TEST(tensor, tensor_t) {
     for (size_t j = 0; j < x[i].size(); j += 2) x[i][j] = i + j;
 
   Tensor<float_t> y(x);
+  EXPECT_EQ(y.shape()[0], 5);
+  EXPECT_EQ(y.shape()[1], 5);
   EXPECT_EQ(y.host_at(1, 1), 2);
   for (size_t i = 0; i < x.size(); i += 2)
     for (size_t j = 0; j < x[i].size(); j += 2)
@@ -604,6 +606,7 @@ TEST(tensor, print) { print_tester<5>(std::cout); }
 
 TEST(tensor, print_view) {
   Tensor<float_t> tensor({3, 3, 3, 3}, 2);
+
   auto t_view = tensor.subView({0, 2}, {0, 1}, {0, 3}, {0, 3});
   t_view.host_at(0, 0, 0, 0) = -1;
   t_view.host_at(1, 0, 1, 1) = 3;

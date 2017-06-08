@@ -65,6 +65,7 @@ struct blocked_range {
   blocked_range(int begin, int end)
     : begin_(static_cast<size_t>(begin)), end_(static_cast<size_t>(end)) {}
 
+  // TODO(Randl): misleading
   const_iterator begin() const { return begin_; }
   const_iterator end() const { return end_; }
 

@@ -19,13 +19,13 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
                                         Tensor<float_t, S4> &out_data,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
-  for_i(layer_parallelize, in_data.size(), [&](int sample) {
+  for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
     for (serial_size_t i = 0; i < params.out_size_; i++) {
       out_data.host_at(sample, i) = float_t{0};
       for (serial_size_t c = 0; c < params.in_size_; c++) {
         out_data.host_at(sample, i) +=
           weights.host_at(0, c * params.out_size_ + i) *
-          in_data.host_at(sample, i);
+          in_data.host_at(sample, c);
       }
 
       if (params.has_bias_) {
@@ -49,7 +49,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
                                         Tensor<float_t, S6> &prev_delta,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
-  for (serial_size_t sample = 0; sample < prev_out.size(); sample++) {
+  for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
     for (serial_size_t c = 0; c < params.in_size_; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
