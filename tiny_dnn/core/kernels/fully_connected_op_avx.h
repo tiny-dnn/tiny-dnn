@@ -88,7 +88,7 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       });
     }
   } else {
-    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+    for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
       auto in  = in_data.host_iter(sample);
       auto out = out_data.host_iter(sample);
       for (serial_size_t i = 0; i < params.out_size_; i++) {
