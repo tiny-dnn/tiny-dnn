@@ -586,8 +586,8 @@ TEST(tensor, tensor_t) {
     for (size_t j = 0; j < x[i].size(); j += 2) x[i][j] = i + j;
 
   Tensor<float_t> y(x);
-  EXPECT_EQ(y.shape()[0], 5);
-  EXPECT_EQ(y.shape()[1], 5);
+  EXPECT_EQ(y.shape()[0], 5u);
+  EXPECT_EQ(y.shape()[1], 5u);
   EXPECT_EQ(y.host_at(1, 1), 2);
   for (size_t i = 0; i < x.size(); i += 2)
     for (size_t j = 0; j < x[i].size(); j += 2)
