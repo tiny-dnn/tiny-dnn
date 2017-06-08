@@ -199,13 +199,13 @@ endif()
 ####
 # Setup the compiler options
 
-# set c++ standard to c++11.
+# set c++ standard to c++14.
 # Note: not working on CMake 2.8. We assume that user has
-#       a compiler with C++11 support.
+#       a compiler with C++14 support.
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-message(STATUS "C++11 support has been enabled by default.")
+message(STATUS "C++14 support has been enabled by default.")
 
 include(cotire)
 

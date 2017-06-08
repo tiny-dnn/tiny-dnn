@@ -84,4 +84,4 @@ TEST(nodes, graph_branch2) {
   EXPECT_FLOAT_EQ(static_cast<float_t>(res[2]), static_cast<float_t>(0.0));
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -140,7 +140,7 @@ class average_pooling_layer : public partial_connected_layer {
    * @param pool_size    [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   average_pooling_layer(serial_size_t in_width,
                         serial_size_t in_height,
                         serial_size_t in_channels,
@@ -156,17 +156,17 @@ class average_pooling_layer : public partial_connected_layer {
                             padding::valid) {}
 
   /**
-  * @param in_width     [in] width of input image
-  * @param in_height    [in] height of input image
-  * @param in_channels  [in] the number of input image channels(depth)
-  * @param pool_size_x  [in] factor by which to downscale
-  * @param pool_size_y  [in] factor by which to downscale
-  * @param stride_x     [in] interval at which to apply the filters to the
-  *input
-  * @param stride_y     [in] interval at which to apply the filters to the
-  *input
-  * @param pad_type     [in] padding mode(same/valid)
-  **/
+   * @param in_width     [in] width of input image
+   * @param in_height    [in] height of input image
+   * @param in_channels  [in] the number of input image channels(depth)
+   * @param pool_size_x  [in] factor by which to downscale
+   * @param pool_size_y  [in] factor by which to downscale
+   * @param stride_x     [in] interval at which to apply the filters to the
+   *input
+   * @param stride_y     [in] interval at which to apply the filters to the
+   *input
+   * @param pad_type     [in] padding mode(same/valid)
+   **/
   average_pooling_layer(serial_size_t in_width,
                         serial_size_t in_height,
                         serial_size_t in_channels,

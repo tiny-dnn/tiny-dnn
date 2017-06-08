@@ -702,4 +702,4 @@ TEST(network, trainable) {
   EXPECT_NE(w4, w4_after_update);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

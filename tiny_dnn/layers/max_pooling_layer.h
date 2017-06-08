@@ -23,7 +23,7 @@
 namespace tiny_dnn {
 
 /**
- * applies max-pooing operaton to the spatial data
+ * applies max-pooling operaton to the spatial data
  **/
 class max_pooling_layer : public layer {
  public:
@@ -79,7 +79,7 @@ class max_pooling_layer : public layer {
    * @param pooling_size [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   max_pooling_layer(serial_size_t in_width,
                     serial_size_t in_height,
                     serial_size_t in_channels,

@@ -165,4 +165,4 @@ TEST(layer_tuple, chain_operator_layer_tuple2) {
   EXPECT_EQ(slice->next_nodes()[1], relu.get());
   EXPECT_EQ(slice->next_nodes()[2], elu.get());
 }
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

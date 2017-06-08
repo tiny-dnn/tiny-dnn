@@ -20,11 +20,11 @@
 namespace tiny_dnn {
 
 /**
-* create whole network and load weights from caffe's netparameter
-*
-* @param layer [in] netparameter of caffemodel
-* @param data_shape [in] size of input data (width x height x channels)
-*/
+ * create whole network and load weights from caffe's netparameter
+ *
+ * @param layer [in] netparameter of caffemodel
+ * @param data_shape [in] size of input data (width x height x channels)
+ */
 inline std::shared_ptr<network<sequential>> create_net_from_caffe_net(
   const caffe::NetParameter &layer, const shape3d &data_shape) {
   detail::caffe_layer_vector src_net(layer);

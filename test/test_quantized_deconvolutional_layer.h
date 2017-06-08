@@ -278,4 +278,4 @@ connection_table(connection, 3, 6));
     serialization_test(layer1, layer2);
 }*/
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

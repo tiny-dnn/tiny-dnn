@@ -111,4 +111,4 @@ TEST(dropout, full_net_batch) {
 
   nn.train<mse>(optimizer, data, train, 20, 10);
 }
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn
