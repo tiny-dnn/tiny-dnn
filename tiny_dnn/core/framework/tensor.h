@@ -60,6 +60,21 @@ class Tensor {
     : storage_(shape) {}
 
   /**
+   * Temporal method to create a new Tensor from old tensor_t
+   */
+  explicit Tensor(const tensor_t &data) {
+    std::vector<size_t> shape = {data.size(), data[0].size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      for (size_t j = 0; j < data[i].size(); ++j) {
+        storage_(i, j) = data[i][j];
+      }
+    }
+  }
+
+  /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape and filling it with value. For example,
    * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
@@ -248,6 +263,21 @@ auto host_data() {
     return true; //std::is_same(Storage, xt::xview<U>);
   }
 */
+
+  /**
+   * Temporal method to convert new Tensor to tensor_t
+   * @return
+   */
+  tensor_t toTensor() const {
+    tensor_t tensor(storage_.shape()[0]);
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      tensor[i].resize(storage_.shape()[1]);
+      for (size_t j = 0; j < storage_.shape()[1]; ++j) {
+        tensor[i][j] = storage_(i, j);
+      }
+    }
+    return tensor;
+  }
 
   /**
    * Creates Tensor given the storage

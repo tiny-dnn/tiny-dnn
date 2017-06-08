@@ -580,6 +580,21 @@ std::ostream &print_tester(std::ostream &os) {
   return os;
 }
 
+TEST(tensor, tensor_t) {
+  tensor_t x(5, vec_t(5, 2));
+  for (size_t i = 0; i < x.size(); i += 2)
+    for (size_t j = 0; j < x[i].size(); j += 2) x[i][j] = i + j;
+
+  Tensor<float_t> y(x);
+  EXPECT_EQ(y.host_at(1, 1), 2);
+  for (size_t i = 0; i < x.size(); i += 2)
+    for (size_t j = 0; j < x[i].size(); j += 2)
+      EXPECT_EQ(y.host_at(i, j), i + j);
+
+  tensor_t z = y.toTensor();
+  EXPECT_EQ(x, z);
+}
+
 template <>
 std::ostream &print_tester<0>(std::ostream &os) {
   return os;
