@@ -29,17 +29,27 @@ class FullyConnectedOp : public core::OpKernel {
     const tensor_t *bias    = params.has_bias_ ? &context.input(2) : nullptr;
     tensor_t &out_data      = context.output(0);
 
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    const Tensor<float_t> in_data_t(in_data), weights_t(W),
+      bias_t = params.has_bias_ ? Tensor<float_t>(*bias) : Tensor<float_t>();
+    Tensor<float_t> out_data_t(out_data);
+
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data_t.fill(0);
 
     // call the algorithm depending  on the selected engine type
 
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::fully_connected_op_internal(
-        in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
-        params, context.parallelize());
+      kernels::fully_connected_op_internal(in_data_t, weights_t, bias_t,
+                                           out_data_t, params,
+                                           context.parallelize());
+
+      // convert Tensor class to tensor_t
+      // NOTE: this hack is temporal
+      // TODO(Randl): Remove once layers forward and backward by themself.
+      out_data = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(
         in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,

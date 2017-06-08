@@ -12,24 +12,23 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void fully_connected_op_internal(const tensor_t &in_data,
-                                        const vec_t &W,
-                                        const vec_t &bias,
-                                        tensor_t &out_data,
+template <typename S1, typename S2, typename S3, typename S4>
+inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
+                                        const Tensor<float_t, S2> &W,
+                                        const Tensor<float_t, S3> &bias,
+                                        Tensor<float_t, S4> &out_data,
                                         const fully_params &params,
                                         const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](int sample) {
-    const vec_t &in = in_data[sample];
-    vec_t &out      = out_data[sample];
-
     for (serial_size_t i = 0; i < params.out_size_; i++) {
-      out[i] = float_t{0};
+      out_data.host_at(sample, i) = float_t{0};
       for (serial_size_t c = 0; c < params.in_size_; c++) {
-        out[i] += W[c * params.out_size_ + i] * in[c];
+        out_data.host_at(sample, i) +=
+          W.host_at(c * params.out_size_ + i) * in_data.host_at(sample, i);
       }
 
       if (params.has_bias_) {
-        out[i] += bias[i];
+        out_data.host_at(sample, i) += bias.host_at(i);
       }
     }
   });
