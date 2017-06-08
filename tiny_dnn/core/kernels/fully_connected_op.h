@@ -47,8 +47,6 @@ class FullyConnectedOp : public core::OpKernel {
                                            out_data_t, params,
                                            context.parallelize());
 
-      // convert Tensor class to tensor_t
-      // NOTE: this hack is temporal
       // TODO(Randl): Remove once layers forward and backward by themself.
       out_data = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
@@ -56,9 +54,11 @@ class FullyConnectedOp : public core::OpKernel {
         in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
         params, context.parallelize());
     } else if (engine == core::backend_t::avx) {
-      kernels::fully_connected_op_avx(in_data, W[0],
-                                      params.has_bias_ ? (*bias)[0] : vec_t(),
-                                      out_data, params, context.parallelize());
+      kernels::fully_connected_op_avx(in_data_t, weights_t, bias_t, out_data_t,
+                                      params, context.parallelize());
+
+      // TODO(Randl): Remove once layers forward and backward by themself.
+      out_data = out_data_t.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }

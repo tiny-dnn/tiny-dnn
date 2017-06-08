@@ -14,14 +14,13 @@ namespace kernels {
 
 #ifdef CNN_USE_AVX
 
-template <typename Allocator>
-inline void avx_fully_connected_forward_kernel(
-  const std::vector<std::vector<float, Allocator>> &in_data,
-  const std::vector<float, Allocator> &W,
-  const std::vector<float, Allocator> &bias,
-  std::vector<std::vector<float, Allocator>> &out_data,
-  const fully_params &params,
-  const bool layer_parallelize) {
+template <typename S1, typename S2, typename S3, typename S4>
+inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
+                                               const Tensor<float, S2> &W,
+                                               const Tensor<float, S3> &bias,
+                                               Tensor<float, S4> &out_data,
+                                               const fully_params &params,
+                                               const bool layer_parallelize) {
   if (params.has_bias_) {
     size_t nblocks  = params.out_size_ / 8;
     size_t nremains = params.out_size_ & 7;
@@ -31,83 +30,88 @@ inline void avx_fully_connected_forward_kernel(
       };
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
-        const auto &in = in_data[sample];
-        auto &out      = out_data[sample];
+      for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
+        auto in  = in_data.host_iter(sample);
+        auto out = out_data.host_iter(sample);
         {
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 b = _mm256_loadu_ps(&bias[8 * i]);
-            _mm256_storeu_ps(&out[8 * i], b);
+            __m256 b = _mm256_loadu_ps(&*std::next(bias.host_begin(), 8 * i));
+            _mm256_storeu_ps(&*std::next(out, 8 * i), b);
           }
-          auto b = _mm256_maskload_ps(&bias[8 * nblocks], imask);
-          _mm256_maskstore_ps(&out[8 * nblocks], imask, b);
+          auto b = _mm256_maskload_ps(
+            &*std::next(bias.host_begin(), 8 * nblocks), imask);
+          _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, b);
         }
         for (serial_size_t c = 0; c < params.in_size_; c++) {
-          auto in_val     = _mm256_set1_ps(in[c]);
-          const float *pW = &W[c * params.out_size_];
+          auto in_val = _mm256_set1_ps(*std::next(in, c));
+          auto pW     = W.host_iter(0, c * params.out_size_);
           for (size_t i = 0; i < nblocks / 2; ++i) {
-            __m256 sum0 = _mm256_loadu_ps(&out[16 * i]);
-            __m256 sum1 = _mm256_loadu_ps(&out[16 * i + 8]);
-            __m256 w0   = _mm256_loadu_ps(pW + 16 * i);
-            __m256 w1   = _mm256_loadu_ps(pW + 16 * i + 8);
+            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, 16 * i));
+            __m256 sum1 = _mm256_loadu_ps(&*std::next(out, 16 * i + 8));
+            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, 16 * i));
+            __m256 w1   = _mm256_loadu_ps(&*std::next(pW, 16 * i + 8));
             sum0        = madd256_ps(w0, in_val, sum0);
             sum1        = madd256_ps(w1, in_val, sum1);
-            _mm256_storeu_ps(&out[16 * i], sum0);
-            _mm256_storeu_ps(&out[16 * i + 8], sum1);
+            _mm256_storeu_ps(&*std::next(out, 16 * i), sum0);
+            _mm256_storeu_ps(&*std::next(out, 16 * i + 8), sum1);
           }
           if (nblocks & 1) {
-            __m256 sum0 = _mm256_loadu_ps(&out[nblocks / 2 * 16]);
-            __m256 w0   = _mm256_loadu_ps(pW + nblocks / 2 * 16);
+            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, nblocks / 2 * 16));
+            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, nblocks / 2 * 16));
             sum0        = madd256_ps(w0, in_val, sum0);
-            _mm256_storeu_ps(&out[nblocks / 2 * 16], sum0);
+            _mm256_storeu_ps(&*std::next(out, nblocks / 2 * 16), sum0);
           }
-          __m256 sum = _mm256_maskload_ps(&out[8 * nblocks], imask);
-          __m256 w   = _mm256_maskload_ps(pW + 8 * nblocks, imask);
+          __m256 sum = _mm256_maskload_ps(&*std::next(out, 8 * nblocks), imask);
+          __m256 w   = _mm256_maskload_ps(&*std::next(pW, 8 * nblocks), imask);
           sum        = madd256_ps(w, in_val, sum);
-          _mm256_maskstore_ps(&out[8 * nblocks], imask, sum);
+          _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, sum);
         }
       });
     } else {
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
-        const auto &in = in_data[sample];
-        auto &out      = out_data[sample];
+      for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
+        auto in  = in_data.host_iter(sample);
+        auto out = out_data.host_iter(sample);
         for (size_t i = 0; i < nblocks; ++i) {
-          __m256 b = _mm256_loadu_ps(&bias[8 * i]);
-          _mm256_storeu_ps(&out[8 * i], b);
+          __m256 b = _mm256_loadu_ps(&*bias.host_iter(0, 8 * i));
+          _mm256_storeu_ps(&*std::next(out, 8 * i), b);
         }
         for (serial_size_t c = 0; c < params.in_size_; c++) {
-          auto in_val     = _mm256_set1_ps(in[c]);
-          const float *pW = &W[c * params.out_size_];
+          auto in_val = _mm256_set1_ps(*std::next(in, c));
+          auto pW     = W.host_iter(0, c * params.out_size_);
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 sum = _mm256_loadu_ps(&out[8 * i]);
-            __m256 w   = _mm256_loadu_ps(pW + 8 * i);
+            __m256 sum = _mm256_loadu_ps(&*std::next(out, 8 * i));
+            __m256 w   = _mm256_loadu_ps(&*std::next(pW, 8 * i));
             sum        = madd256_ps(w, in_val, sum);
-            _mm256_storeu_ps(&out[8 * i], sum);
+            _mm256_storeu_ps(&*std::next(out, 8 * i), sum);
           }
         }
       });
     }
   } else {
     for_i(layer_parallelize, in_data.size(), [&](int sample) {
-      const auto &in = in_data[sample];
-      auto &out      = out_data[sample];
+      auto in  = in_data.host_iter(sample);
+      auto out = out_data.host_iter(sample);
       for (serial_size_t i = 0; i < params.out_size_; i++) {
         float sum = 0.0f;
         for (serial_size_t c = 0; c < params.in_size_; c++) {
-          sum += W[c * params.out_size_ + i] * in[c];
+          sum += W.host_at(0, c * params.out_size_ + i) * *std::next(in, c);
         }
-        out[i] = sum;
+        *std::next(out, i) = sum;
       }
     });
   }
 }
 
-template <typename Allocator>
+template <typename Allocator,
+          typename S1,
+          typename S2,
+          typename S3,
+          typename S4>
 inline void avx_fully_connected_forward_kernel(
-  const std::vector<std::vector<double, Allocator>> &in_data,
-  const std::vector<double, Allocator> &W,
-  const std::vector<double, Allocator> &bias,
-  std::vector<std::vector<double, Allocator>> &out_data,
+  const Tensor<double, S1> &in_data,
+  const Tensor<double, S2> &W,
+  const Tensor<double, S3> &bias,
+  Tensor<double, S4> &out_data,
   const fully_params &params,
   const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
@@ -177,27 +181,32 @@ inline void avx_fully_connected_back_kernel(
   }
 }
 
-template <typename Allocator>
-inline void avx_fully_connected_back_kernel(
-  const std::vector<std::vector<double, Allocator>> &prev_out,
-  const std::vector<double, Allocator> &W,
-  std::vector<std::vector<double, Allocator>> &dW,
-  std::vector<std::vector<double, Allocator>> &db,
-  std::vector<std::vector<double, Allocator>> &curr_delta,
-  std::vector<std::vector<double, Allocator>> &prev_delta,
-  const fully_params &params,
-  const bool layer_parallelize) {
+template <typename Allocator,
+          typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
+                                            const Tensor<double, S2> &W,
+                                            Tensor<double, S3> &dW,
+                                            Tensor<double, S4> &db,
+                                            Tensor<double, S5> &curr_delta,
+                                            Tensor<double, S6> &prev_delta,
+                                            const fully_params &params,
+                                            const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(prev_out, W, dW, db, curr_delta, prev_delta,
                               params, layer_parallelize);
 }
 
 #endif  // CNN_USE_AVX
-
-inline void fully_connected_op_avx(const tensor_t &in_data,
-                                   const vec_t &W,
-                                   const vec_t &bias,
-                                   tensor_t &out_data,
+template <typename S1, typename S2, typename S3, typename S4>
+inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
+                                   const Tensor<float_t, S2> &W,
+                                   const Tensor<float_t, S3> &bias,
+                                   Tensor<float_t, S4> &out_data,
                                    const fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
