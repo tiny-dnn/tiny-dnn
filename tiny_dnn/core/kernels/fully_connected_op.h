@@ -24,11 +24,6 @@ class FullyConnectedOp : public core::OpKernel {
     auto params = OpKernel::params_->fully();
 
     // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &W       = context.input(1);
-    const tensor_t *bias    = params.has_bias_ ? &context.input(2) : nullptr;
-    tensor_t &out_data      = context.output(0);
-
     // TODO(Randl): Remove once layers forward and backward by themself.
     const Tensor<float_t> in_data_t(context.input(0)),
       weights_t(context.input(1)),
@@ -37,7 +32,6 @@ class FullyConnectedOp : public core::OpKernel {
     Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
     out_data_t.fill(0);
 
     // call the algorithm depending  on the selected engine type
@@ -52,9 +46,11 @@ class FullyConnectedOp : public core::OpKernel {
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
-      kernels::fully_connected_op_nnpack(
-        in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
-        params, context.parallelize());
+      kernels::fully_connected_op_avx(in_data_t, weights_t, bias_t, out_data_t,
+                                      params, context.parallelize());
+
+      // TODO(Randl): Remove once layers forward and backward by themself.
+      context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(in_data_t, weights_t, bias_t, out_data_t,
                                       params, context.parallelize());

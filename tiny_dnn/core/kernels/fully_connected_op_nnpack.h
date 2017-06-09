@@ -12,20 +12,29 @@
 
 namespace tiny_dnn {
 namespace kernels {
-
-inline void fully_connected_op_nnpack(const tensor_t &in_data,
-                                      const vec_t &W,
-                                      const vec_t &bias,
-                                      tensor_t &out_data,
+/**
+ * Forward propogation for fully connected layer with NNPACK backend
+ * @param in_data
+ * @param weights
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param layer_parallelize
+ */
+template <typename S1, typename S2, typename S3, typename S4>
+inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
+                                      const Tensor<float, S2> &weights,
+                                      const Tensor<float, S3> &bias,
+                                      Tensor<float, S4> &out_data,
                                       const fully_params &params,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   NNPackInitializer::getInstance().initialize();
 
-  const float *kernel_ptr = W.data();
-  const float *input_ptr  = in_data[0].data();
-  float *output_ptr       = out_data[0].data();
+  const float *kernel_ptr = &*weights.host_begin();
+  const float *input_ptr  = in_data.host_begin();
+  float *output_ptr       = out_data.host_begin();
 
   // TODO: embed it into a class
   const size_t num_mkl_threads = 1;
