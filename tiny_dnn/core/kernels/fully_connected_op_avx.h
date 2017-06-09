@@ -42,58 +42,62 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample, 0);
-        auto out = out_data.host_iter(sample, 0);
         {
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 b = _mm256_loadu_ps(&*std::next(bias.host_begin(), 8 * i));
-            _mm256_storeu_ps(&*std::next(out, 8 * i), b);
+            __m256 b = _mm256_loadu_ps(bias.host_pointer(0, 8 * i));
+            _mm256_storeu_ps(out_data.host_pointer(sample, 8 * i), b);
           }
-          auto b = _mm256_maskload_ps(
-            &*std::next(bias.host_begin(), 8 * nblocks), imask);
-          _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, b);
+          auto b = _mm256_maskload_ps(bias.host_pointer(0, 8 * nblocks), imask);
+          _mm256_maskstore_ps(out_data.host_pointer(sample, 8 * nblocks), imask,
+                              b);
         }
         for (serial_size_t c = 0; c < in_size; c++) {
-          auto in_val = _mm256_set1_ps(*std::next(in, c));
-          auto pW     = W.host_iter(0, c * out_size);
+          auto in_val = _mm256_set1_ps(in_data.host_at(sample, c));
           for (size_t i = 0; i < nblocks / 2; ++i) {
-            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, 16 * i));
-            __m256 sum1 = _mm256_loadu_ps(&*std::next(out, 16 * i + 8));
-            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, 16 * i));
-            __m256 w1   = _mm256_loadu_ps(&*std::next(pW, 16 * i + 8));
-            sum0        = madd256_ps(w0, in_val, sum0);
-            sum1        = madd256_ps(w1, in_val, sum1);
-            _mm256_storeu_ps(&*std::next(out, 16 * i), sum0);
-            _mm256_storeu_ps(&*std::next(out, 16 * i + 8), sum1);
+            __m256 sum0 =
+              _mm256_loadu_ps(out_data.host_pointer(sample, 16 * i));
+            __m256 sum1 =
+              _mm256_loadu_ps(out_data.host_pointer(sample, 16 * i + 8));
+            __m256 w0 =
+              _mm256_loadu_ps(W.host_pointer(0, c * out_size + 16 * i));
+            __m256 w1 =
+              _mm256_loadu_ps(W.host_pointer(0, c * out_size + 16 * i + 8));
+            sum0 = madd256_ps(w0, in_val, sum0);
+            sum1 = madd256_ps(w1, in_val, sum1);
+            _mm256_storeu_ps(out_data.host_pointer(sample, 16 * i), sum0);
+            _mm256_storeu_ps(out_data.host_pointer(sample, 16 * i + 8), sum1);
           }
           if (nblocks & 1) {
-            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, nblocks / 2 * 16));
-            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, nblocks / 2 * 16));
-            sum0        = madd256_ps(w0, in_val, sum0);
-            _mm256_storeu_ps(&*std::next(out, nblocks / 2 * 16), sum0);
+            __m256 sum0 =
+              _mm256_loadu_ps(out_data.host_pointer(sample, nblocks / 2 * 16));
+            __m256 w0 = _mm256_loadu_ps(
+              W.host_pointer(0, c * out_size + nblocks / 2 * 16));
+            sum0 = madd256_ps(w0, in_val, sum0);
+            _mm256_storeu_ps(out_data.host_pointer(sample, nblocks / 2 * 16),
+                             sum0);
           }
-          __m256 sum = _mm256_maskload_ps(&*std::next(out, 8 * nblocks), imask);
-          __m256 w   = _mm256_maskload_ps(&*std::next(pW, 8 * nblocks), imask);
-          sum        = madd256_ps(w, in_val, sum);
-          _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, sum);
+          __m256 sum = _mm256_maskload_ps(
+            out_data.host_pointer(sample, 8 * nblocks), imask);
+          __m256 w = _mm256_maskload_ps(
+            W.host_pointer(0, c * out_size + 8 * nblocks), imask);
+          sum = madd256_ps(w, in_val, sum);
+          _mm256_maskstore_ps(out_data.host_pointer(sample, 8 * nblocks), imask,
+                              sum);
         }
       });
     } else {
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample, 0);
-        auto out = out_data.host_iter(sample, 0);
         for (size_t i = 0; i < nblocks; ++i) {
           __m256 b = _mm256_loadu_ps(&*bias.host_iter(0, 8 * i));
-          _mm256_storeu_ps(&*std::next(out, 8 * i), b);
+          _mm256_storeu_ps(out_data.host_pointer(sample, 8 * i), b);
         }
         for (serial_size_t c = 0; c < in_size; c++) {
-          auto in_val = _mm256_set1_ps(*std::next(in, c));
-          auto pW     = W.host_iter(0, c * out_size);
+          auto in_val = _mm256_set1_ps(in_data.host_at(sample, c));
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 sum = _mm256_loadu_ps(&*std::next(out, 8 * i));
-            __m256 w   = _mm256_loadu_ps(&*std::next(pW, 8 * i));
-            sum        = madd256_ps(w, in_val, sum);
-            _mm256_storeu_ps(&*std::next(out, 8 * i), sum);
+            __m256 sum = _mm256_loadu_ps(out_data.host_pointer(sample, 8 * i));
+            __m256 w = _mm256_loadu_ps(W.host_pointer(0, c * out_size + 8 * i));
+            sum      = madd256_ps(w, in_val, sum);
+            _mm256_storeu_ps(out_data.host_pointer(sample, 8 * i), sum);
           }
         }
       });

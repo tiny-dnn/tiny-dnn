@@ -175,6 +175,16 @@ class Tensor {
 
   const auto host_end() const { return storage_.cxend(); }
 
+  // TODO(Randl): check if strided.
+  template <typename... Args>
+  auto host_pointer(const Args... args) {
+    return &*host_iter(args...);
+  }
+
+  template <typename... Args>
+  auto host_pointer(const Args... args) const {
+    return &*host_iter(args...);
+  }
   /**
    * Calculate an offset for last dimension.
    * @param d an index of last dimension
