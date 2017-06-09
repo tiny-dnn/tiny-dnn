@@ -12,6 +12,15 @@
 namespace tiny_dnn {
 namespace kernels {
 
+/**
+ * Forward propogation for fully connected layer with internal backend
+ * @param in_data
+ * @param weights
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1, typename S2, typename S3, typename S4>
 inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
                                         const Tensor<float_t, S2> &weights,
@@ -35,6 +44,17 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
   });
 }
 
+/**
+ * Backward propogation for fully connected layer with internal backend
+ * @param prev_out
+ * @param weigths
+ * @param weights_grads
+ * @param bias_grads
+ * @param curr_delta
+ * @param prev_delta
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1,
           typename S2,
           typename S3,

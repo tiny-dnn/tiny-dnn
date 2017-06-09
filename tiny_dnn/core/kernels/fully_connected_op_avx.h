@@ -14,6 +14,16 @@ namespace kernels {
 
 #ifdef CNN_USE_AVX
 
+/**
+ * Kernel for forward propogation for fully connected layer with AVX backend
+ * (single precision)
+ * @param in_data
+ * @param W
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1, typename S2, typename S3, typename S4>
 inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
                                                const Tensor<float, S2> &W,
@@ -102,6 +112,17 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
   }
 }
 
+
+/**
+ * Kernel for forward propogation for fully connected layer with AVX backend
+ * (double precision). Currently calls for internal backend
+ * @param in_data
+ * @param W
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1, typename S2, typename S3, typename S4>
 inline void avx_fully_connected_forward_kernel(
   const Tensor<double, S1> &in_data,
@@ -115,6 +136,19 @@ inline void avx_fully_connected_forward_kernel(
                               layer_parallelize);
 }
 
+
+/**
+ * Kernel for backward propogation for fully connected layer with AVX backend
+ * (single precision).
+ * @param prev_out
+ * @param W
+ * @param dW
+ * @param db
+ * @param curr_delta
+ * @param prev_delta
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1,
           typename S2,
           typename S3,
@@ -179,6 +213,18 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
   }
 }
 
+/**
+ * Kernel for backward propogation for fully connected layer with AVX backend
+ * (double precision). Currently calls for internal backend
+ * @param prev_out
+ * @param weigths
+ * @param weights_grads
+ * @param bias_grads
+ * @param curr_delta
+ * @param prev_delta
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1,
           typename S2,
           typename S3,
@@ -186,19 +232,30 @@ template <typename S1,
           typename S5,
           typename S6>
 inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
-                                            const Tensor<double, S2> &W,
-                                            Tensor<double, S3> &dW,
-                                            Tensor<double, S4> &db,
+                                            const Tensor<double, S2> &weigths,
+                                            Tensor<double, S3> &weights_grads,
+                                            Tensor<double, S4> &bias_grads,
                                             Tensor<double, S5> &curr_delta,
                                             Tensor<double, S6> &prev_delta,
                                             const fully_params &params,
                                             const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(prev_out, W, dW, db, curr_delta, prev_delta,
-                              params, layer_parallelize);
+  fully_connected_op_internal(prev_out, weigths, weights_grads, bias_grads, curr_delta, prev_delta, params, layer_parallelize);
 }
 
 #endif  // CNN_USE_AVX
+
+/**
+ * Forward propogation for fully connected layer with internal backend
+ * @param prev_out
+ * @param weigths
+ * @param weights_grads
+ * @param bias_grads
+ * @param curr_delta
+ * @param prev_delta
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1, typename S2, typename S3, typename S4>
 inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    const Tensor<float_t, S2> &W,
@@ -219,6 +276,17 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
+/**
+ * Backward propogation for fully connected layer with internal backend
+ * @param prev_out
+ * @param weigths
+ * @param weights_grads
+ * @param bias_grads
+ * @param curr_delta
+ * @param prev_delta
+ * @param params
+ * @param layer_parallelize
+ */
 template <typename S1,
           typename S2,
           typename S3,
