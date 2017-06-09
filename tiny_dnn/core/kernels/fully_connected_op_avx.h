@@ -112,7 +112,6 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
   }
 }
 
-
 /**
  * Kernel for forward propogation for fully connected layer with AVX backend
  * (double precision). Currently calls for internal backend
@@ -135,7 +134,6 @@ inline void avx_fully_connected_forward_kernel(
   fully_connected_op_internal(in_data, W, bias, out_data, params,
                               layer_parallelize);
 }
-
 
 /**
  * Kernel for backward propogation for fully connected layer with AVX backend
@@ -240,7 +238,9 @@ inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
                                             const fully_params &params,
                                             const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(prev_out, weigths, weights_grads, bias_grads, curr_delta, prev_delta, params, layer_parallelize);
+  fully_connected_op_internal(prev_out, weigths, weights_grads, bias_grads,
+                              curr_delta, prev_delta, params,
+                              layer_parallelize);
 }
 
 #endif  // CNN_USE_AVX
