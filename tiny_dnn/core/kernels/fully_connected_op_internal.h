@@ -26,18 +26,18 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
                                         const Tensor<float_t, S2> &weights,
                                         const Tensor<float_t, S3> &bias,
                                         Tensor<float_t, S4> &out_data,
-                                        const fully_params &params,
+                                        const bool has_bias,
                                         const bool layer_parallelize) {
+  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1];
   for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-    for (serial_size_t i = 0; i < params.out_size_; i++) {
+    for (serial_size_t i = 0; i < out_size; i++) {
       out_data.host_at(sample, i) = float_t{0};
-      for (serial_size_t c = 0; c < params.in_size_; c++) {
+      for (serial_size_t c = 0; c < in_size; c++) {
         out_data.host_at(sample, i) +=
-          weights.host_at(0, c * params.out_size_ + i) *
-          in_data.host_at(sample, c);
+          weights.host_at(0, c * out_size + i) * in_data.host_at(sample, c);
       }
 
-      if (params.has_bias_) {
+      if (has_bias) {
         out_data.host_at(sample, i) += bias.host_at(0, i);
       }
     }
@@ -67,35 +67,35 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
                                         Tensor<float_t, S4> &bias_grads,
                                         Tensor<float_t, S5> &curr_delta,
                                         Tensor<float_t, S6> &prev_delta,
-                                        const fully_params &params,
+                                        const bool has_bias,
                                         const bool layer_parallelize) {
+  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1];
   for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
-    for (serial_size_t c = 0; c < params.in_size_; c++) {
+    for (serial_size_t c = 0; c < in_size; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-      prev_delta.host_at(sample, c) += vectorize::dot(
-        curr_delta.host_iter(sample, 0),
-        weigths.host_iter(0, c * params.out_size_), params.out_size_);
+      prev_delta.host_at(sample, c) +=
+        vectorize::dot(curr_delta.host_iter(sample, 0),
+                       weigths.host_iter(0, c * out_size), out_size);
     }
 
-    for_(layer_parallelize, 0, size_t(params.out_size_),
-         [&](const blocked_range &r) {
-           // accumulate weight-step using delta
-           // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-           for (serial_size_t c = 0; c < params.in_size_; c++) {
-             vectorize::muladd(curr_delta.host_iter(sample, r.begin()),
-                               prev_out.host_at(sample, c), r.end() - r.begin(),
-                               weights_grads.host_iter(
-                                 sample, c * params.out_size_ + r.begin()));
-           }
+    for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
+      // accumulate weight-step using delta
+      // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+      for (serial_size_t c = 0; c < in_size; c++) {
+        vectorize::muladd(
+          curr_delta.host_iter(sample, r.begin()), prev_out.host_at(sample, c),
+          r.end() - r.begin(),
+          weights_grads.host_iter(sample, c * out_size + r.begin()));
+      }
 
-           if (params.has_bias_) {
-             // vec_t& db = *in_grad[2];
-             for (size_t i = r.begin(); i < r.end(); i++) {
-               bias_grads.host_at(sample, i) += curr_delta.host_at(sample, i);
-             }
-           }
-         });
+      if (has_bias) {
+        // vec_t& db = *in_grad[2];
+        for (size_t i = r.begin(); i < r.end(); i++) {
+          bias_grads.host_at(sample, i) += curr_delta.host_at(sample, i);
+        }
+      }
+    });
   }
 }
 

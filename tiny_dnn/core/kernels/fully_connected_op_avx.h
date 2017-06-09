@@ -29,11 +29,12 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
                                                const Tensor<float, S2> &W,
                                                const Tensor<float, S3> &bias,
                                                Tensor<float, S4> &out_data,
-                                               const fully_params &params,
+                                               const bool has_bias,
                                                const bool layer_parallelize) {
-  if (params.has_bias_) {
-    size_t nblocks  = params.out_size_ / 8;
-    size_t nremains = params.out_size_ & 7;
+  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1];
+  if (has_bias) {
+    size_t nblocks  = out_size / 8;
+    size_t nremains = out_size & 7;
     if (nremains) {
       int32_t mask_src[] = {
         -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -52,9 +53,9 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
             &*std::next(bias.host_begin(), 8 * nblocks), imask);
           _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, b);
         }
-        for (serial_size_t c = 0; c < params.in_size_; c++) {
+        for (serial_size_t c = 0; c < in_size; c++) {
           auto in_val = _mm256_set1_ps(*std::next(in, c));
-          auto pW     = W.host_iter(0, c * params.out_size_);
+          auto pW     = W.host_iter(0, c * out_size);
           for (size_t i = 0; i < nblocks / 2; ++i) {
             __m256 sum0 = _mm256_loadu_ps(&*std::next(out, 16 * i));
             __m256 sum1 = _mm256_loadu_ps(&*std::next(out, 16 * i + 8));
@@ -85,9 +86,9 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
           __m256 b = _mm256_loadu_ps(&*bias.host_iter(0, 8 * i));
           _mm256_storeu_ps(&*std::next(out, 8 * i), b);
         }
-        for (serial_size_t c = 0; c < params.in_size_; c++) {
+        for (serial_size_t c = 0; c < in_size; c++) {
           auto in_val = _mm256_set1_ps(*std::next(in, c));
-          auto pW     = W.host_iter(0, c * params.out_size_);
+          auto pW     = W.host_iter(0, c * out_size);
           for (size_t i = 0; i < nblocks; ++i) {
             __m256 sum = _mm256_loadu_ps(&*std::next(out, 8 * i));
             __m256 w   = _mm256_loadu_ps(&*std::next(pW, 8 * i));
@@ -101,10 +102,10 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
     for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
       auto in  = in_data.host_iter(sample, 0);
       auto out = out_data.host_iter(sample, 0);
-      for (serial_size_t i = 0; i < params.out_size_; i++) {
+      for (serial_size_t i = 0; i < out_size; i++) {
         float sum = 0.0f;
-        for (serial_size_t c = 0; c < params.in_size_; c++) {
-          sum += W.host_at(0, c * params.out_size_ + i) * *std::next(in, c);
+        for (serial_size_t c = 0; c < in_size; c++) {
+          sum += W.host_at(0, c * out_size + i) * *std::next(in, c);
         }
         *std::next(out, i) = sum;
       }
@@ -128,10 +129,10 @@ inline void avx_fully_connected_forward_kernel(
   const Tensor<double, S2> &W,
   const Tensor<double, S3> &bias,
   Tensor<double, S4> &out_data,
-  const fully_params &params,
+  const bool has_bias,
   const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(in_data, W, bias, out_data, params,
+  fully_connected_op_internal(in_data, W, bias, out_data, has_bias,
                               layer_parallelize);
 }
 
@@ -159,54 +160,51 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
                                             Tensor<float, S4> &db,
                                             Tensor<float, S5> &curr_delta,
                                             Tensor<float, S6> &prev_delta,
-                                            const fully_params &params,
+                                            const bool has_bias,
                                             const bool layer_parallelize) {
-  if (params.has_bias_) {
+  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1];
+  if (has_bias) {
     for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
-      for (serial_size_t c = 0; c < params.in_size_; c++) {
+      for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta.host_at(sample, c) += vectorize::dot(
-          curr_delta.host_iter(sample, 0), W.host_iter(0, c * params.out_size_),
-          params.out_size_);
+        prev_delta.host_at(sample, c) +=
+          vectorize::dot(curr_delta.host_iter(sample, 0),
+                         W.host_iter(0, c * out_size), out_size);
       }
-      for_(layer_parallelize, 0, size_t(params.out_size_),
-           [&](const blocked_range &r) {
-             // accumulate weight-step using delta
-             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-             size_t len = r.end() - r.begin();
-             for (serial_size_t c = 0; c < params.in_size_; c++) {
-               vectorize::muladd(
-                 curr_delta.host_iter(sample, r.begin()),
-                 *prev_out.host_iter(sample, c), len,
-                 dW.host_iter(sample, c * params.out_size_ + r.begin()));
-             }
-             // vec_t& db = *in_grad[2];
-             vectorize::reduce(curr_delta.host_iter(sample, r.begin()), len,
-                               db.host_iter(sample, r.begin()));
-           });
+      for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
+        // accumulate weight-step using delta
+        // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+        size_t len = r.end() - r.begin();
+        for (serial_size_t c = 0; c < in_size; c++) {
+          vectorize::muladd(curr_delta.host_iter(sample, r.begin()),
+                            *prev_out.host_iter(sample, c), len,
+                            dW.host_iter(sample, c * out_size + r.begin()));
+        }
+        // vec_t& db = *in_grad[2];
+        vectorize::reduce(curr_delta.host_iter(sample, r.begin()), len,
+                          db.host_iter(sample, r.begin()));
+      });
     }
   } else {
     for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
-      for (serial_size_t c = 0; c < params.in_size_; c++) {
+      for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
-        prev_delta.host_at(sample, c) += vectorize::dot(
-          curr_delta.host_iter(sample, 0), W.host_iter(0, c * params.out_size_),
-          params.out_size_);
+        prev_delta.host_at(sample, c) +=
+          vectorize::dot(curr_delta.host_iter(sample, 0),
+                         W.host_iter(0, c * out_size), out_size);
       }
-      for_(layer_parallelize, 0, size_t(params.out_size_),
-           [&](const blocked_range &r) {
-             // accumulate weight-step using delta
-             // dW[c * out_size + i] += current_delta[i] * prev_out[c]
-             size_t len = r.end() - r.begin();
-             for (serial_size_t c = 0; c < params.in_size_; c++) {
-               vectorize::muladd(
-                 curr_delta.host_iter(sample, r.begin()),
-                 *prev_out.host_iter(sample, c), len,
-                 dW.host_iter(sample, c * params.out_size_ + r.begin()));
-             }
-           });
+      for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
+        // accumulate weight-step using delta
+        // dW[c * out_size + i] += current_delta[i] * prev_out[c]
+        size_t len = r.end() - r.begin();
+        for (serial_size_t c = 0; c < in_size; c++) {
+          vectorize::muladd(curr_delta.host_iter(sample, r.begin()),
+                            *prev_out.host_iter(sample, c), len,
+                            dW.host_iter(sample, c * out_size + r.begin()));
+        }
+      });
     }
   }
 }
@@ -235,11 +233,11 @@ inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
                                             Tensor<double, S4> &bias_grads,
                                             Tensor<double, S5> &curr_delta,
                                             Tensor<double, S6> &prev_delta,
-                                            const fully_params &params,
+                                            const bool has_bias,
                                             const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(prev_out, weigths, weights_grads, bias_grads,
-                              curr_delta, prev_delta, params,
+                              curr_delta, prev_delta, has_bias,
                               layer_parallelize);
 }
 
@@ -261,17 +259,17 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    const Tensor<float_t, S2> &W,
                                    const Tensor<float_t, S3> &bias,
                                    Tensor<float_t, S4> &out_data,
-                                   const fully_params &params,
+                                   const bool has_bias,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
-  avx_fully_connected_forward_kernel(in_data, W, bias, out_data, params,
+  avx_fully_connected_forward_kernel(in_data, W, bias, out_data, has_bias,
                                      layer_parallelize);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
   CNN_UNREFERENCED_PARAMETER(W);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
-  CNN_UNREFERENCED_PARAMETER(params);
+  CNN_UNREFERENCED_PARAMETER(has_bias);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
@@ -299,11 +297,11 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &prev_out,
                                    Tensor<float_t, S4> &db,
                                    Tensor<float_t, S5> &curr_delta,
                                    Tensor<float_t, S6> &prev_delta,
-                                   const fully_params &params,
+                                   const bool has_bias,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   avx_fully_connected_back_kernel(prev_out, W, dW, db, curr_delta, prev_delta,
-                                  params, layer_parallelize);
+                                  has_bias, layer_parallelize);
 #else
   CNN_UNREFERENCED_PARAMETER(prev_out);
   CNN_UNREFERENCED_PARAMETER(W);
@@ -311,7 +309,7 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &prev_out,
   CNN_UNREFERENCED_PARAMETER(db);
   CNN_UNREFERENCED_PARAMETER(curr_delta);
   CNN_UNREFERENCED_PARAMETER(prev_delta);
-  CNN_UNREFERENCED_PARAMETER(params);
+  CNN_UNREFERENCED_PARAMETER(has_bias);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif

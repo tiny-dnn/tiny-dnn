@@ -57,7 +57,7 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
   }
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
-  CNN_UNREFERENCED_PARAMETER(W);
+  CNN_UNREFERENCED_PARAMETER(weights);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(params);
