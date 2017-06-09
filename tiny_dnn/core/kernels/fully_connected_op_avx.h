@@ -31,8 +31,8 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample,0);
-        auto out = out_data.host_iter(sample,0);
+        auto in  = in_data.host_iter(sample, 0);
+        auto out = out_data.host_iter(sample, 0);
         {
           for (size_t i = 0; i < nblocks; ++i) {
             __m256 b = _mm256_loadu_ps(&*std::next(bias.host_begin(), 8 * i));
@@ -69,8 +69,8 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       });
     } else {
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample,0);
-        auto out = out_data.host_iter(sample,0);
+        auto in  = in_data.host_iter(sample, 0);
+        auto out = out_data.host_iter(sample, 0);
         for (size_t i = 0; i < nblocks; ++i) {
           __m256 b = _mm256_loadu_ps(&*bias.host_iter(0, 8 * i));
           _mm256_storeu_ps(&*std::next(out, 8 * i), b);
@@ -89,8 +89,8 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
     }
   } else {
     for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-      auto in  = in_data.host_iter(sample,0);
-      auto out = out_data.host_iter(sample,0);
+      auto in  = in_data.host_iter(sample, 0);
+      auto out = out_data.host_iter(sample, 0);
       for (serial_size_t i = 0; i < params.out_size_; i++) {
         float sum = 0.0f;
         for (serial_size_t c = 0; c < params.in_size_; c++) {

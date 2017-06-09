@@ -42,9 +42,9 @@ TEST(deconvolutional, setup_nnp) {
                           backend_t::nnpack);
 
   EXPECT_EQ(l.parallelize(), true);         // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), 3);            // num of input tensors
-  EXPECT_EQ(l.out_channels(), 1);           // num of output tensors
-  EXPECT_EQ(l.in_data_size(), 4);           // size of input tensors
+  EXPECT_EQ(l.in_channels(), 3u);           // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);          // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 4u);          // size of input tensors
   EXPECT_EQ(l.out_data_size(), 32);         // size of output tensors
   EXPECT_EQ(l.in_data_shape().size(), 1);   // number of inputs shapes
   EXPECT_EQ(l.out_data_shape().size(), 1);  // num of output shapes
