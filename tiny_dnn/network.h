@@ -621,7 +621,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -644,7 +644,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -660,7 +660,7 @@ class network {
     }
     return ss.str();
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -675,7 +675,7 @@ class network {
     cereal::JSONInputArchive ia(ss);
     from_archive(ia, what);
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 

@@ -349,7 +349,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
   const auto dst_out_size = dst->out_size();
   const auto dst_in_size  = dst->in_size();
 
-  if (dst_out_size * dst_in_size != weights.data_size()) {
+  if (dst_out_size * dst_in_size != static_cast<size_t>(weights.data_size())) {
     throw nn_error(std::string("layer size mismatch!") + "caffe(" + src.name() +
                    "):" + to_string(weights.data_size()) + "\n" + "tiny-dnn(" +
                    dst->layer_type() + "):" + to_string(dst->weights().size()));

@@ -134,7 +134,7 @@ TEST(image, read_png_2bit) {
 
   EXPECT_EQ(32, img.width());
   EXPECT_EQ(32, img.height());
-  EXPECT_EQ(32, img.depth());
+  EXPECT_EQ(1, img.depth());
   EXPECT_EQ(0, img.at(0, 0));
   EXPECT_EQ(85, img.at(4, 0));
   EXPECT_EQ(170, img.at(8, 0));
