@@ -392,18 +392,17 @@ std::unique_ptr<T> make_unique(Args &&... args) {
 inline xt::xarray<float_t> to_xtensor(const tensor_t &t) {
   if (t.size() == 0) return xt::xarray<float_t>({0, 0});
   xt::xarray<float_t> result = xt::zeros<float_t>({t.size(), t[0].size()});
-  for (serial_size_t i = 0; i < t.size(); ++i)
-    for (serial_size_t j = 0; j < t[0].size(); ++j) result(i, j) = t[i][j];
+  for (size_t i = 0; i < t.size(); ++i)
+    for (size_t j = 0; j < t[0].size(); ++j) result(i, j) = t[i][j];
   return result;
 }
 
 // TODO(Randl): Remove after full integration
 inline tensor_t from_xtensor(const xt::xarray<float_t> &t) {
   tensor_t result;
-  for (serial_size_t i = 0; i < t.shape()[0]; ++i) {
+  for (size_t i = 0; i < t.shape()[0]; ++i) {
     result.push_back(vec_t());
-    for (serial_size_t j = 0; j < t.shape()[1]; ++j)
-      result.back().push_back(t(i, j));
+    for (size_t j = 0; j < t.shape()[1]; ++j) result.back().push_back(t(i, j));
   }
   return result;
 }
