@@ -26,7 +26,6 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
                                       const Tensor<float, S2> &weights,
                                       const Tensor<float, S3> &bias,
                                       Tensor<float, S4> &out_data,
-                                      const bool has_bias,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
@@ -51,7 +50,7 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
   // TODO: embed it into a class
   pthreadpool_destroy(threadpool);
 
-  if (has_bias) {
+  if (bias.size() > 0) {
     for_i(layer_parallelize, out_size,
           [&](int i) { output_ptr[i] += bias.host_at(0, i); });
   }
@@ -60,7 +59,6 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
   CNN_UNREFERENCED_PARAMETER(weights);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
-  CNN_UNREFERENCED_PARAMETER(has_bias);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
@@ -80,11 +78,9 @@ inline void fully_connected_op_nnpack(const Tensor<double, S1> &in_data,
                                       const Tensor<double, S2> &weights,
                                       const Tensor<double, S3> &bias,
                                       Tensor<double, S4> &out_data,
-                                      const bool has_bias,
                                       const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(in_data, weights, bias, out_data, has_bias,
-                              layer_parallelize);
+  fully_connected_op_internal(in_data, weights, bias, out_data, layer_parallelize);
 }
 }  // namespace kernels
 }  // namespace tiny_dnn

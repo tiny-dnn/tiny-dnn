@@ -29,10 +29,9 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
                                                const Tensor<float, S2> &W,
                                                const Tensor<float, S3> &bias,
                                                Tensor<float, S4> &out_data,
-                                               const bool has_bias,
                                                const bool layer_parallelize) {
-  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1];
-  if (has_bias) {
+  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1], sample_size = in_data.shape()[0];
+  if (bias.size()>0) {
     size_t nblocks  = out_size / 8;
     size_t nremains = out_size & 7;
     if (nremains) {
@@ -41,12 +40,13 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       };
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
-      for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
+      for_i(layer_parallelize, sample_size, [&](size_t sample) {
         auto in  = in_data.host_pointer(sample, 0);
         auto out = out_data.host_pointer(sample, 0);
         {
+          auto bias_pointer = bias.host_pointer(0, 0);
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 b = _mm256_loadu_ps(&*std::next(bias.host_begin(), 8 * i));
+            __m256 b = _mm256_loadu_ps(&bias_pointer[8 * i]);
             _mm256_storeu_ps(&*std::next(out, 8 * i), b);
           }
           auto b = _mm256_maskload_ps(bias.host_pointer(0, 8 * nblocks), imask);
@@ -85,11 +85,11 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
         auto b_pointer = bias.host_pointer(0, 0);
         for (size_t i = 0; i < nblocks; ++i) {
           __m256 b = _mm256_loadu_ps(&b_pointer[8 * i]);
-          _mm256_storeu_ps(&*std::next(out, 8 * i), b);
+          _mm256_storeu_ps(&out[8 * i], b);
         }
         auto W_pointer = W.host_pointer(0, 0);
         for (serial_size_t c = 0; c < in_size; c++) {
-          auto in_val = _mm256_set1_ps(*std::next(in, c));
+          auto in_val = _mm256_set1_ps(in[c]);
           auto pW     = &W_pointer[c * out_size];
           for (size_t i = 0; i < nblocks; ++i) {
             __m256 sum = _mm256_loadu_ps(&out[8 * i]);
@@ -101,7 +101,7 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       });
     }
   } else {
-    for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
+    for_i(layer_parallelize, sample_size, [&](size_t sample) {
       auto in  = in_data.host_iter(sample, 0);
       auto out = out_data.host_iter(sample, 0);
       for (serial_size_t i = 0; i < out_size; i++) {
@@ -131,11 +131,9 @@ inline void avx_fully_connected_forward_kernel(
   const Tensor<double, S2> &W,
   const Tensor<double, S3> &bias,
   Tensor<double, S4> &out_data,
-  const bool has_bias,
   const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(in_data, W, bias, out_data, has_bias,
-                              layer_parallelize);
+  fully_connected_op_internal(in_data, W, bias, out_data, layer_parallelize);
 }
 
 /**
@@ -164,9 +162,9 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
                                             Tensor<float, S6> &prev_delta,
                                             const bool has_bias,
                                             const bool layer_parallelize) {
-  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1];
+  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1], sample_size  = prev_out.shape()[0];
   if (has_bias) {
-    for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
+    for (serial_size_t sample = 0; sample < sample_size; sample++) {
       for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
@@ -189,7 +187,7 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
       });
     }
   } else {
-    for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
+    for (serial_size_t sample = 0; sample < sample_size; sample++) {
       for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
@@ -261,11 +259,9 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    const Tensor<float_t, S2> &W,
                                    const Tensor<float_t, S3> &bias,
                                    Tensor<float_t, S4> &out_data,
-                                   const bool has_bias,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
-  avx_fully_connected_forward_kernel(in_data, W, bias, out_data, has_bias,
-                                     layer_parallelize);
+  avx_fully_connected_forward_kernel(in_data, W, bias, out_data, layer_parallelize);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
   CNN_UNREFERENCED_PARAMETER(W);

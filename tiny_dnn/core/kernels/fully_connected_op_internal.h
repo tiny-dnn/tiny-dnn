@@ -26,7 +26,6 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
                                         const Tensor<float_t, S2> &weights,
                                         const Tensor<float_t, S3> &bias,
                                         Tensor<float_t, S4> &out_data,
-                                        const bool has_bias,
                                         const bool layer_parallelize) {
   size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1];
   for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
@@ -37,7 +36,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
           weights.host_at(0, c * out_size + i) * in_data.host_at(sample, c);
       }
 
-      if (has_bias) {
+      if (bias.size() > 0) {
         out_data.host_at(sample, i) += bias.host_at(0, i);
       }
     }
