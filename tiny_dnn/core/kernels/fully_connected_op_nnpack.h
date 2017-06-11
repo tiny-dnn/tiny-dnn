@@ -66,5 +66,25 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
 #endif
 }
 
+/**
+ * Forward propogation for fully connected layer with NNPACK backend
+ * @param in_data
+ * @param weights
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param layer_parallelize
+ */
+template <typename S1, typename S2, typename S3, typename S4>
+inline void fully_connected_op_nnpack(const Tensor<double, S1> &in_data,
+                                      const Tensor<double, S2> &weights,
+                                      const Tensor<double, S3> &bias,
+                                      Tensor<double, S4> &out_data,
+                                      const bool has_bias,
+                                      const bool layer_parallelize) {
+  // fallback to tiny-backend when float_t is double
+  fully_connected_op_internal(in_data, weights, bias, out_data, has_bias,
+                              layer_parallelize);
+}
 }  // namespace kernels
 }  // namespace tiny_dnn
