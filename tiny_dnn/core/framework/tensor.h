@@ -125,7 +125,7 @@ class Tensor {
    *
    * @return Tensor's number of dimensions
    */
-  const auto &dim() const { return storage_.dimension(); }
+  const auto dim() const { return storage_.dimension(); }
 
   /**
    *
