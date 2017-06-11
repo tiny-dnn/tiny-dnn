@@ -38,17 +38,20 @@ class FullyConnectedOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::fully_connected_op_internal(in_data, weights, bias, out_data, context.parallelize());
+      kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
+                                           context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::nnpack) {
-      kernels::fully_connected_op_nnpack(in_data, weights, bias, out_data, context.parallelize());
+      kernels::fully_connected_op_nnpack(in_data, weights, bias, out_data,
+                                         context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::avx) {
-      kernels::fully_connected_op_avx(in_data, weights, bias, out_data, context.parallelize());
+      kernels::fully_connected_op_avx(in_data, weights, bias, out_data,
+                                      context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data.toTensor();

@@ -30,8 +30,9 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
                                                const Tensor<float, S3> &bias,
                                                Tensor<float, S4> &out_data,
                                                const bool layer_parallelize) {
-  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1], sample_size = in_data.shape()[0];
-  if (bias.size()>0) {
+  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1],
+         sample_size = in_data.shape()[0];
+  if (bias.size() > 0) {
     size_t nblocks  = out_size / 8;
     size_t nremains = out_size & 7;
     if (nremains) {
@@ -162,7 +163,8 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
                                             Tensor<float, S6> &prev_delta,
                                             const bool has_bias,
                                             const bool layer_parallelize) {
-  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1], sample_size  = prev_out.shape()[0];
+  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1],
+         sample_size = prev_out.shape()[0];
   if (has_bias) {
     for (serial_size_t sample = 0; sample < sample_size; sample++) {
       for (serial_size_t c = 0; c < in_size; c++) {
@@ -261,7 +263,8 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
                                    Tensor<float_t, S4> &out_data,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
-  avx_fully_connected_forward_kernel(in_data, W, bias, out_data, layer_parallelize);
+  avx_fully_connected_forward_kernel(in_data, W, bias, out_data,
+                                     layer_parallelize);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
   CNN_UNREFERENCED_PARAMETER(W);

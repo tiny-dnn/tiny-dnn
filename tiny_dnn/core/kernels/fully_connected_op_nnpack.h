@@ -80,7 +80,8 @@ inline void fully_connected_op_nnpack(const Tensor<double, S1> &in_data,
                                       Tensor<double, S4> &out_data,
                                       const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
-  fully_connected_op_internal(in_data, weights, bias, out_data, layer_parallelize);
+  fully_connected_op_internal(in_data, weights, bias, out_data,
+                              layer_parallelize);
 }
 }  // namespace kernels
 }  // namespace tiny_dnn
