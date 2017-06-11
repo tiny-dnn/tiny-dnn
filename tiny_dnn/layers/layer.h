@@ -22,6 +22,7 @@
 #include "tiny_dnn/parameter.h"
 
 #include "tiny_dnn/util/parallel_for.h"
+#include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
 #include "tiny_dnn/util/weight_init.h"
@@ -67,9 +68,13 @@ class layer : public node {
       out_channels_(out_type.size()),
       in_type_(in_type),
       out_type_(out_type) {
+    // todo (karandesai) : remove these after parameter integration
     weight_init_ = std::make_shared<weight_init::xavier>();
     bias_init_   = std::make_shared<weight_init::constant>();
-    trainable_   = true;
+
+    weight_init_f_ = std::make_shared<parameter_init::xavier>();
+    bias_init_f_   = std::make_shared<parameter_init::constant>();
+    trainable_     = true;
   }
 
   layer(const layer &) = default;
@@ -802,6 +807,7 @@ class layer : public node {
     return true;
   }
 
+  // todo (karandesai) : remove redundancies after parameter integration
   virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
     auto resize = [sample_count](tensor_t *tensor) {
@@ -820,6 +826,10 @@ class layer : public node {
         resize(ith_out_node(i)->get_data());
       }
       resize(ith_out_node(i)->get_gradient());
+    }
+
+    for (size_t i = 0; i < parameters_.size(); i++) {
+      parameters_[i]->resize_grad(sample_count);
     }
   }
 
@@ -855,9 +865,11 @@ class layer : public node {
   /** Pointer to the device on which the layer/node will run */
   Device *device_ptr_ = nullptr;
   /** Used in update_weight method. Kept as a member variable to reduce
-   * frequent
-   * memory allocation */
+   * frequent memory allocation */
   vec_t weights_diff_;
+  /** Used in ``update_parameters`` method. Kept as a member variable
+   * to reduce frequent memory allocation */
+  Tensor<float_t> parameters_diff_;
 
   template <typename T, typename Func>
   inline void for_i(T size, Func f, size_t grainsize = 100) {
@@ -871,10 +883,17 @@ class layer : public node {
   std::vector<parameter *> parameters_;
   /** Flag indicating whether the layer/node parameters are trainable */
   bool trainable_;
+
+  // todo (karandesai) : remove after parameter integration
   /** Pointer to the function for weights initialization */
   std::shared_ptr<weight_init::function> weight_init_;
   /** Pointer to the function for biases initialization */
   std::shared_ptr<weight_init::function> bias_init_;
+
+  /** Pointer to the function for weights initialization */
+  std::shared_ptr<parameter_init::function> weight_init_f_;
+  /** Pointer to the function for biases initialization */
+  std::shared_ptr<parameter_init::function> bias_init_f_;
 
   std::vector<tensor_t *> fwd_in_data_;
   std::vector<tensor_t *> fwd_out_data_;
