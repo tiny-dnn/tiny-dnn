@@ -267,7 +267,6 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
   CNN_UNREFERENCED_PARAMETER(W);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
-  CNN_UNREFERENCED_PARAMETER(has_bias);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
