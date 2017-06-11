@@ -75,8 +75,8 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
       prev_delta.host_at(sample, c) +=
-        vectorize::dot(curr_delta.host_iter(sample, 0),
-                       weigths.host_iter(0, c * out_size), out_size);
+        vectorize::dot(curr_delta.host_pointer(sample, 0),
+                       weigths.host_pointer(0, c * out_size), out_size);
     }
 
     for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
@@ -84,9 +84,9 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
       // dW[c * out_size + i] += current_delta[i] * prev_out[c]
       for (serial_size_t c = 0; c < in_size; c++) {
         vectorize::muladd(
-          curr_delta.host_iter(sample, r.begin()), prev_out.host_at(sample, c),
-          r.end() - r.begin(),
-          weights_grads.host_iter(sample, c * out_size + r.begin()));
+          curr_delta.host_pointer(sample, r.begin()),
+          prev_out.host_at(sample, c), r.end() - r.begin(),
+          weights_grads.host_pointer(sample, c * out_size + r.begin()));
       }
 
       if (has_bias) {

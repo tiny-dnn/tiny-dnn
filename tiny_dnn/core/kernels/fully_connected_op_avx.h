@@ -42,8 +42,8 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample, 0);
-        auto out = out_data.host_iter(sample, 0);
+        auto in  = in_data.host_pointer(sample, 0);
+        auto out = out_data.host_pointer(sample, 0);
         {
           for (size_t i = 0; i < nblocks; ++i) {
             __m256 b = _mm256_loadu_ps(&*std::next(bias.host_begin(), 8 * i));
@@ -54,46 +54,46 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
           _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, b);
         }
         for (serial_size_t c = 0; c < in_size; c++) {
-          auto in_val = _mm256_set1_ps(*std::next(in, c));
-          auto pW     = W.host_iter(0, c * out_size);
+          auto in_val = _mm256_set1_ps(in[c]);
+          auto pW     = W.host_pointer(0, c * out_size);
           for (size_t i = 0; i < nblocks / 2; ++i) {
-            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, 16 * i));
-            __m256 sum1 = _mm256_loadu_ps(&*std::next(out, 16 * i + 8));
-            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, 16 * i));
-            __m256 w1   = _mm256_loadu_ps(&*std::next(pW, 16 * i + 8));
+            __m256 sum0 = _mm256_loadu_ps(&out[16 * i]);
+            __m256 sum1 = _mm256_loadu_ps(&out[16 * i + 8]);
+            __m256 w0   = _mm256_loadu_ps(&pW[16 * i]);
+            __m256 w1   = _mm256_loadu_ps(&pW[16 * i + 8]);
             sum0        = madd256_ps(w0, in_val, sum0);
             sum1        = madd256_ps(w1, in_val, sum1);
-            _mm256_storeu_ps(&*std::next(out, 16 * i), sum0);
-            _mm256_storeu_ps(&*std::next(out, 16 * i + 8), sum1);
+            _mm256_storeu_ps(&out[16 * i], sum0);
+            _mm256_storeu_ps(&out[16 * i + 8], sum1);
           }
           if (nblocks & 1) {
-            __m256 sum0 = _mm256_loadu_ps(&*std::next(out, nblocks / 2 * 16));
-            __m256 w0   = _mm256_loadu_ps(&*std::next(pW, nblocks / 2 * 16));
+            __m256 sum0 = _mm256_loadu_ps(&out[nblocks / 2 * 16]);
+            __m256 w0   = _mm256_loadu_ps(&pW[nblocks / 2 * 16]);
             sum0        = madd256_ps(w0, in_val, sum0);
-            _mm256_storeu_ps(&*std::next(out, nblocks / 2 * 16), sum0);
+            _mm256_storeu_ps(&out[nblocks / 2 * 16], sum0);
           }
-          __m256 sum = _mm256_maskload_ps(&*std::next(out, 8 * nblocks), imask);
-          __m256 w   = _mm256_maskload_ps(&*std::next(pW, 8 * nblocks), imask);
+          __m256 sum = _mm256_maskload_ps(&out[8 * nblocks], imask);
+          __m256 w   = _mm256_maskload_ps(pW[8 * nblocks], imask);
           sum        = madd256_ps(w, in_val, sum);
-          _mm256_maskstore_ps(&*std::next(out, 8 * nblocks), imask, sum);
+          _mm256_maskstore_ps(&out[8 * nblocks], imask, sum);
         }
       });
     } else {
       for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
-        auto in  = in_data.host_iter(sample, 0);
-        auto out = out_data.host_iter(sample, 0);
+        auto in  = in_data.host_pointer(sample, 0);
+        auto out = out_data.host_pointer(sample, 0);
         for (size_t i = 0; i < nblocks; ++i) {
-          __m256 b = _mm256_loadu_ps(&*bias.host_iter(0, 8 * i));
+          __m256 b = _mm256_loadu_ps(bias.host_pointer(0, 8 * i));
           _mm256_storeu_ps(&*std::next(out, 8 * i), b);
         }
         for (serial_size_t c = 0; c < in_size; c++) {
           auto in_val = _mm256_set1_ps(*std::next(in, c));
           auto pW     = W.host_iter(0, c * out_size);
           for (size_t i = 0; i < nblocks; ++i) {
-            __m256 sum = _mm256_loadu_ps(&*std::next(out, 8 * i));
-            __m256 w   = _mm256_loadu_ps(&*std::next(pW, 8 * i));
+            __m256 sum = _mm256_loadu_ps(&out[8 * i]);
+            __m256 w   = _mm256_loadu_ps(&pW[8 * i]);
             sum        = madd256_ps(w, in_val, sum);
-            _mm256_storeu_ps(&*std::next(out, 8 * i), sum);
+            _mm256_storeu_ps(&out[8 * i], sum);
           }
         }
       });
@@ -169,21 +169,21 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
         prev_delta.host_at(sample, c) +=
-          vectorize::dot(curr_delta.host_iter(sample, 0),
-                         W.host_iter(0, c * out_size), out_size);
+          vectorize::dot(curr_delta.host_pointer(sample, 0),
+                         W.host_pointer(0, c * out_size), out_size);
       }
       for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
         // accumulate weight-step using delta
         // dW[c * out_size + i] += current_delta[i] * prev_out[c]
         size_t len = r.end() - r.begin();
         for (serial_size_t c = 0; c < in_size; c++) {
-          vectorize::muladd(curr_delta.host_iter(sample, r.begin()),
-                            *prev_out.host_iter(sample, c), len,
-                            dW.host_iter(sample, c * out_size + r.begin()));
+          vectorize::muladd(curr_delta.host_pointer(sample, r.begin()),
+                            prev_out.host_at(sample, c), len,
+                            dW.host_pointer(sample, c * out_size + r.begin()));
         }
         // vec_t& db = *in_grad[2];
-        vectorize::reduce(curr_delta.host_iter(sample, r.begin()), len,
-                          db.host_iter(sample, r.begin()));
+        vectorize::reduce(curr_delta.host_pointer(sample, r.begin()), len,
+                          db.host_pointer(sample, r.begin()));
       });
     }
   } else {
@@ -192,17 +192,17 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
         // propagate delta to previous layer
         // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
         prev_delta.host_at(sample, c) +=
-          vectorize::dot(curr_delta.host_iter(sample, 0),
-                         W.host_iter(0, c * out_size), out_size);
+          vectorize::dot(curr_delta.host_pointer(sample, 0),
+                         W.host_pointer(0, c * out_size), out_size);
       }
       for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
         // accumulate weight-step using delta
         // dW[c * out_size + i] += current_delta[i] * prev_out[c]
         size_t len = r.end() - r.begin();
         for (serial_size_t c = 0; c < in_size; c++) {
-          vectorize::muladd(curr_delta.host_iter(sample, r.begin()),
-                            *prev_out.host_iter(sample, c), len,
-                            dW.host_iter(sample, c * out_size + r.begin()));
+          vectorize::muladd(curr_delta.host_pointer(sample, r.begin()),
+                            prev_out.host_at(sample, c), len,
+                            dW.host_pointer(sample, c * out_size + r.begin()));
         }
       });
     }
