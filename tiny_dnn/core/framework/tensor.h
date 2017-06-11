@@ -119,13 +119,13 @@ class Tensor {
    *
    * @return the tensor shape
    */
-  const auto shape() const { return storage_.shape(); }
+  const auto &shape() const { return storage_.shape(); }
 
   /**
    *
    * @return Tensor's number of dimensions
    */
-  const auto dim() const { return storage_.dimension(); }
+  const auto &dim() const { return storage_.dimension(); }
 
   /**
    *
@@ -271,39 +271,45 @@ auto host_data() {
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
-  /**
-   * Returns new Tensor which has shared storage with current, but different
-   * shape
-   *
-   * Example:
-   * @code
-   * Tensor b({4,2});
-   * a = b.subView({2,2,2};
-   * @endcode
-   * b is Tensor of shape 4x2 and a is Tensor of shape 2x2x2. Changing a(0,0,0)
-   * will change b(0,0) too.
-   * @param new_shape
-   * @return
-   */
-  /*
- Tensor<U,xt::xbroadcast<Storage, std::vector<size_t>>>
- subView(std::initializer_list<size_t> const &new_shape) {
-   auto res = Tensor<U,xt::xbroadcast<Storage,
- std::vector<size_t>>>(xt::broadcast(storage_, storage_.shape()));
-   res.storage_.reshape(new_shape);
-   return res;
- }*/
+  template <typename S>
+  xt::xrange<S> get_range(std::initializer_list<S> list) const {
+    // if (*(list.begin()) == -1) return xt::all();
+    // if(*(list.begin())==*(list.begin()+1)) return *(list.begin());
+    if (list.size() == 2) {
+      return xt::range(*(list.begin()), *(list.begin() + 1));
+    } else {
+      // return xt::range(*(list.begin()), *(list.begin() + 1),
+      //               *(list.begin() + 2));
+    }
+  }
 
   /**
    * Returns view of current Tensor
    * @tparam Values index type
+   * @param lists lists of indexes
+   * @return
    */
   template <typename... Values>
   Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
     std::initializer_list<Values>... lists) {
+    // TODO(Randl): all, single, stride
+    // TODO(Randl): different types of values in list won't work
     using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_,
-                        xt::range(*(lists.begin()), *(lists.begin() + 1))...);
+    return SharedTensor(storage_, get_range(lists)...);
+  }
+
+  /**
+   * Returns view of current Tensor
+   * @tparam Values index type
+   * @param lists lists of indexes
+   * @return
+   */
+  template <typename... Values>
+  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> subView(
+    std::initializer_list<Values>... lists) const {
+    using SharedTensor =
+      const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
+    return SharedTensor(storage_, get_range(lists)...);
   }
 
   /*
