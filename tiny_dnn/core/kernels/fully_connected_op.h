@@ -45,8 +45,9 @@ class FullyConnectedOp : public core::OpKernel {
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::nnpack) {
-      kernels::fully_connected_op_avx(in_data, weights, bias, out_data,
-                                      params.has_bias_, context.parallelize());
+      kernels::fully_connected_op_nnpack(in_data, weights, bias, out_data,
+                                         params.has_bias_,
+                                         context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data.toTensor();
