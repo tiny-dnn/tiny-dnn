@@ -52,4 +52,21 @@ TEST(parameter, merge_grads) {
   }
 }
 
+TEST(parameter, layer_adder) {
+  fully_connected_layer fc(3, 2);
+
+  // todo (karandesai): modify later, two parameters will already be there
+  // in fc layer
+  fc.add_parameter(3, 2, 1, 1, parameter_type::weight);
+  fc.add_parameter(2, 1, 1, 1, parameter_type::bias);
+
+  auto vp = fc.parameters();
+
+  // check whether they were added in proper order
+  ASSERT_EQ(vp[0]->type(), parameter_type::weight);
+  ASSERT_EQ(vp[1]->type(), parameter_type::bias);
+}
+
+// todo (karandesai) : test getters and setters on fc layer
+
 }  // namespace tiny_dnn
