@@ -32,7 +32,7 @@ inline void avx_fully_connected_forward_kernel(const Tensor<float, S1> &in_data,
                                                const bool layer_parallelize) {
   size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1],
          sample_size = in_data.shape()[0];
-  if (bias.size() == out_size) {
+  if (bias.size() >= out_size) {
     size_t nblocks  = out_size / 8;
     size_t nremains = out_size & 7;
     if (nremains) {
@@ -164,7 +164,7 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
                                             const bool layer_parallelize) {
   size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1],
          sample_size = prev_out.shape()[0];
-  if (db.size() == out_size) {
+  if (db.size() >= out_size) {
     for (serial_size_t sample = 0; sample < sample_size; sample++) {
       for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer

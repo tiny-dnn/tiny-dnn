@@ -36,7 +36,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
           weights.host_at(0, c * out_size + i) * in_data.host_at(sample, c);
       }
 
-      if (bias.size() == out_size) {
+      if (bias.size() >= out_size) {
         out_data.host_at(sample, i) += bias.host_at(0, i);
       }
     }
@@ -88,7 +88,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
           weights_grads.host_pointer(sample, c * out_size + r.begin()));
       }
 
-      if (bias_grads.size() == out_size) {
+      if (bias_grads.size() >= out_size) {
         // vec_t& db = *in_grad[2];
         for (size_t i = r.begin(); i < r.end(); i++) {
           bias_grads.host_at(sample, i) += curr_delta.host_at(sample, i);
