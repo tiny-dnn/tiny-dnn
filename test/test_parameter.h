@@ -37,14 +37,14 @@ TEST(parameter, getter_setter) {
 }
 
 TEST(parameter, merge_grads) {
-  Tensor<float_t> grad0{{{1.0, 2.0}, {2.0, 1.0}}};
-  Tensor<float_t> gradp{{{2.0, 4.0}, {4.0, 2.0}}};
+  Tensor<float_t> grad0{tensor_t{{1.0, 2.0}, {2.0, 1.0}}};
+  Tensor<float_t> gradp{tensor_t{{2.0, 4.0}, {4.0, 2.0}}};
 
   parameter p(2, 1, 1, 1, parameter_type::bias, false);
   p.set_grad(gradp);
   p.merge_grads(&grad0);
 
-  Tensor<float_t> expected{{{6.0, 6.0}, {6.0, 6.0}}};
+  Tensor<float_t> expected{tensor_t{{6.0, 6.0}, {6.0, 6.0}}};
 
   for (size_t i = 0; i < p.size(); i++) {
     ASSERT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
