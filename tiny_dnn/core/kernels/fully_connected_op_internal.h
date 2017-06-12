@@ -66,7 +66,6 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
                                         Tensor<float_t, S4> &bias_grads,
                                         Tensor<float_t, S5> &curr_delta,
                                         Tensor<float_t, S6> &prev_delta,
-                                        const bool has_bias,
                                         const bool layer_parallelize) {
   size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1];
   for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
@@ -88,7 +87,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
           weights_grads.host_pointer(sample, c * out_size + r.begin()));
       }
 
-      if (has_bias) {
+      if (bias_grads.size() > 0) {
         // vec_t& db = *in_grad[2];
         for (size_t i = r.begin(); i < r.end(); i++) {
           bias_grads.host_at(sample, i) += curr_delta.host_at(sample, i);

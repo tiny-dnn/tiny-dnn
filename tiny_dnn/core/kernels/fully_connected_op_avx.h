@@ -161,11 +161,10 @@ inline void avx_fully_connected_back_kernel(const Tensor<float, S1> &prev_out,
                                             Tensor<float, S4> &db,
                                             Tensor<float, S5> &curr_delta,
                                             Tensor<float, S6> &prev_delta,
-                                            const bool has_bias,
                                             const bool layer_parallelize) {
   size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1],
          sample_size = prev_out.shape()[0];
-  if (has_bias) {
+  if (db.size() > 0) {
     for (serial_size_t sample = 0; sample < sample_size; sample++) {
       for (serial_size_t c = 0; c < in_size; c++) {
         // propagate delta to previous layer
@@ -235,12 +234,10 @@ inline void avx_fully_connected_back_kernel(const Tensor<double, S1> &prev_out,
                                             Tensor<double, S4> &bias_grads,
                                             Tensor<double, S5> &curr_delta,
                                             Tensor<double, S6> &prev_delta,
-                                            const bool has_bias,
                                             const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(prev_out, weigths, weights_grads, bias_grads,
-                              curr_delta, prev_delta, has_bias,
-                              layer_parallelize);
+                              curr_delta, prev_delta, layer_parallelize);
 }
 
 #endif  // CNN_USE_AVX
@@ -297,11 +294,10 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &prev_out,
                                    Tensor<float_t, S4> &db,
                                    Tensor<float_t, S5> &curr_delta,
                                    Tensor<float_t, S6> &prev_delta,
-                                   const bool has_bias,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   avx_fully_connected_back_kernel(prev_out, W, dW, db, curr_delta, prev_delta,
-                                  has_bias, layer_parallelize);
+                                  layer_parallelize);
 #else
   CNN_UNREFERENCED_PARAMETER(prev_out);
   CNN_UNREFERENCED_PARAMETER(W);
@@ -309,7 +305,6 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &prev_out,
   CNN_UNREFERENCED_PARAMETER(db);
   CNN_UNREFERENCED_PARAMETER(curr_delta);
   CNN_UNREFERENCED_PARAMETER(prev_delta);
-  CNN_UNREFERENCED_PARAMETER(has_bias);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif

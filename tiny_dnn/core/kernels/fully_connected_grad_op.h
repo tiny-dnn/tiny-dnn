@@ -39,9 +39,9 @@ class FullyConnectedGradOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::fully_connected_op_internal(
-        prev_out, weights, weights_grads, bias_grads, curr_delta, prev_delta,
-        params.has_bias_, context.parallelize());
+      kernels::fully_connected_op_internal(prev_out, weights, weights_grads,
+                                           bias_grads, curr_delta, prev_delta,
+                                           context.parallelize());
       context.input_grad(0) = prev_delta.toTensor();
       context.input_grad(1) = weights_grads.toTensor();
       if (params.has_bias_) {
@@ -50,7 +50,7 @@ class FullyConnectedGradOp : public core::OpKernel {
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(prev_out, weights, weights_grads,
                                       bias_grads, curr_delta, prev_delta,
-                                      params.has_bias_, context.parallelize());
+                                      context.parallelize());
       context.input_grad(0) = prev_delta.toTensor();
       context.input_grad(1) = weights_grads.toTensor();
       if (params.has_bias_) {
