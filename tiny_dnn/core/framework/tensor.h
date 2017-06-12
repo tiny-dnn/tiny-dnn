@@ -175,6 +175,14 @@ class Tensor {
 
   const auto host_end() const { return storage_.cxend(); }
 
+  auto host_pbegin() { return &*storage_.xbegin(); }
+
+  const auto host_pbegin() const { return &*storage_.cxbegin(); }
+
+  auto host_pend() { return &*storage_.xend(); }
+
+  const auto host_pend() const { return &*storage_.cxend(); }
+
   // TODO(Randl): check if strided.
   template <typename... Args>
   auto host_pointer(const Args... args) {
@@ -237,15 +245,14 @@ auto host_data() {
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
   const void *device_data() const {
-    storage_ptr_->toDevice();
-    return (*storage_ptr_->device_data_)();
+    /*storage_ptr_->toDevice();
+    return (*storage_ptr_->device_data_)();*/
   }
 
   void *mutable_device_data() {
-    static_assert(!kConst, "Non-constant operation on constant Tensor");
-    storage_ptr_->toDevice();
+    /*storage_ptr_->toDevice();
     storage_ptr_->data_dirty_ = true;
-    return (*storage_ptr_->device_data_)();
+    return (*storage_ptr_->device_data_)();*/
   }
 #endif
 
