@@ -39,6 +39,7 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
       size_t kh          = params.weight.height_;
       size_t elem_stride = params.w_stride;
       size_t line_stride = iw * params.h_stride;
+      //TODO(edgarriba): replace with  tensor accessors
       for (size_t sample = r.begin(); sample < r.end(); sample++) {
         for (size_t o = 0; o < od; o++) {
           // TODO(Randl): naming
