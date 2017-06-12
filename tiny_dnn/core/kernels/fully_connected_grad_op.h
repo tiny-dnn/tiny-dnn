@@ -48,10 +48,20 @@ class FullyConnectedGradOp : public core::OpKernel {
       kernels::fully_connected_op_internal(prev_out, weights, weights_grads,
                                            bias_grads, curr_delta, prev_delta,
                                            context.parallelize());
+      context.input_grad(0) = prev_delta.toTensor();
+      context.input_grad(1) = weights_grads.toTensor();
+      if (params.has_bias_) {
+        context.input_grad(2) = bias_grads.toTensor();
+      }
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(prev_out, weights, weights_grads,
                                       bias_grads, curr_delta, prev_delta,
                                       context.parallelize());
+      context.input_grad(0) = prev_delta.toTensor();
+      context.input_grad(1) = weights_grads.toTensor();
+      if (params.has_bias_) {
+        context.input_grad(2) = bias_grads.toTensor();
+      }
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
