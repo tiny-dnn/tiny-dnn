@@ -304,11 +304,13 @@ inline typename T::value_type dot_product(const typename T::value_type *f1,
   typename T::register_type r1 = T::zero();
   typename T::register_type r2 = T::zero();
   typename T::register_type r3 = T::zero();
-  auto sz                      = T::unroll_size;
-  auto sz4                     = T::unroll_size * 4;
-  auto n4                      = size / sz4;
-  auto n1                      = (size % sz4) / sz;
-  auto remain                  = size % sz;
+
+  auto sz     = T::unroll_size;
+  auto sz4    = T::unroll_size * 4;
+  auto n4     = size / sz4;
+  auto n1     = (size % sz4) / sz;
+  auto remain = size % sz;
+
   for (size_t i = 0; i < n4; ++i) {
     auto s10 = T::template load<f1_aligned>(&f1[i * sz4 + sz * 0]);
     auto s11 = T::template load<f1_aligned>(&f1[i * sz4 + sz * 1]);
@@ -318,10 +320,11 @@ inline typename T::value_type dot_product(const typename T::value_type *f1,
     auto s21 = T::template load<f2_aligned>(&f2[i * sz4 + sz * 1]);
     auto s22 = T::template load<f2_aligned>(&f2[i * sz4 + sz * 2]);
     auto s23 = T::template load<f2_aligned>(&f2[i * sz4 + sz * 3]);
-    r0       = T::madd(s10, s20, r0);
-    r1       = T::madd(s11, s21, r1);
-    r2       = T::madd(s12, s22, r2);
-    r3       = T::madd(s13, s23, r3);
+
+    r0 = T::madd(s10, s20, r0);
+    r1 = T::madd(s11, s21, r1);
+    r2 = T::madd(s12, s22, r2);
+    r3 = T::madd(s13, s23, r3);
   }
   size_t idx = n4 * sz4;
   for (size_t i = 0; i < n1; ++i) {
@@ -329,9 +332,10 @@ inline typename T::value_type dot_product(const typename T::value_type *f1,
     auto s2 = T::template load<f2_aligned>(&f2[idx + i * sz]);
     r0      = T::madd(s1, s2, r0);
   }
-  r0                         = T::add(r0, r1);
-  r2                         = T::add(r2, r3);
-  r0                         = T::add(r0, r2);
+  r0 = T::add(r0, r1);
+  r2 = T::add(r2, r3);
+  r0 = T::add(r0, r2);
+
   typename T::value_type sum = T::resemble(r0);
   idx += n1 * sz;
   for (size_t i = 0; i < remain; ++i) {
@@ -345,20 +349,24 @@ inline void add(typename T::value_type c,
                 std::size_t size,
                 typename T::value_type *dst) {
   typename T::register_type c2 = T::set1(c);
-  auto sz                      = T::unroll_size;
-  auto sz4                     = T::unroll_size * 4;
-  auto n4                      = size / sz4;
-  auto n1                      = (size % sz4) / sz;
-  auto remain                  = size % sz;
+
+  auto sz     = T::unroll_size;
+  auto sz4    = T::unroll_size * 4;
+  auto n4     = size / sz4;
+  auto n1     = (size % sz4) / sz;
+  auto remain = size % sz;
+
   for (size_t i = 0; i < n4; ++i) {
     auto d0 = T::template load<dst_aligned>(&dst[i * sz4 + sz * 0]);
     auto d1 = T::template load<dst_aligned>(&dst[i * sz4 + sz * 1]);
     auto d2 = T::template load<dst_aligned>(&dst[i * sz4 + sz * 2]);
     auto d3 = T::template load<dst_aligned>(&dst[i * sz4 + sz * 3]);
-    d0      = T::add(c2, d0);
-    d1      = T::add(c2, d1);
-    d2      = T::add(c2, d2);
-    d3      = T::add(c2, d3);
+
+    d0 = T::add(c2, d0);
+    d1 = T::add(c2, d1);
+    d2 = T::add(c2, d2);
+    d3 = T::add(c2, d3);
+
     T::template store<dst_aligned>(&dst[i * sz4 + sz * 0], d0);
     T::template store<dst_aligned>(&dst[i * sz4 + sz * 1], d1);
     T::template store<dst_aligned>(&dst[i * sz4 + sz * 2], d2);
@@ -536,7 +544,13 @@ void fill(T *dst, size_t size, T value) {
 
 }  // namespace detail
 
-// dst[i] += c
+/**
+ * Adds constant c to each element of dst (dst[i] += c)
+ * @tparam T type of inputs
+ * @param c constant to add
+ * @param size size of vector
+ * @param dst pointer to the beginning of vector
+ */
 template <typename T>
 void add(T c, std::size_t size, T *dst) {
   bool is_dst_aligned =
@@ -545,6 +559,15 @@ void add(T c, std::size_t size, T *dst) {
     detail::add<VECTORIZE_TYPE, std::true_type>(c, size, dst);
   } else {
     detail::add<VECTORIZE_TYPE, std::false_type>(c, size, dst);
+  }
+}
+
+template <typename Iter>
+void add(typename std::iterator_traits<Iter>::value_type c,
+         std::size_t size,
+         Iter dst) {
+  for (size_t i = 0; i < size; ++i) {
+    *(dst++) += c;
   }
 }
 
