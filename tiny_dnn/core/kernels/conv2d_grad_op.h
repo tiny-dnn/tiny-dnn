@@ -33,7 +33,7 @@ class Conv2dGradOp : public core::OpKernel {
     Tensor<float_t> curr_delta_t(context.output_grad(0));
 
     // initialize outputs
-    prev_delta_t.fill(0.0f);
+    prev_delta_t.fill(float_t{0});
 
     // call convolution algorithm depending
     // on the selected engine type
@@ -44,10 +44,16 @@ class Conv2dGradOp : public core::OpKernel {
       kernels::conv2d_op_internal(prev_out_t, weights_t, weights_grads_t,
                                   bias_grads_t, curr_delta_t, prev_delta_t,
                                   params, context.parallelize());
+      context.input_grad(0) = prev_delta_t.toTensor();
+      context.input_grad(1) = weights_grads_t.toTensor();
+      context.input_grad(2) = bias_grads_t.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::conv2d_op_internal(prev_out_t, weights_t, weights_grads_t,
                                   bias_grads_t, curr_delta_t, prev_delta_t,
                                   params, context.parallelize());
+      context.input_grad(0) = prev_delta_t.toTensor();
+      context.input_grad(1) = weights_grads_t.toTensor();
+      context.input_grad(2) = bias_grads_t.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }

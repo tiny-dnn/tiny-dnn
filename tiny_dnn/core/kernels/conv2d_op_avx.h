@@ -54,6 +54,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
+    const float *pw = W.host_pointer(0, 0);
     for (size_t o = 0; o < out.depth_; ++o) {
       __m256 sum0     = _mm256_setzero_ps();
       __m256 sum1     = _mm256_setzero_ps();
