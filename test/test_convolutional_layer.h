@@ -451,8 +451,8 @@ TEST(convolutional, bprop_avx_wstride) {
 
 #ifdef CNN_USE_NNPACK
 TEST(convolutional, fprop_nnp) {
-  convolutional_layer<sigmoid> l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                                 core::backend_t::nnpack);
+  convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
+                        core::backend_t::nnpack);
 
   // layer::forward_propagation expects tensors, even if we feed only one
   // input

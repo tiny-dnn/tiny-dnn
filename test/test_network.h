@@ -154,63 +154,61 @@ TEST(network, manual_init) {
 }
 
 // TODO(nyanp): check out values again since the routine it's a bit sensitive
+/*
+TEST(network, multi_out) {
+  network<graph> net;
+  adam optimizer;
+  size_t tnum = 600;
 
-/*TEST(network, multi_out) {
-    network<graph> net;
-    adam optimizer;
-    size_t tnum = 600;
+  std::vector<vec_t> data;
+  std::vector<std::vector<vec_t>> out;
 
-    std::vector<vec_t> data;
-    std::vector<std::vector<vec_t>> out;
+  auto in     = std::make_shared<input_layer>(shape3d(2, 1, 1));
+  auto hidden = std::make_shared<layers::fc>(2, 4);
+  auto out1   = std::make_shared<layers::fc>(4, 2);
+  auto out2   = std::make_shared<layers::fc>(4, 2);
 
-    auto in = std::make_shared<input_layer>(shape3d(2,1,1));
-    auto hidden = std::make_shared<layers::fc>(2,4);
-    auto out1 = std::make_shared<layers::fc>(4,2);
-    auto out2 = std::make_shared<layers::fc>(4,2);
+  in << hidden << out1;
+  hidden << out2;
 
-    in << hidden << out1;
-    hidden << out2;
+  for (size_t i = 0; i < tnum; i++) {
+    bool in[2] = {bernoulli(0.5), bernoulli(0.5)};
+    // label_t expected = (in[0] ^ in[1]) ? 1 : 0;
 
-    for (size_t i = 0; i < tnum; i++) {
-        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
-        // label_t expected = (in[0] ^ in[1]) ? 1 : 0;
+    data.push_back({static_cast<float_t>(in[0]), static_cast<float_t>(in[1])});
 
-        data.push_back({ static_cast<float_t>(in[0]),
-                         static_cast<float_t>(in[1]) });
+    out.emplace_back(std::vector<vec_t>{
+      // 1st output train and/or function
+      {static_cast<float_t>(in[0] && in[1]),
+       static_cast<float_t>(in[0] || in[1])},
+      // 2nd output train xor/eq function
+      {static_cast<float_t>(in[0] ^ in[1]),
+       static_cast<float_t>(in[0] == in[1])}});
+  }
 
-        out.emplace_back(std::vector<vec_t>{
-            { static_cast<float_t>(in[0] && in[1]),
-              static_cast<float_t>(in[0] || in[1]) }, // 1st output train and/or
-function
-            { static_cast<float_t>(in[0] ^  in[1]),
-              static_cast<float_t>(in[0] == in[1]) } // 2nd output train xor/eq
-function
-        });
-    }
+  // construct single input, dual output network
+  construct_graph(net, {in}, {out1, out2});
 
-    // construct single input, dual output network
-    construct_graph(net, {in}, {out1,out2});
+  optimizer.alpha *= 10;
 
-    optimizer.alpha *= 10;
+  // net.fit<mse>(optimizer, data, out, 10, 10, nop, [&](){ std::cout
+  // <<net.get_loss<mse>(data,out) << std::endl;});
+  net.fit<mse>(optimizer, data, out, 10, 10);
 
-    //net.fit<mse>(optimizer, data, out, 10, 10, nop, [&](){ std::cout <<
-net.get_loss<mse>(data,out) << std::endl;});
-    net.fit<mse>(optimizer, data, out, 10, 10);
+  for (size_t i = 0; i < tnum; i++) {
+    bool in[2] = {bernoulli(0.5), bernoulli(0.5)};
+    std::vector<vec_t> actual = net.predict(std::vector<vec_t>{
+      {static_cast<float_t>(in[0]), static_cast<float_t>(in[1])}});
+    vec_t actual_out1 = actual[0];
+    vec_t actual_out2 = actual[1];
 
-    for (size_t i = 0; i < tnum; i++) {
-        bool in[2] = { bernoulli(0.5), bernoulli(0.5) };
-        std::vector<vec_t> actual = net.predict(
-            std::vector<vec_t>{{ static_cast<float_t>(in[0]),
-                                 static_cast<float_t>(in[1]) }});
-        vec_t actual_out1 = actual[0];
-        vec_t actual_out2 = actual[1];
-
-        EXPECT_NEAR(actual_out1[0], in[0] && in[1], 0.1);
-        EXPECT_NEAR(actual_out1[1], in[0] || in[1], 0.1);
-        EXPECT_NEAR(actual_out2[0], in[0] ^  in[1], 0.1);
-        EXPECT_NEAR(actual_out2[1], in[0] == in[1], 0.1);
-    }
-}*/
+    EXPECT_NEAR(actual_out1[0], in[0] && in[1], 0.1);
+    EXPECT_NEAR(actual_out1[1], in[0] || in[1], 0.1);
+    EXPECT_NEAR(actual_out2[0], in[0] ^ in[1], 0.1);
+    EXPECT_NEAR(actual_out2[1], in[0] == in[1], 0.1);
+  }
+}
+*/
 
 TEST(network, train_predict) {
   // train xor function

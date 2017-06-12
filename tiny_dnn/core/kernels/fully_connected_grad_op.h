@@ -22,30 +22,40 @@ class FullyConnectedGradOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
-    // incoming/outcoming data
-    const tensor_t &prev_out = context.input(0);
-    const tensor_t &W        = context.input(1);
-    tensor_t &dW             = context.input_grad(1);
-    tensor_t *db         = params.has_bias_ ? &context.input_grad(2) : nullptr;
-    tensor_t &prev_delta = context.input_grad(0);
-    tensor_t &curr_delta = context.output_grad(0);
-    tensor_t dummy;  // need lvalue for non-const reference
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    const Tensor<float_t> prev_out(context.input(0)), weights(context.input(1));
+    Tensor<float_t> weights_grads(context.input_grad(1));
+    Tensor<float_t> bias_grads = params.has_bias_
+                                   ? Tensor<float_t>(context.input_grad(2))
+                                   : Tensor<float_t>();
+    Tensor<float_t> prev_delta(context.input_grad(0));
+    Tensor<float_t> curr_delta(context.output_grad(0));
 
     // initialize outputs
-    fill_tensor(prev_delta, float_t{0});
+    prev_delta.fill(float_t{0});
 
     // call the algorithm depending on the selected engine type
 
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::fully_connected_op_internal(
-        prev_out, W[0], dW, params.has_bias_ ? *db : dummy, curr_delta,
-        prev_delta, params, context.parallelize());
+      kernels::fully_connected_op_internal(prev_out, weights, weights_grads,
+                                           bias_grads, curr_delta, prev_delta,
+                                           context.parallelize());
+      context.input_grad(0) = prev_delta.toTensor();
+      context.input_grad(1) = weights_grads.toTensor();
+      if (params.has_bias_) {
+        context.input_grad(2) = bias_grads.toTensor();
+      }
     } else if (engine == core::backend_t::avx) {
-      kernels::fully_connected_op_avx(
-        prev_out, W[0], dW, params.has_bias_ ? *db : dummy, curr_delta,
-        prev_delta, params, context.parallelize());
+      kernels::fully_connected_op_avx(prev_out, weights, weights_grads,
+                                      bias_grads, curr_delta, prev_delta,
+                                      context.parallelize());
+      context.input_grad(0) = prev_delta.toTensor();
+      context.input_grad(1) = weights_grads.toTensor();
+      if (params.has_bias_) {
+        context.input_grad(2) = bias_grads.toTensor();
+      }
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }

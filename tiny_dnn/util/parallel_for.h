@@ -64,6 +64,7 @@ struct blocked_range {
   blocked_range(size_t begin, size_t end) : begin_(begin), end_(end) {}
   blocked_range(int begin, int end) : begin_(begin), end_(end) {}
 
+  // TODO(Randl): misleading
   const_iterator begin() const { return begin_; }
   const_iterator end() const { return end_; }
 
