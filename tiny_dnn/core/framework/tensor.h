@@ -60,6 +60,21 @@ class Tensor {
     : storage_(shape) {}
 
   /**
+   * Temporal method to create a new Tensor from old tensor_t
+   */
+  explicit Tensor(const tensor_t &data) {
+    std::vector<size_t> shape = {data.size(), data[0].size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      for (size_t j = 0; j < data[i].size(); ++j) {
+        storage_(i, j) = data[i][j];
+      }
+    }
+  }
+
+  /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape and filling it with value. For example,
    * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
@@ -104,7 +119,7 @@ class Tensor {
    *
    * @return the tensor shape
    */
-  const auto shape() const { return storage_.shape(); }
+  const auto &shape() const { return storage_.shape(); }
 
   /**
    *
@@ -146,9 +161,58 @@ class Tensor {
 
   const auto host_begin() const { return storage_.cxbegin(); }
 
+  template <typename... Args>
+  auto host_iter(const Args... args) {
+    return std::next(storage_.xbegin(), host_offset(args...));
+  }
+
+  template <typename... Args>
+  auto host_iter(const Args... args) const {
+    return std::next(storage_.cxbegin(), host_offset(args...));
+  }
+
   auto host_end() { return storage_.xend(); }
 
   const auto host_end() const { return storage_.cxend(); }
+
+  // TODO(Randl): check if strided.
+  template <typename... Args>
+  auto host_pointer(const Args... args) {
+    return &*host_iter(args...);
+  }
+
+  template <typename... Args>
+  auto host_pointer(const Args... args) const {
+    return &*host_iter(args...);
+  }
+  /**
+   * Calculate an offset for last dimension.
+   * @param d an index of last dimension
+   * @return offest from the beginning of the dimesion
+   */
+  size_t host_offset(const size_t d) const { return d; }
+
+  /**
+   * Calculate an offest in 1D representation of nD Tensor. Parameters are
+   * indexes of k last dimensions. If k is less than n, function returns an
+   * offset from the first index of (n-k+1)th dimension. This allows recursive
+   * call to acquire offset for generic number of dimensions
+   * @param d index of (k-n)th dimension. For external call, n=k usually holds
+   * @param args index of rest (k-1) dimensions.
+   * @return offset from the first index of (n-k)th dimension
+   */
+  template <typename... Args>
+  size_t host_offset(const size_t d, const Args... args) const {
+    size_t dim = storage_.dimension() - sizeof...(args) - 1;
+    /*if (d >= storage.shape()[dim]) {
+      throw nn_error("Access tensor out of range.");
+    }*/
+    size_t shift = 1;
+    for (size_t i = dim + 1; i < storage_.dimension(); ++i)
+      shift *= storage_.shape()[i];  // TODO(Randl): optimize. Reverse argumets?
+
+    return (d * shift + host_offset(args...));
+  }
 
 // TODO(Randl)
 /*
@@ -207,39 +271,45 @@ auto host_data() {
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
-  /**
-   * Returns new Tensor which has shared storage with current, but different
-   * shape
-   *
-   * Example:
-   * @code
-   * Tensor b({4,2});
-   * a = b.subView({2,2,2};
-   * @endcode
-   * b is Tensor of shape 4x2 and a is Tensor of shape 2x2x2. Changing a(0,0,0)
-   * will change b(0,0) too.
-   * @param new_shape
-   * @return
-   */
-  /*
- Tensor<U,xt::xbroadcast<Storage, std::vector<size_t>>>
- subView(std::initializer_list<size_t> const &new_shape) {
-   auto res = Tensor<U,xt::xbroadcast<Storage,
- std::vector<size_t>>>(xt::broadcast(storage_, storage_.shape()));
-   res.storage_.reshape(new_shape);
-   return res;
- }*/
+  template <typename S>
+  xt::xrange<S> get_range(std::initializer_list<S> list) const {
+    // if (*(list.begin()) == -1) return xt::all();
+    // if(*(list.begin())==*(list.begin()+1)) return *(list.begin());
+    if (list.size() == 2) {
+      return xt::range(*(list.begin()), *(list.begin() + 1));
+    } else {
+      // return xt::range(*(list.begin()), *(list.begin() + 1),
+      //               *(list.begin() + 2));
+    }
+  }
 
   /**
    * Returns view of current Tensor
    * @tparam Values index type
+   * @param lists lists of indexes
+   * @return
    */
   template <typename... Values>
   Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
     std::initializer_list<Values>... lists) {
+    // TODO(Randl): all, single, stride
+    // TODO(Randl): different types of values in list won't work
     using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_,
-                        xt::range(*(lists.begin()), *(lists.begin() + 1))...);
+    return SharedTensor(storage_, get_range(lists)...);
+  }
+
+  /**
+   * Returns view of current Tensor
+   * @tparam Values index type
+   * @param lists lists of indexes
+   * @return
+   */
+  template <typename... Values>
+  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> subView(
+    std::initializer_list<Values>... lists) const {
+    using SharedTensor =
+      const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
+    return SharedTensor(storage_, get_range(lists)...);
   }
 
   /*
@@ -248,6 +318,21 @@ auto host_data() {
     return true; //std::is_same(Storage, xt::xview<U>);
   }
 */
+
+  /**
+   * Temporal method to convert new Tensor to tensor_t
+   * @return
+   */
+  tensor_t toTensor() const {
+    tensor_t tensor(storage_.shape()[0]);
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      tensor[i].resize(storage_.shape()[1]);
+      for (size_t j = 0; j < storage_.shape()[1]; ++j) {
+        tensor[i][j] = storage_(i, j);
+      }
+    }
+    return tensor;
+  }
 
   /**
    * Creates Tensor given the storage

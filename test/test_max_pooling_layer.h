@@ -194,7 +194,9 @@ TEST(max_pool, forward_stride_nnp) {
     };
   // clang-format on
 
-  vec_t res = l.forward({{in}})[0][0];
+  std::vector<const tensor_t*> out;
+  l.forward({{in}}, out);
+  vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -219,7 +221,9 @@ TEST(max_pool, forward_stride_nnp_not_2x2) {
     };
   // clang-format on
 
-  vec_t res = l.forward({{in}})[0][0];
+  std::vector<const tensor_t*> out;
+  l.forward({{in}}, out);
+  vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);
