@@ -45,13 +45,13 @@ class parameter {
       data_({shape_.size() * out_channels}),
       grad_({1, shape_.size() * out_channels}) {}
 
-  shape3d shape() { return shape_; }
+  shape3d shape() const { return shape_; }
 
-  size_t size() { return data_.size(); }
+  size_t size() const { return data_.size(); }
 
-  parameter_type type() { return type_; }
+  parameter_type type() const { return type_; }
 
-  bool is_trainable() { return trainable_; }
+  bool is_trainable() const { return trainable_; }
 
   void set_trainable(bool trainable) { trainable_ = trainable; }
 

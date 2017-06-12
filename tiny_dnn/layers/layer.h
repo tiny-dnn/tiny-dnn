@@ -366,11 +366,7 @@ class layer : public node {
                      parameter_type type,
                      bool trainable = true) {
     parameters_.push_back(
-<<<<<<< HEAD
       new parameter(out_features, in_features, height, width, type, trainable));
-=======
-      new parameter(width, height, depth, n_fmaps, type, trainable));
->>>>>>> 78ec868... Add init_parameters method replicating init_weights.
   }
 
   /**
@@ -792,6 +788,33 @@ class layer : public node {
     post_update();
   }
 
+  void update_parameters(optimizer *o, size_t batch_size) {
+    float_t rcp_batch_size  = float_t{1} / float_t{batch_size};
+    Tensor<float_t> &diff_t = parameters_diff_;
+    for (size_t i = 0; i < parameters_.size(); i++) {
+      if (trainable() && parameters_[i]->is_trainable()) {
+        parameters_[i]->merge_grads(&diff_t);
+
+        for (size_t j = 0; j < diff_t.size(); ++j) {
+          diff_t.host_at(j) *= rcp_batch_size;
+        }
+        // parallelize only when target size is big enough to mitigate
+        // thread spawning overhead.
+        bool parallelize = (parameters_[i]->size() >= 512);
+
+        // todo (karandesai) : remove this workaround later
+        vec_t diff   = diff_t.toVec();
+        vec_t target = parameters_[i]->data()->toVec();
+        o->update(diff, target, parallelize);
+        diff_t = Tensor<float_t>(to_xtensor({diff})[0]);
+        parameters_[i]->set_data(Tensor<float_t>(to_xtensor({target})[0]));
+      }
+    }
+    clear_grads();
+    post_update();
+  }
+
+  // todo (karandesai) : remove after parameter integration
   bool has_same_weights(const layer &rhs, float_t eps) const {
     auto w1 = weights();
     auto w2 = rhs.weights();
@@ -802,6 +825,24 @@ class layer : public node {
 
       for (size_t j = 0; j < w1[i]->size(); j++) {
         if (std::abs(w1[i]->at(j) - w2[i]->at(j)) > eps) return false;
+      }
+    }
+    return true;
+  }
+
+  bool has_same_parameters(const layer &rhs, float_t eps) const {
+    std::vector<const parameter *> lhs_parameters = parameters();
+    std::vector<const parameter *> rhs_parameters = rhs.parameters();
+    if (lhs_parameters.size() != rhs_parameters.size()) return false;
+
+    for (size_t i = 0; i < parameters_.size(); i++) {
+      if (lhs_parameters[i]->size() != rhs_parameters[i]->size()) return false;
+
+      const Tensor<float_t> *lhs_data = lhs_parameters[i]->data();
+      const Tensor<float_t> *rhs_data = rhs_parameters[i]->data();
+      for (size_t j = 0; j < lhs_parameters[i]->size(); j++) {
+        if (std::abs(lhs_data->host_at(j) - rhs_data->host_at(j)) > eps)
+          return false;
       }
     }
     return true;
