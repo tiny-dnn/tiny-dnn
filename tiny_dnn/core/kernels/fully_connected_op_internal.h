@@ -36,7 +36,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
           weights.host_at(0, c * out_size + i) * in_data.host_at(sample, c);
       }
 
-      if (bias.size() > 0) {
+      if (bias.size() == out_size) {
         out_data.host_at(sample, i) += bias.host_at(0, i);
       }
     }
@@ -67,8 +67,9 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
                                         Tensor<float_t, S5> &curr_delta,
                                         Tensor<float_t, S6> &prev_delta,
                                         const bool layer_parallelize) {
-  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1];
-  for (serial_size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
+  size_t out_size = curr_delta.shape()[1], in_size = prev_delta.shape()[1],
+         sample_num = prev_out.shape()[0];
+  for (serial_size_t sample = 0; sample < sample_num; sample++) {
     for (serial_size_t c = 0; c < in_size; c++) {
       // propagate delta to previous layer
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
@@ -87,7 +88,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
           weights_grads.host_pointer(sample, c * out_size + r.begin()));
       }
 
-      if (bias_grads.size() > 0) {
+      if (bias_grads.size() == out_size) {
         // vec_t& db = *in_grad[2];
         for (size_t i = r.begin(); i < r.end(); i++) {
           bias_grads.host_at(sample, i) += curr_delta.host_at(sample, i);
