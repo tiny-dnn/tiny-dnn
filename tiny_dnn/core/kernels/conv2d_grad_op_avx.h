@@ -480,22 +480,26 @@ inline void accumulate_dw(const core::conv_params &params,
 }  // accumulate_dw
 
 // float ver
-template <typename Allocator>
-void avx_conv2d_5x5_back_kernel_one(
-  const core::conv_params &params,
-  const std::vector<float, Allocator> &prev_out,
-  const std::vector<float, Allocator> &W,
-  std::vector<float, Allocator> &dW,
-  std::vector<float, Allocator> &db,
-  std::vector<float, Allocator> &curr_delta,
-  std::vector<float, Allocator> *prev_delta) {
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void avx_conv2d_5x5_back_kernel_one(const Tensor<float, S1> &prev_out,
+                                           const Tensor<float, S2> &weigths,
+                                           Tensor<float, S3> &weights_grads,
+                                           Tensor<float, S4> &bias_grads,
+                                           Tensor<float, S5> &curr_delta,
+                                           Tensor<float, S6> &prev_delta,
+                                           const core::conv_params &params) {
   auto &in                    = params.in;
   auto &out                   = params.out;
   auto &in_padded             = params.in_padded;
   auto &tbl                   = params.tbl;
   auto w_stride               = params.w_stride;
   const size_t in_padded_area = in_padded.area();
-  float *pdelta_dst_org       = &(*prev_delta)[0];
+  float *pdelta_dst_org       = prev_delta.host_begin();
   const size_t h_stride2      = params.h_stride * in_padded.width_;
   static const __m256i imask  = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
   static const __m256 mask =
@@ -512,29 +516,31 @@ void avx_conv2d_5x5_back_kernel_one(
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
-          const float *pw         = &W[25 * (in.depth_ * outc + inc)];
-          const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
-          float *pdelta_dst       = pdelta_dst_org;
-          __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
-          __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
-          __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
-          __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-          __m256 w4a = _mm256_maskload_ps(pw + 20, imask);
-          __m256 w0b = leftShift<4>(w0a);
-          __m256 w1b = leftShift<4>(w1a);
-          __m256 w2b = leftShift<4>(w2a);
-          __m256 w3b = leftShift<4>(w3a);
-          __m256 w4b = leftShift<4>(w4a);
-          __m256 w0c = leftShift<8>(w0a);
-          __m256 w1c = leftShift<8>(w1a);
-          __m256 w2c = leftShift<8>(w2a);
-          __m256 w3c = leftShift<8>(w3a);
-          __m256 w4c = leftShift<8>(w4a);
-          __m256 w0d = leftShift<12>(w0a);
-          __m256 w1d = leftShift<12>(w1a);
-          __m256 w2d = leftShift<12>(w2a);
-          __m256 w3d = leftShift<12>(w3a);
-          __m256 w4d = leftShift<12>(w4a);
+          const float *pw =
+            weigths.host_pointer(0, 25 * (in.depth_ * outc + inc));
+          const float *pdelta_src =
+            curr_delta.host_pointer(out.get_index(0, 0, outc));
+          float *pdelta_dst = pdelta_dst_org;
+          __m256 w0a        = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+          __m256 w1a        = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+          __m256 w2a        = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+          __m256 w3a        = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+          __m256 w4a        = _mm256_maskload_ps(pw + 20, imask);
+          __m256 w0b        = leftShift<4>(w0a);
+          __m256 w1b        = leftShift<4>(w1a);
+          __m256 w2b        = leftShift<4>(w2a);
+          __m256 w3b        = leftShift<4>(w3a);
+          __m256 w4b        = leftShift<4>(w4a);
+          __m256 w0c        = leftShift<8>(w0a);
+          __m256 w1c        = leftShift<8>(w1a);
+          __m256 w2c        = leftShift<8>(w2a);
+          __m256 w3c        = leftShift<8>(w3a);
+          __m256 w4c        = leftShift<8>(w4a);
+          __m256 w0d        = leftShift<12>(w0a);
+          __m256 w1d        = leftShift<12>(w1a);
+          __m256 w2d        = leftShift<12>(w2a);
+          __m256 w3d        = leftShift<12>(w3a);
+          __m256 w4d        = leftShift<12>(w4a);
           for (size_t y = 0; y < out_height;
                ++y, pdelta_src += out_width, pdelta_dst += h_stride2) {
             float *delta_dst0 = pdelta_dst;
@@ -612,29 +618,31 @@ void avx_conv2d_5x5_back_kernel_one(
           if (!tbl.is_connected(outc, inc)) {
             continue;
           }
-          const float *pw         = &W[25 * (in.depth_ * outc + inc)];
-          const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
-          float *pdelta_dst       = pdelta_dst_org;
-          __m256 w0a = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
-          __m256 w1a = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
-          __m256 w2a = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
-          __m256 w3a = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
-          __m256 w4a = _mm256_maskload_ps(pw + 20, imask);
-          __m256 w0b = leftShift<4>(w0a);
-          __m256 w1b = leftShift<4>(w1a);
-          __m256 w2b = leftShift<4>(w2a);
-          __m256 w3b = leftShift<4>(w3a);
-          __m256 w4b = leftShift<4>(w4a);
-          __m256 w0c = leftShift<8>(w0a);
-          __m256 w1c = leftShift<8>(w1a);
-          __m256 w2c = leftShift<8>(w2a);
-          __m256 w3c = leftShift<8>(w3a);
-          __m256 w4c = leftShift<8>(w4a);
-          __m256 w0d = leftShift<12>(w0a);
-          __m256 w1d = leftShift<12>(w1a);
-          __m256 w2d = leftShift<12>(w2a);
-          __m256 w3d = leftShift<12>(w3a);
-          __m256 w4d = leftShift<12>(w4a);
+          const float *pw =
+            weigths.host_pointer(0, 25 * (in.depth_ * outc + inc));
+          const float *pdelta_src =
+            curr_delta.host_pointer(out.get_index(0, 0, outc));
+          float *pdelta_dst = pdelta_dst_org;
+          __m256 w0a        = _mm256_and_ps(_mm256_loadu_ps(pw + 0), mask);
+          __m256 w1a        = _mm256_and_ps(_mm256_loadu_ps(pw + 5), mask);
+          __m256 w2a        = _mm256_and_ps(_mm256_loadu_ps(pw + 10), mask);
+          __m256 w3a        = _mm256_and_ps(_mm256_loadu_ps(pw + 15), mask);
+          __m256 w4a        = _mm256_maskload_ps(pw + 20, imask);
+          __m256 w0b        = leftShift<4>(w0a);
+          __m256 w1b        = leftShift<4>(w1a);
+          __m256 w2b        = leftShift<4>(w2a);
+          __m256 w3b        = leftShift<4>(w3a);
+          __m256 w4b        = leftShift<4>(w4a);
+          __m256 w0c        = leftShift<8>(w0a);
+          __m256 w1c        = leftShift<8>(w1a);
+          __m256 w2c        = leftShift<8>(w2a);
+          __m256 w3c        = leftShift<8>(w3a);
+          __m256 w4c        = leftShift<8>(w4a);
+          __m256 w0d        = leftShift<12>(w0a);
+          __m256 w1d        = leftShift<12>(w1a);
+          __m256 w2d        = leftShift<12>(w2a);
+          __m256 w3d        = leftShift<12>(w3a);
+          __m256 w4d        = leftShift<12>(w4a);
           size_t y   = 0;
           do {
             float *delta_dst0 = pdelta_dst;
@@ -706,8 +714,8 @@ void avx_conv2d_5x5_back_kernel_one(
       __m256 delta_src;
       if (tbl.is_empty()) {
         for (size_t outc = 0; outc < out.depth_; ++outc, widx += wstep) {
-          delta_src       = _mm256_broadcast_ss(&curr_delta[outc]);
-          const float *pw = (const float *)&W[widx];
+          delta_src       = _mm256_broadcast_ss(curr_delta.host_pointer(outc));
+          const float *pw = weigths.host_pointer(widx);
           __m256 w0       = _mm256_loadu_ps(pw + 0);
           __m256 w1       = _mm256_loadu_ps(pw + 8);
           __m256 w2       = _mm256_loadu_ps(pw + 16);
@@ -723,7 +731,7 @@ void avx_conv2d_5x5_back_kernel_one(
             continue;
           }
           delta_src       = _mm256_broadcast_ss(&curr_delta[outc]);
-          const float *pw = (const float *)&W[widx];
+          const float *pw = weigths.host_pointer(widx);
           __m256 w0       = _mm256_loadu_ps(pw + 0);
           __m256 w1       = _mm256_loadu_ps(pw + 8);
           __m256 w2       = _mm256_loadu_ps(pw + 16);
@@ -758,26 +766,22 @@ void avx_conv2d_5x5_back_kernel_one(
       // ---3 3333
       // ---4 4444
       __m256 new_sum0 =
-        _mm256_blend_ps(_mm256_setzero_ps(), sum0, 0x1F /* 0b00011111 */
-                        );
+        _mm256_blend_ps(_mm256_setzero_ps(), sum0, 0x1F /* 0b00011111 */);
       __m256 new_sum1 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_or_ps(rightShift<20>(sum0), leftShift<12>(sum1)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
       __m256 new_sum2 = _mm256_blend_ps(
-        _mm256_setzero_ps(), rightShift<8>(sum1), 0x1F /* 0b00011111 */
-        );
+        _mm256_setzero_ps(), rightShift<8>(sum1), 0x1F /* 0b00011111 */);
       __m256 new_sum3 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_or_ps(rightShift<28>(sum1), leftShift<4>(sum2)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
       __m256 new_sum4 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_set_m128(sum3, _mm256_extractf128_ps(sum2, 1)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
+
       dst0 = _mm256_add_ps(dst0, new_sum0);
       dst1 = _mm256_add_ps(dst1, new_sum1);
       dst2 = _mm256_add_ps(dst2, new_sum2);
@@ -796,14 +800,16 @@ void avx_conv2d_5x5_back_kernel_one(
       for (size_t outc = 0; outc < out.depth_; ++outc) {
         if (!tbl.is_connected(outc, inc)) continue;
 
-        const float *pw         = &W[25 * (in.depth_ * outc + inc)];
-        const float *pdelta_src = &curr_delta[out.get_index(0, 0, outc)];
-        float *pdelta_dst       = pdelta_dst_org;
-        __m256 w0a              = _mm256_maskload_ps(pw + 0, imask);
-        __m256 w1a              = _mm256_maskload_ps(pw + 5, imask);
-        __m256 w2a              = _mm256_maskload_ps(pw + 10, imask);
-        __m256 w3a              = _mm256_maskload_ps(pw + 15, imask);
-        __m256 w4a              = _mm256_maskload_ps(pw + 20, imask);
+        const float *pw =
+          weigths.host_pointer(0, 25 * (in.depth_ * outc + inc));
+        const float *pdelta_src =
+          curr_delta.host_pointer(out.get_index(0, 0, outc));
+        float *pdelta_dst = pdelta_dst_org;
+        __m256 w0a        = _mm256_maskload_ps(pw + 0, imask);
+        __m256 w1a        = _mm256_maskload_ps(pw + 5, imask);
+        __m256 w2a        = _mm256_maskload_ps(pw + 10, imask);
+        __m256 w3a        = _mm256_maskload_ps(pw + 15, imask);
+        __m256 w4a        = _mm256_maskload_ps(pw + 20, imask);
         for (size_t y = 0; y < out_height;
              ++y, pdelta_src += out_width, pdelta_dst += h_stride2) {
           float *delta_dst0 = pdelta_dst;
@@ -839,67 +845,88 @@ void avx_conv2d_5x5_back_kernel_one(
     }        // for inc
   }
 
-  accumulate_dw(params, prev_out, curr_delta, dW, db);
+  accumulate_dw(params, prev_out, curr_delta, weights_grads, bias_grads);
 
   if (params.has_bias) {
-    accumulate_db(out, curr_delta, db);
+    accumulate_db(out, curr_delta, bias_grads);
   }
 }  // avx_conv2d_5x5_back_kernel float ver
 
 // double ver
-template <typename Allocator>
-void avx_conv2d_5x5_back_kernel(
-  const core::conv_params &params,
-  const std::vector<std::vector<double, Allocator>> &prev_out,
-  const std::vector<double, Allocator> &W,
-  std::vector<std::vector<double, Allocator>> &dW,
-  std::vector<std::vector<double, Allocator>> &db,
-  std::vector<std::vector<double, Allocator>> &curr_delta,
-  std::vector<std::vector<double, Allocator>> &prev_delta,
-  bool layer_parallelize) {
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void avx_conv2d_5x5_back_kernel(const Tensor<double, S1> &prev_out,
+                                       const Tensor<double, S2> &weigths,
+                                       Tensor<double, S3> &weights_grads,
+                                       Tensor<double, S4> &bias_grads,
+                                       Tensor<double, S5> &curr_delta,
+                                       Tensor<double, S6> &prev_delta,
+                                       const core::conv_params &params,
+                                       const bool layer_parallelize) {
   // backward-pass fallbacks to tiny-backend when float_t is double
-  conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params,
-                     layer_parallelize);
+  conv2d_op_internal(prev_out, weigths, weights_grads, bias_grads, curr_delta,
+                     prev_delta, params, layer_parallelize);
 }
 
 // float ver
-template <typename Allocator>
-void avx_conv2d_5x5_back_kernel(
-  const core::conv_params &params,
-  const std::vector<std::vector<float, Allocator>> &prev_out,
-  const std::vector<float, Allocator> &W,
-  std::vector<std::vector<float, Allocator>> &dW,
-  std::vector<std::vector<float, Allocator>> &db,
-  std::vector<std::vector<float, Allocator>> &curr_delta,
-  std::vector<std::vector<float, Allocator>> &prev_delta,
-  bool layer_parallelize) {
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void avx_conv2d_5x5_back_kernel(const Tensor<float, S1> &prev_out,
+                                       const Tensor<float, S2> &weigths,
+                                       Tensor<float, S3> &weights_grads,
+                                       Tensor<float, S4> &bias_grads,
+                                       Tensor<float, S5> &curr_delta,
+                                       Tensor<float, S6> &prev_delta,
+                                       const core::conv_params &params,
+                                       const bool layer_parallelize) {
   for_i(layer_parallelize, prev_out.size(), [&](size_t sample) {
-    avx_conv2d_5x5_back_kernel_one(params, prev_out[sample], W, dW[sample],
-                                   db[sample], curr_delta[sample],
-                                   &prev_delta[sample]);
+    auto prev =
+      prev_out.subView({sample, sample + 1}, {0lu, prev_out.shape()[1]});
+    auto dW = weights_grads.subView({sample, sample + 1},
+                                    {0lu, weights_grads.shape()[1]});
+    auto dB =
+      bias_grads.subView({sample, sample + 1}, {0lu, bias_grads.shape()[1]});
+    auto currd =
+      curr_delta.subView({sample, sample + 1}, {0lu, curr_delta.shape()[1]});
+    auto prevd =
+      prev_delta.subView({sample, sample + 1}, {0lu, prev_delta.shape()[1]});
+    avx_conv2d_5x5_back_kernel_one(prev, weigths, dW, dB, currd, prevd, params);
   });
 }
 
 #endif  // CNN_USE_AVX
-
-inline void conv2d_grad_op_avx(const tensor_t &prev_out,
-                               const vec_t &W,
-                               tensor_t &dW,
-                               tensor_t &db,
-                               tensor_t &curr_delta,
-                               tensor_t &prev_delta,
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void conv2d_grad_op_avx(const Tensor<float_t, S1> &prev_out,
+                               const Tensor<float_t, S2> &weigths,
+                               Tensor<float_t, S3> &weights_grads,
+                               Tensor<float_t, S4> &bias_grads,
+                               Tensor<float_t, S5> &curr_delta,
+                               Tensor<float_t, S6> &prev_delta,
                                const core::conv_params &params,
-                               const bool layer_parallelize) {
+                               const bool parallelize) {
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
-    avx_conv2d_5x5_back_kernel(params, prev_out, W, dW, db, curr_delta,
-                               prev_delta, layer_parallelize);
+    avx_conv2d_5x5_back_kernel(prev_out, weigths, weights_grads, bias_grads,
+                               curr_delta, prev_delta, params, parallelize);
     return;
   }
 #endif
 
-  conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params,
-                     layer_parallelize);
+  // conv2d_op_internal(prev_out, W, dW, db, curr_delta, prev_delta, params,
+  // layer_parallelize);
 }
 
 }  // namespace kernels

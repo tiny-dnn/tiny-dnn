@@ -87,17 +87,16 @@ TEST(convolutional, fprop) {
 
   tensor_buf buf(l, false);
 
-  // short-hand references to the payload vectors
-  vec_t &in = buf.in_at(0)[0], &out = buf.out_at(0)[0],
-        &weight = buf.in_at(1)[0];
-
   ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
-
+  // short-hand references to the payload vectors
+  vec_t &in = buf.in_at(0)[0], &weight = buf.in_at(1)[0];
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
   l.setup(false);
   {
     l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    vec_t &out = buf.out_at(0)[0];
 
     for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.0));
   }
@@ -120,6 +119,8 @@ TEST(convolutional, fprop) {
 
   {
     l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    vec_t &out = buf.out_at(0)[0];
 
     EXPECT_NEAR(float_t(-0.05), out[0], 1E-5);
     EXPECT_NEAR(float_t(1.65), out[1], 1E-5);
@@ -455,8 +456,7 @@ TEST(convolutional, fprop_nnp) {
                         core::backend_t::nnpack);
 
   // layer::forward_propagation expects tensors, even if we feed only one
-  // input
-  // at a time
+  // input at a time
   auto create_simple_tensor = [](size_t vector_size) {
     return tensor_t(1, vec_t(vector_size));
   };
@@ -469,7 +469,7 @@ TEST(convolutional, fprop_nnp) {
            bias_tensor   = create_simple_tensor(2);
 
   // short-hand references to the payload vectors
-  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
+  vec_t &in = in_tensor[0], &weight = weight_tensor[0];
 
   ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
 
@@ -485,57 +485,29 @@ TEST(convolutional, fprop_nnp) {
   {
     l.forward_propagation(in_data, out_data);
 
+    vec_t &out = out_tensor[0];
     for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
   }
 
-  weight[0] = 0.3;
-  weight[1] = 0.1;
-  weight[2] = 0.2;
-  weight[3] = 0.0;
-  weight[4] = -0.1;
-  weight[5] = -0.1;
-  weight[6] = 0.05;
-  weight[7] = -0.2;
-  weight[8] = 0.05;
+  // clang-format off
+  weight[0] = 0.3;  weight[1] = 0.1;  weight[2] = 0.2;
+  weight[3] = 0.0;  weight[4] = -0.1; weight[5] = -0.1;
+  weight[6] = 0.05; weight[7] = -0.2; weight[8] = 0.05;
 
-  weight[9]  = 0.0;
-  weight[10] = -0.1;
-  weight[11] = 0.1;
-  weight[12] = 0.1;
-  weight[13] = -0.2;
-  weight[14] = 0.3;
-  weight[15] = 0.2;
-  weight[16] = -0.3;
-  weight[17] = 0.2;
+  weight[9]  = 0.0; weight[10] = -0.1; weight[11] = 0.1;
+  weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
+  weight[15] = 0.2; weight[16] = -0.3; weight[17] = 0.2;
 
-  in[0]  = 3;
-  in[1]  = 2;
-  in[2]  = 1;
-  in[3]  = 5;
-  in[4]  = 2;
-  in[5]  = 3;
-  in[6]  = 0;
-  in[7]  = 2;
-  in[8]  = 0;
-  in[9]  = 1;
-  in[10] = 0;
-  in[11] = 6;
-  in[12] = 1;
-  in[13] = 1;
-  in[14] = 10;
-  in[15] = 3;
-  in[16] = -1;
-  in[17] = 2;
-  in[18] = 9;
-  in[19] = 0;
-  in[20] = 1;
-  in[21] = 2;
-  in[22] = 1;
-  in[23] = 5;
-  in[24] = 5;
+  in[0]  = 3; in[1]  = 2;  in[2]  = 1; in[3]  = 5; in[4]  = 2;
+  in[5]  = 3; in[6]  = 0;  in[7]  = 2; in[8]  = 0; in[9]  = 1;
+  in[10] = 0; in[11] = 6;  in[12] = 1; in[13] = 1; in[14] = 10;
+  in[15] = 3; in[16] = -1; in[17] = 2; in[18] = 9; in[19] = 0;
+  in[20] = 1; in[21] = 2;  in[22] = 1; in[23] = 5; in[24] = 5;
+  // clang-format on
 
   {
     l.forward_propagation(in_data, out_data);
+    vec_t &out = out_tensor[0];
 
     EXPECT_NEAR(0.4875026, out[0], 1E-5);
     EXPECT_NEAR(0.8388910, out[1], 1E-5);

@@ -29,6 +29,7 @@ inline bool is_near_container(const Container &expected,
   auto i2 = std::begin(actual);
 
   for (; i1 != std::end(expected); ++i1, ++i2) {
+    EXPECT_NEAR(*i1, *i2, abs_error);
     if (std::abs(*i1 - *i2) > abs_error) return false;
   }
   return true;

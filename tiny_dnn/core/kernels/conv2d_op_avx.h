@@ -21,12 +21,12 @@ namespace kernels {
 #ifdef CNN_USE_AVX
 
 // float ver
-template <typename Allocator>
+template <typename S1, typename S2, typename S3, typename S4>
 void avx_conv2d_5x5_kernel(const core::conv_params &params,
-                           const std::vector<float, Allocator> &in,
-                           const std::vector<float, Allocator> &W,
-                           const std::vector<float, Allocator> &bias,
-                           std::vector<float, Allocator> &a,
+                           const Tensor<float, S1> &in,
+                           const Tensor<float, S2> &W,
+                           const Tensor<float, S3> &bias,
+                           Tensor<float, S4> &a,
                            const bool layer_parallelize) {
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   assert(params.weight.height_ == 5 && params.weight.width_ == 5);
@@ -48,13 +48,13 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
-    const float *pw = (const float *)&W[0];
+    const float *pw = W.host_pointer(0, 0);
     for (size_t o = 0; o < out.depth_; ++o) {
       __m256 sum0     = _mm256_setzero_ps();
       __m256 sum1     = _mm256_setzero_ps();
       __m256 sum2     = _mm256_setzero_ps();
       __m128 sum3     = _mm_setzero_ps();
-      const float *pi = (const float *)&in[0];
+      const float *pi = in.host_pointer(0);
       for (size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, pi += inarea) {
         if (!tbl.is_connected(o, inc)) {
@@ -78,17 +78,17 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         sum3        = _mm_add_ps(tmp3, sum3);
       }
       __m256 sum  = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
-      __m128 b    = _mm_load_ss(&bias[o]);
+      __m128 b    = _mm_load_ss(bias.host_pointer(0, o));
       __m128 hsum = hsum256_ps(sum);
       b           = madd128_ss(b, y_bias_scale, sum3);
-      _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
+      _mm_store_ss(a.host_pointer(o), _mm_add_ss(hsum, b));
     }
   } else {
     const size_t nblocks = out.width_ / 4;
     for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
-      float *pa = &a[oidx];
+      float *pa = a.host_pointer(oidx);
       // init to bias value
-      float b = bias[o] * bias_scale;
+      float b = bias.host_at(0, o) * bias_scale;
       {
         size_t headSize = 0;
         __m256 b2       = _mm256_set1_ps(b);
@@ -112,8 +112,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
-        const float *pw = (const float *)&W[25 * (params.in.depth_ * o + inc)];
-        const float *pi = (const float *)&in[in_padded.get_index(0, 0, inc)];
+        const float *pw = W.host_pointer(0, 25 * (params.in.depth_ * o + inc));
+        const float *pi = in.host_pointer(in_padded.get_index(0, 0, inc));
 
         __m256 w0a = _mm256_maskload_ps(pw + 0, imask);
         __m256 w1a = _mm256_maskload_ps(pw + 5, imask);
@@ -280,12 +280,12 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 }  // avx_conv2d_5x5_kernel float ver
 
 // double ver
-template <typename Allocator>
+template <typename S1, typename S2, typename S3, typename S4>
 void avx_conv2d_5x5_kernel(const core::conv_params &params,
-                           const std::vector<double, Allocator> &in,
-                           const std::vector<double, Allocator> &W,
-                           const std::vector<double, Allocator> &bias,
-                           std::vector<double, Allocator> &a,
+                           const Tensor<double, S1> &in,
+                           const Tensor<double, S2> &W,
+                           const Tensor<double, S3> &bias,
+                           Tensor<double, S4> &a,
                            const bool layer_parallelize) {
   assert(params.weight.height_ == 5 && params.weight.width_ == 5);
 
@@ -303,7 +303,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const size_t in_padded_area = in_padded.area();
 
   if (out.height_ == 1 && out.width_ == 1) {
-    const double *pw = &W[0];
+    const double *pw = W.host_pointer(0, 0);
     for (size_t o = 0; o < out.depth_; ++o) {
       __m256d sum0 = _mm256_setzero_pd();
       __m256d sum1 = _mm256_setzero_pd();
@@ -325,7 +325,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         __m256d w4       = _mm256_loadu_pd(pw + 16);
         __m256d w5       = _mm256_loadu_pd(pw + 20);
         __m128d w6       = _mm_load_sd(pw + 24);
-        const double *pi = (const double *)&in[inidx];
+        const double *pi = in.host_pointer(inidx);
         __m256d i0       = _mm256_loadu_pd(pi + 0);
         __m256d i1       = _mm256_loadu_pd(pi + 4);
         __m256d i2       = _mm256_loadu_pd(pi + 8);
@@ -353,15 +353,15 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       sum4         = _mm256_add_pd(sum4, sum5);
       sum0         = _mm256_add_pd(sum0, sum2);
       __m256d sum  = _mm256_add_pd(sum0, sum4);
-      __m128d b    = _mm_load_sd(&bias[o]);
+      __m128d b    = _mm_load_sd(bias.host_pointer(0, o));
       __m128d hsum = hsum256_pd(sum);
       b            = madd128_sd(b, y_bias_scale, sum6);
-      _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
+      _mm_store_sd(a.host_pointer(o), _mm_add_sd(hsum, b));
     }
   } else {
     for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
-      double *pa = &a[oidx];
-      double b   = bias[o] * bias_scale;
+      double *pa = a.host_pointer(oidx);
+      double b   = bias.host_at(0, o) * bias_scale;
       {
         size_t headSize = 0;
         __m256d b2      = _mm256_set1_pd(b);
@@ -386,9 +386,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
-        const double *pw =
-          (const double *)&W[25 * (params.in.depth_ * o + inc)];
-        const double *pi = &in[in_padded.get_index(0, 0, inc)];
+        const double *pw = W.host_pointer(0, 25 * (params.in.depth_ * o + inc));
+        const double *pi = in.host_pointer(in_padded.get_index(0, 0, inc));
 
         __m256d w0a = _mm256_loadu_pd(pw + 0);
         __m128d w0b = _mm_load_sd(pw + 4);
@@ -447,24 +446,26 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 }  // avx_conv2d_5x5_kernel double ver
 
 #endif  // CNN_USE_AVX
-
-inline void conv2d_op_avx(const tensor_t &in_data,
-                          const vec_t &W,
-                          const vec_t &bias,
-                          tensor_t &out_data,
+template <typename S1, typename S2, typename S3, typename S4>
+inline void conv2d_op_avx(Tensor<float_t, S1> &in_data,
+                          const Tensor<float_t, S2> &weights,
+                          const Tensor<float_t, S3> &bias,
+                          Tensor<float_t, S4> &out_data,
                           const core::conv_params &params,
                           const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
     // @todo consider better parallelization
     for_i(layer_parallelize, in_data.size(), [&](size_t i) {
-      avx_conv2d_5x5_kernel(params, in_data[i], W, bias, out_data[i],
-                            layer_parallelize);
+      auto in  = in_data.subView({i, i + 1}, {0lu, in_data.shape()[1]});
+      auto out = out_data.subView({i, i + 1}, {0lu, out_data.shape()[1]});
+      avx_conv2d_5x5_kernel(params, in, weights, bias, out, layer_parallelize);
     });
     return;
   }
 #endif
-  conv2d_op_internal(in_data, W, bias, out_data, params, layer_parallelize);
+  conv2d_op_internal(in_data, weights, bias, out_data, params,
+                     layer_parallelize);
 }
 
 }  // namespace kernels

@@ -13,11 +13,25 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void conv2d_op_nnpack(const tensor_t &in_data,
-                             const vec_t &W,
-                             const vec_t &bias,
-                             tensor_t &out_data,
-                             const core::conv_params &params) {
+template <typename S1, typename S2, typename S3, typename S4>
+inline void conv2d_op_nnpack(const Tensor<double, S1> &in_data,
+                             const Tensor<double, S2> &weights,
+                             const Tensor<double, S3> &bias,
+                             Tensor<double, S4> &out_data,
+                             const core::conv_params &params,
+                             const bool layer_parallelize) {
+  // fallback to tiny-backend when float_t is double
+  conv2d_op_internal(in_data, weights, bias, out_data, params,
+                     layer_parallelize);
+}
+
+template <typename S1, typename S2, typename S3, typename S4>
+inline void conv2d_op_nnpack(const Tensor<float, S1> &in_data,
+                             const Tensor<float, S2> &weights,
+                             const Tensor<float, S3> &bias,
+                             Tensor<float, S4> &out_data,
+                             const core::conv_params &params,
+                             const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   core::NNPackInitializer::getInstance().initialize();
@@ -50,11 +64,11 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
 
   const nnp_size stride = {params.w_stride, params.h_stride};
 
-  const float *input_ptr  = in_data[0].data();
-  const float *kernel_ptr = W.data();
-  const float *bias_ptr   = bias.data();
+  const float *input_ptr  = in_data.host_pointer(0, 0);
+  const float *kernel_ptr = weights.host_pointer(0, 0);
+  const float *bias_ptr   = bias.host_pointer(0, 0);
 
-  float *output_ptr = out_data[0].data();
+  float *output_ptr = out_data.host_pointer(0, 0);
 
   // TODO: embed it into a class
   const size_t num_mkl_threads = 1;
@@ -75,7 +89,7 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
   pthreadpool_destroy(threadpool);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
-  CNN_UNREFERENCED_PARAMETER(W);
+  CNN_UNREFERENCED_PARAMETER(weights);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(params);
