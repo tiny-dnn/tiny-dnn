@@ -455,8 +455,7 @@ TEST(convolutional, fprop_nnp) {
                         core::backend_t::nnpack);
 
   // layer::forward_propagation expects tensors, even if we feed only one
-  // input
-  // at a time
+  // input at a time
   auto create_simple_tensor = [](size_t vector_size) {
     return tensor_t(1, vec_t(vector_size));
   };
