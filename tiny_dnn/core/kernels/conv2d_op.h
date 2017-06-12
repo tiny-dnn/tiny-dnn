@@ -26,7 +26,8 @@ class Conv2dOp : public core::OpKernel {
     // TODO(Randl): Remove once layers forward and backward by themself.
     Tensor<float_t> in_data_t(context.input(0));
     const Tensor<float_t> weights_t(context.input(1)),
-      bias_t = Tensor<float_t>(context.input(2));  // TODO has_bias
+      bias_t =
+        params.has_bias ? Tensor<float_t>(context.input(2)) : Tensor<float_t>();
     Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs

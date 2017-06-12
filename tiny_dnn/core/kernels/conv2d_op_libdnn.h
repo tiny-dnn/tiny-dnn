@@ -34,42 +34,47 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
   void compute(core::OpKernelContext &context) override {
 #ifdef CNN_USE_LIBDNN
-    // incoming/outcoming datm
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &W       = context.input(1);
-    const tensor_t &bias    = context.input(2);
-    tensor_t &out_data      = context.output(1);
 
     // retrieve the convolutional parameters and pad input
     // Conv2d::setParams(context.params());
 
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    Tensor<float_t> in_data_t(context.input(0));
+    const Tensor<float_t> weights_t(context.input(1)),
+      bias_t = Tensor<float_t>(context.input(2));  // TODO has_bias
+    Tensor<float_t> out_data_t(context.output(0));
+
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data_t.fill(0.0f);
 
     // retrive device context and queue
 
     CLCudaAPI::Context ctx = OpKernel::device_->context();
     CLCudaAPI::Queue queue = OpKernel::device_->queue();
 
-    for (size_t i = 0; i < in_data.size(); ++i) {
+    size_t samples_num = in_data_t.shape()[0], out_size = out_data_t.shape()[1],
+           in_size = in_data_t.shape()[1];
+    for (size_t i = 0; i < samples_num; ++i) {
+      auto in_begin  = in_data_t.host_pointer(i, 0),
+           in_end    = in_data_t.host_pointer(i, 0) + in_size;
+      auto out_begin = out_data_t.host_pointer(i, 0),
+           out_end   = out_data_t.host_pointer(i, 0) + in_size;
+
       // allocate data to GPU
+      auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue, in_begin, in_end);
 
-      auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue, in_data[i].begin(),
-                                               in_data[i].end());
+      auto dev_W = CLCudaAPI::Buffer<float_t>(
+        ctx, queue, weights_t.host_pbegin(), weights_t.host_pend());
 
-      auto dev_W =
-        CLCudaAPI::Buffer<float_t>(ctx, queue, W[0].begin(), W[0].end());
+      auto dev_bias = CLCudaAPI::Buffer<float_t>(
+        ctx, queue, bias_t.host_pbegin(), bias_t.host_pbegin());
 
-      auto dev_bias =
-        CLCudaAPI::Buffer<float_t>(ctx, queue, bias[0].begin(), bias[0].end());
-
-      auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue, out_data[i].begin(),
-                                                out_data[i].end());
+      auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue, out_begin, out_end);
 
       // cast data types and call libdnn
 
       // TODO(edgar): set a global variable with batch size or
-      // embedd this inside the next gen Tensor class.
+      // embed this inside the next gen Tensor class.
       const int batch_size = 1;
 
       const float_t *input_ptr   = double_cast(dev_in());
@@ -80,8 +85,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
       // first time, tune the kernel
 
-      // TODO(edgar/naibaf): enable when second generation
-      // kernel are available
+      // TODO(edgar/naibaf): enable when second generation kernel are available
 
       if (!initialized_) {
         /*kernel_->Tune(const_cast<float_t*>(output_ptr), nullptr,
@@ -121,8 +125,8 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 
       // Upload data GPU -> CPU
       // TODO(edgar): trigger this only when is needed
-      std::vector<float_t> out(out_data[i].size(), 0);
-      dev_out.Read(queue, out_data[i].size(), out);
+      std::vector<float_t> out(out_size, 0);
+      dev_out.Read(queue, out_size, out);
 
       /*
       // FOR DEBUG ONLY
@@ -134,7 +138,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
       */
 
       // copy data to be activated
-      std::copy(std::begin(out), std::end(out), std::begin(out_data[i]));
+      std::copy(std::begin(out), std::end(out), out_begin);
     }
 
 #else
@@ -149,6 +153,11 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
     return static_cast<float_t *>(reinterpret_cast<void *>(cl_mem_gpu));
   }
 
+  /**
+   * Casts cl_mem to float_t pointer
+   * @param cl_mem_gpu
+   * @return
+   */
   const float_t *double_cast(const cl_mem cl_mem_gpu) {
     return reinterpret_cast<const float_t *>(
       reinterpret_cast<const void *>(cl_mem_gpu));

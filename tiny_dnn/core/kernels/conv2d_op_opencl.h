@@ -20,14 +20,14 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     auto params = OpKernel::params_->conv();
 
-    // incoming/outcoming data
-    const tensor_t &in_data = context.input(0);
-    const tensor_t &W       = context.input(1);
-    const tensor_t &bias    = context.input(2);
-    tensor_t &out_data      = context.output(1);
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    Tensor<float_t> in_data_t(context.input(0));
+    const Tensor<float_t> weights_t(context.input(1)),
+      bias_t = Tensor<float_t>(context.input(2));  // TODO has_bias
+    Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data_t.fill(0.0f);
 
     // retrieve program from register
     CLCudaAPI::Program program = ProgramManager::getInstance().program(
@@ -46,22 +46,26 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
     CLCudaAPI::Context ctx   = context.device()->context();
     CLCudaAPI::Queue queue   = context.device()->queue();
 
+    size_t samples_num = in_data_t.shape()[0], out_size = out_data_t.shape()[1],
+           in_size = in_data_t.shape()[1];
     // TODO(edgar): check if we really need that
-    for (size_t i = 0; i < in_data.size(); ++i) {
+    for (size_t i = 0; i < samples_num; ++i) {
+      auto in_begin  = in_data_t.host_pointer(i, 0),
+           in_end    = in_data_t.host_pointer(i, 0) + in_size;
+      auto out_begin = out_data_t.host_pointer(i, 0),
+           out_end   = out_data_t.host_pointer(i, 0) + in_size;
+
       // Creates device buffers and copies the host data to these
       // device buffers.
+      auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue, in_begin, in_end);
 
-      auto dev_in = CLCudaAPI::Buffer<float_t>(ctx, queue, in_data[i].begin(),
-                                               in_data[i].end());
+      auto dev_W = CLCudaAPI::Buffer<float_t>(
+        ctx, queue, weights_t.host_pbegin(), weights_t.host_pend());
 
-      auto dev_W =
-        CLCudaAPI::Buffer<float_t>(ctx, queue, W[0].begin(), W[0].end());
+      auto dev_bias = CLCudaAPI::Buffer<float_t>(
+        ctx, queue, bias_t.host_pbegin(), bias_t.host_pbegin());
 
-      auto dev_bias =
-        CLCudaAPI::Buffer<float_t>(ctx, queue, bias[0].begin(), bias[0].end());
-
-      auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue, out_data[i].begin(),
-                                                out_data[i].end());
+      auto dev_out = CLCudaAPI::Buffer<float_t>(ctx, queue, out_begin, out_end);
 
       kernel.SetArgument(0, dev_in);    // image_data
       kernel.SetArgument(1, 0);         // image_offset
@@ -102,8 +106,8 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
       nn_info(" > Took " + to_string(event.GetElapsedTime()) + " ms");
 
       // Upload data GPU -> CPU
-      std::vector<float_t> out(out_data[i].size(), 0);
-      dev_out.Read(queue, out_data[i].size(), out);
+      std::vector<float_t> out(samples_num, 0);
+      dev_out.Read(queue, out_size, out);
 
       // FOR DEBUG ONLY
       nn_warn("output kernel");
@@ -112,9 +116,9 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
       }
       std::cout << std::endl;
 
+      auto wh = out_data_t.host_iter(i, 0);
       // copy back
-      std::copy(std::begin(out), std::end(out),
-                std::back_inserter(out_data[i]));
+      std::copy(std::begin(out), std::end(out), out_begin);
     }
 #else
     CNN_UNREFERENCED_PARAMETER(context);
