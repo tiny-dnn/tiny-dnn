@@ -454,6 +454,20 @@ TEST(convolutional, fprop_nnp) {
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
                         core::backend_t::nnpack);
 
+  // layer::forward_propagation expects tensors, even if we feed only one
+  // input
+  // at a time
+  auto create_simple_tensor = [](size_t vector_size) {
+    return tensor_t(1, vec_t(vector_size));
+  };
+
+  // create simple tensors that wrap the payload vectors of the correct size
+  tensor_t in_tensor     = create_simple_tensor(25),
+           out_tensor    = create_simple_tensor(18),
+           a_tensor      = create_simple_tensor(18),
+           weight_tensor = create_simple_tensor(18),
+           bias_tensor   = create_simple_tensor(2);
+
   tensor_buf buf(l, false);
 
   ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
