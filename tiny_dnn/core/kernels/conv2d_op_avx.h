@@ -390,6 +390,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt  = (out_area - headSize) / 8;
         double *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
+          // TODO: segfault here even though adresses are ok
           _mm256_store_pd(&pa2[i * 8 + 0], b2);
           _mm256_store_pd(&pa2[i * 8 + 4], b2);
         }
@@ -473,9 +474,9 @@ inline void conv2d_op_avx(Tensor<float_t, S1> &in_data,
     // @todo consider better parallelization
     for_i(layer_parallelize, in_data.shape()[0], [&](size_t i) {
       auto in = in_data.subView(
-        TensorRange(i, i + 1),
+        TensorSingleIndex(i),
         TensorRange(0, in_data.shape()[1]));  // TODO(Randl): types
-      auto out = out_data.subView(TensorRange(i, i + 1),
+      auto out = out_data.subView(TensorSingleIndex(i),
                                   TensorRange(0, out_data.shape()[1]));
       avx_conv2d_5x5_kernel(params, in, weights, bias, out, layer_parallelize);
     });

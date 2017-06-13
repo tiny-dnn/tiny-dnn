@@ -42,6 +42,11 @@ class Tensor {
   Tensor() {}
 
   /**
+   * Initializes a tensor from storage.
+   * @return
+   */
+  Tensor(Storage &&s) : storage_(std::move(s)){};
+  /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
    * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
@@ -282,30 +287,31 @@ auto host_data() {
   /**
    * Returns view of current Tensor
    * @tparam Values index type
-   * @param lists lists of indexes
+   * @tparam InputRanges
+   * @param ranges
    * @return
    */
-  template <typename... Values>
-  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
-    TensorRangeClass<Values>... ranges) {
-    // TODO(Randl): all, single, stride
-    using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, ranges.get_range()...);
+  template <typename... Values, template <typename> typename... InputRanges>
+  auto subView(InputRanges<Values>... ranges) {
+    // TODO(Randl): all, stride
+    using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
+    using SharedTensor = Tensor<U, ViewType>;
+    return SharedTensor(xt::view(storage_, ranges.get_range()...));
   }
 
   /**
-   * Returns constant view of current Tensor
+   * Returns view of current Tensor
    * @tparam Values index type
-   * @param lists lists of indexes
+   * @tparam InputRanges
+   * @param ranges
    * @return
    */
-  template <typename... Values>
-  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> constView(
-    TensorRangeClass<Values>... ranges) const {
-    // TODO(Randl): all, single, stride
-    using SharedTensor =
-      Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, ranges.get_range()...);
+  template <typename... Values, template <typename> typename... InputRanges>
+  auto subView(InputRanges<Values>... ranges) const {
+    // TODO(Randl): all, stride
+    using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
+    using SharedTensor = Tensor<U, const ViewType>;
+    return SharedTensor(xt::view(storage_, ranges.get_range()...));
   }
 
   /*
@@ -329,15 +335,6 @@ auto host_data() {
     }
     return tensor;
   }
-
-  /**
-   * Creates Tensor given the storage
-   * @tparam T
-   * @param storage
-   */
-  template <class T, class S, class... Args>
-  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
-    : storage_(xt::view(storage, r1, args...)) {}
 
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,

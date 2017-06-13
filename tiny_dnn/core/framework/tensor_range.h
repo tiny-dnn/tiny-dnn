@@ -24,4 +24,19 @@ inline TensorRangeClass<unsigned long long> TensorRange(
   return TensorRangeClass<unsigned long long>(begin, end);
 }
 
+template <typename T = size_t>
+class TensorSingleIndexClass {
+ public:
+  TensorSingleIndexClass(const T index) : range(index){};
+  T get_range() { return range; }
+
+ private:
+  T range;
+};
+
+inline TensorSingleIndexClass<unsigned long long> TensorSingleIndex(
+  const unsigned long long index) {
+  return TensorSingleIndexClass<unsigned long long>(index);
+}
+
 }  // namespace tiny_dnn
