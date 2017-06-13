@@ -41,15 +41,18 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
       size_t line_stride = iw * params.h_stride;
       //TODO(edgarriba): replace with  tensor accessors
       for (size_t sample = r.begin(); sample < r.end(); sample++) {
+        float_t *out_data_begin = out_data.host_pointer(sample, 0);
+        const float_t *in_data_begin = in_data.host_pointer(sample, 0);
+        const float_t *weight_begin = weights.host_pointer(0, 0);
         for (size_t o = 0; o < od; o++) {
           // TODO(Randl): naming
-          auto pa = out_data.host_iter(sample, params.out.get_index(0, 0, o));
+          auto pa = &out_data_begin[params.out.get_index(0, 0, o)];
           for (size_t inc = 0; inc < id; inc++) {
             if (!params.tbl.is_connected(o, inc)) continue;
             auto pw =
-              weights.host_iter(0, params.weight.get_index(0, 0, id * o + inc));
+            &weight_begin[params.weight.get_index(0, 0, id * o + inc)];
             auto pin =
-              in_data.host_iter(sample, params.in_padded.get_index(0, 0, inc));
+            &in_data_begin[params.in_padded.get_index(0, 0, inc)];
             auto pout = pa;
             for (size_t y = 0; y < oh; y++) {
               auto pin_line = pin;
@@ -58,7 +61,7 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
                 float_t sum{0};
                 // should be optimized for small kernel(3x3,5x5)
                 for (size_t wy = 0; wy < kh; wy++) {  // NOLINT
-                  auto pin_element = std::next(pin_line, iw * wy);
+                  auto pin_element = &pin_line[iw * wy];
                   for (serial_size_t wx = 0; wx < kw; wx++) {  // NOLINT
                     sum += *(pw_element++) * *(pin_element++);
                   }
@@ -94,6 +97,10 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
                                const core::conv_params &params,
                                const bool parallelize) {
   for_i(parallelize, prev_out.shape()[0], [&](size_t sample) {
+    const float_t *prev = prev_out.host_pointer(sample, 0);
+    float_t *curr = curr_delta.host_pointer(sample, 0);
+    float_t *prev_d = prev_delta.host_pointer(sample, 0);
+    const float_t *weight_begin = weigths.host_pointer(0, 0);
     // propagate delta to previous layer
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
@@ -104,14 +111,14 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
         idx = params.in.depth_ * outc + inc;
         idx = params.weight.get_index(0, 0, idx);
 
-        const float_t *pw = weigths.host_pointer(0, idx);
+        const float_t *pw = &weight_begin[idx];
 
         idx = params.out.get_index(0, 0, outc);
 
-        const float_t *pdelta_src = curr_delta.host_pointer(sample, idx);
+        const float_t *pdelta_src = &curr[idx];
 
         idx                 = params.in_padded.get_index(0, 0, inc);
-        float_t *pdelta_dst = prev_delta.host_pointer(sample, idx);
+        float_t *pdelta_dst = &prev_d[idx];
 
         for (size_t y = 0; y < params.out.height_; y++) {
           for (size_t x = 0; x < params.out.width_; x++) {
@@ -147,10 +154,10 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
 
             size_t idx           = 0;
             idx                  = params.in_padded.get_index(wx, wy, inc);
-            const float_t *prevo = prev_out.host_pointer(sample, idx);
+            const float_t *prevo = &prev[idx];
 
             idx                  = params.out.get_index(0, 0, outc);
-            const float_t *delta = curr_delta.host_pointer(sample, idx);
+            const float_t *delta = &curr[idx];
 
             if (params.w_stride > 1) {
               for (size_t y = 0; y < params.out.height_; y++) {
@@ -181,9 +188,10 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
 
     // accumulate db
     if (params.has_bias) {
+      const float_t *delta_begin  = curr_delta.host_pointer(sample, 0);
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         size_t idx     = params.out.get_index(0, 0, outc);
-        const float_t *delta  = curr_delta.host_pointer(sample, idx);
+        const float_t *delta  = &delta_begin[idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         bias_grads.host_at(sample, outc) +=
           std::accumulate(delta, deltaa, float_t{0});
