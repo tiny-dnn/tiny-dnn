@@ -36,6 +36,7 @@
 #include "tiny_dnn/layers/slice_layer.h"
 
 #include "tiny_dnn/activations/elu_layer.h"
+#include "tiny_dnn/activations/selu_layer.h"
 #include "tiny_dnn/activations/leaky_relu_layer.h"
 #include "tiny_dnn/activations/relu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
@@ -126,6 +127,8 @@ using softmax = tiny_dnn::softmax_layer;
 using leaky_relu = tiny_dnn::leaky_relu_layer;
 
 using elu = tiny_dnn::elu_layer;
+
+using selu = tiny_dnn::selu_layer;
 
 using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
 
