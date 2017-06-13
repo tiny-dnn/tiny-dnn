@@ -472,11 +472,11 @@ inline void conv2d_op_avx(Tensor<float_t, S1> &in_data,
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
     // @todo consider better parallelization
     for_i(layer_parallelize, in_data.shape()[0], [&](size_t i) {
-      auto in =
-        in_data.subView({i, size_t(i + 1)},
-                        {size_t(0), in_data.shape()[1]});  // TODO(Randl): types
-      auto out =
-        out_data.subView({i, size_t(i + 1)}, {size_t(0), out_data.shape()[1]});
+      auto in = in_data.subView(
+        TensorRange(i, i + 1),
+        TensorRange(0, in_data.shape()[1]));  // TODO(Randl): types
+      auto out = out_data.subView(TensorRange(i, i + 1),
+                                  TensorRange(0, out_data.shape()[1]));
       avx_conv2d_5x5_kernel(params, in, weights, bias, out, layer_parallelize);
     });
     return;
