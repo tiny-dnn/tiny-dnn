@@ -447,8 +447,9 @@ struct LoadAndConstruct<tiny_dnn::selu_layer> {
     tiny_dnn::float_t alpha;
 
     ar(cereal::make_nvp("in_size", in_shape),
-       cereal::make_nvp("lambda",lambda)
-       cereal::make_nvp("alpha", alpha));
+       cereal::make_nvp("lambda",lambda),
+       cereal::make_nvp("alpha", alpha)
+       );
     construct(in_shape,lambda,alpha);
   }
 };
@@ -768,7 +769,7 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive &ar, tiny_dnn::my_activation_layer &layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::selu_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
        cereal::make_nvp("lambda", layer.lambda_),
