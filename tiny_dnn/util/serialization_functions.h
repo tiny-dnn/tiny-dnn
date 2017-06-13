@@ -438,6 +438,22 @@ struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::selu_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::selu_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t lambda;
+    tiny_dnn::float_t alpha;
+
+    ar(cereal::make_nvp("in_size", in_shape),
+       cereal::make_nvp("lambda",lambda)
+       cereal::make_nvp("alpha", alpha));
+    construct(in_shape,lambda,alpha);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::elu_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -752,6 +768,15 @@ struct serialization_buddy {
   }
 
   template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::my_activation_layer &layer) {
+    layer.serialize_prolog(ar);
+    ar(cereal::make_nvp("in_size", layer.in_shape()[0]),
+       cereal::make_nvp("lambda", layer.lambda_),
+       cereal::make_nvp("alpha",layer.alpha_)
+       );
+}
+
+  template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
     layer.serialize_prolog(ar);
     ar(cereal::make_nvp("in_size", layer.in_shape()[0]));
@@ -773,11 +798,10 @@ struct serialization_buddy {
 #endif
 };
 
+
 template <class Archive, typename T>
 typename std::enable_if<std::is_base_of<tiny_dnn::layer, T>::value>::type
 serialize(Archive &ar, T &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
 
 template <class Archive, typename T>
 void serialize(Archive &ar, tiny_dnn::index3d<T> &idx) {
