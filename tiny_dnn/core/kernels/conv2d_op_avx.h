@@ -46,7 +46,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1,
   // -1, -1, -1, 0, 0, 0));
 
-  auto a_begin = a.host_pbegin();
+  auto a_begin    = a.host_pbegin();
   auto bias_begin = bias.host_pbegin();
   const float *pw = W.host_pbegin();
 
@@ -113,7 +113,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         }
       }
       const float *weights_begin = W.host_pbegin();
-      const float *in_begin = in.host_pbegin();
+      const float *in_begin      = in.host_pbegin();
       for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
@@ -309,10 +309,10 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const size_t in_stride      = params.h_stride * in_padded.width_;
   const size_t in_padded_area = in_padded.area();
 
-  auto a_begin = a.host_pbegin();
+  auto a_begin    = a.host_pbegin();
   auto bias_begin = bias.host_pbegin();
-  auto w_begin = W.host_pbegin();
-  auto in_begin = in.host_pbegin();
+  auto w_begin    = W.host_pbegin();
+  auto in_begin   = in.host_pbegin();
   if (out.height_ == 1 && out.width_ == 1) {
     const double *pw = w_begin;
     for (size_t o = 0; o < out.depth_; ++o) {
@@ -324,41 +324,44 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       __m256d sum5 = _mm256_setzero_pd();
       __m128d sum6 = _mm_setzero_pd();
       size_t inidx = 0;
+
       const double *i_begin = in.host_pbegin();
       for (size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, inidx += in_padded_area) {
         if (!tbl.is_connected(o, inc)) {
           continue;
         }
-        __m256d w0       = _mm256_loadu_pd(pw + 0);
-        __m256d w1       = _mm256_loadu_pd(pw + 4);
-        __m256d w2       = _mm256_loadu_pd(pw + 8);
-        __m256d w3       = _mm256_loadu_pd(pw + 12);
-        __m256d w4       = _mm256_loadu_pd(pw + 16);
-        __m256d w5       = _mm256_loadu_pd(pw + 20);
-        __m128d w6       = _mm_load_sd(pw + 24);
+        __m256d w0 = _mm256_loadu_pd(pw + 0);
+        __m256d w1 = _mm256_loadu_pd(pw + 4);
+        __m256d w2 = _mm256_loadu_pd(pw + 8);
+        __m256d w3 = _mm256_loadu_pd(pw + 12);
+        __m256d w4 = _mm256_loadu_pd(pw + 16);
+        __m256d w5 = _mm256_loadu_pd(pw + 20);
+        __m128d w6 = _mm_load_sd(pw + 24);
+
         const double *pi = &i_begin[inidx];
-        __m256d i0       = _mm256_loadu_pd(pi + 0);
-        __m256d i1       = _mm256_loadu_pd(pi + 4);
-        __m256d i2       = _mm256_loadu_pd(pi + 8);
-        __m256d i3       = _mm256_loadu_pd(pi + 12);
-        __m256d i4       = _mm256_loadu_pd(pi + 16);
-        __m256d i5       = _mm256_loadu_pd(pi + 20);
-        __m128d i6       = _mm_load_sd(pi + 24);
-        __m256d tmp0     = _mm256_mul_pd(w0, i0);
-        __m256d tmp1     = _mm256_mul_pd(w1, i1);
-        __m256d tmp2     = _mm256_mul_pd(w2, i2);
-        __m256d tmp3     = _mm256_mul_pd(w3, i3);
-        __m256d tmp4     = _mm256_mul_pd(w4, i4);
-        __m256d tmp5     = _mm256_mul_pd(w5, i5);
-        __m128d tmp6     = _mm_mul_pd(w6, i6);
-        sum0             = _mm256_add_pd(tmp0, sum0);
-        sum1             = _mm256_add_pd(tmp1, sum1);
-        sum2             = _mm256_add_pd(tmp2, sum2);
-        sum3             = _mm256_add_pd(tmp3, sum3);
-        sum4             = _mm256_add_pd(tmp4, sum4);
-        sum5             = _mm256_add_pd(tmp5, sum5);
-        sum6             = _mm_add_pd(tmp6, sum6);
+
+        __m256d i0   = _mm256_loadu_pd(pi + 0);
+        __m256d i1   = _mm256_loadu_pd(pi + 4);
+        __m256d i2   = _mm256_loadu_pd(pi + 8);
+        __m256d i3   = _mm256_loadu_pd(pi + 12);
+        __m256d i4   = _mm256_loadu_pd(pi + 16);
+        __m256d i5   = _mm256_loadu_pd(pi + 20);
+        __m128d i6   = _mm_load_sd(pi + 24);
+        __m256d tmp0 = _mm256_mul_pd(w0, i0);
+        __m256d tmp1 = _mm256_mul_pd(w1, i1);
+        __m256d tmp2 = _mm256_mul_pd(w2, i2);
+        __m256d tmp3 = _mm256_mul_pd(w3, i3);
+        __m256d tmp4 = _mm256_mul_pd(w4, i4);
+        __m256d tmp5 = _mm256_mul_pd(w5, i5);
+        __m128d tmp6 = _mm_mul_pd(w6, i6);
+        sum0         = _mm256_add_pd(tmp0, sum0);
+        sum1         = _mm256_add_pd(tmp1, sum1);
+        sum2         = _mm256_add_pd(tmp2, sum2);
+        sum3         = _mm256_add_pd(tmp3, sum3);
+        sum4         = _mm256_add_pd(tmp4, sum4);
+        sum5         = _mm256_add_pd(tmp5, sum5);
+        sum6         = _mm_add_pd(tmp6, sum6);
       }
       sum0         = _mm256_add_pd(sum0, sum1);
       sum2         = _mm256_add_pd(sum2, sum3);

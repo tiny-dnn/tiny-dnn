@@ -82,13 +82,11 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
       // accumulate weight-step using delta
       // dW[c * out_size + i] += current_delta[i] * prev_out[c]
       auto curr_delta_pointer = curr_delta.host_pointer(sample, r.begin());
-      auto weights_pointer =
-          weights_grads.host_pointer(sample, r.begin());
+      auto weights_pointer    = weights_grads.host_pointer(sample, r.begin());
       for (size_t c = 0; c < in_size; c++) {
-        vectorize::muladd(
-          &curr_delta_pointer[r.begin()],
-          prev_out.host_at(sample, c), r.end() - r.begin(),
-          &weights_pointer[c * out_size + r.begin()]);
+        vectorize::muladd(&curr_delta_pointer[r.begin()],
+                          prev_out.host_at(sample, c), r.end() - r.begin(),
+                          &weights_pointer[c * out_size + r.begin()]);
       }
 
       if (bias_grads.size() >= out_size) {
