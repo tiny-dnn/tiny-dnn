@@ -56,7 +56,8 @@ TEST(tensor, size) {
 
 TEST(tensor, view1) {
   Tensor<float_t> tensor({3, 3, 3, 3}, 2);
-  auto t_view = tensor.subView({0, 2}, {0, 1}, {0, 3}, {0, 3});
+  auto t_view = tensor.subView(TensorRange(0, 2), TensorRange(0, 1),
+                               TensorRange(0, 3), TensorRange(0, 3));
   EXPECT_EQ(t_view.shape()[0], size_t(2));
   EXPECT_EQ(t_view.shape()[1], size_t(1));
   EXPECT_EQ(t_view.shape()[2], size_t(3));
@@ -171,7 +172,8 @@ TEST(tensor, add3) {
 TEST(tensor, add4) {
   Tensor<float_t> t1({2, 2, 2, 2}, 5);
   Tensor<float_t> t2({4, 4, 4, 4}, 3);
-  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+  auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
+                       TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
@@ -261,7 +263,8 @@ TEST(tensor, sub3) {
 TEST(tensor, sub4) {
   Tensor<float_t> t1({2, 2, 2, 2}, 5);
   Tensor<float_t> t2({4, 4, 4, 4}, 3);
-  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+  auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
+                       TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
@@ -352,7 +355,8 @@ TEST(tensor, mul3) {
 TEST(tensor, mul4) {
   Tensor<float_t> t1({2, 2, 2, 2}, 5);
   Tensor<float_t> t2({4, 4, 4, 4}, 3);
-  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+  auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
+                       TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
@@ -485,7 +489,8 @@ TEST(tensor, div5) {
 TEST(tensor, div6) {
   Tensor<float_t> t1({2, 2, 2, 2}, 5);
   Tensor<float_t> t2({4, 4, 4, 4}, 2);
-  auto t3 = t2.subView({0, 2}, {0, 2}, {0, 2}, {0, 2});
+  auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
+                       TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
@@ -562,7 +567,7 @@ TEST(tensor, dim) {
   EXPECT_EQ(t.dim(), 4u);
   Tensor<float_t> t2({4, 2});
   EXPECT_EQ(t2.dim(), 2u);
-  auto t3 = t2.subView({0, 2}, {0, 1});
+  auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 1));
   EXPECT_EQ(t3.dim(), 2u);
 }
 
@@ -607,7 +612,8 @@ TEST(tensor, print) { print_tester<5>(std::cout); }
 TEST(tensor, print_view) {
   Tensor<float_t> tensor({3, 3, 3, 3}, 2);
 
-  auto t_view = tensor.subView({0, 2}, {0, 1}, {0, 3}, {0, 3});
+  auto t_view = tensor.subView(TensorRange(0, 2), TensorRange(0, 1),
+                               TensorRange(0, 3), TensorRange(0, 3));
   t_view.host_at(0, 0, 0, 0) = -1;
   t_view.host_at(1, 0, 1, 1) = 3;
   std::cout << tensor << std::endl << t_view << std::endl;

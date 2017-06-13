@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "tiny_dnn/core/framework/device.fwd.h"
+#include "tiny_dnn/core/framework/tensor_range.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -278,17 +279,17 @@ auto host_data() {
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
-  template <typename S>
-  xt::xrange<S> get_range(std::initializer_list<const S> list) const {
-    // if (*(list.begin()) == -1) return xt::all();
-    // if(*(list.begin())==*(list.begin()+1)) return *(list.begin());
+  /*template <typename S>
+  xt::xrange<S> get_range(std::initializer_list<S> list) const {
+    if (*(list.begin()) == -1) return xt::all();
+    if(*(list.begin())==*(list.begin()+1)) return *(list.begin());
     if (list.size() == 2) {
       return xt::range(*(list.begin()), *(list.begin() + 1));
     } else {
-      // return xt::range(*(list.begin()), *(list.begin() + 1),
-      //               *(list.begin() + 2));
+      return xt::range(*(list.begin()), *(list.begin() + 1),
+                     *(list.begin() + 2));
     }
-  }
+  }*/
 
   /**
    * Returns view of current Tensor
@@ -298,11 +299,11 @@ auto host_data() {
    */
   template <typename... Values>
   Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
-    std::initializer_list<const Values>... lists) {
+    TensorRangeClass<Values>... ranges) {
     // TODO(Randl): all, single, stride
     // TODO(Randl): different types of values in list won't work
     using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, get_range(lists)...);
+    return SharedTensor(storage_, ranges.get_range()...);
   }
 
   /**
@@ -312,11 +313,13 @@ auto host_data() {
    * @return
    */
   template <typename... Values>
-  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> subView(
-    std::initializer_list<Values>... lists) const {
+  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> const
+  constView(TensorRangeClass<Values>... ranges) {
+    // TODO(Randl): all, single, stride
+    // TODO(Randl): different types of values in list won't work
     using SharedTensor =
-      const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, get_range(lists)...);
+      Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
+    return SharedTensor(storage_, ranges.get_range()...);
   }
 
   /*
