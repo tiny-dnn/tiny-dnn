@@ -44,7 +44,7 @@ namespace tiny_dnn{
 
 		void forward_activation(const vec_t &x,vec_t &y) override{
 			for (serial_size_t j = 0; j < x.size(); j++) {
-				y[j] = lambda_ * (x[j] > float_t(0) ? x[j] : alpha_*(std::exp(x[j])-float_t(1)) )
+				y[j] = lambda_ * (x[j] > float_t(0) ? x[j] : alpha_*(std::exp(x[j])-float_t(1)) );
 			}
 		}
 
@@ -54,7 +54,7 @@ namespace tiny_dnn{
 								 const vec_t &dy) override{
 			// dx = dy * (gradient of selu)
 			for(serial_size_t j=0; j<x.size();j++){
-				dx[j] = dy[j] * (y[j] > float_t(0) ? lambda_ : (y[j] + lambda_*alpha_))
+				dx[j] = dy[j] * (y[j] > float_t(0) ? lambda_ : (y[j] + lambda_*alpha_));
 
 			}
 		}
