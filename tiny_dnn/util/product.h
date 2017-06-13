@@ -652,15 +652,6 @@ void add(T c, std::size_t size, T *dst) {
   }
 }
 
-template <typename Iter>
-void add(typename std::iterator_traits<Iter>::value_type c,
-         std::size_t size,
-         Iter dst) {
-  for (size_t i = 0; i < size; ++i) {
-    *(dst++) += c;
-  }
-}
-
 // dst[i] += src[i]
 template <typename T>
 void add(const T *src, std::size_t size, T *dst) {
