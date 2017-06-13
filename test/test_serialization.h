@@ -682,7 +682,7 @@ TEST(serialization, serialize_selu) {
 
   net.from_json(json);
 
-  EXPECT_EQ(net[0]->layer_type(), "leaky-relu-activation");
+  EXPECT_EQ(net[0]->layer_type(), "selu-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(256, 256, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(256, 256, 1));
   EXPECT_FLOAT_EQ(net.at<selu_layer>(0).lambda_value(), float_t(1.05070));
