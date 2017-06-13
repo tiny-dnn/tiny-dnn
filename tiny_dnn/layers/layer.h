@@ -366,7 +366,7 @@ class layer : public node {
                      parameter_type type,
                      bool trainable = true) {
     parameters_.push_back(
-      new parameter(out_features, in_features, height, width, type, trainable));
+      new Parameter(out_channels, in_channels, height, width, type, trainable));
   }
 
   /**
@@ -378,15 +378,14 @@ class layer : public node {
    * @param trainable_only flag to return only the trainable parameters.
    * @return std::vector of pointers to parameters
    */
-  std::vector<parameter *> parameters(bool trainable_only = false) {
-    std::vector<parameter *> vp;
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      if (!trainable_only ||
-          (parameters_[i]->is_trainable() && trainable_only)) {
-        vp.push_back(parameters_[i]);
+  Parameters parameters(bool trainable_only = false) {
+    Parameters parameters;
+    for (Parameter *parameter : parameters) {
+      if (!trainable_only || (parameter->is_trainable() && trainable_only)) {
+        parameters.push_back(parameter);
       }
     }
-    return vp;
+    return parameters;
   }
 
   /**
@@ -398,23 +397,21 @@ class layer : public node {
    * @param trainable_only flag to return only the trainable parameters.
    * @return const std::vector of const pointers to parameters
    */
-  const std::vector<const parameter *> parameters(
-    bool trainable_only = false) const {
-    std::vector<const parameter *> vp;
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      if (!trainable_only ||
-          (parameters_[i]->is_trainable() && trainable_only)) {
-        vp.push_back(parameters_[i]);
+  const ConstParameters parameters(bool trainable_only = false) const {
+    ConstParameters parameters;
+    for (Parameter *parameter : parameters_) {
+      if (!trainable_only || (parameter->is_trainable() && trainable_only)) {
+        parameters.push_back(parameter);
       }
     }
-    return vp;
+    return parameters;
   }
 
-  parameter *ith_parameter(size_t i) { return parameters_[i]; }
+  Parameter *ith_parameter(size_t i) { return parameters_[i]; }
 
-  const parameter *ith_parameter(size_t i) const { return parameters_[i]; }
+  const Parameter *ith_parameter(size_t i) const { return parameters_[i]; }
 
-  void set_ith_parameter(size_t i, parameter &p) { parameters_[i] = &p; }
+  void set_ith_parameter(size_t i, Parameter &p) { parameters_[i] = &p; }
   /** @} */  // Parameter Getters and Setters
 
   virtual void save(
@@ -762,8 +759,8 @@ class layer : public node {
       ith_in_node(i)->clear_grads();
     }
 
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      parameters_[i]->clear_grads();
+    for (Parameter *parameter : parameters_) {
+      parameter->clear_grads();
     }
   }
 
@@ -788,26 +785,26 @@ class layer : public node {
     post_update();
   }
 
-  void update_parameters(optimizer *o, size_t batch_size) {
+  void update_parameters(optimizer *optimizer_ptr, size_t batch_size) {
     float_t rcp_batch_size  = float_t{1} / float_t{batch_size};
     Tensor<float_t> &diff_t = parameters_diff_;
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      if (trainable() && parameters_[i]->is_trainable()) {
-        parameters_[i]->merge_grads(&diff_t);
+    for (Parameter *parameter : parameters_) {
+      if (trainable() && parameter->is_trainable()) {
+        parameter->merge_grads(&diff_t);
 
         for (size_t j = 0; j < diff_t.size(); ++j) {
           diff_t.host_at(j) *= rcp_batch_size;
         }
         // parallelize only when target size is big enough to mitigate
         // thread spawning overhead.
-        bool parallelize = (parameters_[i]->size() >= 512);
+        bool parallelize = (parameter->size() >= 512);
 
         // todo (karandesai) : remove this workaround later
         vec_t diff   = diff_t.toVec();
-        vec_t target = parameters_[i]->data()->toVec();
-        o->update(diff, target, parallelize);
-        diff_t = Tensor<float_t>(to_xtensor({diff})[0]);
-        parameters_[i]->set_data(Tensor<float_t>(to_xtensor({target})[0]));
+        vec_t target = parameter->data()->toVec();
+        optimizer_ptr->update(diff, target, parallelize);
+        diff_t = Tensor<float_t>(diff);
+        parameter->set_data(Tensor<float_t>(target));
       }
     }
     clear_grads();
@@ -831,8 +828,8 @@ class layer : public node {
   }
 
   bool has_same_parameters(const layer &rhs, float_t eps) const {
-    std::vector<const parameter *> lhs_parameters = parameters();
-    std::vector<const parameter *> rhs_parameters = rhs.parameters();
+    ConstParameters lhs_parameters = parameters();
+    ConstParameters rhs_parameters = rhs.parameters();
     if (lhs_parameters.size() != rhs_parameters.size()) return false;
 
     for (size_t i = 0; i < parameters_.size(); i++) {
@@ -869,8 +866,8 @@ class layer : public node {
       resize(ith_out_node(i)->get_gradient());
     }
 
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      parameters_[i]->resize_grad(sample_count);
+    for (Parameter *parameter : parameters_) {
+      parameter->resize_grad(sample_count);
     }
   }
 
@@ -921,7 +918,7 @@ class layer : public node {
 
  private:
   /** A vector of trainable and constant parameters. */
-  std::vector<parameter *> parameters_;
+  Parameters parameters_;
   /** Flag indicating whether the layer/node parameters are trainable */
   bool trainable_;
 

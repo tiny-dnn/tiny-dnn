@@ -15,7 +15,7 @@ namespace parameter_init {
 
 class function {
  public:
-  virtual void fill(parameter *p, size_t fan_in, size_t fan_out) = 0;
+  virtual void fill(Parameter *parameter, size_t fan_in, size_t fan_out) = 0;
 };
 
 class scalable : public function {
@@ -40,11 +40,11 @@ class xavier : public scalable {
   xavier() : scalable(float_t{6}) {}
   explicit xavier(float_t value) : scalable(value) {}
 
-  void fill(parameter *p, size_t fan_in, size_t fan_out) override {
+  void fill(Parameter *parameter, size_t fan_in, size_t fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
-    uniform_rand(p->data()->host_begin(), p->data()->host_end(), -weight_base,
-                 weight_base);
+    uniform_rand(parameter->data()->host_begin(), parameter->data()->host_end(),
+                 -weight_base, weight_base);
   }
 };
 
@@ -53,10 +53,10 @@ class constant : public scalable {
   constant() : scalable(float_t{0}) {}
   explicit constant(float_t value) : scalable(value) {}
 
-  void fill(parameter *p, size_t fan_in, size_t fan_out) override {
+  void fill(Parameter *parameter, size_t fan_in, size_t fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
-    p->data()->fill(scale_);
+    parameter->data()->fill(scale_);
   }
 };
 

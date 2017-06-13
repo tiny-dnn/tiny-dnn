@@ -14,7 +14,7 @@ namespace tiny_dnn {
 
 enum class parameter_type : int8_t { weight = 0x1, bias = 0x2 };
 
-class parameter {
+class Parameter {
  public:
   /**
    * Initializes an empty parameter taking in the dimensions of weights and
@@ -32,7 +32,7 @@ class parameter {
    * @param type         whether parameter is a weight or a bias
    * @param trainable    whether parameter will be updated while training
    */
-  parameter(size_t out_channels,
+  Parameter(size_t out_channels,
             size_t in_channels,
             size_t height,
             size_t width,
@@ -109,5 +109,8 @@ class parameter {
   Tensor<float_t> grad_;
 
 };  // class parameter
+
+using Parameters      = std::vector<Parameter *>;
+using ConstParameters = std::vector<const Parameter *>;
 
 }  // namespace tiny_dnn

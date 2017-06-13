@@ -13,7 +13,7 @@
 namespace tiny_dnn {
 
 TEST(parameter, init) {
-  parameter p(3, 3, 1, 1, parameter_type::weight, true);
+  Parameter p(3, 3, 1, 1, parameter_type::weight, true);
 
   ASSERT_EQ(p.shape().width_, 3u);
   ASSERT_EQ(p.shape().height_, 3u);
@@ -25,7 +25,7 @@ TEST(parameter, init) {
 }
 
 TEST(parameter, getter_setter) {
-  parameter p(4, 1, 1, 1, parameter_type::bias, false);
+  Parameter p(4, 1, 1, 1, parameter_type::bias, false);
   Tensor<float_t> t{{1.0, 2.0, 3.0, 4.0}};
 
   p.set_data(t);
@@ -40,7 +40,7 @@ TEST(parameter, merge_grads) {
   Tensor<float_t> grad0{tensor_t{{1.0, 2.0}, {2.0, 1.0}}};
   Tensor<float_t> gradp{tensor_t{{2.0, 4.0}, {4.0, 2.0}}};
 
-  parameter p(2, 1, 1, 1, parameter_type::bias, false);
+  Parameter p(2, 1, 1, 1, parameter_type::bias, false);
   p.set_grad(gradp);
   p.merge_grads(&grad0);
 
@@ -60,11 +60,11 @@ TEST(parameter, layer_adder) {
   fc.add_parameter(3, 2, 1, 1, parameter_type::weight);
   fc.add_parameter(2, 1, 1, 1, parameter_type::bias);
 
-  auto vp = fc.parameters();
+  auto parameters = fc.parameters();
 
   // check whether they were added in proper order
-  ASSERT_EQ(vp[0]->type(), parameter_type::weight);
-  ASSERT_EQ(vp[1]->type(), parameter_type::bias);
+  ASSERT_EQ(parameters[0]->type(), parameter_type::weight);
+  ASSERT_EQ(parameters[1]->type(), parameter_type::bias);
 }
 
 // todo (karandesai) : test getters and setters on fc layer
