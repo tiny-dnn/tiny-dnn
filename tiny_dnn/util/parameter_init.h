@@ -13,6 +13,9 @@
 namespace tiny_dnn {
 namespace parameter_init {
 
+// todo (karandesai) : refer and exercise
+// https://github.com/alykhantejani/nninit/blob/master/nninit.py
+
 class function {
  public:
   virtual void fill(Parameter *parameter, size_t fan_in, size_t fan_out) = 0;

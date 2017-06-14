@@ -25,8 +25,8 @@ class Parameter {
    * todo (karandesai) : generalize to n-dimensions
    * todo (karandesai) : add an n-dimensional view for easy indexing
    *
-   * @param in_channels  filter depth / input channels
    * @param out_channels number of feature maps in next layer
+   * @param in_channels  filter depth / input channels
    * @param height       filter height
    * @param width        filter width
    * @param type         whether parameter is a weight or a bias
@@ -110,6 +110,9 @@ class Parameter {
   Tensor<float_t> grad_;
 
 };  // class parameter
+
+// todo (karandesai) : analyze performance between raw pointer and shared_ptr
+// after fc parameter integration
 
 using Parameters      = std::vector<Parameter *>;
 using ConstParameters = std::vector<const Parameter *>;

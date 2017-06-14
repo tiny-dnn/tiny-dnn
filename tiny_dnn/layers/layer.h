@@ -793,23 +793,24 @@ class layer : public node {
     float_t rcp_batch_size  = float_t{1} / float_t{batch_size};
     Tensor<float_t> &diff_t = parameters_diff_;
     for (Parameter *parameter : parameters_) {
-      if (trainable() && parameter->is_trainable()) {
-        parameter->merge_grads(&diff_t);
-
-        for (size_t j = 0; j < diff_t.size(); ++j) {
-          diff_t.host_at(j) *= rcp_batch_size;
-        }
-        // parallelize only when target size is big enough to mitigate
-        // thread spawning overhead.
-        bool parallelize = (parameter->size() >= 512);
-
-        // todo (karandesai) : remove this workaround later
-        vec_t diff   = diff_t.toVec();
-        vec_t target = parameter->data()->toVec();
-        optimizer_ptr->update(diff, target, parallelize);
-        diff_t = Tensor<float_t>(diff);
-        parameter->set_data(Tensor<float_t>(target));
+      if (!trainable() || !parameter->is_trainable()) {
+        continue;
       }
+      parameter->merge_grads(&diff_t);
+
+      for (size_t j = 0; j < diff_t.size(); ++j) {
+        diff_t.host_at(j) *= rcp_batch_size;
+      }
+      // parallelize only when target size is big enough to mitigate
+      // thread spawning overhead.
+      bool parallelize = (parameter->size() >= 512);
+
+      // todo (karandesai) : remove this workaround later
+      vec_t diff   = diff_t.toVec();
+      vec_t target = parameter->data()->toVec();
+      optimizer_ptr->update(diff, target, parallelize);
+      diff_t = Tensor<float_t>(diff);
+      parameter->set_data(Tensor<float_t>(target));
     }
     clear_grads();
     post_update();
