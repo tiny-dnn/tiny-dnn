@@ -23,12 +23,11 @@ class MaxPoolOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto &params = OpKernel::params_->maxpool();
 
-    // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    tensor_t &out_data      = context.output(0);
+    const Tensor<float_t> in_data(context.input(0));
+    Tensor<float_t> out_data(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data.fill(0.0f);
 
     // call convolution algorithm depending
     // on the selected engine type
