@@ -1,6 +1,6 @@
 # tiny-dnn documentations
 
-A built version of document is available at [http://tiny-dnn.readthedocs.io/en/latest/index.html](here).
+A built version of document is available at [here](http://tiny-dnn.readthedocs.io/en/latest/index.html).
 
 ## Local build
 
