@@ -16,16 +16,15 @@ inline void global_avepool_op_internal(
   Tensor<float_t, S2> &out_data,
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
-  for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
-    auto in  = in_data.host_pointer(sample, 0);
-    auto out = out_data.host_pointer(sample, 0);
+  for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
 
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
       for (size_t j = 0; j < pool_area; j++) {
-        out[i] += in[i * pool_area + j];
+        out_data.host_at(sample, i) +=
+          in_data.host_at(sample, i * pool_area + j);
       }
-      out[i] /= pool_area;
+      out_data.host_at(sample, i) /= pool_area;
     }
   });
 }
@@ -36,15 +35,13 @@ inline void global_avepool_grad_op_internal(
   const Tensor<float_t, S2> &curr_delta,
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
-  for_i(layer_parallelize, prev_delta.size(), [&](size_t sample) {
-    auto prev = prev_delta.host_pointer(sample, 0);
-    auto curr = curr_delta.host_pointer(sample, 0);
+  for_i(layer_parallelize, prev_delta.shape()[0], [&](size_t sample) {
 
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
-      const float_t pi = curr[i] / pool_area;
+      const float_t pi = curr_delta.host_at(sample, i) / pool_area;
       for (size_t j = 0; j < pool_area; j++) {
-        prev[i * pool_area + j] = pi;
+        prev_delta.host_at(sample, i * pool_area + j) = pi;
       }
     }
   });
