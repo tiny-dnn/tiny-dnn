@@ -31,6 +31,7 @@ class GlobalAvePoolOp : public core::OpKernel {
     // of the specified backend engine
     kernels::global_avepool_op_internal(in_data, out_data, params,
                                         context.parallelize());
+    context.output(0) = out_data.toTensor();
   }
 };
 
