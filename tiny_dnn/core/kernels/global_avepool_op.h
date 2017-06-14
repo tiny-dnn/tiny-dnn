@@ -22,11 +22,11 @@ class GlobalAvePoolOp : public core::OpKernel {
     auto &params = OpKernel::params_->global_avepool();
 
     // incomimg / outcoming data
-    const tensor_t &in_data = context.input(0);
-    tensor_t &out_data      = context.output(0);
+    const Tensor<float_t> in_data(context.input(0));
+    Tensor<float_t> out_data(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data.fill(0.0f);
 
     const core::backend_t engine = context.engine();
 

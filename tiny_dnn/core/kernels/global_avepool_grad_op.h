@@ -22,11 +22,11 @@ class GlobalAvePoolGradOp : public core::OpKernel {
     auto &params = OpKernel::params_->global_avepool();
 
     // incoming/outcoming data
-    tensor_t &prev_delta = context.input_grad(0);
-    tensor_t &curr_delta = context.output_grad(0);
+    Tensor<float_t> prev_delta(context.input_grad(0));
+    Tensor<float_t> curr_delta(context.output_grad(0));
 
     // initialize outputs
-    fill_tensor(prev_delta, float_t{0});
+    prev_delta.fill(0.0f);
 
     const core::backend_t engine = context.engine();
 

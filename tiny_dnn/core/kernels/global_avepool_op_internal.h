@@ -10,14 +10,15 @@
 namespace tiny_dnn {
 namespace kernels {
 
+template <typename S1, typename S2>
 inline void global_avepool_op_internal(
-  const tensor_t &in_data,
-  tensor_t &out_data,
+  const Tensor<float_t, S1> &in_data,
+  Tensor<float_t, S2> &out_data,
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
-    const vec_t &in = in_data[sample];
-    vec_t &out      = out_data[sample];
+    auto in  = in_data.host_pointer(sample, 0);
+    auto out = out_data.host_pointer(sample, 0);
 
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
@@ -29,14 +30,15 @@ inline void global_avepool_op_internal(
   });
 }
 
+template <typename S1, typename S2>
 inline void global_avepool_grad_op_internal(
-  tensor_t &prev_delta,
-  const tensor_t &curr_delta,
+  Tensor<float_t, S1> &prev_delta,
+  const Tensor<float_t, S2> &curr_delta,
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
   for_i(layer_parallelize, prev_delta.size(), [&](size_t sample) {
-    vec_t &prev       = prev_delta[sample];
-    const vec_t &curr = curr_delta[sample];
+    auto prev = prev_delta.host_pointer(sample, 0);
+    auto curr = curr_delta.host_pointer(sample, 0);
 
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
