@@ -337,17 +337,6 @@ class layer : public node {
     return *this;
   }
 
-  /////////////////////////////////////////////////////////////////////////
-  // save/load
-  template <typename Archive>
-  void serialize(Archive &ar) {
-    auto all_weights = weights();
-    for (auto weight : all_weights) {
-      ar(*weight);
-    }
-    initialized_ = true;
-  }
-
   virtual void save(
     std::ostream &os,
     const int precision = std::numeric_limits<float_t>::digits10 + 2
@@ -748,6 +737,8 @@ class layer : public node {
   inline void for_i(T size, Func f, size_t grainsize = 100) {
     tiny_dnn::for_i(parallelize_, size, f, grainsize);
   }
+
+  friend struct serialization_buddy;
 
  private:
   /** Flag indicating whether the layer/node parameters are trainable */

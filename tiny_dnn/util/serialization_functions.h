@@ -488,157 +488,22 @@ struct LoadAndConstruct<tiny_dnn::softsign_layer> {
   }
 };
 
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::elementwise_add_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::average_pooling_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::average_unpooling_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::batch_normalization_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::concat_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::convolutional_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::deconvolutional_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::dropout_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::fully_connected_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::global_average_pooling_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::input_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::linear_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::lrn_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::max_pooling_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::max_unpooling_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::power_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::quantized_convolutional_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::quantized_deconvolutional_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::quantized_fully_connected_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::slice_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::sigmoid_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::tanh_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::relu_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::softmax_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::leaky_relu_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::elu_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::tanh_p1m2_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::softplus_layer,
-                  cereal::specialization::non_member_serialize> {};
-
-template <class Archive>
-struct specialize<Archive,
-                  tiny_dnn::softsign_layer,
-                  cereal::specialization::non_member_serialize> {};
-
 }  // namespace cereal
 
 namespace tiny_dnn {
 
 struct serialization_buddy {
 #ifndef CNN_NO_SERIALIZATION
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::layer &layer) {
+    auto all_weights = layer.weights();
+    for (auto weight : all_weights) {
+      ar(*weight);
+    }
+    layer.initialized_ = true;
+  }
+
   template <class Archive>
   static inline void serialize(Archive &ar,
                                tiny_dnn::elementwise_add_layer &layer) {
@@ -908,148 +773,9 @@ struct serialization_buddy {
 #endif
 };
 
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::elementwise_add_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::average_pooling_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::average_unpooling_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::batch_normalization_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::convolutional_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::deconvolutional_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::dropout_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::fully_connected_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::global_average_pooling_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::input_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::lrn_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::max_pooling_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::max_unpooling_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::quantized_convolutional_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::softplus_layer &layer) {
-  serialization_buddy::serialize(ar, layer);
-}
-
-template <class Archive>
-void serialize(Archive &ar, tiny_dnn::softsign_layer &layer) {
+template <class Archive, typename T>
+typename std::enable_if<std::is_base_of<tiny_dnn::layer, T>::value>::type
+serialize(Archive &ar, T &layer) {
   serialization_buddy::serialize(ar, layer);
 }
 
