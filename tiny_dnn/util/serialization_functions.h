@@ -55,7 +55,7 @@ static size_t to_size(const serial_size_t &src) {
   return static_cast<size_t>(src);
 }
 
-static shape3d_serial to_serial_shape(const tiny_dnn::shape3d &src) {
+static inline shape3d_serial to_serial_shape(const tiny_dnn::shape3d &src) {
   shape3d_serial dst;
   dst.width_  = to_serial(src.width_);
   dst.height_ = to_serial(src.height_);
@@ -63,7 +63,7 @@ static shape3d_serial to_serial_shape(const tiny_dnn::shape3d &src) {
   return dst;
 }
 
-static tiny_dnn::shape3d to_size_shape(const shape3d_serial &src) {
+static inline tiny_dnn::shape3d to_size_shape(const shape3d_serial &src) {
   tiny_dnn::shape3d dst;
   dst.width_  = to_size(src.width_);
   dst.height_ = to_size(src.height_);

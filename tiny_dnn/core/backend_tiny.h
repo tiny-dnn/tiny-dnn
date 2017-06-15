@@ -73,13 +73,13 @@ class tiny_backend : public backend {
       backward_activation(f3) {}
 
   // fully_connected
-  tiny_backend(fully_params *params) : params_f_(params) {}
+  tiny_backend(fully_params *params) /*: params_f_(params)*/ {}
 
   // quantized fully_connected
   tiny_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
-    : params_f_(params), backward_activation(f) {}
+    : /*params_f_(params),*/ backward_activation(f) {}
 
   // core math functions
 
@@ -370,7 +370,7 @@ class tiny_backend : public backend {
   /* Pointer to the convolution parameters */
   conv_params *params_c_;
   deconv_params *params_d_;
-  fully_params *params_f_;
+  //fully_params *params_f_;
 
   /* Pointer to the workers */
   conv_layer_worker_specific_storage *conv_layer_worker_storage_;
