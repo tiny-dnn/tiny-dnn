@@ -64,7 +64,7 @@ class avx_backend : public backend {
       copy_and_pad_delta(f2),
       backward_activation(f3) {}
 
-  // maxpooling
+// maxpooling
 #if 0
   avx_backend(std::vector<std::vector<size_t>> *out2in,
               std::vector<size_t> *in2out,

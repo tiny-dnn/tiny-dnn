@@ -86,7 +86,6 @@ template <class Archive,
 void arc(Archive &ar, cereal::NameValuePair<tiny_dnn::shape3d> &&arg) {
   cereal::NameValuePair<shape3d_serial> arg2(arg.name, shape3d_serial());
   ar(arg2);
-  //arg.value = to_size_shape(arg2.value);
 }
 
 template <class Archive,
@@ -98,8 +97,8 @@ void arc(Archive &ar,
   for (size_t i = 0; i < arg.value.size(); ++i) {
     shapes_serial[i] = to_serial_shape(arg.value[i]);
   }
-  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(arg.name,
-                                                          std::move(shapes_serial));
+  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(
+    arg.name, std::move(shapes_serial));
   ar(arg2);
 }
 
@@ -109,8 +108,8 @@ template <class Archive,
 void arc(Archive &ar,
          cereal::NameValuePair<std::vector<tiny_dnn::shape3d>> &&arg) {
   std::vector<shape3d_serial> shapes_serial;
-  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(arg.name,
-                                                          std::move(shapes_serial));
+  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(
+    arg.name, std::move(shapes_serial));
   ar(arg2);
   for (size_t i = 0; i < shapes_serial.size(); ++i) {
     arg.value[i] = to_size_shape(shapes_serial[i]);
