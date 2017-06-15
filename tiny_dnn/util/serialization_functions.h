@@ -21,7 +21,7 @@ typedef std::uint32_t serial_size_t;
 typedef tiny_dnn::index3d<serial_size_t> shape3d_serial;
 
 template <class T>
-inline cereal::NameValuePair<T> make_nvp(const char *name, T &&value) {
+static inline cereal::NameValuePair<T> make_nvp(const char *name, T &&value) {
   return cereal::make_nvp(name, value);
 }
 
@@ -84,9 +84,9 @@ template <class Archive,
           typename std::enable_if<std::is_base_of<cereal::BinaryInputArchive,
                                                   Archive>::value>::type = 0>
 void arc(Archive &ar, cereal::NameValuePair<tiny_dnn::shape3d> &&arg) {
-  cereal::NameValuePair<shape3d_serial> arg2(arg.name, 0);
+  cereal::NameValuePair<shape3d_serial> arg2(arg.name, shape3d_serial());
   ar(arg2);
-  arg.value = to_size_shape(arg2.value);
+  //arg.value = to_size_shape(arg2.value);
 }
 
 template <class Archive,
@@ -99,7 +99,7 @@ void arc(Archive &ar,
     shapes_serial[i] = to_serial_shape(arg.value[i]);
   }
   cereal::NameValuePair<std::vector<shape3d_serial>> arg2(arg.name,
-                                                          shapes_serial);
+                                                          std::move(shapes_serial));
   ar(arg2);
 }
 
@@ -110,7 +110,7 @@ void arc(Archive &ar,
          cereal::NameValuePair<std::vector<tiny_dnn::shape3d>> &&arg) {
   std::vector<shape3d_serial> shapes_serial;
   cereal::NameValuePair<std::vector<shape3d_serial>> arg2(arg.name,
-                                                          shapes_serial);
+                                                          std::move(shapes_serial));
   ar(arg2);
   for (size_t i = 0; i < shapes_serial.size(); ++i) {
     arg.value[i] = to_size_shape(shapes_serial[i]);
