@@ -58,12 +58,13 @@ option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
 option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
 option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
 
-option(BUILD_TESTS    "Set to ON to build tests"              OFF)
-option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
-option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
-option(COVERALLS      "Set to ON to build with code coverage" OFF)
-option(PROFILE        "Set to ON to build with profiling"     OFF)
-option(USE_ASAN       "Set to ON to build with ASan"          OFF)
+option(BUILD_TESTS      "Set to ON to build tests"              OFF)
+option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
+option(BUILD_DOCS       "Set to ON to build documentation"      OFF)
+option(BUILD_BENCHMARKS "Set to ON to build benchmarks"         OFF)
+option(COVERALLS        "Set to ON to build with code coverage" OFF)
+option(PROFILE          "Set to ON to build with profiling"     OFF)
+option(USE_ASAN         "Set to ON to build with ASan"          OFF)
 
 ####
 # Create the library target
@@ -388,6 +389,10 @@ endif(BUILD_TESTS)
 if(BUILD_DOCS)
     add_subdirectory(docs)
 endif(BUILD_DOCS)
+
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif(BUILD_BENCHMARKS)
 
 ####
 # Configuration summary

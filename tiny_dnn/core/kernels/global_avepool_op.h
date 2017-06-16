@@ -8,6 +8,7 @@
 #pragma once
 
 #include "tiny_dnn/core/framework/op_kernel.h"
+#include "tiny_dnn/core/kernels/global_avepool_op_avx.h"
 #include "tiny_dnn/core/kernels/global_avepool_op_internal.h"
 
 namespace tiny_dnn {
@@ -27,10 +28,17 @@ class GlobalAvePoolOp : public core::OpKernel {
     // initialize outputs
     fill_tensor(out_data, float_t{0});
 
-    // only internal kernel op implemented yet, so use it regardless
-    // of the specified backend engine
-    kernels::global_avepool_op_internal(in_data, out_data, params,
-                                        context.parallelize());
+    const core::backend_t engine = context.engine();
+
+    if (engine == core::backend_t::avx) {
+#ifdef CNN_USE_AVX
+      kernels::global_avepool_op_avx(in_data, out_data, params,
+                                     context.parallelize());
+#endif
+    } else {
+      kernels::global_avepool_op_internal(in_data, out_data, params,
+                                          context.parallelize());
+    }
   }
 };
 

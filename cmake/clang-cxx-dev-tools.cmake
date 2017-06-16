@@ -3,6 +3,7 @@
 
 file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
   ${CMAKE_SOURCE_DIR}/tiny_dnn/*.h
+  ${CMAKE_SOURCE_DIR}/benchmarks/*.h
   ${CMAKE_SOURCE_DIR}/test/*.h
   ${CMAKE_SOURCE_DIR}/examples/*.h
   ${CMAKE_SOURCE_DIR}/examples/*.cpp
