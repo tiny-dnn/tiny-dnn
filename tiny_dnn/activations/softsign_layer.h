@@ -42,3 +42,8 @@ class softsign_layer : public activation_layer {
 };
 
 }  // namespace tiny_dnn
+
+// allow upcasting with cereal
+#ifndef CNN_NO_SERIALIZATION
+CEREAL_REGISTER_TYPE(tiny_dnn::softsign_layer);
+#endif

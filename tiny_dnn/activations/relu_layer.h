@@ -41,3 +41,8 @@ class relu_layer : public activation_layer {
 };
 
 }  // namespace tiny_dnn
+
+// allow upcasting with cereal
+#ifndef CNN_NO_SERIALIZATION
+CEREAL_REGISTER_TYPE(tiny_dnn::relu_layer);
+#endif
