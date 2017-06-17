@@ -802,7 +802,7 @@ struct serialization_buddy {
 template <class Archive, typename T>
 typename std::enable_if<std::is_base_of<tiny_dnn::layer, T>::value>::type
 serialize(Archive &ar, T &layer) {
-   serialization_buddy::serialize(ar, layer);
+  serialization_buddy::serialize(ar, layer);
 }
 
 template <class Archive, typename T>
