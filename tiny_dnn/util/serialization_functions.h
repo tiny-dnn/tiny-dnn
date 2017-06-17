@@ -603,8 +603,7 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
     layer.serialize_prolog(ar);
-    arc(ar,
-        make_nvp("in_size", layer.in_shapes_));
+    arc(ar, make_nvp("in_size", layer.in_shapes_));
   }
 
   template <class Archive>

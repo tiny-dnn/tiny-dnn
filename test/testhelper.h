@@ -63,7 +63,8 @@ inline std::string unique_path() {
       if (*p == '%') *p = (rand() % 10) + '0';
     }
   } while (exists(pattern));
-  //return std::experimental::filesystem::v1::temp_directory_path().string() + pattern;
+  // return std::experimental::filesystem::v1::temp_directory_path().string() +
+  // pattern;
   char path[256];
 #ifdef _WIN32
   ::GetTempPath(256, path);

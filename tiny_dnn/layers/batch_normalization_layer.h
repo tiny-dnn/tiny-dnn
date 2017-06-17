@@ -45,14 +45,14 @@ class batch_normalization_layer : public layer {
     init();
   }
 
- /**
-  * @param in_spatial_size [in] spatial size (WxH) of the input data
-  * @param in_channels     [in] channels of the input data
-  * @param epsilon         [in] small positive value to avoid zero-division
-  * @param momentum        [in] momentum in the computation of the exponential
-  *average of the mean/stddev of the data
-  * @param phase           [in] specify the current context (train/test)
-  **/
+  /**
+   * @param in_spatial_size [in] spatial size (WxH) of the input data
+   * @param in_channels     [in] channels of the input data
+   * @param epsilon         [in] small positive value to avoid zero-division
+   * @param momentum        [in] momentum in the computation of the exponential
+   *average of the mean/stddev of the data
+   * @param phase           [in] specify the current context (train/test)
+   **/
   batch_normalization_layer(size_t in_spatial_size,
                             size_t in_channels,
                             float_t epsilon  = 1e-5,

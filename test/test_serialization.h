@@ -17,8 +17,8 @@ using namespace tiny_dnn::activation;
 
 namespace tiny_dnn {
 
-inline void check_sequential_network_model_serialization(const network<sequential> &net)
-{
+inline void check_sequential_network_model_serialization(
+  const network<sequential>& net) {
   auto path = unique_path();
   network<sequential> net2;
   net.save(path, content_type::model);
@@ -475,7 +475,6 @@ TEST(serialization, serialize_power) {
   EXPECT_FLOAT_EQ(net.at<power_layer>(0).scale(), 0.2f);
   check_sequential_network_model_serialization(net);
 }
-
 
 TEST(serialization, serialize_q_conv) {
   network<sequential> net;

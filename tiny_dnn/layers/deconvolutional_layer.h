@@ -33,30 +33,30 @@ namespace tiny_dnn {
  **/
 class deconvolutional_layer : public layer {
  public:
- /**
-  * constructing deconvolutional layer
-  *
-  * @param in_width     [in] input image width
-  * @param in_height    [in] input image height
-  * @param window_size  [in] window(kernel) size of convolution
-  * @param in_channels  [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels [in] output image channels
-  * @param padding      [in] rounding strategy
-  *                          valid: use valid pixels of input only.
-  *output-size
-  *= (in-width - window_size + 1) *
-  *(in-height - window_size + 1) * out_channels
-  *                          same: add zero-padding to keep same width/height.
-  *output-size = in-width * in-height *
-  *out_channels
-  * @param has_bias     [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride     [in] specify the horizontal interval at which to apply
-  *the filters to the input
-  * @param h_stride     [in] specify the vertical interval at which to apply
-  *the
-  *filters to the input
-  **/
+  /**
+   * constructing deconvolutional layer
+   *
+   * @param in_width     [in] input image width
+   * @param in_height    [in] input image height
+   * @param window_size  [in] window(kernel) size of convolution
+   * @param in_channels  [in] input image channels (grayscale=1, rgb=3)
+   * @param out_channels [in] output image channels
+   * @param padding      [in] rounding strategy
+   *                          valid: use valid pixels of input only.
+   *output-size
+   *= (in-width - window_size + 1) *
+   *(in-height - window_size + 1) * out_channels
+   *                          same: add zero-padding to keep same width/height.
+   *output-size = in-width * in-height *
+   *out_channels
+   * @param has_bias     [in] whether to add a bias vector to the filter
+   *outputs
+   * @param w_stride     [in] specify the horizontal interval at which to apply
+   *the filters to the input
+   * @param h_stride     [in] specify the vertical interval at which to apply
+   *the
+   *filters to the input
+   **/
   deconvolutional_layer(size_t in_width,
                         size_t in_height,
                         size_t window_size,
@@ -74,31 +74,31 @@ class deconvolutional_layer : public layer {
     init_backend(backend_type);
   }
 
- /**
-  * constructing deconvolutional layer
-  *
-  * @param in_width      [in] input image width
-  * @param in_height     [in] input image height
-  * @param window_width  [in] window_width(kernel) size of convolution
-  * @param window_height [in] window_height(kernel) size of convolution
-  * @param in_channels   [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels  [in] output image channels
-  * @param padding       [in] rounding strategy
-  *                          valid: use valid pixels of input only.
-  *output-size
-  *= (in-width - window_width + 1) *
-  *(in-height - window_height + 1) * out_channels
-  *                          same: add zero-padding to keep same width/height.
-  *output-size = in-width * in-height *
-  *out_channels
-  * @param has_bias     [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride     [in] specify the horizontal interval at which to apply
-  *the filters to the input
-  * @param h_stride     [in] specify the vertical interval at which to apply
-  *the
-  *filters to the input
-  **/
+  /**
+   * constructing deconvolutional layer
+   *
+   * @param in_width      [in] input image width
+   * @param in_height     [in] input image height
+   * @param window_width  [in] window_width(kernel) size of convolution
+   * @param window_height [in] window_height(kernel) size of convolution
+   * @param in_channels   [in] input image channels (grayscale=1, rgb=3)
+   * @param out_channels  [in] output image channels
+   * @param padding       [in] rounding strategy
+   *                          valid: use valid pixels of input only.
+   *output-size
+   *= (in-width - window_width + 1) *
+   *(in-height - window_height + 1) * out_channels
+   *                          same: add zero-padding to keep same width/height.
+   *output-size = in-width * in-height *
+   *out_channels
+   * @param has_bias     [in] whether to add a bias vector to the filter
+   *outputs
+   * @param w_stride     [in] specify the horizontal interval at which to apply
+   *the filters to the input
+   * @param h_stride     [in] specify the vertical interval at which to apply
+   *the
+   *filters to the input
+   **/
   deconvolutional_layer(size_t in_width,
                         size_t in_height,
                         size_t window_width,
@@ -117,31 +117,31 @@ class deconvolutional_layer : public layer {
     init_backend(backend_type);
   }
 
- /**
-  * constructing deconvolutional layer
-  *
-  * @param in_width         [in] input image width
-  * @param in_height        [in] input image height
-  * @param window_size      [in] window(kernel) size of convolution
-  * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels     [in] output image channels
-  * @param connection_table [in] definition of connections between in-channels
-  *and out-channels
-  * @param pad_type         [in] rounding strategy
-  *                               valid: use valid pixels of input only.
-  *output-size = (in-width - window_size + 1) *
-  *(in-height - window_size + 1) * out_channels
-  *                               same: add zero-padding to keep same
-  *width/height. output-size = in-width * in-height *
-  *out_channels
-  * @param has_bias         [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride         [in] specify the horizontal interval at which to
-  *apply the filters to the input
-  * @param h_stride         [in] specify the vertical interval at which to
-  *apply
-  *the filters to the input
-  **/
+  /**
+   * constructing deconvolutional layer
+   *
+   * @param in_width         [in] input image width
+   * @param in_height        [in] input image height
+   * @param window_size      [in] window(kernel) size of convolution
+   * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+   * @param out_channels     [in] output image channels
+   * @param connection_table [in] definition of connections between in-channels
+   *and out-channels
+   * @param pad_type         [in] rounding strategy
+   *                               valid: use valid pixels of input only.
+   *output-size = (in-width - window_size + 1) *
+   *(in-height - window_size + 1) * out_channels
+   *                               same: add zero-padding to keep same
+   *width/height. output-size = in-width * in-height *
+   *out_channels
+   * @param has_bias         [in] whether to add a bias vector to the filter
+   *outputs
+   * @param w_stride         [in] specify the horizontal interval at which to
+   *apply the filters to the input
+   * @param h_stride         [in] specify the vertical interval at which to
+   *apply
+   *the filters to the input
+   **/
   deconvolutional_layer(size_t in_width,
                         size_t in_height,
                         size_t window_size,
@@ -160,32 +160,32 @@ class deconvolutional_layer : public layer {
     init_backend(backend_type);
   }
 
- /**
-  * constructing deconvolutional layer
-  *
-  * @param in_width         [in] input image width
-  * @param in_height        [in] input image height
-  * @param window_width     [in] window_width(kernel) size of convolution
-  * @param window_height    [in] window_height(kernel) size of convolution
-  * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels     [in] output image channels
-  * @param connection_table [in] definition of connections between in-channels
-  *and out-channels
-  * @param pad_type         [in] rounding strategy
-  *                               valid: use valid pixels of input only.
-  *output-size = (in-width - window_size + 1) *
-  *(in-height - window_size + 1) * out_channels
-  *                               same: add zero-padding to keep same
-  *width/height. output-size = in-width * in-height *
-  *out_channels
-  * @param has_bias         [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride         [in] specify the horizontal interval at which to
-  *apply the filters to the input
-  * @param h_stride         [in] specify the vertical interval at which to
-  *apply
-  *the filters to the input
-  **/
+  /**
+   * constructing deconvolutional layer
+   *
+   * @param in_width         [in] input image width
+   * @param in_height        [in] input image height
+   * @param window_width     [in] window_width(kernel) size of convolution
+   * @param window_height    [in] window_height(kernel) size of convolution
+   * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+   * @param out_channels     [in] output image channels
+   * @param connection_table [in] definition of connections between in-channels
+   *and out-channels
+   * @param pad_type         [in] rounding strategy
+   *                               valid: use valid pixels of input only.
+   *output-size = (in-width - window_size + 1) *
+   *(in-height - window_size + 1) * out_channels
+   *                               same: add zero-padding to keep same
+   *width/height. output-size = in-width * in-height *
+   *out_channels
+   * @param has_bias         [in] whether to add a bias vector to the filter
+   *outputs
+   * @param w_stride         [in] specify the horizontal interval at which to
+   *apply the filters to the input
+   * @param h_stride         [in] specify the vertical interval at which to
+   *apply
+   *the filters to the input
+   **/
   deconvolutional_layer(size_t in_width,
                         size_t in_height,
                         size_t window_width,
