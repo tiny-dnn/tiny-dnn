@@ -96,3 +96,4 @@ class selu_layer : public activation_layer {
 };
 
 }  // namespace tiny_dnn
+
