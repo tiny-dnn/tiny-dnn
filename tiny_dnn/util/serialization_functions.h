@@ -47,75 +47,6 @@ void arc(Archive &ar, cereal::NameValuePair<size_t> &&arg) {
   arg.value = arg2.value;
 }
 
-static serial_size_t to_serial(const size_t &src) {
-  return static_cast<serial_size_t>(src);
-}
-
-static size_t to_size(const serial_size_t &src) {
-  return static_cast<size_t>(src);
-}
-
-static inline shape3d_serial to_serial_shape(const tiny_dnn::shape3d &src) {
-  shape3d_serial dst;
-  dst.width_  = to_serial(src.width_);
-  dst.height_ = to_serial(src.height_);
-  dst.depth_  = to_serial(src.depth_);
-  return dst;
-}
-
-static inline tiny_dnn::shape3d to_size_shape(const shape3d_serial &src) {
-  tiny_dnn::shape3d dst;
-  dst.width_  = to_size(src.width_);
-  dst.height_ = to_size(src.height_);
-  dst.depth_  = to_size(src.depth_);
-  return dst;
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryOutputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar, cereal::NameValuePair<tiny_dnn::shape3d> &&arg) {
-  cereal::NameValuePair<shape3d_serial> arg2(arg.name,
-                                             to_serial_shape(arg.value));
-  ar(arg2);
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryInputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar, cereal::NameValuePair<tiny_dnn::shape3d> &&arg) {
-  cereal::NameValuePair<shape3d_serial> arg2(arg.name, shape3d_serial());
-  ar(arg2);
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryOutputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar,
-         cereal::NameValuePair<std::vector<tiny_dnn::shape3d>> &&arg) {
-  std::vector<shape3d_serial> shapes_serial(arg.value.size());
-  for (size_t i = 0; i < arg.value.size(); ++i) {
-    shapes_serial[i] = to_serial_shape(arg.value[i]);
-  }
-  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(
-    arg.name, std::move(shapes_serial));
-  ar(arg2);
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryInputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar,
-         cereal::NameValuePair<std::vector<tiny_dnn::shape3d>> &&arg) {
-  std::vector<shape3d_serial> shapes_serial;
-  cereal::NameValuePair<std::vector<shape3d_serial>> arg2(
-    arg.name, std::move(shapes_serial));
-  ar(arg2);
-  for (size_t i = 0; i < shapes_serial.size(); ++i) {
-    arg.value[i] = to_size_shape(shapes_serial[i]);
-  }
-}
-
 template <class Archive>
 inline void arc(Archive &ar) {}
 
@@ -672,7 +603,8 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::concat_layer &layer) {
     layer.serialize_prolog(ar);
-    arc(ar, layer.in_shapes_);
+    arc(ar,
+        make_nvp("in_size", layer.in_shapes_));
   }
 
   template <class Archive>

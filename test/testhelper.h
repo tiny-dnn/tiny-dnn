@@ -9,8 +9,15 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+//#include <filesystem>
+
 #include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
+
+#ifdef _WIN32
+#define NOMINMAX
+#include <Windows.h>
+#endif
 
 namespace tiny_dnn {
 
@@ -49,12 +56,23 @@ inline bool exists(const std::string &path) {
 }
 
 inline std::string unique_path() {
-  std::string pattern = "%%%%-%%%%-%%%%-%%%%";
-
-  for (auto p = pattern.begin(); p != pattern.end(); ++p) {
-    if (*p == '%') *p = (rand() % 10) + '0';
-  }
-  return exists(pattern) ? unique_path() : pattern;
+  std::string pattern;
+  do {
+    pattern = "%%%%-%%%%-%%%%-%%%%";
+    for (auto p = pattern.begin(); p != pattern.end(); ++p) {
+      if (*p == '%') *p = (rand() % 10) + '0';
+    }
+  } while (exists(pattern));
+  //return std::experimental::filesystem::v1::temp_directory_path().string() + pattern;
+  char path[256];
+#ifdef _WIN32
+  ::GetTempPath(256, path);
+#else
+  strcpy(path, "/tmp/");
+#endif
+  strcat(path, pattern.c_str());
+  struct stat buffer;
+  return (stat(path, &buffer) == 0) ? unique_path() : path;
 }
 
 vec_t forward_pass(layer &src, const vec_t &vec) {

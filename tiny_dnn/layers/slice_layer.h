@@ -104,6 +104,8 @@ class slice_layer : public layer {
     }
   }
 
+  slice_type get_slice_type() const { return slice_type_; }
+
   friend struct serialization_buddy;
 
  private:
