@@ -8,7 +8,7 @@ using namespace tiny_dnn::activation;
 namespace tiny_dnn {
 TEST(selu, gradient_check) {
   network<sequential> nn;
-  nn << selu((serial_size_t)3, (serial_size_t)3, (serial_size_t)1);
+  nn << selu(3, 3, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
