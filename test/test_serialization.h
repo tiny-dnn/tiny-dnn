@@ -818,19 +818,10 @@ TEST(serialization, sequential_to_json) {
   EXPECT_EQ(net1.in_data_size(), net2.in_data_size());
   EXPECT_EQ(net1.layer_size(), net2.layer_size());
 
-  EXPECT_EQ(net1[0]->in_shape(), net2[0]->in_shape());
-  EXPECT_EQ(net1[1]->in_shape(), net2[1]->in_shape());
-  EXPECT_EQ(net1[2]->in_shape(), net2[2]->in_shape());
-  EXPECT_EQ(net1[3]->in_shape(), net2[3]->in_shape());
-  EXPECT_EQ(net1[4]->in_shape(), net2[4]->in_shape());
-  EXPECT_EQ(net1[5]->in_shape(), net2[5]->in_shape());
-
-  EXPECT_EQ(net1[0]->layer_type(), net2[0]->layer_type());
-  EXPECT_EQ(net1[1]->layer_type(), net2[1]->layer_type());
-  EXPECT_EQ(net1[2]->layer_type(), net2[2]->layer_type());
-  EXPECT_EQ(net1[3]->layer_type(), net2[3]->layer_type());
-  EXPECT_EQ(net1[4]->layer_type(), net2[4]->layer_type());
-  EXPECT_EQ(net1[5]->layer_type(), net2[5]->layer_type());
+  for (size_t i = 0; i < net1.layer_size(); i++) {
+    EXPECT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
+    EXPECT_EQ(net1[i]->layer_type(), net2[i]->layer_type());
+  }
 
   EXPECT_FLOAT_EQ(net1.at<dropout_layer>(2).dropout_rate(),
                   net2.at<dropout_layer>(2).dropout_rate());

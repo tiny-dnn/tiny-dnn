@@ -70,6 +70,16 @@
 #ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/deserialization_helper.h"
 #include "tiny_dnn/util/serialization_helper.h"
+// to allow upcasting
+CEREAL_REGISTER_TYPE(tiny_dnn::elu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::leaky_relu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::relu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::sigmoid_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softmax_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softplus_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softsign_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::tanh_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::tanh_p1m2_layer)
 #endif  // CNN_NO_SERIALIZATION
 
 // shortcut version of layer names

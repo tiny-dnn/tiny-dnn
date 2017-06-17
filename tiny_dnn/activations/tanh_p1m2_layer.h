@@ -43,8 +43,3 @@ class tanh_p1m2_layer : public activation_layer {
 };
 
 }  // namespace tiny_dnn
-
-// allow upcasting with cereal
-#ifndef CNN_NO_SERIALIZATION
-CEREAL_REGISTER_TYPE(tiny_dnn::tanh_p1m2_layer);
-#endif
