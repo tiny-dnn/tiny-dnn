@@ -16,11 +16,12 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-inline void nnp_deconv2d_kernel(const conv_params &params,
-                                const std::vector<const vec_t *> &in,
-                                const vec_t &W,
-                                const vec_t &bias,
-                                tensor_t &a) {}
+template <typename S1, typename S2, typename S3, typename S4>
+inline void nnp_deconv2d_kernel(const Tensor<float_t, S1> &in_data,
+                                const Tensor<float_t, S2> &weights,
+                                const Tensor<float_t, S3> &bias,
+                                Tensor<float_t, S4> &out_data,
+                                const deconv_params &params) {}
 
 }  // namespace kernels
 }  // namespace core
