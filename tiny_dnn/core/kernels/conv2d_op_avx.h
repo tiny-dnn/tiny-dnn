@@ -46,9 +46,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1,
   // -1, -1, -1, 0, 0, 0));
 
-  auto a_begin    = a.host_pbegin();
-  auto bias_begin = bias.host_pbegin();
-  const float *pw = W.host_pbegin();
+  auto a_begin               = a.host_pbegin();
+  auto bias_begin            = bias.host_pbegin();
+  const float *weights_begin = W.host_pbegin();
+  const float *pw            = W.host_pbegin();
+  const float *in_begin      = in.host_pbegin();
 
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
@@ -91,7 +93,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
     for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
       float *pa = &a_begin[oidx];
       // init to bias value
-      float b = bias.host_at(0, o) * bias_scale;
+      float b = bias_begin[o] * bias_scale;
       {
         size_t headSize = 0;
         __m256 b2       = _mm256_set1_ps(b);
@@ -112,8 +114,6 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
           pa[i] = b;
         }
       }
-      const float *weights_begin = W.host_pbegin();
-      const float *in_begin      = in.host_pbegin();
       for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
@@ -376,7 +376,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   } else {
     for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
       double *pa = &a_begin[oidx];
-      double b   = bias.host_at(0, o) * bias_scale;
+      double b   = bias_begin[o] * bias_scale;
       {
         size_t headSize = 0;
         __m256d b2      = _mm256_set1_pd(b);
