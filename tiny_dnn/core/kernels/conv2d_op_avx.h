@@ -105,8 +105,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt = (out_area - headSize) / 16;
         float *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
-          _mm256_store_ps(&pa2[i * 16 + 0], b2);
-          _mm256_store_ps(&pa2[i * 16 + 8], b2);
+          _mm256_storeu_ps(&pa2[i * 16 + 0], b2);
+          _mm256_storeu_ps(&pa2[i * 16 + 8], b2);
         }
         for (size_t i = headSize + cnt * 16; i < out_area; ++i) {
           pa[i] = b;
@@ -391,8 +391,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         double *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
           // TODO: segfault here even though adresses are ok
-          _mm256_store_pd(&pa2[i * 8 + 0], b2);
-          _mm256_store_pd(&pa2[i * 8 + 4], b2);
+          _mm256_storeu_pd(&pa2[i * 8 + 0], b2);
+          _mm256_storeu_pd(&pa2[i * 8 + 4], b2);
         }
         for (size_t i = headSize + cnt * 8; i < out_area; ++i) {
           _mm_store_sd(&pa[i], _mm256_castpd256_pd128(b2));

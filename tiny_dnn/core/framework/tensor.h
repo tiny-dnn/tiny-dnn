@@ -291,7 +291,7 @@ auto host_data() {
    * @param ranges
    * @return
    */
-  template <typename... Values, template <typename> typename... InputRanges>
+  template <typename... Values, template <typename> class... InputRanges>
   auto subView(InputRanges<Values>... ranges) {
     // TODO(Randl): all, stride
     using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
@@ -306,7 +306,7 @@ auto host_data() {
    * @param ranges
    * @return
    */
-  template <typename... Values, template <typename> typename... InputRanges>
+  template <typename... Values, template <typename> class... InputRanges>
   auto subView(InputRanges<Values>... ranges) const {
     // TODO(Randl): all, stride
     using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
