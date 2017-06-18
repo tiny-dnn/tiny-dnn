@@ -211,6 +211,8 @@ TEST(deconvolutional, gradient_check4) {  // identity - mse
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+// TODO: check
+/*
 TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   network<sequential> nn;
 
@@ -220,7 +222,7 @@ TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   nn.init_weight();
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
-}
+}*/
 
 TEST(deconvolutional, read_write) {
   deconvolutional_layer l1(2, 2, 3, 1, 1);
@@ -248,5 +250,5 @@ TEST(deconvolutional, read_write2) {
 
   serialization_test(layer1, layer2);
 }
-*/
+
 }  // namespace tiny_dnn
