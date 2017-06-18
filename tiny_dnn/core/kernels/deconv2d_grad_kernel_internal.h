@@ -12,16 +12,27 @@
 namespace tiny_dnn {
 namespace core {
 namespace kernels {
-
-inline void tiny_deconv2d_back_kernel(const deconv_params &params,
-                                      const tensor_t &prev_out,
-                                      const vec_t &W,
-                                      tensor_t &dW,
-                                      tensor_t &db,
-                                      tensor_t &curr_delta,
-                                      tensor_t *prev_delta) {
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void tiny_deconv2d_back_kernel(const Tensor<float_t, S1> &prev_out,
+                                      const Tensor<float_t, S2> &weights,
+                                      Tensor<float_t, S3> &weights_grads,
+                                      Tensor<float_t, S4> &bias_grads,
+                                      Tensor<float_t, S5> &curr_delta,
+                                      Tensor<float_t, S6> &prev_delta,
+                                      const deconv_params &params) {
+  const float_t *W = weights.host_pointer(0, 0);  // TODO(Randl)
   // propagate delta to previous layer
-  for_i(prev_out.size(), [&](size_t sample) {
+  for_i(prev_out.size(), [&](int sample) {
+    float_t *curr_d_begin       = curr_delta.host_pointer(sample, 0);
+    float_t *prev_d_begin       = prev_delta.host_pointer(sample, 0);
+    float_t *dW                 = weights_grads.host_pointer(sample, 0);
+    float_t *db                 = bias_grads.host_pointer(sample, 0);
+    const float_t *prev_o_begin = prev_out.host_pointer(sample, 0);
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
@@ -32,10 +43,10 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
         const float_t *pw = &W[idx];
 
         idx                       = params.out_unpadded.get_index(0, 0, outc);
-        const float_t *pdelta_src = &curr_delta[sample][idx];
+        const float_t *pdelta_src = &curr_d_begin[idx];
 
         idx                 = params.in.get_index(0, 0, inc);
-        float_t *pdelta_dst = &(*prev_delta)[sample][idx];
+        float_t *pdelta_dst = &prev_d_begin[idx];
 
         for (size_t y = 0; y < params.in.height_; y++) {
           for (size_t x = 0; x < params.in.width_; x++) {
@@ -68,10 +79,10 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
 
             size_t idx           = 0;
             idx                  = params.in.get_index(0, 0, inc);
-            const float_t *prevo = &prev_out[sample][idx];
+            const float_t *prevo = &prev_o_begin[idx];
 
             idx                  = params.out.get_index(wx, wy, outc);
-            const float_t *delta = &curr_delta[sample][idx];
+            const float_t *delta = &curr_d_begin[idx];
 
             for (size_t y = 0; y < params.in.height_; y++) {
               dst +=
@@ -80,7 +91,7 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
             }
 
             idx = params.in.depth_ * outc + inc;
-            dW[sample][params.weight.get_index(wx, wy, idx)] += dst;
+            dW[params.weight.get_index(wx, wy, idx)] += dst;
           }
         }
       }
@@ -91,10 +102,11 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
       // vec_t& db = *in_grad[2];
 
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
-        size_t idx            = params.out.get_index(0, 0, outc);
-        const float_t *delta  = &curr_delta[sample][idx];
+        size_t idx    = params.out.get_index(0, 0, outc);
+        const float_t *delta = &curr_d_begin[idx];
+        // TODO: name
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
-        db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});
+        db[outc] += std::accumulate(delta, deltaa, float_t{0});
       }
     }
   });

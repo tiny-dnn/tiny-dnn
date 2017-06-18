@@ -13,30 +13,36 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-inline void tiny_deconv2d_kernel(const deconv_params &params,
-                                 const tensor_t &in,
-                                 const vec_t &W,
-                                 const vec_t &bias,
-                                 tensor_t &out,
+// TODO: match structure with other kernels (op class, etc.)
+template <typename S1, typename S2, typename S3, typename S4>
+inline void tiny_deconv2d_kernel(const Tensor<float_t, S1> &in_data,
+                                 const Tensor<float_t, S2> &weights,
+                                 const Tensor<float_t, S3> &bias,
+                                 Tensor<float_t, S4> &out_data,
+                                 const deconv_params &params,
                                  const bool layer_parallelize) {
-  for_i(layer_parallelize, in.size(), [&](size_t sample) {
+  size_t num_of_samples = in_data.shape()[0];
+  const float_t *W      = weights.host_pointer(0, 0);  // TODO(Randl)
+  for_i(layer_parallelize, num_of_samples, [&](size_t sample) {
+    const float_t *in = in_data.host_pointer(sample, 0);
+    float_t *out      = out_data.host_pointer(sample, 0);
     for (size_t o = 0; o < params.out.depth_; o++) {
       for (size_t inc = 0; inc < params.in.depth_; inc++) {
         if (!params.tbl.is_connected(o, inc)) continue;
 
         size_t idx = 0;
-        idx        = params.in.depth_ * o + inc;
-        idx        = params.weight.get_index(0, 0, idx);
-        assert(idx < W.size());
+        idx               = params.in.depth_ * o + inc;
+        idx               = params.weight.get_index(0, 0, idx);
+        assert(idx < weights.size());
         const float_t *pw = &W[idx];
 
         idx = params.in.get_index(0, 0, inc);
-        assert(sample < in.size() && idx <= in[sample].size());
-        const float_t *pi = &in[sample][idx];
+        assert(sample < num_of_samples && idx <= in_data.shape()[1]);
+        const float_t *pi = &in[idx];
 
         idx = params.out.get_index(0, 0, o);
-        assert(sample < out.size() && idx <= out[sample].size());
-        float_t *pout = &out[sample][idx];
+        assert(sample < out_data.shape()[0] && idx <= out_data.shape()[1]);
+        float_t *pout = &out[idx];
 
         for (size_t y = 0; y < params.in.height_; y++) {
           for (size_t x = 0; x < params.in.width_; x++) {
@@ -55,9 +61,10 @@ inline void tiny_deconv2d_kernel(const deconv_params &params,
       }
 
       if (params.has_bias) {
-        float_t *pout  = &out[sample][params.out.get_index(0, 0, o)];
+        float_t *pout =
+          out_data.host_pointer(sample, params.out.get_index(0, 0, o));
         float_t *pout2 = pout + params.out.width_ * params.out.height_;
-        std::for_each(pout, pout2, [&](float_t &f) { f += bias[o]; });
+        std::for_each(pout, pout2, [&](float_t &f) { f += bias.host_at(o); });
       }
     }
   });
