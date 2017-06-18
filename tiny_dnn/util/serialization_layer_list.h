@@ -34,6 +34,7 @@ void register_layers(T* h) {
   h->template register_layer<quantized_deconvolutional_layer>("q_deconv");
   h->template register_layer<quantized_fully_connected_layer>(
     "q_fully_connected");
+  h->template register_layer<recurrent_cell_layer>("recurrent_cell");
   h->template register_layer<slice_layer>("slice");
 
   h->template register_layer<sigmoid_layer>("sigmoid");

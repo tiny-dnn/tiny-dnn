@@ -14,6 +14,7 @@ class conv_params;
 class fully_params;
 class maxpool_params;
 class global_avepool_params;
+class recurrent_cell_params;
 
 /* Base class to model operation parameters */
 class Params {
@@ -24,6 +25,7 @@ class Params {
   fully_params &fully();
   maxpool_params &maxpool();
   global_avepool_params &global_avepool();
+  recurrent_cell_params &recurrent_cell();
 };
 
 }  // namespace core

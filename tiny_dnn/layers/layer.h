@@ -299,6 +299,10 @@ class layer : public node {
    *important
    **/
   virtual serial_size_t fan_in_size() const { return in_shape()[0].width_; }
+  // override to allow initialization of multiple size weight matrices.
+  virtual serial_size_t fan_in_size(serial_size_t) const {
+    return fan_in_size();  // fallback to single weight matrix.
+  }
 
   /**
    * number of outgoing connections for each input unit
@@ -310,6 +314,10 @@ class layer : public node {
    *important
    **/
   virtual serial_size_t fan_out_size() const { return out_shape()[0].width_; }
+  // override to allow initialization of multiple size weight vectors.
+  virtual serial_size_t fan_out_size(serial_size_t) const {
+    return fan_out_size();  // fallback to single weight matrix
+  }
 
   /////////////////////////////////////////////////////////////////////////
   // setter
@@ -619,11 +627,12 @@ class layer : public node {
       switch (in_type_[i]) {
         // fill vectors of weight type
         case vector_type::weight:
-          weight_init_->fill(get_weight_data(i), fan_in_size(), fan_out_size());
+          weight_init_->fill(get_weight_data(i), fan_in_size(i),
+                             fan_out_size(i));
           break;
         // fill vector of bias type
         case vector_type::bias:
-          bias_init_->fill(get_weight_data(i), fan_in_size(), fan_out_size());
+          bias_init_->fill(get_weight_data(i), fan_in_size(i), fan_out_size(i));
           break;
         default: break;
       }

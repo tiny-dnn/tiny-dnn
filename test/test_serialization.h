@@ -245,6 +245,45 @@ TEST(serialization, serialize_dropout) {
   EXPECT_FLOAT_EQ(net.at<dropout_layer>(0).dropout_rate(), 0.5f);
 }
 
+TEST(serialization, serialize_recurrent_cell) {
+  network<sequential> net;
+
+  std::string json = R"(
+      {
+          "nodes": [
+              {
+                  "type": "recurrent_cell",
+                  "in_size": 100,
+                  "out_size": 20,
+                  "has_bias": true,
+                  "activation": {
+                      "polymorphic_id": 2147483649,
+                      "polymorphic_name": "tiny_dnn::tanh_layer",
+                      "ptr_wrapper": {
+                          "id": 2147483649,
+                          "data": {
+                              "type": "tanh",
+                              "value0": {},
+                              "in_size": {
+                                  "width": 0,
+                                  "height": 0,
+                                  "depth": 0
+                              }
+                          }
+                      }
+                  }
+              }
+          ]
+      }
+      )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "recurrent-cell");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
+}
+
 TEST(serialization, serialize_fully) {
   network<sequential> net;
 
@@ -798,6 +837,7 @@ TEST(serialization, sequential_to_json) {
   net1 << fully_connected_layer(10, 100) << tanh_layer()
        << dropout_layer(100, 0.3f, net_phase::test)
        << fully_connected_layer(100, 9) << softmax()
+       << recurrent_cell_layer(9, 9, false, new elu_layer)
        << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer();
 
   auto json = net1.to_json();
@@ -807,19 +847,10 @@ TEST(serialization, sequential_to_json) {
   EXPECT_EQ(net1.in_data_size(), net2.in_data_size());
   EXPECT_EQ(net1.layer_size(), net2.layer_size());
 
-  EXPECT_EQ(net1[0]->in_shape(), net2[0]->in_shape());
-  EXPECT_EQ(net1[1]->in_shape(), net2[1]->in_shape());
-  EXPECT_EQ(net1[2]->in_shape(), net2[2]->in_shape());
-  EXPECT_EQ(net1[3]->in_shape(), net2[3]->in_shape());
-  EXPECT_EQ(net1[4]->in_shape(), net2[4]->in_shape());
-  EXPECT_EQ(net1[5]->in_shape(), net2[5]->in_shape());
-
-  EXPECT_EQ(net1[0]->layer_type(), net2[0]->layer_type());
-  EXPECT_EQ(net1[1]->layer_type(), net2[1]->layer_type());
-  EXPECT_EQ(net1[2]->layer_type(), net2[2]->layer_type());
-  EXPECT_EQ(net1[3]->layer_type(), net2[3]->layer_type());
-  EXPECT_EQ(net1[4]->layer_type(), net2[4]->layer_type());
-  EXPECT_EQ(net1[5]->layer_type(), net2[5]->layer_type());
+  for (size_t i = 0; i < net1.layer_size(); i++) {
+    EXPECT_EQ(net1[i]->in_shape(), net2[i]->in_shape());
+    EXPECT_EQ(net1[i]->layer_type(), net2[i]->layer_type());
+  }
 
   EXPECT_FLOAT_EQ(net1.at<dropout_layer>(2).dropout_rate(),
                   net2.at<dropout_layer>(2).dropout_rate());
