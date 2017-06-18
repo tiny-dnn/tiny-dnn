@@ -104,6 +104,19 @@ class Tensor : public BaseTensor<U> {
   }
 
   /**
+   * Temporal method to create a new Tensor from old vec_t
+   */
+  explicit Tensor(const vec_t &data) {
+    std::vector<size_t> shape = {data.size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      storage_(i) = data[i];
+    }
+  }
+
+  /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape and filling it with value. For example,
    * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
