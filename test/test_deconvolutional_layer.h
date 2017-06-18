@@ -79,7 +79,7 @@ TEST(deconvolutional, fprop) {
            bias_tensor   = create_simple_tensor(2);
 
   // short-hand references to the payload vectors
-  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
+  vec_t &in = in_tensor[0], &weight = weight_tensor[0];
 
   ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
@@ -94,7 +94,7 @@ TEST(deconvolutional, fprop) {
   l.setup(false);
   {
     l.forward_propagation(in_data, out_data);
-
+    vec_t &out = out_tensor[0];
     for (auto o : out) EXPECT_DOUBLE_EQ(o, float_t(0));
   }
 
@@ -113,6 +113,7 @@ TEST(deconvolutional, fprop) {
   {
     l.forward_propagation(in_data, out_data);
 
+    vec_t &out = out_tensor[0];
     EXPECT_NEAR(0.900, out[0], 1E-5);
     EXPECT_NEAR(0.900, out[1], 1E-5);
     EXPECT_NEAR(0.800, out[2], 1E-5);
@@ -147,7 +148,7 @@ TEST(deconvolutional, fprop2) {
            bias_tensor   = create_simple_tensor(2);
 
   // short-hand references to the payload vectors
-  vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
+  vec_t &in = in_tensor[0], &weight = weight_tensor[0];
 
   ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
@@ -161,6 +162,7 @@ TEST(deconvolutional, fprop2) {
   l.setup(false);
   {
     l.forward_propagation(in_data, out_data);
+    vec_t &out = out_tensor[0];
 
     for (auto o : out) EXPECT_DOUBLE_EQ(o, float_t(0));
   }
@@ -182,6 +184,7 @@ TEST(deconvolutional, fprop2) {
 
   {
     l.forward_propagation(in_data, out_data);
+    vec_t &out = out_tensor[0];
 
     EXPECT_NEAR(0.000, out[0], 1E-5);
     EXPECT_NEAR(0.100, out[1], 1E-5);
@@ -194,7 +197,6 @@ TEST(deconvolutional, fprop2) {
   }
 }
 
-/*
 TEST(deconvolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh();
@@ -237,6 +239,8 @@ TEST(deconvolutional, gradient_check4) {  // identity - mse
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+// TODO: check
+/*
 TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   network<sequential> nn;
 
@@ -246,37 +250,33 @@ TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   nn.init_weight();
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
-}
+}*/
 
-TEST(deconvolutional, read_write)
-{
-    deconvolutional_layer l1(2, 2, 3, 1, 1);
-    deconvolutional_layer l2(2, 2, 3, 1, 1);
+TEST(deconvolutional, read_write) {
+  deconvolutional_layer l1(2, 2, 3, 1, 1);
+  deconvolutional_layer l2(2, 2, 3, 1, 1);
 
-    l1.init_weight();
-    l2.init_weight();
+  l1.init_weight();
+  l2.init_weight();
 
-    serialization_test(l1, l2);
+  serialization_test(l1, l2);
 }
 
 TEST(deconvolutional, read_write2) {
 #define O true
 #define X false
-    static const bool connection[] = {
-        O, X, X, X, O, O,
-        O, O, X, X, X, O,
-        O, O, O, X, X, X
-    };
+  static const bool connection[] = {O, X, X, X, O, O, O, O, X,
+                                    X, X, O, O, O, O, X, X, X};
 #undef O
 #undef X
-    deconvolutional_layer layer1(14, 14, 5, 3, 6,
-connection_table(connection, 3, 6));
-    deconvolutional_layer layer2(14, 14, 5, 3, 6,
-connection_table(connection, 3, 6));
-    layer1.init_weight();
-    layer2.init_weight();
+  deconvolutional_layer layer1(14, 14, 5, 3, 6,
+                               connection_table(connection, 3, 6));
+  deconvolutional_layer layer2(14, 14, 5, 3, 6,
+                               connection_table(connection, 3, 6));
+  layer1.init_weight();
+  layer2.init_weight();
 
-    serialization_test(layer1, layer2);
+  serialization_test(layer1, layer2);
 }
-*/
+
 }  // namespace tiny_dnn
