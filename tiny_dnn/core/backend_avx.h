@@ -42,6 +42,7 @@ class avx_backend : public backend {
       copy_and_unpad_delta(f2) {}
 
   // deconvolution
+  //TODO: missing backward_activation
   avx_backend(deconv_params *params,
               std::function<void(const tensor_t &)> f1,
               std::function<void(const tensor_t &, tensor_t &)> f2,
