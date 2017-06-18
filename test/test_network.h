@@ -617,6 +617,8 @@ TEST(network, gradient_check11) {  // softsign - mse
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
+#ifndef CNN_NO_SERIALIZATION
+
 TEST(network, read_write) {
   using loss_func = mse;
   using network   = network<sequential>;
@@ -661,6 +663,8 @@ TEST(network, read_write) {
     ASSERT_NEAR(res1[i], res2[i], eps);
   }
 }
+
+#endif  // #ifndef CNN_NO_SERIALIZATION
 
 TEST(network, trainable) {
   auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
