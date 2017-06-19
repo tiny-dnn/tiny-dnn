@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "tiny_dnn/core/framework/device.fwd.h"
+#include "tiny_dnn/core/framework/tensor_range.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -40,6 +41,11 @@ class Tensor {
    */
   Tensor() {}
 
+  /**
+   * Initializes a tensor from storage.
+   * @return
+   */
+  Tensor(Storage &&s) : storage_(std::move(s)){};
   /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
@@ -175,6 +181,14 @@ class Tensor {
 
   const auto host_end() const { return storage_.cxend(); }
 
+  auto host_pbegin() { return &*storage_.xbegin(); }
+
+  const auto host_pbegin() const { return &*storage_.cxbegin(); }
+
+  auto host_pend() { return &*storage_.xend(); }
+
+  const auto host_pend() const { return &*storage_.cxend(); }
+
   // TODO(Randl): check if strided.
   template <typename... Args>
   auto host_pointer(const Args... args) {
@@ -237,15 +251,14 @@ auto host_data() {
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
   const void *device_data() const {
-    storage_ptr_->toDevice();
-    return (*storage_ptr_->device_data_)();
+    /*storage_ptr_->toDevice();
+    return (*storage_ptr_->device_data_)();*/
   }
 
   void *mutable_device_data() {
-    static_assert(!kConst, "Non-constant operation on constant Tensor");
-    storage_ptr_->toDevice();
+    /*storage_ptr_->toDevice();
     storage_ptr_->data_dirty_ = true;
-    return (*storage_ptr_->device_data_)();
+    return (*storage_ptr_->device_data_)();*/
   }
 #endif
 
@@ -271,45 +284,34 @@ auto host_data() {
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
-  template <typename S>
-  xt::xrange<S> get_range(std::initializer_list<S> list) const {
-    // if (*(list.begin()) == -1) return xt::all();
-    // if(*(list.begin())==*(list.begin()+1)) return *(list.begin());
-    if (list.size() == 2) {
-      return xt::range(*(list.begin()), *(list.begin() + 1));
-    } else {
-      // return xt::range(*(list.begin()), *(list.begin() + 1),
-      //               *(list.begin() + 2));
-    }
+  /**
+   * Returns view of current Tensor
+   * @tparam Values index type
+   * @tparam InputRanges
+   * @param ranges
+   * @return
+   */
+  template <typename... Values, template <typename> class... InputRanges>
+  auto subView(InputRanges<Values>... ranges) {
+    // TODO(Randl): all, stride
+    using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
+    using SharedTensor = Tensor<U, ViewType>;
+    return SharedTensor(xt::view(storage_, ranges.get_range()...));
   }
 
   /**
    * Returns view of current Tensor
    * @tparam Values index type
-   * @param lists lists of indexes
+   * @tparam InputRanges
+   * @param ranges
    * @return
    */
-  template <typename... Values>
-  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
-    std::initializer_list<Values>... lists) {
-    // TODO(Randl): all, single, stride
-    // TODO(Randl): different types of values in list won't work
-    using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, get_range(lists)...);
-  }
-
-  /**
-   * Returns view of current Tensor
-   * @tparam Values index type
-   * @param lists lists of indexes
-   * @return
-   */
-  template <typename... Values>
-  const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>> subView(
-    std::initializer_list<Values>... lists) const {
-    using SharedTensor =
-      const Tensor<U, const xt::xview<Storage &, xt::xrange<Values>...>>;
-    return SharedTensor(storage_, get_range(lists)...);
+  template <typename... Values, template <typename> class... InputRanges>
+  auto subView(InputRanges<Values>... ranges) const {
+    // TODO(Randl): all, stride
+    using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
+    using SharedTensor = Tensor<U, const ViewType>;
+    return SharedTensor(xt::view(storage_, ranges.get_range()...));
   }
 
   /*
@@ -333,15 +335,6 @@ auto host_data() {
     }
     return tensor;
   }
-
-  /**
-   * Creates Tensor given the storage
-   * @tparam T
-   * @param storage
-   */
-  template <class T, class S, class... Args>
-  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
-    : storage_(xt::view(storage, r1, args...)) {}
 
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,

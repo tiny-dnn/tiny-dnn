@@ -10,13 +10,25 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void conv2d_op_internal(const tensor_t &in_data,
-                               const vec_t &W,
-                               const vec_t &bias,
-                               tensor_t &out_data,
+/**
+ * Forward pass for convolution with internal backend.
+ * @param in_data
+ * @param weights
+ * @param bias
+ * @param out_data
+ * @param params
+ * @param parallelize
+ */
+template <typename S1, typename S2, typename S3, typename S4>
+inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
+                               const Tensor<float_t, S2> &weights,
+                               const Tensor<float_t, S3> &bias,
+                               Tensor<float_t, S4> &out_data,
                                const core::conv_params &params,
                                const bool parallelize) {
-  for_(parallelize, 0, in_data.size(),
+  const float_t *weight_begin = weights.host_pointer(0, 0);
+  const float_t *bias_begin   = bias.host_pointer(0, 0);
+  for_(parallelize, 0, in_data.shape()[0],
        [&](const blocked_range &r) {
          size_t out_area           = params.out.area();
          serial_size_t iw          = params.in_padded.width_;
@@ -28,42 +40,39 @@ inline void conv2d_op_internal(const tensor_t &in_data,
          serial_size_t kh          = params.weight.height_;
          serial_size_t elem_stride = params.w_stride;
          serial_size_t line_stride = iw * params.h_stride;
+         // TODO(edgarriba): replace with  tensor accessors
          for (size_t sample = r.begin(); sample < r.end(); sample++) {
-           const vec_t &in = in_data[sample];
-           vec_t &a        = out_data[sample];
+           float_t *out_data_begin      = out_data.host_pointer(sample, 0);
+           const float_t *in_data_begin = in_data.host_pointer(sample, 0);
            for (serial_size_t o = 0; o < od; o++) {
-             float_t *pa = &a[params.out.get_index(0, 0, o)];
+             // TODO(Randl): naming
+             auto pa = &out_data_begin[params.out.get_index(0, 0, o)];
              for (serial_size_t inc = 0; inc < id; inc++) {
                if (!params.tbl.is_connected(o, inc)) continue;
-               serial_size_t idx;
-               idx                = params.weight.get_index(0, 0, id * o + inc);
-               const float_t *pw  = &W[idx];
-               idx                = params.in_padded.get_index(0, 0, inc);
-               const float_t *pin = &in[idx];
-               float_t *pout      = pa;
+               auto pw =
+                 &weight_begin[params.weight.get_index(0, 0, id * o + inc)];
+               auto pin = &in_data_begin[params.in_padded.get_index(0, 0, inc)];
+               auto pout = pa;
                for (serial_size_t y = 0; y < oh; y++) {
-                 const float_t *pin_line = pin;
+                 auto pin_line = pin;
                  for (serial_size_t x = 0; x < ow; x++) {
-                   const float_t *pin_element = pin_line;
-                   const float_t *pw_element  = pw;
+                   auto pw_element = pw;
                    float_t sum{0};
                    // should be optimized for small kernel(3x3,5x5)
-                   for (serial_size_t wy = 0; wy < kh; wy++) {    // NOLINT
+                   for (serial_size_t wy = 0; wy < kh; wy++) {  // NOLINT
+                     auto pin_element = &pin_line[iw * wy];
                      for (serial_size_t wx = 0; wx < kw; wx++) {  // NOLINT
-                       sum += pw_element[wx] * pin_element[wx];
+                       sum += *(pw_element++) * *(pin_element++);
                      }
-                     pw_element += kw;
-                     pin_element += iw;
                    }
-                   pout[x] += sum;
-                   pin_line += elem_stride;
+                   *(pout++) += sum;
+                   pin_line = &pin_line[elem_stride];
                  }
-                 pout += ow;
-                 pin += line_stride;
+                 pin = std::next(pin, line_stride);
                }
              }
              if (params.has_bias) {
-               vectorize::add(bias[o], out_area, pa);
+               vectorize::add(bias_begin[o], out_area, pa);
              }
            }
          }
@@ -72,41 +81,51 @@ inline void conv2d_op_internal(const tensor_t &in_data,
 }
 
 /******************************************************************/
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6>
+inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
+                               const Tensor<float_t, S2> &weigths,
+                               Tensor<float_t, S3> &weights_grads,
+                               Tensor<float_t, S4> &bias_grads,
+                               Tensor<float_t, S5> &curr_delta,
+                               Tensor<float_t, S6> &prev_delta,
+                               const core::conv_params &params,
+                               const bool parallelize) {
+  for_i(parallelize, prev_out.shape()[0], [&](int sample) {
+    const float_t *prev = prev_out.host_pointer(sample, 0);
+    float_t *curr       = curr_delta.host_pointer(sample, 0);
+    float_t *prev_d     = prev_delta.host_pointer(sample, 0);
 
-template <typename tensor_t, typename vec_t>
-void conv2d_op_internal(const tensor_t &prev_out,
-                        const vec_t &W,
-                        tensor_t &dW,
-                        tensor_t &db,
-                        tensor_t &curr_delta,
-                        tensor_t &prev_delta,
-                        const core::conv_params &params,
-                        const bool parallelize) {
-  typedef typename vec_t::value_type float_t;
-
-  for_i(parallelize, prev_out.size(), [&](int sample) {
+    const float_t *weight_begin = weigths.host_pointer(0, 0);
     // propagate delta to previous layer
     for (serial_size_t inc = 0; inc < params.in.depth_; inc++) {
       for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;
 
         serial_size_t idx = 0;
-        idx               = params.in.depth_ * outc + inc;
-        idx               = params.weight.get_index(0, 0, idx);
-        const float_t *pw = &W[idx];
 
-        idx                       = params.out.get_index(0, 0, outc);
-        const float_t *pdelta_src = &curr_delta[sample][idx];
+        idx = params.in.depth_ * outc + inc;
+        idx = params.weight.get_index(0, 0, idx);
 
-        idx = params.in_padded.get_index(0, 0, inc);
-        // float_t* pdelta_dst = &(*prev_delta)[sample][idx];
-        float_t *pdelta_dst = &prev_delta[sample][idx];
+        const float_t *pw = &weight_begin[idx];
+
+        idx = params.out.get_index(0, 0, outc);
+
+        const float_t *pdelta_src = &curr[idx];
+
+        idx                 = params.in_padded.get_index(0, 0, inc);
+        float_t *pdelta_dst = &prev_d[idx];
 
         for (serial_size_t y = 0; y < params.out.height_; y++) {
           for (serial_size_t x = 0; x < params.out.width_; x++) {
             const float_t *ppw = pw;
 
-            idx                       = y * params.out.width_ + x;
+            idx = y * params.out.width_ + x;
+
             const float_t ppdelta_src = pdelta_src[idx];
 
             float_t *ppdelta_dst =
@@ -137,10 +156,10 @@ void conv2d_op_internal(const tensor_t &prev_out,
 
             serial_size_t idx    = 0;
             idx                  = params.in_padded.get_index(wx, wy, inc);
-            const float_t *prevo = &prev_out[sample][idx];
+            const float_t *prevo = &prev[idx];
 
             idx                  = params.out.get_index(0, 0, outc);
-            const float_t *delta = &curr_delta[sample][idx];
+            const float_t *delta = &curr[idx];
 
             if (params.w_stride > 1) {
               for (serial_size_t y = 0; y < params.out.height_; y++) {
@@ -162,7 +181,8 @@ void conv2d_op_internal(const tensor_t &prev_out,
             }
 
             idx = params.in.depth_ * outc + inc;
-            dW[sample][params.weight.get_index(wx, wy, idx)] += dst;
+            weights_grads.host_at(sample,
+                                  params.weight.get_index(wx, wy, idx)) += dst;
           }
         }
       }
@@ -170,11 +190,13 @@ void conv2d_op_internal(const tensor_t &prev_out,
 
     // accumulate db
     if (params.has_bias) {
+      const float_t *delta_begin = curr_delta.host_pointer(sample, 0);
       for (serial_size_t outc = 0; outc < params.out.depth_; outc++) {
         serial_size_t idx     = params.out.get_index(0, 0, outc);
-        const float_t *delta  = &curr_delta[sample][idx];
+        const float_t *delta  = &delta_begin[idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
-        db[sample][outc] += std::accumulate(delta, deltaa, float_t{0});
+        bias_grads.host_at(sample, outc) +=
+          std::accumulate(delta, deltaa, float_t{0});
       }
     }
   });

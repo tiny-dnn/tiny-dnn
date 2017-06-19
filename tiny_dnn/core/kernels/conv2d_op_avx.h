@@ -21,12 +21,12 @@ namespace kernels {
 #ifdef CNN_USE_AVX
 
 // float ver
-template <typename Allocator>
+template <typename S1, typename S2, typename S3, typename S4>
 void avx_conv2d_5x5_kernel(const core::conv_params &params,
-                           const std::vector<float, Allocator> &in,
-                           const std::vector<float, Allocator> &W,
-                           const std::vector<float, Allocator> &bias,
-                           std::vector<float, Allocator> &a,
+                           const Tensor<float, S1> &in,
+                           const Tensor<float, S2> &W,
+                           const Tensor<float, S3> &bias,
+                           Tensor<float, S4> &a,
                            const bool layer_parallelize) {
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
   assert(params.weight.height_ == 5 && params.weight.width_ == 5);
@@ -46,15 +46,20 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1,
   // -1, -1, -1, 0, 0, 0));
 
+  auto a_begin               = a.host_pbegin();
+  auto bias_begin            = bias.host_pbegin();
+  const float *weights_begin = W.host_pbegin();
+  const float *pw            = W.host_pbegin();
+  const float *in_begin      = in.host_pbegin();
+
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
-    const float *pw = (const float *)&W[0];
     for (serial_size_t o = 0; o < out.depth_; ++o) {
       __m256 sum0     = _mm256_setzero_ps();
       __m256 sum1     = _mm256_setzero_ps();
       __m256 sum2     = _mm256_setzero_ps();
       __m128 sum3     = _mm_setzero_ps();
-      const float *pi = (const float *)&in[0];
+      const float *pi = in.host_pbegin();
       for (serial_size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, pi += inarea) {
         if (!tbl.is_connected(o, inc)) {
@@ -78,17 +83,17 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         sum3        = _mm_add_ps(tmp3, sum3);
       }
       __m256 sum  = _mm256_add_ps(_mm256_add_ps(sum0, sum1), sum2);
-      __m128 b    = _mm_load_ss(&bias[o]);
+      __m128 b    = _mm_load_ss(&bias_begin[o]);
       __m128 hsum = hsum256_ps(sum);
       b           = madd128_ss(b, y_bias_scale, sum3);
-      _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
+      _mm_store_ss(&a_begin[o], _mm_add_ss(hsum, b));
     }
   } else {
     const serial_size_t nblocks = out.width_ / 4;
     for (serial_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
-      float *pa = &a[oidx];
+      float *pa = &a_begin[oidx];
       // init to bias value
-      float b = bias[o] * bias_scale;
+      float b = bias_begin[o] * bias_scale;
       {
         size_t headSize = 0;
         __m256 b2       = _mm256_set1_ps(b);
@@ -102,8 +107,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt = (out_area - headSize) / 16;
         float *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
-          _mm256_store_ps(&pa2[i * 16 + 0], b2);
-          _mm256_store_ps(&pa2[i * 16 + 8], b2);
+          _mm256_storeu_ps(&pa2[i * 16 + 0], b2);
+          _mm256_storeu_ps(&pa2[i * 16 + 8], b2);
         }
         for (size_t i = headSize + cnt * 16; i < out_area; ++i) {
           pa[i] = b;
@@ -112,8 +117,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       for (serial_size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
-        const float *pw = (const float *)&W[25 * (params.in.depth_ * o + inc)];
-        const float *pi = (const float *)&in[in_padded.get_index(0, 0, inc)];
+        const float *pw = &weights_begin[25 * (params.in.depth_ * o + inc)];
+        const float *pi = &in_begin[in_padded.get_index(0, 0, inc)];
 
         __m256 w0a = _mm256_maskload_ps(pw + 0, imask);
         __m256 w1a = _mm256_maskload_ps(pw + 5, imask);
@@ -145,61 +150,63 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               const float *pi3 = pi0 + 3 * in_padded.width_;
               const float *pi4 = pi0 + 4 * in_padded.width_;
               __m256 dst0, dst1, dst2, dst3;
-              __m256 i0       = _mm256_loadu_ps(pi0);
-              __m256 i1       = _mm256_loadu_ps(pi1);
-              __m256 i2       = _mm256_loadu_ps(pi2);
-              __m256 i3       = _mm256_loadu_ps(pi3);
-              __m256 i4       = _mm256_loadu_ps(pi4);
-              dst0            = _mm256_mul_ps(w0a, i0);
-              dst1            = _mm256_mul_ps(w0b, i0);
-              dst2            = _mm256_mul_ps(w0c, i0);
-              dst3            = _mm256_mul_ps(w0d, i0);
-              dst0            = madd256_ps(w1a, i1, dst0);
-              dst1            = madd256_ps(w1b, i1, dst1);
-              dst2            = madd256_ps(w1c, i1, dst2);
-              dst3            = madd256_ps(w1d, i1, dst3);
-              dst0            = madd256_ps(w2a, i2, dst0);
-              dst1            = madd256_ps(w2b, i2, dst1);
-              dst2            = madd256_ps(w2c, i2, dst2);
-              dst3            = madd256_ps(w2d, i2, dst3);
-              dst0            = madd256_ps(w3a, i3, dst0);
-              dst1            = madd256_ps(w3b, i3, dst1);
-              dst2            = madd256_ps(w3c, i3, dst2);
-              dst3            = madd256_ps(w3d, i3, dst3);
-              dst0            = madd256_ps(w4a, i4, dst0);
-              dst1            = madd256_ps(w4b, i4, dst1);
-              dst2            = madd256_ps(w4c, i4, dst2);
-              dst3            = madd256_ps(w4d, i4, dst3);
+              __m256 i0 = _mm256_loadu_ps(pi0);
+              __m256 i1 = _mm256_loadu_ps(pi1);
+              __m256 i2 = _mm256_loadu_ps(pi2);
+              __m256 i3 = _mm256_loadu_ps(pi3);
+              __m256 i4 = _mm256_loadu_ps(pi4);
+              dst0      = _mm256_mul_ps(w0a, i0);
+              dst1      = _mm256_mul_ps(w0b, i0);
+              dst2      = _mm256_mul_ps(w0c, i0);
+              dst3      = _mm256_mul_ps(w0d, i0);
+              dst0      = madd256_ps(w1a, i1, dst0);
+              dst1      = madd256_ps(w1b, i1, dst1);
+              dst2      = madd256_ps(w1c, i1, dst2);
+              dst3      = madd256_ps(w1d, i1, dst3);
+              dst0      = madd256_ps(w2a, i2, dst0);
+              dst1      = madd256_ps(w2b, i2, dst1);
+              dst2      = madd256_ps(w2c, i2, dst2);
+              dst3      = madd256_ps(w2d, i2, dst3);
+              dst0      = madd256_ps(w3a, i3, dst0);
+              dst1      = madd256_ps(w3b, i3, dst1);
+              dst2      = madd256_ps(w3c, i3, dst2);
+              dst3      = madd256_ps(w3d, i3, dst3);
+              dst0      = madd256_ps(w4a, i4, dst0);
+              dst1      = madd256_ps(w4b, i4, dst1);
+              dst2      = madd256_ps(w4c, i4, dst2);
+              dst3      = madd256_ps(w4d, i4, dst3);
+
               __m128 sum      = _mm_loadu_ps(ppa);
               __m128 hsum0123 = hsum4x256_ps(dst0, dst1, dst2, dst3);
               sum             = _mm_add_ps(sum, hsum0123);
               _mm_storeu_ps(ppa, sum);
               for (size_t i = 1; i < nblocks; ++i) {
-                i0       = _mm256_loadu_ps(pi0 + i * 4);
-                i1       = _mm256_loadu_ps(pi1 + i * 4);
-                i2       = _mm256_loadu_ps(pi2 + i * 4);
-                i3       = _mm256_loadu_ps(pi3 + i * 4);
-                i4       = _mm256_loadu_ps(pi4 + i * 4);
-                dst0     = _mm256_mul_ps(w0a, i0);
-                dst1     = _mm256_mul_ps(w0b, i0);
-                dst2     = _mm256_mul_ps(w0c, i0);
-                dst3     = _mm256_mul_ps(w0d, i0);
-                dst0     = madd256_ps(w1a, i1, dst0);
-                dst1     = madd256_ps(w1b, i1, dst1);
-                dst2     = madd256_ps(w1c, i1, dst2);
-                dst3     = madd256_ps(w1d, i1, dst3);
-                dst0     = madd256_ps(w2a, i2, dst0);
-                dst1     = madd256_ps(w2b, i2, dst1);
-                dst2     = madd256_ps(w2c, i2, dst2);
-                dst3     = madd256_ps(w2d, i2, dst3);
-                dst0     = madd256_ps(w3a, i3, dst0);
-                dst1     = madd256_ps(w3b, i3, dst1);
-                dst2     = madd256_ps(w3c, i3, dst2);
-                dst3     = madd256_ps(w3d, i3, dst3);
-                dst0     = madd256_ps(w4a, i4, dst0);
-                dst1     = madd256_ps(w4b, i4, dst1);
-                dst2     = madd256_ps(w4c, i4, dst2);
-                dst3     = madd256_ps(w4d, i4, dst3);
+                i0   = _mm256_loadu_ps(pi0 + i * 4);
+                i1   = _mm256_loadu_ps(pi1 + i * 4);
+                i2   = _mm256_loadu_ps(pi2 + i * 4);
+                i3   = _mm256_loadu_ps(pi3 + i * 4);
+                i4   = _mm256_loadu_ps(pi4 + i * 4);
+                dst0 = _mm256_mul_ps(w0a, i0);
+                dst1 = _mm256_mul_ps(w0b, i0);
+                dst2 = _mm256_mul_ps(w0c, i0);
+                dst3 = _mm256_mul_ps(w0d, i0);
+                dst0 = madd256_ps(w1a, i1, dst0);
+                dst1 = madd256_ps(w1b, i1, dst1);
+                dst2 = madd256_ps(w1c, i1, dst2);
+                dst3 = madd256_ps(w1d, i1, dst3);
+                dst0 = madd256_ps(w2a, i2, dst0);
+                dst1 = madd256_ps(w2b, i2, dst1);
+                dst2 = madd256_ps(w2c, i2, dst2);
+                dst3 = madd256_ps(w2d, i2, dst3);
+                dst0 = madd256_ps(w3a, i3, dst0);
+                dst1 = madd256_ps(w3b, i3, dst1);
+                dst2 = madd256_ps(w3c, i3, dst2);
+                dst3 = madd256_ps(w3d, i3, dst3);
+                dst0 = madd256_ps(w4a, i4, dst0);
+                dst1 = madd256_ps(w4b, i4, dst1);
+                dst2 = madd256_ps(w4c, i4, dst2);
+                dst3 = madd256_ps(w4d, i4, dst3);
+
                 sum      = _mm_loadu_ps(ppa + i * 4);
                 hsum0123 = hsum4x256_ps(dst0, dst1, dst2, dst3);
                 sum      = _mm_add_ps(sum, hsum0123);
@@ -280,12 +287,12 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 }  // avx_conv2d_5x5_kernel float ver
 
 // double ver
-template <typename Allocator>
+template <typename S1, typename S2, typename S3, typename S4>
 void avx_conv2d_5x5_kernel(const core::conv_params &params,
-                           const std::vector<double, Allocator> &in,
-                           const std::vector<double, Allocator> &W,
-                           const std::vector<double, Allocator> &bias,
-                           std::vector<double, Allocator> &a,
+                           const Tensor<double, S1> &in,
+                           const Tensor<double, S2> &W,
+                           const Tensor<double, S3> &bias,
+                           Tensor<double, S4> &a,
                            const bool layer_parallelize) {
   assert(params.weight.height_ == 5 && params.weight.width_ == 5);
 
@@ -302,8 +309,12 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const size_t in_stride      = params.h_stride * in_padded.width_;
   const size_t in_padded_area = in_padded.area();
 
+  auto a_begin    = a.host_pbegin();
+  auto bias_begin = bias.host_pbegin();
+  auto w_begin    = W.host_pbegin();
+  auto in_begin   = in.host_pbegin();
   if (out.height_ == 1 && out.width_ == 1) {
-    const double *pw = &W[0];
+    const double *pw = w_begin;
     for (serial_size_t o = 0; o < out.depth_; ++o) {
       __m256d sum0 = _mm256_setzero_pd();
       __m256d sum1 = _mm256_setzero_pd();
@@ -313,55 +324,59 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       __m256d sum5 = _mm256_setzero_pd();
       __m128d sum6 = _mm_setzero_pd();
       size_t inidx = 0;
+
+      const double *i_begin = in.host_pbegin();
       for (serial_size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, inidx += in_padded_area) {
         if (!tbl.is_connected(o, inc)) {
           continue;
         }
-        __m256d w0       = _mm256_loadu_pd(pw + 0);
-        __m256d w1       = _mm256_loadu_pd(pw + 4);
-        __m256d w2       = _mm256_loadu_pd(pw + 8);
-        __m256d w3       = _mm256_loadu_pd(pw + 12);
-        __m256d w4       = _mm256_loadu_pd(pw + 16);
-        __m256d w5       = _mm256_loadu_pd(pw + 20);
-        __m128d w6       = _mm_load_sd(pw + 24);
-        const double *pi = (const double *)&in[inidx];
-        __m256d i0       = _mm256_loadu_pd(pi + 0);
-        __m256d i1       = _mm256_loadu_pd(pi + 4);
-        __m256d i2       = _mm256_loadu_pd(pi + 8);
-        __m256d i3       = _mm256_loadu_pd(pi + 12);
-        __m256d i4       = _mm256_loadu_pd(pi + 16);
-        __m256d i5       = _mm256_loadu_pd(pi + 20);
-        __m128d i6       = _mm_load_sd(pi + 24);
-        __m256d tmp0     = _mm256_mul_pd(w0, i0);
-        __m256d tmp1     = _mm256_mul_pd(w1, i1);
-        __m256d tmp2     = _mm256_mul_pd(w2, i2);
-        __m256d tmp3     = _mm256_mul_pd(w3, i3);
-        __m256d tmp4     = _mm256_mul_pd(w4, i4);
-        __m256d tmp5     = _mm256_mul_pd(w5, i5);
-        __m128d tmp6     = _mm_mul_pd(w6, i6);
-        sum0             = _mm256_add_pd(tmp0, sum0);
-        sum1             = _mm256_add_pd(tmp1, sum1);
-        sum2             = _mm256_add_pd(tmp2, sum2);
-        sum3             = _mm256_add_pd(tmp3, sum3);
-        sum4             = _mm256_add_pd(tmp4, sum4);
-        sum5             = _mm256_add_pd(tmp5, sum5);
-        sum6             = _mm_add_pd(tmp6, sum6);
+        __m256d w0 = _mm256_loadu_pd(pw + 0);
+        __m256d w1 = _mm256_loadu_pd(pw + 4);
+        __m256d w2 = _mm256_loadu_pd(pw + 8);
+        __m256d w3 = _mm256_loadu_pd(pw + 12);
+        __m256d w4 = _mm256_loadu_pd(pw + 16);
+        __m256d w5 = _mm256_loadu_pd(pw + 20);
+        __m128d w6 = _mm_load_sd(pw + 24);
+
+        const double *pi = &i_begin[inidx];
+
+        __m256d i0   = _mm256_loadu_pd(pi + 0);
+        __m256d i1   = _mm256_loadu_pd(pi + 4);
+        __m256d i2   = _mm256_loadu_pd(pi + 8);
+        __m256d i3   = _mm256_loadu_pd(pi + 12);
+        __m256d i4   = _mm256_loadu_pd(pi + 16);
+        __m256d i5   = _mm256_loadu_pd(pi + 20);
+        __m128d i6   = _mm_load_sd(pi + 24);
+        __m256d tmp0 = _mm256_mul_pd(w0, i0);
+        __m256d tmp1 = _mm256_mul_pd(w1, i1);
+        __m256d tmp2 = _mm256_mul_pd(w2, i2);
+        __m256d tmp3 = _mm256_mul_pd(w3, i3);
+        __m256d tmp4 = _mm256_mul_pd(w4, i4);
+        __m256d tmp5 = _mm256_mul_pd(w5, i5);
+        __m128d tmp6 = _mm_mul_pd(w6, i6);
+        sum0         = _mm256_add_pd(tmp0, sum0);
+        sum1         = _mm256_add_pd(tmp1, sum1);
+        sum2         = _mm256_add_pd(tmp2, sum2);
+        sum3         = _mm256_add_pd(tmp3, sum3);
+        sum4         = _mm256_add_pd(tmp4, sum4);
+        sum5         = _mm256_add_pd(tmp5, sum5);
+        sum6         = _mm_add_pd(tmp6, sum6);
       }
       sum0         = _mm256_add_pd(sum0, sum1);
       sum2         = _mm256_add_pd(sum2, sum3);
       sum4         = _mm256_add_pd(sum4, sum5);
       sum0         = _mm256_add_pd(sum0, sum2);
       __m256d sum  = _mm256_add_pd(sum0, sum4);
-      __m128d b    = _mm_load_sd(&bias[o]);
+      __m128d b    = _mm_load_sd(&bias_begin[o]);
       __m128d hsum = hsum256_pd(sum);
       b            = madd128_sd(b, y_bias_scale, sum6);
-      _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
+      _mm_store_sd(&a_begin[o], _mm_add_sd(hsum, b));
     }
   } else {
     for (serial_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
-      double *pa = &a[oidx];
-      double b   = bias[o] * bias_scale;
+      double *pa = &a_begin[oidx];
+      double b   = bias_begin[o] * bias_scale;
       {
         size_t headSize = 0;
         __m256d b2      = _mm256_set1_pd(b);
@@ -375,8 +390,9 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt  = (out_area - headSize) / 8;
         double *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
-          _mm256_store_pd(&pa2[i * 8 + 0], b2);
-          _mm256_store_pd(&pa2[i * 8 + 4], b2);
+          // TODO: segfault here even though adresses are ok
+          _mm256_storeu_pd(&pa2[i * 8 + 0], b2);
+          _mm256_storeu_pd(&pa2[i * 8 + 4], b2);
         }
         for (size_t i = headSize + cnt * 8; i < out_area; ++i) {
           _mm_store_sd(&pa[i], _mm256_castpd256_pd128(b2));
@@ -386,9 +402,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       for (serial_size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
-        const double *pw =
-          (const double *)&W[25 * (params.in.depth_ * o + inc)];
-        const double *pi = &in[in_padded.get_index(0, 0, inc)];
+        const double *pw = &w_begin[25 * (params.in.depth_ * o + inc)];
+        const double *pi = &in_begin[in_padded.get_index(0, 0, inc)];
 
         __m256d w0a = _mm256_loadu_pd(pw + 0);
         __m128d w0b = _mm_load_sd(pw + 4);
@@ -447,24 +462,29 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
 }  // avx_conv2d_5x5_kernel double ver
 
 #endif  // CNN_USE_AVX
-
-inline void conv2d_op_avx(const tensor_t &in_data,
-                          const vec_t &W,
-                          const vec_t &bias,
-                          tensor_t &out_data,
+template <typename S1, typename S2, typename S3, typename S4>
+inline void conv2d_op_avx(Tensor<float_t, S1> &in_data,
+                          const Tensor<float_t, S2> &weights,
+                          const Tensor<float_t, S3> &bias,
+                          Tensor<float_t, S4> &out_data,
                           const core::conv_params &params,
                           const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
     // @todo consider better parallelization
-    for_i(layer_parallelize, in_data.size(), [&](size_t i) {
-      avx_conv2d_5x5_kernel(params, in_data[i], W, bias, out_data[i],
-                            layer_parallelize);
+    for_i(layer_parallelize, in_data.shape()[0], [&](size_t i) {
+      auto in = in_data.subView(
+        TensorSingleIndex(i),
+        TensorRange(0, in_data.shape()[1]));  // TODO(Randl): types
+      auto out = out_data.subView(TensorSingleIndex(i),
+                                  TensorRange(0, out_data.shape()[1]));
+      avx_conv2d_5x5_kernel(params, in, weights, bias, out, layer_parallelize);
     });
     return;
   }
 #endif
-  conv2d_op_internal(in_data, W, bias, out_data, params, layer_parallelize);
+  conv2d_op_internal(in_data, weights, bias, out_data, params,
+                     layer_parallelize);
 }
 
 }  // namespace kernels
