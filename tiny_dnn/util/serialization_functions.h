@@ -30,6 +30,11 @@ void arc(Archive &ar, cereal::NameValuePair<T> &&arg) {
   ar(arg);
 }
 
+template <class Archive, typename T>
+void arc(Archive &ar, T &&arg) {
+  ar(arg);
+}
+
 template <class Archive,
           typename std::enable_if<std::is_base_of<cereal::BinaryOutputArchive,
                                                   Archive>::value>::type = 0>
