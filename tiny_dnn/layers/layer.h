@@ -299,7 +299,7 @@ class layer : public node {
    **/
   virtual size_t fan_in_size() const { return in_shape()[0].width_; }
   // override to allow initialization of multiple size weight matrices.
-  virtual serial_size_t fan_in_size(serial_size_t) const {
+  virtual size_t fan_in_size(size_t) const {
     return fan_in_size();  // fallback to single weight matrix.
   }
 
@@ -314,7 +314,7 @@ class layer : public node {
    **/
   virtual size_t fan_out_size() const { return out_shape()[0].width_; }
   // override to allow initialization of multiple size weight vectors.
-  virtual serial_size_t fan_out_size(serial_size_t) const {
+  virtual size_t fan_out_size(size_t) const {
     return fan_out_size();  // fallback to single weight matrix
   }
 

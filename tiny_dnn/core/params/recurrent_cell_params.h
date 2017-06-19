@@ -15,8 +15,8 @@ namespace core {
 
 class recurrent_cell_params : public Params {
  public:
-  serial_size_t in_size_;
-  serial_size_t out_size_;
+  size_t in_size_;
+  size_t out_size_;
   std::shared_ptr<activation_layer> activation_{};
   bool has_bias_;
 };

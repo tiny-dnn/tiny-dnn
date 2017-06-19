@@ -76,37 +76,37 @@ class recurrent_cell_layer : public layer {
     init_backend(std::move(other.engine()));
   }
 
-  serial_size_t fan_in_size(serial_size_t i) const override {
+  size_t fan_in_size(size_t i) const override {
     return in_shape()[i].width_;
   }
 
-  serial_size_t fan_out_size(serial_size_t i) const override {
+  size_t fan_out_size(size_t i) const override {
     return in_shape()[i].height_;
   }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     if (params_.has_bias_) {
       return {
-        index3d<serial_size_t>(params_.in_size_, 1, 1),   // x
-        index3d<serial_size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),   // U
-        index3d<serial_size_t>(params_.out_size_, params_.out_size_, 1),  // W
-        index3d<serial_size_t>(params_.out_size_, params_.out_size_, 1),  // V
-        index3d<serial_size_t>(params_.out_size_, 1, 1),                  // b
-        index3d<serial_size_t>(params_.out_size_, 1, 1)};                 // c
+        index3d<size_t>(params_.in_size_, 1, 1),   // x
+        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+        index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
+        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
+        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
+        index3d<size_t>(params_.out_size_, 1, 1),                  // b
+        index3d<size_t>(params_.out_size_, 1, 1)};                 // c
     } else {
       return {
-        index3d<serial_size_t>(params_.in_size_, 1, 1),   // x
-        index3d<serial_size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),    // U
-        index3d<serial_size_t>(params_.out_size_, params_.out_size_, 1),   // W
-        index3d<serial_size_t>(params_.out_size_, params_.out_size_, 1)};  // V
+        index3d<size_t>(params_.in_size_, 1, 1),   // x
+        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+        index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
+        index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
+        index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
     }
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1),
-            index3d<serial_size_t>(params_.out_size_, 1, 1)};  // h(t)
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(params_.out_size_, 1, 1),
+            index3d<size_t>(params_.out_size_, 1, 1)};  // h(t)
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,

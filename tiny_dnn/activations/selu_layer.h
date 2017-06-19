@@ -30,7 +30,7 @@ class selu_layer : public activation_layer {
    * @param in_dim      [in] number of elements of the input
    */
 
-  selu_layer(serial_size_t in_dim, const float_t lambda = 1.05070,
+  selu_layer(size_t in_dim, const float_t lambda = 1.05070,
              const float_t alpha = 1.67326)
       : selu_layer(shape3d(in_dim, 1, 1), lambda, alpha) {}
 
@@ -44,8 +44,8 @@ class selu_layer : public activation_layer {
    * @param in_channels [in] number of channels (input elements along depth)
    */
 
-  selu_layer(serial_size_t in_width, serial_size_t in_height,
-             serial_size_t in_channels, const float_t lambda = 1.05070,
+  selu_layer(size_t in_width, size_t in_height,
+             size_t in_channels, const float_t lambda = 1.05070,
              const float_t alpha = 1.67326)
       : selu_layer(shape3d(in_width, in_height, in_channels), lambda, alpha) {}
 
@@ -70,7 +70,7 @@ class selu_layer : public activation_layer {
   float_t alpha_value() { return alpha_; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] =
           lambda_ *
           (x[j] > float_t(0) ? x[j] : alpha_ * (std::exp(x[j]) - float_t(1)));
@@ -80,7 +80,7 @@ class selu_layer : public activation_layer {
   void backward_activation(const vec_t &x, const vec_t &y, vec_t &dx,
                            const vec_t &dy) override {
     // dx = dy * (gradient of selu)
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       dx[j] = dy[j] * (y[j] > float_t(0) ? lambda_ : (y[j] + lambda_ * alpha_));
     }
   }

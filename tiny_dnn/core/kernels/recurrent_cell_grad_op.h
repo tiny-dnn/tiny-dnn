@@ -44,8 +44,6 @@ class RecurrentCellGradOp : public core::OpKernel {
 
     // call the algorithm depending on the selected engine type
 
-    const core::backend_t engine = context.engine();
-
     kernels::recurrent_cell_op_internal(
       prev_out, h, U[0], W[0], V[0], dU, dW, dV, params.has_bias_ ? *db : dummy,
       params.has_bias_ ? *dc : dummy, curr_output_delta, curr_state_delta,
