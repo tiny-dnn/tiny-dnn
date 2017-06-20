@@ -281,20 +281,12 @@ TEST(serialization, serialize_recurrent_cell) {
                   "in_size": 100,
                   "out_size": 20,
                   "has_bias": true,
-                  "activation": {
-                      "polymorphic_id": 2147483649,
-                      "polymorphic_name": "tiny_dnn::tanh_layer",
-                      "ptr_wrapper": {
-                          "id": 2147483649,
-                          "data": {
-                              "type": "tanh",
-                              "value0": {},
-                              "in_size": {
-                                  "width": 0,
-                                  "height": 0,
-                                  "depth": 0
-                              }
-                          }
+                  "value0" : {
+                      "type": "tanh",
+                      "in_size": {
+                          "width": 0,
+                          "height": 0,
+                          "depth": 0
                       }
                   }
               }
