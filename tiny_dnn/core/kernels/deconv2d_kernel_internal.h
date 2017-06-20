@@ -22,7 +22,7 @@ inline void tiny_deconv2d_kernel(const Tensor<float_t, S1> &in_data,
                                  const deconv_params &params,
                                  const bool layer_parallelize) {
   size_t num_of_samples = in_data.shape()[0];
-  const float_t *W      = weights.host_pointer(0, 0);  // TODO(Randl)
+  const float_t *W      = weights.host_pbegin();
   for_i(layer_parallelize, num_of_samples, [&](size_t sample) {
     const float_t *in = in_data.host_pointer(sample, 0);
     float_t *out      = out_data.host_pointer(sample, 0);
