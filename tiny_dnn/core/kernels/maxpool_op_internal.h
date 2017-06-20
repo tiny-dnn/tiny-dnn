@@ -14,11 +14,12 @@ namespace tiny_dnn {
 namespace kernels {
 
 template <typename S1, typename S2>
-inline void maxpool_op_internal(const Tensor<float_t, S1> &in_data,
-                                Tensor<float_t, S2> &out_data,
-                                std::vector<std::vector<size_t>> &max_idx,
-                                const std::vector<std::vector<size_t>> &out2in,
-                                const bool layer_parallelize) {
+inline void maxpool_op_internal(
+  const Tensor<float_t, S1> &in_data,
+  Tensor<float_t, S2> &out_data,
+  std::vector<std::vector<size_t>> &max_idx,
+  const std::vector<std::vector<size_t>> &out2in,
+  const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
 
     std::vector<size_t> &max = max_idx[sample];
