@@ -17,7 +17,7 @@ inline void maxpool_op_internal(
   std::vector<std::vector<serial_size_t>> &max_idx,
   const std::vector<std::vector<serial_size_t>> &out2in,
   const bool layer_parallelize) {
-  for_i(layer_parallelize, in_data.shape()[0], [&](int sample) {
+  for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
 
     std::vector<serial_size_t> &max = max_idx[sample];
 
@@ -44,7 +44,7 @@ inline void maxpool_grad_op_internal(
   std::vector<std::vector<serial_size_t>> &max_idx,
   const std::vector<serial_size_t> &in2out,
   const bool layer_parallelize) {
-  for_i(layer_parallelize, prev_delta.shape()[0], [&](int sample) {
+  for_i(layer_parallelize, prev_delta.shape()[0], [&](size_t sample) {
 
     const std::vector<serial_size_t> &max = max_idx[sample];
 

@@ -12,6 +12,7 @@
 
 namespace tiny_dnn {
 namespace kernels {
+
 template <typename S1, typename S2>
 inline void maxpool_op_nnpack(const Tensor<float, S1> &in_data,
                               Tensor<float, S2> &out_data,
