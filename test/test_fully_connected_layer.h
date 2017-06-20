@@ -10,10 +10,59 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
 
+using namespace tiny_dnn::activation;
+
+TEST(fully_connected, setup_internal) {
+  fully_connected_layer l(32, 10, true, core::backend_t::internal);
+
+  EXPECT_EQ(l.parallelize(), true);            // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 1u);              // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);             // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 32u);            // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 10u);           // size of output tensors
+  EXPECT_EQ(l.fan_in_size(), 32u);             // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 10u);            // num of outgoing connections
+  EXPECT_EQ(l.parameters().size(), 2u);        // num of trainable parameters
+  EXPECT_EQ(l.ith_parameter(0).size(), 320u);  // size of weight parameter
+  EXPECT_EQ(l.ith_parameter(1).size(), 10u);   // size of bias parameter
+  EXPECT_STREQ(l.layer_type().c_str(),
+               "fully-connected");  // string with layer type
+}
+
+TEST(fully_connected, forward) {
+  fully_connected_layer l(3, 2, true);
+
+  vec_t in = {1, 2, 3};
+  // clang-format off
+  vec_t weights_vec = {
+    2, 6,
+    4, 4,
+    6, 2
+  };
+  vec_t biases_vec = {-4, 22};
+  // clang-format on
+  vec_t expected = {24, 42};
+
+  Parameter weight{1, 1, 2, 3, parameter_type::weight};
+  Parameter bias{1, 1, 1, 2, parameter_type::bias};
+  weight.set_data(Tensor<float_t>{weights_vec});
+  bias.set_data(Tensor<float_t>{biases_vec});
+
+  l.set_ith_parameter(0, weight);
+  l.set_ith_parameter(1, bias);
+
+  std::vector<const tensor_t *> out;
+  l.forward({{in}}, out);
+  vec_t result = (*out[0])[0];
+
+  for (size_t i = 0; i < result.size(); i++) {
+    EXPECT_FLOAT_EQ(expected[i], result[i]);
+  }
+}
+
+/*
 TEST(fully_connected, train) {
   network<sequential> nn;
   adagrad optimizer;
@@ -225,5 +274,6 @@ TEST(fully_connected, forward_nobias) {
     EXPECT_FLOAT_EQ(out_expected[i], out[i]);
   }
 }
+*/
 
 }  // namespace tiny_dnn

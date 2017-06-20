@@ -25,7 +25,7 @@ TEST(parameter, init) {
 }
 
 TEST(parameter, getter_setter) {
-  Parameter p(4, 1, 1, 1, parameter_type::bias, false);
+  Parameter p(1, 1, 1, 4, parameter_type::bias, false);
   Tensor<float_t> t{{1.0, 2.0, 3.0, 4.0}};
 
   p.set_data(t);
@@ -40,7 +40,7 @@ TEST(parameter, merge_grads) {
   Tensor<float_t> grad0{tensor_t{{1.0, 2.0}, {2.0, 1.0}}};
   Tensor<float_t> gradp{tensor_t{{2.0, 4.0}, {4.0, 2.0}}};
 
-  Parameter p(2, 1, 1, 1, parameter_type::bias, false);
+  Parameter p(1, 1, 1, 2, parameter_type::bias, false);
   p.set_grad(gradp);
   p.merge_grads(&grad0);
 
@@ -57,8 +57,8 @@ TEST(parameter, layer_adder) {
 
   // todo (karandesai): modify later, two parameters will already be there
   // in fc layer
-  fc.add_parameter(3, 2, 1, 1, parameter_type::weight);
-  fc.add_parameter(2, 1, 1, 1, parameter_type::bias);
+  fc.add_parameter(1, 1, 2, 3, parameter_type::weight);
+  fc.add_parameter(1, 1, 1, 2, parameter_type::bias);
 
   auto parameters = fc.parameters();
 

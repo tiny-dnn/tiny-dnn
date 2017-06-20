@@ -359,6 +359,11 @@ auto host_data() {
   }
 */
 
+  // TODO(Randl): base
+  template <typename T, typename S>
+  friend inline std::ostream &operator<<(std::ostream &os,
+                                         const Tensor<T, S> &tensor);
+
   /**
    * Temporal method to convert new Tensor to tensor_t
    * @return
@@ -386,7 +391,15 @@ auto host_data() {
     return tensor;
   }
 
-  // TODO(Randl): base
+  /**
+   * Creates Tensor given the storage
+   * @tparam T
+   * @param storage
+   */
+  template <class T, class S, class... Args>
+  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
+    : storage_(xt::view(storage, r1, args...)) {}
+
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);

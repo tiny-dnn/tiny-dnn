@@ -9,6 +9,7 @@
 
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/core/params/conv_params.h"
+#include "tiny_dnn/parameter.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -46,6 +47,9 @@ class OpKernelContext {
 
     // the operation params
     Params *params_ptr_ = nullptr;
+
+    // the operation params
+    Parameters parameters_;
 
     // parallelize operation
     bool parallelize = false;
@@ -89,6 +93,18 @@ class OpKernelContext {
   tensor_t &output_grad(const int idx) { return *(*out_grad_)[idx]; }
   const tensor_t &output_grad(const int idx) const {
     return *(*out_grad_)[idx];
+  }
+
+  Parameter *ith_parameter(const size_t idx) {
+    return op_params_->parameters_.at(idx);
+  }
+
+  const Parameter *ith_parameter(const size_t idx) const {
+    return op_params_->parameters_.at(idx);
+  }
+
+  void setParameters(const Parameters &parameters) {
+    op_params_->parameters_ = parameters;
   }
 
   void setParams(Params *params) { op_params_->params_ptr_ = params; }

@@ -14,7 +14,7 @@ namespace tiny_dnn {
 
 enum class parameter_type : int8_t { weight = 0x1, bias = 0x2 };
 
-class Parameter {
+class Parameter : public std::enable_shared_from_this<Parameter> {
  public:
   /**
    * Initializes an empty parameter taking in the dimensions of weights and
@@ -43,8 +43,19 @@ class Parameter {
       shape_(width, height, in_channels),
       out_channels_(out_channels),
       trainable_(trainable),
+      initialized_(false),
       data_({shape_.size() * out_channels}),
       grad_({1, shape_.size() * out_channels}) {}
+
+  // copy constructor
+  Parameter(const Parameter &other)
+    : type_(other.type()),
+      shape_(other.shape()),
+      out_channels_(other.size() / other.shape().size()),
+      trainable_(other.is_trainable()),
+      initialized_(other.is_initialized()),
+      data_(*(other.data())),
+      grad_(*(other.grad())) {}
 
   shape3d shape() const { return shape_; }
 
@@ -54,13 +65,20 @@ class Parameter {
 
   bool is_trainable() const { return trainable_; }
 
-  void set_trainable(bool trainable) { trainable_ = trainable; }
+  void set_trainable(bool trainable = true) { trainable_ = trainable; }
+
+  bool is_initialized() const { return initialized_; }
+
+  void set_initialized(bool initialized = true) { initialized_ = initialized; }
 
   Tensor<float_t> *data() { return &data_; }
 
   const Tensor<float_t> *data() const { return &data_; }
 
-  void set_data(const Tensor<float_t> &data) { data_ = data; }
+  void set_data(const Tensor<float_t> &data) {
+    data_        = data;
+    initialized_ = true;
+  }
 
   Tensor<float_t> *grad() { return &grad_; }
 
@@ -105,6 +123,7 @@ class Parameter {
   size_t out_channels_;
 
   bool trainable_;
+  bool initialized_;
 
   Tensor<float_t> data_;
   Tensor<float_t> grad_;
