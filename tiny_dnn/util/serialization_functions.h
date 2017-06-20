@@ -198,7 +198,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   template <class Archive>
   static void load_and_construct(
-      Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
     tiny_dnn::net_phase phase;
     tiny_dnn::float_t dropout_rate;
     size_t in_size;
@@ -396,16 +396,14 @@ struct LoadAndConstruct<tiny_dnn::recurrent_cell_layer> {
     size_t in_dim, out_dim;
     bool has_bias;
     std::shared_ptr<tiny_dnn::activation_layer> activation{};
-
-		arc(ar,
-				make_nvp("in_size", in_dim),
-				make_nvp("out_size", out_dim),
-        make_nvp("has_bias", has_bias),
-        make_nvp("activation", activation));
+    arc(ar, make_nvp("in_size", in_dim), make_nvp("out_size", out_dim),
+        make_nvp("has_bias", has_bias));
+    auto al = tiny_dnn::layer::load_layer(ar);
     // a nullptr is passed to avoid creating unused activation layer.
     construct(in_dim, out_dim, has_bias, nullptr);
     // set the activation to the loaded value
-    construct->set_activation(activation);
+    construct->set_activation(
+      std::static_pointer_cast<tiny_dnn::activation_layer>(al));
   }
 };
 
@@ -481,6 +479,7 @@ struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
     tiny_dnn::float_t epsilon;
 
     arc(ar, make_nvp("in_size", in_shape), make_nvp("epsilon", epsilon));
+
     construct(in_shape, epsilon);
   }
 };
@@ -489,7 +488,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::selu_layer> {
   template <class Archive>
   static void load_and_construct(
-      Archive &ar, cereal::construct<tiny_dnn::selu_layer> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::selu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t lambda;
     tiny_dnn::float_t alpha;
@@ -506,7 +505,6 @@ struct LoadAndConstruct<tiny_dnn::elu_layer> {
   static void load_and_construct(
     Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
-
     arc(ar, make_nvp("in_size", in_shape));
     construct(in_shape);
   }
@@ -739,7 +737,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-      Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
+    Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     arc(ar, make_nvp("in_size", params_.in),
@@ -755,7 +753,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-      Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
+    Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     arc(ar, make_nvp("in_size", params_.in_size_),
@@ -768,18 +766,16 @@ struct serialization_buddy {
                                tiny_dnn::recurrent_cell_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
-		arc(ar,
-				make_nvp("in_size", params_.in_size_),
+    arc(ar, make_nvp("in_size", params_.in_size_),
         make_nvp("out_size", params_.out_size_),
-        make_nvp("has_bias", params_.has_bias_),
-				make_nvp("activation", params_.activation_));
+        make_nvp("has_bias", params_.has_bias_));
+    tiny_dnn::layer::save_layer(ar, *params_.activation_);
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::slice_layer &layer) {
     layer.serialize_prolog(ar);
-    arc(ar,
-				make_nvp("in_size", layer.in_shape_),
+    arc(ar, make_nvp("in_size", layer.in_shape_),
         make_nvp("slice_type", layer.slice_type_),
         make_nvp("num_outputs", layer.num_outputs_));
   }
@@ -787,90 +783,69 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
     layer.serialize_prolog(ar);
-    arc(ar, 
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::tanh_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-        cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::relu_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::softmax_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::leaky_relu_layer &layer) {
     layer.serialize_prolog(ar);
-
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]),
-				make_nvp("epsilon", layer.epsilon_));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]),
+        make_nvp("epsilon", layer.epsilon_));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    tiny_dnn::shape3d shape = layer.in_shape()[0];
+    arc(ar, make_nvp("in_size", shape));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::selu_layer &layer) {
     layer.serialize_prolog(ar);
-    arc(ar,
-        cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-				make_nvp("in_size", layer.in_shape()[0]),
-				make_nvp("lambda", layer.lambda_),
-				make_nvp("alpha", layer.alpha_));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]),
+        make_nvp("lambda", layer.lambda_), make_nvp("alpha", layer.alpha_));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::tanh_p1m2_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::softplus_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-        cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-				make_nvp("in_size", layer.in_shape()[0]),
-				make_nvp("beta", layer.beta_),
-				make_nvp("threshold", layer.threshold_));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]),
+        make_nvp("beta", layer.beta_), make_nvp("threshold", layer.threshold_));
   }
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::softsign_layer &layer) {
     layer.serialize_prolog(ar);
-		arc(ar,
-				cereal::virtual_base_class<tiny_dnn::activation_layer>(&layer),
-        make_nvp("in_size", layer.in_shape()[0]));
+    arc(ar, make_nvp("in_size", layer.in_shape()[0]));
   }
-#endif
-};
+
+#endif  // #ifndef CNN_NO_SERIALIZATION
+};      // struct serialization_buddy
 
 template <class Archive, typename T>
 typename std::enable_if<std::is_base_of<tiny_dnn::layer, T>::value>::type

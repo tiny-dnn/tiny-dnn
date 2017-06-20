@@ -31,7 +31,7 @@ inline void avx_fully_connected_forward_kernel(
       };
       __m256i imask =
         _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains));
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+      for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
         const auto &in = in_data[sample];
         auto &out      = out_data[sample];
         {
@@ -68,7 +68,7 @@ inline void avx_fully_connected_forward_kernel(
         }
       });
     } else {
-      for_i(layer_parallelize, in_data.size(), [&](int sample) {
+      for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
         const auto &in = in_data[sample];
         auto &out      = out_data[sample];
         for (size_t i = 0; i < nblocks; ++i) {
@@ -88,7 +88,7 @@ inline void avx_fully_connected_forward_kernel(
       });
     }
   } else {
-    for_i(layer_parallelize, in_data.size(), [&](int sample) {
+    for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
       const auto &in = in_data[sample];
       auto &out      = out_data[sample];
       for (size_t i = 0; i < params.out_size_; i++) {
@@ -138,7 +138,7 @@ inline void avx_fully_connected_back_kernel(
         prev_delta2[c] += vectorize::dot(
           &curr_delta2[0], &W[c * params.out_size_], params.out_size_);
       }
-      for_(layer_parallelize, 0, size_t(params.out_size_),
+      for_(layer_parallelize, 0u, params.out_size_,
            [&](const blocked_range &r) {
              // accumulate weight-step using delta
              // dW[c * out_size + i] += current_delta[i] * prev_out[c]
@@ -163,7 +163,7 @@ inline void avx_fully_connected_back_kernel(
         prev_delta2[c] += vectorize::dot(
           &curr_delta2[0], &W[c * params.out_size_], params.out_size_);
       }
-      for_(layer_parallelize, 0, size_t(params.out_size_),
+      for_(layer_parallelize, 0u, params.out_size_,
            [&](const blocked_range &r) {
              // accumulate weight-step using delta
              // dW[c * out_size + i] += current_delta[i] * prev_out[c]

@@ -879,7 +879,7 @@ class network {
                   const std::vector<tensor_t> &v,
                   vec_t &w,
                   tensor_t &dw,
-                  int check_index,
+                  size_t check_index,
                   double eps) {
     static const float_t delta =
       std::sqrt(std::numeric_limits<float_t>::epsilon());
@@ -1076,27 +1076,27 @@ class network {
  * @return [vector of vec_c (sample) to be passed to test function]
  */
 inline std::vector<vec_t> image2vec(const float_t *data,
-                                    const unsigned int rows,
-                                    const unsigned int cols,
-                                    const unsigned int sizepatch,
-                                    const unsigned int step = 1) {
+                                    const size_t rows,
+                                    const size_t cols,
+                                    const size_t sizepatch,
+                                    const size_t step = 1) {
   assert(step > 0);
   std::vector<vec_t> res(
     (cols - sizepatch) * (rows - sizepatch) / (step * step),
     vec_t(sizepatch * sizepatch));
   for_i((cols - sizepatch) * (rows - sizepatch) / (step * step),
-        [&](int count) {
-          const int j = step * (count / ((cols - sizepatch) / step));
-          const int i = step * (count % ((cols - sizepatch) / step));
+        [&](size_t count) {
+          const size_t j = step * (count / ((cols - sizepatch) / step));
+          const size_t i = step * (count % ((cols - sizepatch) / step));
 
           // vec_t sample(sizepatch*sizepatch);
 
           if ((i + sizepatch) < cols && (j + sizepatch) < rows) {
-            for (unsigned int k = 0; k < (sizepatch * sizepatch); k++) {
-              // for_i(sizepatch*sizepatch, [&](int k) {
-              unsigned int y = k / sizepatch + j;
-              unsigned int x = k % sizepatch + i;
-              res[count][k]  = data[x + y * cols];
+            for (size_t k = 0; k < (sizepatch * sizepatch); k++) {
+              // for_i(sizepatch*sizepatch, [&](size_t k) {
+              size_t y      = k / sizepatch + j;
+              size_t x      = k % sizepatch + i;
+              res[count][k] = data[x + y * cols];
             }
             //});
             // res[count] = (sample);

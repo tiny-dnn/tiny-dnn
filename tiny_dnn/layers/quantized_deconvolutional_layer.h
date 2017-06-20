@@ -379,6 +379,8 @@ class quantized_deconvolutional_layer : public layer {
   size_t in_length(size_t in_length,
                    size_t window_size,
                    padding pad_type) const {
+    CNN_UNREFERENCED_PARAMETER(window_size);
+    CNN_UNREFERENCED_PARAMETER(pad_type);
     return in_length;
   }
 
@@ -460,12 +462,12 @@ class quantized_deconvolutional_layer : public layer {
 
         for (size_t c = 0; c < params_.out_unpadded.depth_; c++) {
           float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-          idx = params_.out.get_index(floor(params_.weight.width_ / 2),
-                                      floor(params_.weight.height_ / 2), c);
+          idx           = params_.out.get_index(params_.weight.width_ / 2,
+                                      params_.weight.height_ / 2, c);
 
           const float_t *pout = &out[sample][idx];
 
-          for (size_t y = floor(params_.weight.height_ / 2);
+          for (size_t y = params_.weight.height_ / 2;
                y <
                params_.out_unpadded.height_ + floor(params_.weight.height_ / 2);
                y++, pout += params_.out.width_,

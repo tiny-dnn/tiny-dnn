@@ -165,7 +165,7 @@ inline void accumulate_dw(const core::conv_params &params,
     const size_t remainder = out.width_ & 7;
     __m256i mask = _mm256_loadu_si256((const __m256i *)(masks + 8 - remainder));
     auto &weight = params.weight;
-    int prevo_delta         = in_padded.width_ * params.h_stride;
+    size_t prevo_delta      = in_padded.width_ * params.h_stride;
     const size_t out_width  = out.width_;
     const size_t out_height = out.height_;
     assert(1 < out_width);

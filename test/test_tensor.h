@@ -35,7 +35,7 @@ TEST(tensor, constructors) {
     EXPECT_EQ(*it, float_t(0.0));
   }
 
-  t2 = Tensor<float_t>({1, 1, 1, 1, 2}, 1.1);
+  t2 = Tensor<float_t>({1, 1, 1, 1, 2}, static_cast<float_t>(1.1));
   EXPECT_EQ(*t2.host_begin(), float_t(1.1));
 }
 
@@ -596,4 +596,3 @@ TEST(tensor, print_view) {
 }
 
 }  // namespace tiny_dnn
-

@@ -290,7 +290,6 @@ TEST(image, read_bmp_24bit) {
 
   ASSERT_TRUE(resolve_path("testimage/bmp/24bit.bmp", path));
 
-  image<uint8_t> img(path, image_type::rgb);
   {
     image<uint8_t> img(path, image_type::bgr);
 

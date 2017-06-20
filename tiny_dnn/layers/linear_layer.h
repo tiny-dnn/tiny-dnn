@@ -65,6 +65,7 @@ class linear_layer : public layer {
     tensor_t &curr_delta = *out_grad[0];
 
     CNN_UNREFERENCED_PARAMETER(in_data);
+    CNN_UNREFERENCED_PARAMETER(out_data);
 
     // @todo revise parallelism strategy
     for (size_t sample = 0; sample < prev_delta.size(); ++sample) {

@@ -92,10 +92,10 @@ inline void tiny_quantized_fully_connected_kernel(
                           mult_output, shift_output);
     if (params.has_bias_) {
       for_i(layer_parallelize, params.out_size_,
-            [&](int i) { out[i] += b[i]; });
+            [&](size_t i) { out[i] += b[i]; });
     }
   } else {
-    for_i(layer_parallelize, params.out_size_, [&](int i) {
+    for_i(layer_parallelize, params.out_size_, [&](size_t i) {
       for (size_t c = 0; c < params.in_size_; c++) {
         out_quantized[i] +=
           static_cast<int32_t>(W_quantized[c * params.out_size_ + i] -
@@ -333,10 +333,10 @@ inline void tiny_quantized_fully_connected_kernel(
                           mult_output, shift_output);
     if (params.has_bias_) {
       for_i(layer_parallelize, params.out_size_,
-            [&](int i) { out[i] += b[i]; });
+            [&](size_t i) { out[i] += b[i]; });
     }
   } else {
-    for_i(layer_parallelize, params.out_size_, [&](int i) {
+    for_i(layer_parallelize, params.out_size_, [&](size_t i) {
       for (size_t c = 0; c < params.in_size_; c++) {
         out_quantized[i] +=
           static_cast<int32_t>(W_quantized[c * params.out_size_ + i] -

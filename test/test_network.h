@@ -22,7 +22,10 @@ class test_fc_layer : public fully_connected_layer {
 
   test_fc_layer() : base(10, 10) { ++counter(); }
 
-  test_fc_layer(const test_fc_layer &fc) : base(10, 10) { ++counter(); }
+  test_fc_layer(const test_fc_layer &fc) : base(10, 10) {
+    CNN_UNREFERENCED_PARAMETER(fc);
+    ++counter();
+  }
 
   virtual ~test_fc_layer() { --counter(); }
 

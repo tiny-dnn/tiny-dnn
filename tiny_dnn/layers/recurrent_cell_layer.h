@@ -76,31 +76,25 @@ class recurrent_cell_layer : public layer {
     init_backend(std::move(other.engine()));
   }
 
-  size_t fan_in_size(size_t i) const override {
-    return in_shape()[i].width_;
-  }
+  size_t fan_in_size(size_t i) const override { return in_shape()[i].width_; }
 
-  size_t fan_out_size(size_t i) const override {
-    return in_shape()[i].height_;
-  }
+  size_t fan_out_size(size_t i) const override { return in_shape()[i].height_; }
 
   std::vector<index3d<size_t>> in_shape() const override {
     if (params_.has_bias_) {
-      return {
-        index3d<size_t>(params_.in_size_, 1, 1),   // x
-        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
-        index3d<size_t>(params_.out_size_, 1, 1),                  // b
-        index3d<size_t>(params_.out_size_, 1, 1)};                 // c
+      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
+              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
+              index3d<size_t>(params_.out_size_, 1, 1),                  // b
+              index3d<size_t>(params_.out_size_, 1, 1)};                 // c
     } else {
-      return {
-        index3d<size_t>(params_.in_size_, 1, 1),   // x
-        index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-        index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
-        index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
+      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
+              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
+              index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
     }
   }
 
@@ -153,6 +147,7 @@ class recurrent_cell_layer : public layer {
   }
 
   void init_backend(backend_t backend_type) {
+    CNN_UNREFERENCED_PARAMETER(backend_type);
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
     kernel_fwd_.reset(new RecurrentCellOp(ctx));

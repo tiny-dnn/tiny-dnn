@@ -94,8 +94,9 @@ inline void global_avepool_op_avx(const tensor_t &in_data,
   };
   __m256i imask =
     _mm256_loadu_si256((__m256i const *)(mask_src + 8 - nremains_per_channel));
-  __m128 one_m           = _mm_cvtsi32_ss(_mm_setzero_ps(), 1);
-  __m128 pool_area_m     = _mm_cvtsi32_ss(_mm_setzero_ps(), pool_area);
+  __m128 one_m = _mm_cvtsi32_ss(_mm_setzero_ps(), 1);
+  __m128 pool_area_m =
+    _mm_cvtsi32_ss(_mm_setzero_ps(), static_cast<int>(pool_area));
   __m128 pool_area_inv_m = _mm_div_ss(one_m, pool_area_m);
 
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {

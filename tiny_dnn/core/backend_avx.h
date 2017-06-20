@@ -27,7 +27,10 @@ class avx_backend : public backend {
     : /*params_c_(params),
       conv_layer_worker_storage_(ptr),*/
       copy_and_pad_input(f1),
-      copy_and_unpad_delta(f2) {}
+      copy_and_unpad_delta(f2) {
+    CNN_UNREFERENCED_PARAMETER(params);
+    CNN_UNREFERENCED_PARAMETER(ptr);
+  }
 
   // quantized convolution
   avx_backend(
@@ -39,7 +42,10 @@ class avx_backend : public backend {
     : /*params_c_(params),
       conv_layer_worker_storage_(ptr),*/
       copy_and_pad_input(f1),
-      copy_and_unpad_delta(f2) {}
+      copy_and_unpad_delta(f2) {
+    CNN_UNREFERENCED_PARAMETER(params);
+    CNN_UNREFERENCED_PARAMETER(ptr);
+  }
 
   // deconvolution
   avx_backend(deconv_params *params,
@@ -75,13 +81,17 @@ class avx_backend : public backend {
 #endif
 
   // fully_connected
-  avx_backend(fully_params *params) /*: params_f_(params)*/ {}
+  avx_backend(fully_params *params) /*: params_f_(params)*/ {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // quantized fully_connected
   avx_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
-    : /*params_f_(params),*/ backward_activation(f) {}
+    : /*params_f_(params),*/ backward_activation(f) {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // core math functions
 
@@ -145,6 +155,7 @@ class avx_backend : public backend {
                 const std::vector<tensor_t *> &out_data,
                 std::vector<tensor_t *> &out_grad,
                 std::vector<tensor_t *> &in_grad) override {
+    CNN_UNREFERENCED_PARAMETER(out_data);
     deconv_layer_worker_specific_storage &cws = (*deconv_layer_worker_storage_);
     if (params_d_->pad_type == padding::same)
       copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);

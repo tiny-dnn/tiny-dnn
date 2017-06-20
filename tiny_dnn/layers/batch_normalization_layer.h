@@ -112,7 +112,7 @@ class batch_normalization_layer : public layer {
     //   (dE/dY - mean(dE/dY) - mean(dE/dY \cdot Y) \cdot Y)
     //     ./ sqrt(var(X) + eps)
     //
-    for_i(num_samples, [&](int i) {
+    for_i(num_samples, [&](size_t i) {
       for (size_t j = 0; j < in_channels_; j++) {
         for (size_t k = 0; k < in_spatial_size_; k++) {
           size_t index = j * in_spatial_size_ + k;
@@ -143,7 +143,7 @@ class batch_normalization_layer : public layer {
     // y = (x - mean) ./ sqrt(variance + eps)
     calc_stddev(variance);
 
-    for_i(in_data[0]->size(), [&](int i) {
+    for_i(in_data[0]->size(), [&](size_t i) {
       const float_t *inptr = &in[i][0];
       float_t *outptr      = &out[i][0];
 
