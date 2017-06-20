@@ -13,8 +13,9 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void maxpool_op_nnpack(const tensor_t &in_data,
-                              tensor_t &out_data,
+template <typename S1, typename S2>
+inline void maxpool_op_nnpack(const Tensor<float, S1> &in_data,
+                              Tensor<float, S2> &out_data,
                               const maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
@@ -30,8 +31,8 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
 
   const nnp_size pooling_stride = {params.stride_x, params.stride_y};
 
-  const float *input_ptr = in_data[0].data();
-  float *output_ptr      = out_data[0].data();
+  const float *input_ptr = in_data.host_pbegin();
+  float *output_ptr      = out_data.host_pbegin();
 
   // TODO: embed it into a class
   const size_t num_mkl_threads = 1;
@@ -55,6 +56,16 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
   CNN_UNREFERENCED_PARAMETER(params);
   throw nn_error("TinyDNN has not been compiled with NNPACK support.");
 #endif
+}
+
+template <typename S1, typename S2>
+inline void maxpool_op_nnpack(const Tensor<double, S1> &in_data,
+                              Tensor<double, S2> &out_data,
+                              const maxpool_params &params) {
+  CNN_UNREFERENCED_PARAMETER(in_data);
+  CNN_UNREFERENCED_PARAMETER(out_data);
+  CNN_UNREFERENCED_PARAMETER(params);
+  throw nn_error("Double isn't supported yet.");
 }
 
 }  // namespace kernels
