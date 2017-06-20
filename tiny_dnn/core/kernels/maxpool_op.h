@@ -23,12 +23,11 @@ class MaxPoolOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto &params = OpKernel::params_->maxpool();
 
-    // incomimg/outcoming data
-    const tensor_t &in_data = context.input(0);
-    tensor_t &out_data      = context.output(0);
+    const Tensor<float_t> in_data(context.input(0));
+    Tensor<float_t> out_data(context.output(0));
 
     // initialize outputs
-    fill_tensor(out_data, float_t{0});
+    out_data.fill(0.0f);
 
     // call convolution algorithm depending
     // on the selected engine type
@@ -38,6 +37,7 @@ class MaxPoolOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::maxpool_op_internal(in_data, out_data, params.out2inmax,
                                    params.out2in, context.parallelize());
+      context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::nnpack) {
       // NNPACK supports stride != 2 or pool_size !=2
       // there's optimization over stride=2 and pool_size=2
@@ -52,9 +52,12 @@ class MaxPoolOp : public core::OpKernel {
 
       */
       kernels::maxpool_op_nnpack(in_data, out_data, params);
+      context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::maxpool_op_avx(in_data, out_data, params.out2inmax,
                               params.out2in, context.parallelize());
+      // TODO(Randl): Remove once layers forward and backward by themself.
+      context.output(0) = out_data.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
