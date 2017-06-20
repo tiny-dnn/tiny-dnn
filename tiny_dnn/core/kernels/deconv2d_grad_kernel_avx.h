@@ -12,6 +12,7 @@
 namespace tiny_dnn {
 namespace core {
 namespace kernels {
+
 template <typename S1,
           typename S2,
           typename S3,

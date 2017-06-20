@@ -12,6 +12,7 @@
 namespace tiny_dnn {
 namespace core {
 namespace kernels {
+
 template <typename S1,
           typename S2,
           typename S3,
@@ -25,9 +26,9 @@ inline void tiny_deconv2d_back_kernel(const Tensor<float_t, S1> &prev_out,
                                       Tensor<float_t, S5> &curr_delta,
                                       Tensor<float_t, S6> &prev_delta,
                                       const deconv_params &params) {
-  const float_t *W = weights.host_pointer(0, 0);  // TODO(Randl)
+  const float_t *W = weights.host_pbegin();
   // propagate delta to previous layer
-  for_i(prev_out.size(), [&](int sample) {
+  for_i(prev_out.size(), [&](size_t sample) {
     float_t *curr_d_begin       = curr_delta.host_pointer(sample, 0);
     float_t *prev_d_begin       = prev_delta.host_pointer(sample, 0);
     float_t *dW                 = weights_grads.host_pointer(sample, 0);
