@@ -33,7 +33,7 @@ TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
   const std::vector<size_t> class_sample_counts = {1000, 100, 10, 1};
   const size_t class_count                      = class_sample_counts.size();
   const size_t total_samples =
-    std::accumulate(class_sample_counts.begin(), class_sample_counts.end(), 0);
+    std::accumulate(class_sample_counts.begin(), class_sample_counts.end(), 0u);
 
   std::vector<float_t> class_weights;
   for (size_t class_sample_count : class_sample_counts) {
@@ -56,7 +56,7 @@ TEST(target_cost, get_sample_weight_for_balanced_target_cost) {
     sum_of_products += actual_product;
   }
 
-  EXPECT_NEAR(sum_of_products, total_samples, 1e-6);
+  EXPECT_NEAR(sum_of_products, static_cast<float_t>(total_samples), 1e-6);
 }
 
 TEST(target_cost, create_balanced_target_cost_0) {

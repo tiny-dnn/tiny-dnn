@@ -42,7 +42,9 @@ class max_unpooling_layer : public layer {
                           in_size.height_,
                           in_size.depth_,
                           unpooling_size,
-                          (in_size.height_ == 1 ? 1 : unpooling_size)) {}
+                          (in_size.height_ == 1 ? 1 : unpooling_size)) {
+    CNN_UNREFERENCED_PARAMETER(stride);
+  }
 
   /**
    * @param in_width     [in] width of input image
@@ -94,6 +96,7 @@ class max_unpooling_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
+    CNN_UNREFERENCED_PARAMETER(out_data);
     tensor_t &prev_delta = *in_grad[0];
     tensor_t &curr_delta = *out_grad[0];
 

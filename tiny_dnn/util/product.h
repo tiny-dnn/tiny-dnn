@@ -583,22 +583,22 @@ CNN_MUST_INLINE CNN_VECTORIZE_TYPE::register_type accumulate(
   CNN_VECTORIZE_TYPE::register_type sum2 = CNN_VECTORIZE_TYPE::zero();
   CNN_VECTORIZE_TYPE::register_type sum3 = CNN_VECTORIZE_TYPE::zero();
   for (size_t j = 0; j < n4; ++j) {
-    CNN_VECTORIZE_TYPE::register_type n0 = CNN_VECTORIZE_TYPE::load<aligned>(
+    CNN_VECTORIZE_TYPE::register_type f0 = CNN_VECTORIZE_TYPE::load<aligned>(
       start + CNN_VECTORIZE_TYPE::unroll_size * 4);
-    CNN_VECTORIZE_TYPE::register_type n1 = CNN_VECTORIZE_TYPE::load<aligned>(
+    CNN_VECTORIZE_TYPE::register_type f1 = CNN_VECTORIZE_TYPE::load<aligned>(
       start + CNN_VECTORIZE_TYPE::unroll_size * 5);
-    CNN_VECTORIZE_TYPE::register_type n2 = CNN_VECTORIZE_TYPE::load<aligned>(
+    CNN_VECTORIZE_TYPE::register_type f2 = CNN_VECTORIZE_TYPE::load<aligned>(
       start + CNN_VECTORIZE_TYPE::unroll_size * 6);
-    CNN_VECTORIZE_TYPE::register_type n3 = CNN_VECTORIZE_TYPE::load<aligned>(
+    CNN_VECTORIZE_TYPE::register_type f3 = CNN_VECTORIZE_TYPE::load<aligned>(
       start + CNN_VECTORIZE_TYPE::unroll_size * 7);
     sum0 = CNN_VECTORIZE_TYPE::add(sum0, v0);
     sum1 = CNN_VECTORIZE_TYPE::add(sum1, v1);
     sum2 = CNN_VECTORIZE_TYPE::add(sum2, v2);
     sum3 = CNN_VECTORIZE_TYPE::add(sum3, v3);
-    v0   = n0;
-    v1   = n1;
-    v2   = n2;
-    v3   = n3;
+    v0   = f0;
+    v1   = f1;
+    v2   = f2;
+    v3   = f3;
     start += CNN_VECTORIZE_TYPE::unroll_size * 4;
   }
   if (n2) {
@@ -614,7 +614,7 @@ CNN_MUST_INLINE CNN_VECTORIZE_TYPE::register_type accumulate(
   sum0 = CNN_VECTORIZE_TYPE::add(sum0, sum1);
   sum2 = CNN_VECTORIZE_TYPE::add(sum2, sum3);
   return CNN_VECTORIZE_TYPE::add(sum0, sum2);
-}  // namespace vectorize
+}
 #endif  // CNN_USE_AVX
 
 // dst[i] += c

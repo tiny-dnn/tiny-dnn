@@ -21,7 +21,7 @@ inline void tiny_deconv2d_back_kernel(const deconv_params &params,
                                       tensor_t &curr_delta,
                                       tensor_t *prev_delta) {
   // propagate delta to previous layer
-  for_i(prev_out.size(), [&](int sample) {
+  for_i(prev_out.size(), [&](size_t sample) {
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         if (!params.tbl.is_connected(outc, inc)) continue;

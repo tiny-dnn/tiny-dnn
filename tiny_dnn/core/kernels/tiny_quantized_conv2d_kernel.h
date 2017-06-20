@@ -83,7 +83,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
   const int32_t zero_in_total_space = int64_to_int32(
     float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value));
 
-  for_i(layer_parallelize, params.out.depth_, [&](int o) {
+  for_i(layer_parallelize, params.out.depth_, [&](size_t o) {
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       if (!params.tbl.is_connected(o, inc)) continue;
 
@@ -229,7 +229,7 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params &params,
   //    max_prev_delta_value);
 
   // propagate delta to previous layer
-  for_i(params.in.depth_, [&](int inc) {
+  for_i(params.in.depth_, [&](size_t inc) {
     for (size_t outc = 0; outc < params.out.depth_; outc++) {
       if (!params.tbl.is_connected(outc, inc)) continue;
 
@@ -287,7 +287,7 @@ inline void tiny_quantized_conv2d_back_kernel(const conv_params &params,
   prev_delta = &prev_delta_vec;
 
   // Accumulate dw
-  for_i(params.in.depth_, [&](int inc) {
+  for_i(params.in.depth_, [&](size_t inc) {
     for (size_t outc = 0; outc < params.out.depth_; outc++) {
       if (!params.tbl.is_connected(outc, inc)) continue;
 
@@ -402,7 +402,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
   const int32_t zero_in_total_space = int64_to_int32(
     float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value));
 
-  for_i(layer_parallelize, params.out.depth_, [&](int o) {
+  for_i(layer_parallelize, params.out.depth_, [&](size_t o) {
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       if (!params.tbl.is_connected(o, inc)) continue;
 

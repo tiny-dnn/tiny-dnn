@@ -16,7 +16,7 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                                tensor_t &out_data,
                                const core::conv_params &params,
                                const bool parallelize) {
-  for_(parallelize, 0, in_data.size(),
+  for_(parallelize, 0u, in_data.size(),
        [&](const blocked_range &r) {
          size_t out_area    = params.out.area();
          size_t iw          = params.in_padded.width_;
@@ -68,7 +68,7 @@ inline void conv2d_op_internal(const tensor_t &in_data,
            }
          }
        },
-       0);
+       0u);
 }
 
 /******************************************************************/
@@ -84,7 +84,7 @@ void conv2d_op_internal(const tensor_t &prev_out,
                         const bool parallelize) {
   typedef typename vec_t::value_type float_t;
 
-  for_i(parallelize, prev_out.size(), [&](int sample) {
+  for_i(parallelize, prev_out.size(), [&](size_t sample) {
     // propagate delta to previous layer
     for (size_t inc = 0; inc < params.in.depth_; inc++) {
       for (size_t outc = 0; outc < params.out.depth_; outc++) {

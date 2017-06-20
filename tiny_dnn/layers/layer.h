@@ -208,6 +208,7 @@ class layer : public node {
   }
 
   void set_out_grads(const std::vector<const vec_t *> *grad, size_t cnt) {
+    CNN_UNREFERENCED_PARAMETER(cnt);
     size_t n = 0;
     for (size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] != vector_type::data) continue;
@@ -223,6 +224,7 @@ class layer : public node {
   }
 
   void set_in_data(const std::vector<const vec_t *> *data, size_t cnt) {
+    CNN_UNREFERENCED_PARAMETER(cnt);
     size_t n = 0;
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
@@ -273,6 +275,7 @@ class layer : public node {
    * set input shape of a layer (only used internally while shape inferring)
    */
   virtual void set_in_shape(const shape3d &in_shape) {
+    CNN_UNREFERENCED_PARAMETER(in_shape);
     throw nn_error(
       "Can't set shape. Shape inferring not applicable for this "
       "layer (yet).");

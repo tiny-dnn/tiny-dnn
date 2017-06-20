@@ -30,7 +30,7 @@ inline void recurrent_cell_op_internal(const tensor_t &in_data,
     vec_t &next_state       = out_h[sample];
 
     for (size_t o = 0; o < params.out_size_; o++) {
-      size_t next_state_ = 0;
+      float_t next_state_ = 0;
 
       // W * h(t-1)
       for (size_t o_2 = 0; o_2 < params.out_size_; o_2++) {
@@ -52,7 +52,7 @@ inline void recurrent_cell_op_internal(const tensor_t &in_data,
 
     // V matrix is out_size_ x out_size_
     for (size_t o = 0; o < params.out_size_; o++) {
-      size_t out_ = 0;
+      float_t out_ = 0;
       for (size_t o_2 = 0; o_2 < params.out_size_; o_2++) {
         out_ += V[o_2 * params.out_size_ + o] * next_state[o_2];
       }

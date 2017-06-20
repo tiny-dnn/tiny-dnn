@@ -153,6 +153,7 @@ class recurrent_cell_layer : public layer {
   }
 
   void init_backend(backend_t backend_type) {
+    CNN_UNREFERENCED_PARAMETER(backend_type);
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
     kernel_fwd_.reset(new RecurrentCellOp(ctx));

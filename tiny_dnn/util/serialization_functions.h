@@ -198,7 +198,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   template <class Archive>
   static void load_and_construct(
-      Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
     tiny_dnn::net_phase phase;
     tiny_dnn::float_t dropout_rate;
     size_t in_size;
@@ -739,7 +739,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-      Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
+    Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     arc(ar, make_nvp("in_size", params_.in),
@@ -755,7 +755,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-      Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
+    Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
     layer.serialize_prolog(ar);
     auto &params_ = layer.params_;
     arc(ar, make_nvp("in_size", params_.in_size_),

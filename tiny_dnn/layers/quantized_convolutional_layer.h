@@ -374,7 +374,7 @@ class quantized_convolutional_layer : public layer {
     } else {
       throw nn_error("Not recognized pad_type.");
     }
-    return ceil(tmp);
+    return static_cast<size_t>(ceil(tmp));
   }
 
   static size_t conv_out_dim(size_t in_width,

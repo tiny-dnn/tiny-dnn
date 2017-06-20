@@ -25,8 +25,8 @@ inline std::vector<size_t> calculate_label_counts(
     }
     label_counts[label]++;
   }
-  assert(std::accumulate(label_counts.begin(), label_counts.end(), 0) ==
-         static_cast<int>(t.size()));
+  assert(std::accumulate(label_counts.begin(), label_counts.end(), 0u) ==
+         t.size());
   return label_counts;
 }
 

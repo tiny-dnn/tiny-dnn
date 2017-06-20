@@ -73,13 +73,17 @@ class tiny_backend : public backend {
       backward_activation(f3) {}
 
   // fully_connected
-  tiny_backend(fully_params *params) /*: params_f_(params)*/ {}
+  tiny_backend(fully_params *params) /*: params_f_(params)*/ {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // quantized fully_connected
   tiny_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
-    : /*params_f_(params),*/ backward_activation(f) {}
+    : /*params_f_(params),*/ backward_activation(f) {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // core math functions
 

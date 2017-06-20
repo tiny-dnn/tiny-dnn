@@ -102,7 +102,7 @@ class Conv2dPadding {
 
     tensor_t buf(in.size());
 
-    for_i(true, buf.size(), [&](int sample) {
+    for_i(true, buf.size(), [&](size_t sample) {
       // alloc temporary buffer.
       buf[sample].resize(params_.in_padded.size());
 
@@ -136,7 +136,7 @@ class Conv2dPadding {
 
     tensor_t buf(delta.size());
 
-    for_i(true, buf.size(), [&](int sample) {
+    for_i(true, buf.size(), [&](size_t sample) {
       // alloc temporary buffer.
       buf[sample].resize(params_.in.size());
 
