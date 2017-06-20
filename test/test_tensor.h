@@ -596,4 +596,3 @@ TEST(tensor, print_view) {
 }
 
 }  // namespace tiny_dnn
-

@@ -20,7 +20,7 @@ class selu_layer : public activation_layer {
    */
 
   selu_layer(const float_t lambda = 1.05070, const float_t alpha = 1.67326)
-      : selu_layer(shape3d(0, 0, 0), lambda, alpha) {}
+    : selu_layer(shape3d(0, 0, 0), lambda, alpha) {}
 
   /**
    * Construct a flat selu with specified number of neurons.
@@ -30,9 +30,10 @@ class selu_layer : public activation_layer {
    * @param in_dim      [in] number of elements of the input
    */
 
-  selu_layer(size_t in_dim, const float_t lambda = 1.05070,
-             const float_t alpha = 1.67326)
-      : selu_layer(shape3d(in_dim, 1, 1), lambda, alpha) {}
+  selu_layer(size_t in_dim,
+             const float_t lambda = 1.05070,
+             const float_t alpha  = 1.67326)
+    : selu_layer(shape3d(in_dim, 1, 1), lambda, alpha) {}
 
   /**
    * Construct a selu with specified width, height and channels.
@@ -44,10 +45,12 @@ class selu_layer : public activation_layer {
    * @param in_channels [in] number of channels (input elements along depth)
    */
 
-  selu_layer(size_t in_width, size_t in_height,
-             size_t in_channels, const float_t lambda = 1.05070,
-             const float_t alpha = 1.67326)
-      : selu_layer(shape3d(in_width, in_height, in_channels), lambda, alpha) {}
+  selu_layer(size_t in_width,
+             size_t in_height,
+             size_t in_channels,
+             const float_t lambda = 1.05070,
+             const float_t alpha  = 1.67326)
+    : selu_layer(shape3d(in_width, in_height, in_channels), lambda, alpha) {}
 
   /**
    * Construct a selu layer with specified input shape.
@@ -55,13 +58,15 @@ class selu_layer : public activation_layer {
    * @param in_shape [in] shape of input tensor
    */
 
-  selu_layer(const shape3d &in_shape, const float_t lambda = 1.05070,
-             const float_t alpha = 1.67326)
-      : activation_layer(in_shape), lambda_(lambda), alpha_(alpha) {}
+  selu_layer(const shape3d &in_shape,
+             const float_t lambda = 1.05070,
+             const float_t alpha  = 1.67326)
+    : activation_layer(in_shape), lambda_(lambda), alpha_(alpha) {}
 
-  selu_layer(const layer &prev_layer, const float_t lambda = 1.05070,
-             const float_t alpha = 1.67326)
-      : activation_layer(prev_layer), lambda_(lambda), alpha_(alpha) {}
+  selu_layer(const layer &prev_layer,
+             const float_t lambda = 1.05070,
+             const float_t alpha  = 1.67326)
+    : activation_layer(prev_layer), lambda_(lambda), alpha_(alpha) {}
 
   std::string layer_type() const override { return "selu-activation"; }
 
@@ -72,12 +77,14 @@ class selu_layer : public activation_layer {
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (size_t j = 0; j < x.size(); j++) {
       y[j] =
-          lambda_ *
-          (x[j] > float_t(0) ? x[j] : alpha_ * (std::exp(x[j]) - float_t(1)));
+        lambda_ *
+        (x[j] > float_t(0) ? x[j] : alpha_ * (std::exp(x[j]) - float_t(1)));
     }
   }
 
-  void backward_activation(const vec_t &x, const vec_t &y, vec_t &dx,
+  void backward_activation(const vec_t &x,
+                           const vec_t &y,
+                           vec_t &dx,
                            const vec_t &dy) override {
     // dx = dy * (gradient of selu)
     for (size_t j = 0; j < x.size(); j++) {
@@ -96,4 +103,3 @@ class selu_layer : public activation_layer {
 };
 
 }  // namespace tiny_dnn
-
