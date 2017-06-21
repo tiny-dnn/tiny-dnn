@@ -15,7 +15,7 @@ class input_layer : public layer {
   explicit input_layer(const shape3d &shape)
     : layer({vector_type::data}, {vector_type::data}), shape_(shape) {}
 
-  explicit input_layer(serial_size_t in_dim)
+  explicit input_layer(size_t in_dim)
     : layer({vector_type::data}, {vector_type::data}),
       shape_(shape3d(in_dim, 1, 1)) {}
 

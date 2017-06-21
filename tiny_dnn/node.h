@@ -38,23 +38,22 @@ typedef std::shared_ptr<edge> edgeptr_t;
  **/
 class node : public std::enable_shared_from_this<node> {
  public:
-  node(serial_size_t in_size, serial_size_t out_size)
-    : prev_(in_size), next_(out_size) {}
+  node(size_t in_size, size_t out_size) : prev_(in_size), next_(out_size) {}
   virtual ~node() {}
 
   const std::vector<edgeptr_t> &prev() const { return prev_; }
   const std::vector<edgeptr_t> &next() const { return next_; }
 
-  serial_size_t prev_port(const edge &e) const {
+  size_t prev_port(const edge &e) const {
     auto it = std::find_if(prev_.begin(), prev_.end(),
                            [&](edgeptr_t ep) { return ep.get() == &e; });
-    return (serial_size_t)std::distance(prev_.begin(), it);
+    return (size_t)std::distance(prev_.begin(), it);
   }
 
-  serial_size_t next_port(const edge &e) const {
+  size_t next_port(const edge &e) const {
     auto it = std::find_if(next_.begin(), next_.end(),
                            [&](edgeptr_t ep) { return ep.get() == &e; });
-    return (serial_size_t)std::distance(next_.begin(), it);
+    return (size_t)std::distance(next_.begin(), it);
   }
 
   std::vector<node *> prev_nodes()
@@ -67,8 +66,8 @@ class node : public std::enable_shared_from_this<node> {
 
   friend void connect(layer *head,
                       layer *tail,
-                      serial_size_t head_index,
-                      serial_size_t tail_index);
+                      size_t head_index,
+                      size_t tail_index);
 
   mutable std::vector<edgeptr_t> prev_;
   mutable std::vector<edgeptr_t> next_;

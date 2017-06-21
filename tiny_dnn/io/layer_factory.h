@@ -29,7 +29,7 @@ network<sequential> make_mlp(Iter first, Iter last) {
  * create multi-layer perceptron
  */
 template <typename activation>
-network<sequential> make_mlp(const std::vector<serial_size_t> &units) {
+network<sequential> make_mlp(const std::vector<size_t> &units) {
   return make_mlp<activation>(units.begin(), units.end());
 }
 

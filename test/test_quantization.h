@@ -94,8 +94,8 @@ TEST(quantization_utils, quantized_to_float) {
 
 TEST(quantization_utils, avoid_bias) {
   for (int i = 0; i < 256; ++i) {
-    const float as_float =
-      core::kernels::quantized_to_float<uint8_t>(i, 0.0f, 2.0f);
+    const float as_float = core::kernels::quantized_to_float<uint8_t>(
+      static_cast<uint8_t>(i), 0.0f, 2.0f);
     const int back_to_int =
       core::kernels::float_to_quantized<uint8_t>(as_float, 0.0f, 2.0f);
     EXPECT_EQ(i, back_to_int);

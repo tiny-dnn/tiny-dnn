@@ -18,7 +18,7 @@ TEST(models, alexnet) {
   models::alexnet nn("alexnet");
 
   ASSERT_EQ(nn.name(), "alexnet");
-  EXPECT_EQ(nn.in_data_size(), serial_size_t(224 * 224 * 3));
+  EXPECT_EQ(nn.in_data_size(), size_t(224 * 224 * 3));
 
   vec_t in(nn.in_data_size());
 

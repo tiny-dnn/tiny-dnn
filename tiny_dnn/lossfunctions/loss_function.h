@@ -17,8 +17,7 @@ class mse {
     assert(y.size() == t.size());
     float_t d{0.0};
 
-    for (serial_size_t i = 0; i < y.size(); ++i)
-      d += (y[i] - t[i]) * (y[i] - t[i]);
+    for (size_t i = 0; i < y.size(); ++i) d += (y[i] - t[i]) * (y[i] - t[i]);
 
     return d / static_cast<float_t>(y.size());
   }
@@ -28,7 +27,7 @@ class mse {
     vec_t d(t.size());
     float_t factor = float_t(2) / static_cast<float_t>(t.size());
 
-    for (serial_size_t i = 0; i < y.size(); ++i) d[i] = factor * (y[i] - t[i]);
+    for (size_t i = 0; i < y.size(); ++i) d[i] = factor * (y[i] - t[i]);
 
     return d;
   }
@@ -41,7 +40,7 @@ class absolute {
     assert(y.size() == t.size());
     float_t d{0};
 
-    for (serial_size_t i = 0; i < y.size(); ++i) d += std::abs(y[i] - t[i]);
+    for (size_t i = 0; i < y.size(); ++i) d += std::abs(y[i] - t[i]);
 
     return d / static_cast<float_t>(y.size());
   }
@@ -51,7 +50,7 @@ class absolute {
     vec_t d(t.size());
     float_t factor = float_t(1) / static_cast<float_t>(t.size());
 
-    for (serial_size_t i = 0; i < y.size(); ++i) {
+    for (size_t i = 0; i < y.size(); ++i) {
       float_t sign = y[i] - t[i];
       if (sign < float_t{0.f})
         d[i] = -factor;
@@ -75,7 +74,7 @@ class absolute_eps {
     float_t d{0};
     const float_t eps = float_t(1) / fraction;
 
-    for (serial_size_t i = 0; i < y.size(); ++i) {
+    for (size_t i = 0; i < y.size(); ++i) {
       float_t diff = std::abs(y[i] - t[i]);
       if (diff > eps) d += diff;
     }
@@ -88,7 +87,7 @@ class absolute_eps {
     const float_t factor = float_t(1) / static_cast<float_t>(t.size());
     const float_t eps    = float_t(1) / fraction;
 
-    for (serial_size_t i = 0; i < y.size(); ++i) {
+    for (size_t i = 0; i < y.size(); ++i) {
       float_t sign = y[i] - t[i];
       if (sign < -eps)
         d[i] = -factor;
@@ -108,7 +107,7 @@ class cross_entropy {
     assert(y.size() == t.size());
     float_t d{0};
 
-    for (serial_size_t i = 0; i < y.size(); ++i)
+    for (size_t i = 0; i < y.size(); ++i)
       d += -t[i] * std::log(y[i]) -
            (float_t(1) - t[i]) * std::log(float_t(1) - y[i]);
 
@@ -119,8 +118,8 @@ class cross_entropy {
     assert(y.size() == t.size());
     vec_t d(t.size());
 
-    for (serial_size_t i = 0; i < y.size(); ++i)
-      d[i]               = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+    for (size_t i = 0; i < y.size(); ++i)
+      d[i]        = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
 
     return d;
   }
@@ -133,7 +132,7 @@ class cross_entropy_multiclass {
     assert(y.size() == t.size());
     float_t d{0.0};
 
-    for (serial_size_t i = 0; i < y.size(); ++i) d += -t[i] * std::log(y[i]);
+    for (size_t i = 0; i < y.size(); ++i) d += -t[i] * std::log(y[i]);
 
     return d;
   }
@@ -142,7 +141,7 @@ class cross_entropy_multiclass {
     assert(y.size() == t.size());
     vec_t d(t.size());
 
-    for (serial_size_t i = 0; i < y.size(); ++i) d[i] = -t[i] / y[i];
+    for (size_t i = 0; i < y.size(); ++i) d[i] = -t[i] / y[i];
 
     return d;
   }
@@ -161,8 +160,7 @@ std::vector<vec_t> gradient(const std::vector<vec_t> &y,
 
   assert(y.size() == t.size());
 
-  for (serial_size_t i = 0; i < y.size(); i++)
-    grads[i]           = gradient<E>(y[i], t[i]);
+  for (size_t i = 0; i < y.size(); i++) grads[i] = gradient<E>(y[i], t[i]);
 
   return grads;
 }
@@ -171,8 +169,7 @@ inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
                                   const std::vector<vec_t> &sample_cost) {
   if (sample_gradient.size() == sample_cost.size()) {
     // @todo consider adding parallelism
-    const serial_size_t channel_count =
-      static_cast<serial_size_t>(sample_gradient.size());
+    const size_t channel_count = sample_gradient.size();
     for (size_t channel = 0; channel < channel_count; ++channel) {
       if (sample_gradient[channel].size() == sample_cost[channel].size()) {
         const size_t element_count = sample_gradient[channel].size();
@@ -191,8 +188,8 @@ template <typename E>
 std::vector<tensor_t> gradient(const std::vector<tensor_t> &y,
                                const std::vector<tensor_t> &t,
                                const std::vector<tensor_t> &t_cost) {
-  const serial_size_t sample_count  = static_cast<serial_size_t>(y.size());
-  const serial_size_t channel_count = static_cast<serial_size_t>(y[0].size());
+  const size_t sample_count  = y.size();
+  const size_t channel_count = y[0].size();
 
   std::vector<tensor_t> gradients(sample_count);
 
@@ -201,7 +198,7 @@ std::vector<tensor_t> gradient(const std::vector<tensor_t> &y,
   assert(t_cost.empty() || t_cost.size() == t.size());
 
   // @todo add parallelism
-  for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+  for (size_t sample = 0; sample < sample_count; ++sample) {
     assert(y[sample].size() == channel_count);
     assert(t[sample].size() == channel_count);
     assert(t_cost.empty() || t_cost[sample].empty() ||

@@ -20,26 +20,24 @@ struct conv_layer_worker_specific_storage {
 
 struct connection_table {
   connection_table() : rows_(0), cols_(0) {}
-  connection_table(const bool *ar, serial_size_t rows, serial_size_t cols)
+  connection_table(const bool *ar, size_t rows, size_t cols)
     : connected_(rows * cols), rows_(rows), cols_(cols) {
     std::copy(ar, ar + rows * cols, connected_.begin());
   }
-  connection_table(serial_size_t ngroups,
-                   serial_size_t rows,
-                   serial_size_t cols)
+  connection_table(size_t ngroups, size_t rows, size_t cols)
     : connected_(rows * cols, false), rows_(rows), cols_(cols) {
     if (rows % ngroups || cols % ngroups) {
       throw nn_error("invalid group size");
     }
 
-    serial_size_t row_group = rows / ngroups;
-    serial_size_t col_group = cols / ngroups;
+    size_t row_group = rows / ngroups;
+    size_t col_group = cols / ngroups;
 
-    serial_size_t idx = 0;
+    size_t idx = 0;
 
-    for (serial_size_t g = 0; g < ngroups; g++) {
-      for (serial_size_t r = 0; r < row_group; r++) {
-        for (serial_size_t c = 0; c < col_group; c++) {
+    for (size_t g = 0; g < ngroups; g++) {
+      for (size_t r = 0; r < row_group; r++) {
+        for (size_t c = 0; c < col_group; c++) {
           idx             = (r + g * row_group) * cols_ + c + g * col_group;
           connected_[idx] = true;
         }
@@ -47,28 +45,28 @@ struct connection_table {
     }
   }
 
-  bool is_connected(serial_size_t x, serial_size_t y) const {
+  bool is_connected(size_t x, size_t y) const {
     return is_empty() ? true : connected_[y * cols_ + x];
   }
 
   bool is_empty() const { return rows_ == 0 && cols_ == 0; }
 
   std::deque<bool> connected_;
-  serial_size_t rows_;
-  serial_size_t cols_;
+  size_t rows_;
+  size_t cols_;
 };
 
 class conv_params : public Params {
  public:
   connection_table tbl;
-  index3d<serial_size_t> in;
-  index3d<serial_size_t> in_padded;
-  index3d<serial_size_t> out;
-  index3d<serial_size_t> weight;
+  index3d<size_t> in;
+  index3d<size_t> in_padded;
+  index3d<size_t> out;
+  index3d<size_t> weight;
   bool has_bias;
   padding pad_type;
-  serial_size_t w_stride;
-  serial_size_t h_stride;
+  size_t w_stride;
+  size_t h_stride;
 
   friend std::ostream &operator<<(std::ostream &o,
                                   const core::conv_params &param) {
@@ -104,17 +102,17 @@ class Conv2dPadding {
 
     tensor_t buf(in.size());
 
-    for_i(true, buf.size(), [&](int sample) {
+    for_i(true, buf.size(), [&](size_t sample) {
       // alloc temporary buffer.
       buf[sample].resize(params_.in_padded.size());
 
       // make padded version in order to avoid corner-case in fprop/bprop
-      for (serial_size_t c = 0; c < params_.in.depth_; c++) {
+      for (size_t c = 0; c < params_.in.depth_; c++) {
         float_t *pimg = &buf[sample][params_.in_padded.get_index(
           params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
         const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
 
-        for (serial_size_t y = 0; y < params_.in.height_; y++) {
+        for (size_t y = 0; y < params_.in.height_; y++) {
           std::copy(pin, pin + params_.in.width_, pimg);
           pin += params_.in.width_;
           pimg += params_.in_padded.width_;
@@ -138,16 +136,16 @@ class Conv2dPadding {
 
     tensor_t buf(delta.size());
 
-    for_i(true, buf.size(), [&](int sample) {
+    for_i(true, buf.size(), [&](size_t sample) {
       // alloc temporary buffer.
       buf[sample].resize(params_.in.size());
 
-      for (serial_size_t c = 0; c < params_.in.depth_; c++) {
+      for (size_t c = 0; c < params_.in.depth_; c++) {
         const float_t *pin = &delta[sample][params_.in_padded.get_index(
           params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
         float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
 
-        for (serial_size_t y = 0; y < params_.in.height_; y++) {
+        for (size_t y = 0; y < params_.in.height_; y++) {
           std::copy(pin, pin + params_.in.width_, pdst);
           pdst += params_.in.width_;
           pin += params_.in_padded.width_;

@@ -44,7 +44,7 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
 
   if (params.has_bias_) {
     for_i(layer_parallelize, params.out_size_,
-          [&](int i) { output_ptr[i] += bias[i]; });
+          [&](size_t i) { output_ptr[i] += bias[i]; });
   }
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);

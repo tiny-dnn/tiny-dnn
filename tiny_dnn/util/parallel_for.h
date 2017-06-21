@@ -62,8 +62,7 @@ struct blocked_range {
   typedef size_t const_iterator;
 
   blocked_range(size_t begin, size_t end) : begin_(begin), end_(end) {}
-  blocked_range(int begin, int end)
-    : begin_(static_cast<size_t>(begin)), end_(static_cast<size_t>(end)) {}
+  blocked_range(int begin, int end) : begin_(begin), end_(end) {}
 
   const_iterator begin() const { return begin_; }
   const_iterator end() const { return end_; }
@@ -170,44 +169,22 @@ bool value_representation(U const &value) {
 }
 
 template <typename T, typename Func>
-inline void for_(std::true_type,
-                 bool parallelize,
-                 size_t begin,
-                 T end,
-                 Func f,
-                 int grainsize = 100) {
+inline void for_(
+  bool parallelize, size_t begin, T end, Func f, size_t grainsize = 100) {
+  static_assert(std::is_integral<T>::value, "end must be integral type");
   parallelize = parallelize && value_representation<size_t>(end);
-  parallelize ? parallel_for(begin, static_cast<size_t>(end), f, grainsize)
-              : xparallel_for(begin, static_cast<size_t>(end), f);
-}
-
-template <typename T, typename Func>
-inline void for_(std::false_type,
-                 bool parallelize,
-                 size_t begin,
-                 T end,
-                 Func f,
-                 int grainsize = 100) {
-  parallelize ? parallel_for(begin, static_cast<size_t>(end), f, grainsize)
+  parallelize ? parallel_for(begin, end, f, grainsize)
               : xparallel_for(begin, end, f);
 }
 
 template <typename T, typename Func>
-inline void for_(
-  bool parallelize, size_t begin, T end, Func f, size_t grainsize = 100) {
-  static_assert(std::is_integral<T>::value, "end must be integral type");
-  for_(typename std::is_unsigned<T>::type(), parallelize, begin, end, f,
-       grainsize);
-}
-
-template <typename T, typename Func>
-inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100) {
+inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100u) {
 #ifdef CNN_SINGLE_THREAD
   for (size_t i = 0; i < size; ++i) {
     f(i);
   }
 #else  // #ifdef CNN_SINGLE_THREAD
-  for_(parallelize, 0, size,
+  for_(parallelize, 0u, size,
        [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for

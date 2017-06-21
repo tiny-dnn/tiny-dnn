@@ -33,10 +33,10 @@ class global_average_pooling_layer : public layer {
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels (depth)
-   **/
-  global_average_pooling_layer(serial_size_t in_width,
-                               serial_size_t in_height,
-                               serial_size_t in_channels,
+  **/
+  global_average_pooling_layer(size_t in_width,
+                               size_t in_height,
+                               size_t in_channels,
                                backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     set_global_avepool_params(shape3d(in_width, in_height, in_channels),
@@ -51,11 +51,11 @@ class global_average_pooling_layer : public layer {
     init_backend(std::move(layer::engine()));
   }
 
-  serial_size_t fan_in_size() const override {
-    return static_cast<serial_size_t>(params_.in.width_ * params_.in.height_);
+  size_t fan_in_size() const override {
+    return params_.in.width_ * params_.in.height_;
   }
 
-  serial_size_t fan_out_size() const override { return 1; }
+  size_t fan_out_size() const override { return 1; }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
@@ -77,11 +77,11 @@ class global_average_pooling_layer : public layer {
     kernel_back_->compute(bwd_ctx_);
   }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     return {params_.in};
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
+  std::vector<index3d<size_t>> out_shape() const override {
     return {params_.out};
   }
 
@@ -89,7 +89,7 @@ class global_average_pooling_layer : public layer {
     return std::string("global-ave-pool");
   }
 
-  std::pair<serial_size_t, serial_size_t> pool_size() const {
+  std::pair<size_t, size_t> pool_size() const {
     return std::make_pair(params_.in.width_, params_.in.height_);
   }
 

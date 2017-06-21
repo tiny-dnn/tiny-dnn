@@ -21,9 +21,9 @@ void construct_net(N &nn, core::backend_t backend_type) {
   using relu    = relu_layer;
   using softmax = softmax_layer;
 
-  const serial_size_t n_fmaps  = 32;  // number of feature maps for upper layer
-  const serial_size_t n_fmaps2 = 64;  // number of feature maps for lower layer
-  const serial_size_t n_fc     = 64;  // number of hidden units in fc layer
+  const size_t n_fmaps  = 32;  // number of feature maps for upper layer
+  const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
+  const size_t n_fc     = 64;  // number of hidden units in fc layer
 
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
              backend_type)                      // C1

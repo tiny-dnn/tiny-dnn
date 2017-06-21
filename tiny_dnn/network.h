@@ -475,8 +475,8 @@ class network {
     assert(in.size() == t.size());
 
     std::vector<tensor_t> v(t.size());
-    const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
-    for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+    const size_t sample_count = t.size();
+    for (size_t sample = 0; sample < sample_count; ++sample) {
       net_.label2vec(t[sample], v[sample]);
     }
 
@@ -555,12 +555,12 @@ class network {
   /**
    * return total number of elements of output data
    **/
-  serial_size_t out_data_size() const { return net_.out_data_size(); }
+  size_t out_data_size() const { return net_.out_data_size(); }
 
   /**
    * return total number of elements of input data
    */
-  serial_size_t in_data_size() const { return net_.in_data_size(); }
+  size_t in_data_size() const { return net_.in_data_size(); }
 
   /**
    * set weight initializer to all layers
@@ -621,7 +621,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -644,7 +644,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -660,7 +660,7 @@ class network {
     }
     return ss.str();
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -675,7 +675,7 @@ class network {
     cereal::JSONInputArchive ia(ss);
     from_archive(ia, what);
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -783,8 +783,8 @@ class network {
            i += batch_size) {
         train_once<Error>(
           optimizer, &inputs[i], &desired_outputs[i],
-          static_cast<int>(std::min(batch_size, inputs.size() - i)), n_threads,
-          get_target_cost_sample_pointer(t_cost, i));
+          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)),
+          n_threads, get_target_cost_sample_pointer(t_cost, i));
         on_batch_enumerate();
 
         /* if (i % 100 == 0 && layers_.is_exploded()) {
@@ -879,14 +879,14 @@ class network {
                   const std::vector<tensor_t> &v,
                   vec_t &w,
                   tensor_t &dw,
-                  int check_index,
+                  size_t check_index,
                   double eps) {
     static const float_t delta =
       std::sqrt(std::numeric_limits<float_t>::epsilon());
 
     assert(in.size() == v.size());
 
-    const serial_size_t sample_count = static_cast<serial_size_t>(in.size());
+    const size_t sample_count = in.size();
 
     assert(sample_count > 0);
 
@@ -904,13 +904,13 @@ class network {
 
     float_t f_p    = float_t(0);
     w[check_index] = prev_w + delta;
-    for (serial_size_t i = 0; i < sample_count; i++) {
+    for (size_t i = 0; i < sample_count; i++) {
       f_p += get_loss<E>(in[i], v[i]);
     }
 
     float_t f_m    = float_t(0);
     w[check_index] = prev_w - delta;
-    for (serial_size_t i = 0; i < sample_count; i++) {
+    for (size_t i = 0; i < sample_count; i++) {
       f_m += get_loss<E>(in[i], v[i]);
     }
 
@@ -921,7 +921,7 @@ class network {
     bprop<E>(fprop(in), v, std::vector<tensor_t>());
 
     float_t delta_by_bprop = 0;
-    for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+    for (size_t sample = 0; sample < sample_count; ++sample) {
       delta_by_bprop += dw[sample][check_index];
     }
     net_.clear_grads();
@@ -946,7 +946,7 @@ class network {
     net_.backward(delta);
   }
 
-  void check_t(size_t i, label_t t, serial_size_t dim_out) {
+  void check_t(size_t i, label_t t, size_t dim_out) {
     if (t >= dim_out) {
       std::ostringstream os;
       os << format_str("t[%u]=%u, dim(net output)=%u\n", i, t, dim_out);
@@ -961,7 +961,7 @@ class network {
     }
   }
 
-  void check_t(size_t i, const vec_t &t, serial_size_t dim_out) {
+  void check_t(size_t i, const vec_t &t, size_t dim_out) {
     if (t.size() != dim_out) {
       throw nn_error(
         format_str("output dimension mismatch!\n dim(target[%u])=%u, "
@@ -973,8 +973,8 @@ class network {
   template <typename T>
   void check_training_data(const std::vector<vec_t> &in,
                            const std::vector<T> &t) {
-    serial_size_t dim_in  = in_data_size();
-    serial_size_t dim_out = out_data_size();
+    size_t dim_in  = in_data_size();
+    size_t dim_out = out_data_size();
 
     if (in.size() != t.size()) {
       throw nn_error("size of training data must be equal to label data");
@@ -1076,27 +1076,27 @@ class network {
  * @return [vector of vec_c (sample) to be passed to test function]
  */
 inline std::vector<vec_t> image2vec(const float_t *data,
-                                    const unsigned int rows,
-                                    const unsigned int cols,
-                                    const unsigned int sizepatch,
-                                    const unsigned int step = 1) {
+                                    const size_t rows,
+                                    const size_t cols,
+                                    const size_t sizepatch,
+                                    const size_t step = 1) {
   assert(step > 0);
   std::vector<vec_t> res(
     (cols - sizepatch) * (rows - sizepatch) / (step * step),
     vec_t(sizepatch * sizepatch));
   for_i((cols - sizepatch) * (rows - sizepatch) / (step * step),
-        [&](int count) {
-          const int j = step * (count / ((cols - sizepatch) / step));
-          const int i = step * (count % ((cols - sizepatch) / step));
+        [&](size_t count) {
+          const size_t j = step * (count / ((cols - sizepatch) / step));
+          const size_t i = step * (count % ((cols - sizepatch) / step));
 
           // vec_t sample(sizepatch*sizepatch);
 
           if ((i + sizepatch) < cols && (j + sizepatch) < rows) {
-            for (unsigned int k = 0; k < (sizepatch * sizepatch); k++) {
-              // for_i(sizepatch*sizepatch, [&](int k) {
-              unsigned int y = k / sizepatch + j;
-              unsigned int x = k % sizepatch + i;
-              res[count][k]  = data[x + y * cols];
+            for (size_t k = 0; k < (sizepatch * sizepatch); k++) {
+              // for_i(sizepatch*sizepatch, [&](size_t k) {
+              size_t y      = k / sizepatch + j;
+              size_t x      = k % sizepatch + i;
+              res[count][k] = data[x + y * cols];
             }
             //});
             // res[count] = (sample);

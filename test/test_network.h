@@ -22,7 +22,10 @@ class test_fc_layer : public fully_connected_layer {
 
   test_fc_layer() : base(10, 10) { ++counter(); }
 
-  test_fc_layer(const test_fc_layer &fc) : base(10, 10) { ++counter(); }
+  test_fc_layer(const test_fc_layer &fc) : base(10, 10) {
+    CNN_UNREFERENCED_PARAMETER(fc);
+    ++counter();
+  }
 
   virtual ~test_fc_layer() { --counter(); }
 
@@ -119,7 +122,7 @@ TEST(network, add) {
   network<sequential> net;
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same);
 
-  EXPECT_EQ(net.depth(), static_cast<serial_size_t>(1));
+  EXPECT_EQ(net.depth(), 1);
 }
 
 TEST(network, manual_init) {
@@ -134,9 +137,9 @@ TEST(network, manual_init) {
   vec_t *c1_b = net[0]->weights()[1];
   vec_t *f1_w = net[1]->weights()[0];
 
-  EXPECT_EQ(c1_w->size(), static_cast<serial_size_t>(9));
-  EXPECT_EQ(c1_b->size(), static_cast<serial_size_t>(1));
-  EXPECT_EQ(f1_w->size(), static_cast<serial_size_t>(2));
+  EXPECT_EQ(c1_w->size(), 9);
+  EXPECT_EQ(c1_b->size(), 1);
+  EXPECT_EQ(f1_w->size(), 2);
 
   *c1_w = {0, 1, 2, 3, 4, 5, 6, 7, 8};
   *c1_b = {1};

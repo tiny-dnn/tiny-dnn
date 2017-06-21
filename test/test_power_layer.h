@@ -29,7 +29,7 @@ TEST(power, forward) {
   std::vector<const tensor_t*> out;
   pw.forward({in}, out);
 
-  for (serial_size_t i = 0; i < 6; i++) {
+  for (size_t i = 0; i < 6; i++) {
     EXPECT_FLOAT_EQ(out_expected[0][i], (*out[0])[0][i]);
     EXPECT_FLOAT_EQ(out_expected[1][i], (*out[0])[1][i]);
   }

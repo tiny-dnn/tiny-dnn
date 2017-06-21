@@ -73,13 +73,17 @@ class tiny_backend : public backend {
       backward_activation(f3) {}
 
   // fully_connected
-  tiny_backend(fully_params *params) : params_f_(params) {}
+  tiny_backend(fully_params *params) /*: params_f_(params)*/ {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // quantized fully_connected
   tiny_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
-    : params_f_(params), backward_activation(f) {}
+    : /*params_f_(params),*/ backward_activation(f) {
+    CNN_UNREFERENCED_PARAMETER(params);
+  }
 
   // core math functions
 
@@ -95,7 +99,7 @@ class tiny_backend : public backend {
 
     fill_tensor(out, float_t{0});
 
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias, out[i],
                                             layer_->parallelize());
     }
@@ -117,7 +121,7 @@ class tiny_backend : public backend {
       (*conv_layer_worker_storage_).prev_out_padded_;  // input // NOLINT
 
     fill_tensor(out, float_t{0});
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias,
                                             in_r[i], W_r, b_r, out[i], out_r[i],
                                             layer_->parallelize());
@@ -147,7 +151,7 @@ class tiny_backend : public backend {
 
     fill_tensor(*prev_delta, float_t{0});
 
-    for (serial_size_t i = 0; i < prev_out.size(); i++) {
+    for (size_t i = 0; i < prev_out.size(); i++) {
       kernels::tiny_quantized_conv2d_back_kernel(*params_c_, *prev_out[i], W,
                                                  dW[i], db[i], curr_delta[i],
                                                  &(*prev_delta)[i]);
@@ -190,7 +194,7 @@ class tiny_backend : public backend {
       out, float_t{0},
       params_d_->out.size());  // deconv2d-kernel requires padded size buffer
 
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_deconv2d_kernel(*params_d_, in[i], W, bias,
                                               out[i], layer_->parallelize());
     }
@@ -216,7 +220,7 @@ class tiny_backend : public backend {
       out, float_t{0},
       params_d_->out.size());  // deconv2d-kernel requires padded size buffer
 
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_deconv2d_kernel(*params_d_, in[i], W, bias,
                                               in_r[i], W_r, b_r, out[i],
                                               out_r[i], layer_->parallelize());
@@ -280,7 +284,7 @@ class tiny_backend : public backend {
 
     fill_tensor(*prev_delta, float_t{0});
 
-    for (serial_size_t i = 0; i < prev_out.size(); i++) {
+    for (size_t i = 0; i < prev_out.size(); i++) {
       kernels::tiny_quantized_deconv2d_back_kernel(*params_d_, prev_out[i], W,
                                                    dW[i], db[i], curr_delta[i],
                                                    &(*prev_delta)[i]);
@@ -294,7 +298,7 @@ class tiny_backend : public backend {
     const vec_t &W     = (*in_data[1])[0];
     tensor_t &out      = *out_data[0];
 
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_fully_connected_kernel(
         *params_f_, in[i], W, params_f_->has_bias_ ? (*in_data[2])[0] : vec_t(),
         out[i], layer_->parallelize());
@@ -320,7 +324,7 @@ class tiny_backend : public backend {
     tensor_t &out        = *out_data[0];
     tensor_t &out_r      = *out_data[1];
 
-    for (serial_size_t i = 0; i < in.size(); i++) {
+    for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_fully_connected_kernel(
         *params_f_, in[i], W, b, in_r[i], W_r, b_r, out[i], out_r[i],
         layer_->parallelize());
@@ -348,7 +352,7 @@ class tiny_backend : public backend {
 
     backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-    for (serial_size_t i = 0; i < prev_out.size(); i++) {
+    for (size_t i = 0; i < prev_out.size(); i++) {
       kernels::tiny_quantized_fully_connected_back_kernel(
         *params_f_, prev_out[i], W, dW[i], prev_delta[i], curr_delta[i], db[i],
         layer_->parallelize());
@@ -370,7 +374,7 @@ class tiny_backend : public backend {
   /* Pointer to the convolution parameters */
   conv_params *params_c_;
   deconv_params *params_d_;
-  fully_params *params_f_;
+  // fully_params *params_f_;
 
   /* Pointer to the workers */
   conv_layer_worker_specific_storage *conv_layer_worker_storage_;

@@ -18,7 +18,7 @@ class sigmoid_layer : public activation_layer {
   std::string layer_type() const override { return "sigmoid-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] = float_t(1) / (float_t(1) + std::exp(-x[j]));
     }
   }
@@ -27,7 +27,7 @@ class sigmoid_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of sigmoid)
       dx[j] = dy[j] * y[j] * (float_t(1) - y[j]);
     }

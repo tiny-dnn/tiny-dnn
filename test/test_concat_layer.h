@@ -54,8 +54,8 @@ TEST(concat, forward_data) {
     std::vector<const tensor_t*> out;
     cl.forward({in0, in1, in2}, out);
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 2; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 2; j++) {
         EXPECT_FLOAT_EQ(out_expected[i][j], (*out[0])[i][j]);
       }
     }
@@ -64,8 +64,8 @@ TEST(concat, forward_data) {
   {
     auto out = cl.backward({out_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 2; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 2; j++) {
         EXPECT_FLOAT_EQ(in0[i][j], out[0][i][j]);
         EXPECT_FLOAT_EQ(in1[i][j], out[1][i][j]);
         EXPECT_FLOAT_EQ(in2[i][j], out[2][i][j]);

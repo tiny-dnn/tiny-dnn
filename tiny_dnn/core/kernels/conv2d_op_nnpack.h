@@ -25,16 +25,15 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
   const auto algorithm                 = core::nnp_algorithm();
   const auto kernel_transform_strategy = core::nnp_kts();
 
-  const serial_size_t input_channels  = params.in.depth_;
-  const serial_size_t output_channels = params.out.depth_;
+  const size_t input_channels  = params.in.depth_;
+  const size_t output_channels = params.out.depth_;
 
   // input data passed by convolution layer has been padded already
   // set input_size to padded size
-  const nnp_size input_size = {static_cast<size_t>(params.in_padded.width_),
-                               static_cast<size_t>(params.in_padded.height_)};
+  const nnp_size input_size = {params.in_padded.width_,
+                               params.in_padded.height_};
 
-  const nnp_size kernel_size = {static_cast<size_t>(params.weight.width_),
-                                static_cast<size_t>(params.weight.height_)};
+  const nnp_size kernel_size = {params.weight.width_, params.weight.height_};
 
   // input padded ,so no need to do padding
   const float_t dx{0.0};  // params.in_padded.width_  - params.in.width_;
@@ -43,14 +42,13 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
   // we'll assume that padding is symmetric
 
   const nnp_padding padding = {
-    static_cast<size_t>(dy / 2),  // top
-    static_cast<size_t>(dx / 2),  // right
-    static_cast<size_t>(dy / 2),  // bottom
-    static_cast<size_t>(dx / 2)   // left
+    dy / 2),  // top
+    dx / 2),  // right
+    dy / 2),  // bottom
+    dx / 2)   // left
   };
 
-  const nnp_size stride = {static_cast<size_t>(params.w_stride),
-                           static_cast<size_t>(params.h_stride)};
+  const nnp_size stride = {params.w_stride, params.h_stride};
 
   const float *input_ptr  = in_data[0].data();
   const float *kernel_ptr = W.data();

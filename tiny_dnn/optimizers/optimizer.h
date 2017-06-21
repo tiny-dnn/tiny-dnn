@@ -58,7 +58,7 @@ struct adagrad : public stateful_optimizer<1> {
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &g = get<0>(W);
-    for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
+    for_i(parallelize, W.size(), [&](size_t i) {
       g[i] += dW[i] * dW[i];
       W[i] -= alpha * dW[i] / (std::sqrt(g[i]) + eps);
     });
@@ -81,7 +81,7 @@ struct RMSprop : public stateful_optimizer<1> {
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &g = get<0>(W);
 
-    for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
+    for_i(parallelize, W.size(), [&](size_t i) {
       g[i] = mu * g[i] + (1 - mu) * dW[i] * dW[i];
       W[i] -= alpha * dW[i] / std::sqrt(g[i] + eps);
     });
@@ -115,7 +115,7 @@ struct adam : public stateful_optimizer<2> {
     b1_t *= b1;
     b2_t *= b2;
 
-    for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
+    for_i(parallelize, W.size(), [&](size_t i) {
       mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
       vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
@@ -143,8 +143,8 @@ struct gradient_descent : public optimizer {
   gradient_descent() : alpha(float_t(0.01)), lambda(float_t(0)) {}
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
-    for_i(parallelize, static_cast<int>(W.size()),
-          [&](int i) { W[i] = W[i] - alpha * (dW[i] + lambda * W[i]); });
+    for_i(parallelize, W.size(),
+          [&](size_t i) { W[i] = W[i] - alpha * (dW[i] + lambda * W[i]); });
   }
 
   float_t alpha;   // learning rate
@@ -165,7 +165,7 @@ struct momentum : public stateful_optimizer<1> {
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &dWprev = get<0>(W);
 
-    for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
+    for_i(parallelize, W.size(), [&](size_t i) {
       float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
       W[i] += V;
       dWprev[i] = V;

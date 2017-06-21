@@ -18,8 +18,8 @@ class softsign_layer : public activation_layer {
   std::string layer_type() const override { return "softsign-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
-      y[j] = x[j] / (1.0 + std::abs(x[j]));
+    for (size_t j = 0; j < x.size(); j++) {
+      y[j] = x[j] / (float_t{1} + std::abs(x[j]));
     }
   }
 
@@ -27,9 +27,10 @@ class softsign_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    CNN_UNREFERENCED_PARAMETER(y);
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of softsign)
-      auto d = 1.0 + std::abs(x[j]);
+      auto d = float_t{1} + std::abs(x[j]);
       dx[j]  = dy[j] / (d * d);
     }
   }

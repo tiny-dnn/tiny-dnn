@@ -47,7 +47,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
     CLCudaAPI::Queue queue   = context.device()->queue();
 
     // TODO(edgar): check if we really need that
-    for (serial_size_t i = 0; i < in_data.size(); ++i) {
+    for (size_t i = 0; i < in_data.size(); ++i) {
       // Creates device buffers and copies the host data to these
       // device buffers.
 
@@ -82,8 +82,8 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
         11, static_cast<cl_ushort>(params.out.height_));  // OUTPUT_H
 
       // We make sure that work group size is multiple of 16
-      serial_size_t res  = device->device().MaxWorkGroupSize() % 16;
-      serial_size_t size = device->device().MaxWorkGroupSize() - res;
+      size_t res  = device->device().MaxWorkGroupSize() % 16;
+      size_t size = device->device().MaxWorkGroupSize() - res;
 
       auto global = std::vector<size_t>{size};
       auto local  = std::vector<size_t>{16};
@@ -107,7 +107,7 @@ class Conv2dOpenCLForwardOp : public core::OpKernel {
 
       // FOR DEBUG ONLY
       nn_warn("output kernel");
-      for (serial_size_t j = 0; j < out.size(); ++j) {
+      for (size_t j = 0; j < out.size(); ++j) {
         std::cout << out[j] << " ";
       }
       std::cout << std::endl;
