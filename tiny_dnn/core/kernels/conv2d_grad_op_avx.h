@@ -643,7 +643,7 @@ inline void avx_conv2d_5x5_back_kernel_one(const Tensor<float, S1> &prev_out,
           __m256 w2d        = leftShift<12>(w2a);
           __m256 w3d        = leftShift<12>(w3a);
           __m256 w4d        = leftShift<12>(w4a);
-          size_t y   = 0;
+          size_t y          = 0;
           do {
             float *delta_dst0 = pdelta_dst;
             float *delta_dst1 = &pdelta_dst[in_padded.width_ * 1];
