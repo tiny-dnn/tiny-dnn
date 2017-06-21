@@ -32,7 +32,7 @@ TEST(recurrent_cell, train) {
 
   std::vector<vec_t> data, train;
 
-  for (int i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 100; i++) {
     data.push_back(a);
     data.push_back(a2);
     train.push_back(t);
@@ -55,7 +55,7 @@ TEST(recurrent_cell, train) {
 TEST(recurrent_cell, train_different_batches) {
   auto batch_sizes = {2, 7, 10, 12};
   size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
-                                     std::multiplies<int>());
+                                     std::multiplies<size_t>());
   for (auto &batch_sz : batch_sizes) {
     network<sequential> nn;
     adagrad optimizer;
@@ -114,7 +114,7 @@ TEST(recurrent_cell, train2) {
 
   std::vector<vec_t> data, train;
 
-  for (int i = 0; i < 100; i++) {
+  for (size_t i = 0; i < 100; i++) {
     data.push_back(a);
     data.push_back(a2);
     train.push_back(t);
@@ -156,7 +156,7 @@ TEST(recurrent_cell, read_write) {
 
 TEST(recurrent_cell, forward) {
   recurrent_cell_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), serial_size_t(7));  // in, h, U, W, V, b and c
+  EXPECT_EQ(l.in_channels(), size_t(7));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -174,7 +174,7 @@ TEST(recurrent_cell, forward) {
 
 TEST(recurrent_cell, forward_nobias) {
   recurrent_cell_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), serial_size_t(5));  // in, h, U, W, V, b and c
+  EXPECT_EQ(l.in_channels(), size_t(5));  // in, h, U, W, V, b and c
 
   l.weight_init(weight_init::constant(1.0));
 
