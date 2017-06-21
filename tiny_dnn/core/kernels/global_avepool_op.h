@@ -32,12 +32,13 @@ class GlobalAvePoolOp : public core::OpKernel {
 
     if (engine == core::backend_t::avx) {
 #ifdef CNN_USE_AVX
-      kernels::global_avepool_op_avx(in_data, out_data, params,
-                                     context.parallelize());
+      kernels::global_avepool_op_avx(context.input(0), context.output(0),
+                                     params, context.parallelize());
 #endif
     } else {
       kernels::global_avepool_op_internal(in_data, out_data, params,
                                           context.parallelize());
+      context.output(0) = out_data.toTensor();
     }
   }
 };

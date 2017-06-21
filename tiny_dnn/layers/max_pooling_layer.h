@@ -79,7 +79,7 @@ class max_pooling_layer : public layer {
    * @param pooling_size [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   max_pooling_layer(size_t in_width,
                     size_t in_height,
                     size_t in_channels,

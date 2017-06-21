@@ -140,7 +140,7 @@ class average_pooling_layer : public partial_connected_layer {
    * @param pool_size    [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   average_pooling_layer(size_t in_width,
                         size_t in_height,
                         size_t in_channels,

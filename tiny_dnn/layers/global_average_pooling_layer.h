@@ -33,7 +33,7 @@ class global_average_pooling_layer : public layer {
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels (depth)
-  **/
+   **/
   global_average_pooling_layer(size_t in_width,
                                size_t in_height,
                                size_t in_channels,

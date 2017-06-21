@@ -67,7 +67,7 @@ inline void arc(Archive &ar, Type &&arg, Types &&... args) {
   arc(ar, std::forward<Types>(args)...);
 }
 
-}  // namespace {
+}  // namespace
 
 namespace cereal {
 

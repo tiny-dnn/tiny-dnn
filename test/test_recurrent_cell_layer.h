@@ -189,4 +189,4 @@ TEST(recurrent_cell, forward_nobias) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

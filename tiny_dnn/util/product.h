@@ -631,7 +631,7 @@ CNN_MUST_INLINE CNN_VECTORIZE_TYPE::register_type accumulate(
   sum0 = CNN_VECTORIZE_TYPE::add(sum0, sum1);
   sum2 = CNN_VECTORIZE_TYPE::add(sum2, sum3);
   return CNN_VECTORIZE_TYPE::add(sum0, sum2);
-}
+}  // namespace vectorize
 #endif  // CNN_USE_AVX
 
 /**

@@ -15,4 +15,4 @@ TEST(selu, gradient_check) {
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
-}
+}  // namespace tiny_dnn

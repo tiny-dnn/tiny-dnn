@@ -122,7 +122,7 @@ TEST(network, add) {
   network<sequential> net;
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same);
 
-  EXPECT_EQ(net.depth(), 1);
+  EXPECT_EQ(net.depth(), 1u);
 }
 
 TEST(network, manual_init) {
