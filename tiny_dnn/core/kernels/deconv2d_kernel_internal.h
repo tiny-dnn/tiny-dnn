@@ -31,8 +31,8 @@ inline void tiny_deconv2d_kernel(const Tensor<float_t, S1> &in_data,
         if (!params.tbl.is_connected(o, inc)) continue;
 
         size_t idx = 0;
-        idx               = params.in.depth_ * o + inc;
-        idx               = params.weight.get_index(0, 0, idx);
+        idx        = params.in.depth_ * o + inc;
+        idx        = params.weight.get_index(0, 0, idx);
         assert(idx < weights.size());
         const float_t *pw = &W[idx];
 

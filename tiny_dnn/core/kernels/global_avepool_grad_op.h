@@ -32,12 +32,14 @@ class GlobalAvePoolGradOp : public core::OpKernel {
 
     if (engine == core::backend_t::avx) {
 #ifdef CNN_USE_AVX
-      kernels::global_avepool_grad_op_avx(prev_delta, curr_delta, params,
+      kernels::global_avepool_grad_op_avx(context.input_grad(0),
+                                          context.output_grad(0), params,
                                           context.parallelize());
 #endif
     } else {
       kernels::global_avepool_grad_op_internal(prev_delta, curr_delta, params,
                                                context.parallelize());
+      context.input_grad(0) = prev_delta.toTensor();
     }
   }
 };

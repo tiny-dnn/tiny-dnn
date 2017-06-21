@@ -30,7 +30,7 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
   const float_t *bias_begin   = bias.host_pointer(0, 0);
   for_(parallelize, 0u, in_data.shape()[0],
        [&](const blocked_range &r) {
-         size_t out_area           = params.out.area();
+         size_t out_area    = params.out.area();
          size_t iw          = params.in_padded.width_;
          size_t id          = params.in.depth_;
          size_t ow          = params.out.width_;
@@ -61,7 +61,7 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &in_data,
                    // should be optimized for small kernel(3x3,5x5)
                    for (size_t wy = 0; wy < kh; wy++) {  // NOLINT
                      auto pin_element = &pin_line[iw * wy];
-                     for (serial_size_t wx = 0; wx < kw; wx++) {  // NOLINT
+                     for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
                        sum += *(pw_element++) * *(pin_element++);
                      }
                    }
@@ -190,7 +190,7 @@ inline void conv2d_op_internal(const Tensor<float_t, S1> &prev_out,
     if (params.has_bias) {
       const float_t *delta_begin = curr_delta.host_pointer(sample, 0);
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
-        size_t idx     = params.out.get_index(0, 0, outc);
+        size_t idx            = params.out.get_index(0, 0, outc);
         const float_t *delta  = &delta_begin[idx];
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         bias_grads.host_at(sample, outc) +=

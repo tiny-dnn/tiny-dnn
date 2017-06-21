@@ -103,7 +103,7 @@ inline void tiny_deconv2d_back_kernel(const Tensor<float_t, S1> &prev_out,
       // vec_t& db = *in_grad[2];
 
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
-        size_t idx    = params.out.get_index(0, 0, outc);
+        size_t idx           = params.out.get_index(0, 0, outc);
         const float_t *delta = &curr_d_begin[idx];
         // TODO: name
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
