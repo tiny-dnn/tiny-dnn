@@ -42,6 +42,8 @@ class BaseTensor {
 
   virtual U host_at(size_t index) const = 0;
   virtual U &host_at(size_t index)      = 0;
+
+  virtual ~BaseTensor(){};
 };
 
 /**
@@ -159,19 +161,19 @@ class Tensor : public BaseTensor<U> {
    *
    * @return the tensor shape
    */
-  const std::vector<size_t> &shape() const { return storage_.shape(); }
+  const std::vector<size_t> &shape() const override { return storage_.shape(); }
 
   /**
    *
    * @return Tensor's number of dimensions
    */
-  const size_t dim() const { return storage_.dimension(); }
+  const size_t dim() const override { return storage_.dimension(); }
 
   /**
    *
    * @return the total number of elements in Tensor
    */
-  const size_t size() const { return storage_.size(); }
+  const size_t size() const override { return storage_.size(); }
 
   /**
    * Access to indexes in tensor
@@ -215,13 +217,13 @@ class Tensor : public BaseTensor<U> {
 
   const auto host_end() const { return storage_.cxend(); }
 
-  U *host_pbegin() { return &*storage_.xbegin(); }
+  U *host_pbegin() override { return &*storage_.xbegin(); }
 
-  const U *host_pbegin() const { return &*storage_.cxbegin(); }
+  const U *host_pbegin() const override { return &*storage_.cxbegin(); }
 
-  U *host_pend() { return &*storage_.xend(); }
+  U *host_pend() override { return &*storage_.xend(); }
 
-  const U *host_pend() const { return &*storage_.cxend(); }
+  const U *host_pend() const override { return &*storage_.cxend(); }
 
   // TODO(Randl): check if strided.
   template <typename... Args>
@@ -238,7 +240,7 @@ class Tensor : public BaseTensor<U> {
    * @param d an index of last dimension
    * @return offest from the beginning of the dimesion
    */
-  size_t host_offset(const size_t d) const { return d; }
+  size_t host_offset(const size_t d) const override { return d; }
 
   /**
    * Calculate an offest in 1D representation of nD Tensor. Parameters are
@@ -314,11 +316,13 @@ auto host_data() {
    * Reshape tensor
    * @param shape new shape
    */
-  void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
+  void reshape(const std::vector<size_t> &shape) {
+    storage_.reshape(shape);
+  }
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
-  U host_at(size_t index) const { return storage_(index); }
-  U &host_at(size_t index) { return storage_(index); }
+  U host_at(size_t index) const override { return storage_(index); }
+  U &host_at(size_t index) override { return storage_(index); }
 
   /**
    * Returns view of current Tensor
@@ -361,7 +365,7 @@ auto host_data() {
    * Temporal method to convert new Tensor to tensor_t
    * @return
    */
-  tensor_t toTensor() const {
+  tensor_t toTensor() const override {
     tensor_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
       tensor[i].resize(storage_.shape()[1]);
@@ -376,7 +380,7 @@ auto host_data() {
    * Temporal method to convert new Tensor to vec_t
    * @return
    */
-  vec_t toVec() const {
+  vec_t toVec() const override {
     vec_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
       tensor[i] = storage_(i);
