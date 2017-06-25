@@ -146,15 +146,15 @@ TEST(convolutional, with_stride) {
 
   */
 
-  float_t in[] = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 1.0f, 2.0f, 3.0f, 4.0f,
-                  5.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 3.0f, 4.0f, 5.0f,
-                  6.0f, 7.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+  float_t in[] = {0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+                  5.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 4.0, 5.0,
+                  6.0, 7.0, 4.0, 5.0, 6.0, 7.0, 8.0};
 
-  float_t w[] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+  float_t w[] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
 
-  float_t b[] = {0.5f};
+  float_t b[] = {0.5};
 
-  float_t expected_out[] = {9.5f, 18.5f, 18.5f, 27.5f};
+  float_t expected_out[] = {9.5, 18.5, 18.5, 27.5};
 
   convolutional_layer l(5, 5, 3, 1, 1, padding::valid, true, 2, 2);
   tensor_buf data(l, false), grad(l, false);
@@ -172,18 +172,17 @@ TEST(convolutional, with_stride) {
   }
 
   float_t curr_delta[] = {
-    -1.0f, 2.0f, 3.0f, 0.0f,
+    -1.0, 2.0, 3.0, 0.0,
   };
 
-  float_t expected_prev_delta[] = {-0.5f, -0.5f, 0.5f, 1.0f, 1.0f, -0.5f, -0.5f,
-                                   0.5f,  1.0f,  1.0f, 1.0f, 1.0f, 2.0f,  1.0f,
-                                   1.0f,  1.5f,  1.5f, 1.5f, 0.0f, 0.0f,  1.5f,
-                                   1.5f,  1.5f,  0.0f, 0.0f};
+  float_t expected_prev_delta[] = {
+    -0.5, -0.5, 0.5, 1.0, 1.0, -0.5, -0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0,
+    1.0,  1.0,  1.5, 1.5, 1.5, 0.0,  0.0,  1.5, 1.5, 1.5, 0.0, 0.0};
 
-  float_t expected_dw[] = {10.0f, 14.0f, 18.0f, 14.0f, 18.0f,
-                           22.0f, 18.0f, 22.0f, 26.0f};
+  float_t expected_dw[] = {10.0, 14.0, 18.0, 14.0, 18.0,
+                           22.0, 18.0, 22.0, 26.0};
 
-  float_t expected_db[] = {4.0f};
+  float_t expected_db[] = {4.0};
 
   grad.out_at(0)[0] = vec_t(curr_delta, curr_delta + 4);
 
@@ -472,13 +471,13 @@ TEST(convolutional, fprop_nnp) {
   }
 
   // clang-format off
-  weight[0] = 0.3f;  weight[1] = 0.1f;   weight[2] = 0.2f;
-  weight[3] = 0.0f;  weight[4] = -0.1f;  weight[5] = -0.1f;
-  weight[6] = 0.05f; weight[7] = -0.2f;  weight[8] = 0.05f;
+  weight[0] = 0.3;  weight[1] = 0.1;   weight[2] = 0.2;
+  weight[3] = 0.0;  weight[4] = -0.1;  weight[5] = -0.1;
+  weight[6] = 0.05; weight[7] = -0.2;  weight[8] = 0.05;
 
-  weight[9]  = 0.0f; weight[10] = -0.1f; weight[11] = 0.1f;
-  weight[12] = 0.1f; weight[13] = -0.2f; weight[14] = 0.3f;
-  weight[15] = 0.2f; weight[16] = -0.3f; weight[17] = 0.2f;
+  weight[9]  = 0.0; weight[10] = -0.1; weight[11] = 0.1;
+  weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
+  weight[15] = 0.2; weight[16] = -0.3; weight[17] = 0.2;
 
   in[0]  = 3; in[1]  = 2;  in[2]  = 1; in[3]  = 5; in[4]  = 2;
   in[5]  = 3; in[6]  = 0;  in[7]  = 2; in[8]  = 0; in[9]  = 1;

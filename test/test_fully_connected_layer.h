@@ -23,11 +23,11 @@ TEST(fully_connected, train) {
   vec_t a(3), t(2), a2(3), t2(2);
 
   // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
+    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
+    t[0] = 0.3; t[1] = 0.7;
 
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
+    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
+    t2[0] = 0.5; t2[1] = 0.1;
   // clang-format on
 
   std::vector<vec_t> data, train;
@@ -38,7 +38,7 @@ TEST(fully_connected, train) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1f;
+  optimizer.alpha = 0.1;
   nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
@@ -65,11 +65,11 @@ TEST(fully_connected, train_different_batches) {
     vec_t a(3), t(2), a2(3), t2(2);
 
     // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
+    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
+    t[0] = 0.3; t[1] = 0.7;
 
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
+    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
+    t2[0] = 0.5; t2[1] = 0.1;
     // clang-format on
 
     std::vector<vec_t> data, train;
@@ -80,7 +80,7 @@ TEST(fully_connected, train_different_batches) {
       train.push_back(t);
       train.push_back(t2);
     }
-    optimizer.alpha = 0.1f;
+    optimizer.alpha = 0.1;
     nn.train<mse>(optimizer, data, train, batch_sz, 10);
 
     vec_t predicted = nn.predict(a);
@@ -105,11 +105,11 @@ TEST(fully_connected, train2) {
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
   // clang-format off
-    a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
-    t[0] = 0.3f; t[1] = 0.7f; t[2] = 0.3f;
+    a[0] = 3.0; a[1] = 1.0; a[2] = -1.0; a[3] = 4.0;
+    t[0] = 0.3; t[1] = 0.7; t[2] = 0.3;
 
-    a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
-    t2[0] = 0.6f; t2[1] = 0.0f; t2[2] = 0.1f;
+    a2[0] = 1.0; a2[1] = 0.0; a2[2] = 4.0; a2[3] = 2.0;
+    t2[0] = 0.6; t2[1] = 0.0; t2[2] = 0.1;
   // clang-format on
 
   std::vector<vec_t> data, train;
@@ -120,7 +120,7 @@ TEST(fully_connected, train2) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1f;
+  optimizer.alpha = 0.1;
   nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
