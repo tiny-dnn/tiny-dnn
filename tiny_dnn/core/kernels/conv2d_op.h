@@ -45,6 +45,12 @@ class Conv2dOp : public core::OpKernel {
     } else if (engine == core::backend_t::avx) {
       kernels::conv2d_op_avx(in_data, W[0], bias[0], out_data, params,
                              context.parallelize());
+#if 0
+		} else if (engine == core::backend_t::internal_quantization) {
+			kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias, out[i], layer_->parallelize());
+		} else if (engine == core::backend_t::internal_eficient_quantization) {
+			kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias, in_r[i], W_r, b_r, out[i], out_r[i], layer_->parallelize());
+#endif
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }

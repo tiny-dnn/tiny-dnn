@@ -9,14 +9,11 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
-#include "tiny_dnn/core/kernels/conv2d_grad_op_avx.h"
-#include "tiny_dnn/core/kernels/conv2d_op_internal.h"
-
 namespace tiny_dnn {
 
-class Conv2dGradOp : public core::OpKernel {
+class Convt2dGradOp : public core::OpKernel {
  public:
-  explicit Conv2dGradOp(const core::OpKernelConstruction &context)
+  explicit Convt2dGradOp(const core::OpKernelConstruction &context)
     : core::OpKernel(context) {}
 
   void compute(core::OpKernelContext &context) override {
@@ -39,17 +36,6 @@ class Conv2dGradOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::conv2d_op_internal(prev_out, W[0], dW, db, curr_delta,
-                                  prev_delta, params, context.parallelize());
-    } else if (engine == core::backend_t::avx) {
-      kernels::conv2d_grad_op_avx(prev_out, W[0], dW, db, curr_delta,
-                                  prev_delta, params, context.parallelize());
-#if 0
-		} else if (engine == core::backend_t::internal_quantization) {
-			kernels::tiny_quantized_conv2d_back_kernel(*params_c_, *prev_out[i], W,
-                                                 dW[i], db[i], curr_delta[i],
-                                                 &(*prev_delta)[i])
-#endif
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
