@@ -48,10 +48,29 @@ TEST(tensor, shape) {
   EXPECT_EQ(tensor.shape()[3], size_t(2));
 }
 
+TEST(tensor, base_shape) {
+  Tensor<float_t> tensor({1, 2, 2, 2});
+  BaseTensor<float_t> &base_tensor = tensor;
+
+  EXPECT_EQ(base_tensor.shape()[0], size_t(1));
+  EXPECT_EQ(base_tensor.shape()[1], size_t(2));
+  EXPECT_EQ(base_tensor.shape()[2], size_t(2));
+  EXPECT_EQ(base_tensor.shape()[3], size_t(2));
+}
+
 TEST(tensor, size) {
   Tensor<float_t> tensor({2, 2, 2, 2});
 
   EXPECT_EQ(tensor.size(), size_t(2 * 2 * 2 * 2));
+  EXPECT_EQ(tensor.dim(), size_t(4));
+}
+
+TEST(tensor, base_size) {
+  Tensor<float_t> tensor({2, 2, 2, 2});
+  BaseTensor<float_t> &base_tensor = tensor;
+
+  EXPECT_EQ(base_tensor.size(), size_t(2 * 2 * 2 * 2));
+  EXPECT_EQ(base_tensor.dim(), size_t(4));
 }
 
 TEST(tensor, view1) {

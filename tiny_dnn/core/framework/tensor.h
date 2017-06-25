@@ -24,6 +24,26 @@
 
 namespace tiny_dnn {
 
+template <typename U = float_t>
+class BaseTensor {
+ public:
+  const virtual std::vector<size_t> &shape() const = 0;
+  const virtual size_t dim() const                 = 0;
+  const virtual size_t size() const                = 0;
+  virtual U *host_pbegin()                         = 0;
+  const virtual U *host_pbegin() const             = 0;
+  virtual U *host_pend()                           = 0;
+  const virtual U *host_pend() const               = 0;
+  virtual size_t host_offset(const size_t d) const = 0;
+
+  // TODO: Temporary
+  virtual tensor_t toTensor() const = 0;
+  virtual vec_t toVec() const       = 0;
+
+  virtual U host_at(size_t index) const = 0;
+  virtual U &host_at(size_t index)      = 0;
+};
+
 /**
  * A tensor of the given dimension.
  *
@@ -31,7 +51,7 @@ namespace tiny_dnn {
  * Storage is type of underlying storage
  */
 template <typename U = float_t, typename Storage = xt::xarray<U>>
-class Tensor {
+class Tensor : public BaseTensor<U> {
   typedef U *UPtr;
 
  public:
@@ -46,6 +66,7 @@ class Tensor {
    * @return
    */
   Tensor(Storage &&s) : storage_(std::move(s)){};
+
   /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
@@ -138,13 +159,13 @@ class Tensor {
    *
    * @return the tensor shape
    */
-  const auto &shape() const { return storage_.shape(); }
+  const std::vector<size_t> &shape() const { return storage_.shape(); }
 
   /**
    *
    * @return Tensor's number of dimensions
    */
-  const auto dim() const { return storage_.dimension(); }
+  const size_t dim() const { return storage_.dimension(); }
 
   /**
    *
@@ -186,7 +207,7 @@ class Tensor {
   }
 
   template <typename... Args>
-  auto host_iter(const Args... args) const {
+  const auto host_iter(const Args... args) const {
     return std::next(storage_.cxbegin(), host_offset(args...));
   }
 
@@ -194,22 +215,22 @@ class Tensor {
 
   const auto host_end() const { return storage_.cxend(); }
 
-  auto host_pbegin() { return &*storage_.xbegin(); }
+  U *host_pbegin() { return &*storage_.xbegin(); }
 
-  const auto host_pbegin() const { return &*storage_.cxbegin(); }
+  const U *host_pbegin() const { return &*storage_.cxbegin(); }
 
-  auto host_pend() { return &*storage_.xend(); }
+  U *host_pend() { return &*storage_.xend(); }
 
-  const auto host_pend() const { return &*storage_.cxend(); }
+  const U *host_pend() const { return &*storage_.cxend(); }
 
   // TODO(Randl): check if strided.
   template <typename... Args>
-  auto host_pointer(const Args... args) {
+  U *host_pointer(const Args... args) {
     return &*host_iter(args...);
   }
 
   template <typename... Args>
-  auto host_pointer(const Args... args) const {
+  const U *host_pointer(const Args... args) const {
     return &*host_iter(args...);
   }
   /**
@@ -296,6 +317,8 @@ auto host_data() {
   void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
+  U host_at(size_t index) const { return storage_(index); }
+  U &host_at(size_t index) { return storage_(index); }
 
   /**
    * Returns view of current Tensor
@@ -361,6 +384,7 @@ auto host_data() {
     return tensor;
   }
 
+  // TODO(Randl): base
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);
