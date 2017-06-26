@@ -28,8 +28,8 @@ template <typename U = float_t>
 class BaseTensor {
  public:
   const virtual std::vector<size_t> &shape() const = 0;
-  const virtual size_t dim() const                 = 0;
-  const virtual size_t size() const                = 0;
+  virtual size_t dim() const                 = 0;
+  virtual size_t size() const                = 0;
   virtual U *host_pbegin()                         = 0;
   const virtual U *host_pbegin() const             = 0;
   virtual U *host_pend()                           = 0;
@@ -167,13 +167,13 @@ class Tensor : public BaseTensor<U> {
    *
    * @return Tensor's number of dimensions
    */
-  const size_t dim() const override { return storage_.dimension(); }
+  size_t dim() const override { return storage_.dimension(); }
 
   /**
    *
    * @return the total number of elements in Tensor
    */
-  const size_t size() const override { return storage_.size(); }
+  size_t size() const override { return storage_.size(); }
 
   /**
    * Access to indexes in tensor
