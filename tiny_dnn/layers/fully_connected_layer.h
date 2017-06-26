@@ -48,10 +48,9 @@ class fully_connected_layer : public layer {
     * @param out_features [in] number of elements of the output
     * @param bias [in] whether to include additional bias to the layer
     **/
-  fully_connected_layer(
-    size_t in_features,
-    size_t out_features,
-    fully_connected_layer_params params)
+  fully_connected_layer(size_t in_features,
+                        size_t out_features,
+                        fully_connected_layer_params params)
     : layer(std_input_order(params.bias), {vector_type::data}) {
     set_params(in_features, out_features, params.bias);
     init_backend(params.backend_type);
