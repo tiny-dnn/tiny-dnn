@@ -56,6 +56,8 @@ using namespace tiny_dnn::activation;
 #include "test_image.h"
 #endif  // DNN_USE_IMAGE_API
 
+#include "test_parameter.h"
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

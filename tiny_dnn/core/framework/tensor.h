@@ -41,6 +41,14 @@ class Tensor {
   Tensor() {}
 
   /**
+   * Constructor that accepts a storage object and create a Tensor housing
+   * that storage. Commonly used by [] operator.
+   * @param storage object, can be xtarray.
+   * @return
+   */
+  explicit Tensor(const Storage &storage) : storage_(storage) {}
+
+  /**
    * Constructor that accepts an initializer list of shape and create a
    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
    * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
