@@ -13,15 +13,15 @@
 namespace tiny_dnn {
 
 TEST(parameter, init) {
-  Parameter p(3, 3, 1, 1, parameter_type::weight, true);
+  Parameter p(1, 1, 3, 3, parameter_type::weight, true);
 
-  ASSERT_EQ(p.shape().width_, 3u);
-  ASSERT_EQ(p.shape().height_, 3u);
-  ASSERT_EQ(p.shape().depth_, 1u);
-  ASSERT_EQ(p.size(), 9u);
-  ASSERT_EQ(p.type(), parameter_type::weight);
+  EXPECT_EQ(p.shape().width_, 3u);
+  EXPECT_EQ(p.shape().height_, 3u);
+  EXPECT_EQ(p.shape().depth_, 1u);
+  EXPECT_EQ(p.size(), 9u);
+  EXPECT_EQ(p.type(), parameter_type::weight);
 
-  ASSERT_TRUE(p.is_trainable());
+  EXPECT_TRUE(p.is_trainable());
 }
 
 TEST(parameter, getter_setter) {
@@ -32,7 +32,7 @@ TEST(parameter, getter_setter) {
   Tensor<float_t> *pt = p.data();
 
   for (size_t i = 0; i < t.size(); i++) {
-    ASSERT_EQ(pt->host_at(i), t.host_at(i));
+    EXPECT_EQ(pt->host_at(i), t.host_at(i));
   }
 }
 
@@ -47,8 +47,8 @@ TEST(parameter, merge_grads) {
   Tensor<float_t> expected{tensor_t{{6.0, 6.0}, {6.0, 6.0}}};
 
   for (size_t i = 0; i < p.size(); i++) {
-    ASSERT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
-    ASSERT_EQ(grad0.host_at(1, i), expected.host_at(1, i));
+    EXPECT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
+    EXPECT_EQ(grad0.host_at(1, i), expected.host_at(1, i));
   }
 }
 
@@ -63,8 +63,9 @@ TEST(parameter, layer_adder) {
   auto parameters = fc.parameters();
 
   // check whether they were added in proper order
-  ASSERT_EQ(parameters[0]->type(), parameter_type::weight);
-  ASSERT_EQ(parameters[1]->type(), parameter_type::bias);
+  ASSERT_GE(parameters.size(), 2);
+  EXPECT_EQ(parameters[0]->type(), parameter_type::weight);
+  EXPECT_EQ(parameters[1]->type(), parameter_type::bias);
 }
 
 // todo (karandesai) : test getters and setters on fc layer

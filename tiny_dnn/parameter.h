@@ -32,6 +32,7 @@ class Parameter {
    * @param type         whether parameter is a weight or a bias
    * @param trainable    whether parameter will be updated while training
    */
+  // TODO: what is preferred order? probably, height and width first
   Parameter(size_t out_channels,
             size_t in_channels,
             size_t height,

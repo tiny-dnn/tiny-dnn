@@ -49,7 +49,11 @@ class layer : public node {
  public:
   friend void connection_mismatch(const layer &from, const layer &to);
 
-  virtual ~layer() = default;
+  virtual ~layer() {
+    for (auto &p : parameters_) {
+      delete (p);
+    }
+  };
 
   /**
    * @brief Defaul layer constructor that instantiates a N-input, M-output
@@ -380,7 +384,7 @@ class layer : public node {
    */
   Parameters parameters(bool trainable_only = false) {
     Parameters parameters;
-    for (Parameter *parameter : parameters) {
+    for (Parameter *parameter : parameters_) {
       if (!trainable_only || (parameter->is_trainable() && trainable_only)) {
         parameters.push_back(parameter);
       }
