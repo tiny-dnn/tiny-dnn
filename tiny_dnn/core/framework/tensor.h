@@ -79,6 +79,34 @@ class Tensor {
     : storage_(shape, value) {}
 
   /**
+   * Temporal method to create a new Tensor from old tensor_t
+   */
+  explicit Tensor(const tensor_t &data) {
+    std::vector<size_t> shape = {data.size(), data[0].size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      for (size_t j = 0; j < data[i].size(); ++j) {
+        storage_(i, j) = data[i][j];
+      }
+    }
+  }
+
+  /**
+   * Temporal method to create a new Tensor from old vec_t
+   */
+  explicit Tensor(const vec_t &data) {
+    std::vector<size_t> shape = {data.size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      storage_(i) = data[i];
+    }
+  }
+
+  /**
    *
    * @param T
    * @return
@@ -269,6 +297,33 @@ auto host_data() {
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);
+
+  /**
+   * Temporal method to convert new Tensor to tensor_t
+   * @return
+   */
+  tensor_t toTensor() const {
+    tensor_t tensor(storage_.shape()[0]);
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      tensor[i].resize(storage_.shape()[1]);
+      for (size_t j = 0; j < storage_.shape()[1]; ++j) {
+        tensor[i][j] = storage_(i, j);
+      }
+    }
+    return tensor;
+  }
+
+  /**
+   * Temporal method to convert new Tensor to vec_t
+   * @return
+   */
+  vec_t toVec() const {
+    vec_t tensor(storage_.shape()[0]);
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      tensor[i] = storage_(i);
+    }
+    return tensor;
+  }
 
  private:
   Storage storage_;
