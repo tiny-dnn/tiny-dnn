@@ -14,7 +14,7 @@ namespace tiny_dnn {
 
 enum class parameter_type : int8_t { weight = 0x1, bias = 0x2 };
 
-class parameter {
+class Parameter {
  public:
   /**
    * Initializes an empty parameter taking in the dimensions of weights and
@@ -25,34 +25,34 @@ class parameter {
    * todo (karandesai) : generalize to n-dimensions
    * todo (karandesai) : add an n-dimensional view for easy indexing
    *
-   * @param width      [in] filter width
-   * @param height     [in] filter height
-   * @param depth      [in] filter depth / input channels
-   * @param n_fmaps    [in] number of output feature maps
-   * @param type       [in] whether parameter is a weight or a bias
-   * @param trainable  [in] whether parameter will be updated while training or
-   * not
+   * @param out_channels number of feature maps in next layer
+   * @param in_channels  filter depth / input channels
+   * @param height       filter height
+   * @param width        filter width
+   * @param type         whether parameter is a weight or a bias
+   * @param trainable    whether parameter will be updated while training
    */
-  parameter(size_t width,
+  // TODO: what is preferred order? probably, height and width first
+  Parameter(size_t out_channels,
+            size_t in_channels,
             size_t height,
-            size_t depth,
-            size_t n_fmaps,
+            size_t width,
             parameter_type type,
             bool trainable = true)
     : type_(type),
-      shape_(width, height, depth),
-      n_fmaps_(n_fmaps),
+      shape_(width, height, in_channels),
+      out_channels_(out_channels),
       trainable_(trainable),
-      data_({shape_.size() * n_fmaps}),
-      grad_({1, shape_.size() * n_fmaps}) {}
+      data_({shape_.size() * out_channels}),
+      grad_({1, shape_.size() * out_channels}) {}
 
-  shape3d shape() { return shape_; }
+  shape3d shape() const { return shape_; }
 
-  size_t size() { return data_.size(); }
+  size_t size() const { return data_.size(); }
 
-  parameter_type type() { return type_; }
+  parameter_type type() const { return type_; }
 
-  bool is_trainable() { return trainable_; }
+  bool is_trainable() const { return trainable_; }
 
   void set_trainable(bool trainable) { trainable_ = trainable; }
 
@@ -102,7 +102,7 @@ class parameter {
   // todo (karandesai) : replace with vector<size_t> for n-dimensional
   // parameters
   shape3d shape_;
-  size_t n_fmaps_;
+  size_t out_channels_;
 
   bool trainable_;
 
@@ -110,5 +110,11 @@ class parameter {
   Tensor<float_t> grad_;
 
 };  // class parameter
+
+// todo (karandesai) : analyze performance between raw pointer and shared_ptr
+// after fc parameter integration
+
+using Parameters      = std::vector<Parameter *>;
+using ConstParameters = std::vector<const Parameter *>;
 
 }  // namespace tiny_dnn
