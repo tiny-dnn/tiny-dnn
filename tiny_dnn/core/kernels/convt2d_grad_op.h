@@ -35,13 +35,13 @@ class Convt2dGradOp : public core::OpKernel {
     // call convolution algorithm depending
     // on the selected engine type
 
-    const core::backend_t engine = context.engine();
+    const core::backend_t backend = context.backend_type();
 
-    if (engine == core::backend_t::internal) {
+    if (backend == core::backend_t::internal) {
 			core::kernels::tiny_deconv2d_back_kernel(params, prev_out, W[0], dW, db,
 curr_delta, &prev_delta);
     } else {
-      throw nn_error("Not supported engine: " + to_string(engine));
+      throw nn_error("Not supported backend: " + to_string(backend));
     }
   }
 };

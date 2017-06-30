@@ -34,17 +34,17 @@ class FullyConnectedOp : public core::OpKernel {
 
     // call the algorithm depending  on the selected engine type
 
-    const core::backend_t engine = context.engine();
+    const core::backend_t backend = context.backend_type();
 
-    if (engine == core::backend_t::internal) {
+    if (backend == core::backend_t::internal) {
       kernels::fully_connected_op_internal(
         in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
         params, context.parallelize());
-    } else if (engine == core::backend_t::nnpack) {
+    } else if (backend == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(
         in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
         params, context.parallelize());
-    } else if (engine == core::backend_t::avx) {
+    } else if (backend == core::backend_t::avx) {
       kernels::fully_connected_op_avx(in_data, W[0],
                                       params.has_bias_ ? (*bias)[0] : vec_t(),
                                       out_data, params, context.parallelize());
@@ -55,7 +55,7 @@ class FullyConnectedOp : public core::OpKernel {
 			kernels::tiny_quantized_fully_connected_kernel(*params_f_, in[i], W, b, in_r[i], W_r, b_r, out[i], out_r[i], layer_->parallelize());
 #endif
     } else {
-      throw nn_error("Not supported engine: " + to_string(engine));
+      throw nn_error("Not supported backend: " + to_string(backend));
     }
   }
 };

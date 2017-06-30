@@ -95,7 +95,7 @@ class layer : public node {
   // TODO(edgar): Deprecated: use the below method
   core::backend_t backend_type() const { return backend_type_; }
 
-  core::backend_t engine() const { return backend_type_; }
+  //core::backend_t engine() const { return backend_type_; }
 
   virtual std::string kernel_file() const {
     return std::string("empty_kernel_str");

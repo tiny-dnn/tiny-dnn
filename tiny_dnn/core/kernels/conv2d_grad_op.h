@@ -36,12 +36,12 @@ class Conv2dGradOp : public core::OpKernel {
     // call convolution algorithm depending
     // on the selected engine type
 
-    const core::backend_t engine = context.engine();
+    const core::backend_t backend = context.backend_type();
 
-    if (engine == core::backend_t::internal) {
+    if (backend == core::backend_t::internal) {
       kernels::conv2d_op_internal(prev_out, W[0], dW, db, curr_delta,
                                   prev_delta, params, context.parallelize());
-    } else if (engine == core::backend_t::avx) {
+    } else if (backend == core::backend_t::avx) {
       kernels::conv2d_grad_op_avx(prev_out, W[0], dW, db, curr_delta,
                                   prev_delta, params, context.parallelize());
 #if 0
@@ -51,7 +51,7 @@ class Conv2dGradOp : public core::OpKernel {
                                                  &(*prev_delta)[i])
 #endif
     } else {
-      throw nn_error("Not supported engine: " + to_string(engine));
+      throw nn_error("Not supported backend: " + to_string(backend));
     }
   }
 };

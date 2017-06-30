@@ -33,13 +33,13 @@ class Convt2dOp : public core::OpKernel {
     // call convolution algorithm depending
     // on the selected engine type
 
-    const core::backend_t engine = context.engine();
+    const core::backend_t backend = context.backend_type();
 
-    if (engine == core::backend_t::internal || engine == core::backend_t::avx) {
+    if (backend == core::backend_t::internal || backend == core::backend_t::avx) {
       core::kernels::tiny_deconv2d_kernel(params, in_data, W[0], bias[0],
                                           out_data, context.parallelize());
     } else {
-      throw nn_error("Not supported engine: " + to_string(engine));
+      throw nn_error("Not supported backend: " + to_string(backend));
     }
   }
 };

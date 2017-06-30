@@ -48,7 +48,7 @@ inline std::ostream &operator<<(std::ostream &os, backend_t type) {
   return os;
 }
 
-inline backend_t default_engine() {
+inline backend_t default_backend() {
 #ifdef CNN_USE_AVX
 #if defined(__AVX__) || defined(__AVX2__)
   return backend_t::avx;
