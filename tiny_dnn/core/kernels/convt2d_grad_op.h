@@ -9,6 +9,8 @@
 
 #include "tiny_dnn/core/framework/op_kernel.h"
 
+#include "tiny_dnn/core/kernels/tiny_deconv2d_back_kernel.h"
+
 namespace tiny_dnn {
 
 class Convt2dGradOp : public core::OpKernel {
@@ -17,7 +19,7 @@ class Convt2dGradOp : public core::OpKernel {
     : core::OpKernel(context) {}
 
   void compute(core::OpKernelContext &context) override {
-    auto params = OpKernel::params_->conv();
+    auto params = OpKernel::params_->deconv();
 
     // incoming/outcoming data
     const tensor_t &prev_out = context.input(0);
@@ -36,6 +38,8 @@ class Convt2dGradOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
+			core::kernels::tiny_deconv2d_back_kernel(params, prev_out, W[0], dW, db,
+curr_delta, &prev_delta);
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
