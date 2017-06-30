@@ -113,6 +113,9 @@ inline nnp_convolution_transform_strategy nnp_kts() {
 }
 #endif
 
+
+#if 0
+
 class backend {
  public:
   // context holds solution-dependent parameters
@@ -169,6 +172,7 @@ class backend {
  protected:
   layer *layer_;
 };
+#endif
 
 }  // namespace core
 }  // namespace tiny_dnn
