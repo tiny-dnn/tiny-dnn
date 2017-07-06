@@ -64,8 +64,6 @@ inline void conv2d_op_nnpack(const Tensor<float, S1> &in_data,
 
   float *output_ptr = out_data.host_pointer(0, 0);
 
-  float *output_ptr = out_data.host_pointer(0, 0);
-
   // initialize NNPACK threadpool with maximum number of threads
   core::NNPackThreadPool nnp_threadpool;
   nnp_threadpool.set_max_num_threads();
