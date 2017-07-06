@@ -45,13 +45,13 @@
 #                        (AVX2) libraries). Default is OFF.
 #   TinyDNN_USE_NNPACK - Set to ON to use the Acceleration package
 #                        for neural networks on multi-core CPUs.
+#   TinyDNN_USE_SERIALIZER - Set to ON to build with serialization support.
 #
 # Example to find TinyDNN headers only::
 #
 #   find_package(TinyDNN 0.1.0)
 #   if(TinyDNN_FOUND)
 #     add_executable(foo foo.cc)
-#     target_link_libraries(foo TinyDNN::tiny_cnn)
 #   endif()
 #
 # Example to find TinyDNN headers and some *static* libraries::
@@ -61,7 +61,7 @@
 #   find_package(TinyDNN 0.1.0)
 #   if(TinyDNN_FOUND)
 #     add_executable(foo foo.cc)
-#     target_link_libraries(foo TinyDNN::tiny_cnn ${TinyDNN_LIBRARIES})
+#     target_link_libraries(foo ${TinyDNN_LIBRARIES})
 #   endif()
 #
 ##################################################################
@@ -147,6 +147,10 @@ elseif(@PACKAGE_NAME@_USE_NNPACK AND NOT NNPACK_FOUND)
     # set the paths to headers and libs by hand.
     message(FATAL_ERROR "Can't find NNPACK. Please set NNPACK_INCLUDE_DIR "
             " & NNPACK_LIB")
+endif()
+
+if(NOT @PACKAGE_NAME@_USE_SERIALIZER)
+    add_definitions(-DCNN_NO_SERIALIZATION)
 endif()
 
 # Unix
