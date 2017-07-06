@@ -46,9 +46,10 @@ void construct_net(N &nn) {
   using relu    = relu_layer;
   using softmax = softmax_layer;
 
-  const size_t n_fmaps  = 32;  ///< number of feature maps for upper layer
-  const size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
-  const size_t n_fc = 64;  ///< number of hidden units in fully-connected layer
+  size_t n_fmaps  = 32;  ///< number of feature maps for upper layer
+  size_t n_fmaps2 = 64;  ///< number of feature maps for lower layer
+  size_t n_fmaps3 = 4 * 4 * n_fmaps2;  ///< number of in feature maps for FC7
+  size_t n_fc     = 64;  ///< number of hidden units in fully-connected layer
 
   nn << conv(32, 32, 5, 3, n_fmaps, padding::same)        // C1
      << pool(32, 32, n_fmaps, 2)                          // P2
@@ -59,8 +60,9 @@ void construct_net(N &nn) {
      << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same)   // C5
      << pool(8, 8, n_fmaps2, 2)                           // P6
      << relu(4, 4, n_fmaps2)                              // activation
-     << fc(4 * 4 * n_fmaps2, n_fc)                        // FC7
-     << fc(n_fc, 10) << softmax(10);                      // FC10
+     << fc(n_fmaps3, n_fc)                                // FC7
+     << fc(n_fc, 10)                                      // FC10
+     << softmax(10);                                      // activation
 }
 
 void recognize(const std::string &dictionary, const std::string &src_filename) {

@@ -19,6 +19,10 @@
 #include "nnpack.h"
 #endif
 
+#ifndef CNN_SINGLE_THREAD
+#include <thread>
+#endif
+
 namespace tiny_dnn {
 namespace core {
 
@@ -102,6 +106,31 @@ inline nnp_convolution_transform_strategy nnp_kts() {
   // some algorithm accept tuple based only
   return nnp_convolution_transform_strategy_tuple_based;
 }
+
+class NNPackThreadPool {
+ public:
+  NNPackThreadPool(size_t num_threads = 1) : num_threads_(num_threads) {}
+
+  void set_num_threads(size_t num_threads) { num_threads_ = num_threads; }
+
+  void set_max_num_threads() {
+#ifndef CNN_SINGLE_THREAD
+    set_num_threads(std::thread::hardware_concurrency());
+#else
+    set_num_threads(1);
+#endif  // CNN_SINGLE_THREAD
+  }
+
+  void create() { threadpool_ = pthreadpool_create(num_threads_); }
+
+  void destroy() { pthreadpool_destroy(threadpool_); }
+
+  pthreadpool_t threadpool() { return threadpool_; }
+
+ private:
+  size_t num_threads_;
+  pthreadpool_t threadpool_;
+};
 #endif
 
 class backend {

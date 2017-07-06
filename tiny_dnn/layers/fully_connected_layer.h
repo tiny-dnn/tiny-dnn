@@ -13,24 +13,48 @@
 
 namespace tiny_dnn {
 
+struct layer_params {
+  bool parallellze = true;
+
+  backend_t backend_type = core::default_engine();
+};
+
+struct fully_connected_layer_params : public layer_params {
+  bool bias = true;
+};
+
 /**
  * compute fully-connected(matmul) operation
  **/
 class fully_connected_layer : public layer {
  public:
   /**
-   * @param in_dim [in] number of elements of the input
-   * @param out_dim [in] number of elements of the output
-   * @param has_bias [in] whether to include additional bias to the layer
+   * @param in_features [in] number of elements of the input
+   * @param out_features [in] number of elements of the output
+   * @param bias [in] whether to include additional bias to the layer
    **/
-  fully_connected_layer(size_t in_dim,
-                        size_t out_dim,
-                        bool has_bias          = true,
+  fully_connected_layer(size_t in_features,
+                        size_t out_features,
+                        bool bias              = true,
                         backend_t backend_type = core::default_engine())
-    : layer(std_input_order(has_bias), {vector_type::data}) {
-    set_params(in_dim, out_dim, has_bias);
+    : layer(std_input_order(bias), {vector_type::data}) {
+    set_params(in_features, out_features, bias);
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
+  }
+
+  /**
+    * @param in_features [in] number of elements of the input
+    * @param out_features [in] number of elements of the output
+    * @param bias [in] whether to include additional bias to the layer
+    **/
+  fully_connected_layer(size_t in_features,
+                        size_t out_features,
+                        fully_connected_layer_params params)
+    : layer(std_input_order(params.bias), {vector_type::data}) {
+    set_params(in_features, out_features, params.bias);
+    init_backend(params.backend_type);
+    layer::set_backend_type(params.backend_type);
   }
 
   // move constructor

@@ -7,11 +7,14 @@
 */
 #pragma once
 
+#include <thread>
+
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/params/fully_params.h"
 
 namespace tiny_dnn {
 namespace kernels {
+
 /**
  * Forward propogation for fully connected layer with NNPACK backend
  * @param in_data
@@ -35,21 +38,27 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
   const float *input_ptr  = in_data.host_pointer(0, 0);
   float *output_ptr       = out_data.host_pointer(0, 0);
 
-  // TODO: embed it into a class
-  const size_t num_mkl_threads = 1;
-  pthreadpool_t threadpool     = pthreadpool_create(num_mkl_threads);
+  // TODO(edgarriba): why is it index `[1]`? recheck once parameters refactor is
+  // in. We'll assume here NCHW ?
+  size_t in_size  = in_data.shape()[1];
+  size_t out_size = out_data.shape()[1];
 
-  size_t out_size = out_data.shape()[1], in_size = in_data.shape()[1];
-  const auto status = nnp_fully_connected_inference(
-    in_size, out_size, input_ptr, kernel_ptr, output_ptr, threadpool);
+  // initialize NNPACK threadpool with maximum number of threads
+  NNPackThreadPool nnp_threadpool;
+  nnp_threadpool.set_max_num_threads();
+  nnp_threadpool.create();
+
+  const auto status =
+    nnp_fully_connected_inference(in_size, out_size, input_ptr, kernel_ptr,
+                                  output_ptr, nnp_threadpool.threadpool());
 
   if (status != nnp_status_success) {
     throw nn_error("Could not succeed with nnp_max_pooling_output");
   }
 
-  // TODO: embed it into a class
-  pthreadpool_destroy(threadpool);
+  nnp_threadpool.destroy();
 
+  // apply bias
   if (bias.size() > 0) {
     for_i(layer_parallelize, out_size,
           [&](size_t i) { output_ptr[i] += bias.host_at(0, i); });
@@ -60,7 +69,7 @@ inline void fully_connected_op_nnpack(const Tensor<float, S1> &in_data,
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(layer_parallelize);
-  throw nn_error("TinyDNN has not been compiled with NNPACK support.");
+  throw nn_error("tiny-dnn has not been compiled with NNPACK support.");
 #endif
 }
 
