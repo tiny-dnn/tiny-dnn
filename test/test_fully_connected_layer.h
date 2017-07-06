@@ -177,7 +177,6 @@ TEST(fully_connected, forward) {
 
 #ifdef CNN_USE_NNPACK
 TEST(fully_connected, forward_nnp) {
-  nnp_initialize();
   fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
@@ -189,6 +188,23 @@ TEST(fully_connected, forward_nnp) {
   l.forward({{in}}, o);
   vec_t out          = (*o[0])[0];
   vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
+
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+  }
+}
+
+TEST(fully_connected, forward_nnp_nobias) {
+  fully_connected_layer l(4, 2, false, core::backend_t::nnpack);
+  EXPECT_EQ(l.in_channels(), size_t(2));  // in and W
+
+  l.weight_init(weight_init::constant(1.0));
+
+  vec_t in = {0, 1, 2, 3};
+  std::vector<const tensor_t *> o;
+  l.forward({{in}}, o);
+  vec_t out          = (*o[0])[0];
+  vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {
     EXPECT_FLOAT_EQ(out_expected[i], out[i]);

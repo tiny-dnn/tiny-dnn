@@ -148,15 +148,15 @@ TEST(convolutional, with_stride) {
 
   */
 
-  float_t in[] = {0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 1.0f, 2.0f, 3.0f, 4.0f,
-                  5.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 3.0f, 4.0f, 5.0f,
-                  6.0f, 7.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f};
+  float_t in[] = {0.0, 1.0, 2.0, 3.0, 4.0, 1.0, 2.0, 3.0, 4.0,
+                  5.0, 2.0, 3.0, 4.0, 5.0, 6.0, 3.0, 4.0, 5.0,
+                  6.0, 7.0, 4.0, 5.0, 6.0, 7.0, 8.0};
 
-  float_t w[] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
+  float_t w[] = {0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5};
 
-  float_t b[] = {0.5f};
+  float_t b[] = {0.5};
 
-  float_t expected_out[] = {9.5f, 18.5f, 18.5f, 27.5f};
+  float_t expected_out[] = {9.5, 18.5, 18.5, 27.5};
 
   convolutional_layer l(5, 5, 3, 1, 1, padding::valid, true, 2, 2);
   tensor_buf data(l, false), grad(l, false);
@@ -174,18 +174,17 @@ TEST(convolutional, with_stride) {
   }
 
   float_t curr_delta[] = {
-    -1.0f, 2.0f, 3.0f, 0.0f,
+    -1.0, 2.0, 3.0, 0.0,
   };
 
-  float_t expected_prev_delta[] = {-0.5f, -0.5f, 0.5f, 1.0f, 1.0f, -0.5f, -0.5f,
-                                   0.5f,  1.0f,  1.0f, 1.0f, 1.0f, 2.0f,  1.0f,
-                                   1.0f,  1.5f,  1.5f, 1.5f, 0.0f, 0.0f,  1.5f,
-                                   1.5f,  1.5f,  0.0f, 0.0f};
+  float_t expected_prev_delta[] = {
+    -0.5, -0.5, 0.5, 1.0, 1.0, -0.5, -0.5, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0,
+    1.0,  1.0,  1.5, 1.5, 1.5, 0.0,  0.0,  1.5, 1.5, 1.5, 0.0, 0.0};
 
-  float_t expected_dw[] = {10.0f, 14.0f, 18.0f, 14.0f, 18.0f,
-                           22.0f, 18.0f, 22.0f, 26.0f};
+  float_t expected_dw[] = {10.0, 14.0, 18.0, 14.0, 18.0,
+                           22.0, 18.0, 22.0, 26.0};
 
-  float_t expected_db[] = {4.0f};
+  float_t expected_db[] = {4.0};
 
   grad.out_at(0)[0] = vec_t(curr_delta, curr_delta + 4);
 
@@ -457,44 +456,26 @@ TEST(convolutional, fprop_nnp) {
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
                         core::backend_t::nnpack);
 
-  // layer::forward_propagation expects tensors, even if we feed only one
-  // input at a time
-  auto create_simple_tensor = [](size_t vector_size) {
-    return tensor_t(1, vec_t(vector_size));
-  };
-
-  // create simple tensors that wrap the payload vectors of the correct size
-  tensor_t in_tensor     = create_simple_tensor(25),
-           out_tensor    = create_simple_tensor(18),
-           a_tensor      = create_simple_tensor(18),
-           weight_tensor = create_simple_tensor(18),
-           bias_tensor   = create_simple_tensor(2);
-
-  // short-hand references to the payload vectors
-  vec_t &in = in_tensor[0], &weight = weight_tensor[0];
+  tensor_buf buf(l, false);
 
   ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
-
+  // short-hand references to the payload vectors
+  vec_t &in = buf.in_at(0)[0], &weight = buf.in_at(1)[0];
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  std::vector<tensor_t *> in_data, out_data;
-  in_data.push_back(&in_tensor);
-  in_data.push_back(&weight_tensor);
-  in_data.push_back(&bias_tensor);
-  out_data.push_back(&out_tensor);
-  out_data.push_back(&a_tensor);
   l.setup(false);
   {
-    l.forward_propagation(in_data, out_data);
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
 
-    vec_t &out = out_tensor[0];
-    for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
+    vec_t &out = buf.out_at(0)[0];
+
+    for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.0));
   }
 
   // clang-format off
-  weight[0] = 0.3;  weight[1] = 0.1;  weight[2] = 0.2;
-  weight[3] = 0.0;  weight[4] = -0.1; weight[5] = -0.1;
-  weight[6] = 0.05; weight[7] = -0.2; weight[8] = 0.05;
+  weight[0] = 0.3;  weight[1] = 0.1;   weight[2] = 0.2;
+  weight[3] = 0.0;  weight[4] = -0.1;  weight[5] = -0.1;
+  weight[6] = 0.05; weight[7] = -0.2;  weight[8] = 0.05;
 
   weight[9]  = 0.0; weight[10] = -0.1; weight[11] = 0.1;
   weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
@@ -508,21 +489,22 @@ TEST(convolutional, fprop_nnp) {
   // clang-format on
 
   {
-    l.forward_propagation(in_data, out_data);
-    vec_t &out = out_tensor[0];
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
 
-    EXPECT_NEAR(0.4875026, out[0], 1E-5);
-    EXPECT_NEAR(0.8388910, out[1], 1E-5);
-    EXPECT_NEAR(0.8099984, out[2], 1E-5);
-    EXPECT_NEAR(0.7407749, out[3], 1E-5);
-    EXPECT_NEAR(0.5000000, out[4], 1E-5);
-    EXPECT_NEAR(0.1192029, out[5], 1E-5);
-    EXPECT_NEAR(0.5986877, out[6], 1E-5);
-    EXPECT_NEAR(0.7595109, out[7], 1E-5);
-    EXPECT_NEAR(0.6899745, out[8], 1E-5);
+    vec_t &out = buf.out_at(0)[0];
+
+    EXPECT_NEAR(float_t(-0.05), out[0], 1E-5);
+    EXPECT_NEAR(float_t(1.65), out[1], 1E-5);
+    EXPECT_NEAR(float_t(1.45), out[2], 1E-5);
+    EXPECT_NEAR(float_t(1.05), out[3], 1E-5);
+    EXPECT_NEAR(float_t(0.00), out[4], 1E-5);
+    EXPECT_NEAR(float_t(-2.0), out[5], 1E-5);
+    EXPECT_NEAR(float_t(0.40), out[6], 1E-5);
+    EXPECT_NEAR(float_t(1.15), out[7], 1E-5);
+    EXPECT_NEAR(float_t(0.80), out[8], 1E-5);
   }
 }
-#endif
+#endif  // CNN_USE_NNPACK
 
 TEST(convolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;

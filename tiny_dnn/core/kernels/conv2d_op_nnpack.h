@@ -36,31 +36,25 @@ inline void conv2d_op_nnpack(const Tensor<float, S1> &in_data,
   // call singleton to initialize NNPACK
   core::NNPackInitializer::getInstance().initialize();
 
+  // TODO(edgarriba): we should get this from conv_layer_params
   const auto algorithm                 = core::nnp_algorithm();
   const auto kernel_transform_strategy = core::nnp_kts();
 
+  // TODO(edgarriba): that should be in/out shape
   const size_t input_channels  = params.in.depth_;
   const size_t output_channels = params.out.depth_;
 
-  // input data passed by convolution layer has been padded already
-  // set input_size to padded size
+  // input data passed by convolution layer has been padded
+  // TODO(edgarriba): that should be in_data shape
   const nnp_size input_size = {params.in_padded.width_,
                                params.in_padded.height_};
 
+  // TODO(edgarriba): that should be weights shape
   const nnp_size kernel_size = {params.weight.width_, params.weight.height_};
 
-  // input padded ,so no need to do padding
-  const float_t dx{0.0};  // params.in_padded.width_  - params.in.width_;
-  const float_t dy{0.0};  // params.in_padded.height_ - params.in.height_;
-
+  // input is already padded, so no need to do padding.
   // we'll assume that padding is symmetric
-
-  const nnp_padding padding = {
-    dy / 2),  // top
-    dx / 2),  // right
-    dy / 2),  // bottom
-    dx / 2)   // left
-  };
+  const nnp_padding padding = {0.0, 0.0, 0.0, 0.0};
 
   const nnp_size stride = {params.w_stride, params.h_stride};
 
@@ -70,30 +64,29 @@ inline void conv2d_op_nnpack(const Tensor<float, S1> &in_data,
 
   float *output_ptr = out_data.host_pointer(0, 0);
 
-  // TODO(edgarriba): embed it into a class
-  const size_t num_mkl_threads = 1;
-  pthreadpool_t threadpool     = pthreadpool_create(num_mkl_threads);
+  // initialize NNPACK threadpool with maximum number of threads
+  core::NNPackThreadPool nnp_threadpool;
+  nnp_threadpool.set_max_num_threads();
+  nnp_threadpool.create();
 
-  nnp_profile *profile = nullptr;
-
-  nnp_status status = nnp_convolution_inference(
+  const auto status = nnp_convolution_inference(
     algorithm, kernel_transform_strategy, input_channels, output_channels,
     input_size, padding, kernel_size, stride, input_ptr, kernel_ptr, bias_ptr,
-    output_ptr, threadpool, profile);
+    output_ptr, nnp_threadpool.threadpool(), nullptr);
 
   if (status != nnp_status_success) {
     throw nn_error("Could not succeed with nnp_convolution_inference");
   }
 
-  // TODO(edgarriba): embed it into a class
-  pthreadpool_destroy(threadpool);
+  nnp_threadpool.destroy();
+
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);
   CNN_UNREFERENCED_PARAMETER(weights);
   CNN_UNREFERENCED_PARAMETER(bias);
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(params);
-  throw nn_error("TinyDNN has not been compiled with NNPACK support.");
+  throw nn_error("tiny-dnn has not been compiled with NNPACK support.");
 #endif
 }
 
