@@ -20,7 +20,7 @@ struct fully_connected_layer_params {
   // Whether to include additional bias to the layer
   bool has_bias = true;
   // The backend type for to use for computation.
-  backend_t backend_type = core::default_engine();
+  backend_t backend_type = core::backend_t::internal;
 };
 
 /**
@@ -69,6 +69,8 @@ class fully_connected_layer : public layer {
   size_t fan_in_size() const override { return params_.in_size_; }
 
   size_t fan_out_size() const override { return params_.out_size_; }
+
+  fully_connected_layer_params params() const { return layer_params_; }
 
   std::vector<index3d<size_t>> in_shape() const override {
     std::vector<index3d<size_t>> in_shape;
@@ -126,6 +128,8 @@ class fully_connected_layer : public layer {
   void init_backend(backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
+
+    layer_params_.backend_type = backend_type;
 
     if (backend_type == backend_t::internal || backend_type == backend_t::avx ||
         backend_type == backend_t::nnpack) {
