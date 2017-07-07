@@ -14,16 +14,6 @@ using namespace tiny_dnn::activation;
 
 namespace tiny_dnn {
 
-TEST(fully_connected, read_write) {
-  fully_connected_layer l1(100, 100);
-  fully_connected_layer l2(100, 100);
-
-  l1.setup(true);
-  l2.setup(true);
-
-  serialization_test(l1, l2);
-}
-
 TEST(fully_connected, forward) {
   fully_connected_layer l(4, 2);
   EXPECT_EQ(l.in_channels(), size_t(3));  // in, W and b
@@ -77,5 +67,16 @@ TEST(fully_connected, forward_nobias) {
     EXPECT_FLOAT_EQ(out_expected[i], out[i]);
   }
 }
+
+TEST(fully_connected, serialization) {
+  fully_connected_layer l1(100, 100);
+  fully_connected_layer l2(100, 100);
+
+  l1.setup(true);
+  l2.setup(true);
+
+  serialization_test(l1, l2);
+}
+
 
 }  // namespace tiny_dnn
