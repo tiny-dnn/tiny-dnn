@@ -193,7 +193,7 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), size_t(2));  // in and W
+  EXPECT_EQ(l.in_channels(), 2u);  // in and W
 
   l.weight_init(weight_init::constant(1.0));
 
