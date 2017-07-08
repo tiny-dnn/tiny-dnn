@@ -26,7 +26,7 @@ TEST(parameter, init) {
 
 TEST(parameter, getter_setter) {
   Parameter p(1, 1, 1, 4, parameter_type::bias, false);
-  Tensor<float_t> t{{1.0, 2.0, 3.0, 4.0}};
+  Tensor<float_t> t{vec_t{1.0f, 2.0f, 3.0f, 4.0f}};
 
   p.set_data(t);
   Tensor<float_t> *pt = p.data();
@@ -37,28 +37,22 @@ TEST(parameter, getter_setter) {
 }
 
 TEST(parameter, merge_grads) {
-  Tensor<float_t> grad0{tensor_t{{1.0, 2.0}, {2.0, 1.0}}};
-  Tensor<float_t> gradp{tensor_t{{2.0, 4.0}, {4.0, 2.0}}};
+  Tensor<float_t> gradp{tensor_t{{1.0f, 2.0f}, {2.0f, 1.0f}, {-4.0f, 5.0f}}};
+  Tensor<float_t> grad0{vec_t{0.0f, 0.0f}};
 
   Parameter p(1, 1, 1, 2, parameter_type::bias, false);
   p.set_grad(gradp);
   p.merge_grads(&grad0);
 
-  Tensor<float_t> expected{tensor_t{{6.0, 6.0}, {6.0, 6.0}}};
+  Tensor<float_t> expected{vec_t{-1.0f, 8.0f}};
 
   for (size_t i = 0; i < p.size(); i++) {
     EXPECT_EQ(grad0.host_at(0, i), expected.host_at(0, i));
-    EXPECT_EQ(grad0.host_at(1, i), expected.host_at(1, i));
   }
 }
 
 TEST(parameter, layer_adder) {
   fully_connected_layer fc(3, 2);
-
-  // todo (karandesai): modify later, two parameters will already be there
-  // in fc layer
-  fc.add_parameter(1, 1, 2, 3, parameter_type::weight);
-  fc.add_parameter(1, 1, 1, 2, parameter_type::bias);
 
   auto parameters = fc.parameters();
 

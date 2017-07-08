@@ -70,9 +70,10 @@ class layer : public node {
     weight_init_ = std::make_shared<weight_init::xavier>();
     bias_init_   = std::make_shared<weight_init::constant>();
 
-    weight_init_f_ = std::make_shared<parameter_init::xavier>();
-    bias_init_f_   = std::make_shared<parameter_init::constant>();
-    trainable_     = true;
+    weight_init_f_   = std::make_shared<parameter_init::xavier>();
+    bias_init_f_     = std::make_shared<parameter_init::constant>();
+    trainable_       = true;
+    parameters_diff_ = Tensor<float_t>();
   }
 
   layer(const layer &) = default;
@@ -327,6 +328,7 @@ class layer : public node {
 
   /////////////////////////////////////////////////////////////////////////
   // setter
+  // todo (karandesai) : remove after parameter integration
   template <typename WeightInit>
   layer &weight_init(const WeightInit &f) {
     weight_init_ = std::make_shared<WeightInit>(f);
@@ -350,6 +352,35 @@ class layer : public node {
     bias_init_ = f;
     return *this;
   }
+
+  /**
+   * @name Parameter Init Methods
+   * @{
+   */
+  template <typename WeightInit>
+  layer &weight_init_f(const WeightInit &f) {
+    weight_init_f_ = std::make_shared<WeightInit>(f);
+    return *this;
+  }
+
+  template <typename BiasInit>
+  layer &bias_init_f(const BiasInit &f) {
+    bias_init_f_ = std::make_shared<BiasInit>(f);
+    return *this;
+  }
+
+  template <typename WeightInit>
+  layer &weight_init_f(std::shared_ptr<WeightInit> f) {
+    weight_init_f_ = f;
+    return *this;
+  }
+
+  template <typename BiasInit>
+  layer &bias_init_f(std::shared_ptr<BiasInit> f) {
+    bias_init_f_ = f;
+    return *this;
+  }
+  /** @} */  // Parameter Init Methods
 
   /**
    * @name Parameter Getters and Setters
@@ -740,7 +771,7 @@ class layer : public node {
     // return the number of incoming/outcoming connections for each
     // input/output unit.
     for (size_t i = 0; i < parameters_.size(); i++) {
-      if (parameters_[i]->is_initialized()) {
+      if (parameters_[i]->initialized()) {
         continue;
       }
       switch (parameters_[i]->type()) {
@@ -795,27 +826,27 @@ class layer : public node {
   }
 
   void update_parameters(optimizer *optimizer_ptr, size_t batch_size) {
-    float_t rcp_batch_size  = float_t{1} / float_t{batch_size};
-    Tensor<float_t> &diff_t = parameters_diff_;
+    float_t rcp_batch_size = float_t(1) / float_t(batch_size);
+    auto &diff             = parameters_diff_;
     for (auto &parameter : parameters_) {
       if (!trainable() || !parameter->is_trainable()) {
         continue;
       }
-      parameter->merge_grads(&diff_t);
+      parameter->merge_grads(&diff);
 
-      for (size_t j = 0; j < diff_t.size(); ++j) {
-        diff_t.host_at(j) *= rcp_batch_size;
+      for (size_t j = 0; j < diff.size(); ++j) {
+        diff.host_at(j) *= rcp_batch_size;
       }
       // parallelize only when target size is big enough to mitigate
       // thread spawning overhead.
       bool parallelize = (parameter->size() >= 512);
 
       // todo (karandesai) : remove this workaround later
-      vec_t diff   = diff_t.toVec();
-      vec_t target = parameter->data()->toVec();
-      optimizer_ptr->update(diff, target, parallelize);
-      diff_t = Tensor<float_t>(diff);
-      parameter->set_data(Tensor<float_t>(target));
+      vec_t diff_t   = diff.toVec();
+      vec_t target_t = parameter->data()->toVec();
+      optimizer_ptr->update(diff_t, target_t, parallelize);
+      diff = Tensor<float_t>(diff_t);
+      parameter->set_data(Tensor<float_t>(target_t));
     }
     clear_grads();
     post_update();

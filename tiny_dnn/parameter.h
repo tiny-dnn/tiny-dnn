@@ -53,7 +53,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
       shape_(other.shape()),
       out_channels_(other.size() / other.shape().size()),
       trainable_(other.is_trainable()),
-      initialized_(other.is_initialized()),
+      initialized_(other.initialized()),
       data_(*(other.data())),
       grad_(*(other.grad())) {}
 
@@ -67,7 +67,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
 
   void set_trainable(bool trainable = true) { trainable_ = trainable; }
 
-  bool is_initialized() const { return initialized_; }
+  bool initialized() const { return initialized_; }
 
   void set_initialized(bool initialized = true) { initialized_ = initialized; }
 
@@ -91,19 +91,18 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   }
 
   void merge_grads(Tensor<float_t> *dst) {
-    const auto &grad_head = grad_[0];
+    tensor_t grad_t = grad_.toTensor();
+    vec_t dst_t{0};
+    const auto &grad_head = grad_t[0];
     size_t sz             = grad_head.size();
-    dst->reshape({sz});
-    //    float_t *pdst = &(*dst)[0];
-    // dst = grad_[0]
-    std::copy(grad_head.host_begin(), grad_head.host_end(), dst->host_begin());
+    dst_t.resize(sz);
+    std::copy(grad_head.begin(), grad_head.end(), dst_t.begin());
     // @todo consider adding parallelism
     for (size_t sample = 1, sample_count = grad_.shape()[0];
          sample < sample_count; ++sample) {
-      // dst += grad_[sample]
-      vectorize::reduce<float_t>(&grad_.host_at(sample, 0), sz,
-                                 &dst->host_at(0));
+      vectorize::reduce<float_t>(&grad_t[sample][0], sz, &dst_t[0]);
     }
+    *dst = Tensor<float_t>(dst_t);
   }
 
   void clear_grads() { grad_.fill(float_t{0}); }

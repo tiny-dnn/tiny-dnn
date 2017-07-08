@@ -48,6 +48,7 @@ class xavier : public scalable {
 
     uniform_rand(parameter->data()->host_begin(), parameter->data()->host_end(),
                  -weight_base, weight_base);
+    parameter->grad()->fill(0);
   }
 };
 
@@ -60,6 +61,7 @@ class constant : public scalable {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
     parameter->data()->fill(scale_);
+    parameter->grad()->fill(0);
   }
 };
 
