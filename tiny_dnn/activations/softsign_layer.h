@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -19,7 +23,7 @@ class softsign_layer : public activation_layer {
 
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (size_t j = 0; j < x.size(); j++) {
-      y[j] = x[j] / (float_t{1} + std::abs(x[j]));
+      y[j] = x[j] / (float_t {1} + std::abs(x[j]));
     }
   }
 
@@ -30,7 +34,7 @@ class softsign_layer : public activation_layer {
     CNN_UNREFERENCED_PARAMETER(y);
     for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of softsign)
-      auto d = float_t{1} + std::abs(x[j]);
+      auto d = float_t {1} + std::abs(x[j]);
       dx[j]  = dy[j] / (d * d);
     }
   }
