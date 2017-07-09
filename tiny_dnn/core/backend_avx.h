@@ -90,9 +90,8 @@ class avx_backend : public backend {
 
   // fully_connected
   explicit avx_backend(fully_params *params)
-    :
 #if 0
-    params_f_(params)
+    : params_f_(params)
 #endif
   {
     CNN_UNREFERENCED_PARAMETER(params);
