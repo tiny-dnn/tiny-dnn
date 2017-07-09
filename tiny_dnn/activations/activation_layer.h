@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
@@ -28,7 +32,8 @@ class activation_layer : public layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  activation_layer(size_t in_dim) : activation_layer(shape3d(in_dim, 1, 1)) {}
+  explicit activation_layer(size_t in_dim)
+    : activation_layer(shape3d(in_dim, 1, 1)) {}
 
   /**
    * Construct an activation layer with specified width, height and channels.
@@ -47,14 +52,14 @@ class activation_layer : public layer {
    *
    * @param in_shape [in] shape of input tensor
    */
-  activation_layer(const shape3d &in_shape)
+  explicit activation_layer(const shape3d &in_shape)
     : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
 
   /**
    * Construct an activation layer given the previous layer.
    * @param prev_layer previous layer
    */
-  activation_layer(const layer &prev_layer)
+  explicit activation_layer(const layer &prev_layer)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(prev_layer.out_shape()[0]) {}
 
@@ -85,7 +90,7 @@ class activation_layer : public layer {
           [&](size_t i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
   }
 
-  virtual std::string layer_type() const override = 0;
+  virtual std::string layer_type() const = 0;
 
   /**
    * Populate vec_t of elements 'y' according to activation y = f(x).
