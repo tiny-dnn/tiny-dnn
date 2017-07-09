@@ -6,9 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <vector>
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
+
 #include "tiny_dnn/util/util.h"
 
 #define CIFAR10_IMAGE_DEPTH (3)
