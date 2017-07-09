@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "tiny_dnn/layers/partial_connected_layer.h"
 #include "tiny_dnn/util/util.h"
