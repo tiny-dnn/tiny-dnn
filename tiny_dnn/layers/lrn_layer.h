@@ -8,6 +8,8 @@
 #pragma once
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/util/util.h"
 
@@ -117,7 +119,7 @@ class lrn_layer : public layer {
     }
 
     size_t head      = size_ / 2;
-    long tail        = static_cast<long>(head) - static_cast<long>(size_);
+    size_t tail      = head - size_;
     size_t channels  = in_shape_.depth_;
     const size_t wxh = in_shape_.area();
     const float_t alpha_div_size = alpha_ / size_;
