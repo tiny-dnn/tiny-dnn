@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
+#include <memory>
 
 #include "tiny_dnn/core/kernels/maxpool_grad_op.h"
 #include "tiny_dnn/core/kernels/maxpool_op.h"
