@@ -21,6 +21,7 @@
 
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/node.h"
 #include "tiny_dnn/parameter.h"
 
@@ -181,8 +182,8 @@ class layer : public node {
     return v;
   }
 
-  std::vector<tensor_t *> weights_grads() {
-    std::vector<tensor_t *> v;
+  std::vector<Tensor<> *> weights_grads() {
+    std::vector<Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(ith_in_node(i)->get_gradient());
@@ -220,13 +221,15 @@ class layer : public node {
     size_t n = 0;
     for (size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] != vector_type::data) continue;
-      tensor_t &dst_grad = *ith_out_node(i)->get_gradient();
+      Tensor<> &dst_grad = *ith_out_node(i)->get_gradient();
       assert(n < cnt);
       const auto &src_grad = grad[n++];
       size_t sz            = src_grad.size();
-      dst_grad.resize(sz);
+      dst_grad.resize_axis(sz);
       for (size_t j = 0; j < sz; ++j) {
-        dst_grad[j] = *src_grad[j];
+        // TODO(Randl)
+        std::copy(src_grad[j]->begin(), src_grad[j]->end(),
+                  dst_grad[j].host_begin());
       }
     }
   }
@@ -236,18 +239,20 @@ class layer : public node {
     size_t n = 0;
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
-      tensor_t &dst_data = *ith_in_node(i)->get_data();
+      Tensor<> &dst_data = *ith_in_node(i)->get_data();
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
-      dst_data.resize(sz);
+      dst_data.resize_axis(sz);
       for (size_t j = 0; j < sz; ++j) {
-        dst_data[j] = *src_data[j];
+        // TODO(Randl)
+        std::copy(src_data[j]->begin(), src_data[j]->end(),
+                  dst_data[j].host_begin());
       }
     }
   }
 
-  void output(std::vector<const tensor_t *> &out) const {
+  void output(std::vector<const Tensor<> *> &out) const {
     out.clear();
     for (size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] == vector_type::data) {
@@ -526,7 +531,8 @@ class layer : public node {
 /// visualization.
 #ifdef DNN_USE_IMAGE_API
   virtual image<> output_to_image(size_t channel = 0) const {
-    const vec_t *output = &(*(outputs()[channel]->get_data()))[0];
+    // TODO
+    const vec_t *output = &(*(outputs()[channel]->get_data())).toTensor()[0];
     return vec2image<unsigned char>(*output, out_shape()[channel]);
   }
 #endif
@@ -538,8 +544,8 @@ class layer : public node {
    * @param in_data  input vectors of this layer (data, weight, bias)
    * @param out_data output vectors
    **/
-  virtual void forward_propagation(const std::vector<tensor_t *> &in_data,
-                                   std::vector<tensor_t *> &out_data) = 0;
+  virtual void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                                   std::vector<Tensor<> *> &out_data) = 0;
 
   /**
    * return delta of previous layer (delta=\frac{dE}{da}, a=wx in
@@ -551,10 +557,10 @@ class layer : public node {
    * @param in_grad  gradient of input vectors (i-th vector correspond with
    *in_data[i])
    **/
-  virtual void back_propagation(const std::vector<tensor_t *> &in_data,
-                                const std::vector<tensor_t *> &out_data,
-                                std::vector<tensor_t *> &out_grad,
-                                std::vector<tensor_t *> &in_grad) = 0;
+  virtual void back_propagation(const std::vector<Tensor<> *> &in_data,
+                                const std::vector<Tensor<> *> &out_data,
+                                std::vector<Tensor<> *> &out_grad,
+                                std::vector<Tensor<> *> &in_grad) = 0;
 
   /**
    * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of
@@ -583,7 +589,7 @@ class layer : public node {
   /* @brief Performs layer forward operation given an input tensor and
    * returns the computed data in tensor form.
    *
-   * @param input Vector of `tensor_t` with incoming data.
+   * @param input Vector of `Tensor<>` with incoming data.
    *
    * Internally, it first allocates data without resetting the weights,
    * forwards the input data to the computational graph, inside the
@@ -594,18 +600,21 @@ class layer : public node {
    * graph. Will be this overhead reduced once we have the Tensor
    * class integrated?
    */
-  void forward(const std::vector<tensor_t> &input,
-               std::vector<const tensor_t *> &out) {  // for test
+  void forward(const std::vector<Tensor<>> &input,
+               std::vector<const Tensor<> *> &out) {  // for test
     // allocate data in the computational graph without
     // resetting the weights.
     setup(false);
 
     std::vector<std::vector<const vec_t *>> input2;
+    std::vector<std::vector<vec_t>> input2_st;  // TODO(Randl) temporary
     input2.resize(input.size());
     for (size_t i = 0; i < input.size(); ++i) {
       input2[i].resize(input[i].size());
-      for (size_t j = 0; j < input[i].size(); ++j) {
-        input2[i][j] = &input[i][j];
+      for (size_t j = 0; j < input[i].shape()[0]; ++j) {
+        // TODO(Randl)
+        input2_st[i][j] = input[i].lineToVec(j);
+        input2[i][j]    = &input2_st[i][j];
       }
     }
 
@@ -618,22 +627,25 @@ class layer : public node {
     output(out);
   }
 
-  std::vector<tensor_t> backward(
-    const std::vector<tensor_t> &out_grads) {  // for test
+  std::vector<Tensor<>> backward(
+    const std::vector<Tensor<>> &out_grads) {  // for test
     setup(false);
 
     std::vector<std::vector<const vec_t *>> grads2;
+    std::vector<std::vector<vec_t>> grads2_st;  // TODO(Randl) temporary
     grads2.resize(out_grads.size());
     for (size_t i = 0; i < out_grads.size(); ++i) {
       grads2[i].resize(out_grads[i].size());
-      for (size_t j = 0; j < out_grads[i].size(); ++j) {
-        grads2[i][j] = &out_grads[i][j];
+      for (size_t j = 0; j < out_grads[i].shape()[0]; ++j) {
+        // TODO(Randl)
+        grads2_st[i][j] = out_grads[i].lineToVec(j);
+        grads2[i][j]    = &grads2_st[i][j];
       }
     }
 
     set_out_grads(&grads2[0], grads2.size());
     backward();
-    return map_<tensor_t>(inputs(),
+    return map_<Tensor<>>(inputs(),
                           [](edgeptr_t e) { return *e->get_gradient(); });
   }
 
@@ -646,9 +658,9 @@ class layer : public node {
    * Additionally, the sample count a.k.a number of batches is set.
    *
    * Note: in_data and out_data attempt to contain tensors. However, they
-   * are not real tensors since tensor_t have three dimensions instead of
+   * are not real tensors since Tensor<> have three dimensions instead of
    * four. For this reason they are embedded in to std::vector. Also note
-   * that when std::vector<tensor_t*> it's constructed we cannot assure
+   * that when std::vector<Tensor<>*> it's constructed we cannot assure
    * that data is contiguous.
    *
    * After Tensor class integration we should be able to avoid to have
@@ -930,8 +942,8 @@ class layer : public node {
   // todo (karandesai) : remove redundancies after parameter integration
   virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
-    auto resize = [sample_count](tensor_t *tensor) {
-      tensor->resize(sample_count, (*tensor)[0]);
+    auto resize = [sample_count](Tensor<> *tensor) {
+      tensor->resize_axis(sample_count);
     };
 
     for (size_t i = 0; i < in_channels_; i++) {
@@ -1018,12 +1030,12 @@ class layer : public node {
   /** Pointer to the function for biases initialization */
   std::shared_ptr<parameter_init::function> bias_init_f_;
 
-  std::vector<tensor_t *> fwd_in_data_;
-  std::vector<tensor_t *> fwd_out_data_;
-  std::vector<tensor_t *> bwd_in_data_;
-  std::vector<tensor_t *> bwd_in_grad_;
-  std::vector<tensor_t *> bwd_out_data_;
-  std::vector<tensor_t *> bwd_out_grad_;
+  std::vector<Tensor<> *> fwd_in_data_;
+  std::vector<Tensor<> *> fwd_out_data_;
+  std::vector<Tensor<> *> bwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_grad_;
+  std::vector<Tensor<> *> bwd_out_data_;
+  std::vector<Tensor<> *> bwd_out_grad_;
 
   /* @brief Allocates the necessary edge memory in a specific
    * incoming connection.

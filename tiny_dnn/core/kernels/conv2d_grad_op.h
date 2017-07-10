@@ -23,14 +23,14 @@ class Conv2dGradOp : public core::OpKernel {
     auto params = OpKernel::params_->conv();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> prev_out_t(context.input(0));
-    const Tensor<float_t> weights_t(*(context.ith_parameter(0)->data()));
-    Tensor<float_t> weights_grads_t(*(context.ith_parameter(0)->grad()));
-    Tensor<float_t> bias_grads_t(params.has_bias
+    const Tensor<> prev_out_t(context.input(0));
+    const Tensor<> weights_t(*(context.ith_parameter(0)->data()));
+    Tensor<> weights_grads_t(*(context.ith_parameter(0)->grad()));
+    Tensor<> bias_grads_t(params.has_bias
                                    ? *(context.ith_parameter(1)->grad())
                                    : Tensor<float_t>());
-    Tensor<float_t> prev_delta_t(context.input_grad(0));
-    Tensor<float_t> curr_delta_t(context.output_grad(0));
+    Tensor<> prev_delta_t(context.input_grad(0));
+    Tensor<> curr_delta_t(context.output_grad(0));
 
     // initialize outputs
     prev_delta_t.fill(float_t{0});

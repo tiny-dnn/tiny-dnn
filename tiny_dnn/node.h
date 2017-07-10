@@ -17,6 +17,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
@@ -88,35 +89,29 @@ class edge {
 
   void merge_grads(vec_t *dst) {
     assert(!grad_.empty());
-    const auto &grad_head = grad_[0];
-    size_t sz             = grad_head.size();
+    const auto &grad_head = grad_.host_pbegin();
+    size_t sz             = grad_.shape()[1];
     dst->resize(sz);
     float_t *pdst = &(*dst)[0];
     // dst = grad_[0]
-    std::copy(grad_head.begin(), grad_head.end(), pdst);
+    std::copy(grad_head, grad_head + grad_.shape()[0], pdst);
     // @todo consider adding parallelism
-    for (size_t sample = 1, sample_count = grad_.size(); sample < sample_count;
-         ++sample) {
+    for (size_t sample = 1, sample_count = grad_.shape()[0];
+         sample < sample_count; ++sample) {
       // dst += grad_[sample]
-      vectorize::reduce<float_t>(&grad_[sample][0], sz, pdst);
+      vectorize::reduce<float_t>(grad_.host_pointer(sample, 0), sz, pdst);
     }
   }
 
-  void clear_grads() {
-    for (size_t sample = 0, sample_count = grad_.size(); sample < sample_count;
-         ++sample) {
-      auto &g = grad_[sample];
-      vectorize::fill(&g[0], g.size(), float_t{0});
-    }
-  }
+  void clear_grads() { grad_.fill(0.0); }
 
-  tensor_t *get_data() { return &data_; }
+  Tensor<> *get_data() { return &data_; }
 
-  const tensor_t *get_data() const { return &data_; }
+  const Tensor<> *get_data() const { return &data_; }
 
-  tensor_t *get_gradient() { return &grad_; }
+  Tensor<> *get_gradient() { return &grad_; }
 
-  const tensor_t *get_gradient() const { return &grad_; }
+  const Tensor<> *get_gradient() const { return &grad_; }
 
   const std::vector<node *> &next() const { return next_; }
   node *prev() { return prev_; }
@@ -129,8 +124,8 @@ class edge {
  private:
   shape3d shape_;
   vector_type vtype_;
-  tensor_t data_;
-  tensor_t grad_;
+  Tensor<> data_;
+  Tensor<> grad_;
   node *prev_;                // previous node, "producer" of this tensor
   std::vector<node *> next_;  // next nodes, "consumers" of this tensor
 };

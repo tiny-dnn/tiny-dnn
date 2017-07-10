@@ -24,11 +24,11 @@ class Conv2dOp : public core::OpKernel {
     auto params = OpKernel::params_->conv();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    Tensor<float_t> in_data_t(context.input(0));
-    Tensor<float_t> out_data_t(context.output(0));
+    Tensor<> in_data_t(context.input(0));
+    Tensor<> out_data_t(context.output(0));
 
-    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
-    const Tensor<float_t> bias(params.has_bias
+    const Tensor<> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<> bias(params.has_bias
                                  ? *(context.ith_parameter(1)->data())
                                  : Tensor<float_t>());
 

@@ -23,8 +23,8 @@ class MaxPoolOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto &params = OpKernel::params_->maxpool();
 
-    const Tensor<float_t> in_data(context.input(0));
-    Tensor<float_t> out_data(context.output(0));
+    const Tensor<> in_data(context.input(0));
+    Tensor<> out_data(context.output(0));
 
     // initialize outputs
     out_data.fill(0.0f);

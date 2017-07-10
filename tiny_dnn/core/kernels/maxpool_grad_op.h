@@ -23,8 +23,8 @@ class MaxPoolGradOp : public core::OpKernel {
     auto &params = OpKernel::params_->maxpool();
 
     // incoming/outcoming data
-    Tensor<float_t> prev_delta(context.input_grad(0));
-    Tensor<float_t> curr_delta(context.output_grad(0));
+    Tensor<> prev_delta(context.input_grad(0));
+    Tensor<> curr_delta(context.output_grad(0));
 
     // initialize outputs
     prev_delta.fill(0.0f);

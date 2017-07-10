@@ -15,12 +15,12 @@
 namespace tiny_dnn {
 namespace benchmarks {
 
-std::tuple<tensor_t, tensor_t, global_avepool_params>
+std::tuple<Tensor<>, Tensor<>, global_avepool_params>
 get_bm_global_avepool_data() {
   vec_t input_one(100 * 100 * 100, 10000);
   vec_t output_one(100, 0);
-  tensor_t input_data(1, input_one);
-  tensor_t output_data(1, output_one);
+  Tensor<> input_data(1, input_one);
+  Tensor<> output_data(1, output_one);
   global_avepool_params params;
   params.in  = {100, 100, 100};
   params.out = {100, 1, 1};
@@ -28,7 +28,7 @@ get_bm_global_avepool_data() {
 }
 
 void bm_global_avepool_forward_internal(benchmark::State& state) {
-  tensor_t input_data, output_data;
+  Tensor<> input_data, output_data;
   global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
 
@@ -39,7 +39,7 @@ void bm_global_avepool_forward_internal(benchmark::State& state) {
 
 #ifdef CNN_USE_AVX
 void bm_global_avepool_forward_avx(benchmark::State& state) {
-  tensor_t input_data, output_data;
+  Tensor<> input_data, output_data;
   global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
 
