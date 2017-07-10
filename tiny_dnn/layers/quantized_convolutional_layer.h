@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
+#include <memory>
 
 #include "tiny_dnn/core/backend_tiny.h"
 #ifdef CNN_USE_AVX
@@ -21,8 +23,6 @@
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
 #endif
-
-using namespace tiny_dnn::core;
 
 namespace tiny_dnn {
 
