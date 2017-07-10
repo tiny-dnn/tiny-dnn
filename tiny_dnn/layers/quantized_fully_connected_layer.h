@@ -7,6 +7,11 @@
 */
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+#include <memory>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/product.h"
 
