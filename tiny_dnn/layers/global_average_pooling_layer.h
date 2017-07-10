@@ -24,8 +24,9 @@ namespace tiny_dnn {
  **/
 class global_average_pooling_layer : public layer {
  public:
-  global_average_pooling_layer(const shape3d &in_shape,
-                               backend_t backend_type = core::default_engine())
+  global_average_pooling_layer(
+    const shape3d &in_shape,
+    core::backend_t backend_type = core::default_engine())
     : global_average_pooling_layer(
         in_shape.width_, in_shape.height_, in_shape.depth_, backend_type) {}
 
@@ -34,10 +35,11 @@ class global_average_pooling_layer : public layer {
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels (depth)
   **/
-  global_average_pooling_layer(size_t in_width,
-                               size_t in_height,
-                               size_t in_channels,
-                               backend_t backend_type = core::default_engine())
+  global_average_pooling_layer(
+    size_t in_width,
+    size_t in_height,
+    size_t in_channels,
+    core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     set_global_avepool_params(shape3d(in_width, in_height, in_channels),
                               shape3d(in_channels, 1, 1));
@@ -96,19 +98,19 @@ class global_average_pooling_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  global_avepool_params params_;
+  core::global_avepool_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 

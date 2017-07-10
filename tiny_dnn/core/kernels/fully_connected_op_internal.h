@@ -16,7 +16,7 @@ inline void fully_connected_op_internal(const tensor_t &in_data,
                                         const vec_t &W,
                                         const vec_t &bias,
                                         tensor_t &out_data,
-                                        const fully_params &params,
+                                        const core::fully_params &params,
                                         const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
     const vec_t &in = in_data[sample];
@@ -41,7 +41,7 @@ inline void fully_connected_op_internal(const tensor_t &prev_out,
                                         tensor_t &db,
                                         tensor_t &curr_delta,
                                         tensor_t &prev_delta,
-                                        const fully_params &params,
+                                        const core::fully_params &params,
                                         const bool layer_parallelize) {
   for (size_t sample = 0; sample < prev_out.size(); sample++) {
     for (size_t c = 0; c < params.in_size_; c++) {

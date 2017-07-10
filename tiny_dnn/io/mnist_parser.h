@@ -7,10 +7,10 @@
 */
 #pragma once
 
-#include <string>
-#include <vector>
 #include <cstdint>
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/util/util.h"
 

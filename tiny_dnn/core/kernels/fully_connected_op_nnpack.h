@@ -17,7 +17,7 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
                                       const vec_t &W,
                                       const vec_t &bias,
                                       tensor_t &out_data,
-                                      const fully_params &params,
+                                      const core::fully_params &params,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK

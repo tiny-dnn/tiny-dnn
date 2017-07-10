@@ -15,7 +15,7 @@ namespace kernels {
 
 inline void maxpool_op_nnpack(const tensor_t &in_data,
                               tensor_t &out_data,
-                              const maxpool_params &params) {
+                              const core::maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   NNPackInitializer::getInstance().initialize();

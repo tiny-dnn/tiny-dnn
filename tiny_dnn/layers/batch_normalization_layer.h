@@ -7,10 +7,10 @@
 */
 #pragma once
 
-#include <string>
 #include <algorithm>
-#include <vector>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/math_functions.h"

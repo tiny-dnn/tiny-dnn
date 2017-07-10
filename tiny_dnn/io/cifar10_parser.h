@@ -7,11 +7,11 @@
 */
 #pragma once
 
-#include <string>
-#include <vector>
 #include <algorithm>
 #include <cstdint>
 #include <fstream>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/util/util.h"
 
