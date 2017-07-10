@@ -7,10 +7,10 @@
 */
 #pragma once
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "tiny_dnn/layers/layer.h"
 

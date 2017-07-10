@@ -9,15 +9,15 @@
 
 #include <algorithm>
 #include <iomanip>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <queue>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <limits>
-#include <unordered_set>
 
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"

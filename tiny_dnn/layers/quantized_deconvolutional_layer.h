@@ -9,10 +9,10 @@
 
 #include <algorithm>
 #include <deque>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "tiny_dnn/core/backend_tiny.h"
 #ifdef CNN_USE_AVX
@@ -64,11 +64,11 @@ class quantized_deconvolutional_layer : public layer {
     size_t window_size,
     size_t in_channels,
     size_t out_channels,
-    padding pad_type       = padding::valid,
-    bool has_bias          = true,
-    size_t w_stride        = 1,
-    size_t h_stride        = 1,
-    backend_t backend_type = core::backend_t::internal)
+    padding pad_type             = padding::valid,
+    bool has_bias                = true,
+    size_t w_stride              = 1,
+    size_t h_stride              = 1,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
                       window_size, out_channels, pad_type, has_bias, w_stride,
@@ -108,11 +108,11 @@ class quantized_deconvolutional_layer : public layer {
     size_t window_height,
     size_t in_channels,
     size_t out_channels,
-    padding pad_type       = padding::valid,
-    bool has_bias          = true,
-    size_t w_stride        = 1,
-    size_t h_stride        = 1,
-    backend_t backend_type = core::backend_t::internal)
+    padding pad_type             = padding::valid,
+    bool has_bias                = true,
+    size_t w_stride              = 1,
+    size_t h_stride              = 1,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                       window_height, out_channels, pad_type, has_bias, w_stride,
@@ -151,12 +151,12 @@ class quantized_deconvolutional_layer : public layer {
     size_t window_size,
     size_t in_channels,
     size_t out_channels,
-    const connection_table &connection_table,
-    padding pad_type       = padding::valid,
-    bool has_bias          = true,
-    size_t w_stride        = 1,
-    size_t h_stride        = 1,
-    backend_t backend_type = core::backend_t::internal)
+    const core::connection_table &connection_table,
+    padding pad_type             = padding::valid,
+    bool has_bias                = true,
+    size_t w_stride              = 1,
+    size_t h_stride              = 1,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
                       window_size, out_channels, pad_type, has_bias, w_stride,
@@ -197,12 +197,12 @@ class quantized_deconvolutional_layer : public layer {
     size_t window_height,
     size_t in_channels,
     size_t out_channels,
-    const connection_table &connection_table,
-    padding pad_type       = padding::valid,
-    bool has_bias          = true,
-    size_t w_stride        = 1,
-    size_t h_stride        = 1,
-    backend_t backend_type = core::backend_t::internal)
+    const core::connection_table &connection_table,
+    padding pad_type             = padding::valid,
+    bool has_bias                = true,
+    size_t w_stride              = 1,
+    size_t h_stride              = 1,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                       window_height, out_channels, pad_type, has_bias, w_stride,
@@ -318,11 +318,11 @@ class quantized_deconvolutional_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  void init_backend(const backend_t backend_type) {
+  void init_backend(const core::backend_t backend_type) {
     std::shared_ptr<core::backend> backend = nullptr;
 
     // allocate new backend
-    if (backend_type == backend_t::internal) {
+    if (backend_type == core::backend_t::internal) {
       backend = std::make_shared<core::tiny_backend>(
         &params_,
         [this](const tensor_t &in) { return copy_and_unpad_output(in); },
@@ -342,15 +342,16 @@ class quantized_deconvolutional_layer : public layer {
     }
   }
 
-  void deconv_set_params(const shape3d &in,
-                         size_t w_width,
-                         size_t w_height,
-                         size_t outc,
-                         padding ptype,
-                         bool has_bias,
-                         size_t w_stride,
-                         size_t h_stride,
-                         const connection_table &tbl = connection_table()) {
+  void deconv_set_params(
+    const shape3d &in,
+    size_t w_width,
+    size_t w_height,
+    size_t outc,
+    padding ptype,
+    bool has_bias,
+    size_t w_stride,
+    size_t h_stride,
+    const core::connection_table &tbl = core::connection_table()) {
     params_.in = in;
     params_.out =
       shape3d(deconv_out_length(in.width_, w_width, w_stride),
@@ -367,7 +368,8 @@ class quantized_deconvolutional_layer : public layer {
   }
 
   void init() {
-    deconv_layer_worker_specific_storage &dws = deconv_layer_worker_storage_;
+    core::deconv_layer_worker_specific_storage &dws =
+      deconv_layer_worker_storage_;
 
     if (params_.pad_type == padding::same) {
       dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t{0}));
@@ -447,7 +449,8 @@ class quantized_deconvolutional_layer : public layer {
   }
 
   void copy_and_unpad_output(const tensor_t &out) {
-    deconv_layer_worker_specific_storage &dws = deconv_layer_worker_storage_;
+    core::deconv_layer_worker_specific_storage &dws =
+      deconv_layer_worker_storage_;
 
     dws.curr_out_buf_ =
       tensor_t(out.size(), vec_t(params_.out_unpadded.size(), 0));
@@ -482,13 +485,13 @@ class quantized_deconvolutional_layer : public layer {
   }
 
   /* The convolution parameters */
-  deconv_params params_;
+  core::deconv_params params_;
 
   /* The type of backend */
-  backend_t backend_type_;
+  core::backend_t backend_type_;
 
   /* Workers buffers */
-  deconv_layer_worker_specific_storage deconv_layer_worker_storage_;
+  core::deconv_layer_worker_specific_storage deconv_layer_worker_storage_;
 };
 
 }  // namespace tiny_dnn

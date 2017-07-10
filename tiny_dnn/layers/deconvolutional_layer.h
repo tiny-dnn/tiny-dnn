@@ -9,10 +9,10 @@
 
 #include <algorithm>
 #include <deque>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "tiny_dnn/core/backend_tiny.h"
 #ifdef CNN_USE_AVX

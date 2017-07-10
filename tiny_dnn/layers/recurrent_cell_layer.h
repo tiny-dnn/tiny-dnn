@@ -7,10 +7,10 @@
 */
 #pragma once
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-#include <memory>
 
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
@@ -64,7 +64,7 @@ class recurrent_cell_layer : public layer {
                        size_t out_dim,
                        bool has_bias                = true,
                        activation_layer *activation = new tanh_layer,
-                       backend_t backend_type       = core::default_engine())
+                       core::backend_t backend_type = core::default_engine())
     : layer(recurrent_order(has_bias),  // output bias
             {vector_type::data,         // output vector
              vector_type::aux}) {
@@ -152,7 +152,7 @@ class recurrent_cell_layer : public layer {
     params_.activation_ = std::shared_ptr<activation_layer>(activation);
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     CNN_UNREFERENCED_PARAMETER(backend_type);
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
@@ -162,13 +162,13 @@ class recurrent_cell_layer : public layer {
 
  private:
   /* The layer parameters */
-  recurrent_cell_params params_;
+  core::recurrent_cell_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;

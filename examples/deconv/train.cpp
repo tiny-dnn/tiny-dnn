@@ -41,7 +41,8 @@ void deconv_lanet(network<graph> &nn,
   tanh_layer c1_tanh(28, 28, 6);
   average_pooling_layer p1(28, 28, 6, 2);
   tanh_layer p1_tanh(14, 14, 6);
-  deconvolutional_layer d1(14, 14, 5, 6, 16, connection_table(tbl, 6, 16));
+  deconvolutional_layer d1(14, 14, 5, 6, 16,
+                           core::connection_table(tbl, 6, 16));
   tanh_layer d1_tanh(18, 18, 16);
   average_pooling_layer p2(18, 18, 16, 2);
   tanh_layer p2_tanh(9, 9, 16);

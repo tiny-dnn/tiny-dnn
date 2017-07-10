@@ -7,8 +7,8 @@
 */
 #pragma once
 
-#include <string>
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "tiny_dnn/layers/layer.h"
