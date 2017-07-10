@@ -6,6 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+#include <vector>
+#include <memory>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/core/kernels/recurrent_cell_grad_op.h"
