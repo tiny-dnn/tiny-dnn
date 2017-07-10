@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <utility>
+#include <memory>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
