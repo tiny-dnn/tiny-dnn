@@ -6,6 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+#include <vector>
+#include <memory>
+
 #include "tiny_dnn/layers/layer.h"
 
 #include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
