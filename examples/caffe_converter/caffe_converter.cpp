@@ -86,7 +86,7 @@ void test(const std::string &model_file,
   auto result = net->predict(vec);
 
   clock_t end         = clock();
-  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  double elapsed_secs = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
   cout << "Elapsed time(s): " << elapsed_secs << endl;
 
   std::vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
