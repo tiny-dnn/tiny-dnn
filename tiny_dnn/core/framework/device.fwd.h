@@ -18,6 +18,7 @@
 #endif
 
 namespace tiny_dnn {
+class layer;
 
 enum class device_t { NONE, CPU, GPU /*, FPGA */ };
 
@@ -34,16 +35,20 @@ inline std::ostream &operator<<(std::ostream &os, device_t type) {
   return os;
 }
 
-/* The class models a physical device */
+/**
+ * The class models a physical device
+ */
 class Device {
  public:
-  /* Custom CPU constructor
+  /**
+   * Custom CPU constructor
    *
    * @param type The device type. Can be only CPU.
    */
   inline explicit Device(device_t type);
 
-  /* CPU/GPU OpenCL constructor.
+  /**
+   * CPU/GPU OpenCL constructor.
    * Device context is initialized in constructor.
    *
    * @param type The device type. Can be both CPU and GPU.
@@ -86,7 +91,8 @@ class Device {
     return false;
   }
 
-  /* Registers and create an OpenCL program per Operation type.
+  /**
+   * Registers and create an OpenCL program per Operation type.
    *
    * @param l The layer to be registered
    */
