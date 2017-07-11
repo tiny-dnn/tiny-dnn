@@ -60,8 +60,8 @@ class partial_connected_layer : public layer {
     bias2out_[bias_index].push_back(output_index);
   }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     const tensor_t &in = *in_data[0];
     const vec_t &W     = (*in_data[1])[0];
     const vec_t &b     = (*in_data[2])[0];
@@ -88,10 +88,10 @@ class partial_connected_layer : public layer {
     }
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(out_data);
     const tensor_t &prev_out = *in_data[0];
     const vec_t &W           = (*in_data[1])[0];

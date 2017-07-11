@@ -27,15 +27,15 @@ class input_layer : public layer {
   std::vector<shape3d> out_shape() const override { return {shape_}; }
   std::string layer_type() const override { return "input"; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     *out_data[0] = *in_data[0];
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     // do nothing
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);

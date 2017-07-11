@@ -79,8 +79,8 @@ class max_unpooling_layer : public layer {
 
   size_t fan_out_size() const override { return in2out_[0].size(); }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     const tensor_t &in = *in_data[0];
     tensor_t &out      = *out_data[0];
 
@@ -97,10 +97,10 @@ class max_unpooling_layer : public layer {
     }
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(out_data);
     tensor_t &prev_delta = *in_grad[0];
     tensor_t &curr_delta = *out_grad[0];

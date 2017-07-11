@@ -258,8 +258,8 @@ class convolutional_layer : public layer {
    * @param in_data      input vectors of this layer (data, weight, bias)
    * @param out_data     output vectors
    **/
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // apply padding to the input tensor
     padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
@@ -289,10 +289,10 @@ class convolutional_layer : public layer {
    *with
    *in_data[i])
    **/
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     bwd_in_data_.resize(in_data.size());
     std::copy(in_data.begin(), in_data.end(), bwd_in_data_.begin());
     bwd_in_data_[0] = in_data_padded(in_data);
