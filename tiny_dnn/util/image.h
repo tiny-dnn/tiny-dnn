@@ -11,8 +11,8 @@
 #include <array>
 #include <cstdint>
 #include <fstream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "tiny_dnn/util/util.h"
 

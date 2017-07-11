@@ -7,9 +7,9 @@
 */
 #pragma once
 
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/network.h"
