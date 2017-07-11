@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <fstream>
 #include <vector>
+#include <string>
 
 #include "tiny_dnn/util/util.h"
 
