@@ -11,7 +11,7 @@
 #include <random>
 #include <type_traits>
 
-#include "nn_error.h"
+#include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/config.h"
 
 namespace tiny_dnn {
@@ -61,7 +61,7 @@ inline void set_random_seed(unsigned int seed) {
 
 template <typename Container>
 inline int uniform_idx(const Container &t) {
-  return uniform_rand(0, int(t.size() - 1));
+  return uniform_rand(0, static_cast<int>(t.size() - 1));
 }
 
 inline bool bernoulli(float_t p) {
