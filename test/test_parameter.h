@@ -62,6 +62,38 @@ TEST(parameter, layer_adder) {
   EXPECT_EQ(parameters[1]->type(), parameter_type::bias);
 }
 
+TEST(parameter, xavier_init) {
+  set_random_seed(42u);
+
+  parameter_init::xavier xvr;
+  Parameter parameter(1, 1, 1, 10, parameter_type::weight);
+  xvr.fill(&parameter, 1, 1);
+
+  vec_t out_result = parameter.data()->toVec();
+
+  // clang-format off
+  vec_t out_expected = {-0.434, 1.027, 1.561, -1.096,  0.803,
+                         0.968, 0.341, 0.335, -1.191, -0.187};
+  //clang-format on
+
+  for (size_t i = 0; i < out_result.size(); i++) {
+    EXPECT_NEAR(out_result[i], out_expected[i], 1E-2);
+  }
+}
+
+TEST(parameter, constant_init) {
+  parameter_init::constant cnt(4);
+  Parameter parameter(1, 1, 1, 5, parameter_type::weight);
+  cnt.fill(&parameter, 1, 1);
+
+  vec_t out_result   = parameter.data()->toVec();
+  vec_t out_expected = {4, 4, 4, 4, 4};
+
+  for (size_t i = 0; i < out_result.size(); i++) {
+    EXPECT_NEAR(out_result[i], out_expected[i], 1E-2);
+  }
+}
+
 // todo (karandesai) : test getters and setters on fc layer
 
 }  // namespace tiny_dnn

@@ -58,6 +58,7 @@
 
 #include "tiny_dnn/util/deform.h"
 #include "tiny_dnn/util/graph_visualizer.h"
+#include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/weight_init.h"
 
