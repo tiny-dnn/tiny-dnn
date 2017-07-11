@@ -14,8 +14,8 @@ int main() {
   tiny_dnn::models::alexnet nn;
 
   // change all layers at once
-  nn.weight_init(weight_init::constant(2.0));
-  nn.bias_init(weight_init::constant(2.0));
+  nn.weight_init(tiny_dnn::weight_init::constant(2.0));
+  nn.bias_init(tiny_dnn::weight_init::constant(2.0));
   nn.init_weight();
 
   tiny_dnn::vec_t in(224 * 224 * 3);
@@ -31,5 +31,5 @@ int main() {
   double elapsed_s = t.elapsed();
   t.stop();
 
-  cout << "Elapsed time(s): " << elapsed_s << endl;
+  std::cout << "Elapsed time(s): " << elapsed_s << std::endl;
 }
