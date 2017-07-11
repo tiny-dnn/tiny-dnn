@@ -47,8 +47,7 @@ TEST(fully_connected, forward) {
   l.ith_parameter(0).set_data(Tensor<float_t>(weights));
   l.ith_parameter(1).set_data(Tensor<float_t>(bias));
 
-  std::vector<const tensor_t *> out;
-  l.forward({{in}}, out);
+  auto out     = l.forward({{in}});
   vec_t result = (*out[0])[0];
 
   for (size_t i = 0; i < result.size(); i++) {

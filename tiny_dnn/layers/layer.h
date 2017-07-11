@@ -539,6 +539,14 @@ class layer : public node {
    **/
   virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
+  // convenience wrapper for function below
+  std::vector<const tensor_t *> forward(
+    const std::vector<tensor_t> &input) {  // for test
+    std::vector<const tensor_t *> output;
+    forward(input, output);
+    return output;
+  }
+
   /* @brief Performs layer forward operation given an input tensor and
    * returns the computed data in tensor form.
    *
