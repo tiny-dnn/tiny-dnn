@@ -7,19 +7,19 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <string>
 #include <type_traits>
-#include <vector>
-#include <algorithm>
 #include <utility>
-#include <memory>
+#include <vector>
 
 #include "tiny_dnn/xtensor/xarray.hpp"
 #include "tiny_dnn/xtensor/xview.hpp"
