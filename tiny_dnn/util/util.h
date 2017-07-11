@@ -17,6 +17,9 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <algorithm>
+#include <utility>
+#include <memory>
 
 #include "tiny_dnn/xtensor/xarray.hpp"
 #include "tiny_dnn/xtensor/xview.hpp"
