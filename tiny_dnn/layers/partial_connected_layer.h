@@ -62,28 +62,29 @@ class partial_connected_layer : public layer {
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const tensor_t &in = *in_data[0];
-    const vec_t &W     = (*in_data[1])[0];
-    const vec_t &b     = (*in_data[2])[0];
-    tensor_t &out      = *out_data[0];
+    const Tensor<> &in = *in_data[0];
+    const Tensor<> &W  = (*in_data[1])[0];
+    const Tensor<> &b  = (*in_data[2])[0];
+    Tensor<> &out      = *out_data[0];
 
     // @todo revise the parallelism strategy
     for (size_t sample = 0, sample_count = in.size(); sample < sample_count;
          ++sample) {
-      vec_t &out_sample = out[sample];
+      Tensor<> out_sample = out[sample];
 
       for_i(out2wi_.size(), [&](size_t i) {
         const wi_connections &connections = out2wi_[i];
 
-        float_t &out_element = out_sample[i];
+        float_t &out_element = out_sample.host_at(i);
 
-        out_element = float_t{0};
+        out_element = 0.0;
 
         for (auto connection : connections)
-          out_element += W[connection.first] * in[sample][connection.second];
+          out_element +=
+            W.host_at(connection.first) * in.host_at(sample, connection.second);
 
         out_element *= scale_factor_;
-        out_element += b[out2bias_[i]];
+        out_element += b.host_at(out2bias_[i]);
       });
     }
   }
@@ -93,24 +94,25 @@ class partial_connected_layer : public layer {
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(out_data);
-    const tensor_t &prev_out = *in_data[0];
-    const vec_t &W           = (*in_data[1])[0];
-    vec_t &dW                = (*in_grad[1])[0];
-    vec_t &db                = (*in_grad[2])[0];
-    tensor_t &prev_delta     = *in_grad[0];
-    tensor_t &curr_delta     = *out_grad[0];
+    const Tensor<> &prev_out = *in_data[0];
+    const Tensor<> &W        = (*in_data[1])[0];
+    Tensor<> dW              = (*in_grad[1])[0];
+    Tensor<> db              = (*in_grad[2])[0];
+    Tensor<> &prev_delta     = *in_grad[0];
+    Tensor<> &curr_delta     = *out_grad[0];
 
     // @todo revise the parallelism strategy
     for (size_t sample = 0, sample_count = prev_out.size();
          sample < sample_count; ++sample) {
       for_i(in2wo_.size(), [&](size_t i) {
         const wo_connections &connections = in2wo_[i];
-        float_t delta{0};
+        float_t delta                     = 0.0;
 
         for (auto connection : connections)
-          delta += W[connection.first] * curr_delta[sample][connection.second];
+          delta += W.host_at(connection.first) *
+                   curr_delta.host_at(sample, connection.second);
 
-        prev_delta[sample][i] = delta * scale_factor_;
+        prev_delta.host_at(sample, i) = delta * scale_factor_;
       });
 
       for_i(weight2io_.size(), [&](size_t i) {
@@ -118,19 +120,19 @@ class partial_connected_layer : public layer {
         float_t diff{0};
 
         for (auto connection : connections)
-          diff += prev_out[sample][connection.first] *
-                  curr_delta[sample][connection.second];
+          diff += prev_out.host_at(sample, connection.first) *
+                  curr_delta.host_at(sample, connection.second);
 
-        dW[i] += diff * scale_factor_;
+        dW.host_at(i) += diff * scale_factor_;
       });
 
       for (size_t i = 0; i < bias2out_.size(); i++) {
         const std::vector<size_t> &outs = bias2out_[i];
         float_t diff{0};
 
-        for (auto o : outs) diff += curr_delta[sample][o];
+        for (auto o : outs) diff += curr_delta.host_at(sample, o);
 
-        db[i] += diff;
+        db.host_at(i) += diff;
       }
     }
   }
