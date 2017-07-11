@@ -9,9 +9,6 @@
 
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
-using namespace tiny_dnn::activation;
-
 void construct_net(tiny_dnn::network<tiny_dnn::sequential> &nn) {
 // connection table [Y.Lecun, 1998 Table.1]
 #define O true
@@ -36,27 +33,28 @@ void construct_net(tiny_dnn::network<tiny_dnn::sequential> &nn) {
   // F : fully connected
   nn << q_conv(32, 32, 5, 1, 6, tiny_dnn::padding::valid, true, 1, 1,
           backend_type)                    // C1, 1@32x32-in, 6@28x28-out
-     << tanh_layer(28, 28, 6)
+     << tiny_dnn::tanh_layer(28, 28, 6)
      << ave_pool(28, 28, 6, 2)             // S2, 6@28x28-in, 6@14x14-out
-     << tanh_layer(14, 14, 6)
+     << tiny_dnn::tanh_layer(14, 14, 6)
      << q_conv(14, 14, 5, 6, 16, tiny_dnn::core::connection_table(tbl, 6, 16),
                tiny_dnn::padding::valid, true, 1, 1,
                backend_type)               // C3, 6@14x14-in, 16@10x10-in
-     << tanh_layer(10, 10, 16)
+     << tiny_dnn::tanh_layer(10, 10, 16)
      << ave_pool(10, 10, 16, 2)            // S4, 16@10x10-in, 16@5x5-out
-     << tanh_layer(5, 5, 16)
+     << tiny_dnn::tanh_layer(5, 5, 16)
      << q_conv(5, 5, 5, 16, 120, tiny_dnn::padding::valid, true, 1, 1,
                backend_type)               // C5, 16@5x5-in, 120@1x1-out
-     << tanh_layer(120)
-     << q_fc(120, 10, true, backend_type)  // F6, 120-in, 10-out
-     << tanh_layer(10);
+     << tiny_dnn::tanh_layer(120)
+     << q_fc(120, 10, true, backend_type)
+  // F6, 120-in, 10-out
+     << tiny_dnn::tanh_layer(10);
   // clang-format on
 }
 
 static void train_lenet(const std::string &data_dir_path) {
   // specify loss-function and learning strategy
   tiny_dnn::network<tiny_dnn::sequential> nn;
-  adagrad optimizer;
+  tiny_dnn::adagrad optimizer;
 
   construct_net(nn);
 
