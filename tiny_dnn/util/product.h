@@ -756,7 +756,8 @@ CNN_MUST_INLINE void fill(T *dst, std::size_t size, T value) {
     unsigned long dat;  // NOLINT
     T value;
   } u;
-  static_assert(sizeof(T) == sizeof(unsigned long), "size mismatch.");  // NOLINT
+  static_assert(sizeof(T) == sizeof(unsigned long),  // NOLINT
+                "size mismatch.");
   u.value = value;
   __stosd((unsigned long *)dst, u.dat, size);  // NOLINT
 #endif  // #if defined(CNN_USE_DOUBLE)
@@ -770,7 +771,8 @@ CNN_MUST_INLINE void fill(T *dst, std::size_t size, T value) {
     unsigned long dat;  // NOLINT
     T value;
   } u;
-  static_assert(sizeof(T) == sizeof(unsigned long), "size mismatch.");  // NOLINT
+  static_assert(sizeof(T) == sizeof(unsigned long),  // NOLINT
+                "size mismatch.");
   u.value = value;
   __stosd((unsigned long *)dst, u.dat, size);  // NOLINT
 #endif  // #if defined(CNN_USE_DOUBLE)
