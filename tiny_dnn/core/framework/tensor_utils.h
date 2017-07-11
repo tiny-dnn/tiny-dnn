@@ -9,7 +9,8 @@
 
 #include <algorithm>  // std::fill, std::generate
 #include <cmath>      // sqrt
-#include <numeric>    // std::accumulate
+#include <limits>
+#include <numeric>  // std::accumulate
 
 #include "tiny_dnn/xtensor/xio.hpp"
 

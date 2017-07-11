@@ -1,4 +1,6 @@
-/* Copyright 2015 The TensorFlow Authors. All Rights Reserved.
+/*
+
+Copyright 2015 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,7 +13,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-==============================================================================*/
+==============================================================================
+
+*/
+#pragma once
+
+#include <tuple>
+#include <vector>
 
 // Implements a quantized eight-bit version of the matmul operation.
 
@@ -110,16 +118,18 @@ void tiny_quantized_matmul(const std::vector<T1> &a,
           a_data, b_data, c_data, m, n, k, offset_a, offset_b, lda, ldb, ldc);
       }
     }
-  } /*else {
+  } else {
+#if 0
     ReferenceGemm<T1, T2, Toutput>(
         transpose_a_, transpose_b_, transpose_c, m, n, k, a_data, offset_a,
         lda, b_data, offset_b, ldb, c_data, shift_c, offset_c, mult_c, ldc);
+#endif
   }
 
   float min_c_value;
   float max_c_value;
   quantization_range_for_multiplication<T1, T2, Toutput>(
-      min_a, max_a, min_b, max_b, &min_c_value, &max_c_value);*/
+    min_a, max_a, min_b, max_b, &min_c_value, &max_c_value);
 }
 
 }  // namespace kernels

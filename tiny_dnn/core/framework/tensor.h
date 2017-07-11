@@ -80,24 +80,24 @@ class Tensor {
     return *this;
   }
 
-//~Tensor() = default;
+// ~Tensor() = default;
 
 // TODO(Randl): implement copy and move constructors
 #if 0
-    //TODO(Randl):deep copy
+    // TODO(Randl) :deep copy
     Tensor(const Tensor&other) {
         other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
         data_is_on_host_ = true;
         data_dirty_ = true;
-        //device_data_ is intentionally left uninitialized.
+        // device_data_ is intentionally left uninitialized.
     }
-    //TODO(Randl): Move constructors for Tensor and TensorStorage
+    // TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {}
 
-    Tensor(Tensor&& other) = default;        // move ctor
-    Tensor &operator = (Tensor&&) = default; // move assign
+    Tensor(Tensor&& other) = default;         // move ctor
+    Tensor &operator = (Tensor&&) = default;  // move assign
 #endif
 
   /**
@@ -165,8 +165,8 @@ auto host_data() {
 #if 0
     U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        //fromDevice();
-        //data_dirty_ = true;
+        // fromDevice();
+        // data_dirty_ = true;
         return storage_pointer_->data(offset);
     }
 #endif

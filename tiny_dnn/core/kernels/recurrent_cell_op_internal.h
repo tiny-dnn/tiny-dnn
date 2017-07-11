@@ -63,7 +63,6 @@ inline void recurrent_cell_op_internal(
       }
       out[o] = out_;
     }
-
   });
 }
 
@@ -157,7 +156,6 @@ inline void recurrent_cell_op_internal(
                db_[o] += curr_state_delta_[o];
              }
            }
-
          });
   }
 }

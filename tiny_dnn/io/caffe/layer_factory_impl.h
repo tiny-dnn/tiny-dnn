@@ -6,6 +6,7 @@
     in the LICENSE file.
 */
 #pragma once
+
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -14,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "caffe.pb.h"
+#include "tiny-cnn/tiny_dnn/io/caffe/caffe.pb.h"
 
 #include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/convolutional_layer.h"
@@ -156,7 +157,7 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
     pool_size_h, stride_w, stride_h, pad_type);
 
   // tiny-dnn has trainable parameter in average-pooling layer
-  float_t weight = float_t{1} / (pool_size_w * pool_size_h);
+  float_t weight = 1.0 / (pool_size_w * pool_size_h);
 
   vec_t &w = *ap->weights()[0];
   vec_t &b = *ap->weights()[1];
@@ -361,7 +362,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
   // fill weights
   for (size_t o = 0; o < dst_out_size; o++) {
     for (size_t i = 0; i < dst_in_size; i++) {
-      // TODO: how to access to weights?
+      // TODO(karandesai): how to access to weights?
       // dst->weight()[i * dst->out_size() + o] = weights.data(curr++); //
       // transpose
       w[i * dst_out_size + o] = weights.data(curr++);  // transpose
@@ -372,7 +373,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
   if (src.inner_product_param().bias_term()) {
     auto biases = src.blobs(1);
     for (size_t o = 0; o < dst_out_size; o++) {
-      // TODO: how to access to biases?
+      // TODO(karandesai): how to access to biases?
       // dst->bias()[o] = biases.data(o);
       b[o] = biases.data(o);
     }
@@ -414,7 +415,7 @@ inline std::shared_ptr<layer> create_fullyconnected(
     load_weights_fullyconnected(layer, ip.get());
   }
 
-  // TODO: check if it works
+  // TODO(karan): check if it works
   *top_shape = ip->out_shape()[0];
   return ip;
 }
@@ -423,7 +424,7 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
   // fill weight
   auto weights = src.blobs(0);
 
-  // TODO: check if it works
+  // TODO(karan): check if it works
   // int out_channels = dst->out_shape().depth_;
   // int in_channels = dst->in_shape().depth_;
   int out_channels = dst->out_data_shape()[0].depth_;
@@ -450,7 +451,6 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
         continue;
       }
       for (int x = 0; x < window_size * window_size; x++) {
-        // TODO
         // dst->weight()[dst_idx++] = weights.data(src_idx++);
         w[dst_idx++] = weights.data(src_idx++);
       }
@@ -461,7 +461,6 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
   if (conv_param.bias_term()) {
     auto biases = src.blobs(1);
     for (int o = 0; o < out_channels; o++) {
-      // TODO
       // dst->bias()[o] = biases.data(o);
       b[o] = biases.data(o);
     }
@@ -504,8 +503,6 @@ inline void load_weights_batchnorm(const caffe::LayerParameter &src,
 inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
   auto pool_param = src.pooling_param();
 
-  // TODO
-  // if (dst->weight().size()) {
   if (dst->weights().size()) {
     layer_size_t pool_size = 0;
 
@@ -514,9 +511,9 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
     }
 
     // tiny-dnn has trainable parameter in average-pooling layer
-    float_t weight = float_t{1} / sqr(pool_size);
+    float_t weight = 1.0 / sqr(pool_size);
 
-    // TODO
+    // TODO(karan)
     /*if (!dst->weight().empty()) {
         std::fill(dst->weight().begin(), dst->weight().end(), weight);
     }
@@ -755,8 +752,6 @@ inline std::shared_ptr<layer> create_deconvlayer(
   if (layer.blobs_size() > 0) {  // blobs(0)...weight, blobs(1)...bias
     load_weights_conv(layer, deconv.get());
   }
-  // TODO
-  //*top_shape = deconv->out_shape();
   *top_shape = deconv->out_shape()[0];
   return deconv;
 }
@@ -1058,9 +1053,10 @@ class caffe_layer_vector {
       dst->mutable_param(i)->set_name(old.param(i));
     }
 
-#define COPY_PARAM(name)        \
-  if (old.has_##name##_param()) \
-  dst->mutable_##name##_param()->CopyFrom(old.name##_param())
+#define COPY_PARAM(name)                                        \
+  if (old.has_##name##_param()) {                               \
+    dst->mutable_##name##_param()->CopyFrom(old.name##_param()) \
+  }
 
     COPY_PARAM(accuracy);
     COPY_PARAM(argmax);

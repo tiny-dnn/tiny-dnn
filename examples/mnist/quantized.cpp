@@ -88,7 +88,7 @@ static void train_lenet(const std::string &data_dir_path) {
     tiny_dnn::result res = nn.test(test_images, test_labels);
     std::cout << res.num_success << "/" << res.num_total << std::endl;
 
-    disp.restart(static_cast<unsigned long>(train_images.size()));
+    disp.restart(train_images.size());
     t.restart();
   };
 
