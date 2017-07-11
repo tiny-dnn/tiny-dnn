@@ -6,14 +6,20 @@
     in the LICENSE file.
 */
 #pragma once
+
 #include <stdlib.h>
+#include <string>
+#include <utility>
+
 #ifdef _WIN32
 #include <malloc.h>
 #endif
+
 #ifdef __MINGW32__
 #include <mm_malloc.h>
 #endif
-#include "nn_error.h"
+
+#include <nn_error.h>
 
 namespace tiny_dnn {
 
