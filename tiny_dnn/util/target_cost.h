@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <vector>
 #include <numeric>  // std::accumulate
 
 #include "tiny_dnn/util/util.h"
