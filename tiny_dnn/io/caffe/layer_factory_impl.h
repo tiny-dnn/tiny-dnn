@@ -437,7 +437,8 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
   int window_size = get_kernel_size_2d(conv_param);
 
   if (conv_param.has_group()) {
-    table = core::connection_table(conv_param.group(), in_channels, out_channels);
+    table =
+      core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
   vec_t &w = *dst->weights()[0];
@@ -645,7 +646,8 @@ inline std::shared_ptr<layer> create_convlayer(
 
   // group
   if (conv_param.has_group()) {
-    table = core::connection_table(conv_param.group(), in_channels, out_channels);
+    table =
+      core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
   auto conv = std::make_shared<conv_layer>(
@@ -733,7 +735,8 @@ inline std::shared_ptr<layer> create_deconvlayer(
 
   // group
   if (deconv_param.has_group()) {
-    table = core::connection_table(deconv_param.group(), in_channels, out_channels);
+    table =
+      core::connection_table(deconv_param.group(), in_channels, out_channels);
   }
 
   auto deconv = std::make_shared<deconv_layer>(

@@ -117,9 +117,9 @@ static void train_lenet(const std::string &data_dir_path,
 }
 
 static tiny_dnn::core::backend_t parse_backend_name(const std::string &name) {
-  const std::array<const std::string, 5> names = {
+  const std::array<const std::string, 5> names = {{
     "internal", "nnpack", "libdnn", "avx", "opencl",
-  };
+  }};
   for (size_t i = 0; i < names.size(); ++i) {
     if (name.compare(names[i]) == 0) {
       return static_cast<tiny_dnn::core::backend_t>(i);
