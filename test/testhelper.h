@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
-//#include <filesystem>
 
 #include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
