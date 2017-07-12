@@ -15,7 +15,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "tiny-cnn/tiny_dnn/io/caffe/caffe.pb.h"
+#include "tiny_dnn/io/caffe/caffe.pb.h"
 
 #include "tiny_dnn/layers/average_pooling_layer.h"
 #include "tiny_dnn/layers/convolutional_layer.h"
@@ -430,14 +430,14 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
   int out_channels = dst->out_data_shape()[0].depth_;
   int in_channels  = dst->in_data_shape()[0].depth_;
 
-  connection_table table;
+  core::connection_table table;
   auto conv_param = src.convolution_param();
   int dst_idx     = 0;
   int src_idx     = 0;
   int window_size = get_kernel_size_2d(conv_param);
 
   if (conv_param.has_group()) {
-    table = connection_table(conv_param.group(), in_channels, out_channels);
+    table = core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
   vec_t &w = *dst->weights()[0];
@@ -597,7 +597,7 @@ inline std::shared_ptr<layer> create_convlayer(
   layer_size_t w_stride = 1, h_stride = 1;
   bool has_bias    = true;
   padding pad_type = padding::valid;
-  connection_table table;
+  core::connection_table table;
 
   auto conv_param = layer.convolution_param();
 
@@ -645,7 +645,7 @@ inline std::shared_ptr<layer> create_convlayer(
 
   // group
   if (conv_param.has_group()) {
-    table = connection_table(conv_param.group(), in_channels, out_channels);
+    table = core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
   auto conv = std::make_shared<conv_layer>(
@@ -685,7 +685,7 @@ inline std::shared_ptr<layer> create_deconvlayer(
   layer_size_t w_stride = 1, h_stride = 1;
   bool has_bias    = true;
   padding pad_type = padding::valid;
-  connection_table table;
+  core::connection_table table;
 
   auto deconv_param = layer.convolution_param();
 
@@ -733,7 +733,7 @@ inline std::shared_ptr<layer> create_deconvlayer(
 
   // group
   if (deconv_param.has_group()) {
-    table = connection_table(deconv_param.group(), in_channels, out_channels);
+    table = core::connection_table(deconv_param.group(), in_channels, out_channels);
   }
 
   auto deconv = std::make_shared<deconv_layer>(
@@ -1053,9 +1053,9 @@ class caffe_layer_vector {
       dst->mutable_param(i)->set_name(old.param(i));
     }
 
-#define COPY_PARAM(name)                                        \
-  if (old.has_##name##_param()) {                               \
-    dst->mutable_##name##_param()->CopyFrom(old.name##_param()) \
+#define COPY_PARAM(name)                                         \
+  if (old.has_##name##_param()) {                                \
+    dst->mutable_##name##_param()->CopyFrom(old.name##_param()); \
   }
 
     COPY_PARAM(accuracy);

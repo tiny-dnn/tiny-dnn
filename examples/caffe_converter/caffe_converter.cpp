@@ -12,7 +12,10 @@
 
 #define NO_STRICT
 #define CNN_USE_CAFFE_CONVERTER
+
+#ifndef DNN_USE_IMAGE_API
 #define DNN_USE_IMAGE_API
+#endif
 
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -20,12 +23,12 @@ tiny_dnn::image<float> compute_mean(const std::string &mean_file,
                                     int width,
                                     int height) {
   caffe::BlobProto blob;
-  detail::read_proto_from_binary(mean_file, &blob);
+  tiny_dnn::detail::read_proto_from_binary(mean_file, &blob);
 
   auto data = blob.mutable_data()->mutable_data();
 
   tiny_dnn::image<float> original(data, blob.width(), blob.height(),
-                                  image_type::bgr);
+                                  tiny_dnn::image_type::bgr);
 
   return mean_image(original);
 }
@@ -51,8 +54,9 @@ std::vector<std::string> get_label_list(const std::string &label_file) {
   std::string line;
   std::ifstream ifs(label_file.c_str());
 
-  if (ifs.fail() || ifs.bad())
-    throw runtime_error("failed to open:" + label_file);
+  if (ifs.fail() || ifs.bad()) {
+    throw std::runtime_error("failed to open:" + label_file);
+  }
 
   std::vector<std::string> lines;
   while (getline(ifs, line)) lines.push_back(line);
@@ -75,7 +79,7 @@ void test(const std::string &model_file,
 
   auto mean = compute_mean(mean_file, width, height);
 
-  tiny_dnn::image<float> img(img_file, image_type::bgr);
+  tiny_dnn::image<float> img(img_file, tiny_dnn::image_type::bgr);
 
   tiny_dnn::vec_t vec;
 
@@ -87,18 +91,18 @@ void test(const std::string &model_file,
 
   clock_t end         = clock();
   double elapsed_secs = static_cast<double>(end - begin) / CLOCKS_PER_SEC;
-  cout << "Elapsed time(s): " << elapsed_secs << endl;
+  std::cout << "Elapsed time(s): " << elapsed_secs << std::endl;
 
   std::vector<tiny_dnn::float_t> sorted(result.begin(), result.end());
 
   int top_n = 5;
   partial_sort(sorted.begin(), sorted.begin() + top_n, sorted.end(),
-               greater<tiny_dnn::float_t>());
+               std::greater<tiny_dnn::float_t>());
 
   for (int i = 0; i < top_n; i++) {
     size_t idx =
       distance(result.begin(), find(result.begin(), result.end(), sorted[i]));
-    cout << labels[idx] << "," << sorted[i] << endl;
+    std::cout << labels[idx] << "," << sorted[i] << std::endl;
   }
 }
 
@@ -112,7 +116,7 @@ int main(int argc, char **argv) {
 
   try {
     test(model_file, trained_file, mean_file, label_file, img_file);
-  } catch (const nn_error &e) {
-    cout << e.what() << endl;
+  } catch (const tiny_dnn::nn_error &e) {
+    std::cout << e.what() << std::endl;
   }
 }
