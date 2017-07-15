@@ -13,12 +13,6 @@
 
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
-using namespace tiny_dnn::activation;
-using namespace tiny_dnn::layers;
-
-using namespace std;
-
 void sample1_convnet(const string& data_dir = "../data");
 void sample2_mlp(const string& data_dir = "../data");
 void sample3_dae();
@@ -40,39 +34,40 @@ int main(int argc, char** argv) {
 
 ///////////////////////////////////////////////////////////////////////////////
 // learning convolutional neural networks (LeNet-5 like architecture)
-void sample1_convnet(const string& data_dir) {
+void sample1_convnet(const std::string& data_dir) {
   // construct LeNet-5 architecture
-  network<sequential> nn;
-  adagrad optimizer;
+  tiny_dnn::network<sequential> nn;
+  tiny_dnn::adagrad optimizer;
 
 // connection table [Y.Lecun, 1998 Table.1]
 #define O true
 #define X false
   // clang-format off
-    static const bool connection[] = {
-        O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
-        O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
-        O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
-        X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
-        X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
-        X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
-    };
+static const bool connection[] = {
+  O, X, X, X, O, O, O, X, X, O, O, O, O, X, O, O,
+  O, O, X, X, X, O, O, O, X, X, O, O, O, O, X, O,
+  O, O, O, X, X, X, O, O, O, X, X, O, X, O, O, O,
+  X, O, O, O, X, X, O, O, O, O, X, X, O, X, O, O,
+  X, X, O, O, O, X, X, O, O, O, O, X, O, O, X, O,
+  X, X, X, O, O, O, X, X, O, O, O, O, X, O, O, O
+};
 // clang-format on
 #undef O
 #undef X
 
-  nn << convolutional_layer(32, 32, 5, 1,
-                            6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
-     << tanh_layer(28, 28, 6)
-     << average_pooling_layer(28, 28, 6,
-                              2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
-     << tanh_layer(14, 14, 6)
-     << convolutional_layer(14, 14, 5, 6, 16,
-                            connection_table(connection, 6, 16))
-     << tanh_layer(10, 10, 16) << average_pooling_layer(10, 10, 16, 2)
-     << tanh_layer(5, 5, 16) << convolutional_layer(5, 5, 5, 16, 120)
-     << tanh_layer(1, 1, 120) << fully_connected_layer(120, 10)
-     << tanh_layer(10);
+  using conv     = tiny_dnn::layers::conv;
+  using ave_pool = tiny_dnn::layers::ave_pool;
+  using fc       = tiny_dnn::layers::fc;
+  using tanh     = tiny_dnn::activation::tanh;
+  using tiny_dnn::core::connection_table;
+
+  nn << conv(32, 32, 5, 1, 6) /* 32x32 in, 5x5 kernel, 1-6 fmaps conv */
+     << tanh(28, 28, 6)
+     << ave_pool(28, 28, 6, 2) /* 28x28 in, 6 fmaps, 2x2 subsampling */
+     << tanh(14, 14, 6)
+     << conv(14, 14, 5, 6, 16, connection_table(connection, 6, 16))
+     << tanh(10, 10, 16) << ave_pool(10, 10, 16, 2) << tanh(5, 5, 16)
+     << conv(5, 5, 5, 16, 120) << tanh(1, 1, 120) << fc(120, 10) << tanh(10);
 
   std::cout << "load models..." << std::endl;
 
