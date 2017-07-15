@@ -33,24 +33,30 @@ static const bool tbl[] = {
   // S : sub-sampling
   // F : fully connected
   // clang-format off
-  nn << tiny_dnn::convolutional_layer(32, 32, 5, 1, 6,   // C1, 1@32x32-in, 6@28x28-out
-                            tiny_dnn::padding::valid, true, 1, 1, backend_type)
-     << tiny_dnn::tanh_layer()
-     << tiny_dnn::average_pooling_layer(28, 28, 6, 2)    // S2, 6@28x28-in, 6@14x14-out
-     << tiny_dnn::tanh_layer()
-     << tiny_dnn::convolutional_layer(14, 14, 5, 6, 16,  // C3, 6@14x14-in, 16@10x10-out
-                            tiny_dnn::core::connection_table(tbl, 6, 16),
-                            tiny_dnn::padding::valid, true, 1, 1, backend_type)
-     << tiny_dnn::tanh_layer()
-     << tiny_dnn::average_pooling_layer(10, 10, 16, 2)   // S4, 16@10x10-in, 16@5x5-out
-     << tiny_dnn::tanh_layer()
-     << tiny_dnn::convolutional_layer(5, 5, 5, 16, 120,  // C5, 16@5x5-in, 120@1x1-out
-                            tiny_dnn::padding::valid, true, 1, 1, backend_type)
-     << tiny_dnn::tanh_layer()
-     << tiny_dnn::fully_connected_layer(120, 10, true,   // F6, 120-in, 10-out
-                              backend_type)
-     << tiny_dnn::tanh_layer();
-  // clang-format on
+  using fc = tiny_dnn::layers::fc;
+  using conv = tiny_dnn::layers::conv;
+  using ave_pool = tiny_dnn::layers::ave_pool;
+  using tanh = tiny_dnn::activation::tanh;
+
+  using tiny_dnn::core::connection_table;
+  using tiny_dnn::padding::valid;
+
+  nn << conv(32, 32, 5, 1, 6,   // C1, 1@32x32-in, 6@28x28-out
+             valid, true, 1, 1, backend_type)
+     << tanh()
+     << ave_pool(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
+     << tanh()
+     << conv(14, 14, 5, 6, 16,   // C3, 6@14x14-in, 16@10x10-out
+             connection_table(tbl, 6, 16),
+             valid, true, 1, 1, backend_type)
+     << tanh()
+     << ave_pool(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
+     << tanh()
+     << conv(5, 5, 5, 16, 120,   // C5, 16@5x5-in, 120@1x1-out
+             valid, true, 1, 1, backend_type)
+     << tanh()
+     << fc(120, 10, true, backend_type)  // F6, 120-in, 10-out
+     << tanh();
 }
 
 static void train_lenet(const std::string &data_dir_path,
