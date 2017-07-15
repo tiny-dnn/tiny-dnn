@@ -6,11 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <vector>
+
 #include "gtest/gtest.h"
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
-
-using namespace tiny_dnn::activation;
 
 namespace tiny_dnn {
 
