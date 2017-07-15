@@ -20,6 +20,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <utility>
+#include <memory>
 
 #include "tiny_dnn/lossfunctions/loss_function.h"
 #include "tiny_dnn/nodes.h"
