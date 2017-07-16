@@ -7,9 +7,9 @@
 */
 #pragma once
 
- #include <memory>
-
 #include <gtest/gtest.h>
+
+#include <memory>
 
 #include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
