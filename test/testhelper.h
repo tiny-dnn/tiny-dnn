@@ -6,11 +6,17 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
 #include <cstdio>
 #include <iostream>
 #include <string>
+#include <limits>
+#include <vector>
+#include <utility>
+#include <memory>
 
-#include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 #ifdef _WIN32
@@ -59,7 +65,7 @@ inline std::string unique_path() {
   do {
     pattern = "%%%%-%%%%-%%%%-%%%%";
     for (auto p = pattern.begin(); p != pattern.end(); ++p) {
-      if (*p == '%') *p = (rand() % 10) + '0';
+      if (*p == '%') *p = (rand_r(0) % 10) + '0';
     }
   } while (exists(pattern));
   // return std::experimental::filesystem::v1::temp_directory_path().string() +
@@ -68,9 +74,11 @@ inline std::string unique_path() {
 #ifdef _WIN32
   ::GetTempPath(256, path);
 #else
-  strcpy(path, "/tmp/");
+  // TODO(edgarriba): Almost always, snprintf is better than strcpy
+  strcpy(path, "/tmp/");  // NOLINT
 #endif
-  strcat(path, pattern.c_str());
+  // TODO(edgarriba): Almost always, snprintf is better than strcpy
+  strcat(path, pattern.c_str());  // NOLINT
   struct stat buffer;
   return (stat(path, &buffer) == 0) ? unique_path() : path;
 }
@@ -194,6 +202,7 @@ inline double epsilon() {
 }
 
 inline bool resolve_path(const std::string &filename, std::string &path) {
+  // TODO(edgarriba): use std::vector instead
   static const char *path_list[] = {"",
                                     "./test/",
                                     "../test/",
@@ -210,8 +219,6 @@ inline bool resolve_path(const std::string &filename, std::string &path) {
   }
   return false;
 }
-
-namespace {
 
 std::pair<
   std::vector<tensor_t>,
@@ -240,7 +247,6 @@ std::pair<
 
   return std::make_pair(a, t);
 }
-}  // namespace
 
 #ifndef CNN_NO_SERIALIZATION
 inline std::string layer_to_json(const layer &src) {
