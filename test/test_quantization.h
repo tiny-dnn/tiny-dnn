@@ -7,11 +7,12 @@
 */
 #pragma once
 
+#include <gtest/gtest.h>
+
 #include <limits>
 #include <vector>
 
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -206,8 +207,8 @@ TEST(quantization_utils, requantize_many_in_new_range_32_to_8bit) {
     const float input_max  = ranges[range_index][1];
     const float output_min = ranges[range_index][2];
     const float output_max = ranges[range_index][3];
-    int32_t values_quantized[values_count];
-    uint8_t expected_values[values_count];
+    int32_t values_quantized[values_count];  // NOLINT
+    uint8_t expected_values[values_count];   // NOLINT
     for (size_t value_index = 0; value_index < values_count; ++value_index) {
       const float value_float = values[value_index];
       values_quantized[value_index] =
@@ -218,7 +219,7 @@ TEST(quantization_utils, requantize_many_in_new_range_32_to_8bit) {
                                           input_min, input_max),
         output_min, output_max);
     }
-    uint8_t output_values[values_count];
+    uint8_t output_values[values_count];  // NOLINT
     core::kernels::requantize_many_in_new_range<int32_t, uint8_t>(
       values_quantized, values_count, input_min, input_max, output_min,
       output_max, output_values);
