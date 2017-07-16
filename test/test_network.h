@@ -6,15 +6,18 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
+#include <functional>
 #include <memory>
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <utility>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
-using namespace tiny_dnn::activation;
-using namespace tiny_dnn::layers;
 
 class test_fc_layer : public fully_connected_layer {
  public:
@@ -69,15 +72,15 @@ TEST(network, construct_sequential_by_shared_ptr) {
 
 TEST(network, construct_multi_by_local_variables) {
   network<sequential> net;
-  conv conv1(32, 32, 5, 1, 6, padding::same);
+  convolutional_layer conv1(32, 32, 5, 1, 6, padding::same);
   tanh_layer tanh1(32, 32, 6);
-  conv conv2(32, 32, 7, 6, 12, padding::same);
+  convolutional_layer conv2(32, 32, 7, 6, 12, padding::same);
   sigmoid_layer sgm2(32, 32, 12);
-  max_pool pool1(32, 32, 12, 2);
+  max_pooling_layer pool1(32, 32, 12, 2);
   relu_layer relu1(16, 16, 12);
   lrn_layer lrn(16, 16, 4, 12);
-  dropout dp(16 * 16 * 12, 0.5);
-  fc full(16 * 16 * 12, 1);
+  dropout_layer dp(16 * 16 * 12, 0.5);
+  fully_connected_layer full(16 * 16 * 12, 1);
   softmax_layer sft(1);
 
   net << conv1 << tanh1 << conv2 << sgm2 << pool1 << relu1 << lrn << dp << full
@@ -86,10 +89,11 @@ TEST(network, construct_multi_by_local_variables) {
 
 TEST(network, construct_multi_by_temporary_variables) {
   network<sequential> net;
-  net << conv(32, 32, 5, 1, 6, padding::same) << tanh()
-      << conv(32, 32, 7, 6, 12, padding::same) << sigmoid()
-      << max_pool(32, 32, 12, 2) << relu() << lrn_layer(16, 16, 4, 12)
-      << dropout(16 * 16 * 12, 0.5) << fc(16 * 16 * 12, 1) << softmax();
+  net << convolutional_layer(32, 32, 5, 1, 6, padding::same) << tanh_layer()
+      << convolutional_layer(32, 32, 7, 6, 12, padding::same) << sigmoid()
+      << max_pooling_layer(32, 32, 12, 2) << relu() << lrn_layer(16, 16, 4, 12)
+      << dropout_layer(16 * 16 * 12, 0.5)
+      << fully_connected_layer(16 * 16 * 12, 1) << softmax();
 }
 
 TEST(network, in_dim) {
@@ -229,8 +233,8 @@ TEST(network, train_predict) {
     label.push_back((in[0] ^ in[1]) ? 1 : 0);
   }
 
-  net << fully_connected_layer(2, 10) << tanh() << fully_connected_layer(10, 2)
-      << tanh();
+  net << fully_connected_layer(2, 10) << tanh_layer()
+      << fully_connected_layer(10, 2) << tanh_layer();
 
   net.train<mse>(optimizer, data, label, 10, 10);
 
@@ -283,8 +287,8 @@ TEST(network, train_predict_different_batches) {
       label.push_back((in[0] ^ in[1]) ? 1 : 0);
     }
 
-    net << fully_connected_layer(2, 10) << tanh()
-        << fully_connected_layer(10, 2) << tanh();
+    net << fully_connected_layer(2, 10) << tanh_layer()
+        << fully_connected_layer(10, 2) << tanh_layer();
 
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 
@@ -318,7 +322,7 @@ TEST(network, train_predict_different_batches) {
 }
 
 TEST(network, set_netphase) {
-  // TODO: add unit-test for public api
+  // TODO(nyanp): add unit-test for public api
 }
 
 TEST(network, test) {
@@ -349,7 +353,7 @@ TEST(network, test) {
 }
 
 TEST(network, get_loss) {
-  // TODO: add unit-test for public api
+  // TODO(nyanp): add unit-test for public api
 }
 
 TEST(network, at) {
@@ -466,7 +470,7 @@ TEST(network, gradient_check) {  // sigmoid - cross-entropy
 TEST(network, gradient_check2) {  // tan_h - mse
   using loss_func  = mse;
   using network    = network<sequential>;
-  using activation = tanh;
+  using activation = activation::tanh;
 
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << activation()
@@ -483,6 +487,7 @@ TEST(network, gradient_check2) {  // tan_h - mse
 TEST(network, gradient_check3) {  // mixture - mse
   using loss_func = mse;
   using network   = network<sequential>;
+  using tanh      = activation::tanh;
 
   network nn;
   nn << fully_connected_layer(10, 14 * 14 * 3) << tanh()
@@ -628,18 +633,18 @@ TEST(network, read_write) {
 
   network n1, n2;
 
-  n1 << convolutional_layer(32, 32, 5, 1, 6) << tanh()
+  n1 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer()
      << average_pooling_layer(28, 28, 6, 2)
-     << convolutional_layer(14, 14, 5, 6, 16) << tanh()
+     << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer()
      << average_pooling_layer(10, 10, 16, 2)
-     << convolutional_layer(5, 5, 5, 16, 120) << tanh()
+     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer()
      << fully_connected_layer(120, 10) << softmax();
 
-  n2 << convolutional_layer(32, 32, 5, 1, 6) << tanh()
+  n2 << convolutional_layer(32, 32, 5, 1, 6) << tanh_layer()
      << average_pooling_layer(28, 28, 6, 2)
-     << convolutional_layer(14, 14, 5, 6, 16) << tanh()
+     << convolutional_layer(14, 14, 5, 6, 16) << tanh_layer()
      << average_pooling_layer(10, 10, 16, 2)
-     << convolutional_layer(5, 5, 5, 16, 120) << tanh()
+     << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer()
      << fully_connected_layer(120, 10) << softmax();
 
   n1.init_weight();

@@ -9,8 +9,8 @@
 
 #include <gtest/gtest.h>
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"

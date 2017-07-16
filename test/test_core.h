@@ -35,9 +35,7 @@ device_t device_type(size_t *platform, size_t *device) {
 
   std::array<std::string, 2> devices_order        = {"GPU", "CPU"};
   std::map<std::string, device_t> devices_t_order = {
-    std::make_pair("GPU", device_t::GPU),
-    std::make_pair("CPU", device_t::CPU)
-  };
+    std::make_pair("GPU", device_t::GPU), std::make_pair("CPU", device_t::CPU)};
   for (auto d_type : devices_order)
     for (auto p = platforms.begin(); p != platforms.end(); ++p)
       for (size_t d = 0; d < p->NumDevices(); ++d) {

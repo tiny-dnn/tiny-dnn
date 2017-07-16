@@ -76,7 +76,7 @@ TEST(dropout, full_net) {
     train.push_back(t2);
   }
 
-  nn << fully_connected_layer(4, 10) << relu() << dropout(10, 0.5)
+  nn << fully_connected_layer(4, 10) << relu() << dropout_layer(10, 0.5)
      << fully_connected_layer(10, 2) << sigmoid();
 
   nn.train<mse>(optimizer, data, train, 1, 10);
@@ -106,7 +106,7 @@ TEST(dropout, full_net_batch) {
     train.push_back(t2);
   }
 
-  nn << fully_connected_layer(4, 10) << relu() << dropout(10, 0.5)
+  nn << fully_connected_layer(4, 10) << relu() << dropout_layer(10, 0.5)
      << fully_connected_layer(10, 2) << sigmoid();
 
   nn.train<mse>(optimizer, data, train, 20, 10);

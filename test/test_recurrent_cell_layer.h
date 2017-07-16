@@ -102,8 +102,8 @@ TEST(recurrent_cell, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << recurrent_cell_layer(4, 6) << tanh() << recurrent_cell_layer(6, 3)
-     << tanh();
+  nn << recurrent_cell_layer(4, 6) << tanh_layer() << recurrent_cell_layer(6, 3)
+     << tanh_layer();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -139,7 +139,7 @@ TEST(recurrent_cell, train2) {
 
 TEST(recurrent_cell, gradient_check) {
   network<sequential> nn;
-  nn << recurrent_cell_layer(50, 10) << tanh();
+  nn << recurrent_cell_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();

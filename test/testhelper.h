@@ -11,11 +11,11 @@
 
 #include <cstdio>
 #include <iostream>
-#include <string>
 #include <limits>
-#include <vector>
-#include <utility>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "tiny_dnn/tiny_dnn.h"
 

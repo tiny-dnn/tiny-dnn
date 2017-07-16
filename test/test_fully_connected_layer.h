@@ -99,8 +99,8 @@ TEST(fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << fully_connected_layer(4, 6) << tanh() << fully_connected_layer(6, 3)
-     << tanh();
+  nn << fully_connected_layer(4, 6) << tanh_layer()
+     << fully_connected_layer(6, 3) << tanh_layer();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -136,7 +136,7 @@ TEST(fully_connected, train2) {
 
 TEST(fully_connected, gradient_check) {
   network<sequential> nn;
-  nn << fully_connected_layer(50, 10) << tanh();
+  nn << fully_connected_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
