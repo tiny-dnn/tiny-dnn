@@ -6,11 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <functional>
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -23,11 +26,11 @@ TEST(fully_connected, train) {
   vec_t a(3), t(2), a2(3), t2(2);
 
   // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
+    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
+    t[0] = 0.3; t[1] = 0.7;
 
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
+    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
+    t2[0] = 0.5; t2[1] = 0.1;
   // clang-format on
 
   std::vector<vec_t> data, train;
@@ -38,18 +41,18 @@ TEST(fully_connected, train) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1f;
+  optimizer.alpha = 0.1;
   nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t[1], 1E-5);
+  EXPECT_NEAR(predicted[0], t[0], 1e-5);
+  EXPECT_NEAR(predicted[1], t[1], 1e-5);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+  EXPECT_NEAR(predicted[0], t2[0], 1e-5);
+  EXPECT_NEAR(predicted[1], t2[1], 1e-5);
 }
 
 TEST(fully_connected, train_different_batches) {
@@ -65,11 +68,11 @@ TEST(fully_connected, train_different_batches) {
     vec_t a(3), t(2), a2(3), t2(2);
 
     // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
+    a[0] = 3.0; a[1] = 0.0; a[2] = -1.0;
+    t[0] = 0.3; t[1] = 0.7;
 
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
+    a2[0] = 0.2; a2[1] = 0.5; a2[2] = 4.0;
+    t2[0] = 0.5; t2[1] = 0.1;
     // clang-format on
 
     std::vector<vec_t> data, train;
@@ -80,18 +83,18 @@ TEST(fully_connected, train_different_batches) {
       train.push_back(t);
       train.push_back(t2);
     }
-    optimizer.alpha = 0.1f;
+    optimizer.alpha = 0.1;
     nn.train<mse>(optimizer, data, train, batch_sz, 10);
 
     vec_t predicted = nn.predict(a);
 
-    EXPECT_NEAR(predicted[0], t[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t[1], 1E-5);
+    EXPECT_NEAR(predicted[0], t[0], 1e-5);
+    EXPECT_NEAR(predicted[1], t[1], 1e-5);
 
     predicted = nn.predict(a2);
 
-    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+    EXPECT_NEAR(predicted[0], t2[0], 1e-5);
+    EXPECT_NEAR(predicted[1], t2[1], 1e-5);
   }
 }
 
@@ -105,11 +108,11 @@ TEST(fully_connected, train2) {
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
   // clang-format off
-    a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
-    t[0] = 0.3f; t[1] = 0.7f; t[2] = 0.3f;
+    a[0] = 3.0; a[1] = 1.0; a[2] = -1.0; a[3] = 4.0;
+    t[0] = 0.3; t[1] = 0.7; t[2] = 0.3;
 
-    a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
-    t2[0] = 0.6f; t2[1] = 0.0f; t2[2] = 0.1f;
+    a2[0] = 1.0; a2[1] = 0.0; a2[2] = 4.0; a2[3] = 2.0;
+    t2[0] = 0.6; t2[1] = 0.0; t2[2] = 0.1;
   // clang-format on
 
   std::vector<vec_t> data, train;
@@ -120,18 +123,18 @@ TEST(fully_connected, train2) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1f;
+  optimizer.alpha = 0.1;
   nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t[1], 1E-4);
+  EXPECT_NEAR(predicted[0], t[0], 1e-4);
+  EXPECT_NEAR(predicted[1], t[1], 1e-4);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-4);
+  EXPECT_NEAR(predicted[0], t2[0], 1e-4);
+  EXPECT_NEAR(predicted[1], t2[1], 1e-4);
 }
 
 TEST(fully_connected, gradient_check) {
@@ -156,7 +159,7 @@ TEST(fully_connected, read_write) {
 
 TEST(fully_connected, forward) {
   fully_connected_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -176,7 +179,7 @@ TEST(fully_connected, forward) {
 TEST(fully_connected, forward_nnp) {
   nnp_initialize();
   fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
-  EXPECT_EQ(l.in_channels(), size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -193,7 +196,7 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), size_t(2));  // in and W
+  EXPECT_EQ(l.in_channels(), 2u);  // in and W
 
   l.weight_init(weight_init::constant(1.0));
 
