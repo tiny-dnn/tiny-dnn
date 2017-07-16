@@ -6,11 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <functional>
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -189,4 +192,4 @@ TEST(recurrent_cell, forward_nobias) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn
