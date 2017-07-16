@@ -6,13 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
 
 #include "tiny_dnn/core/framework/tensor_utils.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -165,7 +167,7 @@ TEST(tensor, add3) {
 
   Tensor<float_t> t3;
 
-  EXPECT_THROW(layer_add(t3, t1, t2);, nn_error);
+  EXPECT_THROW(layer_add(t3, t1, t2), nn_error);
 }
 
 TEST(tensor, add4) {
