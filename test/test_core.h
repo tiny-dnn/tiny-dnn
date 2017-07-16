@@ -6,13 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
-#include "gtest/gtest.h"
-#include "testhelper.h"
 
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -33,7 +35,9 @@ device_t device_type(size_t *platform, size_t *device) {
 
   std::array<std::string, 2> devices_order        = {"GPU", "CPU"};
   std::map<std::string, device_t> devices_t_order = {
-    std::make_pair("GPU", device_t::GPU), std::make_pair("CPU", device_t::CPU)};
+    std::make_pair("GPU", device_t::GPU),
+    std::make_pair("CPU", device_t::CPU)
+  };
   for (auto d_type : devices_order)
     for (auto p = platforms.begin(); p != platforms.end(); ++p)
       for (size_t d = 0; d < p->NumDevices(); ++d) {
@@ -144,19 +148,19 @@ TEST(core, device_add_op) {
     // max_pooling_layer l(4, 4, 1, 2, 2,
     // core::backend_t::opencl);
 
-    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0);
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 0u);
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     // first time op registration: OK
     my_gpu_device.registerOp(l);
 
-    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1u);
 
     // second time op registraion: we expect that Op it's not
     // registrated since it's already there.
     my_gpu_device.registerOp(l);
 
-    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1);
+    ASSERT_EQ(ProgramManager::getInstance().num_programs(), 1u);
 #endif
   }
 }
@@ -192,7 +196,7 @@ TEST(core, ocl_conv) {
     // short-hand references to the payload vectors
     vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-    ASSERT_EQ(l.in_shape()[1].size(), 18);  // weight
+    ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -228,17 +232,17 @@ TEST(core, ocl_conv) {
     {
       l.forward_propagation(in_data, out_data);
 
-      EXPECT_NEAR(0.4875026, out[0], 1E-5);
-      EXPECT_NEAR(0.8388910, out[1], 1E-5);
-      EXPECT_NEAR(0.8099984, out[2], 1E-5);
-      EXPECT_NEAR(0.7407749, out[3], 1E-5);
-      EXPECT_NEAR(0.5000000, out[4], 1E-5);
-      EXPECT_NEAR(0.1192029, out[5], 1E-5);
-      EXPECT_NEAR(0.5986877, out[6], 1E-5);
-      EXPECT_NEAR(0.7595109, out[7], 1E-5);
-      EXPECT_NEAR(0.6899745, out[8], 1E-5);
+      EXPECT_NEAR(0.4875026, out[0], 1e-5);
+      EXPECT_NEAR(0.8388910, out[1], 1e-5);
+      EXPECT_NEAR(0.8099984, out[2], 1e-5);
+      EXPECT_NEAR(0.7407749, out[3], 1e-5);
+      EXPECT_NEAR(0.5000000, out[4], 1e-5);
+      EXPECT_NEAR(0.1192029, out[5], 1e-5);
+      EXPECT_NEAR(0.5986877, out[6], 1e-5);
+      EXPECT_NEAR(0.7595109, out[7], 1e-5);
+      EXPECT_NEAR(0.6899745, out[8], 1e-5);
     }
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn
