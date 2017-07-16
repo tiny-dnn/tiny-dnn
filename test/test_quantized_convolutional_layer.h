@@ -6,11 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -19,20 +21,20 @@ TEST(quantized_convolutional, setup_internal) {
                                   core::backend_t::internal);
 
   EXPECT_EQ(l.parallelize(), true);          // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), size_t(3));     // num of input tensors
-  EXPECT_EQ(l.out_channels(), size_t(1));    // num of output tensors
-  EXPECT_EQ(l.in_data_size(), size_t(25));   // size of input tensors
-  EXPECT_EQ(l.out_data_size(), size_t(18));  // size of output tensors
-  EXPECT_EQ(l.in_data_shape().size(), size_t(1));   // number of inputs shapes
-  EXPECT_EQ(l.out_data_shape().size(), size_t(1));  // num of output shapes
-  EXPECT_EQ(l.weights().size(), size_t(2));         // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(), size_t(2));   // the wieghts vector size
-  EXPECT_EQ(l.inputs().size(), size_t(3));          // num of input edges
-  EXPECT_EQ(l.outputs().size(), size_t(1));         // num of outpus edges
-  EXPECT_EQ(l.in_types().size(), size_t(3));        // num of input data types
-  EXPECT_EQ(l.out_types().size(), size_t(1));       // num of output data types
-  EXPECT_EQ(l.fan_in_size(), size_t(9));    // num of incoming connections
-  EXPECT_EQ(l.fan_out_size(), size_t(18));  // num of outgoing connections
+  EXPECT_EQ(l.in_channels(), 3u);            // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);           // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 25u);          // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 18u);         // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(), 1u);   // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), 1u);  // num of output shapes
+  EXPECT_EQ(l.weights().size(), 2u);         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), 2u);   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), 3u);          // num of input edges
+  EXPECT_EQ(l.outputs().size(), 1u);         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), 3u);        // num of input data types
+  EXPECT_EQ(l.out_types().size(), 1u);       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), 9u);            // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 18u);          // num of outgoing connections
   EXPECT_STREQ(l.layer_type().c_str(), "q_conv");  // string with layer type
 }
 
@@ -56,7 +58,7 @@ TEST(quantized_convolutional, fprop) {
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-  ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -69,17 +71,17 @@ TEST(quantized_convolutional, fprop) {
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1E-3);
+    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
-    weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
-    weight[3] = 0.0f;  weight[4] = -0.1f; weight[5] = -0.1f;
-    weight[6] = 0.05f; weight[7] = -0.2f; weight[8] = 0.05f;
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] = -0.1; weight[5] = -0.1;
+    weight[6] = 0.05; weight[7] = -0.2; weight[8] = 0.05;
 
-    weight[9] = 0.0f; weight[10] = -0.1f; weight[11] = 0.1f;
-    weight[12] = 0.1f; weight[13] = -0.2f; weight[14] = 0.3f;
-    weight[15] = 0.2f; weight[16] = -0.3f; weight[17] = 0.2f;
+    weight[9] = 0.0; weight[10] = -0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] = -0.3; weight[17] = 0.2;
 
     in[0] = 3;  in[1] = 2;  in[2] = 1;  in[3] = 5; in[4] = 2;
     in[5] = 3;  in[6] = 0;  in[7] = 2;  in[8] = 0; in[9] = 1;
@@ -90,24 +92,24 @@ TEST(quantized_convolutional, fprop) {
     {
         l.forward_propagation(in_data, out_data);
 
-        EXPECT_NEAR(-0.043426, out[0], 2E-2);
-        EXPECT_NEAR(1.6769816, out[1], 2E-2);
-        EXPECT_NEAR(1.4731820, out[2], 2E-2);
-        EXPECT_NEAR(1.0822733, out[3], 2E-2);
-        EXPECT_NEAR(0.0415336, out[4], 2E-2);
-        EXPECT_NEAR(-1.997466, out[5], 2E-2);
-        EXPECT_NEAR(0.4238461, out[6], 2E-2);
-        EXPECT_NEAR(1.1756143, out[7], 2E-2);
-        EXPECT_NEAR(0.8273983, out[8], 2E-2);
-        EXPECT_NEAR(-0.192101, out[9], 2E-2);
-        EXPECT_NEAR(1.2309504, out[10], 2E-2);
-        EXPECT_NEAR(2.2292108, out[11], 2E-2);
-        EXPECT_NEAR(0.5300441, out[12], 2E-2);
-        EXPECT_NEAR(1.7407004, out[13], 2E-2);
-        EXPECT_NEAR(1.6345025, out[14], 2E-2);
-        EXPECT_NEAR(0.6362420, out[15], 2E-2);
-        EXPECT_NEAR(3.4186277, out[16], 2E-2);
-        EXPECT_NEAR(-0.489455, out[17], 2E-2);
+        EXPECT_NEAR(-0.043426, out[0], 2e-2);
+        EXPECT_NEAR(1.6769816, out[1], 2e-2);
+        EXPECT_NEAR(1.4731820, out[2], 2e-2);
+        EXPECT_NEAR(1.0822733, out[3], 2e-2);
+        EXPECT_NEAR(0.0415336, out[4], 2e-2);
+        EXPECT_NEAR(-1.997466, out[5], 2e-2);
+        EXPECT_NEAR(0.4238461, out[6], 2e-2);
+        EXPECT_NEAR(1.1756143, out[7], 2e-2);
+        EXPECT_NEAR(0.8273983, out[8], 2e-2);
+        EXPECT_NEAR(-0.192101, out[9], 2e-2);
+        EXPECT_NEAR(1.2309504, out[10], 2e-2);
+        EXPECT_NEAR(2.2292108, out[11], 2e-2);
+        EXPECT_NEAR(0.5300441, out[12], 2e-2);
+        EXPECT_NEAR(1.7407004, out[13], 2e-2);
+        EXPECT_NEAR(1.6345025, out[14], 2e-2);
+        EXPECT_NEAR(0.6362420, out[15], 2e-2);
+        EXPECT_NEAR(3.4186277, out[16], 2e-2);
+        EXPECT_NEAR(-0.489455, out[17], 2e-2);
     }
   // clang-format on
 }
@@ -134,7 +136,7 @@ TEST(quantized_convolutional, fprop_npp) {
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-  ASSERT_EQ(l.in_shape()[1].size(), size_t(18));  // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -147,7 +149,7 @@ TEST(quantized_convolutional, fprop_npp) {
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.5, o, 1E-3);
+    for (auto o : out) EXPECT_NEAR(0.5, o, 1e-3);
   }
 
   // clang-format off
@@ -171,24 +173,24 @@ TEST(quantized_convolutional, fprop_npp) {
   {
     l.forward_propagation(in_data, out_data);
 
-    EXPECT_NEAR(-0.043426, out[0], 2E-2);
-    EXPECT_NEAR(1.6769816, out[1], 2E-2);
-    EXPECT_NEAR(1.4858254, out[2], 2E-2);
-    EXPECT_NEAR(1.0822733, out[3], 2E-2);
-    EXPECT_NEAR(0.0415336, out[4], 2E-2);
-    EXPECT_NEAR(-1.997466, out[5], 2E-2);
-    EXPECT_NEAR(0.4238461, out[6], 2E-2);
-    EXPECT_NEAR(1.1884713, out[7], 2E-2);
-    EXPECT_NEAR(0.8273983, out[8], 2E-2);
-    EXPECT_NEAR(-0.192101, out[9], 2E-2);
-    EXPECT_NEAR(1.2309504, out[10], 2E-2);
-    EXPECT_NEAR(2.2292108, out[11], 2E-2);
-    EXPECT_NEAR(0.5300441, out[12], 2E-2);
-    EXPECT_NEAR(1.7407004, out[13], 2E-2);
-    EXPECT_NEAR(1.6345025, out[14], 2E-2);
-    EXPECT_NEAR(0.6362420, out[15], 2E-2);
-    EXPECT_NEAR(3.4186277, out[16], 2E-2);
-    EXPECT_NEAR(-0.489455, out[17], 2E-2);
+    EXPECT_NEAR(-0.043426, out[0], 2e-2);
+    EXPECT_NEAR(1.6769816, out[1], 2e-2);
+    EXPECT_NEAR(1.4858254, out[2], 2e-2);
+    EXPECT_NEAR(1.0822733, out[3], 2e-2);
+    EXPECT_NEAR(0.0415336, out[4], 2e-2);
+    EXPECT_NEAR(-1.997466, out[5], 2e-2);
+    EXPECT_NEAR(0.4238461, out[6], 2e-2);
+    EXPECT_NEAR(1.1884713, out[7], 2e-2);
+    EXPECT_NEAR(0.8273983, out[8], 2e-2);
+    EXPECT_NEAR(-0.192101, out[9], 2e-2);
+    EXPECT_NEAR(1.2309504, out[10], 2e-2);
+    EXPECT_NEAR(2.2292108, out[11], 2e-2);
+    EXPECT_NEAR(0.5300441, out[12], 2e-2);
+    EXPECT_NEAR(1.7407004, out[13], 2e-2);
+    EXPECT_NEAR(1.6345025, out[14], 2e-2);
+    EXPECT_NEAR(0.6362420, out[15], 2e-2);
+    EXPECT_NEAR(3.4186277, out[16], 2e-2);
+    EXPECT_NEAR(-0.489455, out[17], 2e-2);
   }
 }
 #endif
