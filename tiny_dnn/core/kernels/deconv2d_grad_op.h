@@ -21,13 +21,19 @@ class Conv2dTransposedGradOp : public core::OpKernel {
     auto &params = OpKernel::params_->deconv();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> prev_out(context.input(0)), weights(context.input(1));
-    Tensor<float_t> weights_grads(context.input_grad(1));
-    Tensor<float_t> bias_grads = params.has_bias
-                                   ? Tensor<float_t>(context.input_grad(2))
-                                   : Tensor<float_t>();
+    const Tensor<float_t> prev_out(context.input(0));
     Tensor<float_t> prev_delta(context.input_grad(0));
     Tensor<float_t> curr_delta(context.output_grad(0));
+
+    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<float_t> bias(params.has_bias
+                                 ? *(context.ith_parameter(1)->data())
+                                 : Tensor<float_t>());
+
+    Tensor<float_t> weights_grads(*(context.ith_parameter(0)->grad()));
+    Tensor<float_t> bias_grads(params.has_bias
+                                 ? *(context.ith_parameter(1)->grad())
+                                 : Tensor<float_t>());
 
     // initialize outputs
     prev_delta.fill(float_t{0});
@@ -35,11 +41,11 @@ class Conv2dTransposedGradOp : public core::OpKernel {
     kernels::deconv2d_op_internal(prev_out, weights, weights_grads, bias_grads,
                                   curr_delta, prev_delta, params,
                                   params.has_bias, context.parallelize());
-    context.input_grad(0) = prev_delta.toTensor();
-    context.input_grad(1) = weights_grads.toTensor();
+    context.ith_parameter(0)->set_grad(weights_grads);
     if (params.has_bias) {
-      context.input_grad(2) = bias_grads.toTensor();
+      context.ith_parameter(1)->set_grad(bias_grads);
     }
+    context.input_grad(0) = prev_delta.toTensor();
   }
 };
 
