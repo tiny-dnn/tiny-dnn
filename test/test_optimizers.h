@@ -2,8 +2,6 @@
 #include "gtest/gtest.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
 
 TEST(optimizers, nesterov_momentum_update) {
