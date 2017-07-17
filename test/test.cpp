@@ -40,6 +40,7 @@ using namespace tiny_dnn::activation;
 #include "test_slice_layer.h"
 #include "test_target_cost.h"
 #include "test_tensor.h"
+#include "test_optimizers.h"
 
 #ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
