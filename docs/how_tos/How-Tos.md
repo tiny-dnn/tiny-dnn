@@ -489,7 +489,7 @@ num of parameters:11770
 
 ### get weight vector
 ```cpp
-std::vector<vec_t*> weights = nn[i]->get_weights();
+std::vector<vec_t*> weights = nn[i]->weights();
 ```
 Number of elements differs by layer types and settings. For example, in fully-connected layer with bias term, weights[0] represents weight matrix and weights[1] represents bias vector.
 
