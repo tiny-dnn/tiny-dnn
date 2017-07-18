@@ -140,6 +140,59 @@ TEST(ave_pool, forward_stride) {
   }
 }
 
+TEST(ave_pool, backward) {
+  average_pooling_layer l(4, 4, 1, 2);
+
+  l.weight_init(weight_init::constant(1.0));
+  l.bias_init(weight_init::constant(1.0));
+  l.init_weight();
+
+  // clang-format off
+  vec_t in = {
+      0, 1, 2, 3,
+      8, 7, 5, 6,
+      4, 3, 1, 2,
+      0,-1,-2,-3
+  };
+
+  vec_t out_grad = {
+      1, 2,
+      3, 4
+  };
+
+  vec_t curr_delta_expected = {
+      0.25, 0.25, 0.5, 0.5,
+      0.25, 0.25, 0.5, 0.5,
+      0.75, 0.75, 1.0, 1.0,
+      0.75, 0.75, 1.0, 1.0
+  };
+
+  vec_t dw_expected = {
+      0, 0,
+      0, 0
+  };
+
+  vec_t db_expected = {10};
+  // clang-format on
+
+  std::vector<tensor_t> in_grad = l.backward(std::vector<tensor_t>{{out_grad}});
+  vec_t curr_delta_result       = in_grad[0][0];
+  vec_t dw_result               = in_grad[1][0];
+  vec_t db_result               = in_grad[2][0];
+
+  for (size_t i = 0; i < curr_delta_expected.size(); i++) {
+    EXPECT_FLOAT_EQ(curr_delta_result[i], curr_delta_expected[i]);
+  }
+
+  for (size_t i = 0; i < dw_expected.size(); i++) {
+    EXPECT_FLOAT_EQ(dw_result[i], dw_expected[i]);
+  }
+
+  for (size_t i = 0; i < db_expected.size(); i++) {
+    EXPECT_FLOAT_EQ(db_result[i], db_expected[i]);
+  }
+}
+
 TEST(ave_pool, read_write) {
   average_pooling_layer l1(100, 100, 5, 2);
   average_pooling_layer l2(100, 100, 5, 2);
