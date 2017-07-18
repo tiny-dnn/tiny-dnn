@@ -67,6 +67,7 @@ before_install:
     fi
   - gcc --version
   - g++ --version
+  - make cpplint
 
 install:
   - bash -x .travis/install.sh
