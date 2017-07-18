@@ -90,7 +90,7 @@ class activation_layer : public layer {
           [&](size_t i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
   }
 
-  virtual std::string layer_type() const override = 0;
+  std::string layer_type() const override = 0;
 
   /**
    * Populate vec_t of elements 'y' according to activation y = f(x).
