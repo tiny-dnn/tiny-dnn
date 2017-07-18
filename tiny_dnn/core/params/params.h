@@ -10,6 +10,7 @@
 namespace tiny_dnn {
 namespace core {
 
+class avepool_params;
 class conv_params;
 class deconv_params;
 class fully_params;
@@ -22,6 +23,7 @@ class Params {
  public:
   Params() {}
 
+  avepool_params &avepool();
   conv_params &conv();
   deconv_params &deconv();
   fully_params &fully();

@@ -11,114 +11,96 @@
 #include <string>
 #include <vector>
 
-#include "tiny_dnn/layers/partial_connected_layer.h"
+#include "tiny_dnn/core/framework/tensor.h"
+#include "tiny_dnn/core/params/avepool_params.h"
 #include "tiny_dnn/util/util.h"
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
 #endif  // DNN_USE_IMAGE_API
 
+using namespace tiny_dnn::core;
+
 namespace tiny_dnn {
 
 // forward_propagation
 inline void tiny_average_pooling_kernel(
-  bool parallelize,
-  const std::vector<tensor_t *> &in_data,
-  std::vector<tensor_t *> &out_data,
-  const shape3d &out_dim,
-  float_t scale_factor,
-  std::vector<typename partial_connected_layer::wi_connections> &out2wi) {
-  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const Tensor<> in((*in_data[0])[sample]);
-    const Tensor<> W((*in_data[1])[0]);
-    const Tensor<> b((*in_data[2])[0]);
-    Tensor<> out((*out_data[0])[sample]);
-
-    auto oarea = out_dim.area();
+  const Tensor<> &in_data,
+  const Tensor<> &weights,
+  const Tensor<> &biases,
+  Tensor<> &out_data,
+  const avepool_params &params,
+  const average_pooling_layer_worker_specific_storage &aws,
+  const bool layer_parallelize) {
+  for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
+    auto oarea = params.out.area();
     size_t idx = 0;
-    for (size_t d = 0; d < out_dim.depth_; ++d) {
-      float_t weight = W.host_at(d) * scale_factor;
-      float_t bias   = b.host_at(d);
+
+    for (size_t d = 0; d < params.out.depth_; ++d) {
+      float_t weight = weights.host_at(d) * params.scale_factor;
+      float_t bias   = biases.host_at(d);
       for (size_t i = 0; i < oarea; ++i, ++idx) {
-        const auto &connections = out2wi[idx];
-        float_t value           = 0.0;
+        const auto &connections = aws.out2wi[idx];
+        float_t value{0};
         for (auto connection : connections)
-          value += in.host_at(connection.second);
+          value += in_data.host_at(sample, connection.second);
         value *= weight;
         value += bias;
-        out.host_at(idx) = value;
+        out_data.host_at(sample, idx) = value;
       }
     }
-
-    assert(out.size() == out2wi.size());
-    (*out_data[0])[sample] = out.toVec();
   });
 }
 
 // back_propagation
 inline void tiny_average_pooling_back_kernel(
-  bool parallelize,
-  const std::vector<tensor_t *> &in_data,
-  const std::vector<tensor_t *> &out_data,
-  std::vector<tensor_t *> &out_grad,
-  std::vector<tensor_t *> &in_grad,
-  const shape3d &in_dim,
-  float_t scale_factor,
-  std::vector<typename partial_connected_layer::io_connections> &weight2io,
-  std::vector<typename partial_connected_layer::wo_connections> &in2wo,
-  std::vector<std::vector<size_t>> &bias2out) {
-  CNN_UNREFERENCED_PARAMETER(out_data);
-  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const Tensor<> prev_out((*in_data[0])[sample]);
-    const Tensor<> W((*in_data[1])[0]);
-    Tensor<> dW((*in_grad[1])[sample]);
-    Tensor<> db((*in_grad[2])[sample]);
-    Tensor<> prev_delta((*in_grad[0])[sample]);
-    Tensor<> curr_delta((*out_grad[0])[sample]);
-
-    auto inarea = in_dim.area();
+  const Tensor<> &prev_out,
+  const Tensor<> &weights,
+  Tensor<> &weights_grads,
+  Tensor<> &bias_grads,
+  Tensor<> &curr_delta,
+  Tensor<> &prev_delta,
+  const avepool_params &params,
+  const average_pooling_layer_worker_specific_storage &aws,
+  const bool layer_parallelize) {
+  for_i(layer_parallelize, prev_out.shape()[0], [&](size_t sample) {
+    auto inarea = params.in.area();
     size_t idx  = 0;
-    for (size_t i = 0; i < in_dim.depth_; ++i) {
-      float_t weight = W.host_at(i) * scale_factor;
+    for (size_t i = 0; i < params.in.depth_; ++i) {
+      float_t weight = weights.host_at(i) * params.scale_factor;
       for (size_t j = 0; j < inarea; ++j, ++idx) {
-        prev_delta.host_at(idx) =
-          weight * curr_delta.host_at(in2wo[idx][0].second);
+        prev_delta.host_at(sample, idx) =
+          weight * curr_delta.host_at(sample, aws.in2wo[idx][0].second);
       }
     }
 
-    for (size_t i = 0; i < weight2io.size(); ++i) {
-      const auto &connections = weight2io[i];
+    for (size_t i = 0; i < aws.weight2io.size(); ++i) {
+      const auto &connections = aws.weight2io[i];
       float_t diff{0};
 
       for (auto connection : connections)
-        diff += prev_out.host_at(connection.first) *
-                curr_delta.host_at(connection.second);
+        diff += prev_out.host_at(sample, connection.first) *
+                curr_delta.host_at(sample, connection.second);
 
-      dW.host_at(i) += diff * scale_factor;
+      weights_grads.host_at(sample, i) += diff * params.scale_factor;
     }
 
-    for (size_t i = 0; i < bias2out.size(); i++) {
-      const std::vector<size_t> &outs = bias2out[i];
+    for (size_t i = 0; i < aws.bias2out.size(); i++) {
+      const std::vector<size_t> &outs = aws.bias2out[i];
       float_t diff{0};
 
-      for (auto o : outs) diff += curr_delta.host_at(o);
+      for (auto o : outs) diff += curr_delta.host_at(sample, o);
 
-      db.host_at(i) += diff;
+      bias_grads.host_at(sample, i) += diff;
     }
-    (*in_grad[1])[sample]  = dW.toVec();
-    (*in_grad[2])[sample]  = db.toVec();
-    (*in_grad[0])[sample]  = prev_delta.toVec();
-    (*out_grad[0])[sample] = curr_delta.toVec();
   });
 }
 
 /**
  * average pooling with trainable weights
  **/
-class average_pooling_layer : public partial_connected_layer {
+class average_pooling_layer : public layer {
  public:
-  using Base = partial_connected_layer;
-
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
@@ -183,23 +165,13 @@ class average_pooling_layer : public partial_connected_layer {
                         size_t stride_x,
                         size_t stride_y,
                         padding pad_type = padding::valid)
-    : Base(in_width * in_height * in_channels,
-           conv_out_length(in_width, pool_size_x, stride_x, pad_type) *
-             conv_out_length(in_height, pool_size_y, stride_y, pad_type) *
-             in_channels,
-           in_channels,
-           in_channels,
-           float_t(1) / (pool_size_x * pool_size_y)),
-      stride_x_(stride_x),
-      stride_y_(stride_y),
-      pool_size_x_(pool_size_x),
-      pool_size_y_(pool_size_y),
-      pad_type_(pad_type),
-      in_(in_width, in_height, in_channels),
-      out_(conv_out_length(in_width, pool_size_x, stride_x, pad_type),
-           conv_out_length(in_height, pool_size_y, stride_y, pad_type),
-           in_channels),
-      w_(pool_size_x, pool_size_y, in_channels) {
+    : layer(std_input_order(in_channels > 0), {vector_type::data}) {
+    avepool_set_params(in_width, in_height, in_channels, pool_size_x,
+                       pool_size_y, stride_x, stride_y, pad_type);
+    aws_ = average_pooling_layer_worker_specific_storage(
+      in_channels, params_.out.size(), params_.in.size(), in_channels,
+      params_.out.size());
+
     if ((in_width % pool_size_x) || (in_height % pool_size_y)) {
       pooling_size_mismatch(in_width, in_height, pool_size_x, pool_size_y);
     }
@@ -207,44 +179,85 @@ class average_pooling_layer : public partial_connected_layer {
     init_connection(pool_size_x, pool_size_y);
   }
 
-  std::vector<index3d<size_t>> in_shape() const override {
-    return {in_, w_, index3d<size_t>(1, 1, out_.depth_)};
+  std::vector<shape3d> in_shape() const override {
+    return {params_.in, params_.window, shape3d(1, 1, params_.out.depth_)};
   }
 
-  std::vector<index3d<size_t>> out_shape() const override { return {out_}; }
+  std::vector<shape3d> out_shape() const override { return {params_.out}; }
 
   std::string layer_type() const override { return "ave-pool"; }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    tiny_average_pooling_kernel(parallelize_, in_data, out_data, out_,
-                                Base::scale_factor_, Base::out2wi_);
+    // todo (karandesai) : transfer all this into OpKernel
+    // OpKernels do not accept worker storage so currently tricky to do so
+
+    const Tensor<> in      = Tensor<>(*in_data[0]);
+    const Tensor<> weights = Tensor<>(*in_data[1]);
+    const Tensor<> bias    = Tensor<>(*in_data[2]);
+    Tensor<> out           = Tensor<>(*out_data[0]);
+    out.fill(0);
+
+    tiny_average_pooling_kernel(in, weights, bias, out, params_, aws_,
+                                parallelize_);
+    *out_data[0] = out.toTensor();
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tiny_average_pooling_back_kernel(
-      parallelize_, in_data, out_data, out_grad, in_grad, in_,
-      Base::scale_factor_, Base::weight2io_, Base::in2wo_, Base::bias2out_);
+    // todo (karandesai) : transfer all this into OpKernel
+
+    const Tensor<> prev_out = Tensor<>(*in_data[0]);
+    Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
+    Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
+
+    const Tensor<> weights = Tensor<>(*in_data[1]);
+    const Tensor<> bias    = Tensor<>(*in_data[2]);
+    Tensor<> weights_grads = Tensor<>(*in_grad[1]);
+    Tensor<> bias_grads    = Tensor<>(*in_grad[2]);
+
+    prev_delta.fill(0);
+
+    tiny_average_pooling_back_kernel(prev_out, weights, weights_grads,
+                                     bias_grads, curr_delta, prev_delta,
+                                     params_, aws_, parallelize_);
+    *in_grad[0] = prev_delta.toTensor();
+    *in_grad[1] = weights_grads.toTensor();
+    *in_grad[2] = bias_grads.toTensor();
   }
 
   std::pair<size_t, size_t> pool_size() const {
-    return std::make_pair(pool_size_x_, pool_size_y_);
+    return std::make_pair(params_.window.width_, params_.window.height_);
   }
 
   friend struct serialization_buddy;
 
  private:
-  size_t stride_x_;
-  size_t stride_y_;
-  size_t pool_size_x_;
-  size_t pool_size_y_;
-  padding pad_type_;
-  shape3d in_;
-  shape3d out_;
-  shape3d w_;
+  avepool_params params_;
+  average_pooling_layer_worker_specific_storage aws_;
+
+  void avepool_set_params(size_t in_width,
+                          size_t in_height,
+                          size_t in_channels,
+                          size_t pool_size_x,
+                          size_t pool_size_y,
+                          size_t stride_x,
+                          size_t stride_y,
+                          padding pad_type = padding::valid) {
+    params_.in = shape3d(in_width, in_height, in_channels);
+    params_.out =
+      pad_type == padding::same
+        ? params_.in
+        : shape3d(pool_out_dim(in_width, pool_size_x, stride_x),
+                  pool_out_dim(in_height, pool_size_y, stride_y), in_channels);
+    params_.window       = shape3d(pool_size_x, pool_size_y, in_channels);
+    params_.stride_x     = stride_x;
+    params_.stride_y     = stride_y;
+    params_.pad_type     = pad_type;
+    params_.scale_factor = float_t{1} / (pool_size_x * pool_size_y);
+  }
 
   static size_t pool_out_dim(size_t in_size,
                              size_t pooling_size,
@@ -254,19 +267,20 @@ class average_pooling_layer : public partial_connected_layer {
   }
 
   void init_connection(size_t pooling_size_x, size_t pooling_size_y) {
-    for (size_t c = 0; c < in_.depth_; ++c) {
-      for (size_t y = 0; y < in_.height_ - pooling_size_y + 1; y += stride_y_) {
-        for (size_t x = 0; x < in_.width_ - pooling_size_x + 1;
-             x += stride_x_) {
+    for (size_t c = 0; c < params_.in.depth_; ++c) {
+      for (size_t y = 0; y < params_.in.height_ - pooling_size_y + 1;
+           y += params_.stride_y) {
+        for (size_t x = 0; x < params_.in.width_ - pooling_size_x + 1;
+             x += params_.stride_x) {
           connect_kernel(pooling_size_x, pooling_size_y, x, y, c);
         }
       }
     }
 
-    for (size_t c = 0; c < in_.depth_; ++c) {
-      for (size_t y = 0; y < out_.height_; ++y) {
-        for (size_t x = 0; x < out_.width_; ++x) {
-          this->connect_bias(c, out_.get_index(x, y, c));
+    for (size_t c = 0; c < params_.in.depth_; ++c) {
+      for (size_t y = 0; y < params_.out.height_; ++y) {
+        for (size_t x = 0; x < params_.out.width_; ++x) {
+          this->connect_bias(c, params_.out.get_index(x, y, c));
         }
       }
     }
@@ -277,16 +291,30 @@ class average_pooling_layer : public partial_connected_layer {
                       size_t x,
                       size_t y,
                       size_t inc) {
-    size_t dymax  = std::min(pooling_size_y, in_.height_ - y);
-    size_t dxmax  = std::min(pooling_size_x, in_.width_ - x);
-    size_t dstx   = x / stride_x_;
-    size_t dsty   = y / stride_y_;
-    size_t outidx = out_.get_index(dstx, dsty, inc);
+    size_t dymax  = std::min(pooling_size_y, params_.in.height_ - y);
+    size_t dxmax  = std::min(pooling_size_x, params_.in.width_ - x);
+    size_t dstx   = x / params_.stride_x;
+    size_t dsty   = y / params_.stride_y;
+    size_t outidx = params_.out.get_index(dstx, dsty, inc);
     for (size_t dy = 0; dy < dymax; ++dy) {
       for (size_t dx = 0; dx < dxmax; ++dx) {
-        this->connect_weight(in_.get_index(x + dx, y + dy, inc), outidx, inc);
+        this->connect_weight(params_.in.get_index(x + dx, y + dy, inc), outidx,
+                             inc);
       }
     }
+  }
+
+  void connect_weight(size_t input_index,
+                      size_t output_index,
+                      size_t weight_index) {
+    aws_.weight2io[weight_index].emplace_back(input_index, output_index);
+    aws_.out2wi[output_index].emplace_back(weight_index, input_index);
+    aws_.in2wo[input_index].emplace_back(weight_index, output_index);
+  }
+
+  void connect_bias(size_t bias_index, size_t output_index) {
+    aws_.out2bias[output_index] = bias_index;
+    aws_.bias2out[bias_index].push_back(output_index);
   }
 };
 

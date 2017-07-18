@@ -101,12 +101,11 @@ TEST(ave_pool, forward) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
+  auto out = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_FLOAT_EQ(expected[i], res[i]);
+    EXPECT_NEAR(expected[i], res[i], 1E-7);
   }
 }
 
@@ -131,12 +130,11 @@ TEST(ave_pool, forward_stride) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
+  auto out = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_FLOAT_EQ(expected[i], res[i]);
+    EXPECT_NEAR(expected[i], res[i], 1E-7);
   }
 }
 
@@ -155,12 +153,12 @@ TEST(ave_pool, backward) {
       0,-1,-2,-3
   };
 
-  vec_t out_grad = {
+  vec_t curr_delta = {
       1, 2,
       3, 4
   };
 
-  vec_t curr_delta_expected = {
+  vec_t prev_delta_expected = {
       0.25, 0.25, 0.5, 0.5,
       0.25, 0.25, 0.5, 0.5,
       0.75, 0.75, 1.0, 1.0,
@@ -175,21 +173,22 @@ TEST(ave_pool, backward) {
   vec_t db_expected = {10};
   // clang-format on
 
-  std::vector<tensor_t> in_grad = l.backward(std::vector<tensor_t>{{out_grad}});
-  vec_t curr_delta_result       = in_grad[0][0];
-  vec_t dw_result               = in_grad[1][0];
-  vec_t db_result               = in_grad[2][0];
+  std::vector<tensor_t> in_grad =
+    l.backward(std::vector<tensor_t>{{curr_delta}});
+  vec_t prev_delta_result = in_grad[0][0];
+  vec_t dw_result         = in_grad[1][0];
+  vec_t db_result         = in_grad[2][0];
 
-  for (size_t i = 0; i < curr_delta_expected.size(); i++) {
-    EXPECT_FLOAT_EQ(curr_delta_result[i], curr_delta_expected[i]);
+  for (size_t i = 0; i < prev_delta_expected.size(); i++) {
+    EXPECT_NEAR(prev_delta_result[i], prev_delta_expected[i], 1E-7);
   }
 
   for (size_t i = 0; i < dw_expected.size(); i++) {
-    EXPECT_FLOAT_EQ(dw_result[i], dw_expected[i]);
+    EXPECT_NEAR(dw_result[i], dw_expected[i], 1E-7);
   }
 
   for (size_t i = 0; i < db_expected.size(); i++) {
-    EXPECT_FLOAT_EQ(db_result[i], db_expected[i]);
+    EXPECT_NEAR(db_result[i], db_expected[i], 1E-7);
   }
 }
 
