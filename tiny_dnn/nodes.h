@@ -10,6 +10,8 @@
 #include <tuple>
 #include <unordered_map>
 #include <vector>
+#include <memory>
+#include <utility>
 
 #ifndef CNN_NO_SERIALIZATION
 #include <cereal/types/tuple.hpp>
