@@ -61,11 +61,13 @@ inline bool exists(const std::string &path) {
 }
 
 inline std::string unique_path() {
+  // TODO(edgarriba/karandesai-96): reuse global defined seed
+  unsigned int seed = 0;
   std::string pattern;
   do {
     pattern = "%%%%-%%%%-%%%%-%%%%";
     for (auto p = pattern.begin(); p != pattern.end(); ++p) {
-      if (*p == '%') *p = (rand_r(0) % 10) + '0';
+      if (*p == '%') *p = (rand_r(&seed) % 10) + '0';
     }
   } while (exists(pattern));
   // return std::experimental::filesystem::v1::temp_directory_path().string() +
