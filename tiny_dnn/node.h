@@ -15,6 +15,7 @@
 #include <sstream>
 #include <unordered_set>
 #include <vector>
+#include <algorithm>
 
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/util/product.h"
