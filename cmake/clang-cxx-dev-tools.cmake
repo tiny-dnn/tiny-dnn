@@ -44,7 +44,7 @@ if(CLANG_TIDY)
     )
 endif()
 
- add_custom_target(
+add_custom_target(
     cpplint
     COMMAND /usr/bin/python ${CMAKE_SOURCE_DIR}/third_party/cpplint.py
     --filter=-runtime/references
