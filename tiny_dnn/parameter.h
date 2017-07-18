@@ -8,6 +8,7 @@
 #pragma once
 
 #include "tiny_dnn/core/framework/tensor.h"
+#include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -70,6 +71,13 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   bool initialized() const { return initialized_; }
 
   void set_initialized(bool initialized = true) { initialized_ = initialized; }
+
+  void initialize(parameter_init::function &f,
+                  const size_t &fan_in  = 1,
+                  const size_t &fan_out = 1) {
+    f.fill(data_, fan_in, fan_out);
+    clear_grads();
+  }
 
   Tensor<float_t> *data() { return &data_; }
 

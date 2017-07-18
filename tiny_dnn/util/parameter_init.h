@@ -7,7 +7,7 @@
 */
 #pragma once
 
-#include "tiny_dnn/parameter.h"
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -18,7 +18,9 @@ namespace parameter_init {
 
 class function {
  public:
-  virtual void fill(Parameter *parameter, size_t fan_in, size_t fan_out) = 0;
+  virtual void fill(Tensor<float_t> &tensor,
+                    const size_t &fan_in,
+                    const size_t &fan_out) {}
 };
 
 class scalable : public function {
@@ -43,12 +45,13 @@ class xavier : public scalable {
   xavier() : scalable(float_t{6}) {}
   explicit xavier(float_t value) : scalable(value) {}
 
-  void fill(Parameter *parameter, size_t fan_in, size_t fan_out) override {
+  void fill(Tensor<float_t> &tensor,
+            const size_t &fan_in,
+            const size_t &fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
 
-    uniform_rand(parameter->data()->host_begin(), parameter->data()->host_end(),
-                 -weight_base, weight_base);
-    parameter->grad()->fill(0);
+    uniform_rand(tensor.host_begin(), tensor.host_end(), -weight_base,
+                 weight_base);
   }
 };
 
@@ -57,11 +60,12 @@ class constant : public scalable {
   constant() : scalable(float_t{0}) {}
   explicit constant(float_t value) : scalable(value) {}
 
-  void fill(Parameter *parameter, size_t fan_in, size_t fan_out) override {
+  void fill(Tensor<float_t> &tensor,
+            const size_t &fan_in,
+            const size_t &fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);
     CNN_UNREFERENCED_PARAMETER(fan_out);
-    parameter->data()->fill(scale_);
-    parameter->grad()->fill(0);
+    tensor.fill(scale_);
   }
 };
 

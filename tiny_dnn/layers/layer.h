@@ -785,13 +785,13 @@ class layer : public node {
       switch (parameters_[i]->type()) {
         // fill parameters of weight type
         case parameter_type::weight:
-          weight_init_f_->fill(parameters_[i].get(), fan_in_size(i),
-                               fan_out_size(i));
+          parameters_[i]->initialize(*weight_init_f_, fan_in_size(i),
+                                     fan_out_size(i));
           break;
         // fill vector of bias type
         case parameter_type::bias:
-          bias_init_f_->fill(parameters_[i].get(), fan_in_size(i),
-                             fan_out_size(i));
+          parameters_[i]->initialize(*bias_init_f_, fan_in_size(i),
+                                     fan_out_size(i));
           break;
         default: break;
       }
