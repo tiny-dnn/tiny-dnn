@@ -599,7 +599,7 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(sl->layer_type(), "slice");
   EXPECT_EQ(sl->get_slice_type(), slice_type::slice_samples);
   EXPECT_EQ(sl->in_shape()[0], shape3d(3, 2, 1));
-  EXPECT_EQ(sl->out_shape().size(), 2);
+  EXPECT_EQ(sl->out_shape().size(), 2u);
   EXPECT_EQ(sl->out_shape()[0], shape3d(3, 2, 1));
   EXPECT_EQ(sl->out_shape()[1], shape3d(3, 2, 1));
   check_sequential_network_model_serialization(net);
@@ -627,7 +627,7 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(sl->layer_type(), "slice");
   EXPECT_EQ(sl->in_shape()[0], shape3d(3, 2, 4));
   EXPECT_EQ(sl->get_slice_type(), slice_type::slice_channels);
-  EXPECT_EQ(sl->out_shape().size(), 2);
+  EXPECT_EQ(sl->out_shape().size(), 2u);
   EXPECT_EQ(sl->out_shape()[0], shape3d(3, 2, 2));
   EXPECT_EQ(sl->out_shape()[1], shape3d(3, 2, 2));
   check_sequential_network_model_serialization(net);
@@ -905,7 +905,7 @@ TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
   net1 << fully_connected_layer(10, 100) << tanh_layer()
-       << dropout_layer(100, 0.3f, net_phase::test)
+       << dropout_layer(100, 0.3, net_phase::test)
        << fully_connected_layer(100, 9) << softmax()
        << recurrent_cell_layer(9, 9, false, new elu_layer)
        << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer();
