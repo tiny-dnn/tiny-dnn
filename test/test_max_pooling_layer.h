@@ -7,10 +7,12 @@
 */
 #pragma once
 
-#include <string>
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -43,21 +45,21 @@ TEST(max_pool, forward) {
 TEST(max_pool, setup_internal) {
   max_pooling_layer l(4, 4, 1, 2, 2, core::backend_t::internal);
 
-  EXPECT_EQ(l.parallelize(), true);         // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), size_t(1));    // num of input tensors
-  EXPECT_EQ(l.out_channels(), size_t(1));   // num of output tensors
-  EXPECT_EQ(l.in_data_size(), size_t(16));  // size of input tensors
-  EXPECT_EQ(l.out_data_size(), size_t(4));  // size of output tensors
-  EXPECT_EQ(l.in_data_shape().size(), size_t(1));   // num of inputs shapes
-  EXPECT_EQ(l.out_data_shape().size(), size_t(1));  // num of output shapes
-  EXPECT_EQ(l.weights().size(), size_t(0));         // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(), size_t(0));   // the wieghts vector size
-  EXPECT_EQ(l.inputs().size(), size_t(1));          // num of input edges
-  EXPECT_EQ(l.outputs().size(), size_t(1));         // num of outpus edges
-  EXPECT_EQ(l.in_types().size(), size_t(1));        // num of input data types
-  EXPECT_EQ(l.out_types().size(), size_t(1));       // num of output data types
-  EXPECT_EQ(l.fan_in_size(), size_t(4));   // num of incoming connections
-  EXPECT_EQ(l.fan_out_size(), size_t(1));  // num of outgoing connections
+  EXPECT_EQ(l.parallelize(), true);          // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 1u);            // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);           // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 16u);          // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 4u);          // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(), 1u);   // num of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), 1u);  // num of output shapes
+  EXPECT_EQ(l.weights().size(), 0u);         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), 0u);   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), 1u);          // num of input edges
+  EXPECT_EQ(l.outputs().size(), 1u);         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), 1u);        // num of input data types
+  EXPECT_EQ(l.out_types().size(), 1u);       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), 4u);            // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 1u);           // num of outgoing connections
   EXPECT_STREQ(l.layer_type().c_str(), "max-pool");  // string with layer type
 }
 
@@ -66,10 +68,10 @@ TEST(max_pool, forward_stride_internal) {
 
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -93,17 +95,17 @@ TEST(max_pool, forward_padding_same) {
 
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
-        8, 7, 6, 6,
-        8, 7, 6, 6,
-        4, 3, 2, 2,
-        0,-1,-2,-3
+        8,  7,  6,  6,
+        8,  7,  6,  6,
+        4,  3,  2,  2,
+        0, -1, -2, -3
     };
   // clang-format on
 
@@ -120,16 +122,16 @@ TEST(max_pool, forward_stride_x) {
   max_pooling_layer l(4, 4, 1, 2, 1, 2, 1, padding::valid);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
-        1, 3,
-        8, 6,
-        4, 2,
+        1,  3,
+        8,  6,
+        4,  2,
         0, -2
     };
   // clang-format on
@@ -150,10 +152,10 @@ TEST(max_pool, forward_stride_y) {
   max_pooling_layer l(4, 4, 1, 1, 2, 1, 2, padding::valid);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -162,8 +164,8 @@ TEST(max_pool, forward_stride_y) {
     };
   // clang-format on
 
-  EXPECT_EQ(l.out_shape()[0].width_, 4);
-  EXPECT_EQ(l.out_shape()[0].height_, 2);
+  EXPECT_EQ(l.out_shape()[0].width_, 4u);
+  EXPECT_EQ(l.out_shape()[0].height_, 2u);
 
   std::vector<const tensor_t*> out;
   l.forward({{in}}, out);
@@ -180,10 +182,10 @@ TEST(max_pool, forward_stride_nnp) {
   max_pooling_layer l(4, 4, 1, 2, 2, core::backend_t::nnpack);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -205,10 +207,10 @@ TEST(max_pool, forward_stride_nnp_not_2x2) {
   max_pooling_layer l(4, 4, 1, 3, 1, core::backend_t::nnpack);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -229,10 +231,10 @@ TEST(max_pool, forward_stride) {
   max_pooling_layer l(4, 4, 1, 2, 1);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -255,10 +257,10 @@ TEST(max_pool, backward) {
   max_pooling_layer l(4, 4, 1, 2);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t out_grad = {
@@ -296,10 +298,10 @@ TEST(max_pool, serialization) {
 
   // clang-format off
     vec_t in = {
-        9, 4, 8, 8,
-        0, 7, 3, 0,
-        4, 8, 1, 7,
-        0, 3,-2, 9
+        9, 4,  8, 8,
+        0, 7,  3, 0,
+        4, 8,  1, 7,
+        0, 3, -2, 9
     };
   // clang-format on
 
@@ -326,10 +328,10 @@ TEST(max_pool, serialization_stride) {
 
   // clang-format off
     vec_t in = {
-        9, 4, 8, 8,
-        0, 7, 3, 0,
-        4, 8, 1, 7,
-        0, 3,-2, 9
+        9, 4,  8, 8,
+        0, 7,  3, 0,
+        4, 8,  1, 7,
+        0, 3, -2, 9
     };
   // clang-format on
 
@@ -356,10 +358,10 @@ TEST(max_pool, serialization_padding) {
 
   // clang-format off
     vec_t in = {
-        9, 4, 8, 8,
-        0, 7, 3, 0,
-        4, 8, 1, 7,
-        0, 3,-2, 9
+        9, 4,  8, 8,
+        0, 7,  3, 0,
+        4, 8,  1, 7,
+        0, 3, -2, 9
     };
   // clang-format on
 
