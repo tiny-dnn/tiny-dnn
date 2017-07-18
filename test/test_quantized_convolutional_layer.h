@@ -75,13 +75,14 @@ TEST(quantized_convolutional, fprop) {
   }
 
   // clang-format off
-    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
-    weight[3] = 0.0;  weight[4] = -0.1; weight[5] = -0.1;
-    weight[6] = 0.05; weight[7] = -0.2; weight[8] = 0.05;
+    // TODO(edgarriba): apparently when using double type, test crashes.
+    weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
+    weight[3] = 0.0f;  weight[4] = -0.1f; weight[5] = -0.1f;
+    weight[6] = 0.05f; weight[7] = -0.2f; weight[8] = 0.05f;
 
-    weight[9] = 0.0; weight[10] = -0.1; weight[11] = 0.1;
-    weight[12] = 0.1; weight[13] = -0.2; weight[14] = 0.3;
-    weight[15] = 0.2; weight[16] = -0.3; weight[17] = 0.2;
+    weight[9] = 0.0f; weight[10] = -0.1f; weight[11] = 0.1f;
+    weight[12] = 0.1f; weight[13] = -0.2f; weight[14] = 0.3f;
+    weight[15] = 0.2f; weight[16] = -0.3f; weight[17] = 0.2f;
 
     in[0] = 3;  in[1] = 2;  in[2] = 1;  in[3] = 5; in[4] = 2;
     in[5] = 3;  in[6] = 0;  in[7] = 2;  in[8] = 0; in[9] = 1;
