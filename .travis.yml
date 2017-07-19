@@ -1,6 +1,16 @@
 dist: trusty
 osx_image: xcode8
+sudo: false
+
 language: cpp
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
 
 cache:
   pip: true
@@ -38,62 +48,32 @@ branches:
 
 env:
   global:
-    - USE_TBB=ON
-    - BUILD_TESTS=ON
-    - BUILD_EXAMPLES=ON
+    - USE_TBB=ON              # only OFF for clang on linux
+    - USE_SSE=OFF
+    - USE_AVX=OFF
+    - USE_DOUBLE=OFF
+    - BUILD_EXAMPLES=OFF
+    - BUILD_TESTS=OFF
     - COVERALLS=OFF           # only ON for gcc on linux
     - USE_ASAN=OFF            # only ON for gcc on linux
     - CLANG_FORMAT_CHECK=OFF  # only ON for one job
+
+  matrix:
+    - BUILD_TESTS=ON
+    - BUILD_TESTS=ON USE_SSE=ON USE_AVX=ON
+    - BUILD_TESTS=ON USE_SSE=ON USE_AVX=ON USE_DOUBLE=ON
+    - BUILD_EXAMPLES=ON
 
 matrix:
   include:
     # Only do a clang format check
     - os: linux
       compiler: clang
-      sudo: false
-      env: CLANG_FORMAT_CHECK=ON BUILD_TESTS=OFF BUILD_EXAMPLES=OFF USE_AVX=OFF USE_SSE=OFF USE_DOUBLE=OFF
+      env: CLANG_FORMAT_CHECK=ON
 
-    # Next three jobs are on linux with clang compiler
-    # Other specifics - USE_TBB=OFF
-    - os: linux
-      compiler: clang
-      sudo: false
-      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF USE_TBB=OFF
-
-    - os: linux
-      compiler: clang
-      sudo: false
-      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=OFF USE_TBB=OFF
-
-    - os: linux
-      compiler: clang
-      sudo: false
-      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=ON USE_TBB=OFF
-
-    # One job are on osx with clang compiler
+  exclude:
     - os: osx
-      compiler: clang
-      sudo: false
-      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
-
-    # Next three jobs are on linux with gcc compiler
-    # sudo: required because of higher memory requirement
-    # Container builds provide 4GB memory while VMs provde 7.5GB
-    # Other specifics = COVERALLS=ON, USE_ASAN=ON
-    - os: linux
       compiler: gcc
-      sudo: required
-      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF COVERALLS=ON USE_ASAN=ON
-
-    - os: linux
-      compiler: gcc
-      sudo: required
-      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=OFF COVERALLS=ON USE_ASAN=ON
-
-    - os: linux
-      compiler: gcc
-      sudo: required
-      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=ON COVERALLS=ON USE_ASAN=ON
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
@@ -108,24 +88,38 @@ install:
   - gem install coveralls-lcov
 
 before_script:
-  - if [ "$COVERALLS" = "ON" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
+      export USE_ASAN="ON";
+      export COVERALLS="ON";
       lcov --directory . --zerocounters;
     fi
+
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
+      export USE_TBB="OFF";
+    fi
+
   - cmake -DUSE_TBB=$USE_TBB
           -DUSE_SSE=$USE_SSE
           -DUSE_AVX=$USE_AVX
           -DUSE_DOUBLE=$USE_DOUBLE
+          -DBUILD_EXAMPLES=$BUILD_EXAMPLES
           -DBUILD_TESTS=$BUILD_TESTS
           -DCOVERALLS=$COVERALLS
-          -DUSE_ASAN=$USE_ASAN
-          -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
+          -DUSE_ASAN=$USE_ASAN .;
 
 script:
-  - make -j2;
+  - if [ "$BUILD_TESTS" == "ON" ]; then
+      make -j2 generated_proto;
+      make -j2 tiny_dnn_test;
+      test/tiny_dnn_test;
+    fi
+
+  - if [ "$BUILD_EXAMPLES" == "ON" ]; then
+      make -j2 examples_all;
+    fi
+
   - if [ "$CLANG_FORMAT_CHECK" == "ON" ]; then
       make clang-format-check;
-    else
-      test/tiny_dnn_test;
     fi
 
 after_success:

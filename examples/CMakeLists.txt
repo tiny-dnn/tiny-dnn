@@ -64,6 +64,15 @@ if(PROTO_CPP_AVAILABLE)
     cotire(example_caffe_converter)
 endif()
 
+if(USE_SERIALIZER)
+    add_custom_target(examples_all DEPENDS example_mnist_train example_mnist_test
+            example_mnist_quantized_train example_deconv_train
+            example_deconv_visual example_cifar_train example_cifar_test )
+else()
+    add_custom_target(examples_all DEPENDS example_deconv_visual example_cifar_train
+            example_cifar_test )
+endif()
+
 if(PROTO_CPP_GENERATE)
     add_dependencies(example_caffe_converter generated_proto)
 endif()
