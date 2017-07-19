@@ -56,6 +56,47 @@ TEST(fully_connected, forward) {
   }
 }
 
+TEST(fully_connected, setup_internal) {
+  fully_connected_layer l(32, 10, true, core::backend_t::internal);
+
+  EXPECT_EQ(l.parallelize(), true);            // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 1u);              // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);             // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 32u);            // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 10u);           // size of output tensors
+  EXPECT_EQ(l.fan_in_size(), 32u);             // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 10u);            // num of outgoing connections
+  EXPECT_EQ(l.parameters().size(), 2u);        // num of trainable parameters
+  EXPECT_EQ(l.ith_parameter(0).size(), 320u);  // size of weight parameter
+  EXPECT_EQ(l.ith_parameter(1).size(), 10u);   // size of bias parameter
+  EXPECT_STREQ(l.layer_type().c_str(),
+               "fully-connected");  // string with layer type
+}
+
+TEST(fully_connected, forward) {
+  fully_connected_layer l(3, 2, true);
+
+  vec_t in = {1, 2, 3};
+  // clang-format off
+  vec_t weights = {
+    2, 6, 4,
+    4, 6, 2
+  };
+  vec_t bias = {-4, 22};
+  // clang-format on
+  vec_t expected = {24, 42};
+
+  l.ith_parameter(0).set_data(Tensor<float_t>(weights));
+  l.ith_parameter(1).set_data(Tensor<float_t>(bias));
+
+  auto out     = l.forward({{in}});
+  vec_t result = (*out[0])[0];
+
+  for (size_t i = 0; i < result.size(); i++) {
+    EXPECT_FLOAT_EQ(expected[i], result[i]);
+  }
+}
+
 TEST(fully_connected, train) {
   network<sequential> nn;
   adagrad optimizer;
@@ -235,9 +276,7 @@ TEST(fully_connected, forward_nnp_nobias) {
 
 TEST(fully_connected, forward_nnp_nobias) {
   fully_connected_layer l(4, 2, false, core::backend_t::nnpack);
-  EXPECT_EQ(l.in_channels(), size_t(2));  // in and W
-
-  l.weight_init(weight_init::constant(1.0));
+  l.weight_init_f(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const tensor_t *> o;

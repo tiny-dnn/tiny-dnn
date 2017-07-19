@@ -89,6 +89,17 @@ class Tensor : public BaseTensor<U> {
     : storage_(shape) {}
 
   /**
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape and filling it with value. For example,
+   * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
+   * filled with zeros
+   * @param shape  shape array containing N integers, sizes of dimensions
+   * @param value value to fill
+   */
+  explicit Tensor(std::initializer_list<size_t> const &shape, U value)
+    : storage_(shape, value) {}
+
+  /**
    * Temporal method to create a new Tensor from old tensor_t
    */
   explicit Tensor(const tensor_t &data) {
