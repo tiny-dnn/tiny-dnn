@@ -16,11 +16,11 @@ TEST(optimizers, adagrad_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
 
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
@@ -36,11 +36,11 @@ TEST(optimizers, rmsprop_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
 
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
@@ -56,11 +56,11 @@ TEST(optimizers, adam_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
 
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
@@ -76,11 +76,11 @@ TEST(optimizers, naive_sgd_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
 
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
@@ -96,11 +96,11 @@ TEST(optimizers, momentum_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
     
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
@@ -116,11 +116,11 @@ TEST(optimizers, nesterov_momentum_update) {
 
     // Testing
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(first_update[i], weights[i], 1e-3);
     
     optimizer.update(gradients, weights, false);
-    for (auto i = 0u; i < weights.size(); i++)
+    for (size_t i = 0; i < weights.size(); i++)
         EXPECT_NEAR(second_update[i], weights[i], 1e-3);
 }
 
