@@ -1,16 +1,6 @@
-sudo: false
 dist: trusty
 osx_image: xcode8
-
 language: cpp
-
-os:
-  - linux
-  - osx
-
-compiler:
-  - gcc
-  - clang
 
 cache:
   pip: true
@@ -51,17 +41,59 @@ env:
     - USE_TBB=ON
     - BUILD_TESTS=ON
     - BUILD_EXAMPLES=ON
-    - COVERALLS=ON
-
-  matrix:
-    - USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
-    - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=OFF
-    - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=ON
+    - COVERALLS=OFF           # only ON for gcc on linux
+    - USE_ASAN=OFF            # only ON for gcc on linux
+    - CLANG_FORMAT_CHECK=OFF  # only ON for one job
 
 matrix:
-  exclude: # On OSX g++ is a symlink to clang++ by default
+  include:
+    # Only do a clang format check
+    - os: linux
+      compiler: clang
+      sudo: false
+      env: CLANG_FORMAT_CHECK=ON BUILD_TESTS=OFF BUILD_EXAMPLES=OFF USE_AVX=OFF USE_SSE=OFF USE_DOUBLE=OFF
+
+    # Next three jobs are on linux with clang compiler
+    # Other specifics - USE_TBB=OFF
+    - os: linux
+      compiler: clang
+      sudo: false
+      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF USE_TBB=OFF
+
+    - os: linux
+      compiler: clang
+      sudo: false
+      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=OFF USE_TBB=OFF
+
+    - os: linux
+      compiler: clang
+      sudo: false
+      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=ON USE_TBB=OFF
+
+    # One job are on osx with clang compiler
     - os: osx
+      compiler: clang
+      sudo: false
+      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF
+
+    # Next three jobs are on linux with gcc compiler
+    # sudo: required because of higher memory requirement
+    # Container builds provide 4GB memory while VMs provde 7.5GB
+    # Other specifics = COVERALLS=ON, USE_ASAN=ON
+    - os: linux
       compiler: gcc
+      sudo: required
+      env: USE_SSE=OFF USE_AVX=OFF USE_DOUBLE=OFF COVERALLS=ON USE_ASAN=ON
+
+    - os: linux
+      compiler: gcc
+      sudo: required
+      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=OFF COVERALLS=ON USE_ASAN=ON
+
+    - os: linux
+      compiler: gcc
+      sudo: required
+      env: USE_SSE=ON USE_AVX=ON USE_DOUBLE=ON COVERALLS=ON USE_ASAN=ON
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
@@ -76,38 +108,28 @@ install:
   - gem install coveralls-lcov
 
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
+  - if [ "$COVERALLS" = "ON" ]; then
       lcov --directory . --zerocounters;
-      cmake -DUSE_TBB=$USE_TBB
-            -DUSE_SSE=$USE_SSE
-            -DUSE_AVX=$USE_AVX
-            -DUSE_DOUBLE=$USE_DOUBLE
-            -DBUILD_TESTS=$BUILD_TESTS
-            -DCOVERALLS=$COVERALLS
-            -DUSE_ASAN=ON
-            -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
-      cmake -DUSE_SSE=$USE_SSE
-            -DUSE_AVX=$USE_AVX
-            -DBUILD_TESTS=$BUILD_TESTS
-            -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
-    fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      cmake -DUSE_TBB=$USE_TBB
-            -DUSE_AVX=OFF
-            -DBUILD_TESTS=$BUILD_TESTS .;
-    fi
+  - cmake -DUSE_TBB=$USE_TBB
+          -DUSE_SSE=$USE_SSE
+          -DUSE_AVX=$USE_AVX
+          -DUSE_DOUBLE=$USE_DOUBLE
+          -DBUILD_TESTS=$BUILD_TESTS
+          -DCOVERALLS=$COVERALLS
+          -DUSE_ASAN=$USE_ASAN
+          -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
 
 script:
-  - make -j2
-  - test/tiny_dnn_test
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ] && [ "$USE_SSE" == "ON" ] && [ "$USE_AVX" == "ON" ] && [ "$USE_DOUBLE" == "ON" ]; then
+  - make -j2;
+  - if [ "$CLANG_FORMAT_CHECK" == "ON" ]; then
       make clang-format-check;
+    else
+      test/tiny_dnn_test;
     fi
 
 after_success:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
+  - if [ "$COVERALLS" == "ON" ]; then
       lcov --directory . --capture --output-file coverage.info;
       lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' 'tiny_dnn/io/caffe/caffe.pb.*' --output-file coverage.info;
       lcov --list coverage.info;

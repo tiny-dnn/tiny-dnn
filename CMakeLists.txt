@@ -376,6 +376,9 @@ install(DIRECTORY   ${PROJECT_SOURCE_DIR}/${project_library_target_name}
 # Check if protobuf available
 include(cmake/protoc.cmake)
 
+# Clang format checking
+include(cmake/clang-cxx-dev-tools.cmake)
+
 # Subdirectories for examples, testing and documentation
 # TODO: explain in brief about different examples, test and docs.
 if(BUILD_EXAMPLES)
