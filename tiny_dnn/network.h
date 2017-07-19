@@ -815,6 +815,7 @@ class network {
                   const tensor_t *t_cost) {
     if (size == 1) {
       bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
+      net_.update_parameters(&optimizer, 1);
       net_.update_weights(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
@@ -845,6 +846,7 @@ class network {
              : std::vector<tensor_t>();
 
     bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
+    net_.update_parameters(&optimizer, batch_size);
     net_.update_weights(&optimizer, batch_size);
   }
 

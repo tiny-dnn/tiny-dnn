@@ -10,6 +10,7 @@
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/network.h"
 #include "tiny_dnn/nodes.h"
+#include "tiny_dnn/parameter.h"
 
 #include "tiny_dnn/core/framework/tensor.h"
 
@@ -57,6 +58,7 @@
 
 #include "tiny_dnn/util/deform.h"
 #include "tiny_dnn/util/graph_visualizer.h"
+#include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/weight_init.h"
 

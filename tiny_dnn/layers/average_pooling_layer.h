@@ -42,8 +42,9 @@ inline void tiny_average_pooling_kernel(
       float_t bias   = b.host_at(d);
       for (size_t i = 0; i < oarea; ++i, ++idx) {
         const auto &connections = out2wi[idx];
-        float_t value = 0.0;
-        for (auto connection : connections) value += in.host_at(connection.second);
+        float_t value           = 0.0;
+        for (auto connection : connections)
+          value += in.host_at(connection.second);
         value *= weight;
         value += bias;
         out.host_at(idx) = value;
@@ -81,7 +82,8 @@ inline void tiny_average_pooling_back_kernel(
     for (size_t i = 0; i < in_dim.depth_; ++i) {
       float_t weight = W.host_at(i) * scale_factor;
       for (size_t j = 0; j < inarea; ++j, ++idx) {
-        prev_delta.host_at(idx) = weight * curr_delta.host_at(in2wo[idx][0].second);
+        prev_delta.host_at(idx) =
+          weight * curr_delta.host_at(in2wo[idx][0].second);
       }
     }
 
@@ -90,7 +92,8 @@ inline void tiny_average_pooling_back_kernel(
       float_t diff{0};
 
       for (auto connection : connections)
-        diff += prev_out.host_at(connection.first) * curr_delta.host_at(connection.second);
+        diff += prev_out.host_at(connection.first) *
+                curr_delta.host_at(connection.second);
 
       dW.host_at(i) += diff * scale_factor;
     }
@@ -103,13 +106,11 @@ inline void tiny_average_pooling_back_kernel(
 
       db.host_at(i) += diff;
     }
-    (*in_grad[1])[sample] = dW.toVec();
-    (*in_grad[2])[sample] = db.toVec();
-    (*in_grad[0])[sample] = prev_delta.toVec();
+    (*in_grad[1])[sample]  = dW.toVec();
+    (*in_grad[2])[sample]  = db.toVec();
+    (*in_grad[0])[sample]  = prev_delta.toVec();
     (*out_grad[0])[sample] = curr_delta.toVec();
   });
-
-
 }
 
 /**

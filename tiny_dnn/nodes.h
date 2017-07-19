@@ -107,6 +107,15 @@ class nodes {
   }
 
   /**
+   * update parameters and clear all gradients
+   **/
+  virtual void update_parameters(optimizer *opt, int batch_size) {
+    for (auto l : nodes_) {
+      l->update_parameters(opt, batch_size);
+    }
+  }
+
+  /**
    * setup all weights, must be called before forward/backward
    **/
   virtual void setup(bool reset_weight) {

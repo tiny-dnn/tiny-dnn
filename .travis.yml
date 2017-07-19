@@ -41,7 +41,7 @@ branches:
   only:
     - master
     - feat/xtensor_integration
-    - feat/decouple_activations
+    - feat/parameters_refactor
 
 env:
   global:

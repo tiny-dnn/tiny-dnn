@@ -39,12 +39,26 @@ class fully_connected_layer : public layer {
    * @param out_features [in] number of elements of the output
    * @param bias [in] whether to include additional bias to the layer
    **/
+<<<<<<< a101f7a64c4c893694f48d8f056d79446f34aeec
   fully_connected_layer(size_t in_dim,
                         size_t out_dim,
                         bool has_bias                = true,
                         core::backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
+=======
+  fully_connected_layer(size_t in_features,
+                        size_t out_features,
+                        bool bias              = true,
+                        backend_t backend_type = core::default_engine())
+    : layer({vector_type::data}, {vector_type::data}) {
+    layer::add_parameter(1, 1, out_features, in_features,
+                         parameter_type::weight, true);
+    if (bias) {
+      layer::add_parameter(1, 1, 1, out_features, parameter_type::bias, true);
+    }
+    set_params(in_features, out_features, bias);
+>>>>>>> Integrate parameter API into fully connected layer. (#803)
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
   }
@@ -76,19 +90,12 @@ class fully_connected_layer : public layer {
 
   size_t fan_out_size() const override { return params_.out_size_; }
 
-  std::vector<index3d<size_t>> in_shape() const override {
-    if (params_.has_bias_) {
-      return {index3d<size_t>(params_.in_size_, 1, 1),
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1),
-              index3d<size_t>(params_.out_size_, 1, 1)};
-    } else {
-      return {index3d<size_t>(params_.in_size_, 1, 1),
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1)};
-    }
+  std::vector<shape3d> in_shape() const override {
+    return {shape3d(params_.in_size_, 1, 1)};
   }
 
-  std::vector<index3d<size_t>> out_shape() const override {
-    return {index3d<size_t>(params_.out_size_, 1, 1)};
+  std::vector<shape3d> out_shape() const override {
+    return {shape3d(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
@@ -97,6 +104,7 @@ class fully_connected_layer : public layer {
     fwd_ctx_.set_in_out(in_data, out_data);
     fwd_ctx_.setParallelize(layer::parallelize());
     fwd_ctx_.setEngine(layer::engine());
+    fwd_ctx_.setParameters(parameters());
 
     // launch fully connected kernel
     kernel_fwd_->compute(fwd_ctx_);
@@ -110,6 +118,7 @@ class fully_connected_layer : public layer {
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParallelize(layer::parallelize());
     bwd_ctx_.setEngine(layer::engine());
+    bwd_ctx_.setParameters(parameters());
 
     // launch fully connected kernel
     kernel_back_->compute(bwd_ctx_);
