@@ -89,7 +89,8 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * mean absolute error with epsilon range
 
 ### optimization algorithms
-* stochastic gradient descent (with/without L2 normalization and momentum)
+* stochastic gradient descent (with/without L2 normalization)
+* momentum and Nesterov momentum
 * adagrad
 * rmsprop
 * adam
