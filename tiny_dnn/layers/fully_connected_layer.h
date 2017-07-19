@@ -42,7 +42,7 @@ class fully_connected_layer : public layer {
   fully_connected_layer(size_t in_features,
                         size_t out_features,
                         bool bias              = true,
-                        core::backend_t backend_type = core::default_engine())
+                        backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(1, 1, out_features, in_features,
                          parameter_type::weight, true);
