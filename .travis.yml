@@ -1,4 +1,4 @@
-sudo: required
+sudo: false
 dist: trusty
 osx_image: xcode8
 
@@ -22,10 +22,13 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - llvm-toolchain-precise-3.6
+      - sourceline: 'deb http://apt.llvm.org/trusty/ llvm-toolchain-trusty-4.0 main'
+      - key_url: 'http://apt.llvm.org/llvm-snapshot.gpg.key'
     packages:
       - gcc-4.9
       - g++-4.9
       - clang-3.6
+      - clang-format-4.0
       - cmake
       - git
       # Optional dependencies
