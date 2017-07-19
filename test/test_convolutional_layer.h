@@ -76,7 +76,7 @@ class tensor_buf {
   std::vector<tensor_t *> in_ptr_, out_ptr_;
 };
 
-TEST(convolutional, fprop) {
+TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);
   l.setup(false);
 
@@ -209,27 +209,6 @@ TEST(convolutional, with_stride) {
 // test for AVX backends
 
 #ifdef CNN_USE_AVX
-TEST(convolutional, fprop_avx) {
-  convolutional_layer l(7, 7, 5, 1, 2);
-
-  tensor_buf buf(l), buf2(l);
-
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
-  l.forward_propagation(buf.in_buf(), buf.out_buf());
-
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
-  l.forward_propagation(buf.in_buf(), buf2.out_buf());
-
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
-
-  for (size_t i = 0; i < out_avx.size(); i++) {
-    // check if all outputs between default backend and avx backend are the
-    // same
-    EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
-  }
-}
-
 TEST(convolutional, bprop_avx) {
   convolutional_layer l(7, 7, 5, 1, 2);
 
