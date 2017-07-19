@@ -28,8 +28,8 @@ template <typename U = float_t>
 class BaseTensor {
  public:
   const virtual std::vector<size_t> &shape() const = 0;
-  virtual size_t dim() const                 = 0;
-  virtual size_t size() const                = 0;
+  virtual size_t dim() const                       = 0;
+  virtual size_t size() const                      = 0;
   virtual U *host_pbegin()                         = 0;
   const virtual U *host_pbegin() const             = 0;
   virtual U *host_pend()                           = 0;
@@ -89,6 +89,17 @@ class Tensor : public BaseTensor<U> {
     : storage_(shape) {}
 
   /**
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape and filling it with value. For example,
+   * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
+   * filled with zeros
+   * @param shape  shape array containing N integers, sizes of dimensions
+   * @param value value to fill
+   */
+  explicit Tensor(std::initializer_list<size_t> const &shape, U value)
+    : storage_(shape, value) {}
+
+  /**
    * Temporal method to create a new Tensor from old tensor_t
    */
   explicit Tensor(const tensor_t &data) {
@@ -115,17 +126,6 @@ class Tensor : public BaseTensor<U> {
       storage_(i) = data[i];
     }
   }
-
-  /**
-   * Constructor that accepts an initializer list of shape and create a
-   * Tensor with that shape and filling it with value. For example,
-   * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
-   * filled with zeros
-   * @param shape  shape array containing N integers, sizes of dimensions
-   * @param value value to fill
-   */
-  explicit Tensor(std::initializer_list<size_t> const &shape, U value)
-    : storage_(shape, value) {}
 
   /**
    *
@@ -316,9 +316,7 @@ auto host_data() {
    * Reshape tensor
    * @param shape new shape
    */
-  void reshape(const std::vector<size_t> &shape) {
-    storage_.reshape(shape);
-  }
+  void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
   U host_at(size_t index) const override { return storage_(index); }
@@ -361,6 +359,11 @@ auto host_data() {
   }
 */
 
+  // TODO(Randl): base
+  template <typename T, typename S>
+  friend inline std::ostream &operator<<(std::ostream &os,
+                                         const Tensor<T, S> &tensor);
+
   /**
    * Temporal method to convert new Tensor to tensor_t
    * @return
@@ -388,7 +391,15 @@ auto host_data() {
     return tensor;
   }
 
-  // TODO(Randl): base
+  /**
+   * Creates Tensor given the storage
+   * @tparam T
+   * @param storage
+   */
+  template <class T, class S, class... Args>
+  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
+    : storage_(xt::view(storage, r1, args...)) {}
+
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);

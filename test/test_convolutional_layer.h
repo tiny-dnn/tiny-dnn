@@ -10,9 +10,9 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
+
+using namespace tiny_dnn::activation;
 
 TEST(convolutional, setup_internal) {
   convolutional_layer l(5, 5, 3, 1, 2);
