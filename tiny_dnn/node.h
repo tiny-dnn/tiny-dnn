@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <iomanip>
 #include <memory>
 #include <numeric>
@@ -15,7 +16,6 @@
 #include <sstream>
 #include <unordered_set>
 #include <vector>
-#include <algorithm>
 
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/util/product.h"

@@ -7,11 +7,11 @@
 */
 #pragma once
 
+#include <memory>
 #include <tuple>
 #include <unordered_map>
-#include <vector>
-#include <memory>
 #include <utility>
+#include <vector>
 
 #ifndef CNN_NO_SERIALIZATION
 #include <cereal/types/tuple.hpp>
