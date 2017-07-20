@@ -9,6 +9,7 @@
 
 #include <algorithm>  // std::fill, std::generate
 #include <cmath>      // sqrt
+#include <functional>
 #include <limits>
 #include <numeric>  // std::accumulate
 
