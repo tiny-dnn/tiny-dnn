@@ -279,9 +279,9 @@ class deconvolutional_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    if (params_.pad_type == padding::same)
+    if (params_.pad_type == padding::same) {
       copy_and_pad_delta(dws_.curr_delta_padded, *in_grad[0]);
-
+    }
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParams(&params_);
     bwd_ctx_.setParallelize(layer::parallelize());

@@ -12,8 +12,6 @@
 
 namespace tiny_dnn {
 
-using namespace tiny_dnn::activation;
-
 TEST(deconvolutional, setup_tiny) {
   deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
                           backend_t::internal);
@@ -64,16 +62,12 @@ TEST(deconvolutional, setup_nnp) {
 
 TEST(deconvolutional, fprop) {
   deconvolutional_layer l(2, 2, 3, 1, 2);
-  l.setup(false);
+  l.weight_init_f(parameter_init::constant(0.0));
 
-  vec_t in(4);
-  vec_t weight(18);
-  vec_t bias(2);
-  vec_t out_expected(32);
-
+  vec_t in(4, 0);
+  vec_t out_expected(32, 0);
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  l.ith_parameter(0).set_data(Tensor<float_t>(weight));
   auto out         = l.forward({{in}});
   vec_t out_result = (*out[0])[0];
 
@@ -82,7 +76,7 @@ TEST(deconvolutional, fprop) {
   }
 
   // clang-format off
-  weight = {
+  vec_t weight = {
       0.3,  0.1,  0.2,
       0.0, -0.1, -0.1,
       0.05, -0.2,  0.05,
@@ -111,7 +105,7 @@ TEST(deconvolutional, fprop) {
   // clang-format on
 
   l.ith_parameter(0).set_data(Tensor<float_t>(weight));
-  l.forward({{in}}, out);
+  out        = l.forward({{in}});
   out_result = (*out[0])[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
@@ -121,32 +115,21 @@ TEST(deconvolutional, fprop) {
 
 TEST(deconvolutional, fprop_padding_same) {
   deconvolutional_layer l(2, 2, 3, 1, 2, padding::same);
-  l.setup(false);
+  l.weight_init_f(parameter_init::constant(0.0));
 
-  auto create_simple_tensor = [](size_t vector_size) {
-    return tensor_t(1, vec_t(vector_size));
-  };
+  vec_t in(4, 0);
+  vec_t out_expected(8, 0);
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  tensor_t in_tensor  = create_simple_tensor(4),
-           out_tensor = create_simple_tensor(32);
+  auto out         = l.forward({{in}});
+  vec_t out_result = (*out[0])[0];
 
-  // short-hand references to the payload vectors
-  vec_t weight = vec_t(18);
-  vec_t bias   = vec_t(2);
-
-  uniform_rand(in_tensor[0].begin(), in_tensor[0].end(), -1.0, 1.0);
-
-  std::vector<tensor_t *> in_data, out_data;
-  in_data.push_back(&in_tensor);
-  out_data.push_back(&out_tensor);
-  l.ith_parameter(0).set_data(Tensor<float_t>(weight));
-  l.ith_parameter(1).set_data(Tensor<float_t>(bias));
-  l.forward_propagation(in_data, out_data);
-
-  for (auto o : out_tensor[0]) EXPECT_DOUBLE_EQ(o, float_t(0));
+  for (size_t i = 0; i < out_result.size(); i++) {
+    EXPECT_FLOAT_EQ(out_result[i], float_t{0});
+  }
 
   // clang-format off
-  weight = {
+  vec_t weight = {
       0.3,  0.1,  0.2,
       0.0, -0.1, -0.1,
       0.05, -0.2,  0.05,
@@ -156,12 +139,12 @@ TEST(deconvolutional, fprop_padding_same) {
       0.2, -0.3,  0.2
   };
 
-  in_tensor[0] = {
+  in = {
       3.0, 2.0,
       3.0, 0.0
   };
 
-  vec_t out_expected = {
+  out_expected = {
        0.0,  0.1,
       -0.8, -0.55,
 
@@ -171,13 +154,12 @@ TEST(deconvolutional, fprop_padding_same) {
   // clang-format on
 
   // resize tensor because its dimension changed in above used test case
-  out_tensor[0].resize(32);
   l.ith_parameter(0).set_data(Tensor<float_t>(weight));
-  l.ith_parameter(1).set_data(Tensor<float_t>(bias));
-  l.forward_propagation(in_data, out_data);
+  out        = l.forward({{in}});
+  out_result = (*out[0])[0];
 
   for (size_t i = 0; i < out_expected.size(); i++) {
-    EXPECT_FLOAT_EQ(out_tensor[0][i], out_expected[i]);
+    EXPECT_FLOAT_EQ(out_result[i], out_expected[i]);
   }
 }
 

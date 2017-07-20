@@ -36,7 +36,7 @@ class Conv2dTransposedGradOp : public core::OpKernel {
                                  : Tensor<float_t>());
 
     // initialize outputs
-    prev_delta.fill(float_t{0});
+    prev_delta.fill(0);
 
     kernels::deconv2d_op_internal(prev_out, weights, weights_grads, bias_grads,
                                   curr_delta, prev_delta, params,

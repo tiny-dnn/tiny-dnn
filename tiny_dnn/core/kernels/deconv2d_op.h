@@ -29,7 +29,9 @@ class Conv2dTransposedOp : public core::OpKernel {
                                  ? *(context.ith_parameter(1)->data())
                                  : Tensor<float_t>());
 
-    // initialize outputs
+    // initialize outputs, pad first if unpadded already
+    // output will be unpadded after forward pass calculation
+    out_data.reshape({1, params.out.size()});
     out_data.fill(0);
 
     kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,

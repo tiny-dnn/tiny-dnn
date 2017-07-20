@@ -710,8 +710,8 @@ class layer : public node {
     if (reset_weight || !initialized_) {
       // todo (karandesai) : remove this call after parameter integration
       init_weight();
+      init_parameters();
     }
-    init_parameters();
   }
 
   // todo (karandesai) : remove this after parameter integration
