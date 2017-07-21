@@ -181,13 +181,13 @@ struct momentum : public stateful_optimizer<1> {
  * SGD with Nesterov momentum
  *
  * Y Nesterov,
- * A method for unconstrained convex minimization problem with the rate of 
+ * A method for unconstrained convex minimization problem with the rate of
  * convergence o(1/k2), Doklady ANSSSR, vol.269, pp.543-547, 1983.
  **/
 struct nesterov_momentum : public stateful_optimizer<1> {
  public:
-  nesterov_momentum() : alpha(float_t(0.01)), lambda(float_t(0)),
-                        mu(float_t(0.9)) {}
+  nesterov_momentum()
+    : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &dWprev = get<0>(W);
