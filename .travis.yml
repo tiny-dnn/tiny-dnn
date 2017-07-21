@@ -20,22 +20,22 @@ cache:
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-precise-3.6
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.6
     packages:
-      - gcc-4.9
-      - g++-4.9
-      - clang-3.6
-      - cmake
-      - git
-      # Optional dependencies
-      - libtbb-dev
-      # coveralls dependencies
-      - gem
-      - lcov
-      # caffe-importer dependencies
-      - libprotobuf-dev
-      - protobuf-compiler
+    - gcc-4.9
+    - g++-4.9
+    - clang-3.6
+    - cmake
+    - git
+    # Optional dependencies
+    - libtbb-dev
+    # coveralls dependencies
+    - gem
+    - lcov
+    # caffe-importer dependencies
+    - libprotobuf-dev
+    - protobuf-compiler
 
 branches:
   only:
@@ -62,8 +62,8 @@ matrix:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
-       export CC="gcc-4.9";
-       export CXX="g++-4.9";
+      export CC="gcc-4.9";
+      export CXX="g++-4.9";
     fi
   - gcc --version
   - g++ --version
@@ -96,7 +96,9 @@ before_script:
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
-  - make test_lints
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      make test_lints;
+    fi
 
 script:
   - make -j2
