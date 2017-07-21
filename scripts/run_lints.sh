@@ -20,7 +20,7 @@ fi
 
 for cpp_file in $all_cpp_files; do
     
-    $clang_format_bin -style=file -output-replacements-xml $cpp_file | grep "<replacement " >/dev/null
+    $clang_format_bin -style=file -output-replacements-xml $cpp_file | grep "<replacement " > /dev/null
     if [ $? -ne 1 ]; then
         echo "Error, clang-format not clean: $cpp_file"
         exit 1

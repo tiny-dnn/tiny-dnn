@@ -46,6 +46,6 @@ endif()
 
 add_custom_target(
    test_lints
-   COMMAND /bin/bash ${CMAKE_SOURCE_DIR}/scripts/lints.sh
+   COMMAND /bin/bash ${CMAKE_SOURCE_DIR}/scripts/run_lints.sh
    ${ALL_CXX_SOURCE_FILES}
    )

@@ -71,6 +71,7 @@ before_install:
 install:
   - bash -x .travis/install.sh
   - gem install coveralls-lcov
+  - pip install --user cpplint
 
 before_script:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
