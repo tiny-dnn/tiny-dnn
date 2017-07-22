@@ -10,8 +10,6 @@
 #include "testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
-
 namespace tiny_dnn {
 
 TEST(deconvolutional, setup_tiny) {
