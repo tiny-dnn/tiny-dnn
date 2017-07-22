@@ -17,7 +17,8 @@ struct deconv_layer_worker_specific_storage {
   tensor_t curr_delta_padded;
 };
 
-struct deconv_params {
+class deconv_params : public Params {
+ public:
   connection_table tbl;
   index3d<size_t> in;
   index3d<size_t> out;
@@ -27,7 +28,23 @@ struct deconv_params {
   padding pad_type;
   size_t w_stride;
   size_t h_stride;
+
+  friend std::ostream &operator<<(std::ostream &o,
+                                  const core::deconv_params &param) {
+    o << "in:         " << param.in << "\n";
+    o << "out:        " << param.out << "\n";
+    o << "out_unpadded: " << param.out_unpadded << "\n";
+    o << "weight:     " << param.weight << "\n";
+    o << "has_bias:   " << param.has_bias << "\n";
+    o << "w_stride:   " << param.w_stride << "\n";
+    o << "h_stride:   " << param.h_stride << "\n";
+    return o;
+  }
 };
+
+inline deconv_params &Params::deconv() {
+  return *(static_cast<deconv_params *>(this));
+}
 
 }  // namespace core
 }  // namespace tiny_dnn
