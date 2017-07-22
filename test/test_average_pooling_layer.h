@@ -6,11 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -26,7 +28,6 @@ TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
 
-  // TODO: gradient check in tests might make it easier to debug
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -85,10 +86,10 @@ TEST(ave_pool, forward) {
   average_pooling_layer l(4, 4, 1, 2);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {
@@ -114,10 +115,10 @@ TEST(ave_pool, forward_stride) {
   average_pooling_layer l(4, 4, 1, 2, 1);
   // clang-format off
     vec_t in = {
-        0, 1, 2, 3,
-        8, 7, 5, 6,
-        4, 3, 1, 2,
-        0,-1,-2,-3
+        0,  1,  2,  3,
+        8,  7,  5,  6,
+        4,  3,  1,  2,
+        0, -1, -2, -3
     };
 
     vec_t expected = {

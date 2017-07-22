@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/config.h"
 #include "tiny_dnn/core/backend.h"
 
@@ -73,7 +75,11 @@ class tiny_backend : public backend {
       backward_activation(f3) {}
 
   // fully_connected
-  tiny_backend(fully_params *params) /*: params_f_(params)*/ {
+  explicit tiny_backend(fully_params *params)
+#if 0
+    : params_f_(params)
+#endif
+  {
     CNN_UNREFERENCED_PARAMETER(params);
   }
 

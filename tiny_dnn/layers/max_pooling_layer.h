@@ -8,7 +8,9 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/core/kernels/maxpool_grad_op.h"
@@ -37,7 +39,7 @@ class max_pooling_layer : public layer {
                     size_t in_height,
                     size_t in_channels,
                     size_t pooling_size,
-                    backend_t backend_type = core::default_engine())
+                    core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_width,
                         in_height,
                         in_channels,
@@ -48,7 +50,7 @@ class max_pooling_layer : public layer {
   max_pooling_layer(const shape3d &in_shape,
                     size_t pooling_size,
                     size_t stride,
-                    backend_t backend_type = core::default_engine())
+                    core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_shape.width_,
                         in_shape.height_,
                         in_shape.depth_,
@@ -61,7 +63,7 @@ class max_pooling_layer : public layer {
                     size_t in_channels,
                     size_t pooling_size,
                     size_t stride,
-                    backend_t backend_type = core::default_engine())
+                    core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_width,
                         in_height,
                         in_channels,
@@ -87,8 +89,8 @@ class max_pooling_layer : public layer {
                     size_t pooling_size_y,
                     size_t stride_x,
                     size_t stride_y,
-                    padding pad_type       = padding::valid,
-                    backend_t backend_type = core::default_engine())
+                    padding pad_type             = padding::valid,
+                    core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     set_maxpool_params(
       shape3d(in_width, in_height, in_channels),
@@ -165,13 +167,13 @@ class max_pooling_layer : public layer {
 
  private:
   /* The Max Poling operation params */
-  maxpool_params params_;
+  core::maxpool_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
@@ -219,12 +221,13 @@ class max_pooling_layer : public layer {
     }
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal ||
-        backend_type == backend_t::nnpack || backend_type == backend_t::avx) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::nnpack ||
+        backend_type == core::backend_t::avx) {
       kernel_fwd_.reset(new MaxPoolOp(ctx));
       kernel_back_.reset(new MaxPoolGradOp(ctx));
       return;

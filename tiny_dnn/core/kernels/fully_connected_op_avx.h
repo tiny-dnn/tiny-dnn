@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/kernels/fully_connected_op_internal.h"
 
 namespace tiny_dnn {
@@ -20,7 +22,7 @@ inline void avx_fully_connected_forward_kernel(
   const std::vector<float, Allocator> &W,
   const std::vector<float, Allocator> &bias,
   std::vector<std::vector<float, Allocator>> &out_data,
-  const fully_params &params,
+  const core::fully_params &params,
   const bool layer_parallelize) {
   if (params.has_bias_) {
     size_t nblocks  = params.out_size_ / 8;
@@ -108,7 +110,7 @@ inline void avx_fully_connected_forward_kernel(
   const std::vector<double, Allocator> &W,
   const std::vector<double, Allocator> &bias,
   std::vector<std::vector<double, Allocator>> &out_data,
-  const fully_params &params,
+  const core::fully_params &params,
   const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(in_data, W, bias, out_data, params,
@@ -123,7 +125,7 @@ inline void avx_fully_connected_back_kernel(
   std::vector<std::vector<float, Allocator>> &db,
   std::vector<std::vector<float, Allocator>> &curr_delta,
   std::vector<std::vector<float, Allocator>> &prev_delta,
-  const fully_params &params,
+  const core::fully_params &params,
   const bool layer_parallelize) {
   if (params.has_bias_) {
     for (size_t sample = 0; sample < prev_out.size(); sample++) {
@@ -185,7 +187,7 @@ inline void avx_fully_connected_back_kernel(
   std::vector<std::vector<double, Allocator>> &db,
   std::vector<std::vector<double, Allocator>> &curr_delta,
   std::vector<std::vector<double, Allocator>> &prev_delta,
-  const fully_params &params,
+  const core::fully_params &params,
   const bool layer_parallelize) {
   // fallback to tiny-backend when float_t is double
   fully_connected_op_internal(prev_out, W, dW, db, curr_delta, prev_delta,
@@ -198,7 +200,7 @@ inline void fully_connected_op_avx(const tensor_t &in_data,
                                    const vec_t &W,
                                    const vec_t &bias,
                                    tensor_t &out_data,
-                                   const fully_params &params,
+                                   const core::fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   avx_fully_connected_forward_kernel(in_data, W, bias, out_data, params,
@@ -220,7 +222,7 @@ inline void fully_connected_op_avx(const tensor_t &prev_out,
                                    tensor_t &db,
                                    tensor_t &curr_delta,
                                    tensor_t &prev_delta,
-                                   const fully_params &params,
+                                   const core::fully_params &params,
                                    const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   avx_fully_connected_back_kernel(prev_out, W, dW, db, curr_delta, prev_delta,

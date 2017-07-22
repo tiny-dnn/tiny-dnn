@@ -10,6 +10,7 @@
 #if defined(CNN_USE_SSE) || defined(CNN_USE_AVX)
 #include <immintrin.h>
 #endif
+
 #include <cassert>
 #include <cstdint>
 #include <numeric>
@@ -17,6 +18,7 @@
 #ifdef CNN_USE_AVX
 #include "tiny_dnn/core/kernels/avx_kernel_common.h"
 #endif
+
 #include "tiny_dnn/util/macro.h"
 
 namespace vectorize {
@@ -437,7 +439,7 @@ CNN_MUST_INLINE void add(const typename T::value_type *src,
   }
 }
 
-// TODO: documentation
+// TODO(beru): documentation
 /**
  *
  * @tparam T
@@ -751,12 +753,13 @@ CNN_MUST_INLINE void fill(T *dst, std::size_t size, T value) {
   __stosq((unsigned __int64 *)dst, u.dat, size);
 #else   // #if defined(CNN_USE_DOUBLE)
   union {
-    unsigned long dat;
+    unsigned long dat;  // NOLINT
     T value;
   } u;
-  static_assert(sizeof(T) == sizeof(unsigned long), "size mismatch.");
+  static_assert(sizeof(T) == sizeof(unsigned long),  // NOLINT
+                "size mismatch.");
   u.value = value;
-  __stosd((unsigned long *)dst, u.dat, size);
+  __stosd((unsigned long *)dst, u.dat, size);  // NOLINT
 #endif  // #if defined(CNN_USE_DOUBLE)
 
 #elif defined(_M_IX86)
@@ -765,12 +768,13 @@ CNN_MUST_INLINE void fill(T *dst, std::size_t size, T value) {
   detail::fill(dst, size, value);
 #else   // #if defined(CNN_USE_DOUBLE)
   union {
-    unsigned long dat;
+    unsigned long dat;  // NOLINT
     T value;
   } u;
-  static_assert(sizeof(T) == sizeof(unsigned long), "size mismatch.");
+  static_assert(sizeof(T) == sizeof(unsigned long),  // NOLINT
+                "size mismatch.");
   u.value = value;
-  __stosd((unsigned long *)dst, u.dat, size);
+  __stosd((unsigned long *)dst, u.dat, size);  // NOLINT
 #endif  // #if defined(CNN_USE_DOUBLE)
 
 #else  // !x86 && !x64

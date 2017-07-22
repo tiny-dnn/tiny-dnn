@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -19,7 +23,8 @@ class softplus_layer : public activation_layer {
    * layer. Connection happens like ( layer1 << act_layer1 ) and shape of this
    * layer is inferred at that time.
    */
-  softplus_layer(const float_t beta = 1.0, const float_t threshold = 20.0)
+  explicit softplus_layer(const float_t beta      = 1.0,
+                          const float_t threshold = 20.0)
     : softplus_layer(shape3d(0, 0, 0), beta, threshold) {}
 
   /**

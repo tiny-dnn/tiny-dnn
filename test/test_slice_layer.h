@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -17,18 +21,18 @@ TEST(slice, forward_data) {
 
   // clang-format off
     tensor_t in = {
-        { 0,1,2,3,4,5 },
-        { 6,7,8,9,10,11 },
-        { 12,13,14,15,16,17 },
-        { 18,19,20,21,22,23 }
+        {  0,  1,  2,  3,  4,  5 },
+        {  6,  7,  8,  9, 10, 11 },
+        { 12, 13, 14, 15, 16, 17 },
+        { 18, 19, 20, 21, 22, 23 }
     };
 
     tensor_t out0_expected = {
-        { 0,1,2,3,4,5 }
+        { 0, 1, 2, 3, 4, 5 }
     };
 
     tensor_t out1_expected = {
-        { 6,7,8,9,10,11 }
+        { 6, 7, 8, 9, 10, 11 }
     };
 
     tensor_t out2_expected = {

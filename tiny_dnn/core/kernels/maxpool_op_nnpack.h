@@ -15,7 +15,7 @@ namespace kernels {
 
 inline void maxpool_op_nnpack(const tensor_t &in_data,
                               tensor_t &out_data,
-                              const maxpool_params &params) {
+                              const core::maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   NNPackInitializer::getInstance().initialize();
@@ -33,7 +33,7 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
   const float *input_ptr = in_data[0].data();
   float *output_ptr      = out_data[0].data();
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   const size_t num_mkl_threads = 1;
   pthreadpool_t threadpool     = pthreadpool_create(num_mkl_threads);
 
@@ -47,7 +47,7 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
     throw nn_error("Could not succeed with nnp_max_pooling_output");
   }
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   pthreadpool_destroy(threadpool);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);

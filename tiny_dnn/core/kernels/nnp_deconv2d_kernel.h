@@ -7,10 +7,12 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/params/deconv_params.h"
 
 #ifdef CNN_USE_NNPACK
-#include "nnpack.h"
+#include <nnpack.h>
 
 namespace tiny_dnn {
 namespace core {

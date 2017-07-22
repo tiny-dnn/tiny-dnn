@@ -6,6 +6,11 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 

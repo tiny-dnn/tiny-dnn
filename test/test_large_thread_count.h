@@ -6,17 +6,19 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(test_large_thread_count, test_large_thread_count) {
   network<sequential> net;
-  net << fully_connected_layer(1, 2) << tanh();
+  net << fully_connected_layer(1, 2) << tanh_layer();
   adagrad optimizer;
 
   std::vector<vec_t> data;

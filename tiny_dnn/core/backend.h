@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/params/conv_params.h"
 #include "tiny_dnn/core/params/deconv_params.h"
 #include "tiny_dnn/core/params/fully_params.h"
@@ -16,7 +18,7 @@
 #include "tiny_dnn/node.h"
 
 #ifdef CNN_USE_NNPACK
-#include "nnpack.h"
+#include <nnpack.h>
 #endif
 
 namespace tiny_dnn {

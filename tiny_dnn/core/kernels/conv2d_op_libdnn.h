@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #ifdef CNN_USE_LIBDNN
@@ -169,13 +173,12 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 // TODO(edgar): refactor this since it's possible
 // to have OpenCL and CUDA.
 #if defined(USE_OPENCL)
-      greentea::Backend::BACKEND_OpenCL
+      greentea::Backend::BACKEND_OpenCL);
 #elif defined(USE_CUDA)
-      greentea::Backend::BACKEND_CUDA
+      greentea::Backend::BACKEND_CUDA);
 #else
-      greentea::Backend::BACKEND_CPU
+      greentea::Backend::BACKEND_CPU);
 #endif
-      );
 
     // Initialize device pointer in libdnn
     dev_ptr_->Init();

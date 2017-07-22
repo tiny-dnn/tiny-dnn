@@ -7,8 +7,10 @@
 */
 #pragma once
 
+#include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #ifndef CNN_NO_SERIALIZATION

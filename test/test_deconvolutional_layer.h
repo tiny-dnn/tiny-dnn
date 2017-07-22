@@ -6,17 +6,19 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(deconvolutional, setup_tiny) {
   deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
-                          backend_t::internal);
+                          core::backend_t::internal);
 
   EXPECT_EQ(l.parallelize(), true);          // if layer can be parallelized
   EXPECT_EQ(l.in_channels(), 3u);            // num of input tensors

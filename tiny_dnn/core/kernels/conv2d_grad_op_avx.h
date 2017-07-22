@@ -758,26 +758,21 @@ void avx_conv2d_5x5_back_kernel_one(
       // ---3 3333
       // ---4 4444
       __m256 new_sum0 =
-        _mm256_blend_ps(_mm256_setzero_ps(), sum0, 0x1F /* 0b00011111 */
-                        );
+        _mm256_blend_ps(_mm256_setzero_ps(), sum0, 0x1F /* 0b00011111 */);
       __m256 new_sum1 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_or_ps(rightShift<20>(sum0), leftShift<12>(sum1)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
       __m256 new_sum2 = _mm256_blend_ps(
-        _mm256_setzero_ps(), rightShift<8>(sum1), 0x1F /* 0b00011111 */
-        );
+        _mm256_setzero_ps(), rightShift<8>(sum1), 0x1F /* 0b00011111 */);
       __m256 new_sum3 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_or_ps(rightShift<28>(sum1), leftShift<4>(sum2)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
       __m256 new_sum4 =
         _mm256_blend_ps(_mm256_setzero_ps(),
                         _mm256_set_m128(sum3, _mm256_extractf128_ps(sum2, 1)),
-                        0x1F /* 0b00011111 */
-                        );
+                        0x1F /* 0b00011111 */);
       dst0 = _mm256_add_ps(dst0, new_sum0);
       dst1 = _mm256_add_ps(dst1, new_sum1);
       dst2 = _mm256_add_ps(dst2, new_sum2);
