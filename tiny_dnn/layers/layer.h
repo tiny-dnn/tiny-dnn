@@ -714,7 +714,6 @@ class layer : public node {
       init_weight();
       init_parameters();
     }
-    init_parameters();
   }
 
   // todo (karandesai) : remove this after parameter integration
