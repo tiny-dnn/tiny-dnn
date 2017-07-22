@@ -56,7 +56,9 @@ class FullyConnectedGradOp : public core::OpKernel {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
     context.ith_parameter(0)->set_grad(weights_grads);
-    context.ith_parameter(1)->set_grad(bias_grads);
+    if (params.has_bias_) {
+      context.ith_parameter(1)->set_grad(bias_grads);
+    }
     context.input_grad(0) = prev_delta.toTensor();
   }
 };
