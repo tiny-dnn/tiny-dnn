@@ -6,9 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
+#include <memory>
 #include <sstream>
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {

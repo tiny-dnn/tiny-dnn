@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <unordered_map>
+
 #include "tiny_dnn/layers/layer.h"
 
 #include "tiny_dnn/core/framework/device.fwd.h"

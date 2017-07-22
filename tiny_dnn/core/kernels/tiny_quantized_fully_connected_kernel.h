@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/core/kernels/tiny_quantization_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_matmul_kernel.h"

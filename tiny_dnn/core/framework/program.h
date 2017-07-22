@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <string>
+
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/layers/layer.h"
 

@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -174,26 +178,26 @@ TEST(batchnorm, forward) {
   // clang-format off
     tensor_t in = {
       {
-         0.0f,  0.0f,  0.0f,  0.0f, // ch-0 of data#0
-        -4.0f,  0.0f, -1.0f,  2.0f, // ch-1 of data#0
-         1.0f,  0.0f,  1.0f,  3.0f, // ch-2 of data#0
+         0.0,  0.0,  0.0,  0.0,  // ch-0 of data#0
+        -4.0,  0.0, -1.0,  2.0,  // ch-1 of data#0
+         1.0,  0.0,  1.0,  3.0,  // ch-2 of data#0
       }, {
-         0.0f,  0.0f,  0.0f,  0.0f,  // ch-0 of data#1  
-         2.0f,  0.0f, -4.0f, -3.0f,  // ch-1 of data#1
-         2.0f,  5.0f,  1.0f, 10.0f   // ch-2 of data#1
+         0.0,  0.0,  0.0,  0.0,  // ch-0 of data#1
+         2.0,  0.0, -4.0, -3.0,  // ch-1 of data#1
+         2.0,  5.0,  1.0, 10.0   // ch-2 of data#1
       }
     };
 
     /* y = (x - mean) ./ sqrt(variance + eps) */
     tensor_t expect = {
         {
-            0.0f,    0.0f,    0.0f,   0.0f,   // ch-0 of data#0
-           -1.225f,  0.408f,  0.0f,   1.225f, // ch-1 of data#0
-           -0.573f, -0.879f, -0.573f, 0.038f, // ch-2 of data#0
-        },{
-            0.0f,   0.0f,    0.0f,    0.0f,  // ch-0 of data#1  
-            1.225f, 0.408f, -1.225f, -0.816f,  // ch-1 of data#1
-           -0.268f, 0.650f, -0.573f,  2.179f   // ch-2 of data#1
+            0.0,    0.0,    0.0,   0.0,    // ch-0 of data#0
+           -1.225,  0.408,  0.0,   1.225,  // ch-1 of data#0
+           -0.573, -0.879, -0.573, 0.038,  // ch-2 of data#0
+        }, {
+            0.0,   0.0,    0.0,    0.0,    // ch-0 of data#1
+            1.225, 0.408, -1.225, -0.816,  // ch-1 of data#1
+           -0.268, 0.650, -0.573,  2.179f  // ch-2 of data#1
         }
     };
 

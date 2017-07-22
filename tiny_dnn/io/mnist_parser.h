@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
 #include <cstdint>
 #include <fstream>
+#include <string>
+#include <vector>
+
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {

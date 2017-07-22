@@ -8,32 +8,30 @@
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+
 #include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
-using namespace tiny_dnn::activation;
-
 template <typename N>
-void construct_net(N &nn, core::backend_t backend_type) {
-  using conv    = convolutional_layer;
-  using pool    = max_pooling_layer;
-  using fc      = fully_connected_layer;
-  using relu    = relu_layer;
-  using softmax = softmax_layer;
+void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
+  using conv    = tiny_dnn::convolutional_layer;
+  using pool    = tiny_dnn::max_pooling_layer;
+  using fc      = tiny_dnn::fully_connected_layer;
+  using relu    = tiny_dnn::relu_layer;
+  using softmax = tiny_dnn::softmax_layer;
 
   const size_t n_fmaps  = 32;  // number of feature maps for upper layer
   const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, padding::same, true, 1, 1,
+  nn << conv(32, 32, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
      << relu()                                  // activation
-     << conv(16, 16, 5, n_fmaps, n_fmaps, padding::same, true, 1, 1,
+     << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                      // C3
      << pool(16, 16, n_fmaps, 2, backend_type)  // P4
      << relu()                                  // activation
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, padding::same, true, 1, 1,
+     << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1,
              backend_type)                                // C5
      << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
      << relu()                                            // activation
@@ -46,22 +44,22 @@ void train_cifar10(std::string data_dir_path,
                    double learning_rate,
                    const int n_train_epochs,
                    const int n_minibatch,
-                   core::backend_t backend_type,
+                   tiny_dnn::core::backend_t backend_type,
                    std::ostream &log) {
   // specify loss-function and learning strategy
-  network<sequential> nn;
-  adam optimizer;
+  tiny_dnn::network<tiny_dnn::sequential> nn;
+  tiny_dnn::adam optimizer;
 
   construct_net(nn, backend_type);
 
   std::cout << "load models..." << std::endl;
 
   // load cifar dataset
-  std::vector<label_t> train_labels, test_labels;
-  std::vector<vec_t> train_images, test_images;
+  std::vector<tiny_dnn::label_t> train_labels, test_labels;
+  std::vector<tiny_dnn::vec_t> train_images, test_images;
 
   for (int i = 1; i <= 5; i++) {
-    parse_cifar10(data_dir_path + "/data_batch_" + to_string(i) + ".bin",
+    parse_cifar10(data_dir_path + "/data_batch_" + std::to_string(i) + ".bin",
                   &train_images, &train_labels, -1.0, 1.0, 0, 0);
   }
 
@@ -70,8 +68,8 @@ void train_cifar10(std::string data_dir_path,
 
   std::cout << "start learning" << std::endl;
 
-  progress_display disp(train_images.size());
-  timer t;
+  tiny_dnn::progress_display disp(train_images.size());
+  tiny_dnn::timer t;
 
   optimizer.alpha *=
     static_cast<tiny_dnn::float_t>(sqrt(n_minibatch) * learning_rate);
@@ -92,9 +90,9 @@ void train_cifar10(std::string data_dir_path,
   auto on_enumerate_minibatch = [&]() { disp += n_minibatch; };
 
   // training
-  nn.train<cross_entropy>(optimizer, train_images, train_labels, n_minibatch,
-                          n_train_epochs, on_enumerate_minibatch,
-                          on_enumerate_epoch);
+  nn.train<tiny_dnn::cross_entropy>(optimizer, train_images, train_labels,
+                                    n_minibatch, n_train_epochs,
+                                    on_enumerate_minibatch, on_enumerate_epoch);
 
   std::cout << "end training." << std::endl;
 
@@ -105,16 +103,16 @@ void train_cifar10(std::string data_dir_path,
   ofs << nn;
 }
 
-static core::backend_t parse_backend_name(const std::string &name) {
+static tiny_dnn::core::backend_t parse_backend_name(const std::string &name) {
   const std::array<const std::string, 5> names = {
     "internal", "nnpack", "libdnn", "avx", "opencl",
   };
   for (size_t i = 0; i < names.size(); ++i) {
     if (name.compare(names[i]) == 0) {
-      return static_cast<core::backend_t>(i);
+      return static_cast<tiny_dnn::core::backend_t>(i);
     }
   }
-  return core::default_engine();
+  return tiny_dnn::core::default_engine();
 }
 
 static void usage(const char *argv0) {
@@ -126,11 +124,11 @@ static void usage(const char *argv0) {
 }
 
 int main(int argc, char **argv) {
-  double learning_rate         = 0.01;
-  int epochs                   = 30;
-  std::string data_path        = "";
-  int minibatch_size           = 10;
-  core::backend_t backend_type = core::default_engine();
+  double learning_rate                   = 0.01;
+  int epochs                             = 30;
+  std::string data_path                  = "";
+  int minibatch_size                     = 10;
+  tiny_dnn::core::backend_t backend_type = tiny_dnn::core::default_engine();
 
   if (argc == 2) {
     std::string argname(argv[1]);

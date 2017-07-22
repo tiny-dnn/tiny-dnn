@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <limits>
+#include <vector>
+
 namespace tiny_dnn {
 namespace core {
 namespace kernels {

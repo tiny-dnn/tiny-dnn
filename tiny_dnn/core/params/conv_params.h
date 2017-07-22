@@ -7,7 +7,11 @@
 */
 #pragma once
 
-#include "params.h"
+#include <algorithm>
+#include <deque>
+#include <vector>
+
+#include "tiny_dnn/core/params/params.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -88,7 +92,7 @@ inline conv_params &Params::conv() {
 class Conv2dPadding {
  public:
   Conv2dPadding() {}
-  Conv2dPadding(const conv_params &params) : params_(params) {}
+  explicit Conv2dPadding(const conv_params &params) : params_(params) {}
 
   /* Applies padding to an input tensor given the convolution parameters
    *

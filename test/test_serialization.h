@@ -7,13 +7,13 @@
 */
 #pragma once
 
+#include <gtest/gtest.h>
+
 #include <cstdio>
+#include <string>
 
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
-
-using namespace tiny_dnn::activation;
 
 namespace tiny_dnn {
 
@@ -24,6 +24,7 @@ inline void check_sequential_network_model_serialization(
   net.save(path, content_type::model);
   net2.load(path, content_type::model);
   ASSERT_EQ(net.layer_size(), net2.layer_size());
+
   for (size_t i = 0; i < net.layer_size(); i++) {
     ASSERT_EQ(net[i]->in_shape(), net2[i]->in_shape());
     ASSERT_EQ(net[i]->out_shape(), net2[i]->out_shape());
@@ -122,8 +123,8 @@ TEST(serialization, serialize_batchnorm) {
   EXPECT_EQ(net[0]->layer_type(), "batch-norm");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 2));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 2));
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), 0.001f);
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), 0.8f);
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), 0.001);
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), 0.8);
   check_sequential_network_model_serialization(net);
 }
 
@@ -266,7 +267,7 @@ TEST(serialization, serialize_dropout) {
   EXPECT_EQ(net[0]->layer_type(), "dropout");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 1));
-  EXPECT_FLOAT_EQ(net.at<dropout_layer>(0).dropout_rate(), 0.5f);
+  EXPECT_FLOAT_EQ(net.at<dropout_layer>(0).dropout_rate(), 0.5);
   check_sequential_network_model_serialization(net);
 }
 
@@ -463,8 +464,8 @@ TEST(serialization, serialize_power) {
   EXPECT_EQ(net[0]->layer_type(), "power");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 2, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 2, 1));
-  EXPECT_FLOAT_EQ(net.at<power_layer>(0).factor(), 0.5f);
-  EXPECT_FLOAT_EQ(net.at<power_layer>(0).scale(), 0.2f);
+  EXPECT_FLOAT_EQ(net.at<power_layer>(0).factor(), 0.5);
+  EXPECT_FLOAT_EQ(net.at<power_layer>(0).scale(), 0.2);
   check_sequential_network_model_serialization(net);
 }
 
@@ -598,7 +599,7 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(sl->layer_type(), "slice");
   EXPECT_EQ(sl->get_slice_type(), slice_type::slice_samples);
   EXPECT_EQ(sl->in_shape()[0], shape3d(3, 2, 1));
-  EXPECT_EQ(sl->out_shape().size(), 2);
+  EXPECT_EQ(sl->out_shape().size(), 2u);
   EXPECT_EQ(sl->out_shape()[0], shape3d(3, 2, 1));
   EXPECT_EQ(sl->out_shape()[1], shape3d(3, 2, 1));
   check_sequential_network_model_serialization(net);
@@ -626,7 +627,7 @@ TEST(serialization, serialize_slice) {
   EXPECT_EQ(sl->layer_type(), "slice");
   EXPECT_EQ(sl->in_shape()[0], shape3d(3, 2, 4));
   EXPECT_EQ(sl->get_slice_type(), slice_type::slice_channels);
-  EXPECT_EQ(sl->out_shape().size(), 2);
+  EXPECT_EQ(sl->out_shape().size(), 2u);
   EXPECT_EQ(sl->out_shape()[0], shape3d(3, 2, 2));
   EXPECT_EQ(sl->out_shape()[1], shape3d(3, 2, 2));
   check_sequential_network_model_serialization(net);
@@ -760,7 +761,7 @@ TEST(serialization, serialize_leaky_relu) {
   EXPECT_EQ(net[0]->layer_type(), "leaky-relu-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(256, 256, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(256, 256, 1));
-  EXPECT_FLOAT_EQ(net.at<leaky_relu_layer>(0).epsilon_value(), float_t(0.1));
+  EXPECT_FLOAT_EQ(net.at<leaky_relu_layer>(0).epsilon_value(), 0.1);
   check_sequential_network_model_serialization(net);
 }
 
@@ -870,8 +871,8 @@ TEST(serialization, serialize_softplus) {
   EXPECT_EQ(net[0]->layer_type(), "softplus-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
-  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).beta_value(), float_t(1));
-  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).threshold_value(), float_t(20));
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).beta_value(), 1.0);
+  EXPECT_FLOAT_EQ(net.at<softplus_layer>(0).threshold_value(), 20.0);
   check_sequential_network_model_serialization(net);
 }
 
@@ -904,7 +905,7 @@ TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
   net1 << fully_connected_layer(10, 100) << tanh_layer()
-       << dropout_layer(100, 0.3f, net_phase::test)
+       << dropout_layer(100, 0.3, net_phase::test)
        << fully_connected_layer(100, 9) << softmax()
        << recurrent_cell_layer(9, 9, false, new elu_layer)
        << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer();
@@ -931,7 +932,7 @@ TEST(serialization, sequential_model) {
 
   net1 << fully_connected_layer(10, 16) << tanh_layer()
        << average_pooling_layer(4, 4, 1, 2) << relu()
-       << power_layer(shape3d(2, 2, 1), 0.5f);
+       << power_layer(shape3d(2, 2, 1), 0.5);
 
   net1.init_weight();
 
@@ -958,7 +959,7 @@ TEST(serialization, sequential_weights) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3f));
+  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
 
   for (int i = 0; i < 2; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);
@@ -970,8 +971,8 @@ TEST(serialization, sequential_weights2) {
   network<sequential> net1, net2;
   vec_t data = {1, 2, 3, 4, 5, 0};
 
-  net1 << batch_normalization_layer(3, 2, 0.01f, 0.99f, net_phase::train)
-       << linear_layer(3 * 2, 2.0f, 0.5f) << elu()
+  net1 << batch_normalization_layer(3, 2, 0.01, 0.99, net_phase::train)
+       << linear_layer(3 * 2, 2.0, 0.5) << elu()
        << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu();
 
   net1.init_weight();
@@ -987,7 +988,7 @@ TEST(serialization, sequential_weights2) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3f));
+  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
 
   for (int i = 0; i < 6; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);

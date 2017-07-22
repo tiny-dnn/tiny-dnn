@@ -6,13 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
-using namespace tiny_dnn::activation;
 
 TEST(convolutional, setup_internal) {
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true);
@@ -508,7 +510,7 @@ TEST(convolutional, fprop_nnp) {
 
 TEST(convolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh();
+  nn << convolutional_layer(5, 5, 3, 1, 1) << activation::tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -626,7 +628,7 @@ TEST(convolutional,
   network<sequential> nn;
   bool tbl[3 * 3] = {true, false, true, false, true, false, true, true, false};
 
-  connection_table connections(tbl, 3, 3);
+  core::connection_table connections(tbl, 3, 3);
 
   nn << convolutional_layer(7, 7, 3, 3, 1, connections, padding::valid, true, 1,
                             1, core::backend_t::internal)
@@ -673,9 +675,9 @@ TEST(convolutional, read_write2) {
 #undef O
 #undef X
   convolutional_layer layer1(14, 14, 5, 3, 6,
-                             connection_table(connection, 3, 6));
+                             core::connection_table(connection, 3, 6));
   convolutional_layer layer2(14, 14, 5, 3, 6,
-                             connection_table(connection, 3, 6));
+                             core::connection_table(connection, 3, 6));
   layer1.init_weight();
   layer2.init_weight();
 
@@ -684,7 +686,7 @@ TEST(convolutional, read_write2) {
 */
 
 TEST(convolutional, copy_and_pad_input_same) {
-  conv_params params;
+  core::conv_params params;
   params.in        = shape3d(5, 5, 1);
   params.weight    = shape3d(3, 3, 2);
   params.in_padded = shape3d(7, 7, 1);
@@ -693,7 +695,7 @@ TEST(convolutional, copy_and_pad_input_same) {
   params.w_stride  = 1;
   params.h_stride  = 1;
 
-  Conv2dPadding conv2d_padding(params);
+  core::Conv2dPadding conv2d_padding(params);
 
   auto create_tensor = [](size_t batch_size, size_t vector_size) {
     return tensor_t(batch_size, vec_t(vector_size));
@@ -724,7 +726,7 @@ TEST(convolutional, copy_and_pad_input_same) {
 }
 
 TEST(convolutional, copy_and_unpad_delta_same) {
-  conv_params params;
+  core::conv_params params;
   params.in        = shape3d(3, 3, 1);
   params.weight    = shape3d(2, 2, 1);
   params.in_padded = shape3d(5, 5, 1);
@@ -733,7 +735,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
   params.w_stride  = 1;
   params.h_stride  = 1;
 
-  Conv2dPadding conv2d_padding(params);
+  core::Conv2dPadding conv2d_padding(params);
 
   auto create_tensor = [](size_t batch_size, size_t vector_size) {
     return tensor_t(batch_size, vec_t(vector_size));

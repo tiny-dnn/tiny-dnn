@@ -96,7 +96,6 @@ class deserialization_helper {
   }
 
   deserialization_helper() { register_layers(this); }
-
 };  // class deserialization_helper
 
 template <typename InputArchive>

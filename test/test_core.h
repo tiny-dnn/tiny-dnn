@@ -6,13 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
-#include "gtest/gtest.h"
-#include "testhelper.h"
 
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
@@ -101,7 +103,7 @@ TEST(core, add_bad_device) {
   Device my_gpu_device(device_t::CPU);
 
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                        backend_t::libdnn);
+                        core::backend_t::libdnn);
 
   EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
 }
@@ -119,7 +121,7 @@ TEST(core, add_bad_layer) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
     convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                          backend_t::internal);
+                          core::backend_t::internal);
 
     EXPECT_THROW(my_gpu_device.registerOp(l), nn_error);
   }
@@ -139,7 +141,7 @@ TEST(core, device_add_op) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
     convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                          backend_t::libdnn);
+                          core::backend_t::libdnn);
 
     // max_pooling_layer l(4, 4, 1, 2, 2,
     // core::backend_t::opencl);
@@ -170,7 +172,7 @@ TEST(core, ocl_conv) {
     Device my_gpu_device(device, cl_platform, cl_device);
 
     convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
-                          backend_t::libdnn);
+                          core::backend_t::libdnn);
     sigmoid_layer sgm(3, 3, 2);
     l << sgm;
 
@@ -228,17 +230,17 @@ TEST(core, ocl_conv) {
     {
       l.forward_propagation(in_data, out_data);
 
-      EXPECT_NEAR(0.4875026, out[0], 1E-5);
-      EXPECT_NEAR(0.8388910, out[1], 1E-5);
-      EXPECT_NEAR(0.8099984, out[2], 1E-5);
-      EXPECT_NEAR(0.7407749, out[3], 1E-5);
-      EXPECT_NEAR(0.5000000, out[4], 1E-5);
-      EXPECT_NEAR(0.1192029, out[5], 1E-5);
-      EXPECT_NEAR(0.5986877, out[6], 1E-5);
-      EXPECT_NEAR(0.7595109, out[7], 1E-5);
-      EXPECT_NEAR(0.6899745, out[8], 1E-5);
+      EXPECT_NEAR(0.4875026, out[0], 1e-5);
+      EXPECT_NEAR(0.8388910, out[1], 1e-5);
+      EXPECT_NEAR(0.8099984, out[2], 1e-5);
+      EXPECT_NEAR(0.7407749, out[3], 1e-5);
+      EXPECT_NEAR(0.5000000, out[4], 1e-5);
+      EXPECT_NEAR(0.1192029, out[5], 1e-5);
+      EXPECT_NEAR(0.5986877, out[6], 1e-5);
+      EXPECT_NEAR(0.7595109, out[7], 1e-5);
+      EXPECT_NEAR(0.6899745, out[8], 1e-5);
     }
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

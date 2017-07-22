@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -19,7 +23,8 @@ class selu_layer : public activation_layer {
    * layer is inferred at that time.
    */
 
-  selu_layer(const float_t lambda = 1.05070, const float_t alpha = 1.67326)
+  explicit selu_layer(const float_t lambda = 1.05070,
+                      const float_t alpha  = 1.67326)
     : selu_layer(shape3d(0, 0, 0), lambda, alpha) {}
 
   /**

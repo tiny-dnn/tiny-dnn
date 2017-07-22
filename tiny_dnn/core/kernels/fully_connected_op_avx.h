@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/kernels/fully_connected_op_internal.h"
 
 namespace tiny_dnn {
@@ -271,6 +273,7 @@ inline void fully_connected_op_avx(const Tensor<float_t, S1> &in_data,
   throw nn_error("TinyDNN has not been compiled with AVX support.");
 #endif
 }
+
 /**
  * Backward propogation for fully connected layer with internal backend
  * @param prev_out

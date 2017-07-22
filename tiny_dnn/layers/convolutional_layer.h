@@ -8,7 +8,9 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/core/kernels/conv2d_grad_op.h"
@@ -21,8 +23,6 @@
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
 #endif  // DNN_USE_IMAGE_API
-
-using namespace tiny_dnn::core;
 
 namespace tiny_dnn {
 
@@ -63,18 +63,18 @@ class convolutional_layer : public layer {
                       size_t window_size,
                       size_t in_channels,
                       size_t out_channels,
-                      padding pad_type       = padding::valid,
-                      bool has_bias          = true,
-                      size_t w_stride        = 1,
-                      size_t h_stride        = 1,
-                      backend_t backend_type = core::default_engine())
+                      padding pad_type             = padding::valid,
+                      bool has_bias                = true,
+                      size_t w_stride              = 1,
+                      size_t h_stride              = 1,
+                      core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
                           window_size,
                           window_size,
                           in_channels,
                           out_channels,
-                          connection_table(),
+                          core::connection_table(),
                           pad_type,
                           has_bias,
                           w_stride,
@@ -112,18 +112,18 @@ class convolutional_layer : public layer {
                       size_t window_height,
                       size_t in_channels,
                       size_t out_channels,
-                      padding pad_type       = padding::valid,
-                      bool has_bias          = true,
-                      size_t w_stride        = 1,
-                      size_t h_stride        = 1,
-                      backend_t backend_type = core::default_engine())
+                      padding pad_type             = padding::valid,
+                      bool has_bias                = true,
+                      size_t w_stride              = 1,
+                      size_t h_stride              = 1,
+                      core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
                           window_width,
                           window_height,
                           in_channels,
                           out_channels,
-                          connection_table(),
+                          core::connection_table(),
                           pad_type,
                           has_bias,
                           w_stride,
@@ -161,12 +161,12 @@ class convolutional_layer : public layer {
                       size_t window_size,
                       size_t in_channels,
                       size_t out_channels,
-                      const connection_table &connection_table,
-                      padding pad_type       = padding::valid,
-                      bool has_bias          = true,
-                      size_t w_stride        = 1,
-                      size_t h_stride        = 1,
-                      backend_t backend_type = core::default_engine())
+                      const core::connection_table &connection_table,
+                      padding pad_type             = padding::valid,
+                      bool has_bias                = true,
+                      size_t w_stride              = 1,
+                      size_t h_stride              = 1,
+                      core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
                           window_size,
@@ -213,12 +213,12 @@ class convolutional_layer : public layer {
                       size_t window_height,
                       size_t in_channels,
                       size_t out_channels,
-                      const connection_table &connection_table,
+                      const core::connection_table &connection_table,
                       padding pad_type       = padding::valid,
                       bool has_bias          = true,
                       size_t w_stride        = 1,
                       size_t h_stride        = 1,
-                      backend_t backend_type = core::default_engine())
+                      core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(out_channels, in_channels, window_height, window_width,
                          parameter_type::weight, true);
@@ -402,15 +402,16 @@ class convolutional_layer : public layer {
                                                 : &cws_.prev_out_padded_;
   }
 
-  void conv_set_params(const shape3d &in,
-                       size_t w_width,
-                       size_t w_height,
-                       size_t outc,
-                       padding ptype,
-                       bool has_bias,
-                       size_t w_stride,
-                       size_t h_stride,
-                       const connection_table &tbl = connection_table()) {
+  void conv_set_params(
+    const shape3d &in,
+    size_t w_width,
+    size_t w_height,
+    size_t outc,
+    padding ptype,
+    bool has_bias,
+    size_t w_stride,
+    size_t h_stride,
+    const core::connection_table &tbl = core::connection_table()) {
     params_.in = in;
     params_.in_padded =
       shape3d(in_length(in.width_, w_width, ptype),
@@ -432,7 +433,7 @@ class convolutional_layer : public layer {
     }
 
     // set parameters to padding operation
-    padding_op_ = Conv2dPadding(params_);
+    padding_op_ = core::Conv2dPadding(params_);
   }
 
   size_t in_length(size_t in_length,
@@ -465,21 +466,22 @@ class convolutional_layer : public layer {
 
   void createOp() override { init_backend(layer::engine()); }
 
-  void init_backend(const backend_t backend_type) {
+  void init_backend(const core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal ||
-        backend_type == backend_t::nnpack || backend_type == backend_t::avx) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::nnpack ||
+        backend_type == core::backend_t::avx) {
       kernel_fwd_.reset(new Conv2dOp(ctx));
       kernel_back_.reset(new Conv2dGradOp(ctx));
       return;
-    } else if (backend_type == backend_t::opencl) {
+    } else if (backend_type == core::backend_t::opencl) {
       throw nn_error("Not implemented engine: " + to_string(backend_type));
       /*kernel_fwd_.reset(new Conv2dOpenCLForwardOp(ctx));
       kernel_back_.reset(new Conv2dOpenCLBackwardOp(ctx));
       return;*/
-    } else if (backend_type == backend_t::libdnn) {
+    } else if (backend_type == core::backend_t::libdnn) {
       if (layer::device() == nullptr) return;
       kernel_fwd_.reset(new Conv2dLibDNNForwardOp(ctx));
       kernel_back_.reset(new Conv2dLibDNNBackwardOp(ctx));
@@ -491,16 +493,16 @@ class convolutional_layer : public layer {
 
  private:
   /* The convolution parameters */
-  conv_params params_;
+  core::conv_params params_;
 
   /* Padding operation */
-  Conv2dPadding padding_op_;
+  core::Conv2dPadding padding_op_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;

@@ -6,13 +6,16 @@
     in the LICENSE file.
 */
 #pragma once
+
 #include <algorithm>
 #include <iomanip>
+#include <limits>
 #include <memory>
 #include <numeric>
 #include <queue>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -284,7 +287,7 @@ class layer : public node {
     throw nn_error(
       "Can't set shape. Shape inferring not applicable for this "
       "layer (yet).");
-  };
+  }
 
   /**
    * array of output shapes (width x height x depth)
@@ -451,8 +454,7 @@ class layer : public node {
   virtual void save(
     std::ostream &os,
     const int precision = std::numeric_limits<float_t>::digits10 + 2
-    /*by default, we want there to be enough precision*/) const {  // NOLINT
-
+    /*by default, we want there to be enough precision*/) const {
     /*
      if (is_exploded()) {
        throw nn_error("failed to save weights because of infinite weight");

@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -19,7 +23,7 @@ class leaky_relu_layer : public activation_layer {
    * layer. Connection happens like ( layer1 << act_layer1 ) and shape of this
    * layer is inferred at that time.
    */
-  leaky_relu_layer(const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const float_t epsilon = 0.01)
     : leaky_relu_layer(shape3d(0, 0, 0), epsilon) {}
 
   /**
@@ -29,7 +33,7 @@ class leaky_relu_layer : public activation_layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  leaky_relu_layer(size_t in_dim, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(size_t in_dim, const float_t epsilon = 0.01)
     : leaky_relu_layer(shape3d(in_dim, 1, 1), epsilon) {}
 
   /**
@@ -52,14 +56,16 @@ class leaky_relu_layer : public activation_layer {
    *
    * @param in_shape [in] shape of input tensor
    */
-  leaky_relu_layer(const shape3d &in_shape, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const shape3d &in_shape,
+                            const float_t epsilon = 0.01)
     : activation_layer(in_shape), epsilon_(epsilon) {}
 
   /**
    * Construct a leaky ReLU layer given the previous layer.
    * @param prev_layer previous layer
    */
-  leaky_relu_layer(const layer &prev_layer, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const layer &prev_layer,
+                            const float_t epsilon = 0.01)
     : activation_layer(prev_layer), epsilon_(epsilon) {}
 
   std::string layer_type() const override { return "leaky-relu-activation"; }

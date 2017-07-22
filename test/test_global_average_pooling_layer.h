@@ -7,10 +7,12 @@
 */
 #pragma once
 
-#include <string>
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -29,10 +31,10 @@ TEST(global_ave_pool, forward) {
   global_average_pooling_layer l(4, 4, 1);
 
   // clang-format off
-  vec_t in = {0, 1, 2, 3,
-              8, 7, 5, 6,
-              4, 3, 1, 2,
-              0,-1,-2,-3};
+  vec_t in = {0,  1,  2,  3,
+              8,  7,  5,  6,
+              4,  3,  1,  2,
+              0, -1, -2, -3};
   // clang-format on
 
   vec_t expected = {2.25};
@@ -86,12 +88,12 @@ TEST(global_ave_pool, forward_multichannel) {
 TEST(global_ave_pool, backward) {
   global_average_pooling_layer l(4, 4, 1);
   // clang-format off
-  vec_t in = {0, 1, 2, 3,
-              8, 7, 5, 6,
-              4, 3, 1, 2,
-              0,-1,-2,-3};
+  vec_t in = {0,  1,  2,  3,
+              8,  7,  5,  6,
+              4,  3,  1,  2,
+              0, -1, -2, -3};
 
-  vec_t out_grad = {16};
+  vec_t out_grad = { 16 };
 
   vec_t in_grad_expected = {1, 1, 1, 1,
                             1, 1, 1, 1,
