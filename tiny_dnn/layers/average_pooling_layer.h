@@ -94,10 +94,6 @@ inline void tiny_average_pooling_back_kernel(
 
       bias_grads.host_at(sample, i) += diff;
     }
-    (*in_grad[1])[sample]  = dW.toVec();
-    (*in_grad[2])[sample]  = db.toVec();
-    (*in_grad[0])[sample]  = prev_delta.toVec();
-    (*out_grad[0])[sample] = curr_delta.toVec();
   });
 }
 
