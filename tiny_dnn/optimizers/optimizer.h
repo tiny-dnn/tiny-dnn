@@ -220,8 +220,8 @@ struct nesterov_momentum : public stateful_optimizer<1> {
  **/
 struct nesterov_momentum : public stateful_optimizer<1> {
  public:
-  nesterov_momentum() : alpha(float_t(0.01)), lambda(float_t(0)),
-                        mu(float_t(0.9)) {}
+  nesterov_momentum()
+    : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &dWprev = get<0>(W);
