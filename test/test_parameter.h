@@ -57,7 +57,7 @@ TEST(parameter, layer_adder) {
   auto parameters = fc.parameters();
 
   // check whether they were added in proper order
-  ASSERT_GE(parameters.size(), 2);
+  ASSERT_GE(parameters.size(), 2u);
   EXPECT_EQ(parameters[0]->type(), parameter_type::weight);
   EXPECT_EQ(parameters[1]->type(), parameter_type::bias);
 }

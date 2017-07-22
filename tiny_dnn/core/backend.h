@@ -40,7 +40,7 @@ inline std::ostream &operator<<(std::ostream &os, backend_t type) {
     case backend_t::libdnn: os << "LibDNN"; break;
     case backend_t::avx: os << "AVX"; break;
     case backend_t::opencl: os << "OpenCL"; break;
-    default: throw nn_error("Not supported ostream enum."); break;
+    default: throw nn_error("Not supported ostream enum: "); break;
   }
   return os;
 }
