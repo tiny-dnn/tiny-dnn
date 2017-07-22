@@ -233,7 +233,7 @@ class deconvolutional_layer : public layer {
       params_(std::move(other.params_)),
       backend_type_(std::move(other.backend_type_)),
       dws_(std::move(other.dws_)) {
-    init_backend(std::move(layer::engine()));
+    init_backend(std::move(layer::backend_type()));
   }
 
   ///< number of incoming connections for each output unit
@@ -283,6 +283,7 @@ class deconvolutional_layer : public layer {
     if (params_.pad_type == padding::same) {
       copy_and_pad_delta(dws_.curr_delta_padded, *in_grad[0]);
     }
+
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParams(&params_);
     bwd_ctx_.setParallelize(layer::parallelize());
@@ -472,7 +473,9 @@ class deconvolutional_layer : public layer {
   }
 
   void copy_and_unpad_output(const tensor_t &out) {
-    dws_.curr_out_buf_ =
+    core::deconv_layer_worker_specific_storage &dws = dws_;
+
+    dws.curr_out_buf_ =
       tensor_t(out.size(), vec_t(params_.out_unpadded.size(), 0));
     tensor_t *dst_tensor = &dws_.curr_out_buf_;
 

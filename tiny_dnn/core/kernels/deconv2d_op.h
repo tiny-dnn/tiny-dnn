@@ -22,6 +22,7 @@ class Conv2dTransposedOp : public core::OpKernel {
 
     // incomimg / outcoming data
     const Tensor<float_t> in_data(context.input(0));
+<<<<<<< 13a5a8180703c5da82bbab42cea5dbf0fb69dcbf
     Tensor<float_t> out_data(context.output(0));
 
     const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
@@ -37,6 +38,18 @@ class Conv2dTransposedOp : public core::OpKernel {
     kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,
                                   params.has_bias, context.parallelize());
     // TODO(Randl): Remove once layers forward and backward by themself.
+=======
+    const Tensor<float_t> weights(context.input(1));
+    const Tensor<float_t> bias =
+      params.has_bias ? Tensor<float_t>(context.input(2)) : Tensor<float_t>();
+    Tensor<float_t> out_data(context.output(0));
+
+    // initialize outputs
+    out_data.fill(0.0f);
+
+    kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,
+                                  params.has_bias, context.parallelize());
+>>>>>>> Add OpKernel classes for deconv2d layer and remove old kernels. (#805)
     context.output(0) = out_data.toTensor();
   }
 };
