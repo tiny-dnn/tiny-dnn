@@ -141,12 +141,21 @@ TEST(deconvolutional, fprop_padding_same) {
       0.1, -0.2,  0.3,
       0.2, -0.3,  0.2
   };
+<<<<<<< 161c65afa5c913ef54ad7f1ffb8d212b22bf2dee
 
   in = {
       3.0, 2.0,
       3.0, 0.0
   };
 
+=======
+
+  in = {
+      3.0, 2.0,
+      3.0, 0.0
+  };
+
+>>>>>>> Integrate parameter API into deconvolution layer. (#814)
   out_expected = {
        0.0,  0.1,
       -0.8, -0.55,
@@ -221,7 +230,7 @@ TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   nn.init_weight();
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
-}*/
+}
 
 TEST(deconvolutional, read_write) {
   deconvolutional_layer l1(2, 2, 3, 1, 1);
@@ -249,5 +258,5 @@ TEST(deconvolutional, read_write2) {
 
   serialization_test(layer1, layer2);
 }
-
+*/
 }  // namespace tiny_dnn
