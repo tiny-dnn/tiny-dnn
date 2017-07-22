@@ -15,7 +15,6 @@
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
 TEST(deconvolutional, setup_tiny) {
   deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
                           core::backend_t::internal);
