@@ -6,6 +6,9 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+
 #include "tiny_dnn/config.h"
 
 #ifdef CNN_WINDOWS

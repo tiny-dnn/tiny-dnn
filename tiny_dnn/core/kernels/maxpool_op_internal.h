@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <limits>
+#include <vector>
+
 namespace tiny_dnn {
 namespace kernels {
 

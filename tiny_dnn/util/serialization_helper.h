@@ -7,13 +7,14 @@
 */
 #pragma once
 
-#include <cereal/archives/json.hpp>
-#include <cereal/types/memory.hpp>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <typeindex>
+
+#include <cereal/archives/json.hpp>
+#include <cereal/types/memory.hpp>
 
 #include "tiny_dnn/layers/layers.h"
 #include "tiny_dnn/util/macro.h"
@@ -96,7 +97,6 @@ class serialization_helper {
   }
 
   serialization_helper() { register_layers(this); }
-
 };  // class serialization_helper
 
 template <typename OutputArchive>

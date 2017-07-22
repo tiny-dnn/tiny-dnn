@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <memory>
+
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
 #include "third_party/CLCudaAPI/clpp11.h"

@@ -12,11 +12,12 @@
 #include <limits>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
-#include "aligned_allocator.h"
-#include "nn_error.h"
 #include "tiny_dnn/config.h"
+#include "tiny_dnn/util/aligned_allocator.h"
+#include "tiny_dnn/util/nn_error.h"
 
 #ifdef CNN_USE_TBB
 #ifndef NOMINMAX
@@ -27,8 +28,8 @@
 #endif
 
 #if !defined(CNN_USE_OMP) && !defined(CNN_SINGLE_THREAD)
-#include <future>
-#include <thread>
+#include <future>  // NOLINT
+#include <thread>  // NOLINT
 #endif
 
 #if defined(CNN_USE_GCD) && !defined(CNN_SINGLE_THREAD)

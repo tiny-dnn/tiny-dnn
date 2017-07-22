@@ -16,9 +16,11 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/lossfunctions/loss_function.h"

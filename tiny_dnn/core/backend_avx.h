@@ -6,7 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <vector>
+
 #include "tiny_dnn/core/backend.h"
+#include "tiny_dnn/core/kernels/avx_deconv2d_back_kernel.h"
+#include "tiny_dnn/core/kernels/avx_deconv2d_kernel.h"
 
 namespace tiny_dnn {
 namespace core {
@@ -21,8 +26,11 @@ class avx_backend : public backend {
               std::function<void(const tensor_t &)> f1,
               std::function<void(const tensor_t &, tensor_t &)> f2,
               conv_layer_worker_specific_storage *ptr)
-    : /*params_c_(params),
-      conv_layer_worker_storage_(ptr),*/
+    :
+#if 0
+      params_c_(params),
+      conv_layer_worker_storage_(ptr),
+#endif
       copy_and_pad_input(f1),
       copy_and_unpad_delta(f2) {
     CNN_UNREFERENCED_PARAMETER(params);
@@ -36,8 +44,11 @@ class avx_backend : public backend {
     std::function<void(const tensor_t &, tensor_t &)> f2,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f3,
     conv_layer_worker_specific_storage *ptr)
-    : /*params_c_(params),
-      conv_layer_worker_storage_(ptr),*/
+    :
+#if 0
+      params_c_(params),
+      conv_layer_worker_storage_(ptr),
+#endif
       copy_and_pad_input(f1),
       copy_and_unpad_delta(f2) {
     CNN_UNREFERENCED_PARAMETER(params);
@@ -68,7 +79,11 @@ class avx_backend : public backend {
 #endif
 
   // fully_connected
-  avx_backend(fully_params *params) /*: params_f_(params)*/ {
+  explicit avx_backend(fully_params *params)
+#if 0
+    : params_f_(params)
+#endif
+  {
     CNN_UNREFERENCED_PARAMETER(params);
   }
 
@@ -76,7 +91,11 @@ class avx_backend : public backend {
   avx_backend(
     fully_params *params,
     std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
-    : /*params_f_(params),*/ backward_activation(f) {
+    :
+#if 0
+    params_f_(params),
+#endif
+      backward_activation(f) {
     CNN_UNREFERENCED_PARAMETER(params);
   }
 

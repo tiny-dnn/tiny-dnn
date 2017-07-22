@@ -6,6 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 
 #include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
@@ -36,7 +42,7 @@ class fully_connected_layer : public layer {
   fully_connected_layer(size_t in_features,
                         size_t out_features,
                         bool bias              = true,
-                        backend_t backend_type = core::default_engine())
+                        core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(1, 1, out_features, in_features,
                          parameter_type::weight, true);
@@ -120,12 +126,13 @@ class fully_connected_layer : public layer {
     params_.has_bias_ = has_bias;
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal || backend_type == backend_t::avx ||
-        backend_type == backend_t::nnpack) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::avx ||
+        backend_type == core::backend_t::nnpack) {
       kernel_fwd_.reset(new FullyConnectedOp(ctx));
       kernel_back_.reset(new FullyConnectedGradOp(ctx));
     } else {
@@ -135,13 +142,13 @@ class fully_connected_layer : public layer {
 
  private:
   /* The layer parameters */
-  fully_params params_;
+  core::fully_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;

@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/core/params/conv_params.h"
 #include "tiny_dnn/parameter.h"
@@ -18,7 +22,7 @@ class OpKernel;  // delared below
 
 class OpKernelConstruction {
  public:
-  explicit OpKernelConstruction() {}
+  OpKernelConstruction() {}
   explicit OpKernelConstruction(Device *device, Params *params)
     : device_(device), params_(params) {}
 
@@ -140,7 +144,7 @@ class OpKernelContext {
 
 class OpKernel {
  public:
-  explicit OpKernel() {}
+  OpKernel() {}
   explicit OpKernel(const OpKernelConstruction &context)
     : device_(context.device()), params_(context.params()) {}
 

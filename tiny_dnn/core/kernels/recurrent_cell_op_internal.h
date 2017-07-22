@@ -12,17 +12,18 @@
 namespace tiny_dnn {
 namespace kernels {
 
-inline void recurrent_cell_op_internal(const tensor_t &in_data,
-                                       const tensor_t &prev_h,
-                                       const vec_t &U,
-                                       const vec_t &W,
-                                       const vec_t &V,
-                                       const vec_t &bias,
-                                       const vec_t &c,
-                                       tensor_t &out_data,
-                                       tensor_t &out_h,
-                                       const recurrent_cell_params &params,
-                                       const bool layer_parallelize) {
+inline void recurrent_cell_op_internal(
+  const tensor_t &in_data,
+  const tensor_t &prev_h,
+  const vec_t &U,
+  const vec_t &W,
+  const vec_t &V,
+  const vec_t &bias,
+  const vec_t &c,
+  tensor_t &out_data,
+  tensor_t &out_h,
+  const core::recurrent_cell_params &params,
+  const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
     const vec_t &in         = in_data[sample];
     const vec_t &prev_state = prev_h[sample];
@@ -62,27 +63,27 @@ inline void recurrent_cell_op_internal(const tensor_t &in_data,
       }
       out[o] = out_;
     }
-
   });
 }
 
-inline void recurrent_cell_op_internal(const tensor_t &prev_out,
-                                       const tensor_t &prev_h,
-                                       const vec_t &U,
-                                       const vec_t &W,
-                                       const vec_t &V,
-                                       tensor_t &dU,
-                                       tensor_t &dW,
-                                       tensor_t &dV,
-                                       tensor_t &db,
-                                       tensor_t &dc,
-                                       const tensor_t &curr_output_delta,
-                                       tensor_t &curr_state_delta,
-                                       tensor_t &prev_output_delta,
-                                       tensor_t &prev_state_delta,
-                                       const tensor_t &out_h,
-                                       const recurrent_cell_params &params,
-                                       const bool layer_parallelize) {
+inline void recurrent_cell_op_internal(
+  const tensor_t &prev_out,
+  const tensor_t &prev_h,
+  const vec_t &U,
+  const vec_t &W,
+  const vec_t &V,
+  tensor_t &dU,
+  tensor_t &dW,
+  tensor_t &dV,
+  tensor_t &db,
+  tensor_t &dc,
+  const tensor_t &curr_output_delta,
+  tensor_t &curr_state_delta,
+  tensor_t &prev_output_delta,
+  tensor_t &prev_state_delta,
+  const tensor_t &out_h,
+  const core::recurrent_cell_params &params,
+  const bool layer_parallelize) {
   for (size_t sample = 0; sample < prev_out.size(); sample++) {
     const vec_t &prev_out_          = prev_out[sample];
     const vec_t &prev_h_            = prev_h[sample];
@@ -155,7 +156,6 @@ inline void recurrent_cell_op_internal(const tensor_t &prev_out,
                db_[o] += curr_state_delta_[o];
              }
            }
-
          });
   }
 }
