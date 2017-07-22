@@ -23,10 +23,12 @@ class Conv2dGradOp : public core::OpKernel {
     auto params = OpKernel::params_->conv();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> prev_out_t(context.input(0)),
-      weights_t(context.input(1));
-    Tensor<float_t> weights_grads_t(context.input_grad(1));
-    Tensor<float_t> bias_grads_t(context.input_grad(2));
+    const Tensor<float_t> prev_out_t(context.input(0));
+    const Tensor<float_t> weights_t(*(context.ith_parameter(0)->data()));
+    Tensor<float_t> weights_grads_t(*(context.ith_parameter(0)->grad()));
+    Tensor<float_t> bias_grads_t(params.has_bias
+                                   ? *(context.ith_parameter(1)->grad())
+                                   : Tensor<float_t>());
     Tensor<float_t> prev_delta_t(context.input_grad(0));
     Tensor<float_t> curr_delta_t(context.output_grad(0));
 
@@ -42,18 +44,17 @@ class Conv2dGradOp : public core::OpKernel {
       kernels::conv2d_op_internal(prev_out_t, weights_t, weights_grads_t,
                                   bias_grads_t, curr_delta_t, prev_delta_t,
                                   params, context.parallelize());
-      context.input_grad(0) = prev_delta_t.toTensor();
-      context.input_grad(1) = weights_grads_t.toTensor();
-      context.input_grad(2) = bias_grads_t.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::conv2d_op_internal(prev_out_t, weights_t, weights_grads_t,
                                   bias_grads_t, curr_delta_t, prev_delta_t,
                                   params, context.parallelize());
-      context.input_grad(0) = prev_delta_t.toTensor();
-      context.input_grad(1) = weights_grads_t.toTensor();
-      context.input_grad(2) = bias_grads_t.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
+    }
+    context.input_grad(0) = prev_delta_t.toTensor();
+    context.ith_parameter(0)->set_grad(weights_grads_t);
+    if (params.has_bias) {
+      context.ith_parameter(1)->set_grad(bias_grads_t);
     }
   }
 };

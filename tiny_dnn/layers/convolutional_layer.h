@@ -214,12 +214,17 @@ class convolutional_layer : public layer {
                       size_t in_channels,
                       size_t out_channels,
                       const core::connection_table &connection_table,
-                      padding pad_type             = padding::valid,
-                      bool has_bias                = true,
-                      size_t w_stride              = 1,
-                      size_t h_stride              = 1,
+                      padding pad_type       = padding::valid,
+                      bool has_bias          = true,
+                      size_t w_stride        = 1,
+                      size_t h_stride        = 1,
                       core::backend_t backend_type = core::default_engine())
-    : layer(std_input_order(has_bias), {vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
+    layer::add_parameter(out_channels, in_channels, window_height, window_width,
+                         parameter_type::weight, true);
+    if (has_bias) {
+      layer::add_parameter(1, 1, 1, out_channels, parameter_type::bias, true);
+    }
     conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                     window_height, out_channels, pad_type, has_bias, w_stride,
                     h_stride, connection_table);
@@ -266,6 +271,7 @@ class convolutional_layer : public layer {
     fwd_ctx_.set_in_out(fwd_in_data_, out_data);
     fwd_ctx_.setParallelize(layer::parallelize());
     fwd_ctx_.setEngine(layer::engine());
+    fwd_ctx_.setParameters(parameters());
 
     // launch convolutional kernel
     kernel_fwd_->compute(fwd_ctx_);
@@ -301,6 +307,7 @@ class convolutional_layer : public layer {
     bwd_ctx_.setParams(&params_);
     bwd_ctx_.setParallelize(layer::parallelize());
     bwd_ctx_.setEngine(layer::engine());
+    bwd_ctx_.setParameters(parameters());
 
     // launch convolutional kernel
     kernel_back_->compute(bwd_ctx_);
@@ -316,12 +323,7 @@ class convolutional_layer : public layer {
   }
 
   std::vector<index3d<size_t>> in_shape() const override {
-    if (params_.has_bias) {
-      return {params_.in, params_.weight,
-              index3d<size_t>(1, 1, params_.out.depth_)};
-    } else {
-      return {params_.in, params_.weight};
-    }
+    return {params_.in};
   }
 
   std::vector<index3d<size_t>> out_shape() const override {
