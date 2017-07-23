@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/core/params/params.h"
 
 namespace tiny_dnn {

@@ -22,7 +22,7 @@ namespace tiny_dnn {
 struct layer_params {
   bool parallellze = true;
 
-  backend_t backend_type = core::default_engine();
+  core::backend_t backend_type = core::default_engine();
 };
 
 struct fully_connected_layer_params : public layer_params {
@@ -39,18 +39,10 @@ class fully_connected_layer : public layer {
    * @param out_features [in] number of elements of the output
    * @param bias [in] whether to include additional bias to the layer
    **/
-<<<<<<< a101f7a64c4c893694f48d8f056d79446f34aeec
-  fully_connected_layer(size_t in_dim,
-                        size_t out_dim,
-                        bool has_bias                = true,
-                        core::backend_t backend_type = core::default_engine())
-    : layer(std_input_order(has_bias), {vector_type::data}) {
-    set_params(in_dim, out_dim, has_bias);
-=======
   fully_connected_layer(size_t in_features,
                         size_t out_features,
-                        bool bias              = true,
-                        backend_t backend_type = core::default_engine())
+                        bool bias                    = true,
+                        core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(1, 1, out_features, in_features,
                          parameter_type::weight, true);
@@ -58,7 +50,6 @@ class fully_connected_layer : public layer {
       layer::add_parameter(1, 1, 1, out_features, parameter_type::bias, true);
     }
     set_params(in_features, out_features, bias);
->>>>>>> Integrate parameter API into fully connected layer. (#803)
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
   }

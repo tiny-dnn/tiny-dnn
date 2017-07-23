@@ -214,10 +214,10 @@ class convolutional_layer : public layer {
                       size_t in_channels,
                       size_t out_channels,
                       const core::connection_table &connection_table,
-                      padding pad_type       = padding::valid,
-                      bool has_bias          = true,
-                      size_t w_stride        = 1,
-                      size_t h_stride        = 1,
+                      padding pad_type             = padding::valid,
+                      bool has_bias                = true,
+                      size_t w_stride              = 1,
+                      size_t h_stride              = 1,
                       core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(out_channels, in_channels, window_height, window_width,

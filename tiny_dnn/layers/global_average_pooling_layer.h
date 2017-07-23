@@ -37,10 +37,11 @@ class global_average_pooling_layer : public layer {
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels (depth)
    **/
-  global_average_pooling_layer(size_t in_width,
-                               size_t in_height,
-                               size_t in_channels,
-                               backend_t backend_type = core::default_engine())
+  global_average_pooling_layer(
+    size_t in_width,
+    size_t in_height,
+    size_t in_channels,
+    core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     set_global_avepool_params(shape3d(in_width, in_height, in_channels),
                               shape3d(in_channels, 1, 1));

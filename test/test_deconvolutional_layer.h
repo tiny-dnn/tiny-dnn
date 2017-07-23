@@ -166,7 +166,7 @@ TEST(deconvolutional, fprop_padding_same) {
   }
 }
 
-// TODO: check
+// TODO(karan): check
 /*
 TEST(deconvolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;

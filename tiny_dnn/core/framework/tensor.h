@@ -36,14 +36,14 @@ class BaseTensor {
   const virtual U *host_pend() const               = 0;
   virtual size_t host_offset(const size_t d) const = 0;
 
-  // TODO: Temporary
+  // TODO(Randl): Temporary
   virtual tensor_t toTensor() const = 0;
   virtual vec_t toVec() const       = 0;
 
   virtual U host_at(size_t index) const = 0;
   virtual U &host_at(size_t index)      = 0;
 
-  virtual ~BaseTensor(){};
+  virtual ~BaseTensor() {}
 };
 
 /**
@@ -67,7 +67,7 @@ class Tensor : public BaseTensor<U> {
    * Initializes a tensor from storage.
    * @return
    */
-  Tensor(Storage &&s) : storage_(std::move(s)){};
+  explicit Tensor(Storage &&s) : storage_(std::move(s)) {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a

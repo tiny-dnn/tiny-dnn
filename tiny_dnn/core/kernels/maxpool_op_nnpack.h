@@ -16,7 +16,7 @@ namespace kernels {
 template <typename S1, typename S2>
 inline void maxpool_op_nnpack(const Tensor<float, S1> &in_data,
                               Tensor<float, S2> &out_data,
-                              const maxpool_params &params) {
+                              const core::maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   NNPackInitializer::getInstance().initialize();
@@ -69,7 +69,7 @@ inline void maxpool_op_nnpack(const Tensor<float, S1> &in_data,
 template <typename S1, typename S2>
 inline void maxpool_op_nnpack(const Tensor<double, S1> &in_data,
                               Tensor<double, S2> &out_data,
-                              const maxpool_params &params) {
+                              const core::maxpool_params &params) {
   CNN_UNREFERENCED_PARAMETER(in_data);
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(params);

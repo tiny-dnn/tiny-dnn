@@ -10,8 +10,6 @@
 #include <vector>
 
 #include "tiny_dnn/core/backend.h"
-#include "tiny_dnn/core/kernels/deconv2d_grad_kernel_avx.h"
-#include "tiny_dnn/core/kernels/deconv2d_kernel_avx.h"
 
 namespace tiny_dnn {
 namespace core {
