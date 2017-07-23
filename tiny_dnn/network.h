@@ -489,7 +489,7 @@ class network {
       std::vector<vec_t *> weights     = current->weights();
       std::vector<tensor_t *> grads = current->weights_grads();
 
-      if ((*weights[0]).empty()) continue;
+      if (weights.empty() || (*weights[0]).empty()) continue;
       assert(weights.size() == grads.size());
 
       switch (mode) {
