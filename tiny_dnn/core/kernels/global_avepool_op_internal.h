@@ -17,7 +17,6 @@ inline void global_avepool_op_internal(
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
-
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
       for (size_t j = 0; j < pool_area; j++) {
@@ -36,7 +35,6 @@ inline void global_avepool_grad_op_internal(
   const core::global_avepool_params &params,
   const bool layer_parallelize) {
   for_i(layer_parallelize, prev_delta.shape()[0], [&](size_t sample) {
-
     const size_t pool_area = params.in.width_ * params.in.height_;
     for (size_t i = 0; i < params.in.depth_; i++) {
       const float_t pi = curr_delta.host_at(sample, i) / pool_area;

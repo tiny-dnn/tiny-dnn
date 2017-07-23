@@ -148,10 +148,10 @@ TEST(ave_pool, backward) {
 
   // clang-format off
   vec_t in = {
-      0, 1, 2, 3,
-      8, 7, 5, 6,
-      4, 3, 1, 2,
-      0,-1,-2,-3
+      0,  1,  2,  3,
+      8,  7,  5,  6,
+      4,  3,  1,  2,
+      0, -1, -2, -3
   };
 
   vec_t curr_delta = {

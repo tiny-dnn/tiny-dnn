@@ -17,7 +17,7 @@ inline void deconv2d_op_internal(const Tensor<float_t, S1> &in_data,
                                  const Tensor<float_t, S2> &weights,
                                  const Tensor<float_t, S3> &bias,
                                  Tensor<float_t, S4> &out_data,
-                                 const deconv_params &params,
+                                 const core::deconv_params &params,
                                  const bool &has_bias,
                                  const bool &parallelize) {
   size_t num_of_samples = in_data.shape()[0];
@@ -81,7 +81,7 @@ inline void deconv2d_op_internal(const Tensor<float_t, S1> &prev_out,
                                  Tensor<float_t, S4> &bias_grads,
                                  Tensor<float_t, S5> &curr_delta,
                                  Tensor<float_t, S6> &prev_delta,
-                                 const deconv_params &params,
+                                 const core::deconv_params &params,
                                  const bool &has_bias,
                                  const bool &parallelize) {
   const float_t *W = weights.host_pbegin();
@@ -163,7 +163,7 @@ inline void deconv2d_op_internal(const Tensor<float_t, S1> &prev_out,
       for (size_t outc = 0; outc < params.out.depth_; outc++) {
         size_t idx           = params.out.get_index(0, 0, outc);
         const float_t *delta = &curr_d_begin[idx];
-        // TODO: name
+        // TODO(Randl): name
         const float_t *deltaa = delta + params.out.width_ * params.out.height_;
         db[outc] += std::accumulate(delta, deltaa, float_t{0});
       }
