@@ -117,6 +117,7 @@ struct adam : public stateful_optimizer<2> {
       mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
       vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
+      // L2 norm based update rule
       W[i] -= alpha * (mt[i] / (float_t(1) - b1_t)) /
               std::sqrt((vt[i] / (float_t(1) - b2_t)) + eps);
     });
@@ -151,13 +152,14 @@ struct adamax : public stateful_optimizer<2> {
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &mt = get<0>(W);
-    vec_t &vt = get<1>(W);
+    vec_t &ut = get<1>(W);
 
-    for_i(parallelize, static_cast<int>(W.size()), [&](int i) {
+    for_i(parallelize, W.size(), [&](int i) {
       mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
-      vt[i] = std::max(b2 * vt[i], std::abs(dW[i]));
+      ut[i] = std::max(b2 * ut[i], std::abs(dW[i]));
 
-      W[i] -= alpha * (mt[i] / (float_t(1) - b1_t)) / (vt[i] + eps);
+      // Lp norm based update rule
+      W[i] -= (alpha / (1.0 - b1_t)) * (mt[i] / (ut[i] + eps));
     });
 
     b1_t *= b1;
