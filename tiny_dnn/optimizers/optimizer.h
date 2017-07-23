@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <unordered_map>
 
 #include "tiny_dnn/util/util.h"
