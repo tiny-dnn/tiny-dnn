@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/util.h"
@@ -33,7 +36,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
    * @param type         whether parameter is a weight or a bias
    * @param trainable    whether parameter will be updated while training
    */
-  // TODO: what is preferred order? probably, height and width first
+  // TODO(karan): what is preferred order? probably, height and width first
   Parameter(size_t out_channels,
             size_t in_channels,
             size_t height,
@@ -134,7 +137,6 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
 
   Tensor<float_t> data_;
   Tensor<float_t> grad_;
-
 };  // class parameter
 
 // todo (karandesai) : analyze performance between raw pointer and shared_ptr

@@ -391,7 +391,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt  = (out_area - headSize) / 8;
         double *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
-          // TODO: segfault here even though adresses are ok
+          // TODO(beru): segfault here even though adresses are ok
           _mm256_storeu_pd(&pa2[i * 8 + 0], b2);
           _mm256_storeu_pd(&pa2[i * 8 + 4], b2);
         }

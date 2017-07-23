@@ -102,7 +102,7 @@ TEST(ave_pool, forward) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -131,7 +131,7 @@ TEST(ave_pool, forward_stride) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -148,10 +148,10 @@ TEST(ave_pool, backward) {
 
   // clang-format off
   vec_t in = {
-      0, 1, 2, 3,
-      8, 7, 5, 6,
-      4, 3, 1, 2,
-      0,-1,-2,-3
+      0,  1,  2,  3,
+      8,  7,  5,  6,
+      4,  3,  1,  2,
+      0, -1, -2, -3
   };
 
   vec_t curr_delta = {
