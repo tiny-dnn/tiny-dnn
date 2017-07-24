@@ -101,7 +101,7 @@ TEST(ave_pool, forward) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -130,7 +130,7 @@ TEST(ave_pool, forward_stride) {
   l.bias_init(weight_init::constant(0.0));
   l.init_weight();
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
