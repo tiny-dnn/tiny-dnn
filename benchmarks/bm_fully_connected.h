@@ -16,7 +16,10 @@ namespace tiny_dnn {
 namespace benchmarks {
 
 void bm_fully_connected_internal(bm::State& state) {
-  Tensor<float_t> in_data({1, 5}), out_data({1, 3}), weights({15}), bias({3});
+  size_t in_size(state.range(0)), out_size(state.range(1));
+
+  Tensor<> in_data({1, in_size}), out_data({1, out_size});
+  Tensor<> weights({in_size * out_size}), bias({out_size});
 
   uniform_rand(in_data.host_begin(), in_data.host_end(), -1, 1);
   uniform_rand(weights.host_begin(), weights.host_end(), -1, 1);
@@ -29,7 +32,15 @@ void bm_fully_connected_internal(bm::State& state) {
   }
 }
 
-BENCHMARK(bm_fully_connected_internal);
+BENCHMARK(bm_fully_connected_internal)
+  ->Args({16, 4})
+  ->Args({64, 4})
+  ->Args({256, 4})
+  ->Args({1024, 4})
+  ->Args({1024, 16})
+  ->Args({1024, 64})
+  ->Args({1024, 256})
+  ->Args({1024, 1024});
 
 }  // namespace benchmarks
 }  // namespace tiny_dnn
