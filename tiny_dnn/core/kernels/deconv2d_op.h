@@ -36,21 +36,7 @@ class Conv2dTransposedOp : public core::OpKernel {
 
     kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,
                                   params.has_bias, context.parallelize());
-    // TODO(Randl): Remove once layers forward and backward by themself.
-    Tensor<float_t> out_data(context.output(0));
 
-    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
-    const Tensor<float_t> bias(params.has_bias
-                                 ? *(context.ith_parameter(1)->data())
-                                 : Tensor<float_t>());
-
-    // initialize outputs, pad first if unpadded already
-    // output will be unpadded after forward pass calculation
-    out_data.reshape({1, params.out.size()});
-    out_data.fill(0);
-
-    kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,
-                                  params.has_bias, context.parallelize());
     context.output(0) = out_data.toTensor();
   }
 };
