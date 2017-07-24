@@ -13,7 +13,7 @@ namespace tiny_dnn {
 namespace core {
 namespace kernels {
 
-// TODO: match structure with other kernels (op class, etc.)
+// TODO(Randl/Karan): match structure with other kernels (op class, etc.)
 template <typename S1, typename S2, typename S3, typename S4>
 inline void tiny_deconv2d_kernel(const Tensor<float_t, S1> &in_data,
                                  const Tensor<float_t, S2> &weights,

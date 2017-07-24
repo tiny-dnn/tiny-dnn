@@ -141,21 +141,12 @@ TEST(deconvolutional, fprop_padding_same) {
       0.1, -0.2,  0.3,
       0.2, -0.3,  0.2
   };
-<<<<<<< 161c65afa5c913ef54ad7f1ffb8d212b22bf2dee
 
   in = {
       3.0, 2.0,
       3.0, 0.0
   };
 
-=======
-
-  in = {
-      3.0, 2.0,
-      3.0, 0.0
-  };
-
->>>>>>> Integrate parameter API into deconvolution layer. (#814)
   out_expected = {
        0.0,  0.1,
       -0.8, -0.55,
@@ -220,7 +211,6 @@ TEST(deconvolutional, gradient_check4) {  // identity - mse
 }
 
 // TODO: check
-/*
 TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   network<sequential> nn;
 
