@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <unordered_map>
 
 #include "tiny_dnn/util/util.h"
@@ -112,16 +113,17 @@ struct adam : public stateful_optimizer<2> {
     vec_t &mt = get<0>(W);
     vec_t &vt = get<1>(W);
 
-    b1_t *= b1;
-    b2_t *= b2;
-
     for_i(parallelize, W.size(), [&](size_t i) {
       mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
       vt[i] = b2 * vt[i] + (float_t(1) - b2) * dW[i] * dW[i];
 
+      // L2 norm based update rule
       W[i] -= alpha * (mt[i] / (float_t(1) - b1_t)) /
               std::sqrt((vt[i] / (float_t(1) - b2_t)) + eps);
     });
+
+    b1_t *= b1;
+    b2_t *= b2;
   }
 
   float_t alpha;  // learning rate
@@ -129,6 +131,44 @@ struct adam : public stateful_optimizer<2> {
   float_t b2;     // decay term
   float_t b1_t;   // decay term power t
   float_t b2_t;   // decay term power t
+
+ private:
+  float_t eps;  // constant value to avoid zero-division
+};
+
+/**
+ * @brief [a new optimizer (2015)]
+ * @details [see Adam: A Method for Stochastic Optimization (Algorithm 2)
+ *               http://arxiv.org/abs/1412.6980]
+ *
+ */
+struct adamax : public stateful_optimizer<2> {
+  adamax()
+    : alpha(float_t(0.002)),
+      b1(float_t(0.9)),
+      b2(float_t(0.999)),
+      b1_t(b1),
+      eps(float_t(1e-8)) {}
+
+  void update(const vec_t &dW, vec_t &W, bool parallelize) {
+    vec_t &mt = get<0>(W);
+    vec_t &ut = get<1>(W);
+
+    for_i(parallelize, W.size(), [&](int i) {
+      mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
+      ut[i] = std::max(b2 * ut[i], std::abs(dW[i]));
+
+      // Lp norm based update rule
+      W[i] -= (alpha / (1.0 - b1_t)) * (mt[i] / (ut[i] + eps));
+    });
+
+    b1_t *= b1;
+  }
+
+  float_t alpha;  // learning rate
+  float_t b1;     // decay term
+  float_t b2;     // decay term
+  float_t b1_t;   // decay term power t
 
  private:
   float_t eps;  // constant value to avoid zero-division
