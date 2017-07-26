@@ -486,7 +486,7 @@ class network {
       if (current->weights().size() < 2) {
         continue;
       }
-      std::vector<vec_t *> weights     = current->weights();
+      std::vector<vec_t *> weights  = current->weights();
       std::vector<tensor_t *> grads = current->weights_grads();
 
       if (weights.empty() || (*weights[0]).empty()) continue;
@@ -495,7 +495,7 @@ class network {
       switch (mode) {
         case GRAD_CHECK_ALL:
           for (size_t i = 0; i < weights.size(); i++) {
-            vec_t &w = *weights[i];
+            vec_t &w     = *weights[i];
             tensor_t &dw = *grads[i];
             for (size_t j = 0; j < w.size(); j++) {
               if (!calc_delta<E>(in, v, w, dw, j, eps)) {
@@ -506,7 +506,7 @@ class network {
           break;
         case GRAD_CHECK_RANDOM:
           for (size_t i = 0; i < grads.size(); i++) {
-            vec_t &w = *weights[i];
+            vec_t &w     = *weights[i];
             tensor_t &dw = *grads[i];
             for (size_t j = 0; j < 10; j++) {
               if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
