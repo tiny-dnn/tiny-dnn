@@ -37,10 +37,11 @@ using namespace tiny_dnn::activation;
 #include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
 #include "test_quantized_deconvolutional_layer.h"
-#include "test_recurrent_cell_layer.h"
+// TODO(karandesa-96): enable once parameter api is ready
+// #include "test_recurrent_cell_layer.h"
 #include "test_slice_layer.h"
 // todo (karandesai) : fix after parameter integration
-//#include "test_target_cost.h"
+// #include "test_target_cost.h"
 #include "test_tensor.h"
 #include "test_optimizers.h"
 
