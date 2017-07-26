@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -9,6 +9,7 @@
 #ifndef XCONTAINER_HPP
 #define XCONTAINER_HPP
 
+#include <algorithm>
 #include <functional>
 #include <numeric>
 #include <stdexcept>
@@ -49,7 +50,6 @@ namespace xt
     template <class D>
     class xcontainer : public xiterable<D>
     {
-
     public:
 
         using derived_type = D;
@@ -85,7 +85,7 @@ namespace xt
 
         size_type size() const noexcept;
 
-        size_type dimension() const noexcept;
+        constexpr size_type dimension() const noexcept;
 
         const inner_shape_type& shape() const noexcept;
         const inner_strides_type& strides() const noexcept;
@@ -139,21 +139,18 @@ namespace xt
         template <class S>
         stepper stepper_begin(const S& shape) noexcept;
         template <class S>
-        stepper stepper_end(const S& shape) noexcept;
+        stepper stepper_end(const S& shape, layout_type l) noexcept;
 
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
         using container_iterator = typename container_type::iterator;
         using const_container_iterator = typename container_type::const_iterator;
 
-        container_iterator data_xbegin() noexcept;
-        const_container_iterator data_xbegin() const noexcept;
-
-        container_iterator data_xend() noexcept;
-        const_container_iterator data_xend() const noexcept;
+        reference data_element(size_type i);
+        const_reference data_element(size_type i) const;
 
     protected:
 
@@ -166,10 +163,18 @@ namespace xt
         xcontainer(xcontainer&&) = default;
         xcontainer& operator=(xcontainer&&) = default;
 
+        container_iterator data_xbegin() noexcept;
+        const_container_iterator data_xbegin() const noexcept;
+        container_iterator data_xend(layout_type l) noexcept;
+        const_container_iterator data_xend(layout_type l) const noexcept;
+
     private:
 
+        template <class C>
+        friend class xstepper;
+
         template <class It>
-        It data_xend_impl(It end) const noexcept;
+        It data_xend_impl(It end, layout_type l) const noexcept;
 
         inner_shape_type& mutable_shape();
         inner_strides_type& mutable_strides();
@@ -195,7 +200,6 @@ namespace xt
     template <class D, layout_type L>
     class xstrided_container : public xcontainer<D>
     {
-
     public:
 
         using base_type = xcontainer<D>;
@@ -260,9 +264,18 @@ namespace xt
 
     template <class D>
     template <class It>
-    inline It xcontainer<D>::data_xend_impl(It end) const noexcept
+    inline It xcontainer<D>::data_xend_impl(It end, layout_type l) const noexcept
     {
-        return strides().size() != 0 ? end - 1 + strides().back() : end;
+        if (dimension() == 0)
+        {
+            return end;
+        }
+        else
+        {
+            auto leading_stride = (l == layout_type::row_major ? strides().back() : strides().front());
+            leading_stride = std::max(leading_stride, typename inner_strides_type::value_type(1));
+            return end - 1 + leading_stride;
+        }
     }
 
     template <class D>
@@ -312,7 +325,7 @@ namespace xt
      * Returns the number of dimensions of the container.
      */
     template <class D>
-    inline auto xcontainer<D>::dimension() const noexcept -> size_type
+    inline constexpr auto xcontainer<D>::dimension() const noexcept -> size_type
     {
         return shape().size();
     }
@@ -420,7 +433,7 @@ namespace xt
      * Returns a reference to the element at the specified position in the container.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the container.
      */
     template <class D>
@@ -435,7 +448,7 @@ namespace xt
      * Returns a reference to the element at the specified position in the container.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the container.
      */
     template <class D>
@@ -663,15 +676,15 @@ namespace xt
     inline auto xcontainer<D>::stepper_begin(const S& shape) noexcept -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(static_cast<derived_type*>(this), data().begin(), offset);
+        return stepper(static_cast<derived_type*>(this), data_xbegin(), offset);
     }
 
     template <class D>
     template <class S>
-    inline auto xcontainer<D>::stepper_end(const S& shape) noexcept -> stepper
+    inline auto xcontainer<D>::stepper_end(const S& shape, layout_type l) noexcept -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(static_cast<derived_type*>(this), data_xend(), offset);
+        return stepper(static_cast<derived_type*>(this), data_xend(l), offset);
     }
 
     template <class D>
@@ -679,15 +692,15 @@ namespace xt
     inline auto xcontainer<D>::stepper_begin(const S& shape) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(static_cast<const derived_type*>(this), data().begin(), offset);
+        return const_stepper(static_cast<const derived_type*>(this), data_xbegin(), offset);
     }
 
     template <class D>
     template <class S>
-    inline auto xcontainer<D>::stepper_end(const S& shape) const noexcept -> const_stepper
+    inline auto xcontainer<D>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(static_cast<const derived_type*>(this), data_xend(), offset);
+        return const_stepper(static_cast<const derived_type*>(this), data_xend(l), offset);
     }
 
     template <class D>
@@ -703,15 +716,27 @@ namespace xt
     }
 
     template <class D>
-    inline auto xcontainer<D>::data_xend() noexcept -> container_iterator
+    inline auto xcontainer<D>::data_xend(layout_type l) noexcept -> container_iterator
     {
-        return data_xend_impl(data().end());
+        return data_xend_impl(data().end(), l);
     }
 
     template <class D>
-    inline auto xcontainer<D>::data_xend() const noexcept -> const_container_iterator
+    inline auto xcontainer<D>::data_xend(layout_type l) const noexcept -> const_container_iterator
     {
-        return data_xend_impl(data().end());
+        return data_xend_impl(data().end(), l);
+    }
+
+    template <class D>
+    inline auto xcontainer<D>::data_element(size_type i) -> reference
+    {
+        return data()[i];
+    }
+
+    template <class D>
+    inline auto xcontainer<D>::data_element(size_type i) const -> const_reference
+    {
+        return data()[i];
     }
 
     /*************************************

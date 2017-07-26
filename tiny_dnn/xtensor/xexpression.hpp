@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -39,13 +39,12 @@ namespace xt
     template <class D>
     class xexpression
     {
-
     public:
 
         using derived_type = D;
 
         derived_type& derived_cast() & noexcept;
-        const derived_type& derived_cast() const & noexcept;
+        const derived_type& derived_cast() const& noexcept;
         derived_type derived_cast() && noexcept;
 
     protected:
@@ -90,7 +89,7 @@ namespace xt
      * Returns a constant reference to the actual derived type of the xexpression.
      */
     template <class D>
-    inline auto xexpression<D>::derived_cast() && noexcept->derived_type
+    inline auto xexpression<D>::derived_cast() && noexcept -> derived_type
     {
         return *static_cast<derived_type*>(this);
     }

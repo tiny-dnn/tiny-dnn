@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -39,9 +39,9 @@ namespace xt
     template <class F, class CT>
     class xfunctorview;
 
-    /*****************************
+    /*******************************
      * xfunctorview_temporary_type *
-     *****************************/
+     *******************************/
 
     namespace detail
     {
@@ -253,11 +253,11 @@ namespace xt
         template <class S>
         stepper stepper_begin(const S& shape) noexcept;
         template <class S>
-        stepper stepper_end(const S& shape) noexcept;
+        stepper stepper_end(const S& shape, layout_type l) noexcept;
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
     private:
 
@@ -265,7 +265,7 @@ namespace xt
         functor_type m_functor;
 
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
-        void assign_temporary_impl(temporary_type& tmp);
+        void assign_temporary_impl(temporary_type&& tmp);
         friend class xview_semantic<xfunctorview<F, CT>>;
     };
 
@@ -362,7 +362,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type);
 
         bool equal(const xfunctor_stepper& rhs) const;
 
@@ -447,7 +447,7 @@ namespace xt
     }
 
     template <class F, class CT>
-    inline void xfunctorview<F, CT>::assign_temporary_impl(temporary_type& tmp)
+    inline void xfunctorview<F, CT>::assign_temporary_impl(temporary_type&& tmp)
     {
         std::copy(tmp.cbegin(), tmp.cend(), xbegin());
     }
@@ -530,7 +530,7 @@ namespace xt
      * Returns a reference to the element at the specified position in the expression.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the function.
      */
     template <class F, class CT>
@@ -575,7 +575,7 @@ namespace xt
      * Returns a constant reference to the element at the specified position in the expression.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the function.
      */
     template <class F, class CT>
@@ -1068,9 +1068,9 @@ namespace xt
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) noexcept -> stepper
+    inline auto xfunctorview<F, CT>::stepper_end(const S& shape, layout_type l) noexcept -> stepper
     {
-        return stepper(m_e.stepper_end(shape), &m_functor);
+        return stepper(m_e.stepper_end(shape, l), &m_functor);
     }
 
     template <class F, class CT>
@@ -1083,10 +1083,10 @@ namespace xt
 
     template <class F, class CT>
     template <class S>
-    inline auto xfunctorview<F, CT>::stepper_end(const S& shape) const noexcept -> const_stepper
+    inline auto xfunctorview<F, CT>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
         const xexpression_type& const_m_e = m_e;
-        return const_stepper(const_m_e.stepper_end(shape), &m_functor);
+        return const_stepper(const_m_e.stepper_end(shape, l), &m_functor);
     }
 
     /************************************
@@ -1193,9 +1193,9 @@ namespace xt
     }
 
     template <class F, class ST>
-    void xfunctor_stepper<F, ST>::to_end()
+    void xfunctor_stepper<F, ST>::to_end(layout_type l)
     {
-        m_stepper.to_end();
+        m_stepper.to_end(l);
     }
 
     template <class F, class ST>

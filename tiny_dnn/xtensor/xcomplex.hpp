@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -130,15 +130,17 @@ namespace xt
         return detail::complex_expression_helper<is_xexpression<std::decay_t<E>>::value>::imag(std::forward<E>(e));
     }
 
-#define UNARY_COMPLEX_FUNCTOR(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using argument_type = T;\
-        using result_type = decltype(std::NAME(std::declval<T>()));\
-        constexpr result_type operator()(const T& t) const {\
-            using std::NAME;\
-            return NAME(t);\
-        }\
+#define UNARY_COMPLEX_FUNCTOR(NAME)                                 \
+    template <class T>                                              \
+    struct NAME##_fun                                               \
+    {                                                               \
+        using argument_type = T;                                    \
+        using result_type = decltype(std::NAME(std::declval<T>())); \
+        constexpr result_type operator()(const T& t) const          \
+        {                                                           \
+            using std::NAME;                                        \
+            return NAME(t);                                         \
+        }                                                           \
     }
 
     namespace math
@@ -148,7 +150,7 @@ namespace xt
 
         namespace detail
         {
-            // libc++ (OSX) conj is unfortunately broken and returns 
+            // libc++ (OSX) conj is unfortunately broken and returns
             // std::complex<T> instead of T.
             template <class T>
             constexpr T conj(const T& c)
