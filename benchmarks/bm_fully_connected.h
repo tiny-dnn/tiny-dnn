@@ -19,6 +19,13 @@ const size_t BM_CONST_SAMPLE_SIZE = 1;
 namespace tiny_dnn {
 namespace benchmarks {
 
+/**
+ * Benchmark fixture for Fully Connected Op kernel forward on any backend.
+ * Used for both single threaded as well as parallelized op kernel.
+ *
+ * Performs uniform random initialization of all tensors depending on the
+ * provided size.
+ */
 class BM_FullyConnectedOp : public bm::Fixture {
  public:
   void SetUp(const bm::State& state) {
@@ -43,67 +50,10 @@ class BM_FullyConnectedOp : public bm::Fixture {
   Tensor<> in_data, out_data, weights, bias;
 };
 
-BENCHMARK_DEFINE_F(BM_FullyConnectedOp, internal)(bm::State& state) {
-  while (state.KeepRunning()) {
-    kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
-                                         false);
-  }
-}
-
-BENCHMARK_REGISTER_F(FullyConnectedOp, internal)
-  ->Args({16, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({64, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 16, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 64, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 256, BM_CONST_SAMPLE_SIZE});
-
-BENCHMARK_DEFINE_F(BM_FullyConnectedOp, internal_parallel)(bm::State& state) {
-  while (state.KeepRunning()) {
-    kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
-                                         true);
-  }
-}
-
-BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal_parallel)
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 1})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 2})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 4})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 8})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 16})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 32});
-
-#ifdef CNN_USE_AVX
-BENCHMARK_DEFINE_F(BM_FullyConnectedOp, avx)(bm::State& state) {
-  while (state.KeepRunning()) {
-    kernels::fully_connected_op_avx(in_data, weights, bias, out_data, false);
-  }
-}
-
-BENCHMARK_REGISTER_F(FullyConnectedOp, avx)
-  ->Args({16, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({64, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 16, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 64, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 256, BM_CONST_SAMPLE_SIZE});
-
-BENCHMARK_DEFINE_F(BM_FullyConnectedOp, avx_parallel)(bm::State& state) {
-  while (state.KeepRunning()) {
-    kernels::fully_connected_op_avx(in_data, weights, bias, out_data, true);
-  }
-}
-
-BENCHMARK_REGISTER_F(BM_FullyConnectedOp, avx_parallel)
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 1})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 2})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 4})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 8})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 16})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 32});
-
-#endif
-
+/**
+ * Benchmark fixture for Fully Connected Op kernel backward on any backend.
+ * Similar as the forward fixture.
+ */
 class BM_FullyConnectedGradOp : public bm::Fixture {
  public:
   void SetUp(const bm::State& state) {
@@ -133,6 +83,40 @@ class BM_FullyConnectedGradOp : public bm::Fixture {
   Tensor<> weights, weights_grads, bias_grads;
 };
 
+/** Keeping same number of samples in single threaded benchmarks. */
+void args_with_same_samples(bm::internal::Benchmark* b) {
+  b->Args({16, 4, BM_CONST_SAMPLE_SIZE})
+    ->Args({64, 4, BM_CONST_SAMPLE_SIZE})
+    ->Args({256, 4, BM_CONST_SAMPLE_SIZE})
+    ->Args({256, 16, BM_CONST_SAMPLE_SIZE})
+    ->Args({256, 64, BM_CONST_SAMPLE_SIZE})
+    ->Args({256, 256, BM_CONST_SAMPLE_SIZE});
+}
+
+/** Keeping same input output size in multi threaded benchmarks. */
+void args_with_same_in_out(bm::internal::Benchmark* b) {
+  b->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 1})
+    ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 2})
+    ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 4})
+    ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 8})
+    ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 16})
+    ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 32});
+}
+
+BENCHMARK_DEFINE_F(BM_FullyConnectedOp, internal)(bm::State& state) {
+  while (state.KeepRunning()) {
+    kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
+                                         false);
+  }
+}
+
+BENCHMARK_DEFINE_F(BM_FullyConnectedOp, internal_parallel)(bm::State& state) {
+  while (state.KeepRunning()) {
+    kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
+                                         true);
+  }
+}
+
 BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, internal)(bm::State& state) {
   while (state.KeepRunning()) {
     kernels::fully_connected_op_internal(prev_out, weights, weights_grads,
@@ -140,14 +124,6 @@ BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, internal)(bm::State& state) {
                                          false);
   }
 }
-
-BENCHMARK_REGISTER_F(FullyConnectedGradOp, internal)
-  ->Args({16, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({64, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 16, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 64, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 256, BM_CONST_SAMPLE_SIZE});
 
 BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, internal_parallel)
 (bm::State& state) {
@@ -158,15 +134,19 @@ BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, internal_parallel)
   }
 }
 
-BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, internal_parallel)
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 1})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 2})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 4})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 8})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 16})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 32});
-
 #ifdef CNN_USE_AVX
+BENCHMARK_DEFINE_F(BM_FullyConnectedOp, avx)(bm::State& state) {
+  while (state.KeepRunning()) {
+    kernels::fully_connected_op_avx(in_data, weights, bias, out_data, false);
+  }
+}
+
+BENCHMARK_DEFINE_F(BM_FullyConnectedOp, avx_parallel)(bm::State& state) {
+  while (state.KeepRunning()) {
+    kernels::fully_connected_op_avx(in_data, weights, bias, out_data, true);
+  }
+}
+
 BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, avx)(bm::State& state) {
   while (state.KeepRunning()) {
     kernels::fully_connected_op_avx(prev_out, weights, weights_grads,
@@ -174,28 +154,38 @@ BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, avx)(bm::State& state) {
   }
 }
 
-BENCHMARK_REGISTER_F(FullyConnectedGradOp, avx)
-  ->Args({16, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({64, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 4, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 16, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 64, BM_CONST_SAMPLE_SIZE})
-  ->Args({256, 256, BM_CONST_SAMPLE_SIZE});
-
 BENCHMARK_DEFINE_F(BM_FullyConnectedGradOp, avx_parallel)(bm::State& state) {
   while (state.KeepRunning()) {
     kernels::fully_connected_op_avx(prev_out, weights, weights_grads,
                                     bias_grads, curr_delta, prev_delta, true);
   }
 }
+#endif
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal)
+  ->Apply(args_with_same_samples);
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal_parallel)
+  ->Apply(args_with_same_in_out);
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, internal)
+  ->Apply(args_with_same_samples);
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, internal_parallel)
+  ->Apply(args_with_same_in_out);
+
+#ifdef CNN_USE_AVX
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal)
+  ->Apply(args_with_same_samples);
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal_parallel)
+  ->Apply(args_with_same_in_out);
+
+BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, avx)
+  ->Apply(args_with_same_samples);
 
 BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, avx_parallel)
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 1})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 2})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 4})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 8})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 16})
-  ->Args({BM_CONST_IN_SIZE, BM_CONST_OUT_SIZE, 32});
+  ->Apply(args_with_same_in_out);
 #endif
 
 }  // namespace benchmarks
