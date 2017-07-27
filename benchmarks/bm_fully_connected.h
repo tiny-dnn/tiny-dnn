@@ -175,10 +175,9 @@ BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, internal_parallel)
   ->Apply(args_with_same_in_out);
 
 #ifdef CNN_USE_AVX
-BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal)
-  ->Apply(args_with_same_samples);
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, avx)->Apply(args_with_same_samples);
 
-BENCHMARK_REGISTER_F(BM_FullyConnectedOp, internal_parallel)
+BENCHMARK_REGISTER_F(BM_FullyConnectedOp, avx_parallel)
   ->Apply(args_with_same_in_out);
 
 BENCHMARK_REGISTER_F(BM_FullyConnectedGradOp, avx)
