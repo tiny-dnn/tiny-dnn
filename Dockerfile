@@ -10,6 +10,7 @@ RUN apt-get install -y \
     build-essential    \
     cmake              \
     python-pip         \
+    ocl-icd-opencl-dev \
     git
 
 # Setup software directories
@@ -44,3 +45,8 @@ RUN cd /software && \
     git clone https://github.com/tiny-dnn/tiny-dnn.git && \
     cd /software/tiny-dnn && \
     git submodule update --init
+
+# Build tiny-dnn
+RUN cd /software/tiny-dnn && \
+    cmake -DBUILD_TESTS=On -DUSE_OPENCL=On -Bbuild -H. && \
+    cmake --build build
