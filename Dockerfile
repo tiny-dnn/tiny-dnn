@@ -28,8 +28,8 @@ RUN cd /software && \
     cd /software/tiny-dnn && \
     git submodule update --init
 
-# Build tiny-dnn
+# Build tiny-dnn with OpenCL and LibDNN support
 RUN cd /software/tiny-dnn && \
     mkdir build && \
-    cmake -DBUILD_TESTS=On -DBUILD_OPENCL=On -DUSE_LIBDNN=On -Bbuild -H. && \
+    cmake -DBUILD_TESTS=On -DUSE_OPENCL=On -DUSE_LIBDNN=On -Bbuild -H. && \
     cmake --build build
