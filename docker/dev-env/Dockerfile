@@ -26,25 +26,3 @@ RUN apt-get install -y    \
     clang-format-4.0
 
 RUN pip install cpplint
- 
-# configure and build NNPACK
-
-RUN apt-get install ninja-build
-
-RUN pip install --upgrade setuptools && \
-    pip install wheel && \
-    pip install ninja-syntax
-
-RUN pip install --upgrade git+https://github.com/tiny-dnn/PeachPy
-RUN pip install --upgrade git+https://github.com/tiny-dnn/confu
-
-WORKDIR /opt
-RUN git clone https://github.com/tiny-dnn/NNPACK.git && \
-    cd NNPACK && \
-    confu setup && \
-    python ./configure.py && \
-    ninja
-
-
-# TODO(edgarriba): install OpenCL && CUDA
-# TODO(edgarriba): configure properly libdnn
