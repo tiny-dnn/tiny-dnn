@@ -1,17 +1,27 @@
 sudo: true
 dist: trusty
 
+env:
+  - DOCKER_IMG=tinydnn/tinydnn
+
+
 jobs:
   include:
-    - stage: build docker image
-      script:
-      - docker pull tinydnn/tinydnn
-      - docker images
+    - stage: lints
+      env:
+        - RUN_LINTS=ON
+      script: ./travis_script.sh
     - stage: test
-      script:
-      - docker run --rm tinydnn/tinydnn echo "hello world !"
-    - stage: test lints
-      script:
-      - docker run --rm tinydnn/tinydnn
-      - mkdir build && cd build && cmake ..
-      - make test_lints
+      os:
+        - linux
+        - osx
+      env:
+        - BUILD_TESTS=ON
+      script: ./travis_script.sh
+    - stage: examples
+      env:
+        - BUILD_EXAMPLES=ON
+      script: ./travis_script.sh
+
+cache:
+  - docker
