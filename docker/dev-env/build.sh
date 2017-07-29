@@ -1,3 +1,3 @@
 #!/bin/bash
 
-docker build -t tinydnn/dev-env .
+docker build -t tinydnn/tinydnn .
