@@ -1,11 +1,6 @@
-FROM ubuntu:17.04
+FROM tinydnn/tinydnn:dev-ubuntu17.04
 
 MAINTAINER Edgar Riba <edgar.riba@gmail.com>
-
-# install basic stuff
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python-setuptools
 
 # configure and build NNPACK
 
