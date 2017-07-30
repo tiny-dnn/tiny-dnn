@@ -79,12 +79,12 @@ class Tensor : public BaseTensor<U> {
   explicit Tensor(std::vector<size_t> const &shape) : storage_(shape) {}
 
   /**
-    * Constructor that accepts an initializer list of shape and create a
-    * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
-    * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
-    * @param shape array containing N integers, sizes of dimensions
-    * @return
-    */
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
+   * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
+   * @param shape array containing N integers, sizes of dimensions
+   * @return
+   */
   explicit Tensor(std::initializer_list<size_t> const &shape)
     : storage_(shape) {}
 

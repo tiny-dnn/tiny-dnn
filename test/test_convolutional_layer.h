@@ -73,10 +73,37 @@ class tensor_buf {
   std::vector<tensor_t *> &in_buf() { return in_ptr_; }
   std::vector<tensor_t *> &out_buf() { return out_ptr_; }
 
+  friend std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer);
+
  private:
   std::vector<tensor_t> in_data_, out_data_;
   std::vector<tensor_t *> in_ptr_, out_ptr_;
 };
+
+/**
+ * Print tensor buffer. May be useful for tests
+ * @param out
+ * @param buffer
+ * @return
+ */
+std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer) {
+  out << "In data:" << std::endl;
+  for (auto &ten : buffer.in_data_) {
+    out << "Tensor" << std::endl;
+    for (auto &vec : ten)
+      for (auto &n : vec) out << n << " ";
+    out << std::endl << std::endl;
+  }
+  out << std::endl;
+  out << "Out data:" << std::endl;
+  for (auto &ten : buffer.out_data_) {
+    out << "Tensor" << std::endl;
+    for (auto &vec : ten)
+      for (auto &n : vec) out << n << " ";
+    out << std::endl << std::endl;
+  }
+  return out;
+}
 
 TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);

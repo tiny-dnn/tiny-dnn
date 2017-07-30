@@ -49,8 +49,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   auto a_begin               = a.host_pbegin();
   auto bias_begin            = bias.host_pbegin();
   const float *weights_begin = W.host_pbegin();
-  const float *pw            = W.host_pbegin();
-  const float *in_begin      = in.host_pbegin();
+  // const float *pw            = W.host_pbegin();
+  const float *in_begin = in.host_pbegin();
 
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
