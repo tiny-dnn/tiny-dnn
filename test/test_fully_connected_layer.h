@@ -190,8 +190,8 @@ TEST(fully_connected, gradient_check) {
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration later
- * uncomment after fixing
+/* todo (karandesai) : deal with serialization after parameter integration
+ * later uncomment after fixing
 TEST(fully_connected, read_write) {
   fully_connected_layer l1(100, 100);
   fully_connected_layer l2(100, 100);

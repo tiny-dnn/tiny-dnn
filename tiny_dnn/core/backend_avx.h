@@ -177,6 +177,7 @@ class avx_backend : public backend {
   backend_t type() const override { return backend_t::avx; }
 
  private:
+  // TODO: unused?
   deconv_params *params_d_;
   deconv_layer_worker_specific_storage *deconv_layer_worker_storage_;
 #if 0

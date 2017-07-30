@@ -30,6 +30,7 @@ class random_generator {
  private:
   // avoid gen_(0) for MSVC known issue
   // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+  // TODO(Randl): real random?
   random_generator() : gen_(1) {}
   std::mt19937 gen_;
 };
