@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -121,7 +121,6 @@ namespace xt
     class xfunction : public xexpression<xfunction<F, R, CT...>>,
                       public xconst_iterable<xfunction<F, R, CT...>>
     {
-
     public:
 
         using self_type = xfunction<F, R, CT...>;
@@ -187,7 +186,9 @@ namespace xt
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
+
+        const_reference data_element(size_type i) const;
 
     private:
 
@@ -199,6 +200,9 @@ namespace xt
 
         template <std::size_t... I, class It>
         const_reference element_access_impl(std::index_sequence<I...>, It first, It last) const;
+
+        template <std::size_t... I>
+        const_reference data_element_impl(std::index_sequence<I...>, size_type i) const;
 
         template <class Func, std::size_t... I>
         const_stepper build_stepper(Func&& f, std::index_sequence<I...>) const noexcept;
@@ -257,7 +261,6 @@ namespace xt
     template <class F, class R, class... CT>
     class xfunction_iterator
     {
-
     public:
 
         using self_type = xfunction_iterator<F, R, CT...>;
@@ -307,7 +310,6 @@ namespace xt
     template <class F, class R, class... CT>
     class xfunction_stepper
     {
-
     public:
 
         using self_type = xfunction_stepper<F, R, CT...>;
@@ -331,7 +333,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type l);
 
         reference operator*() const;
 
@@ -457,7 +459,7 @@ namespace xt
      * Returns a constant reference to the element at the specified position in the function.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the container.
      */
     template <class F, class R, class... CT>
@@ -601,10 +603,16 @@ namespace xt
 
     template <class F, class R, class... CT>
     template <class S>
-    inline auto xfunction<F, R, CT...>::stepper_end(const S& shape) const noexcept -> const_stepper
+    inline auto xfunction<F, R, CT...>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
-        auto f = [&shape](const auto& e) noexcept { return e.stepper_end(shape); };
+        auto f = [&shape, l](const auto& e) noexcept { return e.stepper_end(shape, l); };
         return build_stepper(f, std::make_index_sequence<sizeof...(CT)>());
+    }
+
+    template <class F, class R, class... CT>
+    inline auto xfunction<F, R, CT...>::data_element(size_type i) const -> const_reference
+    {
+        return data_element_impl(std::make_index_sequence<sizeof...(CT)>(), i);
     }
 
     template <class F, class R, class... CT>
@@ -626,6 +634,13 @@ namespace xt
     inline auto xfunction<F, R, CT...>::element_access_impl(std::index_sequence<I...>, It first, It last) const -> const_reference
     {
         return m_f((std::get<I>(m_e).element(first, last))...);
+    }
+
+    template <class F, class R, class... CT>
+    template <std::size_t... I>
+    inline auto xfunction<F, R, CT...>::data_element_impl(std::index_sequence<I...>, size_type i) const ->const_reference
+    {
+        return m_f((std::get<I>(m_e).data_element(i))...);
     }
 
     template <class F, class R, class... CT>
@@ -772,9 +787,9 @@ namespace xt
     }
 
     template <class F, class R, class... CT>
-    inline void xfunction_stepper<F, R, CT...>::to_end()
+    inline void xfunction_stepper<F, R, CT...>::to_end(layout_type l)
     {
-        auto f = [](auto& it) { it.to_end(); };
+        auto f = [l](auto& it) { it.to_end(l); };
         for_each(f, m_it);
     }
 

@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -25,18 +25,18 @@ namespace xt
     template <class T>
     struct numeric_constants
     {
-        static constexpr T PI =         3.141592653589793238463;
-        static constexpr T PI_2 =       1.57079632679489661923;
-        static constexpr T PI_4 =       0.785398163397448309616;
-        static constexpr T D_1_PI =     0.318309886183790671538;
-        static constexpr T D_2_PI =     0.636619772367581343076;
+        static constexpr T PI = 3.141592653589793238463;
+        static constexpr T PI_2 = 1.57079632679489661923;
+        static constexpr T PI_4 = 0.785398163397448309616;
+        static constexpr T D_1_PI = 0.318309886183790671538;
+        static constexpr T D_2_PI = 0.636619772367581343076;
         static constexpr T D_2_SQRTPI = 1.12837916709551257390;
-        static constexpr T SQRT2 =      1.41421356237309504880;
-        static constexpr T SQRT1_2 =    0.707106781186547524401;
-        static constexpr T E =          2.71828182845904523536;
-        static constexpr T LOG2E =      1.44269504088896340736;
-        static constexpr T LOG10E =     0.434294481903251827651;
-        static constexpr T LN2 =        0.693147180559945309417;
+        static constexpr T SQRT2 = 1.41421356237309504880;
+        static constexpr T SQRT1_2 = 0.707106781186547524401;
+        static constexpr T E = 2.71828182845904523536;
+        static constexpr T LOG2E = 1.44269504088896340736;
+        static constexpr T LOG10E = 0.434294481903251827651;
+        static constexpr T LN2 = 0.693147180559945309417;
     };
 
     /***********
@@ -51,62 +51,72 @@ namespace xt
             using type = bool;
         };
     }
-#define UNARY_MATH_FUNCTOR(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using argument_type = T;\
-        using result_type = T;\
-        constexpr T operator()(const T& arg) const {\
-            using std::NAME;\
-            return NAME(arg);\
-        }\
+#define UNARY_MATH_FUNCTOR(NAME)                   \
+    template <class T>                             \
+    struct NAME##_fun                              \
+    {                                              \
+        using argument_type = T;                   \
+        using result_type = T;                     \
+        constexpr T operator()(const T& arg) const \
+        {                                          \
+            using std::NAME;                       \
+            return NAME(arg);                      \
+        }                                          \
     }
 
-#define UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using argument_type = T;\
-        using result_type = complex_value_type_t<T>;\
-        constexpr result_type operator()(const T& arg) const {\
-            using std::NAME;\
-            return NAME(arg);\
-        }\
+#define UNARY_MATH_FUNCTOR_COMPLEX_REDUCING(NAME)            \
+    template <class T>                                       \
+    struct NAME##_fun                                        \
+    {                                                        \
+        using argument_type = T;                             \
+        using result_type = complex_value_type_t<T>;         \
+        constexpr result_type operator()(const T& arg) const \
+        {                                                    \
+            using std::NAME;                                 \
+            return NAME(arg);                                \
+        }                                                    \
     }
 
-#define BINARY_MATH_FUNCTOR(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using first_argument_type = T;\
-        using second_argument_type = T;\
-        using result_type = T;\
-        constexpr T operator()(const T& arg1, const T& arg2) const {\
-            using std::NAME;\
-            return NAME(arg1, arg2);\
-        }\
+#define BINARY_MATH_FUNCTOR(NAME)                                  \
+    template <class T>                                             \
+    struct NAME##_fun                                              \
+    {                                                              \
+        using first_argument_type = T;                             \
+        using second_argument_type = T;                            \
+        using result_type = T;                                     \
+        constexpr T operator()(const T& arg1, const T& arg2) const \
+        {                                                          \
+            using std::NAME;                                       \
+            return NAME(arg1, arg2);                               \
+        }                                                          \
     }
 
-#define TERNARY_MATH_FUNCTOR(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using first_argument_type = T;\
-        using second_argument_type = T;\
-        using third_argument_type = T;\
-        using result_type = T;\
-        constexpr T operator()(const T& arg1, const T& arg2, const T& arg3) const {\
-            using std::NAME;\
-            return NAME(arg1, arg2, arg3);\
-        }\
+#define TERNARY_MATH_FUNCTOR(NAME)                                                \
+    template <class T>                                                            \
+    struct NAME##_fun                                                             \
+    {                                                                             \
+        using first_argument_type = T;                                            \
+        using second_argument_type = T;                                           \
+        using third_argument_type = T;                                            \
+        using result_type = T;                                                    \
+        constexpr T operator()(const T& arg1, const T& arg2, const T& arg3) const \
+        {                                                                         \
+            using std::NAME;                                                      \
+            return NAME(arg1, arg2, arg3);                                        \
+        }                                                                         \
     }
 
-#define UNARY_BOOL_FUNCTOR(NAME)\
-    template <class T>\
-    struct NAME##_fun {\
-        using argument_type = T;\
-        using result_type = typename xt::detail::bool_functor_return_type<T>::type;\
-        constexpr result_type operator()(const T& arg) const {\
-            using std::NAME;\
-            return NAME(arg);\
-        }\
+#define UNARY_BOOL_FUNCTOR(NAME)                                                    \
+    template <class T>                                                              \
+    struct NAME##_fun                                                               \
+    {                                                                               \
+        using argument_type = T;                                                    \
+        using result_type = typename xt::detail::bool_functor_return_type<T>::type; \
+        constexpr result_type operator()(const T& arg) const                        \
+        {                                                                           \
+            using std::NAME;                                                        \
+            return NAME(arg);                                                       \
+        }                                                                           \
     }
 
     namespace math
@@ -147,6 +157,12 @@ namespace xt
         UNARY_MATH_FUNCTOR(erfc);
         UNARY_MATH_FUNCTOR(tgamma);
         UNARY_MATH_FUNCTOR(lgamma);
+        UNARY_MATH_FUNCTOR(ceil);
+        UNARY_MATH_FUNCTOR(floor);
+        UNARY_MATH_FUNCTOR(trunc);
+        UNARY_MATH_FUNCTOR(round);
+        UNARY_MATH_FUNCTOR(nearbyint);
+        UNARY_MATH_FUNCTOR(rint);
         UNARY_BOOL_FUNCTOR(isfinite);
         UNARY_BOOL_FUNCTOR(isinf);
         UNARY_BOOL_FUNCTOR(isnan);
@@ -310,6 +326,28 @@ namespace xt
     namespace math
     {
         template <class T>
+        struct minimum
+        {
+            using result_type = T;
+
+            constexpr result_type operator()(const T& t1, const T& t2) const noexcept
+            {
+                return (t1 < t2) ? t1 : t2;
+            }
+        };
+
+        template <class T>
+        struct maximum
+        {
+            using result_type = T;
+
+            constexpr result_type operator()(const T& t1, const T& t2) const noexcept
+            {
+                return (t1 > t2) ? t1 : t2;
+            }
+        };
+
+        template <class T>
         struct clamp_fun
         {
             using first_argument_type = T;
@@ -325,21 +363,135 @@ namespace xt
 
     /**
      * @ingroup basic_functions
+     * @brief Elementwise maximum
+     *
+     * Returns an \ref xfunction for the element-wise
+     * maximum between e1 and e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto maximum(E1&& e1, E2&& e2) noexcept
+        -> detail::xfunction_type_t<math::maximum, E1, E2>
+    {
+        return detail::make_xfunction<math::maximum>(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
+    /**
+     * @ingroup basic_functions
+     * @brief Elementwise minimum
+     *
+     * Returns an \ref xfunction for the element-wise
+     * minimum between e1 and e2.
+     * @param e1 an \ref xexpression
+     * @param e2 an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E1, class E2>
+    inline auto minimum(E1&& e1, E2&& e2) noexcept
+        -> detail::xfunction_type_t<math::minimum, E1, E2>
+    {
+        return detail::make_xfunction<math::minimum>(std::forward<E1>(e1), std::forward<E2>(e2));
+    }
+
+    /**
+     * @ingroup basic_functions
+     * @brief Maximum element along given axis.
+     *
+     * Returns an \ref xreducer for the maximum of elements over given
+     * \em axes.
+     * @param e an \ref xexpression
+     * @param axes the axes along which the maximum is found (optional)
+     * @return an \ref xreducer
+     */
+    template <class E, class X>
+    inline auto amax(E&& e, X&& axes) noexcept
+    {
+        using functor_type = math::maximum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), std::forward<X>(axes));
+    }
+
+    template <class E>
+    inline auto amax(E&& e) noexcept
+    {
+        using functor_type = math::maximum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e));
+    }
+
+#ifdef X_OLD_CLANG
+    template <class E, class I>
+    inline auto amax(E&& e, std::initializer_list<I> axes) noexcept
+    {
+        using functor_type = math::maximum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), axes);
+    }
+#else
+    template <class E, class I, std::size_t N>
+    inline auto amax(E&& e, const I(&axes)[N]) noexcept
+    {
+        using functor_type = math::maximum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), axes);
+    }
+#endif
+
+    /**
+     * @ingroup basic_functions
+     * @brief Minimum element along given axis.
+     *
+     * Returns an \ref xreducer for the minimum of elements over given
+     * \em axes.
+     * @param e an \ref xexpression
+     * @param axes the axes along which the minimum is found (optional)
+     * @return an \ref xreducer
+     */
+    template <class E, class X>
+    inline auto amin(E&& e, X&& axes) noexcept
+    {
+        using functor_type = math::minimum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), std::forward<X>(axes));
+    }
+
+    template <class E>
+    inline auto amin(E&& e) noexcept
+    {
+        using functor_type = math::minimum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e));
+    }
+
+#ifdef X_OLD_CLANG
+    template <class E, class I>
+    inline auto amin(E&& e, std::initializer_list<I> axes) noexcept
+    {
+        using functor_type = math::minimum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), axes);
+    }
+#else
+    template <class E, class I, std::size_t N>
+    inline auto amin(E&& e, const I(&axes)[N]) noexcept
+    {
+        using functor_type = math::minimum<typename std::decay_t<E>::value_type>;
+        return reduce(functor_type(), std::forward<E>(e), axes);
+    }
+#endif
+
+    /**
+     * @ingroup basic_functions
      * @brief Clip values between hi and lo
      * 
      * Returns an \ref xfunction for the element-wise clipped 
-     * values between hi- and lo
+     * values between lo and hi
      * @param e1 an \ref xexpression or a scalar
-     * @param hi a scalar
      * @param lo a scalar
+     * @param hi a scalar
      *
      * @return a \ref xfunction
      */
     template <class E1, class E2, class E3>
-    inline auto clip(E1&& e1, E2&& hi, E3&& lo) noexcept
+    inline auto clip(E1&& e1, E2&& lo, E3&& hi) noexcept
         -> detail::xfunction_type_t<math::clamp_fun, E1, E2, E3>
     {
-        return detail::make_xfunction<math::clamp_fun>(std::forward<E1>(e1), std::forward<E2>(hi), std::forward<E3>(lo));
+        return detail::make_xfunction<math::clamp_fun>(std::forward<E1>(e1), std::forward<E2>(lo), std::forward<E3>(hi));
     }
 
     namespace math
@@ -895,6 +1047,113 @@ namespace xt
         return detail::make_xfunction<math::lgamma_fun>(std::forward<E>(e));
     }
 
+    /*********************************************
+     * nearest integer floating point operations *
+     *********************************************/
+
+    /**
+     * @defgroup nearint_functions Nearest integer floating point operations
+     */
+
+    /**
+     * @ingroup nearint_functions
+     * @brief ceil function.
+     *
+     * Returns an \ref xfunction for the element-wise smallest integer value
+     * not less than \em e.
+     * @param e an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E>
+    inline auto ceil(E&& e) noexcept
+        -> detail::xfunction_type_t<math::ceil_fun, E>
+    {
+        return detail::make_xfunction<math::ceil_fun>(std::forward<E>(e));
+    }
+
+    /**
+    * @ingroup nearint_functions
+    * @brief floor function.
+    *
+    * Returns an \ref xfunction for the element-wise smallest integer value
+    * not greater than \em e.
+    * @param e an \ref xexpression
+    * @return an \ref xfunction
+    */
+    template <class E>
+    inline auto floor(E&& e) noexcept
+        -> detail::xfunction_type_t<math::floor_fun, E>
+    {
+        return detail::make_xfunction<math::floor_fun>(std::forward<E>(e));
+    }
+
+    /**
+    * @ingroup nearint_functions
+    * @brief trunc function.
+    *
+    * Returns an \ref xfunction for the element-wise nearest integer not greater
+    * in magnitude than \em e.
+    * @param e an \ref xexpression
+    * @return an \ref xfunction
+    */
+    template <class E>
+    inline auto trunc(E&& e) noexcept
+        -> detail::xfunction_type_t<math::trunc_fun, E>
+    {
+        return detail::make_xfunction<math::trunc_fun>(std::forward<E>(e));
+    }
+
+    /**
+     * @ingroup nearint_functions
+     * @brief round function.
+     *
+     * Returns an \ref xfunction for the element-wise nearest integer value
+     * to \em e, rounding halfway cases away from zero, regardless of the
+     * current rounding mode.
+     * @param e an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E>
+    inline auto round(E&& e) noexcept
+        -> detail::xfunction_type_t<math::round_fun, E>
+    {
+        return detail::make_xfunction<math::round_fun>(std::forward<E>(e));
+    }
+
+    /**
+     * @ingroup nearint_functions
+     * @brief nearbyint function.
+     *
+     * Returns an \ref xfunction for the element-wise rounding of \em e to integer
+     * values in floating point format, using the current rounding mode. nearbyint
+     * never raises FE_INEXACT error.
+     * @param e an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E>
+    inline auto nearbyint(E&& e) noexcept
+        -> detail::xfunction_type_t<math::nearbyint_fun, E>
+    {
+        return detail::make_xfunction<math::nearbyint_fun>(std::forward<E>(e));
+    }
+
+    /**
+     * @ingroup nearint_functions
+     * @brief rint function.
+     *
+     * Returns an \ref xfunction for the element-wise rounding of \em e to integer
+     * values in floating point format, using the current rounding mode. Contrary
+     * to nearbyint, rint may raise FE_INEXACT error.
+     * @param e an \ref xexpression
+     * @return an \ref xfunction
+     */
+    template <class E>
+    inline auto rint(E&& e) noexcept
+        -> detail::xfunction_type_t<math::rint_fun, E>
+    {
+        return detail::make_xfunction<math::rint_fun>(std::forward<E>(e));
+    }
+
     /****************************
      * classification functions *
      ****************************/
@@ -902,7 +1161,7 @@ namespace xt
     /**
      * @defgroup classif_functions Classification functions
      */
-      
+
     /**
      * @ingroup classif_functions
      * @brief finite value check
@@ -978,7 +1237,8 @@ namespace xt
             using result_type = bool;
             isclose(double rtol, double atol, bool equal_nan)
                 : m_rtol(rtol), m_atol(atol), m_equal_nan(equal_nan)
-            {}
+            {
+            }
 
             bool operator()(const T& a, const T& b) const
             {
@@ -995,46 +1255,46 @@ namespace xt
             bool m_equal_nan;
         };
     }
+
     /**
      * @ingroup classif_functions
      * @brief Element-wise closeness detection
      *
      * Returns an \ref xfunction that evaluates to
-     * true if the element in e1 and e2 are close to each other
+     * true if the elements in ``e1`` and ``e2`` are close to each other
      * according to parameters ``atol`` and ``rtol``.
      * The equation is: ``std::abs(a - b) <= (m_atol + m_rtol * std::abs(b))``.
-     *
-     * @param e1, @param e2 input arrays to compare
+     * @param e1 input array to compare
+     * @param e2 input array to compare
      * @param rtol the relative tolerance parameter (default 1e-05)
      * @param atol the absolute tolerance parameter (default 1e-08)
-     * @param equal_nan if true, isclose returns true if both elements of a and b are NaN
+     * @param equal_nan if true, isclose returns true if both elements of e1 and e2 are NaN
      * @return an \ref xfunction
      */
     template <class E1, class E2>
-    inline auto isclose(E1&& a, E2&& b, double rtol = 1e-05, double atol = 1e-08, bool equal_nan = false) noexcept
+    inline auto isclose(E1&& e1, E2&& e2, double rtol = 1e-05, double atol = 1e-08, bool equal_nan = false) noexcept
     {
         return detail::make_xfunction<detail::isclose>(std::make_tuple(rtol, atol, equal_nan),
-                                                       std::forward<E1>(a), std::forward<E2>(b));
+                                                       std::forward<E1>(e1), std::forward<E2>(e2));
     }
 
     /**
      * @ingroup classif_functions
-     * @brief Check if all elements in \em a are close to the
-     * corresponding elements in \em b.
+     * @brief Check if all elements in \em e1 are close to the
+     * corresponding elements in \em e2.
      *
-     * Returns an \ref xfunction that evaluates to
-     * true if all elements in e1 and e2 are close to each other
+     * Returns true if all elements in ``e1`` and ``e2`` are close to each other
      * according to parameters ``atol`` and ``rtol``.
-     * @param e1, @param e2 input arrays to compare
+     * @param e1 input array to compare
+     * @param e2 input arrays to compare
      * @param rtol the relative tolerance parameter (default 1e-05)
      * @param atol the absolute tolerance parameter (default 1e-08)
-     * @param equal_nan if true, isclose returns true if both elements of a and b are NaN
-     * @return an \ref xfunction
+     * @return a boolean
      */
     template <class E1, class E2>
-    inline auto allclose(E1&& a, E2&& b, double rtol = 1e-05, double atol = 1e-08) noexcept
+    inline auto allclose(E1&& e1, E2&& e2, double rtol = 1e-05, double atol = 1e-08) noexcept
     {
-        return xt::all(isclose(std::forward<E1>(a), std::forward<E2>(b), rtol, atol));
+        return xt::all(isclose(std::forward<E1>(e1), std::forward<E2>(e2), rtol, atol));
     }
 
     /**********************

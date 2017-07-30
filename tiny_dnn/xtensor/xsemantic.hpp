@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -31,7 +31,6 @@ namespace xt
     template <class D>
     class xsemantic_base : public xexpression<D>
     {
-
     public:
 
         using base_type = xexpression<D>;
@@ -108,14 +107,13 @@ namespace xt
     template <class D>
     class xcontainer_semantic : public xsemantic_base<D>
     {
-
     public:
 
         using base_type = xsemantic_base<D>;
         using derived_type = D;
         using temporary_type = typename base_type::temporary_type;
 
-        derived_type& assign_temporary(temporary_type&);
+        derived_type& assign_temporary(temporary_type&&);
 
         template <class E>
         derived_type& assign_xexpression(const xexpression<E>& e);
@@ -156,14 +154,13 @@ namespace xt
     template <class D>
     class xadaptor_semantic : public xsemantic_base<D>
     {
-
     public:
 
         using base_type = xsemantic_base<D>;
         using derived_type = D;
         using temporary_type = typename base_type::temporary_type;
 
-        derived_type& assign_temporary(temporary_type&);
+        derived_type& assign_temporary(temporary_type&&);
 
         template <class E>
         derived_type& assign_xexpression(const xexpression<E>& e);
@@ -203,14 +200,13 @@ namespace xt
     template <class D>
     class xview_semantic : public xsemantic_base<D>
     {
-
     public:
 
         using base_type = xsemantic_base<D>;
         using derived_type = D;
         using temporary_type = typename base_type::temporary_type;
 
-        derived_type& assign_temporary(temporary_type&);
+        derived_type& assign_temporary(temporary_type&&);
 
         template <class E>
         derived_type& assign_xexpression(const xexpression<E>& e);
@@ -414,7 +410,7 @@ namespace xt
     inline auto xsemantic_base<D>::operator=(const xexpression<E>& e) -> derived_type&
     {
         temporary_type tmp(e);
-        return this->derived_cast().assign_temporary(tmp);
+        return this->derived_cast().assign_temporary(std::move(tmp));
     }
 
     /**************************************
@@ -427,7 +423,7 @@ namespace xt
      * @return a reference to \c *this.
      */
     template <class D>
-    inline auto xcontainer_semantic<D>::assign_temporary(temporary_type& tmp) -> derived_type&
+    inline auto xcontainer_semantic<D>::assign_temporary(temporary_type&& tmp) -> derived_type&
     {
         using std::swap;
         swap(this->derived_cast(), tmp);
@@ -475,9 +471,9 @@ namespace xt
      * @return a reference to \c *this.
      */
     template <class D>
-    inline auto xadaptor_semantic<D>::assign_temporary(temporary_type& tmp) -> derived_type&
+    inline auto xadaptor_semantic<D>::assign_temporary(temporary_type&& tmp) -> derived_type&
     {
-        this->derived_cast().assign_temporary_impl(tmp);
+        this->derived_cast().assign_temporary_impl(std::move(tmp));
         return this->derived_cast();
     }
 
@@ -522,9 +518,9 @@ namespace xt
      * @return a reference to \c *this.
      */
     template <class D>
-    inline auto xview_semantic<D>::assign_temporary(temporary_type& tmp) -> derived_type&
+    inline auto xview_semantic<D>::assign_temporary(temporary_type&& tmp) -> derived_type&
     {
-        this->derived_cast().assign_temporary_impl(tmp);
+        this->derived_cast().assign_temporary_impl(std::move(tmp));
         return this->derived_cast();
     }
 

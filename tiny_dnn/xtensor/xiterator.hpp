@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -9,7 +9,11 @@
 #ifndef XITERATOR_HPP
 #define XITERATOR_HPP
 
+#include <array>
+#include <algorithm>
+#include <cstddef>
 #include <iterator>
+#include <vector>
 
 #include "xexception.hpp"
 #include "xlayout.hpp"
@@ -80,7 +84,6 @@ namespace xt
     template <class C>
     class xstepper
     {
-
     public:
 
         using container_type = C;
@@ -104,7 +107,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type l);
 
         bool equal(const xstepper& rhs) const;
 
@@ -145,7 +148,6 @@ namespace xt
     template <class E, bool is_const = true>
     class xindexed_stepper
     {
-
     public:
 
         using self_type = xindexed_stepper<E, is_const>;
@@ -175,7 +177,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type l);
 
         bool equal(const self_type& rhs) const;
 
@@ -203,7 +205,6 @@ namespace xt
         template <class S>
         class shape_storage
         {
-
         public:
 
             using shape_type = S;
@@ -221,7 +222,6 @@ namespace xt
         template <class S>
         class shape_storage<S*>
         {
-
         public:
 
             using shape_type = S;
@@ -242,7 +242,6 @@ namespace xt
     template <class It, class S, layout_type L>
     class xiterator : detail::shape_storage<S>
     {
-
     public:
 
         using self_type = xiterator<It, S, L>;
@@ -372,9 +371,9 @@ namespace xt
     }
 
     template <class C>
-    inline void xstepper<C>::to_end()
+    inline void xstepper<C>::to_end(layout_type l)
     {
-        m_it = p_c->data_xend();
+        m_it = p_c->data_xend(l);
     }
 
     template <class C>
@@ -408,20 +407,24 @@ namespace xt
         while (i != 0)
         {
             --i;
-            if (++index[i] != shape[i])
+            if (index[i] != shape[i] - 1)
             {
+                ++index[i];
                 stepper.step(i);
                 return;
             }
-            else if (i != 0)
+            else
             {
                 index[i] = 0;
-                stepper.reset(i);
+                if (i != 0)
+                {
+                    stepper.reset(i);
+                }
             }
         }
         if (i == 0)
         {
-            stepper.to_end();
+            stepper.to_end(layout_type::row_major);
         }
     }
 
@@ -436,25 +439,24 @@ namespace xt
         while (i != 0)
         {
             --i;
-            if (index[i] == 0)
-            {
-                if (i != 0)
-                {
-                    index[i] = shape[i] - 1;
-                    stepper.reset_back(i);
-                }
-                else
-                {
-                    std::fill(index.begin(), index.end(), size_type(0));
-                    stepper.to_begin();
-                }
-            }
-            else
+            if (index[i] != 0)
             {
                 --index[i];
                 stepper.step_back(i);
                 return;
             }
+            else
+            {
+                index[i] = shape[i] - 1;
+                if (i != 0)
+                {
+                     stepper.reset_back(i);
+                }
+            }
+        }
+        if (i == 0)
+        {
+            stepper.to_begin();
         }
     }
 
@@ -466,22 +468,28 @@ namespace xt
     {
         using size_type = typename S::size_type;
         size_type size = index.size();
-        for (size_type i = 0; i < size; ++i)
+        size_type i = 0;
+        while (i != size)
         {
-            if (++index[i] != shape[i])
+            if (index[i] != shape[i] - 1)
             {
+                ++index[i];
                 stepper.step(i);
                 return;
             }
-            else if (i != size - 1)
-            {
-                index[i] = 0;
-                stepper.reset(i);
-            }
             else
             {
-                stepper.to_end();
+                index[i] = 0;
+                if (i != size - 1)
+                {
+                    stepper.reset(i);
+                }
             }
+            ++i;
+        }
+        if (i == size)
+        {
+            stepper.to_end(layout_type::column_major);
         }
     }
 
@@ -493,27 +501,28 @@ namespace xt
     {
         using size_type = typename S::size_type;
         size_type size = index.size();
-        for (size_type i = 0; i < size; ++i)
+        size_type i = 0;
+        while (i != size)
         {
-            if (index[i] == 0)
-            {
-                if (i != size - 1)
-                {
-                    index[i] = shape[i] - 1;
-                    stepper.reset_back(i);
-                }
-                else
-                {
-                    std::fill(index.begin(), index.end(), size_type(0));
-                    stepper.to_begin();
-                }
-            }
-            else
+            if (index[i] != 0)
             {
                 --index[i];
                 stepper.step_back(i);
                 return;
             }
+            else
+            {
+                index[i] = shape[i] - 1;
+                if (i != size - 1)
+                {
+                    stepper.reset_back(i);
+                }
+            }
+            ++i;
+        }
+        if (i == size)
+        {
+            stepper.to_begin();
         }
     }
 
@@ -526,7 +535,7 @@ namespace xt
         : p_e(e), m_index(make_sequence<index_type>(e->shape().size(), size_type(0))), m_offset(offset)
     {
         if (end)
-            to_end();
+            to_end(layout_type::row_major);
     }
 
     template <class C, bool is_const>
@@ -568,8 +577,9 @@ namespace xt
     {
         std::fill(m_index.begin(), m_index.end(), size_type(0));
     }
+
     template <class C, bool is_const>
-    inline void xindexed_stepper<C, is_const>::to_end()
+    inline void xindexed_stepper<C, is_const>::to_end(layout_type)
     {
         m_index = p_e->shape();
     }
@@ -645,9 +655,9 @@ namespace xt
     {
         if (reverse)
         {
-            auto iter_end = m_index.end() - 1;
-            std::transform(m_index.begin(), iter_end, m_index.begin(),
-                           [](const auto& v) { return v - 1; });
+            auto iter_begin = (L == layout_type::row_major)  ? m_index.begin() : m_index.begin() + 1;
+            auto iter_end = (L == layout_type::row_major) ? m_index.end() - 1 : m_index.end();
+            std::transform(iter_begin, iter_end, iter_begin, [](const auto& v) { return v - 1; });
         }
     }
 

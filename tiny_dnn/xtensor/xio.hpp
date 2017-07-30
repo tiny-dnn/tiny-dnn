@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -130,13 +130,15 @@ namespace xt
                             if (e.dimension() > 1)
                             {
                                 elems_on_line = 0;
-                                out << std::endl << indents;
+                                out << std::endl
+                                    << indents;
                             }
                             i = e.shape()[0] - edge_items;
                         }
                         if (e.dimension() == 1 && line_lim != 0 && elems_on_line >= line_lim)
                         {
-                            out << std::endl << indents;
+                            out << std::endl
+                                << indents;
                             elems_on_line = 0;
                         }
 
@@ -150,12 +152,14 @@ namespace xt
                         }
                         else
                         {
-                            out << std::endl << indents;
+                            out << std::endl
+                                << indents;
                         }
                     }
                     if (e.dimension() == 1 && line_lim != 0 && elems_on_line >= line_lim)
                     {
-                        out << std::endl << indents;
+                        out << std::endl
+                            << indents;
                     }
                     xout<I - 1>::output(out, view(e, i), printer, blanks + 1, element_width, edge_items, line_width) << '}';
                 }
@@ -252,10 +256,10 @@ namespace xt
                 }
                 else
                 {
-                    precision_type decimals = 1; // print a leading 0
+                    precision_type decimals = 1;  // print a leading 0
                     if (std::floor(m_max) != 0)
                     {
-                        decimals += (precision_type) std::log10(std::floor(m_max));
+                        decimals += (precision_type)std::log10(std::floor(m_max));
                     }
                     // 2 => sign and dot
                     m_width = 2 + decimals + m_precision;
@@ -595,6 +599,7 @@ namespace xt
             }
 
         private:
+
             std::function<std::string(const value_type&)> m_func;
         };
 
