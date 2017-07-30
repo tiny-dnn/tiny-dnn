@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -40,7 +44,7 @@ TEST(concat, forward_data) {
         { 16, 17 },
         { 22, 23 }
     };
-    
+
     tensor_t out_expected = {
         { 0, 1, 2, 3, 4, 5 },
         { 6, 7, 8, 9, 10, 11 },

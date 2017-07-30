@@ -160,7 +160,7 @@ struct gradient_descent : public optimizer {
  **/
 struct momentum : public stateful_optimizer<1> {
  public:
-  momentum() : alpha(float_t(0.01)), lambda(float_t{0}), mu(float_t(0.9)) {}
+  momentum() : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
   void update(const vec_t &dW, vec_t &W, bool parallelize) {
     vec_t &dWprev = get<0>(W);
@@ -168,6 +168,33 @@ struct momentum : public stateful_optimizer<1> {
     for_i(parallelize, W.size(), [&](size_t i) {
       float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
       W[i] += V;
+      dWprev[i] = V;
+    });
+  }
+
+  float_t alpha;   // learning rate
+  float_t lambda;  // weight decay
+  float_t mu;      // momentum
+};
+
+/**
+ * SGD with Nesterov momentum
+ *
+ * Y Nesterov,
+ * A method for unconstrained convex minimization problem with the rate of
+ * convergence o(1/k2), Doklady ANSSSR, vol.269, pp.543-547, 1983.
+ **/
+struct nesterov_momentum : public stateful_optimizer<1> {
+ public:
+  nesterov_momentum()
+    : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
+
+  void update(const vec_t &dW, vec_t &W, bool parallelize) {
+    vec_t &dWprev = get<0>(W);
+
+    for_i(parallelize, W.size(), [&](size_t i) {
+      float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
+      W[i] += (-mu) * dWprev[i] + (1 + mu) * V;
       dWprev[i] = V;
     });
   }

@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <tuple>
+
 #include "benchmark/benchmark.h"
 #include "tiny_dnn/tiny_dnn.h"
 
@@ -53,5 +55,6 @@ BENCHMARK(bm_global_avepool_forward_internal)->Iterations(1000);
 #ifdef CNN_USE_AVX
 BENCHMARK(bm_global_avepool_forward_avx)->Iterations(1000);
 #endif
-}
+
+}  // namespace benchmarks
 }  // namespace tiny_dnn

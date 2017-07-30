@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/kernels/maxpool_op_internal.h"
 
 namespace tiny_dnn {

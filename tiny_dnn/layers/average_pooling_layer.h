@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/core/framework/tensor.h"
@@ -19,8 +20,6 @@
 #include "tiny_dnn/util/image.h"
 #endif  // DNN_USE_IMAGE_API
 
-using namespace tiny_dnn::core;
-
 namespace tiny_dnn {
 
 // forward_propagation
@@ -29,8 +28,8 @@ inline void tiny_average_pooling_kernel(
   const Tensor<> &weights,
   const Tensor<> &biases,
   Tensor<> &out_data,
-  const avepool_params &params,
-  const average_pooling_layer_worker_specific_storage &aws,
+  const core::avepool_params &params,
+  const core::average_pooling_layer_worker_specific_storage &aws,
   const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
     auto oarea = params.out.area();
@@ -60,8 +59,8 @@ inline void tiny_average_pooling_back_kernel(
   Tensor<> &bias_grads,
   Tensor<> &curr_delta,
   Tensor<> &prev_delta,
-  const avepool_params &params,
-  const average_pooling_layer_worker_specific_storage &aws,
+  const core::avepool_params &params,
+  const core::average_pooling_layer_worker_specific_storage &aws,
   const bool layer_parallelize) {
   for_i(layer_parallelize, prev_out.shape()[0], [&](size_t sample) {
     auto inarea = params.in.area();
@@ -168,7 +167,7 @@ class average_pooling_layer : public layer {
     : layer(std_input_order(in_channels > 0), {vector_type::data}) {
     avepool_set_params(in_width, in_height, in_channels, pool_size_x,
                        pool_size_y, stride_x, stride_y, pad_type);
-    aws_ = average_pooling_layer_worker_specific_storage(
+    aws_ = core::average_pooling_layer_worker_specific_storage(
       in_channels, params_.out.size(), params_.in.size(), in_channels,
       params_.out.size());
 
@@ -235,8 +234,8 @@ class average_pooling_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  avepool_params params_;
-  average_pooling_layer_worker_specific_storage aws_;
+  core::avepool_params params_;
+  core::average_pooling_layer_worker_specific_storage aws_;
 
   void avepool_set_params(size_t in_width,
                           size_t in_height,
@@ -256,7 +255,7 @@ class average_pooling_layer : public layer {
     params_.stride_x     = stride_x;
     params_.stride_y     = stride_y;
     params_.pad_type     = pad_type;
-    params_.scale_factor = float_t{1} / (pool_size_x * pool_size_y);
+    params_.scale_factor = 1.0 / (pool_size_x * pool_size_y);
   }
 
   static size_t pool_out_dim(size_t in_size,

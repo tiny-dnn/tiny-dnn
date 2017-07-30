@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "tiny_dnn/core/kernels/tiny_quantization_kernel.h"
 #include "tiny_dnn/core/params/conv_params.h"
 

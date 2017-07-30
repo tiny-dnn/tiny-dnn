@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <vector>
+
 #include "tiny_dnn/core/params/conv_params.h"
 #include "tiny_dnn/core/params/deconv_params.h"
 #include "tiny_dnn/core/params/fully_params.h"
@@ -16,11 +18,11 @@
 #include "tiny_dnn/node.h"
 
 #ifdef CNN_USE_NNPACK
-#include "nnpack.h"
+#include <nnpack.h>
 #endif
 
 #ifndef CNN_SINGLE_THREAD
-#include <thread>
+#include <thread>  // NOLINT
 #endif
 
 namespace tiny_dnn {
@@ -109,7 +111,8 @@ inline nnp_convolution_transform_strategy nnp_kts() {
 
 class NNPackThreadPool {
  public:
-  NNPackThreadPool(size_t num_threads = 1) : num_threads_(num_threads) {}
+  explicit NNPackThreadPool(size_t num_threads = 1)
+    : num_threads_(num_threads) {}
 
   void set_num_threads(size_t num_threads) { num_threads_ = num_threads; }
 

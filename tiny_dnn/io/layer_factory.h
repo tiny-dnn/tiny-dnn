@@ -6,6 +6,9 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <vector>
+
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/util/util.h"
 

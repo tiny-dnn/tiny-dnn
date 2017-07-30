@@ -6,11 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
+#include <gtest/gtest.h>
+
+#include <string>
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -350,7 +353,7 @@ TEST(image, resize) {
   EXPECT_EQ(32u, img.height());
   EXPECT_EQ(3u, img.depth());
   EXPECT_EQ((int)image_type::rgb, (int)img.type());
-  EXPECT_EQ(size_t{32 * 32 * 3}, img.data().size());
+  EXPECT_EQ(size_t(32 * 32 * 3), img.data().size());
 }
 
 TEST(image, empty) {
@@ -479,21 +482,21 @@ TEST(image, subtract_scalar) {
 TEST(image, subtract_image) {
   // clang-format off
     uint8_t src_pixels[] = {
-        0, 1, // r
-        32,33, // g
-        254,255 // b
+        0,     1,  // r
+        32,   33,  // g
+        254, 255   // b
     };
 
     uint8_t sub_pixels[] = {
-        1, 1,
-        31,33,
+        1,   1,
+        31, 33,
         0, 250
     };
 
     // should be saturated
     uint8_t expected_pixels[] = {
-        0, 0,
-        1, 0,
+        0,   0,
+        1,   0,
         254, 5
     };
   // clang-format on

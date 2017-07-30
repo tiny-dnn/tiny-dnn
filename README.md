@@ -89,7 +89,8 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * mean absolute error with epsilon range
 
 ### optimization algorithms
-* stochastic gradient descent (with/without L2 normalization and momentum)
+* stochastic gradient descent (with/without L2 normalization)
+* momentum and Nesterov momentum
 * adagrad
 * rmsprop
 * adam
@@ -127,7 +128,7 @@ Some cmake options are available:
 |USE_AVX2|Build tiny-dnn with AVX2 library support|OFF|Intel CPU which supports AVX2|
 |USE_NNPACK|Use NNPACK for convolution operation|OFF|[Acceleration package for neural networks on multi-core CPUs](https://github.com/Maratyszcza/NNPACK)|
 |USE_OPENCL|Enable/Disable OpenCL support (experimental)|OFF|[The open standard for parallel programming of heterogeneous systems](https://www.khronos.org/opencl/)|
-|USE_LIBDNN|Use Greentea LinDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
+|USE_LIBDNN|Use Greentea LibDNN for convolution operation with GPU via OpenCL (experimental)|OFF|[An universal convolution implementation supporting CUDA and OpenCL](https://github.com/naibaf7/libdnn)|
 |USE_SERIALIZER|Enable model serialization|ON<sup>2</sup>|-|
 |USE_DOUBLE|Use double precision computations instead of single precision|OFF|-|
 |USE_ASAN|Use Address Sanitizer|OFF|clang or gcc compiler|
