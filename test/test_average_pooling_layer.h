@@ -99,7 +99,7 @@ TEST(ave_pool, forward) {
 
   l.weight_init_f(parameter_init::constant(1.0));
   l.bias_init_f(parameter_init::constant(0.0));
-  l.init_parameters();
+  l.setup(false);
 
   auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
