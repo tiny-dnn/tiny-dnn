@@ -19,8 +19,8 @@ namespace core {
 
 struct conv_layer_worker_specific_storage {
   std::vector<const Tensor<> *> prev_out_padded_;
-  std::vector<Tensor<>> prev_out_buf_;
-  std::vector<Tensor<>> prev_delta_padded_;
+  Tensor<> prev_out_buf_;
+  Tensor<> prev_delta_padded_;
 };
 
 struct connection_table {

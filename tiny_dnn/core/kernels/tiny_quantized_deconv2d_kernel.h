@@ -213,7 +213,7 @@ inline void tiny_quantized_deconv2d_back_kernel(
 
   // dequantize to float, this could be removed within concatenated quantized
   // network
-  vec_t prev_delta_vec = quantized_tensor_to_float<uint8_t>(
+  auto prev_delta_vec = quantized_tensor_to_float<uint8_t>(
     prev_delta_requantized, min_prev_delta_requantized,
     max_prev_delta_requantized);
   prev_delta = &prev_delta_vec;

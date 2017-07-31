@@ -104,9 +104,9 @@ class tiny_backend : public backend {
     out.fill(float_t(0.0));
 
     for (size_t i = 0; i < in.size(); i++) {
-      kernels::tiny_quantized_conv2d_kernel(
-        *params_c_, *in[i], W, bias,
-        out.subView(TensorSingleIndex(i), TensorAll()), layer_->parallelize());
+      auto out_i = out.subView(TensorSingleIndex(i), TensorAll());
+      kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias, out_i,
+                                            layer_->parallelize());
     }
   }
 
@@ -122,8 +122,7 @@ class tiny_backend : public backend {
     auto bias = params_c_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
     const Tensor<> &in_r = *in_data[1];
     auto W_r        = layer_->parameter_at(params_c_->has_bias ? 2:1).data();
-    auto b_r        =
-        params_c_->has_bias ? layer_->parameter_at(3).data() : Tensor<>();
+    auto b_r        = params_c_->has_bias ? layer_->parameter_at(3).data() : Tensor<>();
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
 
@@ -132,8 +131,10 @@ class tiny_backend : public backend {
 
     out.fill(float_t(0.0));
     for (size_t i = 0; i < in.size(); i++) {
+      auto out_i   = out.subView(TensorSingleIndex(i), TensorAll());
+      auto out_r_i = out_r.subView(TensorSingleIndex(i), TensorAll());
       kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias,
-                                            in_r[i], W_r, b_r, out[i], out_r[i],
+                                            in_r[i], W_r, b_r, out_i, out_r_i,
                                             layer_->parallelize());
     }
   }
@@ -144,7 +145,7 @@ class tiny_backend : public backend {
                 std::vector<Tensor<> *> &in_grad) override {
     conv_layer_worker_specific_storage &cws = (*conv_layer_worker_storage_);
 
-    std::vector<const vec_t *> &prev_out = cws.prev_out_padded_;
+    std::vector<const Tensor<> *> &prev_out = cws.prev_out_padded_;
 
     auto W = layer_->parameter_at(0).data();
     Tensor<> &dW         = layer_->parameter_at(0).grad();
@@ -160,12 +161,16 @@ class tiny_backend : public backend {
 
     backward_activation(*out_grad[0], *out_data[0], curr_delta);
 
-    fill_tensor(*prev_delta, float_t{0});
+    prev_delta->fill(float_t(0.0));
 
     for (size_t i = 0; i < prev_out.size(); i++) {
-      kernels::tiny_quantized_conv2d_back_kernel(*params_c_, *prev_out[i], W,
-                                                 dW[i], db[i], curr_delta[i],
-                                                 &(*prev_delta)[i]);
+      auto dW_i         = dW.subView(TensorSingleIndex(i), TensorAll());
+      auto db_i         = db.subView(TensorSingleIndex(i), TensorAll());
+      auto curr_delta_i = curr_delta.subView(TensorSingleIndex(i), TensorAll());
+      auto prev_delta_i =
+        prev_delta->subView(TensorSingleIndex(i), TensorAll());
+      kernels::tiny_quantized_conv2d_back_kernel(
+        *params_c_, *prev_out[i], W, dW_i, db_i, curr_delta_i, &prev_delta_i);
     }
 
     if (params_c_->pad_type == padding::same) {
@@ -188,8 +193,10 @@ class tiny_backend : public backend {
     out.fill(float_t(0));
 
     for (size_t i = 0; i < in.size(); i++) {
-      kernels::tiny_quantized_deconv2d_kernel(*params_d_, in[i], W, bias,
-                                              out[i], layer_->parallelize());
+      auto in_i  = in.subView(TensorSingleIndex(i), TensorAll());
+      auto out_i = out.subView(TensorSingleIndex(i), TensorAll());
+      kernels::tiny_quantized_deconv2d_kernel(*params_d_, in_i, W, bias, out_i,
+                                              layer_->parallelize());
     }
 
     copy_and_unpad_output(out);
@@ -202,21 +209,28 @@ class tiny_backend : public backend {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
 
     const Tensor<> &in = *in_data[0];  // input
+    const Tensor<> &in_r = *in_data[1];
+
     auto W             = layer_->parameter_at(0).data();
     auto bias          = params_d_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
-    const Tensor<> &in_r = *in_data[1];
     auto W_r        = layer_->parameter_at(params_d_->has_bias ?2:1).data();
     auto b_r        = params_d_->has_bias ? layer_->parameter_at(3).data() :  Tensor<>();
+
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
 
     // deconv2d-kernel requires padded size buffer
-    fill_tensor(out, float_t{0}, params_d_->out.size());
+    out.resize_axis(params_d_->out.size());
+    out.fill(float_t(0.0));
 
     for (size_t i = 0; i < in.size(); i++) {
-      kernels::tiny_quantized_deconv2d_kernel(*params_d_, in[i], W, bias,
-                                              in_r[i], W_r, b_r, out[i],
-                                              out_r[i], layer_->parallelize());
+      auto in_i    = in.subView(TensorSingleIndex(i), TensorAll());
+      auto in_r_i  = in_r.subView(TensorSingleIndex(i), TensorAll());
+      auto out_i   = out.subView(TensorSingleIndex(i), TensorAll());
+      auto out_r_i = out_r.subView(TensorSingleIndex(i), TensorAll());
+      kernels::tiny_quantized_deconv2d_kernel(*params_d_, in_i, W, bias, in_r_i,
+                                              W_r, b_r, out_i, out_r_i,
+                                              layer_->parallelize());
     }
 
     copy_and_unpad_output(out);
@@ -234,7 +248,7 @@ class tiny_backend : public backend {
     const Tensor<> &prev_out = *(cws.prev_out_);
 
     auto W       = layer_->parameter_at(0).data();
-    Tensor<> &dW = layer_->parameter_at(0).grad()-
+    Tensor<> &dW = layer_->parameter_at(0).grad();
     Tensor<> &db = layer_->parameter_at(1).grad();
     Tensor<> &curr_delta = (params_d_->pad_type == padding::same)
                              ? cws.curr_delta_padded
@@ -250,9 +264,13 @@ class tiny_backend : public backend {
     prev_delta->fill(float_t(0.0));
 
     for (size_t i = 0; i < prev_out.size(); i++) {
-      kernels::tiny_quantized_deconv2d_back_kernel(*params_d_, prev_out[i], W,
-                                                   dW[i], db[i], curr_delta[i],
-                                                   &(*prev_delta)[i]);
+      auto dW_i         = dW.subView(TensorSingleIndex(i), TensorAll());
+      auto db_i         = db.subView(TensorSingleIndex(i), TensorAll());
+      auto curr_delta_i = curr_delta.subView(TensorSingleIndex(i), TensorAll());
+      auto prev_delta_i =
+        prev_delta->subView(TensorSingleIndex(i), TensorAll());
+      kernels::tiny_quantized_deconv2d_back_kernel(
+        *params_d_, prev_out[i], W, dW_i, db_i, curr_delta_i, &prev_delta_i);
     }
   }
 
