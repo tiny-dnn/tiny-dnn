@@ -26,9 +26,8 @@ class Conv2dGradOp : public core::OpKernel {
     const Tensor<> prev_out_t(context.input(0));
     const Tensor<> weights_t(*(context.ith_parameter(0)->data()));
     Tensor<> weights_grads_t(*(context.ith_parameter(0)->grad()));
-    Tensor<> bias_grads_t(params.has_bias
-                                   ? *(context.ith_parameter(1)->grad())
-                                   : Tensor<float_t>());
+    Tensor<> bias_grads_t(params.has_bias ? *(context.ith_parameter(1)->grad())
+                                          : Tensor<float_t>());
     Tensor<> prev_delta_t(context.input_grad(0));
     Tensor<> curr_delta_t(context.output_grad(0));
 
