@@ -126,7 +126,6 @@ inline void tiny_quantized_conv2d_back_kernel(
   Tensor<float_t, S4> &db,
   Tensor<float_t, S5> &curr_delta,
   Tensor<float_t, S6> *prev_delta) {
-  // previous output quantization
   float_t min_prev_out, max_prev_out, min_filter, max_filter, min_curr_delta,
     max_curr_delta;
   auto prev_out_quantized =
@@ -277,7 +276,7 @@ inline void tiny_quantized_conv2d_back_kernel(
       size_t idx            = params.out.get_index(0, 0, outc);
       const float_t *delta  = curr_delta.host_pointer(idx);
       const float_t *deltaa = delta + params.out.width_ * params.out.height_;
-      db[outc] += std::accumulate(delta, deltaa, float_t(0.0));
+      db.host_at(outc) += std::accumulate(delta, deltaa, float_t(0.0));
     }
   }
 }
@@ -317,7 +316,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
       min_bias -= 1e-3f;
     }
   }
-  // output range0
+  // output range
   float_t min_output_value;
   float_t max_output_value;
   quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
