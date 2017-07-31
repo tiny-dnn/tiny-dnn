@@ -16,7 +16,7 @@ namespace kernels {
 // double version
 template <typename S1, typename S2>
 inline void global_avepool_op_avx(const Tensor<double, S1> &in_data,
-                                  Tensor<double, S1> &out_data,
+                                  Tensor<double, S2> &out_data,
                                   const core::global_avepool_params &params,
                                   const bool layer_parallelize) {
   const size_t pool_area            = params.in.width_ * params.in.height_;
@@ -65,8 +65,8 @@ inline void global_avepool_grad_op_avx(
   __m256d pool_area_inv_m = _mm256_set1_pd(pool_area_inv);
 
   for_i(layer_parallelize, sample_num, [&](size_t sample) {
-    auto in        = prev_delta.host_pointer(sample, 0);
-    const auto out = curr_delta.host_pointer(sample, 0);
+    auto prev       = prev_delta.host_pointer(sample, 0);
+    const auto curr = curr_delta.host_pointer(sample, 0);
 
     for (size_t i = 0; i < params.in.depth_; i++) {
       size_t j       = 0;
