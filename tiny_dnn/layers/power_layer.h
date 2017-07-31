@@ -58,12 +58,13 @@ class power_layer : public layer {
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const tensor_t &x = *in_data[0];
-    tensor_t &y       = *out_data[0];
+    const size_t sample_count = in_data[0]->shape()[0];
 
-    for (size_t i = 0; i < x.size(); i++) {
-      std::transform(x[i].begin(), x[i].end(), y[i].begin(),
-                     [=](float_t x) { return scale_ * std::pow(x, factor_); });
+    for (size_t i = 0; i < sample_count; i++) {
+      auto x = in_data[0]->subView(TensorSingleIndex(i), TensorAll());
+      auto y = out_data[0]->subView(TensorSingleIndex(i), TensorAll());
+      std::transform(x.host_begin(), x.host_end(), y.host_begin(),
+                     [=](float_t z) { return scale_ * std::pow(z, factor_); });
     }
   }
 
@@ -71,13 +72,15 @@ class power_layer : public layer {
                         const std::vector<Tensor<> *> &out_data,
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
-    tensor_t &dx       = *in_grad[0];
-    const tensor_t &dy = *out_grad[0];
-    const tensor_t &x  = *in_data[0];
-    const tensor_t &y  = *out_data[0];
+    Tensor<> &dx       = *in_grad[0];
+    const Tensor<> &dy = *out_grad[0];
+    const Tensor<> &x  = *in_data[0];
+    const Tensor<> &y  = *out_data[0];
 
-    for (size_t i = 0; i < x.size(); i++) {
-      for (size_t j = 0; j < x[i].size(); j++) {
+    const size_t sample_count = x.shape()[0], num = x.shape()[1];
+
+    for (size_t i = 0; i < sample_count; ++i) {
+      for (size_t j = 0; j < num; ++j) {
         // f(x) = (scale*x)^factor
         // ->
         //   dx = dy * df(x)
@@ -85,11 +88,12 @@ class power_layer : public layer {
         //      = dy * scale * factor * (scale * x)^factor * (scale *
         //      x)^(-1)
         //      = dy * factor * y / x
-        if (std::abs(x[i][j]) > 1e-10) {
-          dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
+        if (std::abs(x.host_at(i, j)) > 1e-10) {
+          dx.host_at(i, j) =
+            dy.host_at(i, j) * factor_ * y.host_at(i, j) / x.host_at(i, j);
         } else {
-          dx[i][j] =
-            dy[i][j] * scale_ * factor_ * std::pow(x[i][j], factor_ - 1.0f);
+          dx.host_at(i, j) = dy.host_at(i, j) * scale_ * factor_ *
+                             std::pow(x.host_at(i, j), factor_ - 1.0f);
         }
       }
     }
