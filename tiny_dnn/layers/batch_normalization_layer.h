@@ -91,19 +91,20 @@ class batch_normalization_layer : public layer {
                         const std::vector<Tensor<> *> &out_data,
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
-    tensor_t &prev_delta     = *in_grad[0];
-    tensor_t &curr_delta     = *out_grad[0];
-    const tensor_t &curr_out = *out_data[0];
+    Tensor<> &prev_delta     = *in_grad[0];
+    Tensor<> &curr_delta     = *out_grad[0];
+    const Tensor<> &curr_out = *out_data[0];
     const size_t num_samples = curr_out.size();
 
     CNN_UNREFERENCED_PARAMETER(in_data);
 
-    tensor_t delta_dot_y = curr_out;
+    Tensor<> delta_dot_y = curr_out;
+    // TODO(Randl): switch to Tensor
     vec_t mean_delta_dot_y, mean_delta, mean_Y;
 
     for (size_t i = 0; i < num_samples; i++) {
-      for (size_t j = 0; j < curr_out[0].size(); j++) {
-        delta_dot_y[i][j] *= curr_delta[i][j];
+      for (size_t j = 0; j < curr_out.shape()[1]; j++) {
+        delta_dot_y.host_at(i, j) *= curr_delta.host_at(i, j);
       }
     }
 
@@ -120,11 +121,12 @@ class batch_normalization_layer : public layer {
         for (size_t k = 0; k < in_spatial_size_; k++) {
           size_t index = j * in_spatial_size_ + k;
 
-          prev_delta[i][index] = curr_delta[i][index] - mean_delta[j] -
-                                 mean_delta_dot_y[j] * curr_out[i][index];
+          prev_delta.host_at(i, index) =
+            curr_delta.host_at(i, index) - mean_delta[j] -
+            mean_delta_dot_y[j] * curr_out.host_at(i, index);
 
           // stddev_ is calculated in the forward pass
-          prev_delta[i][index] /= stddev_[j];
+          prev_delta.host_at(i, index) /= stddev_[j];
         }
       }
     });
@@ -135,8 +137,8 @@ class batch_normalization_layer : public layer {
     vec_t &mean = (phase_ == net_phase::train) ? mean_current_ : mean_;
     vec_t &variance =
       (phase_ == net_phase::train) ? variance_current_ : variance_;
-    tensor_t &in  = *in_data[0];
-    tensor_t &out = *out_data[0];
+    Tensor<> &in  = *in_data[0];
+    Tensor<> &out = *out_data[0];
 
     if (phase_ == net_phase::train) {
       // calculate mean/variance from this batch in train phase
@@ -146,9 +148,9 @@ class batch_normalization_layer : public layer {
     // y = (x - mean) ./ sqrt(variance + eps)
     calc_stddev(variance);
 
-    for_i(in_data[0]->size(), [&](size_t i) {
-      const float_t *inptr = &in[i][0];
-      float_t *outptr      = &out[i][0];
+    for_i(in_data[0]->shape()[0], [&](size_t i) {
+      const float_t *inptr = in.host_pointer(i, 0);
+      float_t *outptr      = out.host_pointer(i, 0);
 
       for (size_t j = 0; j < in_channels_; j++) {
         float_t m = mean[j];

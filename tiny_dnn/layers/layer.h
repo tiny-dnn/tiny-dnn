@@ -579,9 +579,9 @@ class layer : public node {
   virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
   // convenience wrapper for function below
-  std::vector<const tensor_t *> forward(
-    const std::vector<tensor_t> &input) {  // for test
-    std::vector<const tensor_t *> output;
+  std::vector<const Tensor<> *> forward(
+    const std::vector<Tensor<>> &input) {  // for test
+    std::vector<const Tensor<> *> output;
     forward(input, output);
     return output;
   }
@@ -1107,8 +1107,9 @@ class layer : public node {
    * Returns the mutable pointer to the edge raw data.
    */
   vec_t *get_weight_data(size_t i) {
-    assert(is_trainable_weight(in_type_[i]));
-    return &(*(ith_in_node(i)->get_data()))[0];
+    return nullptr;
+    // assert(is_trainable_weight(in_type_[i]));
+    // return &(*(ith_in_node(i)->get_data()))[0];
   }
 
   /* @brief Retrieves weight vector from incoming edge
@@ -1117,8 +1118,9 @@ class layer : public node {
    * Returns the non mutable pointer to the edge raw data.
    */
   const vec_t *get_weight_data(size_t i) const {
-    assert(is_trainable_weight(in_type_[i]));
-    return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
+    return nullptr;
+    // assert(is_trainable_weight(in_type_[i]));
+    // return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
   }
 };
 
