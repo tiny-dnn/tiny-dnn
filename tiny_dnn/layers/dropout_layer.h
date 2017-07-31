@@ -70,28 +70,28 @@ class dropout_layer : public layer {
                         const std::vector<Tensor<> *> &out_data,
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
-    tensor_t &prev_delta       = *in_grad[0];
-    const tensor_t &curr_delta = *out_grad[0];
+    Tensor<> &prev_delta       = *in_grad[0];
+    const Tensor<> &curr_delta = *out_grad[0];
 
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
 
-    for_i(prev_delta.size(), [&](size_t sample) {
+    for_i(prev_delta.shape()[0], [&](size_t sample) {
       // assert(prev_delta[sample].size() == curr_delta[sample].size());
       // assert(mask_[sample].size() == prev_delta[sample].size());
-      size_t sz = prev_delta[sample].size();
+      size_t sz = prev_delta.shape()[1];
       for (size_t i = 0; i < sz; ++i) {
-        prev_delta[sample][i] = mask_[sample][i] * curr_delta[sample][i];
+        prev_delta.host_at(sample,i) = mask_[sample][i] * curr_delta.host_at(sample,i);
       }
     });
   }
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const tensor_t &in = *in_data[0];
-    tensor_t &out      = *out_data[0];
+    const Tensor<>  &in = *in_data[0];
+    Tensor<>  &out      = *out_data[0];
 
-    const size_t sample_count = in.size();
+    const size_t sample_count = in.shape()[0];
 
     if (mask_.size() < sample_count) {
       mask_.resize(sample_count, mask_[0]);
@@ -100,18 +100,20 @@ class dropout_layer : public layer {
     for_i(sample_count, [&](size_t sample) {
       std::vector<uint8_t> &mask = mask_[sample];
 
-      const vec_t &in_vec = in[sample];
-      vec_t &out_vec      = out[sample];
+      const auto in_vec = in.subView(TensorSingleIndex(sample), TensorAll());
+      auto out_vec      = out.subView(TensorSingleIndex(sample), TensorAll());
+
+      const size_t num = in_vec.shape()[0];
 
       if (phase_ == net_phase::train) {
-        for (size_t i = 0; i < in_vec.size(); i++)
+        for (size_t i = 0; i < num; i++)
           mask[i]     = bernoulli(dropout_rate_);
 
-        for (size_t i = 0; i < in_vec.size(); i++)
-          out_vec[i]  = mask[i] * scale_ * in_vec[i];
+        for (size_t i = 0; i < num; i++)
+          out_vec.host_at(i)  = mask[i] * scale_ * in_vec.host_at(i);
       } else {
-        for (size_t i = 0, end = in_vec.size(); i < end; i++)
-          out_vec[i] = in_vec[i];
+        for (size_t i = 0; i < num; i++)
+          out_vec.host_at(i) = in_vec.host_at(i);
       }
     });
   }
