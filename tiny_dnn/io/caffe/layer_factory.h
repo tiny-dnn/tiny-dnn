@@ -79,6 +79,7 @@ inline std::shared_ptr<network<sequential>> create_net_from_caffe_net(
     shape_t shape_next = shape;
     auto layer         = detail::create(src_net[i], shape, &shape_next);
 
+    // TODO(Randl): potentially-evaluated-expression
     nn_info("convert " + type + " => " + typeid(*layer).name());
     nn_info("shape:" + to_string(shape_next));
 
