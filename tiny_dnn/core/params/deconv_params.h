@@ -11,10 +11,10 @@ namespace tiny_dnn {
 namespace core {
 
 struct deconv_layer_worker_specific_storage {
-  const tensor_t *prev_out_;
-  const tensor_t *curr_out_unpadded_;
-  tensor_t curr_out_buf_;
-  tensor_t curr_delta_padded;
+  const Tensor<> *prev_out_;
+  const Tensor<> *curr_out_unpadded_;
+  Tensor<> curr_out_buf_;
+  Tensor<> curr_delta_padded;
 };
 
 class deconv_params : public Params {

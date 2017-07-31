@@ -36,8 +36,8 @@ class Conv2dTransposedOp : public core::OpKernel {
 
     kernels::deconv2d_op_internal(in_data, weights, bias, out_data, params,
                                   params.has_bias, context.parallelize());
-
-    context.output(0) = out_data.toTensor();
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    context.output(0) = out_data;
   }
 };
 

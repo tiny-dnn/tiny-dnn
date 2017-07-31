@@ -69,6 +69,8 @@ using xtensor_t = xt::xexpression<T>;
 
 enum class net_phase { train, test };
 
+// TODO(Randl): add full and arbitary padding
+// (probably store padding as a number and have a default for valid, same, full)
 enum class padding {
   valid,  ///< use valid pixels of input
   same    ///< add zero-padding around input so as to keep image size
