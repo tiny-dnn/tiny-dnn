@@ -37,14 +37,13 @@ class MaxPoolGradOp : public core::OpKernel {
       kernels::maxpool_grad_op_internal(prev_delta, curr_delta,
                                         params.out2inmax, params.in2out,
                                         context.parallelize());
-      context.input_grad(0) = prev_delta.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::maxpool_grad_op_avx(prev_delta, curr_delta, params.out2inmax,
                                    params.in2out, context.parallelize());
-      context.input_grad(0) = prev_delta.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
+    context.input_grad(0) = prev_delta;
   }
 };
 
