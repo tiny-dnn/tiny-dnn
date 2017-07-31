@@ -39,7 +39,7 @@ class GlobalAvePoolGradOp : public core::OpKernel {
       kernels::global_avepool_grad_op_internal(prev_delta, curr_delta, params,
                                                context.parallelize());
     }
-    context.input_grad(0) = prev_delta.toTensor();
+      context.input_grad(0) = prev_delta;
   }
 };
 

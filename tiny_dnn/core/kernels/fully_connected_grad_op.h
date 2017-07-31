@@ -57,7 +57,7 @@ class FullyConnectedGradOp : public core::OpKernel {
     if (params.has_bias_) {
       context.ith_parameter(1)->set_grad(bias_grads);
     }
-    context.input_grad(0) = prev_delta.toTensor();
+    context.input_grad(0) = prev_delta;
   }
 };
 
