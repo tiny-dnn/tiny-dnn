@@ -18,9 +18,9 @@ namespace tiny_dnn {
 namespace core {
 
 struct conv_layer_worker_specific_storage {
-  std::vector<const vec_t *> prev_out_padded_;
-  std::vector<vec_t> prev_out_buf_;
-  std::vector<vec_t> prev_delta_padded_;
+  std::vector<const Tensor<> *> prev_out_padded_;
+  std::vector<Tensor<>> prev_out_buf_;
+  std::vector<Tensor<>> prev_delta_padded_;
 };
 
 struct connection_table {
