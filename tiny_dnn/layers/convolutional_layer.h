@@ -318,8 +318,7 @@ class convolutional_layer : public layer {
 
   void set_sample_count(size_t sample_count) override {
     layer::set_sample_count(sample_count);
-    cws_.prev_delta_padded_.resize(sample_count,
-                                   vec_t(params_.in_padded.size(), float_t(0)));
+    cws_.prev_delta_padded_.resize_axis(sample_count);
   }
 
   std::vector<index3d<size_t>> in_shape() const override {
@@ -397,7 +396,7 @@ class convolutional_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  tensor_t *in_data_padded(const std::vector<tensor_t *> &in) {
+  Tensor<> *in_data_padded(const std::vector<Tensor<> *> &in) {
     return (params_.pad_type == padding::valid) ? in[0]
                                                 : &cws_.prev_out_padded_;
   }
@@ -428,8 +427,7 @@ class convolutional_layer : public layer {
 
     // init padding buffer
     if (params_.pad_type == padding::same) {
-      cws_.prev_delta_padded_.resize(
-        1, vec_t(params_.in_padded.size(), float_t(0)));
+      cws_.prev_delta_padded_.reshape({1, params_.in_padded.size()});
     }
 
     // set parameters to padding operation
@@ -508,14 +506,14 @@ class convolutional_layer : public layer {
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
 
-  std::vector<tensor_t *> fwd_in_data_;
-  std::vector<tensor_t *> bwd_in_data_;
-  std::vector<tensor_t *> bwd_in_grad_;
+  std::vector<Tensor<> *> fwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_grad_;
 
   /* Buffer to store padded data */
   struct conv_layer_worker_specific_storage {
-    tensor_t prev_out_padded_;
-    tensor_t prev_delta_padded_;
+    Tensor<> prev_out_padded_;
+    Tensor<> prev_delta_padded_;
   } cws_;
 };
 

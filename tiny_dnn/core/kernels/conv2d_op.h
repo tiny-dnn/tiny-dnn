@@ -42,24 +42,19 @@ class Conv2dOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::conv2d_op_internal(in_data_t, weights, bias, out_data_t, params,
                                   context.parallelize());
-
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
       kernels::conv2d_op_nnpack(in_data_t, weights, bias, out_data_t, params,
                                 context.parallelize());
 
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::conv2d_op_avx(in_data_t, weights, bias, out_data_t, params,
                              context.parallelize());
 
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    context.output(0) = out_data_t;
   }
 };
 

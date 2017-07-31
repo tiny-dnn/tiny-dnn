@@ -50,7 +50,7 @@ class Conv2dGradOp : public core::OpKernel {
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
-    context.input_grad(0) = prev_delta_t.toTensor();
+    context.input_grad(0) = prev_delta_t;
     context.ith_parameter(0)->set_grad(weights_grads_t);
     if (params.has_bias) {
       context.ith_parameter(1)->set_grad(bias_grads_t);
