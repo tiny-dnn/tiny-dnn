@@ -888,16 +888,11 @@ inline void avx_conv2d_5x5_back_kernel(const Tensor<float, S1> &prev_out,
                                        const core::conv_params &params,
                                        const bool layer_parallelize) {
   for_i(layer_parallelize, prev_out.size(), [&](size_t sample) {
-    auto prev =
-      prev_out.subView({sample, sample + 1}, {0lu, prev_out.shape()[1]});
-    auto dW = weights_grads.subView({sample, sample + 1},
-                                    {0lu, weights_grads.shape()[1]});
-    auto dB =
-      bias_grads.subView({sample, sample + 1}, {0lu, bias_grads.shape()[1]});
-    auto currd =
-      curr_delta.subView({sample, sample + 1}, {0lu, curr_delta.shape()[1]});
-    auto prevd =
-      prev_delta.subView({sample, sample + 1}, {0lu, prev_delta.shape()[1]});
+    auto prev  = prev_out.subView(TensorSingleIndex(sample), TensorAll());
+    auto dW    = weights_grads.subView(TensorSingleIndex(sample), TensorAll());
+    auto dB    = bias_grads.subView(TensorSingleIndex(sample), TensorAll());
+    auto currd = curr_delta.subView(TensorSingleIndex(sample), TensorAll());
+    auto prevd = prev_delta.subView(TensorSingleIndex(sample), TensorAll());
     avx_conv2d_5x5_back_kernel_one(prev, weigths, dW, dB, currd, prevd, params);
   });
 }
