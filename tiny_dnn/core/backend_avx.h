@@ -21,8 +21,8 @@ class avx_backend : public backend {
 
   // convolution
   avx_backend(conv_params *params,
-              std::function<void(const tensor_t &)> f1,
-              std::function<void(const tensor_t &, tensor_t &)> f2,
+              std::function<void(const Tensor<> &)> f1,
+              std::function<void(const Tensor<> &, Tensor<> &)> f2,
               conv_layer_worker_specific_storage *ptr)
     :
 #if 0
@@ -38,9 +38,9 @@ class avx_backend : public backend {
   // quantized convolution
   avx_backend(
     conv_params *params,
-    std::function<void(const tensor_t &)> f1,
-    std::function<void(const tensor_t &, tensor_t &)> f2,
-    std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f3,
+    std::function<void(const Tensor<> &)> f1,
+    std::function<void(const Tensor<> &, Tensor<> &)> f2,
+    std::function<void(const Tensor<> &, const Tensor<> &, Tensor<> &)> f3,
     conv_layer_worker_specific_storage *ptr)
     :
 #if 0
@@ -56,9 +56,9 @@ class avx_backend : public backend {
   // quantized deconvolution
   avx_backend(
     deconv_params *params,
-    std::function<void(const tensor_t &)> f1,
-    std::function<void(const tensor_t &, tensor_t &)> f2,
-    std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f3,
+    std::function<void(const Tensor<> &)> f1,
+    std::function<void(const Tensor<> &, Tensor<> &)> f2,
+    std::function<void(const Tensor<> &, const Tensor<> &, Tensor<> &)> f3,
     deconv_layer_worker_specific_storage *ptr)
     : params_d_(params),
       deconv_layer_worker_storage_(ptr),
@@ -88,7 +88,7 @@ class avx_backend : public backend {
   // quantized fully_connected
   avx_backend(
     fully_params *params,
-    std::function<void(const tensor_t &, const tensor_t &, tensor_t &)> f)
+    std::function<void(const Tensor<> &, const Tensor<> &, Tensor<> &)> f)
     :
 #if 0
     params_f_(params),
@@ -99,24 +99,24 @@ class avx_backend : public backend {
 
   // core math functions
 
-  void conv2d_q(const std::vector<tensor_t *> &in_data,
-                std::vector<tensor_t *> &out_data) override {
+  void conv2d_q(const std::vector<Tensor<> *> &in_data,
+                std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("conv2d_q not implemented yet.");
   }
 
-  void conv2d_eq(const std::vector<tensor_t *> &in_data,
-                 std::vector<tensor_t *> &out_data) override {
+  void conv2d_eq(const std::vector<Tensor<> *> &in_data,
+                 std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("conv2d_eq not implemented yet.");
   }
 
-  void conv2d_q(const std::vector<tensor_t *> &in_data,
-                const std::vector<tensor_t *> &out_data,
-                std::vector<tensor_t *> &out_grad,
-                std::vector<tensor_t *> &in_grad) override {
+  void conv2d_q(const std::vector<Tensor<> *> &in_data,
+                const std::vector<Tensor<> *> &out_data,
+                std::vector<Tensor<> *> &out_grad,
+                std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     CNN_UNREFERENCED_PARAMETER(out_grad);
@@ -124,24 +124,24 @@ class avx_backend : public backend {
     throw nn_error("conv2d_q not implemented yet.");
   }
 
-  void deconv2d_q(const std::vector<tensor_t *> &in_data,
-                  std::vector<tensor_t *> &out_data) override {
+  void deconv2d_q(const std::vector<Tensor<> *> &in_data,
+                  std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("not implemented yet.");
   }
 
-  void deconv2d_eq(const std::vector<tensor_t *> &in_data,
-                   std::vector<tensor_t *> &out_data) override {
+  void deconv2d_eq(const std::vector<Tensor<> *> &in_data,
+                   std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("not implemented yet.");
   }
 
-  void deconv2d_q(const std::vector<tensor_t *> &in_data,
-                  const std::vector<tensor_t *> &out_data,
-                  std::vector<tensor_t *> &out_grad,
-                  std::vector<tensor_t *> &in_grad) override {
+  void deconv2d_q(const std::vector<Tensor<> *> &in_data,
+                  const std::vector<Tensor<> *> &out_data,
+                  std::vector<Tensor<> *> &out_grad,
+                  std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     CNN_UNREFERENCED_PARAMETER(out_grad);
@@ -149,24 +149,24 @@ class avx_backend : public backend {
     throw nn_error("not implemented yet.");
   }
 
-  void fully_q(const std::vector<tensor_t *> &in_data,
-               std::vector<tensor_t *> &out_data) override {
+  void fully_q(const std::vector<Tensor<> *> &in_data,
+               std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("not implemented yet.");
   }
 
-  void fully_eq(const std::vector<tensor_t *> &in_data,
-                std::vector<tensor_t *> &out_data) override {
+  void fully_eq(const std::vector<Tensor<> *> &in_data,
+                std::vector<Tensor<> *> &out_data) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     throw nn_error("not implemented yet.");
   }
 
-  void fully_q(const std::vector<tensor_t *> &in_data,
-               const std::vector<tensor_t *> &out_data,
-               std::vector<tensor_t *> &out_grad,
-               std::vector<tensor_t *> &in_grad) override {
+  void fully_q(const std::vector<Tensor<> *> &in_data,
+               const std::vector<Tensor<> *> &out_data,
+               std::vector<Tensor<> *> &out_grad,
+               std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     CNN_UNREFERENCED_PARAMETER(out_grad);
@@ -193,11 +193,11 @@ class avx_backend : public backend {
 #endif
 
   /* Pointers to parent class functions */
-  std::function<void(const tensor_t &)> copy_and_pad_input;
-  std::function<void(const tensor_t &)> copy_and_unpad_output;
-  std::function<void(const tensor_t &, tensor_t &)> copy_and_unpad_delta;
-  std::function<void(const tensor_t &, tensor_t &)> copy_and_pad_delta;
-  std::function<void(const tensor_t &, const tensor_t &, tensor_t &)>
+  std::function<void(const Tensor<> &)> copy_and_pad_input;
+  std::function<void(const Tensor<> &)> copy_and_unpad_output;
+  std::function<void(const Tensor<> &, Tensor<> &)> copy_and_unpad_delta;
+  std::function<void(const Tensor<> &, Tensor<> &)> copy_and_pad_delta;
+  std::function<void(const Tensor<> &, const Tensor<> &, Tensor<> &)>
     backward_activation;
 };
 
