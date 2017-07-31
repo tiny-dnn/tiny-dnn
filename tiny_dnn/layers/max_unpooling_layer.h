@@ -81,18 +81,20 @@ class max_unpooling_layer : public layer {
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const tensor_t &in = *in_data[0];
-    tensor_t &out      = *out_data[0];
+    const Tensor<> &in = *in_data[0];
+    Tensor<> &out      = *out_data[0];
 
-    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
-      const vec_t &in_vec = in[sample];
-      vec_t &out_vec      = out[sample];
+    for (size_t sample = 0, sample_num = in_data[0]->shape()[0];
+         sample < sample_num; ++sample) {
+      const auto in_vec = in.subView(TensorSingleIndex(sample), TensorAll());
+      auto out_vec      = out.subView(TensorSingleIndex(sample), TensorAll());
 
       std::vector<size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_i(in2out_.size(), [&](size_t i) {
         const auto &in_index = out2in_[i];
-        out_vec[i] = (max_idx[in_index] == i) ? in_vec[in_index] : float_t{0};
+        out_vec.host_at(i) =
+          (max_idx[in_index] == i) ? in_vec.host_at(in_index) : float_t{0};
       });
     }
   }
@@ -102,20 +104,23 @@ class max_unpooling_layer : public layer {
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(out_data);
-    tensor_t &prev_delta = *in_grad[0];
-    tensor_t &curr_delta = *out_grad[0];
+    Tensor<> &prev_delta = *in_grad[0];
+    Tensor<> &curr_delta = *out_grad[0];
 
-    for (size_t sample = 0; sample < in_data[0]->size(); sample++) {
-      vec_t &prev_delta_vec = prev_delta[sample];
-      vec_t &curr_delta_vec = curr_delta[sample];
+    for (size_t sample = 0, sample_num = in_data[0]->shape()[0];
+         sample < sample_num; ++sample) {
+      auto prev_delta_vec =
+        prev_delta.subView(TensorSingleIndex(sample), TensorAll());
+      auto curr_delta_vec =
+        curr_delta.subView(TensorSingleIndex(sample), TensorAll());
 
       std::vector<size_t> &max_idx = worker_storage_.in2outmax_;
 
       for_(parallelize_, 0, in2out_.size(), [&](const blocked_range &r) {
         for (size_t i = r.begin(); i != r.end(); i++) {
           size_t outi = out2in_[i];
-          prev_delta_vec[i] =
-            (max_idx[outi] == i) ? curr_delta_vec[outi] : float_t{0};
+          prev_delta_vec.host_at(i) =
+            (max_idx[outi] == i) ? curr_delta_vec.host_at(outi) : float_t{0};
         }
       });
     }
