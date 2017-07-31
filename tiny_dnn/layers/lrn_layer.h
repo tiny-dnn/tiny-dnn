@@ -85,8 +85,8 @@ class lrn_layer : public layer {
     // @todo revise the parallelism strategy
     for (size_t sample = 0, sample_count = in_data[0]->size();
          sample < sample_count; ++sample) {
-      vec_t &in  = (*in_data[0])[sample];
-      vec_t &out = (*out_data[0])[sample];
+      auto in  = in_data[0]->subView(TensorSingleIndex(sample), TensorAll());
+      auto out = out_data[0]->subView(TensorSingleIndex(sample), TensorAll());
 
       if (region_ == norm_region::across_channels) {
         forward_across(in, out);
@@ -104,13 +104,14 @@ class lrn_layer : public layer {
     CNN_UNREFERENCED_PARAMETER(out_data);
     CNN_UNREFERENCED_PARAMETER(out_grad);
     CNN_UNREFERENCED_PARAMETER(in_grad);
-    throw nn_error("not implemented");
+    throw nn_error("not implemented");  // TODO(Randl): implement
   }
 
   friend struct serialization_buddy;
 
  private:
-  void forward_across(const vec_t &in, vec_t &out) {
+  template <typename S1, typename S2>
+  void forward_across(const Tensor<float_t, S1> &in, Tensor<float_t, S2> &out) {
     vectorize::fill(&in_square_[0], in_square_.size(), float_t{0});
 
     for (size_t i = 0; i < size_ / 2; i++) {
@@ -119,12 +120,14 @@ class lrn_layer : public layer {
     }
 
     size_t head = size_ / 2;
-    long tail   = static_cast<long>(head) - static_cast<long>(size_);  // NOLINT
+    int_fast64_t tail =
+      static_cast<int_fast64_t>(head) - static_cast<int_fast64_t>(size_);
+
     size_t channels              = in_shape_.depth_;
     const size_t wxh             = in_shape_.area();
     const float_t alpha_div_size = alpha_ / size_;
 
-    for (size_t i = 0; i < channels; i++, head++, tail++) {
+    for (size_t i = 0; i < channels; ++i, ++head, ++tail) {
       if (head < channels)
         add_square_sum(&in[in_shape_.get_index(0, 0, head)], wxh,
                        &in_square_[0]);
@@ -133,15 +136,17 @@ class lrn_layer : public layer {
         sub_square_sum(&in[in_shape_.get_index(0, 0, tail)], wxh,
                        &in_square_[0]);
 
-      float_t *dst       = &out[in_shape_.get_index(0, 0, i)];
-      const float_t *src = &in[in_shape_.get_index(0, 0, i)];
-      for (size_t j = 0; j < wxh; j++)
-        dst[j]      = src[j] *
+      float_t *dst       = out.host_pointer(in_shape_.get_index(0, 0, i));
+      const float_t *src = in.host_pointer(in_shape_.get_index(0, 0, i));
+      for (size_t j = 0; j < wxh; j++) {
+        dst[j] = src[j] *
                  std::pow(float_t(1) + alpha_div_size * in_square_[j], -beta_);
+      }
     }
   }
 
-  void forward_within(const vec_t &in, vec_t &out) {
+  template <typename S1, typename S2>
+  void forward_within(const Tensor<float_t, S1> &in, Tensor<float_t, S2> &out) {
     CNN_UNREFERENCED_PARAMETER(in);
     CNN_UNREFERENCED_PARAMETER(out);
     throw nn_error("not implemented");

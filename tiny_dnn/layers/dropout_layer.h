@@ -81,15 +81,16 @@ class dropout_layer : public layer {
       // assert(mask_[sample].size() == prev_delta[sample].size());
       size_t sz = prev_delta.shape()[1];
       for (size_t i = 0; i < sz; ++i) {
-        prev_delta.host_at(sample,i) = mask_[sample][i] * curr_delta.host_at(sample,i);
+        prev_delta.host_at(sample, i) =
+          mask_[sample][i] * curr_delta.host_at(sample, i);
       }
     });
   }
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const Tensor<>  &in = *in_data[0];
-    Tensor<>  &out      = *out_data[0];
+    const Tensor<> &in = *in_data[0];
+    Tensor<> &out      = *out_data[0];
 
     const size_t sample_count = in.shape()[0];
 
@@ -106,14 +107,12 @@ class dropout_layer : public layer {
       const size_t num = in_vec.shape()[0];
 
       if (phase_ == net_phase::train) {
-        for (size_t i = 0; i < num; i++)
-          mask[i]     = bernoulli(dropout_rate_);
+        for (size_t i = 0; i < num; i++) mask[i] = bernoulli(dropout_rate_);
 
-        for (size_t i = 0; i < num; i++)
-          out_vec.host_at(i)  = mask[i] * scale_ * in_vec.host_at(i);
+        for (size_t i        = 0; i < num; i++)
+          out_vec.host_at(i) = mask[i] * scale_ * in_vec.host_at(i);
       } else {
-        for (size_t i = 0; i < num; i++)
-          out_vec.host_at(i) = in_vec.host_at(i);
+        for (size_t i = 0; i < num; i++) out_vec.host_at(i) = in_vec.host_at(i);
       }
     });
   }

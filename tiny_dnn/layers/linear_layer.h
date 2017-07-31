@@ -45,17 +45,17 @@ class linear_layer : public layer {
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const tensor_t &in = *in_data[0];
-    tensor_t &out      = *out_data[0];
+    const Tensor<> &in = *in_data[0];
+    Tensor<> &out      = *out_data[0];
 
     // do nothing
     CNN_UNREFERENCED_PARAMETER(out);
 
     // @todo revise the parallelism strategy
     for_i(dim_, [&](size_t i) {
-      for (size_t sample = 0, sample_count = in.size(); sample < sample_count;
-           ++sample)
-        out[sample][i] = scale_ * in[sample][i] + bias_;
+      for (size_t sample = 0, sample_count = in.shape()[0];
+           sample < sample_count; ++sample)
+        out.host_at(sample, i) = scale_ * in.host_at(sample, i) + bias_;
     });
   }
 
@@ -63,16 +63,16 @@ class linear_layer : public layer {
                         const std::vector<Tensor<> *> &out_data,
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
-    tensor_t &prev_delta = *in_grad[0];
-    tensor_t &curr_delta = *out_grad[0];
+    Tensor<> &prev_delta = *in_grad[0];
+    Tensor<> &curr_delta = *out_grad[0];
 
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
 
     // @todo revise parallelism strategy
-    for (size_t sample = 0; sample < prev_delta.size(); ++sample) {
+    for (size_t sample = 0; sample < prev_delta.shape()[0]; ++sample) {
       for_i(dim_, [&](size_t i) {
-        prev_delta[sample][i] = curr_delta[sample][i] * scale_;
+        prev_delta.host_at(sample, i) = curr_delta.host_at(sample, i) * scale_;
       });
     }
   }
