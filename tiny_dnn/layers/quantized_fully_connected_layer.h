@@ -30,8 +30,8 @@ class quantized_fully_connected_layer : public layer {
   quantized_fully_connected_layer(
     size_t in_dim,
     size_t out_dim,
-    bool has_bias          = true,
-    backend_t backend_type = core::backend_t::internal)
+    bool has_bias                = true,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer({vector_type::data}, {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     layer::add_parameter(1, 1, out_dim, in_dim, parameter_type::weight, true);
