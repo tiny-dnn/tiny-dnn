@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -569,9 +569,9 @@ namespace xt
             using const_reference = typename optional_const_reference::value_closure;
             using pointer = value_type*;
             using const_pointer = const value_type*;
- 
+
             template <class T>
-            decltype(auto) operator()(T&&t) const
+            decltype(auto) operator()(T&& t) const
             {
                 return std::forward<T>(t).value();
             }
@@ -594,7 +594,7 @@ namespace xt
             using const_pointer = const value_type*;
 
             template <class T>
-            decltype(auto) operator()(T&&t) const
+            decltype(auto) operator()(T&& t) const
             {
                 return std::forward<T>(t).has_value();
             }
@@ -634,7 +634,6 @@ namespace xt
     /***************************
      * value_or implementation *
      ***************************/
-
 }
 
 #endif
