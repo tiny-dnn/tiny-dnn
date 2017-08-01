@@ -76,7 +76,7 @@ class tensor_buf {
   std::vector<tensor_t *> in_ptr_, out_ptr_;
 };
 
-TEST(convolutional, fprop) {
+TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);
   l.setup(false);
 
@@ -209,147 +209,142 @@ TEST(convolutional, with_stride) {
 // test for AVX backends
 
 #ifdef CNN_USE_AVX
-TEST(convolutional, fprop_avx) {
-  convolutional_layer l(7, 7, 5, 1, 2);
-
-  tensor_buf buf(l), buf2(l);
-
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
-  l.forward_propagation(buf.in_buf(), buf.out_buf());
-
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
-  l.forward_propagation(buf.in_buf(), buf2.out_buf());
-
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
-
-  for (size_t i = 0; i < out_avx.size(); i++) {
-    // check if all outputs between default backend and avx backend are the
-    // same
-    EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
-  }
-}
-
 TEST(convolutional, bprop_avx) {
-  convolutional_layer l(7, 7, 5, 1, 2);
+  convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.setup(false);
 
-  tensor_buf data(l), grad1(l);
-  tensor_buf grad2(grad1);
+  vec_t out_grads(18, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto prev_grads_noavx   = l.backward({{out_grads}});
+  vec_t result_noavx      = prev_grads_noavx[0][0];
+  Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
+  Tensor<> *b_grads_noavx = l.ith_parameter(1).grad();
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(),
-                     grad1.in_buf());
+  l.clear_grads();
+  l.set_backend_type(backend_t::avx);
+  auto prev_grads_avx   = l.backward({{out_grads}});
+  vec_t result_avx      = prev_grads_avx[0][0];
+  Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
+  Tensor<> *b_grads_avx = l.ith_parameter(1).grad();
 
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
+  EXPECT_EQ(result_avx.size(), result_noavx.size());
+  for (size_t i = 0; i < result_avx.size(); i++) {
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
+  }
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(),
-                     grad2.in_buf());
+  EXPECT_EQ(w_grads_avx->size(), w_grads_noavx->size());
+  for (size_t i = 0; i < w_grads_avx->size(); i++) {
+    EXPECT_NEAR(w_grads_avx->host_at(i), w_grads_noavx->host_at(i), 1E-5);
+  }
 
-  for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch)[0];
-    vec_t &out_avx   = grad2.in_at(ch)[0];
-    for (size_t i = 0; i < out_avx.size(); i++) {
-      EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
-    }
+  EXPECT_EQ(b_grads_avx->size(), b_grads_noavx->size());
+  for (size_t i = 0; i < b_grads_avx->size(); i++) {
+    EXPECT_NEAR(b_grads_avx->host_at(i), b_grads_noavx->host_at(i), 1E-5);
   }
 }
 
 TEST(convolutional, fprop_avx_1x1out) {
   convolutional_layer l(5, 5, 5, 1, 2);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.setup(false);
 
-  tensor_buf buf(l), buf2(l);
+  vec_t in(25, 0);
+  uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto out_noavx     = l.forward({{in}});
+  vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.forward_propagation(buf.in_buf(), buf.out_buf());
-
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
-
-  l.forward_propagation(buf.in_buf(), buf2.out_buf());
-
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
+  l.set_backend_type(backend_t::avx);
+  auto out_avx     = l.forward({{in}});
+  vec_t result_avx = (*out_avx[0])[0];
 
   for (size_t i = 0; i < out_avx.size(); i++) {
-    EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
 
 TEST(convolutional, bprop_avx_1x1out) {
   convolutional_layer l(5, 5, 5, 1, 2);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.setup(false);
 
-  tensor_buf data(l), grad1(l);
-  tensor_buf grad2(grad1);
+  vec_t out_grads(2, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto prev_grads_noavx   = l.backward({{out_grads}});
+  vec_t result_noavx      = prev_grads_noavx[0][0];
+  Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(),
-                     grad1.in_buf());
+  l.clear_grads();
+  l.set_backend_type(backend_t::avx);
+  auto prev_grads_avx   = l.backward({{out_grads}});
+  vec_t result_avx      = prev_grads_avx[0][0];
+  Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
 
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
+  EXPECT_EQ(result_avx.size(), result_noavx.size());
+  for (size_t i = 0; i < result_avx.size(); i++) {
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
+  }
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(),
-                     grad2.in_buf());
-
-  for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch)[0];
-    vec_t &out_avx   = grad2.in_at(ch)[0];
-    for (size_t i = 0; i < out_avx.size(); i++) {
-      EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
-    }
+  EXPECT_EQ(w_grads_avx->size(), w_grads_noavx->size());
+  for (size_t i = 0; i < w_grads_avx->size(); i++) {
+    EXPECT_NEAR(w_grads_avx->host_at(i), w_grads_noavx->host_at(i), 1E-5);
   }
 }
 
 TEST(convolutional, fprop_avx_hstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.bias_init_f(parameter_init::constant(1.0));
+  l.setup(false);
 
-  tensor_buf buf(l), buf2(l);
+  vec_t in(49, 0);
+  uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto out_noavx     = l.forward({{in}});
+  vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.forward_propagation(buf.in_buf(), buf.out_buf());
-
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
-
-  l.forward_propagation(buf.in_buf(), buf2.out_buf());
-
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
+  l.set_backend_type(backend_t::avx);
+  auto out_avx     = l.forward({{in}});
+  vec_t result_avx = (*out_avx[0])[0];
 
   for (size_t i = 0; i < out_avx.size(); i++) {
-    EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
 
 TEST(convolutional, bprop_avx_hstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.setup(false);
 
-  tensor_buf data(l), grad1(l);
-  tensor_buf grad2(grad1);
+  vec_t out_grads(18, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto prev_grads_noavx   = l.backward({{out_grads}});
+  vec_t result_noavx      = prev_grads_noavx[0][0];
+  Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad1.out_buf(),
-                     grad1.in_buf());
+  l.clear_grads();
+  l.set_backend_type(backend_t::avx);
+  auto prev_grads_avx   = l.backward({{out_grads}});
+  vec_t result_avx      = prev_grads_avx[0][0];
+  Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
 
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
+  EXPECT_EQ(result_avx.size(), result_noavx.size());
+  for (size_t i = 0; i < result_avx.size(); i++) {
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
+  }
 
-  l.forward_propagation(data.in_buf(), data.out_buf());
-  l.back_propagation(data.in_buf(), data.out_buf(), grad2.out_buf(),
-                     grad2.in_buf());
-
-  for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch)[0];
-    vec_t &out_avx   = grad2.in_at(ch)[0];
-    for (size_t i = 0; i < out_avx.size(); i++) {
-      EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
-    }
+  EXPECT_EQ(w_grads_avx->size(), w_grads_noavx->size());
+  for (size_t i = 0; i < w_grads_avx->size(); i++) {
+    EXPECT_NEAR(w_grads_avx->host_at(i), w_grads_noavx->host_at(i), 1E-5);
   }
 }
 
@@ -403,22 +398,23 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
 
 TEST(convolutional, fprop_avx_wstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
+  l.weight_init_f(parameter_init::xavier(1.0));
+  l.bias_init_f(parameter_init::constant(1.0));
+  l.setup(false);
 
-  tensor_buf buf(l), buf2(l);
+  vec_t in(49, 0);
+  uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(tiny_dnn::core::backend_t::internal);
+  l.set_backend_type(backend_t::internal);
+  auto out_noavx     = l.forward({{in}});
+  vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.forward_propagation(buf.in_buf(), buf.out_buf());
-
-  l.set_backend_type(tiny_dnn::core::backend_t::avx);
-
-  l.forward_propagation(buf.in_buf(), buf2.out_buf());
-
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
+  l.set_backend_type(backend_t::avx);
+  auto out_avx     = l.forward({{in}});
+  vec_t result_avx = (*out_avx[0])[0];
 
   for (size_t i = 0; i < out_avx.size(); i++) {
-    EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
+    EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
 

@@ -199,31 +199,31 @@ class Tensor : public BaseTensor<U> {
    *
    * @return Iterator pointing to the beginning of Tensor
    */
-  auto host_begin() { return storage_.xbegin(); }
+  auto host_begin() { return storage_.begin(); }
 
-  const auto host_begin() const { return storage_.cxbegin(); }
+  const auto host_begin() const { return storage_.cbegin(); }
 
   template <typename... Args>
   auto host_iter(const Args... args) {
-    return std::next(storage_.xbegin(), host_offset(args...));
+    return std::next(storage_.begin(), host_offset(args...));
   }
 
   template <typename... Args>
   const auto host_iter(const Args... args) const {
-    return std::next(storage_.cxbegin(), host_offset(args...));
+    return std::next(storage_.cbegin(), host_offset(args...));
   }
 
-  auto host_end() { return storage_.xend(); }
+  auto host_end() { return storage_.end(); }
 
-  const auto host_end() const { return storage_.cxend(); }
+  const auto host_end() const { return storage_.cend(); }
 
-  U *host_pbegin() override { return &*storage_.xbegin(); }
+  U *host_pbegin() override { return &*storage_.begin(); }
 
-  const U *host_pbegin() const override { return &*storage_.cxbegin(); }
+  const U *host_pbegin() const override { return &*storage_.cbegin(); }
 
-  U *host_pend() override { return &*storage_.xend(); }
+  U *host_pend() override { return &*storage_.end(); }
 
-  const U *host_pend() const override { return &*storage_.cxend(); }
+  const U *host_pend() const override { return &*storage_.cend(); }
 
   // TODO(Randl): check if strided.
   template <typename... Args>
@@ -307,7 +307,7 @@ auto host_data() {
     // static_assert(!kConst, "Non-constant operation on constant Tensor");
     // data_is_on_host_ = true;
     // data_dirty_ = true;
-    std::fill(storage_.xbegin(), storage_.xend(), value);
+    std::fill(storage_.begin(), storage_.end(), value);
     return *this;
   }
 

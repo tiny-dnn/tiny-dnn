@@ -97,11 +97,11 @@ TEST(ave_pool, forward) {
     };
   // clang-format on
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
-  l.init_weight();
+  l.weight_init_f(parameter_init::constant(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.setup(false);
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -126,11 +126,11 @@ TEST(ave_pool, forward_stride) {
     };
   // clang-format on
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
-  l.init_weight();
+  l.weight_init_f(parameter_init::constant(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.setup(false);
 
-  auto out = l.forward({{in}});
+  auto out  = l.forward({{in}});
   vec_t res = (*out[0])[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -141,9 +141,9 @@ TEST(ave_pool, forward_stride) {
 TEST(ave_pool, backward) {
   average_pooling_layer l(4, 4, 1, 2);
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(1.0));
-  l.init_weight();
+  l.weight_init_f(parameter_init::constant(1.0));
+  l.bias_init_f(parameter_init::constant(1.0));
+  l.setup(false);
 
   // clang-format off
   vec_t in = {
@@ -176,8 +176,8 @@ TEST(ave_pool, backward) {
   std::vector<tensor_t> in_grad =
     l.backward(std::vector<tensor_t>{{curr_delta}});
   vec_t prev_delta_result = in_grad[0][0];
-  vec_t dw_result         = in_grad[1][0];
-  vec_t db_result         = in_grad[2][0];
+  vec_t dw_result         = l.ith_parameter(0).data()->toTensor()[0];
+  vec_t db_result         = l.ith_parameter(1).data()->toTensor()[0];
 
   for (size_t i = 0; i < prev_delta_expected.size(); i++) {
     EXPECT_NEAR(prev_delta_result[i], prev_delta_expected[i], 1E-7);
@@ -192,14 +192,15 @@ TEST(ave_pool, backward) {
   }
 }
 
+/* todo (karandesai) : deal with serialization after parameter integration
 TEST(ave_pool, read_write) {
   average_pooling_layer l1(100, 100, 5, 2);
   average_pooling_layer l2(100, 100, 5, 2);
 
-  l1.setup(true);
-  l2.setup(true);
+  l1.setup(false);
+  l2.setup(false);
 
   serialization_test(l1, l2);
 }
-
+*/
 }  // namespace tiny_dnn

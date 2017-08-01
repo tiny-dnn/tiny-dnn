@@ -165,12 +165,17 @@ class average_pooling_layer : public layer {
                         size_t stride_x,
                         size_t stride_y,
                         padding pad_type = padding::valid)
-    : layer(std_input_order(in_channels > 0), {vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
     avepool_set_params(in_width, in_height, in_channels, pool_size_x,
                        pool_size_y, stride_x, stride_y, pad_type);
     aws_ = average_pooling_layer_worker_specific_storage(
       in_channels, params_.out.size(), params_.in.size(), in_channels,
       params_.out.size());
+
+    // todo (karandesai) : add has_bias flag and necessary consequences
+    layer::add_parameter(in_channels, in_channels, in_height, in_width,
+                         parameter_type::weight);
+    layer::add_parameter(1, 1, 1, in_channels, parameter_type::bias);
 
     if ((in_width % pool_size_x) || (in_height % pool_size_y)) {
       pooling_size_mismatch(in_width, in_height, pool_size_x, pool_size_y);
@@ -179,9 +184,7 @@ class average_pooling_layer : public layer {
     init_connection(pool_size_x, pool_size_y);
   }
 
-  std::vector<shape3d> in_shape() const override {
-    return {params_.in, params_.window, shape3d(1, 1, params_.out.depth_)};
-  }
+  std::vector<shape3d> in_shape() const override { return {params_.in}; }
 
   std::vector<shape3d> out_shape() const override { return {params_.out}; }
 
@@ -192,11 +195,12 @@ class average_pooling_layer : public layer {
     // todo (karandesai) : transfer all this into OpKernel
     // OpKernels do not accept worker storage so currently tricky to do so
 
-    const Tensor<> in      = Tensor<>(*in_data[0]);
-    const Tensor<> weights = Tensor<>(*in_data[1]);
-    const Tensor<> bias    = Tensor<>(*in_data[2]);
-    Tensor<> out           = Tensor<>(*out_data[0]);
+    const Tensor<> in = Tensor<>(*in_data[0]);
+    Tensor<> out      = Tensor<>(*out_data[0]);
     out.fill(0);
+
+    const Tensor<> weights = *(layer::ith_parameter(0).data());
+    const Tensor<> bias    = *(layer::ith_parameter(1).data());
 
     tiny_average_pooling_kernel(in, weights, bias, out, params_, aws_,
                                 parallelize_);
@@ -213,10 +217,10 @@ class average_pooling_layer : public layer {
     Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
     Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
 
-    const Tensor<> weights = Tensor<>(*in_data[1]);
-    const Tensor<> bias    = Tensor<>(*in_data[2]);
-    Tensor<> weights_grads = Tensor<>(*in_grad[1]);
-    Tensor<> bias_grads    = Tensor<>(*in_grad[2]);
+    const Tensor<> weights = *(layer::ith_parameter(0).data());
+    const Tensor<> bias    = *(layer::ith_parameter(1).data());
+    Tensor<> weights_grads = *(layer::ith_parameter(0).grad());
+    Tensor<> bias_grads    = *(layer::ith_parameter(1).grad());
 
     prev_delta.fill(0);
 
@@ -224,8 +228,8 @@ class average_pooling_layer : public layer {
                                      bias_grads, curr_delta, prev_delta,
                                      params_, aws_, parallelize_);
     *in_grad[0] = prev_delta.toTensor();
-    *in_grad[1] = weights_grads.toTensor();
-    *in_grad[2] = bias_grads.toTensor();
+    layer::ith_parameter(0).set_data(weights_grads);
+    layer::ith_parameter(1).set_data(bias_grads);
   }
 
   std::pair<size_t, size_t> pool_size() const {
