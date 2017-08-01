@@ -87,8 +87,9 @@ void parallel_for(size_t begin,
                   const Func &f,
                   size_t /*grainsize*/) {
   assert(end >= begin);
+  // unsigned index isn't allowed in OpenMP 2.0
 #pragma omp parallel for
-  for (size_t i = begin; i < end; ++i) f(blocked_range(i, i + 1));
+  for (int i = (int)begin; i < (int)end; ++i) f(blocked_range(i, i + 1));
 }
 
 #elif defined(CNN_USE_GCD)
@@ -189,10 +190,14 @@ inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100u) {
        [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
-#endif
+        for (int i = (int)r.begin(); i < (int)r.end(); i++) {
+          f(i);
+        }
+#else
          for (size_t i = r.begin(); i < r.end(); i++) {
            f(i);
          }
+#endif
        },
        grainsize);
 #endif  // #ifdef CNN_SINGLE_THREAD
