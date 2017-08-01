@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <memory>
+#include <vector>
+
 #include "tiny_dnn/core/framework/op_kernel.h"
 
 #ifdef CNN_USE_LIBDNN
@@ -41,7 +45,7 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
     // TODO(Randl): Remove once layers forward and backward by themself.
     Tensor<float_t> in_data_t(context.input(0));
     const Tensor<float_t> weights_t(context.input(1)),
-      bias_t = Tensor<float_t>(context.input(2));  // TODO has_bias
+      bias_t = Tensor<float_t>(context.input(2));  // TODO(Randl): has_bias
     Tensor<float_t> out_data_t(context.output(0));
 
     // initialize outputs
@@ -178,13 +182,12 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
 // TODO(edgar): refactor this since it's possible
 // to have OpenCL and CUDA.
 #if defined(USE_OPENCL)
-      greentea::Backend::BACKEND_OpenCL
+      greentea::Backend::BACKEND_OpenCL);
 #elif defined(USE_CUDA)
-      greentea::Backend::BACKEND_CUDA
+      greentea::Backend::BACKEND_CUDA);
 #else
-      greentea::Backend::BACKEND_CPU
+      greentea::Backend::BACKEND_CPU);
 #endif
-      );
 
     // Initialize device pointer in libdnn
     dev_ptr_->Init();

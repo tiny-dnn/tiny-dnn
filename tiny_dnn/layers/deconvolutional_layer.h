@@ -9,7 +9,10 @@
 
 #include <algorithm>
 #include <deque>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "tiny_dnn/core/kernels/deconv2d_grad_op.h"
 #include "tiny_dnn/core/kernels/deconv2d_op.h"
@@ -19,8 +22,6 @@
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
 #endif  // DNN_USE_IMAGE_API
-
-using namespace tiny_dnn::core;
 
 namespace tiny_dnn {
 
@@ -60,18 +61,18 @@ class deconvolutional_layer : public layer {
                         size_t window_size,
                         size_t in_channels,
                         size_t out_channels,
-                        padding pad_type       = padding::valid,
-                        bool has_bias          = true,
-                        size_t w_stride        = 1,
-                        size_t h_stride        = 1,
-                        backend_t backend_type = core::default_engine())
+                        padding pad_type             = padding::valid,
+                        bool has_bias                = true,
+                        size_t w_stride              = 1,
+                        size_t h_stride              = 1,
+                        core::backend_t backend_type = core::default_engine())
     : deconvolutional_layer(in_width,
                             in_height,
                             window_size,
                             window_size,
                             in_channels,
                             out_channels,
-                            connection_table(),
+                            core::connection_table(),
                             pad_type,
                             has_bias,
                             w_stride,
@@ -109,18 +110,18 @@ class deconvolutional_layer : public layer {
                         size_t window_height,
                         size_t in_channels,
                         size_t out_channels,
-                        padding pad_type       = padding::valid,
-                        bool has_bias          = true,
-                        size_t w_stride        = 1,
-                        size_t h_stride        = 1,
-                        backend_t backend_type = core::default_engine())
+                        padding pad_type             = padding::valid,
+                        bool has_bias                = true,
+                        size_t w_stride              = 1,
+                        size_t h_stride              = 1,
+                        core::backend_t backend_type = core::default_engine())
     : deconvolutional_layer(in_width,
                             in_height,
                             window_width,
                             window_height,
                             in_channels,
                             out_channels,
-                            connection_table(),
+                            core::connection_table(),
                             pad_type,
                             has_bias,
                             w_stride,
@@ -157,12 +158,12 @@ class deconvolutional_layer : public layer {
                         size_t window_size,
                         size_t in_channels,
                         size_t out_channels,
-                        const connection_table &connection_table,
-                        padding pad_type       = padding::valid,
-                        bool has_bias          = true,
-                        size_t w_stride        = 1,
-                        size_t h_stride        = 1,
-                        backend_t backend_type = core::default_engine())
+                        const core::connection_table &connection_table,
+                        padding pad_type             = padding::valid,
+                        bool has_bias                = true,
+                        size_t w_stride              = 1,
+                        size_t h_stride              = 1,
+                        core::backend_t backend_type = core::default_engine())
     : deconvolutional_layer(in_width,
                             in_height,
                             window_size,
@@ -208,12 +209,12 @@ class deconvolutional_layer : public layer {
                         size_t window_height,
                         size_t in_channels,
                         size_t out_channels,
-                        const connection_table &connection_table,
-                        padding pad_type       = padding::valid,
-                        bool has_bias          = true,
-                        size_t w_stride        = 1,
-                        size_t h_stride        = 1,
-                        backend_t backend_type = core::default_engine())
+                        const core::connection_table &connection_table,
+                        padding pad_type             = padding::valid,
+                        bool has_bias                = true,
+                        size_t w_stride              = 1,
+                        size_t h_stride              = 1,
+                        core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     layer::add_parameter(out_channels, in_channels, window_height, window_width,
                          parameter_type::weight);
@@ -282,6 +283,7 @@ class deconvolutional_layer : public layer {
     if (params_.pad_type == padding::same) {
       copy_and_pad_delta(dws_.curr_delta_padded, *in_grad[0]);
     }
+
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParams(&params_);
     bwd_ctx_.setParallelize(layer::parallelize());
@@ -345,29 +347,30 @@ class deconvolutional_layer : public layer {
 
  private:
   /* The convolution parameters */
-  deconv_params params_;
+  core::deconv_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
 
   /* The type of backend */
-  backend_t backend_type_;
+  core::backend_t backend_type_;
 
-  deconv_layer_worker_specific_storage dws_;
+  core::deconv_layer_worker_specific_storage dws_;
 
-  void init_backend(const backend_t backend_type) {
+  void init_backend(const core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal ||
-        backend_type == backend_t::nnpack || backend_type == backend_t::avx) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::nnpack ||
+        backend_type == core::backend_t::avx) {
       kernel_fwd_.reset(new Conv2dTransposedOp(ctx));
       kernel_back_.reset(new Conv2dTransposedGradOp(ctx));
       return;
@@ -376,15 +379,16 @@ class deconvolutional_layer : public layer {
     }
   }
 
-  void deconv_set_params(const shape3d &in,
-                         size_t w_width,
-                         size_t w_height,
-                         size_t outc,
-                         padding ptype,
-                         bool has_bias,
-                         size_t w_stride,
-                         size_t h_stride,
-                         const connection_table &tbl = connection_table()) {
+  void deconv_set_params(
+    const shape3d &in,
+    size_t w_width,
+    size_t w_height,
+    size_t outc,
+    padding ptype,
+    bool has_bias,
+    size_t w_stride,
+    size_t h_stride,
+    const core::connection_table &tbl = core::connection_table()) {
     params_.in = in;
     params_.out =
       shape3d(deconv_out_length(in.width_, w_width, w_stride),

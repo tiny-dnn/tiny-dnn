@@ -7,6 +7,11 @@
 */
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/product.h"
 
@@ -25,8 +30,8 @@ class quantized_fully_connected_layer : public layer {
   quantized_fully_connected_layer(
     size_t in_dim,
     size_t out_dim,
-    bool has_bias          = true,
-    backend_t backend_type = core::backend_t::internal)
+    bool has_bias                = true,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
@@ -79,7 +84,7 @@ class quantized_fully_connected_layer : public layer {
   friend struct serialization_buddy;
 
  protected:
-  fully_params params_;
+  core::fully_params params_;
 
   void set_params(const size_t in_size, const size_t out_size, bool has_bias) {
     params_.in_size_  = in_size;
@@ -87,11 +92,11 @@ class quantized_fully_connected_layer : public layer {
     params_.has_bias_ = has_bias;
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     std::shared_ptr<core::backend> backend = nullptr;
 
     // allocate new backend
-    if (backend_type == backend_t::internal) {
+    if (backend_type == core::backend_t::internal) {
       backend = std::make_shared<core::tiny_backend>(&params_);
     } else {
       throw nn_error("Not supported backend type.");

@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -18,10 +22,10 @@ TEST(lrn, cross) {
 
   tiny_dnn::float_t in[4]       = {-1.0, 3.0, 2.0, 5.0};
   tiny_dnn::float_t expected[4] = {
-    -1.0f / 36.0f,        // -1.0 / (1+0.5*(1*1+3*3))^2
-    3.0f / 64.0f,         //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
-    2.0f / 400.0f,        //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
-    5.0f / 15.5f / 15.5f  // 5.0 / (1+0.5*(2*2+5*5))^2
+    -1.0 / 36.0,       // -1.0 / (1+0.5*(1*1+3*3))^2
+    3.0 / 64.0,        //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
+    2.0 / 400.0,       //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
+    5.0 / 15.5 / 15.5  // 5.0 / (1+0.5*(2*2+5*5))^2
   };
   std::vector<const tensor_t*> o;
   lrn.forward({{vec_t(in, in + 4)}}, o);
@@ -34,8 +38,8 @@ TEST(lrn, cross) {
 }
 
 TEST(lrn, read_write) {
-  lrn_layer l1(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
-  lrn_layer l2(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
+  lrn_layer l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
+  lrn_layer l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
 
   l1.init_weight();
   l2.init_weight();

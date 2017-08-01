@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <limits>
+#include <vector>
+
 namespace tiny_dnn {
 namespace kernels {
 
@@ -17,7 +20,6 @@ inline void maxpool_op_internal(const Tensor<float_t, S1> &in_data,
                                 const std::vector<std::vector<size_t>> &out2in,
                                 const bool layer_parallelize) {
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
-
     std::vector<size_t> &max = max_idx[sample];
 
     for (size_t i = 0; i < out2in.size(); i++) {
@@ -43,7 +45,6 @@ inline void maxpool_grad_op_internal(Tensor<float_t, S1> &prev_delta,
                                      const std::vector<size_t> &in2out,
                                      const bool layer_parallelize) {
   for_i(layer_parallelize, prev_delta.shape()[0], [&](size_t sample) {
-
     const std::vector<size_t> &max = max_idx[sample];
 
     for (size_t i = 0; i < in2out.size(); i++) {

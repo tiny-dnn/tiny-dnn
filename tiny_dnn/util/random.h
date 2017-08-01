@@ -11,8 +11,8 @@
 #include <random>
 #include <type_traits>
 
-#include "nn_error.h"
 #include "tiny_dnn/config.h"
+#include "tiny_dnn/util/nn_error.h"
 
 namespace tiny_dnn {
 
@@ -30,6 +30,7 @@ class random_generator {
  private:
   // avoid gen_(0) for MSVC known issue
   // https://connect.microsoft.com/VisualStudio/feedback/details/776456
+  // TODO(Randl): real random?
   random_generator() : gen_(1) {}
   std::mt19937 gen_;
 };
@@ -61,7 +62,7 @@ inline void set_random_seed(unsigned int seed) {
 
 template <typename Container>
 inline int uniform_idx(const Container &t) {
-  return uniform_rand(0, int(t.size() - 1));
+  return uniform_rand(0, static_cast<int>(t.size() - 1));
 }
 
 inline bool bernoulli(float_t p) {

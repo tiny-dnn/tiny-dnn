@@ -6,13 +6,16 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <functional>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
-using namespace tiny_dnn::activation;
 
 TEST(fully_connected, setup_internal) {
   fully_connected_layer l(32, 10, true, core::backend_t::internal);
@@ -84,13 +87,13 @@ TEST(fully_connected, train) {
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t[1], 1E-5);
+  EXPECT_NEAR(predicted[0], t[0], 1e-5);
+  EXPECT_NEAR(predicted[1], t[1], 1e-5);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+  EXPECT_NEAR(predicted[0], t2[0], 1e-5);
+  EXPECT_NEAR(predicted[1], t2[1], 1e-5);
 }
 
 /* todo (karandesai) : Inspect problem, there is a major precision loss
@@ -127,13 +130,13 @@ TEST(fully_connected, train_different_batches) {
 
     vec_t predicted = nn.predict(a);
 
-    EXPECT_NEAR(predicted[0], t[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t[1], 1E-5);
+    EXPECT_NEAR(predicted[0], t[0], 1e-5);
+    EXPECT_NEAR(predicted[1], t[1], 1e-5);
 
     predicted = nn.predict(a2);
 
-    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
+    EXPECT_NEAR(predicted[0], t2[0], 1e-5);
+    EXPECT_NEAR(predicted[1], t2[1], 1e-5);
   }
 }
 */
@@ -142,8 +145,8 @@ TEST(fully_connected, train2) {
   network<sequential> nn;
   gradient_descent optimizer;
 
-  nn << fully_connected_layer(4, 6) << tanh() << fully_connected_layer(6, 3)
-     << tanh();
+  nn << fully_connected_layer(4, 6) << tanh_layer()
+     << fully_connected_layer(6, 3) << tanh_layer();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -168,18 +171,18 @@ TEST(fully_connected, train2) {
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t[1], 1E-4);
+  EXPECT_NEAR(predicted[0], t[0], 1e-4);
+  EXPECT_NEAR(predicted[1], t[1], 1e-4);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-4);
+  EXPECT_NEAR(predicted[0], t2[0], 1e-4);
+  EXPECT_NEAR(predicted[1], t2[1], 1e-4);
 }
 
 TEST(fully_connected, gradient_check) {
   network<sequential> nn;
-  nn << fully_connected_layer(50, 10) << tanh();
+  nn << fully_connected_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -187,8 +190,8 @@ TEST(fully_connected, gradient_check) {
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration later
- * uncomment after fixing
+/* todo (karandesai) : deal with serialization after parameter integration
+ * later uncomment after fixing
 TEST(fully_connected, read_write) {
   fully_connected_layer l1(100, 100);
   fully_connected_layer l2(100, 100);
@@ -211,6 +214,21 @@ TEST(fully_connected, forward_nnp) {
   l.forward({{in}}, o);
   vec_t out          = (*o[0])[0];
   vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
+
+  for (size_t i = 0; i < out_expected.size(); i++) {
+    EXPECT_FLOAT_EQ(out_expected[i], out[i]);
+  }
+}
+
+TEST(fully_connected, forward_nnp_nobias) {
+  fully_connected_layer l(4, 2, false, core::backend_t::nnpack);
+  l.weight_init_f(parameter_init::constant(1.0));
+
+  vec_t in = {0, 1, 2, 3};
+  std::vector<const tensor_t *> o;
+  l.forward({{in}}, o);
+  vec_t out          = (*o[0])[0];
+  vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {
     EXPECT_FLOAT_EQ(out_expected[i], out[i]);

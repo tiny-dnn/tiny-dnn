@@ -36,14 +36,14 @@ class BaseTensor {
   const virtual U *host_pend() const               = 0;
   virtual size_t host_offset(const size_t d) const = 0;
 
-  // TODO: Temporary
+  // TODO(Randl): Temporary
   virtual tensor_t toTensor() const = 0;
   virtual vec_t toVec() const       = 0;
 
   virtual U host_at(size_t index) const = 0;
   virtual U &host_at(size_t index)      = 0;
 
-  virtual ~BaseTensor(){};
+  virtual ~BaseTensor() {}
 };
 
 /**
@@ -67,7 +67,7 @@ class Tensor : public BaseTensor<U> {
    * Initializes a tensor from storage.
    * @return
    */
-  Tensor(Storage &&s) : storage_(std::move(s)){};
+  explicit Tensor(Storage &&s) : storage_(std::move(s)) {}
 
   /**
    * Constructor that accepts an initializer list of shape and create a
@@ -137,24 +137,24 @@ class Tensor : public BaseTensor<U> {
     return *this;
   }
 
-//~Tensor() = default;
+// ~Tensor() = default;
 
 // TODO(Randl): implement copy and move constructors
 #if 0
-    //TODO(Randl):deep copy
+    // TODO(Randl) :deep copy
     Tensor(const Tensor&other) {
         other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
         data_is_on_host_ = true;
         data_dirty_ = true;
-        //device_data_ is intentionally left uninitialized.
+        // device_data_ is intentionally left uninitialized.
     }
-    //TODO(Randl): Move constructors for Tensor and TensorStorage
+    // TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {}
 
-    Tensor(Tensor&& other) = default;        // move ctor
-    Tensor &operator = (Tensor&&) = default; // move assign
+    Tensor(Tensor&& other) = default;         // move ctor
+    Tensor &operator = (Tensor&&) = default;  // move assign
 #endif
 
   /**
@@ -279,8 +279,8 @@ auto host_data() {
 #if 0
     U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        //fromDevice();
-        //data_dirty_ = true;
+        // fromDevice();
+        // data_dirty_ = true;
         return storage_pointer_->data(offset);
     }
 #endif

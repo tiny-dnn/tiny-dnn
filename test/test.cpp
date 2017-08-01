@@ -18,7 +18,7 @@ using namespace tiny_dnn::activation;
 // todo (karandesai) : fix after parameter integration
 //#include "test_network.h"
 // TODO(yida): fix broken test
-//#include "test_average_unpooling_layer.h"
+// #include "test_average_unpooling_layer.h"
 #include "test_batch_norm_layer.h"
 #include "test_concat_layer.h"
 #include "test_convolutional_layer.h"
@@ -37,9 +37,12 @@ using namespace tiny_dnn::activation;
 #include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
 #include "test_quantized_deconvolutional_layer.h"
+// TODO(karandesa-96): enable once parameter api is ready
+// #include "test_recurrent_cell_layer.h"
 #include "test_slice_layer.h"
 // todo (karandesai) : fix after parameter integration
-//#include "test_target_cost.h"
+// #include "test_target_cost.h"
+#include "test_optimizers.h"
 #include "test_tensor.h"
 
 // todo (karandesai) : fix after parameter integration

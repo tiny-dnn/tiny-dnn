@@ -12,31 +12,36 @@ namespace tiny_dnn {
 template <typename T = size_t>
 class TensorRangeClass {
  public:
-  TensorRangeClass(const T begin, const T end) : range(begin, end){};
+  TensorRangeClass(const T begin, const T end) : range(begin, end) {}
   xt::xrange<T> get_range() { return range; }
 
  private:
   xt::xrange<T> range;
 };
 
-inline TensorRangeClass<unsigned long long> TensorRange(
-  const unsigned long long begin, const unsigned long long end) {
-  return TensorRangeClass<unsigned long long>(begin, end);
+// TODO(Randnl): Use int16/int64/etc, rather than the C type long  [runtime/int]
+// [4]
+inline TensorRangeClass<unsigned long long>                 // NOLINT
+  TensorRange(const unsigned long long begin,               // NOLINT
+              const unsigned long long end) {               // NOLINT
+  return TensorRangeClass<unsigned long long>(begin, end);  // NOLINT
 }
 
 template <typename T = size_t>
 class TensorSingleIndexClass {
  public:
-  TensorSingleIndexClass(const T index) : range(index){};
+  explicit TensorSingleIndexClass(const T index) : range(index) {}
   T get_range() { return range; }
 
  private:
   T range;
 };
 
-inline TensorSingleIndexClass<unsigned long long> TensorSingleIndex(
-  const unsigned long long index) {
-  return TensorSingleIndexClass<unsigned long long>(index);
+// TODO(Randnl): Use int16/int64/etc, rather than the C type long  [runtime/int]
+// [4]
+inline TensorSingleIndexClass<unsigned long long>            // NOLINT
+  TensorSingleIndex(const unsigned long long index) {        // NOLINT
+  return TensorSingleIndexClass<unsigned long long>(index);  // NOLINT
 }
 
 }  // namespace tiny_dnn

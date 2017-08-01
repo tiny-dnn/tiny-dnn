@@ -7,8 +7,6 @@
 */
 #pragma once
 
-#include <thread>
-
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/params/fully_params.h"
 

@@ -7,15 +7,18 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <cassert>
 #include <cstdarg>
 #include <cstdio>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <random>
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/xtensor/xarray.hpp"

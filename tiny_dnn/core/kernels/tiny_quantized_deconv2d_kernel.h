@@ -7,6 +7,9 @@
 */
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #include "tiny_dnn/core/kernels/tiny_quantization_kernel.h"
 #include "tiny_dnn/core/params/deconv_params.h"
 
@@ -213,7 +216,7 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
   std::vector<int32_t> dW_quantized(dW.size(), static_cast<int32_t>(0));
 
   // calculating offset
-  // TODO wangdiya: do we need to check overflows?
+  // TODO(wangdiya): do we need to check overflows?
   const int32_t offset_prev_out = int64_to_int32(
     float_to_quantized_unclamped<uint8_t>(0.0f, min_prev_out, max_prev_out));
   const int32_t offset_filter = int64_to_int32(

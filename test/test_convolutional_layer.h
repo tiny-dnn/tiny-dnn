@@ -6,13 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
-
-using namespace tiny_dnn::activation;
 
 TEST(convolutional, setup_internal) {
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true);
@@ -71,10 +73,37 @@ class tensor_buf {
   std::vector<tensor_t *> &in_buf() { return in_ptr_; }
   std::vector<tensor_t *> &out_buf() { return out_ptr_; }
 
+  friend std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer);
+
  private:
   std::vector<tensor_t> in_data_, out_data_;
   std::vector<tensor_t *> in_ptr_, out_ptr_;
 };
+
+/**
+ * Print tensor buffer. May be useful for tests
+ * @param out
+ * @param buffer
+ * @return
+ */
+std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer) {
+  out << "In data:" << std::endl;
+  for (auto &ten : buffer.in_data_) {
+    out << "Tensor" << std::endl;
+    for (auto &vec : ten)
+      for (auto &n : vec) out << n << " ";
+    out << std::endl << std::endl;
+  }
+  out << std::endl;
+  out << "Out data:" << std::endl;
+  for (auto &ten : buffer.out_data_) {
+    out << "Tensor" << std::endl;
+    for (auto &vec : ten)
+      for (auto &n : vec) out << n << " ";
+    out << std::endl << std::endl;
+  }
+  return out;
+}
 
 TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);
@@ -82,17 +111,17 @@ TEST(convolutional, forward) {
 
   // clang-format off
   vec_t in = {
-      3, 2, 1, 5, 2,
-      3, 0, 2, 0, 1,
-      0, 6, 1, 1, 10,
-      3,-1, 2, 9, 0,
-      1, 2, 1, 5, 5
+      3,  2, 1, 5, 2,
+      3,  0, 2, 0, 1,
+      0,  6, 1, 1, 10,
+      3, -1, 2, 9, 0,
+      1,  2, 1, 5, 5
   };
 
   vec_t weight = {
-      0.3,  0.1,  0.2,
-      0.0, -0.1, -0.1,
-      0.05,-0.2, 0.05,
+      0.3,   0.1,  0.2,
+      0.0,  -0.1, -0.1,
+      0.05, -0.2, 0.05,
 
       0.0, -0.1,  0.1,
       0.1, -0.2,  0.3,
@@ -217,14 +246,14 @@ TEST(convolutional, bprop_avx) {
 
   vec_t out_grads(18, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
   Tensor<> *b_grads_noavx = l.ith_parameter(1).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -254,11 +283,11 @@ TEST(convolutional, fprop_avx_1x1out) {
   vec_t in(25, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 
@@ -274,13 +303,13 @@ TEST(convolutional, bprop_avx_1x1out) {
 
   vec_t out_grads(2, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -305,11 +334,11 @@ TEST(convolutional, fprop_avx_hstride) {
   vec_t in(49, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 
@@ -326,13 +355,13 @@ TEST(convolutional, bprop_avx_hstride) {
 
   vec_t out_grads(18, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -405,11 +434,11 @@ TEST(convolutional, fprop_avx_wstride) {
   vec_t in(49, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 
@@ -451,6 +480,19 @@ TEST(convolutional, bprop_avx_wstride) {
 TEST(convolutional, fprop_nnp) {
   convolutional_layer l(5, 5, 3, 1, 2, padding::valid, true, 1, 1,
                         core::backend_t::nnpack);
+
+  // layer::forward_propagation expects tensors, even if we feed only one
+  // input at a time
+  auto create_simple_tensor = [](size_t vector_size) {
+    return tensor_t(1, vec_t(vector_size));
+  };
+
+  // create simple tensors that wrap the payload vectors of the correct size
+  tensor_t in_tensor     = create_simple_tensor(25),
+           out_tensor    = create_simple_tensor(18),
+           a_tensor      = create_simple_tensor(18),
+           weight_tensor = create_simple_tensor(18),
+           bias_tensor   = create_simple_tensor(2);
 
   tensor_buf buf(l, false);
 
@@ -504,7 +546,7 @@ TEST(convolutional, fprop_nnp) {
 
 TEST(convolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << tanh();
+  nn << convolutional_layer(5, 5, 3, 1, 1) << activation::tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_weight();
@@ -622,7 +664,7 @@ TEST(convolutional,
   network<sequential> nn;
   bool tbl[3 * 3] = {true, false, true, false, true, false, true, true, false};
 
-  connection_table connections(tbl, 3, 3);
+  core::connection_table connections(tbl, 3, 3);
 
   nn << convolutional_layer(7, 7, 3, 3, 1, connections, padding::valid, true, 1,
                             1, core::backend_t::internal)
@@ -669,9 +711,9 @@ TEST(convolutional, read_write2) {
 #undef O
 #undef X
   convolutional_layer layer1(14, 14, 5, 3, 6,
-                             connection_table(connection, 3, 6));
+                             core::connection_table(connection, 3, 6));
   convolutional_layer layer2(14, 14, 5, 3, 6,
-                             connection_table(connection, 3, 6));
+                             core::connection_table(connection, 3, 6));
   layer1.init_weight();
   layer2.init_weight();
 
@@ -680,7 +722,7 @@ TEST(convolutional, read_write2) {
 */
 
 TEST(convolutional, copy_and_pad_input_same) {
-  conv_params params;
+  core::conv_params params;
   params.in        = shape3d(5, 5, 1);
   params.weight    = shape3d(3, 3, 2);
   params.in_padded = shape3d(7, 7, 1);
@@ -689,7 +731,7 @@ TEST(convolutional, copy_and_pad_input_same) {
   params.w_stride  = 1;
   params.h_stride  = 1;
 
-  Conv2dPadding conv2d_padding(params);
+  core::Conv2dPadding conv2d_padding(params);
 
   auto create_tensor = [](size_t batch_size, size_t vector_size) {
     return tensor_t(batch_size, vec_t(vector_size));
@@ -720,7 +762,7 @@ TEST(convolutional, copy_and_pad_input_same) {
 }
 
 TEST(convolutional, copy_and_unpad_delta_same) {
-  conv_params params;
+  core::conv_params params;
   params.in        = shape3d(3, 3, 1);
   params.weight    = shape3d(2, 2, 1);
   params.in_padded = shape3d(5, 5, 1);
@@ -729,7 +771,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
   params.w_stride  = 1;
   params.h_stride  = 1;
 
-  Conv2dPadding conv2d_padding(params);
+  core::Conv2dPadding conv2d_padding(params);
 
   auto create_tensor = [](size_t batch_size, size_t vector_size) {
     return tensor_t(batch_size, vec_t(vector_size));

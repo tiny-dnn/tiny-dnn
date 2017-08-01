@@ -49,11 +49,12 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   auto a_begin               = a.host_pbegin();
   auto bias_begin            = bias.host_pbegin();
   const float *weights_begin = W.host_pbegin();
-  const float *pw            = W.host_pbegin();
-  const float *in_begin      = in.host_pbegin();
+  // const float *pw            = W.host_pbegin();
+  const float *in_begin = in.host_pbegin();
 
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
+    const float *pw = W.host_pointer(0, 0);
     for (size_t o = 0; o < out.depth_; ++o) {
       __m256 sum0     = _mm256_setzero_ps();
       __m256 sum1     = _mm256_setzero_ps();
@@ -390,7 +391,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         size_t cnt  = (out_area - headSize) / 8;
         double *pa2 = pa + headSize;
         for (size_t i = 0; i < cnt; ++i) {
-          // TODO: segfault here even though adresses are ok
+          // TODO(beru): segfault here even though adresses are ok
           _mm256_storeu_pd(&pa2[i * 8 + 0], b2);
           _mm256_storeu_pd(&pa2[i * 8 + 4], b2);
         }
