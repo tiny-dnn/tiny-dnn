@@ -654,10 +654,21 @@ void add(T c, std::size_t size, T *dst) {
   }
 }
 
-template <typename Iter>
+/**
+ * Adds constant c to each element of dst (dst[i] += c)
+ * Iterator version
+ * @tparam Iter Iterator type
+ * @param c constant to add
+ * @param size number of elements
+ * @param dst iterator to the beginning of the data
+ */
+template <typename Iter,
+          // Function shouldn't be called on regylar pointers
+          typename = std::enable_if_t<!std::is_pointer<Iter>::value>>
 void add(typename std::iterator_traits<Iter>::value_type c,
          std::size_t size,
          Iter dst) {
+  // TODO(Randl): optimize
   for (size_t i = 0; i < size; ++i) {
     *(dst++) += c;
   }
