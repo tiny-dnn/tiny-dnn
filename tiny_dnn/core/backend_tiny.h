@@ -251,7 +251,7 @@ class tiny_backend : public backend {
                std::vector<tensor_t *> &out_data) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &in = *in_data[0];
-    const vec_t &W     = (*in_data[1])[0];
+    const vec_t &W     = layer_->ith_parameter(0).data()->toVec();
     tensor_t &out      = *out_data[0];
 
     for (size_t i = 0; i < in.size(); i++) {
@@ -272,11 +272,11 @@ class tiny_backend : public backend {
                 std::vector<tensor_t *> &out_data) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &in   = *in_data[0];
-    const vec_t &W       = (*in_data[1])[0];
-    vec_t &b             = (*in_data[2])[0];
+    const vec_t &W       = layer_->ith_parameter(0).data()->toVec();
+    vec_t &b             = layer_->ith_parameter(1).data()->toVec();
     const tensor_t &in_r = *in_data[3];
-    const vec_t &W_r     = (*in_data[4])[0];
-    const vec_t &b_r     = (*in_data[5])[0];
+    const vec_t &W_r     = layer_->ith_parameter(2).data()->toVec();
+    const vec_t &b_r     = layer_->ith_parameter(3).data()->toVec();
     tensor_t &out        = *out_data[0];
     tensor_t &out_r      = *out_data[1];
 
@@ -300,9 +300,9 @@ class tiny_backend : public backend {
                std::vector<tensor_t *> &in_grad) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &prev_out = *in_data[0];
-    const vec_t &W           = (*in_data[1])[0];
-    tensor_t &dW             = *in_grad[1];
-    tensor_t &db             = *in_grad[2];
+    const vec_t &W           = layer_->ith_parameter(0).data()->toVec();
+    tensor_t &dW             = layer_->ith_parameter(0).grad()->toTensor();
+    tensor_t &db             = layer_->ith_parameter(1).grad()->toTensor();
     tensor_t &prev_delta     = *in_grad[0];
     tensor_t &curr_delta     = *out_grad[0];
 
@@ -312,6 +312,8 @@ class tiny_backend : public backend {
       kernels::tiny_quantized_fully_connected_back_kernel(
         *params_f_, prev_out[i], W, dW[i], prev_delta[i], curr_delta[i], db[i],
         layer_->parallelize());
+      layer_->ith_parameter(0).set_grad(Tensor<>(dW));
+      layer_->ith_parameter(1).set_grad(Tensor<>(db));
     }
 #else
     CNN_UNREFERENCED_PARAMETER(in_data);

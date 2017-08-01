@@ -30,10 +30,14 @@ class quantized_fully_connected_layer : public layer {
   quantized_fully_connected_layer(
     size_t in_dim,
     size_t out_dim,
-    bool has_bias                = true,
-    core::backend_t backend_type = core::backend_t::internal)
-    : layer(std_input_order(has_bias), {vector_type::data}) {
+    bool has_bias          = true,
+    backend_t backend_type = core::backend_t::internal)
+    : layer({vector_type::data}, {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
+    layer::add_parameter(1, 1, out_dim, in_dim, parameter_type::weight, true);
+    if (has_bias) {
+      layer::add_parameter(1, 1, 1, out_dim, parameter_type::bias, true);
+    }
     init_backend(backend_type);
   }
 
@@ -47,19 +51,12 @@ class quantized_fully_connected_layer : public layer {
 
   size_t fan_out_size() const override { return params_.out_size_; }
 
-  std::vector<index3d<size_t>> in_shape() const override {
-    if (params_.has_bias_) {
-      return {index3d<size_t>(params_.in_size_, 1, 1),
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1),
-              index3d<size_t>(params_.out_size_, 1, 1)};
-    } else {
-      return {index3d<size_t>(params_.in_size_, 1, 1),
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1)};
-    }
+  std::vector<shape3d> in_shape() const override {
+    return {shape3d(params_.in_size_, 1, 1)};
   }
 
-  std::vector<index3d<size_t>> out_shape() const override {
-    return {index3d<size_t>(params_.out_size_, 1, 1)};
+  std::vector<shape3d> out_shape() const override {
+    return {shape3d(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
