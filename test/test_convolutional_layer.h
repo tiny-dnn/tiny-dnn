@@ -246,14 +246,14 @@ TEST(convolutional, bprop_avx) {
 
   vec_t out_grads(18, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
   Tensor<> *b_grads_noavx = l.ith_parameter(1).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -283,11 +283,11 @@ TEST(convolutional, fprop_avx_1x1out) {
   vec_t in(25, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 
@@ -303,13 +303,13 @@ TEST(convolutional, bprop_avx_1x1out) {
 
   vec_t out_grads(2, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -334,11 +334,11 @@ TEST(convolutional, fprop_avx_hstride) {
   vec_t in(49, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 
@@ -355,13 +355,13 @@ TEST(convolutional, bprop_avx_hstride) {
 
   vec_t out_grads(18, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
   Tensor<> *w_grads_noavx = l.ith_parameter(0).grad();
 
   l.clear_grads();
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
   Tensor<> *w_grads_avx = l.ith_parameter(0).grad();
@@ -434,11 +434,11 @@ TEST(convolutional, fprop_avx_wstride) {
   vec_t in(49, 0);
   uniform_rand(in.begin(), in.end(), -1, 1);
 
-  l.set_backend_type(backend_t::internal);
+  l.set_backend_type(core::backend_t::internal);
   auto out_noavx     = l.forward({{in}});
   vec_t result_noavx = (*out_noavx[0])[0];
 
-  l.set_backend_type(backend_t::avx);
+  l.set_backend_type(core::backend_t::avx);
   auto out_avx     = l.forward({{in}});
   vec_t result_avx = (*out_avx[0])[0];
 

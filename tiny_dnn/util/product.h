@@ -663,7 +663,7 @@ void add(T c, std::size_t size, T *dst) {
  * @param dst iterator to the beginning of the data
  */
 template <typename Iter,
-          // Function shouldn't be called on regylar pointers
+          // Function shouldn't be called on regular pointers
           typename = std::enable_if_t<!std::is_pointer<Iter>::value>>
 void add(typename std::iterator_traits<Iter>::value_type c,
          std::size_t size,
