@@ -12,7 +12,6 @@
 
 #include <iostream>  // for ostream, cout, etc
 #include <string>    // for string
-#include <chrono>    // for high_resolution_clock
 
 namespace tiny_dnn {
 
