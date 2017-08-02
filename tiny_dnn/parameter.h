@@ -124,6 +124,28 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     return &grad_.host_at(sample, i);
   }
 
+  // todo (karandesai) : introduce support for HDF
+  /**
+   * @name Serialization - Deserialization Utilities
+   * @{
+   */
+  void save(std::ostream &os,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2) {
+    os << std::setprecision(precision);
+    for (size_t i = 0; i < data_.size(); i++) {
+      os << *data_at(i) << " ";
+    }
+  }
+
+  void load(std::istream &is,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2) {
+    is >> std::setprecision(precision);
+    for (size_t i = 0; i < data_.size(); i++) {
+      is >> *data_at(i);
+    }
+  }
+  /** @} */  // Serialization - Deserialization Utilities
+
  private:
   parameter_type type_;
 

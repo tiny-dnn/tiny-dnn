@@ -137,17 +137,17 @@ TEST(network, manual_init) {
 
   adagrad opt;
 
-  Tensor<> *c1_w = net[0]->weights()[0];
-  Tensor<> *c1_b = net[0]->weights()[1];
-  Tensor<> *f1_w = net[1]->weights()[0];
+  Parameter c1_w = net[0]->ith_parameter(0);
+  Parameter c1_b = net[0]->ith_parameter(1);
+  Parameter f1_w = net[1]->ith_parameter(0);
 
-  EXPECT_EQ(c1_w->size(), 9u);
-  EXPECT_EQ(c1_b->size(), 1u);
-  EXPECT_EQ(f1_w->size(), 2u);
+  EXPECT_EQ(c1_w.size(), 9u);
+  EXPECT_EQ(c1_b.size(), 1u);
+  EXPECT_EQ(f1_w.size(), 2u);
 
-  *c1_w = Tensor<>({0., 1., 2., 3., 4., 5., 6., 7., 8.});
-  *c1_b = Tensor<>({1.});
-  *f1_w = Tensor<>({1., 2.});
+  c1_w.set_data(Tensor<>({0, 1, 2, 3, 4, 5, 6, 7, 8}));
+  c1_b.set_data(Tensor<>({1}));
+  f1_w.set_data(Tensor<>({1, 2}));
 
   // check if the training and predicting works
   // https://github.com/tiny-dnn/tiny-dnn/issues/330
@@ -329,8 +329,8 @@ TEST(network, test) {
   int data_num = 300;
 
   net << fc;
-  net.weight_init(weight_init::constant(1.0));
-  net.init_weight();
+  net.weight_init_f(parameter_init::constant(1.0));
+  net.init_parameters();
 
   std::vector<vec_t> in, expected;
 
@@ -360,7 +360,7 @@ TEST(network, at) {
   average_pooling_layer p1(32, 32, 6, 2);
 
   net << c1 << p1;
-  net.init_weight();
+  net.init_parameters();
 
   // auto& c = net.at<convolutional_layer>(0);
   // auto& p = net.at<average_pooling_layer>(1);
@@ -383,15 +383,19 @@ TEST(network, weight_init) {
       << average_pooling_layer(32, 32, 6, 2);
 
   // change all layers at once
-  net.weight_init(weight_init::constant(2.0));
-  net.init_weight();
+  net.weight_init_f(parameter_init::constant(2.0));
+  net.init_parameters();
 
-  Tensor<> &w1 = *net[0]->weights()[0];
-  Tensor<> &w2 = *net[1]->weights()[0];
+  Parameter w1 = net[0]->ith_parameter(0);
+  Parameter w2 = net[0]->ith_parameter(0);
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
+  for (size_t i = 0; i < w1.size(); i++) {
+    EXPECT_NEAR(*(w1.data_at(i)), 2.0, 1e-10);
+  }
 
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 2.0, 1e-10);
+  for (size_t i = 0; i < w2.size(); i++) {
+    EXPECT_NEAR(*(w2.data_at(i)), 2.0, 1e-10);
+  }
 }
 
 TEST(network, weight_init_per_layer) {
@@ -403,7 +407,7 @@ TEST(network, weight_init_per_layer) {
   // change specific layer
   net[0]->weight_init(weight_init::constant(2.0));
   net[1]->weight_init(weight_init::constant(1.0));
-  net.init_weight();
+  net.init_parameters();
 
   Tensor<> &w1 = *net[0]->weights()[0];
   Tensor<> &w2 = *net[1]->weights()[0];
@@ -420,7 +424,7 @@ TEST(network, bias_init) {
       << average_pooling_layer(32, 32, 6, 2);
 
   net.bias_init(weight_init::constant(2.0));
-  net.init_weight();
+  net.init_parameters();
 
   Tensor<> &w1 = *net[0]->weights()[1];
   Tensor<> &w2 = *net[1]->weights()[1];
@@ -438,7 +442,7 @@ TEST(network, bias_init_per_layer) {
 
   net[0]->bias_init(weight_init::constant(2.0));
   net[1]->bias_init(weight_init::constant(1.0));
-  net.init_weight();
+  net.init_parameters();
 
   Tensor<> &w1 = *net[0]->weights()[1];
   Tensor<> &w2 = *net[1]->weights()[1];
@@ -460,7 +464,7 @@ TEST(network, gradient_check) {  // sigmoid - cross-entropy
      << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
@@ -477,7 +481,7 @@ TEST(network, gradient_check2) {  // tan_h - mse
      << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
@@ -494,7 +498,7 @@ TEST(network, gradient_check3) {  // mixture - mse
      << fully_connected_layer(5 * 5 * 6, 3);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
@@ -511,7 +515,7 @@ TEST(network, gradient_check4) {  // sigmoid - cross-entropy
      << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_RANDOM));
 }
@@ -528,7 +532,7 @@ TEST(network, gradient_check5) {  // softmax - cross-entropy
      << fully_connected_layer(5 * 5 * 6, 3) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            1e-1f, GRAD_CHECK_RANDOM));
 }
@@ -543,7 +547,7 @@ TEST(network, gradient_check6) {  // sigmoid - cross-entropy
      << fully_connected_layer(201, 2) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -555,7 +559,7 @@ TEST(network, gradient_check7) {  // leaky-relu - mse
   auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   // We need to use larger threshold here, because
   // relu/elu/leaky-relu has non-smooth region of the form
   //
@@ -574,7 +578,7 @@ TEST(network, gradient_check8) {  // elu - mse
   auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   // We need to use larger threshold here, because
   // relu/elu/leaky-relu has non-smooth region of the form
@@ -594,7 +598,7 @@ TEST(network, gradient_check9) {  // tanh_p1m2 - mse
   auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -606,7 +610,7 @@ TEST(network, gradient_check10) {  // softplus - mse
   auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -618,7 +622,7 @@ TEST(network, gradient_check11) {  // softsign - mse
   auto nn = make_mlp<activation>({3, 201, 2});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -645,8 +649,8 @@ TEST(network, read_write) {
      << convolutional_layer(5, 5, 5, 16, 120) << tanh_layer()
      << fully_connected_layer(120, 10) << softmax();
 
-  n1.init_weight();
-  n2.init_weight();
+  n1.init_parameters();
+  n2.init_parameters();
 
   std::vector<vec_t> t;
   std::vector<label_t> l;
@@ -688,7 +692,7 @@ TEST(network, trainable) {
 
   adam a;
 
-  net.init_weight();
+  net.init_parameters();
 
   auto w0_standby = *net[0]->weights()[0];
   auto w2_standby = *net[2]->weights()[0];

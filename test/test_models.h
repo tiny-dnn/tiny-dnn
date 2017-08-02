@@ -28,7 +28,7 @@ TEST(models, alexnet) {
   // init wieghts and biases
   nn.weight_init(weight_init::constant(2.0));
   nn.bias_init(weight_init::constant(2.0));
-  nn.init_weight();
+  nn.init_parameters();
 
   // predict
   auto res = nn.predict(in);

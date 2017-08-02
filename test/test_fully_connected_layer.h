@@ -185,23 +185,20 @@ TEST(fully_connected, gradient_check) {
   nn << fully_connected_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration
- * later uncomment after fixing
 TEST(fully_connected, read_write) {
   fully_connected_layer l1(100, 100);
   fully_connected_layer l2(100, 100);
 
-  l1.setup(true);
-  l2.setup(true);
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
-*/
 
 #ifdef CNN_USE_NNPACK
 TEST(fully_connected, forward_nnp) {

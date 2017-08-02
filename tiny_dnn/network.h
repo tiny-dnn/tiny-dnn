@@ -160,9 +160,9 @@ class network {
   std::string name() const { return name_; }
 
   /**
-   * explicitly initialize weights of all layers
+   * explicitly initialize parameters of all layers
    **/
-  void init_weight() { net_.setup(true); }
+  void init_parameters() { net_.setup(true); }
 
   /**
    * executes forward-propagation and returns output
@@ -567,6 +567,7 @@ class network {
   /**
    * set weight initializer to all layers
    **/
+  // todo (karandesai) : remove after parameter integration
   template <typename WeightInit>
   network &weight_init(const WeightInit &f) {
     auto ptr = std::make_shared<WeightInit>(f);
@@ -577,10 +578,31 @@ class network {
   /**
    * set bias initializer to all layers
    **/
+  // todo (karandesai) : remove after parameter integration
   template <typename BiasInit>
   network &bias_init(const BiasInit &f) {
     auto ptr = std::make_shared<BiasInit>(f);
     for (auto &l : net_) l->bias_init(ptr);
+    return *this;
+  }
+
+  /**
+   * set weight initializer to all layers
+   **/
+  template <typename WeightInit>
+  network &weight_init_f(const WeightInit &f) {
+    auto ptr = std::make_shared<WeightInit>(f);
+    for (auto &l : net_) l->weight_init_f(ptr);
+    return *this;
+  }
+
+  /**
+   * set bias initializer to all layers
+   **/
+  template <typename BiasInit>
+  network &bias_init_f(const BiasInit &f) {
+    auto ptr = std::make_shared<BiasInit>(f);
+    for (auto &l : net_) l->bias_init_f(ptr);
     return *this;
   }
 

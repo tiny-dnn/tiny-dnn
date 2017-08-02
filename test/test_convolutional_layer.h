@@ -522,7 +522,7 @@ TEST(convolutional, gradient_check) {  // tanh - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << activation::tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -532,7 +532,7 @@ TEST(convolutional, gradient_check2) {  // sigmoid - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -543,7 +543,7 @@ TEST(convolutional, gradient_check3) {  // rectified - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << relu();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -554,7 +554,7 @@ TEST(convolutional, gradient_check4) {  // identity - mse
   nn << convolutional_layer(5, 5, 3, 1, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -565,7 +565,7 @@ TEST(convolutional, gradient_check5) {  // sigmoid - cross-entropy
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -576,7 +576,7 @@ TEST(convolutional, gradient_check6) {  // sigmoid - absolute
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first, test_data.second,
                                           epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -587,7 +587,7 @@ TEST(convolutional, gradient_check7) {  // sigmoid - absolute eps
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -600,7 +600,7 @@ TEST(convolutional, gradient_check8_pad_same) {  // sigmoid - mse - padding same
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -613,7 +613,7 @@ TEST(convolutional, gradient_check9_w_stride) {  // sigmoid - mse - w_stride > 1
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -627,7 +627,7 @@ TEST(convolutional,
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -644,7 +644,7 @@ TEST(convolutional,
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -659,19 +659,17 @@ TEST(convolutional,
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration later
- * uncomment after fixing
 TEST(convolutional, read_write) {
   convolutional_layer l1(5, 5, 3, 1, 1);
   convolutional_layer l2(5, 5, 3, 1, 1);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
@@ -687,12 +685,11 @@ TEST(convolutional, read_write2) {
                              core::connection_table(connection, 3, 6));
   convolutional_layer layer2(14, 14, 5, 3, 6,
                              core::connection_table(connection, 3, 6));
-  layer1.init_weight();
-  layer2.init_weight();
+  layer1.init_parameters();
+  layer2.init_parameters();
 
   serialization_test(layer1, layer2);
 }
-*/
 
 TEST(convolutional, copy_and_pad_input_same) {
   core::conv_params params;

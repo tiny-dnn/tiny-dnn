@@ -45,7 +45,7 @@ TEST(power, gradient_check) {
      << fully_connected_layer(20, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
