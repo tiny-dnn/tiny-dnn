@@ -360,9 +360,11 @@ class quantized_convolutional_layer : public layer {
 
   void init() {
     if (params_.pad_type == padding::same) {
-      cws_.prev_out_buf_.resize(1, vec_t(params_.in_padded.size(), float_t{0}));
-      cws_.prev_delta_padded_.resize(
-        1, vec_t(params_.in_padded.size(), float_t{0}));
+      cws_.prev_out_buf_.reshape({1, params_.in_padded.size()});
+      cws_.prev_out_buf_.fill(float_t(0.0));
+
+      cws_.prev_delta_padded_.reshape({1, params_.in_padded.size()});
+      cws_.prev_delta_padded_.fill(float_t(0.0));
     } else {
       cws_.prev_out_buf_.clear();
     }
@@ -427,13 +429,14 @@ class quantized_convolutional_layer : public layer {
       if (params_.pad_type == padding::valid) {
         cws.prev_out_padded_[sample] = &(in[sample]);
       } else {
-        vec_t *dst = &cws.prev_out_buf_[sample];
+        auto dst =
+          cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll());
 
-        // make padded version in order to avoid corner-case in
-        // fprop/bprop
+        // make padded version in order to avoid corner-case in fprop/bprop
         for (size_t c = 0; c < params_.in.depth_; c++) {
-          float_t *pimg = &(*dst)[params_.in_padded.get_index(
-            params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
+          size_t idx = params_.in_padded.get_index(
+            params_.weight.width_ / 2, params_.weight.height_ / 2, c);
+          float_t *pimg      = dst.host_pointer(idx);
           const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
 
           for (size_t y = 0; y < params_.in.height_; y++,

@@ -388,8 +388,10 @@ class quantized_deconvolutional_layer : public layer {
       deconv_layer_worker_storage_;
 
     if (params_.pad_type == padding::same) {
-      dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t{0}));
-      dws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t{0}));
+      dws.curr_out_buf_.reshape({1, params_.in.size()});
+      dws.curr_out_buf_.fill(float_t(0.0));
+      dws.curr_delta_padded.reshape({1, params_.out.size()});
+      dws.curr_delta_padded.fill(float_t(0.0));
     } else {
       dws.curr_out_buf_.clear();
     }
