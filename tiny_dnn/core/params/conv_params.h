@@ -18,7 +18,7 @@ namespace tiny_dnn {
 namespace core {
 
 struct conv_layer_worker_specific_storage {
-  //TODO(Randl): won't work
+  // TODO(Randl): won't work
   std::vector<const Tensor<> *> prev_out_padded_;
   Tensor<> prev_out_buf_;
   Tensor<> prev_delta_padded_;

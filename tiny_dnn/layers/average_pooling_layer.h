@@ -195,12 +195,11 @@ class average_pooling_layer : public layer {
     // OpKernels do not accept worker storage so currently tricky to do so
     out_data[0]->fill(0);
 
-
     const Tensor<> weights = *(layer::parameter_at(0).data());
     const Tensor<> bias    = *(layer::parameter_at(1).data());
 
-    tiny_average_pooling_kernel(*in_data[0], *out_data[0], bias, out, params_, aws_,
-                                parallelize_);
+    tiny_average_pooling_kernel(*in_data[0], weights, bias, *out_data[0],
+                                params_, aws_, parallelize_);
   }
 
   void back_propagation(const std::vector<Tensor<> *> &in_data,
@@ -209,7 +208,6 @@ class average_pooling_layer : public layer {
                         std::vector<Tensor<> *> &in_grad) override {
     in_grad[0]->fill(0);
   // todo (karandesai) : transfer all this into OpKernel
-
 
     const Tensor<> weights = *(layer::parameter_at(0).data());
     const Tensor<> bias    = *(layer::parameter_at(1).data());
