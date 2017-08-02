@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "tiny_dnn/tiny_dnn.h"
+#include "tiny_dnn/util/gradient_check.h"
 
 #ifdef _WIN32
 #define NOMINMAX
@@ -248,6 +249,20 @@ std::pair<
   }
 
   return std::make_pair(a, t);
+}
+
+std::vector<tensor_t> generate_test_data(const std::vector<size_t> nsamples,
+                                         const std::vector<size_t> sizes) {
+  assert(nsamples.size() == sizes.size());
+  std::vector<tensor_t> ret(nsamples.size());
+  for (size_t i = 0; i < nsamples.size(); i++) {
+    ret[i].resize(nsamples[i]);
+    for (size_t j = 0; j < nsamples[i]; j++) {
+      ret[i][j].resize(sizes[i]);
+      uniform_rand(ret[i][j].begin(), ret[i][j].end(), -1.0, 1.0);
+    }
+  }
+  return ret;
 }
 
 #ifndef CNN_NO_SERIALIZATION
