@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -58,7 +58,6 @@ namespace xt
     class xgenerator : public xexpression<xgenerator<F, R, S>>,
                        public xexpression_const_iterable<xgenerator<F, R, S>>
     {
-
     public:
 
         using self_type = xgenerator<F, R, S>;
@@ -81,8 +80,8 @@ namespace xt
         using const_stepper = typename iterable_base::const_stepper;
 
         static constexpr layout_type static_layout = layout_type::any;
-        static constexpr bool contiguous_layout = true;
-        
+        static constexpr bool contiguous_layout = false;
+
         template <class Func>
         xgenerator(Func&& f, const S& shape) noexcept;
 
@@ -108,7 +107,7 @@ namespace xt
         template <class O>
         const_stepper stepper_begin(const O& shape) const noexcept;
         template <class O>
-        const_stepper stepper_end(const O& shape) const noexcept;
+        const_stepper stepper_end(const O& shape, layout_type) const noexcept;
 
     private:
 
@@ -210,7 +209,7 @@ namespace xt
      * Returns a constant reference to the element at the specified position in the function.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the container.
      */
     template <class F, class R, class S>
@@ -261,7 +260,7 @@ namespace xt
 
     template <class F, class R, class S>
     template <class O>
-    inline auto xgenerator<F, R, S>::stepper_end(const O& shape) const noexcept -> const_stepper
+    inline auto xgenerator<F, R, S>::stepper_end(const O& shape, layout_type) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
         return const_stepper(this, offset, true);

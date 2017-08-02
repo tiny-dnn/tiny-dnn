@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -13,9 +13,12 @@
 #ifndef XBUILDER_HPP
 #define XBUILDER_HPP
 
+#include <array>
+#include <cstddef>
 #include <cmath>
 #include <functional>
 #include <utility>
+#include <vector>
 
 #include "xbroadcast.hpp"
 #include "xfunction.hpp"
@@ -23,9 +26,6 @@
 
 #ifdef X_OLD_CLANG
     #include <initializer_list>
-    #include <vector>
-#else
-    #include <array>
 #endif
 
 namespace xt
@@ -164,6 +164,7 @@ namespace xt
             }
 
         private:
+
             F m_ft;
             template <class It>
             inline value_type access_impl(const It& begin, const It& end) const
@@ -191,6 +192,7 @@ namespace xt
             }
 
         private:
+
             int m_k;
         };
     }
@@ -295,7 +297,7 @@ namespace xt
             using size_type = std::size_t;
             using value_type = std::common_type_t<typename std::decay_t<CT>::value_type...>;
 
-            inline concatenate_impl(std::tuple<CT...>&& t, std::size_t axis)
+            inline concatenate_impl(std::tuple<CT...>&& t, size_type axis)
                 : m_t(t), m_axis(axis)
             {
             }
@@ -333,7 +335,7 @@ namespace xt
                     return arr[idx];
                 };
 
-                std::size_t i = 0;
+                size_type i = 0;
                 for (; i < sizeof...(CT); ++i)
                 {
                     if (apply<bool>(i, match, m_t))
@@ -356,7 +358,7 @@ namespace xt
             using size_type = std::size_t;
             using value_type = std::common_type_t<typename std::decay_t<CT>::value_type...>;
 
-            inline stack_impl(std::tuple<CT...>&& t, std::size_t axis)
+            inline stack_impl(std::tuple<CT...>&& t, size_type axis)
                 : m_t(t), m_axis(axis)
             {
             }
@@ -383,7 +385,7 @@ namespace xt
                 {
                     return arr[idx];
                 };
-                std::size_t i = idx[m_axis];
+                size_type i = idx[m_axis];
                 idx.erase(idx.begin() + m_axis);
                 return apply<value_type>(i, get_item, m_t);
             }
@@ -410,7 +412,7 @@ namespace xt
             template <class... Args>
             value_type operator()(Args... args) const
             {
-                std::array<size_type, sizeof...(Args)> args_arr({static_cast<size_type>(args)...});
+                std::array<size_type, sizeof...(Args)> args_arr = {static_cast<size_type>(args)...};
                 return m_source(args_arr[m_axis]);
             }
 
@@ -707,6 +709,22 @@ namespace xt
         };
     }
 
+    namespace detail
+    {
+        // meta-function returning the shape type for a diagonal
+        template <class ST, class... S>
+        struct diagonal_shape_type
+        {
+            using type = ST;
+        };
+
+        template <class I, std::size_t L>
+        struct diagonal_shape_type<std::array<I, L>>
+        {
+            using type = std::array<I, L - 1>;
+        };
+    }
+
     /**
      * @brief Returns the elements on the diagonal of arr
      * If arr has more than two dimensions, then the axes specified by 
@@ -735,23 +753,23 @@ namespace xt
     inline auto diagonal(E&& arr, int offset = 0, std::size_t axis_1 = 0, std::size_t axis_2 = 1)
     {
         using CT = xclosure_t<E>;
+        using shape_type = typename detail::diagonal_shape_type<typename std::decay_t<E>::shape_type>::type;
+
         auto shape = arr.shape();
+        auto dimension = arr.dimension();
 
-        // the following shape calculation code is an almost verbatim adaptation of numpy:
+        // The following shape calculation code is an almost verbatim adaptation of numpy:
         // https://github.com/numpy/numpy/blob/2aabeafb97bea4e1bfa29d946fbf31e1104e7ae0/numpy/core/src/multiarray/item_selection.c#L1799
-
-        auto ret_shape = std::vector<std::size_t>(arr.dimension());
-
+        auto ret_shape = make_sequence<shape_type>(dimension - 1, 0);
         std::size_t dim_1 = shape[axis_1];
         std::size_t dim_2 = shape[axis_2];
-        std::size_t n_dim = arr.dimension();
 
         offset >= 0 ? dim_2 -= offset : dim_1 += offset;
 
         auto diag_size = dim_2 < dim_1 ? dim_2 : dim_1;
 
         std::size_t i = 0;
-        for (std::size_t idim = 0; idim < n_dim; ++idim)
+        for (std::size_t idim = 0; idim < dimension; ++idim)
         {
             if (idim != axis_1 && idim != axis_2)
             {
@@ -759,8 +777,7 @@ namespace xt
             }
         }
 
-        ret_shape[n_dim - 2] = diag_size;
-        ret_shape.pop_back();
+        ret_shape.back() = diag_size;
 
         return detail::make_xgenerator(detail::fn_impl<detail::diagonal_fn<CT>>(detail::diagonal_fn<CT>(std::forward<E>(arr), offset, axis_1, axis_2)),
                                        ret_shape);

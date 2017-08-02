@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -9,11 +9,11 @@
 #ifndef XCSV_HPP
 #define XCSV_HPP
 
+#include <exception>
 #include <istream>
 #include <iterator>
-#include <string>
 #include <sstream>
-#include <exception>
+#include <string>
 #include <utility>
 
 #include "xtensor.hpp"
@@ -95,34 +95,34 @@ namespace xt
     template <class T, class A>
     xtensor_container<std::vector<T, A>, 2> load_csv(std::istream& stream)
     {
-         using container_type = typename std::vector<T, A>;
-         using tensor_type = xtensor_container<container_type, 2>;
-         using size_type = typename tensor_type::size_type;
-         using inner_shape_type = typename tensor_type::inner_shape_type;
-         using inner_strides_type = typename tensor_type::inner_strides_type;
-         using output_iterator = std::back_insert_iterator<container_type>;
- 
-         container_type data;
-         size_type nbrow = 0, nbcol = 0;
-         {
-             output_iterator output(data);
-             std::string row, cell;
-             while (std::getline(stream, row))
-             {
-                 std::stringstream row_stream(row);
-                 nbcol = detail::load_csv_row<size_type, T, output_iterator>(row_stream, output, cell);
-                 ++nbrow;
-             }
-         }
-         inner_shape_type shape = { nbrow, nbcol };
-         inner_strides_type strides; // no need for initializer list for stack-allocated strides_type
-         size_type data_size = compute_strides(shape, layout_type::row_major, strides);
-         // Sanity check for data size.
-         if (data.size() != data_size)
-         {
-              throw std::runtime_error("Inconsistent row lengths in CSV");
-         }
-         return tensor_type(std::move(data), std::move(shape), std::move(strides));
+        using container_type = typename std::vector<T, A>;
+        using tensor_type = xtensor_container<container_type, 2>;
+        using size_type = typename tensor_type::size_type;
+        using inner_shape_type = typename tensor_type::inner_shape_type;
+        using inner_strides_type = typename tensor_type::inner_strides_type;
+        using output_iterator = std::back_insert_iterator<container_type>;
+
+        container_type data;
+        size_type nbrow = 0, nbcol = 0;
+        {
+            output_iterator output(data);
+            std::string row, cell;
+            while (std::getline(stream, row))
+            {
+                std::stringstream row_stream(row);
+                nbcol = detail::load_csv_row<size_type, T, output_iterator>(row_stream, output, cell);
+                ++nbrow;
+            }
+        }
+        inner_shape_type shape = {nbrow, nbcol};
+        inner_strides_type strides;  // no need for initializer list for stack-allocated strides_type
+        size_type data_size = compute_strides(shape, layout_type::row_major, strides);
+        // Sanity check for data size.
+        if (data.size() != data_size)
+        {
+            throw std::runtime_error("Inconsistent row lengths in CSV");
+        }
+        return tensor_type(std::move(data), std::move(shape), std::move(strides));
     }
 
     /**
@@ -138,7 +138,7 @@ namespace xt
         const E& ex = e.derived_cast();
         if (ex.dimension() != 2)
         {
-             throw std::runtime_error("Only 2-D expressions can be serialized to CSV");
+            throw std::runtime_error("Only 2-D expressions can be serialized to CSV");
         }
         size_type nbrows = ex.shape()[0], nbcols = ex.shape()[1];
         auto st = ex.stepper_begin(ex.shape());
