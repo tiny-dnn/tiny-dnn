@@ -143,7 +143,6 @@ inline void global_avepool_grad_op_avx(
   for_i(layer_parallelize, sample_num, [&](size_t sample) {
     auto prev       = prev_delta.host_pointer(sample, 0);
     const auto curr = curr_delta.host_pointer(sample, 0);
-    ;
 
     for (size_t i = 0; i < params.in.depth_; i++) {
       size_t j = 0;

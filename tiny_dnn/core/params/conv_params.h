@@ -50,7 +50,7 @@ struct connection_table {
   }
 
   bool is_connected(size_t x, size_t y) const {
-    return is_empty() ? true : connected_[y * cols_ + x];
+    return is_empty() || connected_[y * cols_ + x];
   }
 
   bool is_empty() const { return rows_ == 0 && cols_ == 0; }
