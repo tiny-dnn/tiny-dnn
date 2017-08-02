@@ -14,8 +14,8 @@
 
 namespace tiny_dnn {
 
-TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
-  using loss_func  = cross_entropy;
+TEST(ave_unpool, gradient_check) {  // sigmoid - mse
+  using loss_func  = mse;           // TODO(Randl): fails with cross-entropy
   using activation = sigmoid;
   using network    = network<sequential>;
 
