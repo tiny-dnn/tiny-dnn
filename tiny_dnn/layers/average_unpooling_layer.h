@@ -30,27 +30,29 @@ inline void tiny_average_unpooling_kernel(
   std::vector<typename partial_connected_layer::wi_connections> &out2wi) {
   CNN_UNREFERENCED_PARAMETER(scale_factor);
   for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const vec_t &in = (*in_data[0])[sample];
-    const vec_t &W  = (*in_data[1])[0];
-    const vec_t &b  = (*in_data[2])[0];
-    vec_t &out      = (*out_data[0])[sample];
+    const Tensor<> in((*in_data[0])[sample]);
+    const Tensor<> W((*in_data[1])[0]);
+    const Tensor<> b((*in_data[2])[0]);
+    Tensor<> out((*out_data[0])[sample]);
 
     auto oarea = out_dim.area();
     size_t idx = 0;
     for (size_t d = 0; d < out_dim.depth_; ++d) {
-      float_t weight = W[d];  // * scale_factor;
-      float_t bias   = b[d];
+      float_t weight = W.host_at(d);  // * scale_factor;
+      float_t bias   = b.host_at(d);
       for (size_t i = 0; i < oarea; ++i, ++idx) {
         const auto &connections = out2wi[idx];
         float_t value{0};
-        for (auto connection : connections) value += in[connection.second];
+        for (auto connection : connections)
+          value += in.host_at(connection.second);
         value *= weight;
         value += bias;
-        out[idx] = value;
+        out.host_at(idx) = value;
       }
     }
 
     assert(out.size() == out2wi.size());
+    (*out_data[0])[sample] = out.toVec();
   });
 }
 
@@ -69,40 +71,46 @@ inline void tiny_average_unpooling_back_kernel(
   CNN_UNREFERENCED_PARAMETER(out_data);
   CNN_UNREFERENCED_PARAMETER(scale_factor);
   for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const vec_t &prev_out = (*in_data[0])[sample];
-    const vec_t &W        = (*in_data[1])[0];
-    vec_t &dW             = (*in_grad[1])[sample];
-    vec_t &db             = (*in_grad[2])[sample];
-    vec_t &prev_delta     = (*in_grad[0])[sample];
-    vec_t &curr_delta     = (*out_grad[0])[sample];
+    const Tensor<> prev_out((*in_data[0])[sample]);
+    const Tensor<> W((*in_data[1])[0]);
+    Tensor<> dW((*in_grad[1])[sample]);
+    Tensor<> db((*in_grad[2])[sample]);
+    Tensor<> prev_delta((*in_grad[0])[sample]);
+    Tensor<> curr_delta((*out_grad[0])[sample]);
 
     auto inarea = in_dim.area();
     size_t idx  = 0;
     for (size_t i = 0; i < in_dim.depth_; ++i) {
-      float_t weight = W[i];  // * scale_factor;
+      float_t weight = W.host_at(i);  // * scale_factor;
       for (size_t j = 0; j < inarea; ++j, ++idx) {
-        prev_delta[idx] = weight * curr_delta[in2wo[idx][0].second];
+        prev_delta.host_at(idx) =
+          weight * curr_delta.host_at(in2wo[idx][0].second);
       }
     }
 
     for (size_t i = 0; i < weight2io.size(); ++i) {
       const auto &connections = weight2io[i];
-      float_t diff{0};
+      float_t diff            = 0.0;
 
       for (auto connection : connections)
-        diff += prev_out[connection.first] * curr_delta[connection.second];
+        diff += prev_out.host_at(connection.first) *
+                curr_delta.host_at(connection.second);
 
-      dW[i] += diff;  // * scale_factor;
+      dW.host_at(i) += diff;  // * scale_factor;
     }
 
     for (size_t i = 0; i < bias2out.size(); i++) {
       const std::vector<size_t> &outs = bias2out[i];
-      float_t diff{0};
+      float_t diff                    = 0.0;
 
-      for (auto o : outs) diff += curr_delta[o];
+      for (auto o : outs) diff += curr_delta.host_at(o);
 
-      db[i] += diff;
+      db.host_at(i) += diff;
     }
+    (*in_grad[1])[sample]  = dW.toVec();
+    (*in_grad[2])[sample]  = db.toVec();
+    (*in_grad[0])[sample]  = prev_delta.toVec();
+    (*out_grad[0])[sample] = curr_delta.toVec();
   });
 }
 
