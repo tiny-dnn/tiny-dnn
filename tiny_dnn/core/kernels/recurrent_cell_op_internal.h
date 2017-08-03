@@ -112,7 +112,7 @@ inline void recurrent_cell_op_internal(
   const Tensor<float_t, S15> &out_h,
   const core::recurrent_cell_params &params,
   const bool layer_parallelize) {
-  for (size_t sample = 0; sample < prev_out.size(); sample++) {
+  for (size_t sample = 0; sample < prev_out.shape()[0]; sample++) {
     const auto prev_out_ =
       prev_out.subView(TensorSingleIndex(sample), TensorAll());
     const auto prev_h_ = prev_h.subView(TensorSingleIndex(sample), TensorAll());
@@ -135,8 +135,8 @@ inline void recurrent_cell_op_internal(
     for (size_t o = 0; o < params.out_size_; o++) {
       // propagate delta from output to h.
       curr_state_delta_.host_at(o) +=
-        vectorize::dot(curr_output_delta_.host_pbegin(),
-                       V.host_pointer(o * params.out_size_), params.out_size_);
+        vectorize::dot(curr_output_delta_.host_begin(),
+                       V.host_iter(o * params.out_size_), params.out_size_);
     }
 
     // h'(t)
