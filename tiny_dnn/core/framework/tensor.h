@@ -407,8 +407,10 @@ auto host_data() {
    */
   vec_t toVec() const {
     vec_t tensor(storage_.shape()[0]);
-    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
-      tensor[i] = storage_(i);
+    auto vec = tensor.begin();
+    auto ten = host_begin();
+    for (; vec != tensor.end(); ++vec, ++ten) {
+      *vec = *ten;
     }
     return tensor;
   }
@@ -418,9 +420,8 @@ auto host_data() {
    * @return
    */
   Tensor &fromVec(vec_t vect) {
-    vec_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
-      storage_(i) = tensor[i];
+      storage_(i) = vect[i];
     }
     return *this;
   }
