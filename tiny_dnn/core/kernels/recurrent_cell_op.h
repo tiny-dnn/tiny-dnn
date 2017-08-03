@@ -20,7 +20,7 @@ class RecurrentCellOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->recurrent_cell();
 
-    // incomimg/outcoming data
+    // incoming/outcoming data
     const Tensor<> in_data(context.input(0)), prev_h(context.input(1));
     const Tensor<> U(context.input(2)[0]), W(context.input(3)[0]),
       V(context.input(4)[0]);

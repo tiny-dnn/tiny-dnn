@@ -79,59 +79,86 @@ inline void recurrent_cell_op_internal(
   });
 }
 
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6,
+          typename S7,
+          typename S8,
+          typename S9,
+          typename S10,
+          typename S11,
+          typename S12,
+          typename S13,
+          typename S14,
+          typename S15>
 inline void recurrent_cell_op_internal(
-  const tensor_t &prev_out,
-  const tensor_t &prev_h,
-  const vec_t &U,
-  const vec_t &W,
-  const vec_t &V,
-  tensor_t &dU,
-  tensor_t &dW,
-  tensor_t &dV,
-  tensor_t &db,
-  tensor_t &dc,
-  const tensor_t &curr_output_delta,
-  tensor_t &curr_state_delta,
-  tensor_t &prev_output_delta,
-  tensor_t &prev_state_delta,
-  const tensor_t &out_h,
+  const Tensor<float_t, S1> &prev_out,
+  const Tensor<float_t, S2> &prev_h,
+  const Tensor<float_t, S3> &U,
+  const Tensor<float_t, S4> &W,
+  const Tensor<float_t, S5> &V,
+  Tensor<float_t, S6> &dU,
+  Tensor<float_t, S7> &dW,
+  Tensor<float_t, S8> &dV,
+  Tensor<float_t, S9> &db,
+  Tensor<float_t, S10> &dc,
+  const Tensor<float_t, S11> &curr_output_delta,
+  Tensor<float_t, S12> &curr_state_delta,
+  Tensor<float_t, S13> &prev_output_delta,
+  Tensor<float_t, S14> &prev_state_delta,
+  const Tensor<float_t, S15> &out_h,
   const core::recurrent_cell_params &params,
   const bool layer_parallelize) {
   for (size_t sample = 0; sample < prev_out.size(); sample++) {
-    const vec_t &prev_out_          = prev_out[sample];
-    const vec_t &prev_h_            = prev_h[sample];
-    vec_t &dU_                      = dU[sample];
-    vec_t &dW_                      = dW[sample];
-    vec_t &dV_                      = dV[sample];
-    vec_t &db_                      = db[sample];
-    vec_t &dc_                      = dc[sample];
-    const vec_t &curr_output_delta_ = curr_output_delta[sample];
-    vec_t &curr_state_delta_        = curr_state_delta[sample];
-    vec_t &prev_output_delta_       = prev_output_delta[sample];
-    vec_t &prev_state_delta_        = prev_state_delta[sample];
-    const vec_t &out_h_             = out_h[sample];
+    const auto prev_out_ =
+      prev_out.subView(TensorSingleIndex(sample), TensorAll());
+    const auto prev_h_ = prev_h.subView(TensorSingleIndex(sample), TensorAll());
+    auto dU_           = dU.subView(TensorSingleIndex(sample), TensorAll());
+    auto dW_           = dW.subView(TensorSingleIndex(sample), TensorAll());
+    auto dV_           = dV.subView(TensorSingleIndex(sample), TensorAll());
+    auto db_           = db.subView(TensorSingleIndex(sample), TensorAll());
+    auto dc_           = dc.subView(TensorSingleIndex(sample), TensorAll());
+    const auto curr_output_delta_ =
+      curr_output_delta.subView(TensorSingleIndex(sample), TensorAll());
+    auto curr_state_delta_ =
+      curr_state_delta.subView(TensorSingleIndex(sample), TensorAll());
+    auto prev_output_delta_ =
+      prev_output_delta.subView(TensorSingleIndex(sample), TensorAll());
+    auto prev_state_delta_ =
+      prev_state_delta.subView(TensorSingleIndex(sample), TensorAll());
+    const auto out_h_ = out_h.subView(TensorSingleIndex(sample), TensorAll());
 
     // from output to h
     for (size_t o = 0; o < params.out_size_; o++) {
       // propagate delta from output to h.
-      curr_state_delta_[o] += vectorize::dot(
-        &curr_output_delta_[0], &V[o * params.out_size_], params.out_size_);
+      curr_state_delta_.host_at(o) +=
+        vectorize::dot(curr_output_delta_.host_pbegin(),
+                       V.host_pointer(o * params.out_size_), params.out_size_);
     }
 
     // h'(t)
-    params.activation_->backward_activation(prev_h_, out_h_, curr_state_delta_,
-                                            curr_state_delta_);
+    // TODO(Randl): tmp
+    const vec_t prev_h_v = prev_h_.toVec(), out_h_v = out_h_.toVec();
+    vec_t curr_state_delta_v = curr_state_delta_.toVec();
+    params.activation_->backward_activation(
+      prev_h_v, out_h_v, curr_state_delta_v, curr_state_delta_v);
+    curr_state_delta_.fromVec(curr_state_delta_v);
 
     // \delta h(t) -W-> h(t-1)
     for (size_t o = 0; o < params.out_size_; o++) {
-      prev_state_delta_[o] += vectorize::dot(
-        &curr_state_delta_[0], &W[o * params.out_size_], params.out_size_);
+      prev_state_delta_.host_at(o) +=
+        vectorize::dot(curr_state_delta_.host_pbegin(),
+                       W.host_pointer(o * params.out_size_), params.out_size_);
     }
 
     // \delta h(t) -U-> \delta x(t)
     for (size_t i = 0; i < params.in_size_; i++) {
-      prev_output_delta_[i] += vectorize::dot(
-        &curr_state_delta_[0], &U[i * params.out_size_], params.out_size_);
+      prev_output_delta_.host_at(i) +=
+        vectorize::dot(curr_state_delta_.host_pbegin(),
+                       U.host_pointer(i * params.out_size_), params.out_size_);
     }
 
     for_(layer_parallelize, 0, size_t(params.out_size_),
@@ -142,31 +169,34 @@ inline void recurrent_cell_op_internal(
            const size_t end    = r.end();
            const size_t stride = end - begin;
            for (size_t o = 0; o < params.out_size_; o++) {
-             vectorize::muladd(&curr_output_delta_[begin], out_h_[o], stride,
-                               &dV_[o * params.out_size_ + begin]);
+             vectorize::muladd(curr_output_delta_.host_pointer(begin),
+                               out_h_.host_at(o), stride,
+                               dV_.host_pointer(o * params.out_size_ + begin));
            }
 
            if (params.has_bias_) {
              // vec_t& dc;
              for (size_t o = begin; o < end; o++) {
-               dc_[o] += curr_output_delta_[o];
+               dc_.host_at(o) += curr_output_delta_.host_at(o);
              }
            }
 
            for (size_t o = 0; o < params.out_size_; o++) {
-             vectorize::muladd(&curr_state_delta_[begin], prev_h_[o], stride,
-                               &dW_[o * params.out_size_ + begin]);
+             vectorize::muladd(curr_state_delta_.host_pointer(begin),
+                               prev_h_.host_at(o), stride,
+                               dW_.host_pointer(o * params.out_size_ + begin));
            }
 
            for (size_t i = 0; i < params.in_size_; i++) {
-             vectorize::muladd(&curr_state_delta[sample][begin], prev_out_[i],
-                               stride, &dU_[i * params.out_size_ + begin]);
+             vectorize::muladd(curr_state_delta_.host_pointer(begin),
+                               prev_out_.host_at(i), stride,
+                               dU_.host_pointer(i * params.out_size_ + begin));
            }
 
            if (params.has_bias_) {
              // vec_t& db;
              for (size_t o = begin; o < end; o++) {
-               db_[o] += curr_state_delta_[o];
+               db_.host_at(o) += curr_state_delta_.host_at(o);
              }
            }
          });
