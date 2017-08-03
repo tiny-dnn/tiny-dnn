@@ -19,8 +19,8 @@
 namespace tiny_dnn {
 
 TEST(tensor, constructors) {
-  Tensor<float_t> t1;
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1;
+  Tensor<> t2({2, 2, 2, 2});
   t2.fill(float_t(2.0));
 
   t1 = t2;  // invoke assign copy ctor
@@ -30,19 +30,19 @@ TEST(tensor, constructors) {
     EXPECT_EQ(*it, float_t(2.0));
   }
 
-  t1 = Tensor<float_t>({2, 2, 3, 4, 2}, 0);  // invoke copy ctor
+  t1 = Tensor<>({2, 2, 3, 4, 2}, 0);  // invoke copy ctor
 
   // check that t1 have default values
   for (auto it = t1.host_begin(); it != t1.host_end(); ++it) {
     EXPECT_EQ(*it, float_t(0.0));
   }
 
-  t2 = Tensor<float_t>({1, 1, 1, 1, 2}, static_cast<float_t>(1.1));
+  t2 = Tensor<>({1, 1, 1, 1, 2}, static_cast<float_t>(1.1));
   EXPECT_EQ(*t2.host_begin(), float_t(1.1));
 }
 
 TEST(tensor, shape) {
-  Tensor<float_t> tensor({1, 2, 2, 2});
+  Tensor<> tensor({1, 2, 2, 2});
 
   EXPECT_EQ(tensor.shape()[0], size_t(1));
   EXPECT_EQ(tensor.shape()[1], size_t(2));
@@ -50,33 +50,15 @@ TEST(tensor, shape) {
   EXPECT_EQ(tensor.shape()[3], size_t(2));
 }
 
-TEST(tensor, base_shape) {
-  Tensor<float_t> tensor({1, 2, 2, 2});
-  BaseTensor<float_t> &base_tensor = tensor;
-
-  EXPECT_EQ(base_tensor.shape()[0], size_t(1));
-  EXPECT_EQ(base_tensor.shape()[1], size_t(2));
-  EXPECT_EQ(base_tensor.shape()[2], size_t(2));
-  EXPECT_EQ(base_tensor.shape()[3], size_t(2));
-}
-
 TEST(tensor, size) {
-  Tensor<float_t> tensor({2, 2, 2, 2});
+  Tensor<> tensor({2, 2, 2, 2});
 
   EXPECT_EQ(tensor.size(), size_t(2 * 2 * 2 * 2));
   EXPECT_EQ(tensor.dim(), size_t(4));
 }
 
-TEST(tensor, base_size) {
-  Tensor<float_t> tensor({2, 2, 2, 2});
-  BaseTensor<float_t> &base_tensor = tensor;
-
-  EXPECT_EQ(base_tensor.size(), size_t(2 * 2 * 2 * 2));
-  EXPECT_EQ(base_tensor.dim(), size_t(4));
-}
-
 TEST(tensor, view1) {
-  Tensor<float_t> tensor({3, 3, 3, 3}, 2);
+  Tensor<> tensor({3, 3, 3, 3}, 2);
   auto t_view = tensor.subView(TensorRange(0, 2), TensorRange(0, 1),
                                TensorRange(0, 3), TensorRange(0, 3));
   EXPECT_EQ(t_view.shape()[0], size_t(2));
@@ -88,16 +70,48 @@ TEST(tensor, view1) {
   EXPECT_EQ(tensor.host_at(0, 0, 0, 0), -1);
 }
 
+TEST(tensor, view2) {
+  Tensor<> tensor({3, 3, 3, 4}, 2);
+  auto t_view = tensor.subView(TensorRange(0, 2), TensorSingleIndex(0),
+                               TensorRange(0, 3), TensorAll());
+  EXPECT_EQ(t_view.shape()[0], size_t(2));
+  EXPECT_EQ(t_view.shape()[1], size_t(3));
+  EXPECT_EQ(t_view.shape()[2], size_t(4));
+  t_view.host_at(0, 0, 0) = -1;
+  t_view.host_at(1, 1, 1) = 3;
+  EXPECT_EQ(tensor.host_at(0, 0, 0, 0), -1);
+  EXPECT_EQ(tensor.host_at(1, 0, 1, 1), 3);
+}
+
+TEST(tensor, view3) {
+  Tensor<> tensor({5, 5}, 2);
+  ViewTensor t_view = tensor.subView(TensorSingleIndex(2), TensorAll());
+  EXPECT_EQ(t_view.dim(), size_t(1));
+  EXPECT_EQ(t_view.shape()[0], size_t(5));
+  Tensor<> tensor2({1, 3}, 2);
+  auto t_view2 = tensor2.subView(TensorSingleIndex(0), TensorAll());
+  EXPECT_EQ(t_view2.dim(), size_t(1));
+  EXPECT_EQ(t_view2.shape()[0], size_t(3));
+}
+
+TEST(tensor, const_view1) {
+  const Tensor<> tensor({5, 5}, 2);
+  auto t_view = tensor.subView(TensorSingleIndex(2), TensorAll());
+  EXPECT_EQ(t_view.dim(), size_t(1));
+  EXPECT_EQ(t_view.shape()[0], size_t(5));
+  EXPECT_EQ(tensor.host_at(2), 2);
+}
+
 TEST(tensor, reshape) {
-  Tensor<float_t> tensor({1, 2, 2, 2}, 2);
+  Tensor<> tensor({1, 2, 2, 2}, 2);
   tensor.reshape({4, 1, 2});
   EXPECT_EQ(tensor.shape()[0], size_t(4));
-  EXPECT_EQ(tensor.shape().size(), size_t(3));
+  EXPECT_EQ(tensor.dim(), size_t(3));
   EXPECT_EQ(tensor.host_at(2, 0, 1), size_t(2));
 }
 
 TEST(tensor, fill) {
-  Tensor<float_t> tensor({2, 2, 2, 2});
+  Tensor<> tensor({2, 2, 2, 2});
 
   // fill all tensor values with ones
 
@@ -117,8 +131,8 @@ TEST(tensor, fill) {
 }
 
 TEST(tensor, add1) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -127,7 +141,7 @@ TEST(tensor, add1) {
 
   // compute element-wise sum along all tensor values
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   layer_add(t3, t1, t2);
 
@@ -139,7 +153,7 @@ TEST(tensor, add1) {
 }
 
 TEST(tensor, add2a) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -147,7 +161,7 @@ TEST(tensor, add2a) {
 
   // compute element-wise sum along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   // check that sum is okay
 
@@ -159,7 +173,7 @@ TEST(tensor, add2a) {
 }
 
 TEST(tensor, add2b) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -167,7 +181,7 @@ TEST(tensor, add2b) {
 
   // compute element-wise sum along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   // check that sum is okay
 
@@ -179,26 +193,26 @@ TEST(tensor, add2b) {
 }
 
 TEST(tensor, add3) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({4, 4, 4, 4});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({4, 4, 4, 4});
 
   // compute element-wise sum along all tensor values.
   // Expect a throw since shapes are different
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   EXPECT_THROW(layer_add(t3, t1, t2), nn_error);
 }
 
 TEST(tensor, add4) {
-  Tensor<float_t> t1({2, 2, 2, 2}, 5);
-  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  Tensor<> t1({2, 2, 2, 2}, 5);
+  Tensor<> t2({4, 4, 4, 4}, 3);
   auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
                        TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
-  Tensor<float_t> t4;
+  Tensor<> t4;
 
   // check that sum is okay
 
@@ -210,8 +224,8 @@ TEST(tensor, add4) {
 }
 
 TEST(tensor, sub1) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -220,7 +234,7 @@ TEST(tensor, sub1) {
 
   // compute element-wise subtraction along all tensor values
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
   layer_sub(t3, t1, t2);
 
   // check that difference is okay
@@ -231,7 +245,7 @@ TEST(tensor, sub1) {
 }
 
 TEST(tensor, sub2a) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -239,7 +253,7 @@ TEST(tensor, sub2a) {
 
   // compute element-wise subtraction along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_sub(t2, t, float_t(2.0));
 
@@ -251,7 +265,7 @@ TEST(tensor, sub2a) {
 }
 
 TEST(tensor, sub2b) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -259,7 +273,7 @@ TEST(tensor, sub2b) {
 
   // compute element-wise subtraction along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_sub(t2, float_t(1.0), t);
 
@@ -271,25 +285,25 @@ TEST(tensor, sub2b) {
 }
 
 TEST(tensor, sub3) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({4, 4, 4, 4});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({4, 4, 4, 4});
 
   // compute element-wise subtraction along all tensor values.
   // Expect a throw since shapes are different
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   EXPECT_THROW(layer_sub(t3, t1, t2), nn_error);
 }
 TEST(tensor, sub4) {
-  Tensor<float_t> t1({2, 2, 2, 2}, 5);
-  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  Tensor<> t1({2, 2, 2, 2}, 5);
+  Tensor<> t2({4, 4, 4, 4}, 3);
   auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
                        TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
-  Tensor<float_t> t4;
+  Tensor<> t4;
 
   // check that diffrence is okay
 
@@ -300,8 +314,8 @@ TEST(tensor, sub4) {
   }
 }
 TEST(tensor, mul1) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -310,7 +324,7 @@ TEST(tensor, mul1) {
 
   // compute element-wise multiplication along all tensor values
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   layer_mul(t3, t1, t2);
 
@@ -322,7 +336,7 @@ TEST(tensor, mul1) {
 }
 
 TEST(tensor, mul2a) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -330,7 +344,7 @@ TEST(tensor, mul2a) {
 
   // compute element-wise multiplication along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_mul(t2, t, float_t(2.0));
 
@@ -342,7 +356,7 @@ TEST(tensor, mul2a) {
 }
 
 TEST(tensor, mul2b) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -350,7 +364,7 @@ TEST(tensor, mul2b) {
 
   // compute element-wise multiplication along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_mul(t2, float_t(2.0), t);
 
@@ -362,26 +376,26 @@ TEST(tensor, mul2b) {
 }
 
 TEST(tensor, mul3) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({4, 4, 4, 4});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({4, 4, 4, 4});
 
   // compute element-wise multiplication along all tensor values.
   // Expect a throw since shapes are different
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   EXPECT_THROW(layer_mul(t3, t1, t2), nn_error);
 }
 
 TEST(tensor, mul4) {
-  Tensor<float_t> t1({2, 2, 2, 2}, 5);
-  Tensor<float_t> t2({4, 4, 4, 4}, 3);
+  Tensor<> t1({2, 2, 2, 2}, 5);
+  Tensor<> t2({4, 4, 4, 4}, 3);
   auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
                        TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
-  Tensor<float_t> t4;
+  Tensor<> t4;
 
   layer_mul(t4, t1, t3);
 
@@ -392,8 +406,8 @@ TEST(tensor, mul4) {
 }
 
 TEST(tensor, div1) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -402,7 +416,7 @@ TEST(tensor, div1) {
 
   // compute element-wise division along all tensor values
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   layer_div(t3, t1, t2);
 
@@ -414,7 +428,7 @@ TEST(tensor, div1) {
 }
 
 TEST(tensor, div2a) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -422,7 +436,7 @@ TEST(tensor, div2a) {
 
   // compute element-wise division along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_div(t2, t, float_t(2.0));
 
@@ -434,7 +448,7 @@ TEST(tensor, div2a) {
 }
 
 TEST(tensor, div2b) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -442,7 +456,7 @@ TEST(tensor, div2b) {
 
   // compute element-wise division along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_div(t2, float_t(1.0), t);
 
@@ -454,20 +468,20 @@ TEST(tensor, div2b) {
 }
 
 TEST(tensor, div3) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({4, 4, 4, 4});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({4, 4, 4, 4});
 
   // compute element-wise division along all tensor values.
   // Expect a throw since shapes are different
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   EXPECT_THROW(layer_div(t3, t1, t2), nn_error);
 }
 
 TEST(tensor, div4) {
-  Tensor<float_t> t1({2, 2, 2, 2});
-  Tensor<float_t> t2({2, 2, 2, 2});
+  Tensor<> t1({2, 2, 2, 2});
+  Tensor<> t2({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -476,7 +490,7 @@ TEST(tensor, div4) {
 
   // compute element-wise division along all tensor values
 
-  Tensor<float_t> t3;
+  Tensor<> t3;
 
   layer_div(t3, t1, t2);
 
@@ -488,7 +502,7 @@ TEST(tensor, div4) {
 }
 
 TEST(tensor, div5) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
 
@@ -496,7 +510,7 @@ TEST(tensor, div5) {
 
   // compute element-wise division along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_div(t2, t, float_t(0.0));
 
@@ -508,14 +522,14 @@ TEST(tensor, div5) {
 }
 
 TEST(tensor, div6) {
-  Tensor<float_t> t1({2, 2, 2, 2}, 5);
-  Tensor<float_t> t2({4, 4, 4, 4}, 2);
+  Tensor<> t1({2, 2, 2, 2}, 5);
+  Tensor<> t2({4, 4, 4, 4}, 2);
   auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 2), TensorRange(0, 2),
                        TensorRange(0, 2));
 
   // compute element-wise sum along all tensor values.
 
-  Tensor<float_t> t4;
+  Tensor<> t4;
 
   // check that result is okay
 
@@ -527,14 +541,14 @@ TEST(tensor, div6) {
 }
 
 TEST(tensor, sqrt1) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
   t.fill(float_t(4.0));
 
   // compute element-wise square root along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_sqrt(t2, t);
 
@@ -546,14 +560,14 @@ TEST(tensor, sqrt1) {
 }
 
 TEST(tensor, sqrt2) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
   t.fill(float_t(-1.0));
 
   // compute element-wise square root along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_sqrt(t2, t);
 
@@ -565,14 +579,14 @@ TEST(tensor, sqrt2) {
 }
 
 TEST(tensor, exp) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
 
   // fill tensor with initial values
   t.fill(float_t(-1.0));
 
   // compute element-wise exponent along all tensor values
 
-  Tensor<float_t> t2;
+  Tensor<> t2;
 
   layer_exp(t2, t);
 
@@ -584,9 +598,9 @@ TEST(tensor, exp) {
 }
 
 TEST(tensor, dim) {
-  Tensor<float_t> t({2, 2, 2, 2});
+  Tensor<> t({2, 2, 2, 2});
   EXPECT_EQ(t.dim(), 4u);
-  Tensor<float_t> t2({4, 2});
+  Tensor<> t2({4, 2});
   EXPECT_EQ(t2.dim(), 2u);
   auto t3 = t2.subView(TensorRange(0, 2), TensorRange(0, 1));
   EXPECT_EQ(t3.dim(), 2u);
@@ -599,7 +613,7 @@ std::ostream &print_tester(std::ostream &os) {
   std::vector<size_t> shape(N, 2);
   shape.back() = 3;
 
-  Tensor<float_t> t(shape);
+  Tensor<> t(shape);
   t.fill(float_t{1.0});
   os << t;
   print_tester<N - 1>(os);
@@ -611,7 +625,7 @@ TEST(tensor, tensor_t) {
   for (size_t i = 0; i < x.size(); i += 2)
     for (size_t j = 0; j < x[i].size(); j += 2) x[i][j] = i + j;
 
-  Tensor<float_t> y(x);
+  Tensor<> y(x);
   EXPECT_EQ(y.shape()[0], 5u);
   EXPECT_EQ(y.shape()[1], 5u);
   EXPECT_EQ(y.host_at(1, 1), 2);
@@ -631,7 +645,7 @@ std::ostream &print_tester<0>(std::ostream &os) {
 TEST(tensor, print) { print_tester<5>(std::cout); }
 
 TEST(tensor, print_view) {
-  Tensor<float_t> tensor({3, 3, 3, 3}, 2);
+  Tensor<> tensor({3, 3, 3, 3}, 2);
 
   auto t_view = tensor.subView(TensorRange(0, 2), TensorRange(0, 1),
                                TensorRange(0, 3), TensorRange(0, 3));

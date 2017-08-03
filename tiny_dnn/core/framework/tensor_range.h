@@ -19,12 +19,12 @@ class TensorRangeClass {
   xt::xrange<T> range;
 };
 
-// TODO(Randnl): Use int16/int64/etc, rather than the C type long  [runtime/int]
+// TODO(Randl): Use int16/int64/etc, rather than the C type long  [runtime/int]
 // [4]
-inline TensorRangeClass<unsigned long long>                 // NOLINT
-  TensorRange(const unsigned long long begin,               // NOLINT
-              const unsigned long long end) {               // NOLINT
-  return TensorRangeClass<unsigned long long>(begin, end);  // NOLINT
+inline TensorRangeClass<size_t>                 // NOLINT
+  TensorRange(const size_t begin,               // NOLINT
+              const size_t end) {               // NOLINT
+  return TensorRangeClass<size_t>(begin, end);  // NOLINT
 }
 
 template <typename T = size_t>
@@ -37,11 +37,18 @@ class TensorSingleIndexClass {
   T range;
 };
 
-// TODO(Randnl): Use int16/int64/etc, rather than the C type long  [runtime/int]
+// TODO(Randl): Use int16/int64/etc, rather than the C type long  [runtime/int]
 // [4]
-inline TensorSingleIndexClass<unsigned long long>            // NOLINT
-  TensorSingleIndex(const unsigned long long index) {        // NOLINT
-  return TensorSingleIndexClass<unsigned long long>(index);  // NOLINT
+inline TensorSingleIndexClass<size_t>            // NOLINT
+  TensorSingleIndex(const size_t index) {        // NOLINT
+  return TensorSingleIndexClass<size_t>(index);  // NOLINT
 }
 
+template <typename T = size_t>  // Just for uniformity, not really needed
+class TensorAllClass {
+ public:
+  xt::xall_tag get_range() { return xt::all(); }
+};
+
+inline TensorAllClass<size_t> TensorAll() { return TensorAllClass<size_t>(); }
 }  // namespace tiny_dnn
