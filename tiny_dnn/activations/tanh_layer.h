@@ -21,19 +21,24 @@ class tanh_layer : public activation_layer {
 
   std::string layer_type() const override { return "tanh-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] = std::tanh(x[j]);
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto iterx = x.host_begin();
+    auto itery = y.host_begin();
+    for (; iterx != x.host_end(); ++iterx, ++itery) {
+      *itery = *iterx;
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    for (size_t j = 0; j < x.size(); j++) {
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    auto iterdx = dx.host_begin();
+    auto iterdy = dy.host_begin();
+    auto itery  = y.host_begin();
+    for (; iterdx != dx.host_end(); ++iterdx, ++iterdy, ++itery) {
       // dx = dy * (gradient of tanh)
-      dx[j] = dy[j] * (float_t(1) - sqr(y[j]));
+      *iterdx = *iterdy * (float_t(1) - sqr(*itery));
     }
   }
 
