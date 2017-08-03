@@ -121,8 +121,9 @@ class cross_entropy {
     assert(y.size() == t.size());
     vec_t d(t.size());
 
-    for (size_t i = 0; i < y.size(); ++i)
-      d[i]        = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+    for (size_t i = 0; i < y.size(); ++i) {
+      d[i] = (y[i] - t[i]) / (y[i] * (float_t(1) - y[i]));
+    }
 
     return d;
   }

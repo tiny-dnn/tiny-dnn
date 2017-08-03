@@ -576,6 +576,7 @@ void fill(T *dst, size_t size, T value) {
 
 }  // namespace detail
 
+// TODO(Randl): can be done with templates instead of ifdef?
 #ifdef CNN_USE_AVX
 // vertically accumulate 'n' AVX registers into single register.
 template <typename aligned>
