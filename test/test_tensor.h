@@ -102,6 +102,12 @@ TEST(tensor, const_view1) {
   EXPECT_EQ(tensor.host_at(2), 2);
 }
 
+TEST(tensor, view3) {
+  Tensor<float_t> tensor({5, 5}, 2);
+  ViewTensor t_view = tensor.subView(TensorSingleIndex(2), TensorRange(0, 5));
+  EXPECT_EQ(t_view.shape()[0], size_t(5));
+}
+
 TEST(tensor, reshape) {
   Tensor<> tensor({1, 2, 2, 2}, 2);
   tensor.reshape({4, 1, 2});
