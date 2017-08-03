@@ -77,7 +77,7 @@ class activation_layer : public layer {
     Tensor<> &y       = *out_data[0];
     for_i(x.size(), [&](size_t i) {
       forward_activation(x.subView(TensorSingleIndex(i), TensorAll()),
-                         TensorSingleIndex(i), TensorAll());
+                         y.subView(TensorSingleIndex(i), TensorAll()));
     });
   }
 
@@ -85,12 +85,16 @@ class activation_layer : public layer {
                         const std::vector<Tensor<> *> &out_data,
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
-    tensor_t &dx       = *in_grad[0];
-    const tensor_t &dy = *out_grad[0];
-    const tensor_t &x  = *in_data[0];
-    const tensor_t &y  = *out_data[0];
-    for_i(x.size(),
-          [&](size_t i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
+    Tensor<> &dx       = *in_grad[0];
+    const Tensor<> &dy = *out_grad[0];
+    const Tensor<> &x  = *in_data[0];
+    const Tensor<> &y  = *out_data[0];
+    for_i(x.size(), [&](size_t i) {
+      backward_activation(x.subView(TensorSingleIndex(i), TensorAll()),
+                          y.subView(TensorSingleIndex(i), TensorAll()),
+                          dx.subView(TensorSingleIndex(i), TensorAll()),
+                          dy.subView(TensorSingleIndex(i), TensorAll()));
+    });
   }
 
   std::string layer_type() const override = 0;
@@ -103,7 +107,7 @@ class activation_layer : public layer {
    * @param x  input vector
    * @param y  output vector (values to be assigned based on input)
    **/
-  virtual void forward_activation(const vec_t &x, vec_t &y) = 0;
+  virtual void forward_activation(const ConstViewTensor x, ViewTensor y) = 0;
 
   /**
    * Populate vec_t of elements 'dx' according to gradient of activation.
@@ -113,13 +117,15 @@ class activation_layer : public layer {
    * @param dx gradient of input vectors (i-th element correspond with x[i])
    * @param dy gradient of output vectors (i-th element correspond with y[i])
    **/
-  virtual void backward_activation(const vec_t &x,
-                                   const vec_t &y,
-                                   vec_t &dx,
-                                   const vec_t &dy) = 0;
+  virtual void backward_activation(const ConstViewTensor x,
+                                   const ConstViewTensor y,
+                                   ViewTensor dx,
+                                   const ConstViewTensor dy) = 0;
 
+  // TODO(Randl): check ranges for different activations
   /**
-   * Target value range for learning.
+   *
+   * @return target value range for learning.
    */
   virtual std::pair<float_t, float_t> scale() const = 0;
 
