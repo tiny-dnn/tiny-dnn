@@ -12,56 +12,69 @@
 namespace tiny_dnn {
 namespace kernels {
 
+template <typename S1,
+          typename S2,
+          typename S3,
+          typename S4,
+          typename S5,
+          typename S6,
+          typename S7,
+          typename S8,
+          typename S9>
 inline void recurrent_cell_op_internal(
-  const tensor_t &in_data,
-  const tensor_t &prev_h,
-  const vec_t &U,
-  const vec_t &W,
-  const vec_t &V,
-  const vec_t &bias,
-  const vec_t &c,
-  tensor_t &out_data,
-  tensor_t &out_h,
+  const Tensor<float_t, S1> &in_data,
+  const Tensor<float_t, S2> &prev_h,
+  const Tensor<float_t, S3> &U,
+  const Tensor<float_t, S4> &W,
+  const Tensor<float_t, S5> &V,
+  const Tensor<float_t, S6> &bias,
+  const Tensor<float_t, S7> &c,
+  Tensor<float_t, S8> &out_data,
+  Tensor<float_t, S9> &out_h,
   const core::recurrent_cell_params &params,
   const bool layer_parallelize) {
-  for_i(layer_parallelize, in_data.size(), [&](size_t sample) {
-    const vec_t &in         = in_data[sample];
-    const vec_t &prev_state = prev_h[sample];
-    vec_t &out              = out_data[sample];
-    vec_t &next_state       = out_h[sample];
+  for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
+    const auto in = in_data.subView(TensorSingleIndex(sample), TensorAll());
+    const auto prev_state =
+      prev_h.subView(TensorSingleIndex(sample), TensorAll());
+    auto out        = out_data.subView(TensorSingleIndex(sample), TensorAll());
+    auto next_state = out_h.subView(TensorSingleIndex(sample), TensorAll());
 
     for (size_t o = 0; o < params.out_size_; o++) {
       float_t next_state_ = 0;
-
       // W * h(t-1)
       for (size_t o_2 = 0; o_2 < params.out_size_; o_2++) {
-        next_state_ += W[o_2 * params.out_size_ + o] * prev_state[o_2];
+        next_state_ +=
+          W.host_at(o_2 * params.out_size_ + o) * prev_state.host_at(o_2);
       }
 
       // U*x(t)
       for (size_t i = 0; i < params.in_size_; i++) {
-        next_state_ += U[i * params.out_size_ + o] * in[i];
+        next_state_ += U.host_at(i * params.out_size_ + o) * in.host_at(i);
       }
 
       if (params.has_bias_) {
-        next_state_ += bias[o];
+        next_state_ += bias.host_at(o);
       }
-      next_state[o] = next_state_;
+      next_state.host_at(o) = next_state_;
     }
 
-    params.activation_->forward_activation(next_state, next_state);
+    // TODO(Randl): temporary
+    vec_t t1 = next_state.toVec();
+    params.activation_->forward_activation(t1, t1);
+    next_state.fromVec(t1);
 
     // V matrix is out_size_ x out_size_
     for (size_t o = 0; o < params.out_size_; o++) {
       float_t out_ = 0;
       for (size_t o_2 = 0; o_2 < params.out_size_; o_2++) {
-        out_ += V[o_2 * params.out_size_ + o] * next_state[o_2];
+        out_ += V.host_at(o_2 * params.out_size_ + o) * next_state.host_at(o_2);
       }
 
       if (params.has_bias_) {
-        out_ += c[o];
+        out_ += c.host_at(o);
       }
-      out[o] = out_;
+      out.host_at(o) = out_;
     }
   });
 }
