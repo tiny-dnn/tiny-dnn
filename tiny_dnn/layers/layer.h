@@ -407,48 +407,79 @@ class layer : public node {
    * This can be used during training phase when parameter update is
    * required.
    *
-   * @param trainable_only flag to return only the trainable parameters.
+   * @param trainable_only flag to return only the trainable parameters
    * @return std::vector of pointers to parameters
    */
   Parameters parameters(bool trainable_only = false) {
     Parameters parameters;
     for (size_t i = 0; i < parameters_.size(); i++) {
       if (!trainable_only ||
-          (ith_parameter(i).is_trainable() && trainable_only)) {
-        parameters.push_back(&ith_parameter(i));
+          (parameter_at(i).is_trainable() && trainable_only)) {
+        parameters.push_back(&parameter_at(i));
       }
     }
     return parameters;
   }
 
-  /**
-   * @brief Get const pointers to parameters of this layer.
-   *
-   * This can be used during inference phase when parameter update is not
-   * required.
-   *
-   * @param trainable_only flag to return only the trainable parameters.
-   * @return const std::vector of const pointers to parameters
-   */
-  const ConstParameters parameters(bool trainable_only = false) const {
+  ConstParameters parameters(bool trainable_only = false) const {
     ConstParameters parameters;
     for (size_t i = 0; i < parameters_.size(); i++) {
       if (!trainable_only ||
-          (ith_parameter(i).is_trainable() && trainable_only)) {
-        parameters.push_back(&ith_parameter(i));
+          (parameter_at(i).is_trainable() && trainable_only)) {
+        parameters.push_back(&parameter_at(i));
       }
     }
     return parameters;
   }
 
-  Parameter &ith_parameter(size_t i) { return *parameters_[i]; }
+  /** To be generally used internally by kernels and optimizers. */
+  Parameter &parameter_at(size_t i) { return *parameters_[i]; }
 
-  const Parameter &ith_parameter(size_t i) const { return *parameters_[i]; }
+  /** To be generally used internally by kernels and optimizers. */
+  const Parameter &parameter_at(size_t i) const { return *parameters_[i]; }
 
-  void set_ith_parameter(size_t i, Parameter &p) {
-    if (i >= parameters_.size()) parameters_.resize(i + 1);
-    parameters_[i] = std::make_shared<Parameter>(p);
+  /** Convenience method to access and manipulate weights. */
+  Parameter &weights_at() {
+    Parameter *weights_p = nullptr;
+    bool fetched         = false;
+    for (auto &parameter : parameters_) {
+      if (parameter->type() == parameter_type::weight) {
+        if (!fetched) {
+          weights_p = parameter.get();
+          fetched   = true;
+        } else {
+          nn_warn("Layer " + layer_type() +
+                  " contains more than "
+                  "one weights parameters, returning first only!\n");
+        }
+      }
+    }
+    return *weights_p;
   }
+
+  /** Convenience method to access and analyze particular weights. */
+  const Parameter &weights_at() const { return weights_at(); }
+
+  /** Convenience method to access and manipulate particular bias. */
+  Parameter &bias_at() {
+    Parameter *bias_p = nullptr;
+    bool fetched      = false;
+    for (auto &parameter : parameters_) {
+      if (parameter->type() == parameter_type::bias && !fetched) {
+        bias_p  = parameter.get();
+        fetched = true;
+      } else if (fetched) {
+        nn_warn(
+          "Layer " + layer_type() +
+          "contains more than one bias parameters, returning first only!");
+      }
+    }
+    return *bias_p;
+  }
+
+  /** Convenience method to access and analyze particular biases. */
+  const Parameter &bias_at() const { return bias_at(); }
+
   /** @} */  // Parameter Getters and Setters
 
   virtual void save(

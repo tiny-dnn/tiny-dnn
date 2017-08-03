@@ -177,8 +177,8 @@ TEST(ave_pool, backward) {
   std::vector<tensor_t> in_grad =
     l.backward(std::vector<tensor_t>{{curr_delta}});
   vec_t prev_delta_result = in_grad[0][0];
-  vec_t dw_result         = l.ith_parameter(0).data()->toTensor()[0];
-  vec_t db_result         = l.ith_parameter(1).data()->toTensor()[0];
+  vec_t dw_result         = l.weights_at().data()->toTensor()[0];
+  vec_t db_result         = l.bias_at().data()->toTensor()[0];
 
   for (size_t i = 0; i < prev_delta_expected.size(); i++) {
     EXPECT_NEAR(prev_delta_result[i], prev_delta_expected[i], 1E-7);
