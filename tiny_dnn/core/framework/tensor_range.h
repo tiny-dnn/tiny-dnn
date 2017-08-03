@@ -19,12 +19,9 @@ class TensorRangeClass {
   xt::xrange<T> range;
 };
 
-// TODO(Randl): Use int16/int64/etc, rather than the C type long  [runtime/int]
-// [4]
-inline TensorRangeClass<size_t>                 // NOLINT
-  TensorRange(const size_t begin,               // NOLINT
-              const size_t end) {               // NOLINT
-  return TensorRangeClass<size_t>(begin, end);  // NOLINT
+inline TensorRangeClass<size_t> TensorRange(const size_t begin,
+                                            const size_t end) {
+  return TensorRangeClass<size_t>(begin, end);
 }
 
 template <typename T = size_t>
@@ -37,11 +34,8 @@ class TensorSingleIndexClass {
   T range;
 };
 
-// TODO(Randl): Use int16/int64/etc, rather than the C type long  [runtime/int]
-// [4]
-inline TensorSingleIndexClass<size_t>            // NOLINT
-  TensorSingleIndex(const size_t index) {        // NOLINT
-  return TensorSingleIndexClass<size_t>(index);  // NOLINT
+inline TensorSingleIndexClass<size_t> TensorSingleIndex(const size_t index) {
+  return TensorSingleIndexClass<size_t>(index);
 }
 
 template <typename T = size_t>  // Just for uniformity, not really needed
