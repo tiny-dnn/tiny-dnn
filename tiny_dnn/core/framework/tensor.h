@@ -106,17 +106,13 @@ class Tensor {
     }
   }
 
-  /**
-   *
-   * @param T
-   * @return
-   */
-  Tensor<U> &operator=(const Tensor<U> &T) {
-    storage_ = T.storage_;
-    return *this;
-  }
+  Tensor(const Tensor &other) = default;         // copy ctor
+  Tensor &operator=(const Tensor &T) = default;  // copy assign
 
-// ~Tensor() = default;
+  // ~Tensor() = default;
+
+  Tensor(Tensor &&other) = default;             // move ctor
+  Tensor &operator=(Tensor &&other) = default;  // move assign
 
 // TODO(Randl): implement copy and move constructors
 #if 0
@@ -130,10 +126,7 @@ class Tensor {
         // device_data_ is intentionally left uninitialized.
     }
     // TODO(Randl): Move constructors for Tensor and TensorStorage
-    Tensor &operator = (const Tensor& other) {}
 
-    Tensor(Tensor&& other) = default;         // move ctor
-    Tensor &operator = (Tensor&&) = default;  // move assign
 #endif
 
   /**
@@ -312,6 +305,16 @@ auto host_data() {
     for (size_t i = 0; i < size; ++i) storage_[i] = tensor.storage_;
     return *this;
   }
+
+
+  template <typename S>
+  Tensor &assign(Tensor<U, S> tensor) {
+    auto in = tensor.host_begin();
+    auto out = host_begin();
+    for (; in!=tensor.host_end(); ++in, ++out) *out=*in;
+    return *this;
+  }
+
   // TODO(Randl): checked version
   /**
    * Reshape tensor
