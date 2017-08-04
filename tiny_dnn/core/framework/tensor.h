@@ -25,28 +25,6 @@
 
 namespace tiny_dnn {
 
-template <typename U = float_t>
-class BaseTensor {
- public:
-  const virtual std::vector<size_t> &shape() const = 0;
-  virtual size_t dim() const                       = 0;
-  virtual size_t size() const                      = 0;
-  virtual U *host_pbegin()                         = 0;
-  const virtual U *host_pbegin() const             = 0;
-  virtual U *host_pend()                           = 0;
-  const virtual U *host_pend() const               = 0;
-  virtual size_t host_offset(const size_t d) const = 0;
-
-  // TODO(Randl): Temporary
-  virtual tensor_t toTensor() const = 0;
-  virtual vec_t toVec() const       = 0;
-
-  virtual U host_at(size_t index) const = 0;
-  virtual U &host_at(size_t index)      = 0;
-
-  virtual ~BaseTensor() {}
-};
-
 /**
  * A tensor of the given dimension.
  *
@@ -54,7 +32,7 @@ class BaseTensor {
  * Storage is type of underlying storage
  */
 template <typename U = float_t, typename Storage = xt::xarray<U>>
-class Tensor : public BaseTensor<U> {
+class Tensor {
   typedef U *UPtr;
 
  public:
@@ -142,7 +120,7 @@ class Tensor : public BaseTensor<U> {
 
 // TODO(Randl): implement copy and move constructors
 #if 0
-    // TODO(Randl) :deep copy
+  // TODO(Randl) :deep copy
     Tensor(const Tensor&other) {
         other.fromDevice();
         shape_ = other.shape_;
@@ -162,19 +140,25 @@ class Tensor : public BaseTensor<U> {
    *
    * @return the tensor shape
    */
-  const std::vector<size_t> &shape() const override { return storage_.shape(); }
+  const std::vector<size_t> &shape() const { return storage_.shape(); }
 
   /**
    *
    * @return Tensor's number of dimensions
    */
-  size_t dim() const override { return storage_.dimension(); }
+  size_t dim() const { return storage_.dimension(); }
+
+  /**
+   *
+   * @return is tensor is empty
+   */
+  bool empty() const { return size() == 0; }
 
   /**
    *
    * @return the total number of elements in Tensor
    */
-  size_t size() const override { return storage_.size(); }
+  size_t size() const { return storage_.size(); }
 
   /**
    * Access to indexes in tensor
@@ -214,17 +198,18 @@ class Tensor : public BaseTensor<U> {
     return std::next(storage_.cbegin(), host_offset(args...));
   }
 
+  // TODO(Randl): rename?
   auto host_end() { return storage_.end(); }
 
   const auto host_end() const { return storage_.cend(); }
 
-  U *host_pbegin() override { return &*storage_.begin(); }
+  U *host_pbegin() { return &*storage_.begin(); }
 
-  const U *host_pbegin() const override { return &*storage_.cbegin(); }
+  const U *host_pbegin() const { return &*storage_.cbegin(); }
 
-  U *host_pend() override { return &*storage_.end(); }
+  U *host_pend() { return &*storage_.end(); }
 
-  const U *host_pend() const override { return &*storage_.cend(); }
+  const U *host_pend() const { return &*storage_.cend(); }
 
   // TODO(Randl): check if strided.
   template <typename... Args>
@@ -241,7 +226,7 @@ class Tensor : public BaseTensor<U> {
    * @param d an index of last dimension
    * @return offest from the beginning of the dimesion
    */
-  size_t host_offset(const size_t d) const override { return d; }
+  size_t host_offset(const size_t d) const { return d; }
 
   /**
    * Calculate an offest in 1D representation of nD Tensor. Parameters are
@@ -278,7 +263,7 @@ auto host_data() {
 }*/
 // TODO(ּּRandl): should we enable this again?
 #if 0
-    U* mutable_host_data() {
+  U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
         // fromDevice();
         // data_dirty_ = true;
@@ -312,6 +297,21 @@ auto host_data() {
     return *this;
   }
 
+  /**
+   * Fill tensor with another tensor repeated size times over first axis
+   * @tparam S storage of parameter tensor
+   * @param size
+   * @param tensor
+   * @return
+   */
+  template <typename S>
+  Tensor &fill(size_t size, Tensor<U, S> tensor) {
+    auto shape = tensor.shape();
+    shape.insert(shape.begin(), size);
+    storage_.reshape(shape);
+    for (size_t i = 0; i < size; ++i) storage_[i] = tensor.storage_;
+    return *this;
+  }
   // TODO(Randl): checked version
   /**
    * Reshape tensor
@@ -319,9 +319,28 @@ auto host_data() {
    */
   void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
+  /**
+   * Reshapes to shape {}
+   */
+  void clear() { storage_.reshape({}); }
+
+  // TODO(Randl): checked version
+  /**
+   * Reshape tensor
+   * @param shape new shape
+   */
+  void resize_axis(const size_t value, const size_t axis = 0) {
+    auto curr  = shape();
+    curr[axis] = value;
+    storage_.reshape(curr);
+  }
+
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
-  U host_at(size_t index) const override { return storage_(index); }
-  U &host_at(size_t index) override { return storage_(index); }
+  const Tensor operator[](size_t index) const {
+    return Tensor(storage_[index]);
+  }
+  // U host_at(size_t index) const { return storage_(index); }
+  // U &host_at(size_t index) { return storage_(index); }
 
   /**
    * Returns view of current Tensor
@@ -332,7 +351,7 @@ auto host_data() {
    */
   template <typename... Values, template <typename> class... InputRanges>
   auto subView(InputRanges<Values>... ranges) {
-    // TODO(Randl): all, stride
+    // TODO(Randl): stride
     using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
     using SharedTensor = Tensor<U, ViewType>;
     return SharedTensor(xt::view(storage_, ranges.get_range()...));
@@ -347,10 +366,12 @@ auto host_data() {
    */
   template <typename... Values, template <typename> class... InputRanges>
   auto subView(InputRanges<Values>... ranges) const {
-    // TODO(Randl): all, stride
-    using ViewType     = decltype(xt::view(storage_, ranges.get_range()...));
-    using SharedTensor = Tensor<U, const ViewType>;
-    return SharedTensor(xt::view(storage_, ranges.get_range()...));
+    // TODO(Randl): stride
+    using ViewType =
+      decltype(xt::view((const Storage)storage_, ranges.get_range()...));
+    using SharedTensor = Tensor<U, ViewType>;
+    return SharedTensor(
+      xt::view((const Storage)storage_, ranges.get_range()...));
   }
 
   /*
@@ -369,7 +390,7 @@ auto host_data() {
    * Temporal method to convert new Tensor to tensor_t
    * @return
    */
-  tensor_t toTensor() const override {
+  tensor_t toTensor() const {
     tensor_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
       tensor[i].resize(storage_.shape()[1]);
@@ -381,13 +402,38 @@ auto host_data() {
   }
 
   /**
-   * Temporal method to convert new Tensor to vec_t
+   * Temporary method to convert new Tensor to vec_t
    * @return
    */
-  vec_t toVec() const override {
+  vec_t toVec() const {
+    vec_t tensor(storage_.shape()[0]);
+    auto vec = tensor.begin();
+    auto ten = host_begin();
+    for (; vec != tensor.end(); ++vec, ++ten) {
+      *vec = *ten;
+    }
+    return tensor;
+  }
+
+  /**
+   * Temporary method.
+   * @return
+   */
+  Tensor &fromVec(vec_t vect) {
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      storage_(i) = vect[i];
+    }
+    return *this;
+  }
+
+  /**
+   * Temporal method to convert line of new Tensor to vec_t
+   * @return
+   */
+  vec_t lineToVec(size_t line) const {
     vec_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
-      tensor[i] = storage_(i);
+      tensor[i] = storage_(line, i);
     }
     return tensor;
   }
@@ -409,4 +455,8 @@ auto host_data() {
   Storage storage_;
 };
 
+using ViewTensor =
+  decltype(Tensor<>({2, 2}).subView(TensorSingleIndex(1), TensorAll()));
+using ConstViewTensor = decltype(((const Tensor<>)Tensor<>({2, 2}))
+                                   .subView(TensorSingleIndex(1), TensorAll()));
 }  // namespace tiny_dnn
