@@ -486,33 +486,34 @@ class network {
       if (current->weights().size() < 2) {
         continue;
       }
-      vec_t &w     = *current->weights()[0];
-      vec_t &b     = *current->weights()[1];
-      tensor_t &dw = (*current->weights_grads()[0]);
-      tensor_t &db = (*current->weights_grads()[1]);
+      std::vector<vec_t *> weights  = current->weights();
+      std::vector<tensor_t *> grads = current->weights_grads();
 
-      if (w.empty()) continue;
+      if (weights.empty() || (*weights[0]).empty()) continue;
+      assert(weights.size() == grads.size());
 
       switch (mode) {
         case GRAD_CHECK_ALL:
-          for (size_t i = 0; i < w.size(); i++)
-            if (!calc_delta<E>(in, v, w, dw, i, eps)) {
-              return false;
+          for (size_t i = 0; i < weights.size(); i++) {
+            vec_t &w     = *weights[i];
+            tensor_t &dw = *grads[i];
+            for (size_t j = 0; j < w.size(); j++) {
+              if (!calc_delta<E>(in, v, w, dw, j, eps)) {
+                return false;
+              }
             }
-          for (size_t i = 0; i < b.size(); i++)
-            if (!calc_delta<E>(in, v, b, db, i, eps)) {
-              return false;
-            }
+          }
           break;
         case GRAD_CHECK_RANDOM:
-          for (size_t i = 0; i < 10; i++)
-            if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
-              return false;
+          for (size_t i = 0; i < grads.size(); i++) {
+            vec_t &w     = *weights[i];
+            tensor_t &dw = *grads[i];
+            for (size_t j = 0; j < 10; j++) {
+              if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
+                return false;
+              }
             }
-          for (size_t i = 0; i < 10; i++)
-            if (!calc_delta<E>(in, v, b, db, uniform_idx(b), eps)) {
-              return false;
-            }
+          }
           break;
         default: throw nn_error("unknown grad-check type");
       }
