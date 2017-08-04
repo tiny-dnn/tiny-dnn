@@ -48,17 +48,17 @@ class RecurrentCellGradOp : public core::OpKernel {
       context.parallelize());
 
     // TODO(Randl): remove
-    context.input_grad(2) = dU.toTensor();
-    context.input_grad(3) = dW.toTensor();
-    context.input_grad(4) = dV.toTensor();
+    context.input_grad(2) = dU;
+    context.input_grad(3) = dW;
+    context.input_grad(4) = dV;
     if (params.has_bias_) {
-      context.input_grad(5) = db.toTensor();
-      context.input_grad(6) = dc.toTensor();
+      context.input_grad(5) = db;
+      context.input_grad(6) = dc;
     }
-    context.input_grad(0)  = prev_output_delta.toTensor();
-    context.input_grad(1)  = prev_state_delta.toTensor();
-    context.output_grad(0) = curr_output_delta.toTensor();
-    context.output_grad(1) = curr_state_delta.toTensor();
+    context.input_grad(0)  = prev_output_delta;
+    context.input_grad(1)  = prev_state_delta;
+    context.output_grad(0) = curr_output_delta;
+    context.output_grad(1) = curr_state_delta;
   }
 };
 

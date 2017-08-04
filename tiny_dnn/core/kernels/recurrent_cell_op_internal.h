@@ -59,10 +59,7 @@ inline void recurrent_cell_op_internal(
       next_state.host_at(o) = next_state_;
     }
 
-    // TODO(Randl): temporary
-    vec_t t1 = next_state.toVec();
-    params.activation_->forward_activation(t1, t1);
-    next_state.fromVec(t1);
+    params.activation_->forward_activation(next_state, next_state);
 
     // V matrix is out_size_ x out_size_
     for (size_t o = 0; o < params.out_size_; o++) {
@@ -140,12 +137,8 @@ inline void recurrent_cell_op_internal(
     }
 
     // h'(t)
-    // TODO(Randl): tmp
-    const vec_t prev_h_v = prev_h_.toVec(), out_h_v = out_h_.toVec();
-    vec_t curr_state_delta_v = curr_state_delta_.toVec();
-    params.activation_->backward_activation(
-      prev_h_v, out_h_v, curr_state_delta_v, curr_state_delta_v);
-    curr_state_delta_.fromVec(curr_state_delta_v);
+    params.activation_->backward_activation(prev_h_, out_h_, curr_state_delta_,
+                                            curr_state_delta_);
 
     // \delta h(t) -W-> h(t-1)
     for (size_t o = 0; o < params.out_size_; o++) {

@@ -44,8 +44,9 @@ class RecurrentCellOp : public core::OpKernel {
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
-    context.output(0) = out_data.toTensor();
-    context.output(1) = next_h.toTensor();
+    // TODO(Randl): remove
+    context.output(0) = out_data;
+    context.output(1) = next_h;
   }
 };
 
