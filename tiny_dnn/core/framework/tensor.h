@@ -305,7 +305,7 @@ auto host_data() {
    * @return
    */
   template <typename S>
-  Tensor &fill(size_t size, Tensor<U, S> tensor) {
+  Tensor &repeat(size_t size, Tensor<U, S> tensor) {
     auto shape = tensor.shape();
     shape.insert(shape.begin(), size);
     storage_.reshape(shape);
