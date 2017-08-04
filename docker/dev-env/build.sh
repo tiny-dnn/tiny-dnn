@@ -11,18 +11,23 @@ if [ $# -eq 0 ] ; then
 else
     match=0
     for img in "${docker_images[@]}"; do
-        echo $img
         if [[ $img = "$1" ]]; then
             match=1
             break
         fi
     done
     if [[ $match = 0 ]]; then
-        echo "** Not supported image $1, aborting building docker image. **"
+        echo "** Not supported image $1, options are: ${docker_images[@]} **"
+        echo "** Aborting building docker image."
         exit 1
-    else
-        docker_tag=$tag_prefix/$1
+    fi
+    docker_tag=$tag_prefix/$1
+    if [ $1 == ${docker_images[0]} ] ; then
+        docker_file="Dockerfile"
+    elif [ $1 == ${docker_images[1]} ] ; then
         docker_file="Dockerfile.full"
+    else
+        echo "** Something went really wrong !**"
     fi
 fi
 
