@@ -79,21 +79,27 @@ class selu_layer : public activation_layer {
 
   float_t alpha_value() { return alpha_; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] =
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx = x.host_begin();
+    auto ity = y.host_begin();
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      *ity =
         lambda_ *
-        (x[j] > float_t(0) ? x[j] : alpha_ * (std::exp(x[j]) - float_t(1)));
+        (*itx > float_t(0) ? *itx : alpha_ * (std::exp(*itx) - float_t(1)));
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    // dx = dy * (gradient of selu)
-    for (size_t j = 0; j < x.size(); j++) {
-      dx[j] = dy[j] * (y[j] > float_t(0) ? lambda_ : (y[j] + lambda_ * alpha_));
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    auto itx  = x.host_begin();
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    auto itdy = dy.host_begin();
+    for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
+      // dx = dy * (gradient of selu)
+      *itdx = *itdy * (*ity > float_t(0) ? lambda_ : (*ity + lambda_ * alpha_));
     }
   }
 

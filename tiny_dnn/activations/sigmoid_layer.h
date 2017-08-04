@@ -21,19 +21,25 @@ class sigmoid_layer : public activation_layer {
 
   std::string layer_type() const override { return "sigmoid-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] = float_t(1) / (float_t(1) + std::exp(-x[j]));
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx = x.host_begin();
+    auto ity = y.host_begin();
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      *ity = float_t(1) / (float_t(1) + std::exp(-*itx));
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    for (size_t j = 0; j < x.size(); j++) {
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    auto itx  = x.host_begin();
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    auto itdy = dy.host_begin();
+    for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
       // dx = dy * (gradient of sigmoid)
-      dx[j] = dy[j] * y[j] * (float_t(1) - y[j]);
+      *itdx = *itdy * *ity * (float_t(1) - *ity);
     }
   }
 
