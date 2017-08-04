@@ -115,9 +115,12 @@ class slice_layer : public layer {
  private:
   void slice_data_forward(const Tensor<> &in_data,
                           std::vector<Tensor<> *> &out_data) {
-    for (size_t i = 0, index = 0; i < num_outputs_; i++, index += slice_size_[i]) {
-      auto in_view = in_data.subView(TensorRange(index, index + slice_size_[i]), TensorAll());
-      auto out_view = out_data[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
+    for (size_t i = 0, index = 0; i < num_outputs_;
+         i++, index += slice_size_[i]) {
+      auto in_view = in_data.subView(TensorRange(index, index + slice_size_[i]),
+                                     TensorAll());
+      auto out_view =
+        out_data[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
 
       out_view.assign(in_view);
     }
@@ -125,9 +128,12 @@ class slice_layer : public layer {
 
   void slice_data_backward(std::vector<Tensor<> *> &out_grad,
                            Tensor<> &in_grad) {
-    for (size_t i = 0, index = 0; i < num_outputs_; i++, index += slice_size_[i]) {
-      auto in_view = in_grad.subView(TensorRange(index, index + slice_size_[i]), TensorAll());
-      auto out_view = out_grad[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
+    for (size_t i = 0, index = 0; i < num_outputs_;
+         i++, index += slice_size_[i]) {
+      auto in_view = in_grad.subView(TensorRange(index, index + slice_size_[i]),
+                                     TensorAll());
+      auto out_view =
+        out_grad[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
       out_view.assign(in_view);
     }
   }
@@ -140,8 +146,9 @@ class slice_layer : public layer {
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
-        float_t *out      = out_data[i]->host_pointer(s,0);
-        const float_t *in = in_data.host_pointer(s,0) + channel_idx * spatial_dim;
+        float_t *out = out_data[i]->host_pointer(s, 0);
+        const float_t *in =
+          in_data.host_pointer(s, 0) + channel_idx * spatial_dim;
 
         std::copy(in, in + slice_size_[i] * spatial_dim, out);
       }
@@ -157,8 +164,8 @@ class slice_layer : public layer {
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
-        const float_t *out = out_grad[i]->host_pointer(s,0);
-        float_t *in        = in_grad.host_pointer(s,0) + channel_idx * spatial_dim;
+        const float_t *out = out_grad[i]->host_pointer(s, 0);
+        float_t *in = in_grad.host_pointer(s, 0) + channel_idx * spatial_dim;
 
         std::copy(out, out + slice_size_[i] * spatial_dim, in);
       }

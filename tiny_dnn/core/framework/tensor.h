@@ -306,12 +306,11 @@ auto host_data() {
     return *this;
   }
 
-
   template <typename S>
   Tensor &assign(Tensor<U, S> tensor) {
-    auto in = tensor.host_begin();
+    auto in  = tensor.host_begin();
     auto out = host_begin();
-    for (; in!=tensor.host_end(); ++in, ++out) *out=*in;
+    for (; in != tensor.host_end(); ++in, ++out) *out = *in;
     return *this;
   }
 
