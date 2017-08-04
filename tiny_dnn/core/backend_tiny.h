@@ -98,14 +98,15 @@ class tiny_backend : public backend {
     auto W        = layer_->parameter_at(0).data();
     auto bias     = params_c_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
     Tensor<> &out = *out_data[0];
-    const std::vector<const Tensor<> *> &in =
-      conv_layer_worker_storage_->prev_out_padded_;  // input // NOLINT
+    // input
+    std::vector<ConstViewTensor> &in =
+      conv_layer_worker_storage_->prev_out_padded_;  // NOLINT
 
     out.fill(float_t(0.0));
 
     for (size_t i = 0; i < in.size(); i++) {
       auto out_i = out.subView(TensorSingleIndex(i), TensorAll());
-      kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias, out_i,
+      kernels::tiny_quantized_conv2d_kernel(*params_c_, in[i], W, bias, out_i,
                                             layer_->parallelize());
     }
   }
@@ -125,16 +126,16 @@ class tiny_backend : public backend {
     auto b_r        = params_c_->has_bias ? layer_->parameter_at(3).data() : Tensor<>();
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
-
-    const std::vector<const Tensor<> *> &in =
-      conv_layer_worker_storage_->prev_out_padded_;  // input // NOLINT
+    // input
+    const std::vector<ConstViewTensor> &in =
+      conv_layer_worker_storage_->prev_out_padded_;  // NOLINT
 
     out.fill(float_t(0.0));
     for (size_t i = 0; i < in.size(); i++) {
       auto out_i   = out.subView(TensorSingleIndex(i), TensorAll());
       auto out_r_i = out_r.subView(TensorSingleIndex(i), TensorAll());
-      kernels::tiny_quantized_conv2d_kernel(*params_c_, *in[i], W, bias,
-                                            in_r[i], W_r, b_r, out_i, out_r_i,
+      kernels::tiny_quantized_conv2d_kernel(*params_c_, in[i], W, bias, in_r[i],
+                                            W_r, b_r, out_i, out_r_i,
                                             layer_->parallelize());
     }
   }
@@ -145,7 +146,7 @@ class tiny_backend : public backend {
                 std::vector<Tensor<> *> &in_grad) override {
     conv_layer_worker_specific_storage &cws = (*conv_layer_worker_storage_);
 
-    std::vector<const Tensor<> *> &prev_out = cws.prev_out_padded_;
+    std::vector<ConstViewTensor> &prev_out = cws.prev_out_padded_;
 
     auto W = layer_->parameter_at(0).data();
     Tensor<> &dW         = layer_->parameter_at(0).grad();
@@ -170,7 +171,7 @@ class tiny_backend : public backend {
       auto prev_delta_i =
         prev_delta->subView(TensorSingleIndex(i), TensorAll());
       kernels::tiny_quantized_conv2d_back_kernel(
-        *params_c_, *prev_out[i], W, dW_i, db_i, curr_delta_i, &prev_delta_i);
+        *params_c_, prev_out[i], W, dW_i, db_i, curr_delta_i, &prev_delta_i);
     }
 
     if (params_c_->pad_type == padding::same) {

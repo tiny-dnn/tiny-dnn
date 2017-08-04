@@ -413,7 +413,7 @@ class quantized_convolutional_layer : public layer {
            conv_out_length(in_height, window_height, h_stride, pad_type);
   }
 
-  void copy_and_pad_input(const tensor_t &in) {
+  void copy_and_pad_input(const Tensor<> &in) {
     core::conv_layer_worker_specific_storage &cws = cws_;
 
     const size_t sample_count = in.size();
@@ -421,13 +421,18 @@ class quantized_convolutional_layer : public layer {
     cws.prev_out_padded_.resize(sample_count);
 
     if (params_.pad_type == padding::same) {
-      cws.prev_out_buf_.resize(sample_count, cws.prev_out_buf_[0]);
-      cws.prev_delta_padded_.resize(sample_count, cws.prev_delta_padded_[0]);
+      cws.prev_out_buf_.repeat(
+        sample_count,
+        cws.prev_out_buf_.subView(TensorSingleIndex(0), TensorAll()));
+      cws.prev_delta_padded_.repeat(
+        sample_count,
+        cws.prev_delta_padded_.subView(TensorSingleIndex(0), TensorAll()));
     }
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
       if (params_.pad_type == padding::valid) {
-        cws.prev_out_padded_[sample] = &(in[sample]);
+        cws.prev_out_padded_[sample] =
+          std::move(in.subView(TensorSingleIndex(sample), TensorAll()));
       } else {
         auto dst =
           cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll());
@@ -436,8 +441,9 @@ class quantized_convolutional_layer : public layer {
         for (size_t c = 0; c < params_.in.depth_; c++) {
           size_t idx = params_.in_padded.get_index(
             params_.weight.width_ / 2, params_.weight.height_ / 2, c);
-          float_t *pimg      = dst.host_pointer(idx);
-          const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
+          float_t *pimg = dst.host_pointer(idx);
+          const float_t *pin =
+            in.host_pointer(sample, params_.in.get_index(0, 0, c));
 
           for (size_t y = 0; y < params_.in.height_; y++,
                       pin += params_.in.width_,
@@ -446,25 +452,27 @@ class quantized_convolutional_layer : public layer {
           }
         }
 
-        cws.prev_out_padded_[sample] = &(cws.prev_out_buf_[sample]);
+        cws.prev_out_padded_[sample] =
+          cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll());
       }
     }
   }
 
-  void copy_and_unpad_delta(const tensor_t &delta, tensor_t &delta_unpadded) {
+  void copy_and_unpad_delta(const Tensor<> &delta, Tensor<> &delta_unpadded) {
     if (params_.pad_type == padding::valid) {
       delta_unpadded = delta;
     } else {
       for (size_t sample = 0; sample < delta.size(); sample++) {
-        size_t idx       = 0;
-        const vec_t &src = delta[sample];
-        vec_t &dst       = delta_unpadded[sample];
+        size_t idx     = 0;
+        const auto src = delta.subView(TensorSingleIndex(sample), TensorAll());
+        auto dst =
+          delta_unpadded.subView(TensorSingleIndex(sample), TensorAll());
 
         for (size_t c = 0; c < params_.in.depth_; c++) {
-          float_t *pdst = &dst[params_.in.get_index(0, 0, c)];
+          float_t *pdst = dst.host_pointer(params_.in.get_index(0, 0, c));
           idx           = params_.in_padded.get_index(params_.weight.width_ / 2,
                                             params_.weight.height_ / 2, c);
-          const float_t *pin = &src[idx];
+          const float_t *pin = src.host_pointer(idx);
 
           for (size_t y = 0; y < params_.in.height_; y++) {
             std::copy(pin, pin + params_.in.width_, pdst);
@@ -482,8 +490,8 @@ class quantized_convolutional_layer : public layer {
     // allocate new backend
     if (backend_type == core::backend_t::internal) {
       backend = std::make_shared<core::tiny_backend>(
-        &params_, [this](const tensor_t &in) { return copy_and_pad_input(in); },
-        [this](const tensor_t &delta, tensor_t &dst) {
+        &params_, [this](const Tensor<> &in) { return copy_and_pad_input(in); },
+        [this](const Tensor<> &delta, Tensor<> &dst) {
           return copy_and_unpad_delta(delta, dst);
         },
         &cws_);
