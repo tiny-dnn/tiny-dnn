@@ -43,22 +43,23 @@ TEST(slice, forward_data) {
 
   {
     std::vector<const Tensor<>*> out;
-    sl.forward({in}, out);
+    sl.forward({{Tensor<>(in)}}, out);
 
     for (size_t i = 0; i < 6; i++) {
-      EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0])[0][i]);
-      EXPECT_FLOAT_EQ(out1_expected[0][i], (*out[1])[0][i]);
-      EXPECT_FLOAT_EQ(out2_expected[0][i], (*out[2])[0][i]);
-      EXPECT_FLOAT_EQ(out2_expected[1][i], (*out[2])[1][i]);
+      EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0]).toTensor()[0][i]);
+      EXPECT_FLOAT_EQ(out1_expected[0][i], (*out[1]).toTensor()[0][i]);
+      EXPECT_FLOAT_EQ(out2_expected[0][i], (*out[2]).toTensor()[0][i]);
+      EXPECT_FLOAT_EQ(out2_expected[1][i], (*out[2]).toTensor()[1][i]);
     }
   }
 
   {
-    auto out = sl.backward({out0_expected, out1_expected, out2_expected});
+    auto out = sl.backward({Tensor<>(out0_expected), Tensor<>(out1_expected),
+                            Tensor<>(out2_expected)});
 
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 6; j++) {
-        EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+        EXPECT_FLOAT_EQ(in[i][j], out[0].host_at(i, j));
       }
     }
   }
@@ -99,23 +100,24 @@ TEST(slice, forward_channels) {
 
   {
     std::vector<const Tensor<>*> out;
-    sl.forward({in}, out);
+    sl.forward({{Tensor<>(in)}}, out);
 
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 2; j++) {
-        EXPECT_FLOAT_EQ(out0_expected[i][j], (*out[0])[i][j]);
-        EXPECT_FLOAT_EQ(out1_expected[i][j], (*out[1])[i][j]);
-        EXPECT_FLOAT_EQ(out2_expected[i][j], (*out[2])[i][j]);
+        EXPECT_FLOAT_EQ(out0_expected[i][j], out[0]->host_at(i, j));
+        EXPECT_FLOAT_EQ(out1_expected[i][j], out[1]->host_at(i, j));
+        EXPECT_FLOAT_EQ(out2_expected[i][j], out[2]->host_at(i, j));
       }
     }
   }
 
   {
-    auto out = sl.backward({out0_expected, out1_expected, out2_expected});
+    auto out = sl.backward({Tensor<>(out0_expected), Tensor<>(out1_expected),
+                            Tensor<>(out2_expected)});
 
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 6; j++) {
-        EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
+        EXPECT_FLOAT_EQ(in[i][j], out[0].host_at(i, j));
       }
     }
   }
