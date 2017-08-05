@@ -155,7 +155,7 @@ TEST(convolutional, with_stride) {
   l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
   auto out         = l.forward({{Tensor<>(in)}});
-  vec_t result_out = (*out[0])[0];
+  vec_t result_out = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < result_out.size(); i++) {
     EXPECT_NEAR(expected_out[i], result_out[i], 1E-5);

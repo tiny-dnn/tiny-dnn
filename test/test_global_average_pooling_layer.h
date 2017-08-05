@@ -100,7 +100,7 @@ TEST(global_ave_pool, backward) {
                             1, 1, 1, 1,
                             1, 1, 1, 1};
   // clang-format on
-  vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
+  vec_t in_grad = l.backward(std::vector<Tensor<>>{{Tensor<>(out_grad)}})[0].toTensor()[0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
@@ -123,7 +123,7 @@ TEST(global_ave_pool, backward_multichannel) {
                                         3, 3};
   // clang-format on
 
-  vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
+  vec_t in_grad = l.backward(std::vector<Tensor<>>{{Tensor<>(out_grad)}})[0].toTensor()[0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);

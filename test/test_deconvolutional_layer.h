@@ -72,7 +72,7 @@ TEST(deconvolutional, fprop) {
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
   auto out         = l.forward({{Tensor<>(in)}});
-  vec_t out_result = (*out[0])[0];
+  vec_t out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
     EXPECT_FLOAT_EQ(out_result[i], float_t{0});
@@ -109,7 +109,7 @@ TEST(deconvolutional, fprop) {
 
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
   out        = l.forward({{Tensor<>(in)}});
-  out_result = (*out[0])[0];
+  out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
     EXPECT_FLOAT_EQ(out_result[i], out_expected[i]);
@@ -125,7 +125,7 @@ TEST(deconvolutional, fprop_padding_same) {
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
   auto out         = l.forward({{Tensor<>(in)}});
-  vec_t out_result = (*out[0])[0];
+  vec_t out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
     EXPECT_FLOAT_EQ(out_result[i], float_t{0});
@@ -159,7 +159,7 @@ TEST(deconvolutional, fprop_padding_same) {
   // resize tensor because its dimension changed in above used test case
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
   out        = l.forward({{Tensor<>(in)}});
-  out_result = (*out[0])[0];
+  out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_expected.size(); i++) {
     EXPECT_FLOAT_EQ(out_result[i], out_expected[i]);
