@@ -186,7 +186,7 @@ TEST(batchnorm, gradient_check2) {
     const size_t idx = uniform_idx(input_data[edge][0]);
     float_t ngrad = numeric_gradient(bn, input_data, edge, idx, out_data,
 out_grad, edge, idx);
-    float_t cgrad = computed_gradient(bn, input_data, edge, idx, out_data,
+    float_t cgrad = analytical_gradient(bn, input_data, edge, idx, out_data,
 out_grad, edge, idx);
     std::cout << "relative error" << relative_error(cgrad, ngrad) << std::endl;
     EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());

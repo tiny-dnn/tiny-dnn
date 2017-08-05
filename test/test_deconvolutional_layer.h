@@ -222,7 +222,7 @@ kernel_size*kernel_size*in_channels*out_channels, out_channels});
     const size_t out_idx = uniform_idx(out_data[out_edge][0]);
     float_t ngrad = numeric_gradient(deconv, input_data, in_edge, in_idx,
 out_data, out_grad, out_edge, out_idx);
-    float_t cgrad = computed_gradient(deconv, input_data, in_edge, in_idx,
+    float_t cgrad = analytical_gradient(deconv, input_data, in_edge, in_idx,
 out_data, out_grad, out_edge, out_idx);
     EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
   }
