@@ -694,11 +694,12 @@ TEST(caffe_converter, sigmoid) {
 
   vec_t ret  = model->predict(in);
   vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  ViewTensor r2(ret2);
   sigmoid_layer sig(5);
-  sig.forward_activation(in, ret2);
+  sig.forward_activation(ConstViewTensor(in), r2);
 
   for (size_t i = 0; i < 5; i++) {
-    EXPECT_FLOAT_EQ(ret[i], ret2[i]);
+    EXPECT_FLOAT_EQ(ret[i], r2.host_at(i));
   }
 }
 
@@ -731,11 +732,12 @@ TEST(caffe_converter, tanh) {
 
   vec_t ret  = model->predict(in);
   vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+  ViewTensor r2(ret2);
   tanh_layer tanh(5);
-  tanh.forward_activation(in, ret2);
+  tanh.forward_activation(ConstViewTensor(in), r2);
 
   for (size_t i = 0; i < 5; i++) {
-    EXPECT_FLOAT_EQ(ret[i], ret2[i]);
+    EXPECT_FLOAT_EQ(ret[i], r2.host_at(i));
   }
 }
 

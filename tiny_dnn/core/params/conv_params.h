@@ -110,7 +110,6 @@ class Conv2dPadding {
     Tensor<> buf({sample_num, params_.in_padded.size()});
 
     for_i(true, sample_num, [&](size_t sample) {
-
       // make padded version in order to avoid corner-case in fprop/bprop
       for (size_t c = 0; c < params_.in.depth_; c++) {
         float_t *pimg = buf.host_pointer(
@@ -149,7 +148,6 @@ class Conv2dPadding {
     Tensor<> buf({sample_num, params_.in.size()});
 
     for_i(true, sample_num, [&](size_t sample) {
-
       for (size_t c = 0; c < params_.in.depth_; c++) {
         const float_t *pin = delta.host_pointer(
           sample,

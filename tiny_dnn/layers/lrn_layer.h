@@ -116,7 +116,7 @@ class lrn_layer : public layer {
 
     for (size_t i = 0; i < size_ / 2; i++) {
       size_t idx = in_shape_.get_index(0, 0, i);
-      add_square_sum(&in[idx], in_shape_.area(), &in_square_[0]);
+      add_square_sum(in.host_pointer(idx), in_shape_.area(), &in_square_[0]);
     }
 
     size_t head = size_ / 2;
@@ -129,11 +129,11 @@ class lrn_layer : public layer {
 
     for (size_t i = 0; i < channels; ++i, ++head, ++tail) {
       if (head < channels)
-        add_square_sum(&in[in_shape_.get_index(0, 0, head)], wxh,
+        add_square_sum(in.host_iter(in_shape_.get_index(0, 0, head)), wxh,
                        &in_square_[0]);
 
       if (tail >= 0)
-        sub_square_sum(&in[in_shape_.get_index(0, 0, tail)], wxh,
+        sub_square_sum(in.host_iter(in_shape_.get_index(0, 0, tail)), wxh,
                        &in_square_[0]);
 
       float_t *dst       = out.host_pointer(in_shape_.get_index(0, 0, i));
@@ -152,12 +152,14 @@ class lrn_layer : public layer {
     throw nn_error("not implemented");
   }
 
-  void add_square_sum(const float_t *src, size_t size, float_t *dst) {
-    for (size_t i = 0; i < size; i++) dst[i] += src[i] * src[i];
+  template <typename Iter1, typename Iter2>
+  void add_square_sum(Iter1 src, size_t size, Iter2 dst) {
+    for (size_t i = 0; i < size; ++i, ++src, ++dst) *dst += *src * *src;
   }
 
-  void sub_square_sum(const float_t *src, size_t size, float_t *dst) {
-    for (size_t i = 0; i < size; i++) dst[i] -= src[i] * src[i];
+  template <typename Iter1, typename Iter2>
+  void sub_square_sum(Iter1 src, size_t size, Iter2 dst) {
+    for (size_t i = 0; i < size; ++i, ++src, ++dst) *dst -= *src * *src;
   }
 
   shape3d in_shape_;

@@ -90,7 +90,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
       int32_t *paa_quantized =
         pa_quantized + params.out.width_ * params.out.height_;
       std::for_each(pa_quantized, paa_quantized, [&](int32_t &f) {
-        f += (bias_quantized[o] - zero_in_total_space);
+        f += (bias_quantized.host_at(o) - zero_in_total_space);
       });
     }
   });
@@ -303,7 +303,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
   // filter range
   float_t min_filter(W_r.host_at(0));
   float_t max_filter(W_r.host_at(1));
-  if (W_r[0] == W_r[1]) {
+  if (min_filter == max_filter) {
     max_filter += 1e-3f;
     min_filter -= 1e-3f;
   }
@@ -389,7 +389,7 @@ inline void tiny_quantized_conv2d_kernel(const conv_params &params,
       int32_t *paa_quantized =
         pa_quantized + params.out.width_ * params.out.height_;
       std::for_each(pa_quantized, paa_quantized, [&](int32_t &f) {
-        f += static_cast<int32_t>((bias[o] - zero_in_total_space));
+        f += static_cast<int32_t>((bias.host_at(o) - zero_in_total_space));
       });
     }
   });
