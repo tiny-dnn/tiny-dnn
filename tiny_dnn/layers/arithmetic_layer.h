@@ -48,7 +48,7 @@ class elementwise_add_layer : public layer {
 
     out = in1;
 
-    // TODO parallelize
+    // TODO(Randl): parallelize
     for (size_t sample = 0; sample < in1.size(); ++sample) {
       for (size_t i = 1; i < num_args_; i++) {
         std::transform((*in_data[i])[sample].host_begin(),
