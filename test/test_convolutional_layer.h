@@ -31,10 +31,8 @@ TEST(convolutional, setup_internal) {
   EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
 }
 
-inline void randomize_tensor(tensor_t &tensor) {
-  for (auto &vec : tensor) {
-    uniform_rand(vec.begin(), vec.end(), -1.0, 1.0);
-  }
+inline void randomize_tensor(Tensor<> &tensor) {
+  uniform_rand(tensor.host_begin(), tensor.host_end(), -1.0, 1.0);
 }
 
 // prepare tensor buffers for unit test
@@ -52,12 +50,12 @@ class tensor_buf {
       in_ptr_(l.in_channels()),
       out_ptr_(l.out_channels()) {
     for (size_t i = 0; i < l.in_channels(); i++) {
-      in_data_[i].resize(1, vec_t(l.in_shape()[i].size()));
+      in_data_[i].reshape({1, l.in_shape()[i].size()});
       in_ptr_[i] = &in_data_[i];
     }
 
     for (size_t i = 0; i < l.out_channels(); i++) {
-      out_data_[i].resize(1, vec_t(l.out_shape()[i].size()));
+      out_data_[i].reshape({1, l.out_shape()[i].size()});
       out_ptr_[i] = &out_data_[i];
     }
 
@@ -67,43 +65,18 @@ class tensor_buf {
     }
   }
 
-  tensor_t &in_at(size_t i) { return in_data_[i]; }
-  tensor_t &out_at(size_t i) { return out_data_[i]; }
+  Tensor<> &in_at(size_t i) { return in_data_[i]; }
+  Tensor<> &out_at(size_t i) { return out_data_[i]; }
 
-  std::vector<tensor_t *> &in_buf() { return in_ptr_; }
-  std::vector<tensor_t *> &out_buf() { return out_ptr_; }
+  std::vector<Tensor<> *> &in_buf() { return in_ptr_; }
+  std::vector<Tensor<> *> &out_buf() { return out_ptr_; }
 
   friend std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer);
 
  private:
-  std::vector<tensor_t> in_data_, out_data_;
-  std::vector<tensor_t *> in_ptr_, out_ptr_;
+  std::vector<Tensor<>> in_data_, out_data_;
+  std::vector<Tensor<> *> in_ptr_, out_ptr_;
 };
-
-/**
- * Print tensor buffer. May be useful for tests
- * @param out
- * @param buffer
- * @return
- */
-std::ostream &operator<<(std::ostream &out, const tensor_buf &buffer) {
-  out << "In data:" << std::endl;
-  for (auto &ten : buffer.in_data_) {
-    out << "Tensor" << std::endl;
-    for (auto &vec : ten)
-      for (auto &n : vec) out << n << " ";
-    out << std::endl << std::endl;
-  }
-  out << std::endl;
-  out << "Out data:" << std::endl;
-  for (auto &ten : buffer.out_data_) {
-    out << "Tensor" << std::endl;
-    for (auto &vec : ten)
-      for (auto &n : vec) out << n << " ";
-    out << std::endl << std::endl;
-  }
-  return out;
-}
 
 TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);
@@ -139,9 +112,9 @@ TEST(convolutional, forward) {
   };
   // clang-format on
 
-  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
-  auto out     = l.forward({{in}});
-  vec_t result = (*out[0])[0];
+  l.ith_parameter(0).set_data(Tensor<float_t>(weight));
+  auto out     = l.forward({{Tensor<>(in)}});
+  vec_t result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < result.size(); i++) {
     EXPECT_NEAR(expected[i], result[i], 1E-5);
@@ -181,7 +154,7 @@ TEST(convolutional, with_stride) {
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
   l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
-  auto out         = l.forward({{in}});
+  auto out         = l.forward({{Tensor<>(in)}});
   vec_t result_out = (*out[0])[0];
 
   for (size_t i = 0; i < result_out.size(); i++) {
@@ -247,15 +220,15 @@ TEST(convolutional, bprop_avx) {
   vec_t out_grads(18, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{out_grads}});
-  vec_t result_noavx      = prev_grads_noavx[0][0];
+  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
   Tensor<> *b_grads_noavx = l.bias_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{out_grads}});
-  vec_t result_avx      = prev_grads_avx[0][0];
+  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
   Tensor<> *b_grads_avx = l.bias_at()[0]->grad();
 
@@ -284,14 +257,14 @@ TEST(convolutional, fprop_avx_1x1out) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{in}});
-  vec_t result_noavx = (*out_noavx[0])[0];
+  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{in}});
-  vec_t result_avx = (*out_avx[0])[0];
+  auto out_avx     = l.forward({{Tensor<>(in)}});
+  vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
-  for (size_t i = 0; i < out_avx.size(); i++) {
+  for (size_t i = 0; i < result_avx.size(); i++) {
     EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
@@ -304,14 +277,14 @@ TEST(convolutional, bprop_avx_1x1out) {
   vec_t out_grads(2, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{out_grads}});
-  vec_t result_noavx      = prev_grads_noavx[0][0];
+  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{out_grads}});
-  vec_t result_avx      = prev_grads_avx[0][0];
+  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
   EXPECT_EQ(result_avx.size(), result_noavx.size());
@@ -335,14 +308,14 @@ TEST(convolutional, fprop_avx_hstride) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{in}});
-  vec_t result_noavx = (*out_noavx[0])[0];
+  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{in}});
-  vec_t result_avx = (*out_avx[0])[0];
+  auto out_avx     = l.forward({{Tensor<>(in)}});
+  vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
-  for (size_t i = 0; i < out_avx.size(); i++) {
+  for (size_t i = 0; i < result_avx.size(); i++) {
     EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
@@ -356,14 +329,14 @@ TEST(convolutional, bprop_avx_hstride) {
   vec_t out_grads(18, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{out_grads}});
-  vec_t result_noavx      = prev_grads_noavx[0][0];
+  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{out_grads}});
-  vec_t result_avx      = prev_grads_avx[0][0];
+  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
   EXPECT_EQ(result_avx.size(), result_noavx.size());
@@ -390,8 +363,8 @@ TEST(convolutional, fprop_avx_hstride_1x1out) {
 
   l.forward_propagation(buf.in_buf(), buf2.out_buf());
 
-  vec_t &out_avx   = buf2.out_at(0)[0];
-  vec_t &out_noavx = buf.out_at(0)[0];
+  vec_t &out_avx   = buf2.out_at(0).toTensor()[0];
+  vec_t &out_noavx = buf.out_at(0).toTensor()[0];
 
   for (size_t i = 0; i < out_avx.size(); i++) {
     EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
@@ -417,8 +390,8 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
                      grad2.in_buf());
 
   for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch)[0];
-    vec_t &out_avx   = grad2.in_at(ch)[0];
+    vec_t &out_noavx = grad1.in_at(ch).toTensor()[0];
+    vec_t &out_avx   = grad2.in_at(ch).toTensor()[0];
     for (size_t i = 0; i < out_avx.size(); i++) {
       EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }
@@ -435,14 +408,14 @@ TEST(convolutional, fprop_avx_wstride) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{in}});
-  vec_t result_noavx = (*out_noavx[0])[0];
+  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{in}});
-  vec_t result_avx = (*out_avx[0])[0];
+  auto out_avx     = l.forward({{Tensor<>(in)}});
+  vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
-  for (size_t i = 0; i < out_avx.size(); i++) {
+  for (size_t i = 0; i < result_avx.size(); i++) {
     EXPECT_NEAR(result_avx[i], result_noavx[i], 1E-5);
   }
 }
@@ -466,8 +439,10 @@ TEST(convolutional, bprop_avx_wstride) {
                      grad2.in_buf());
 
   for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch)[0];
-    vec_t &out_avx   = grad2.in_at(ch)[0];
+    vec_t &out_noavx = grad1.in_at(ch).toTensor()[0];
+    ;
+    vec_t &out_avx = grad2.in_at(ch).toTensor()[0];
+    ;
     for (size_t i = 0; i < out_avx.size(); i++) {
       EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }
@@ -737,7 +712,8 @@ TEST(convolutional, copy_and_pad_input_same) {
     return tensor_t(batch_size, vec_t(vector_size));
   };
 
-  tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
+  tensor_t in_tensor = create_tensor(1, 1 * 5 * 5);
+  Tensor<> out_tensor;
 
   fill_tensor(in_tensor, float_t(1));
 
@@ -750,7 +726,7 @@ TEST(convolutional, copy_and_pad_input_same) {
    *                      0 0 0 0 0
    */
 
-  conv2d_padding.copy_and_pad_input(in_tensor, out_tensor);
+  conv2d_padding.copy_and_pad_input(Tensor<>(in_tensor), out_tensor);
 
   EXPECT_EQ(out_tensor[0][7], float_t(0));
   EXPECT_EQ(out_tensor[0][8], float_t(1));
@@ -777,7 +753,8 @@ TEST(convolutional, copy_and_unpad_delta_same) {
     return tensor_t(batch_size, vec_t(vector_size));
   };
 
-  tensor_t in_tensor = create_tensor(1, 1 * 5 * 5), out_tensor;
+  tensor_t in_tensor = create_tensor(1, 1 * 5 * 5);
+  Tensor<> out_tensor;
 
   fill_tensor(in_tensor, float_t(0));
 
@@ -798,7 +775,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
     }
   }
 
-  conv2d_padding.copy_and_unpad_delta(in_tensor, out_tensor);
+  conv2d_padding.copy_and_unpad_delta(Tensor<>(in_tensor), out_tensor);
 
   for (size_t i = 0; i < out_tensor[0].size(); ++i) {
     EXPECT_EQ(out_tensor[0][i], float_t(1));

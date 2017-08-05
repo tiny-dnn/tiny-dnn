@@ -23,7 +23,7 @@ TEST(dropout, randomized) {
   dropout_layer l(num_units, dropout_rate, net_phase::train);
   vec_t v(num_units, 1.0);
 
-  std::vector<const tensor_t*> out;
+  std::vector<const Tensor<>*> out;
   l.forward({{v}}, out);
   const auto mask1 = l.get_mask(0);
 

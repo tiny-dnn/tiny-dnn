@@ -50,7 +50,7 @@ TEST(fully_connected, forward) {
   l.weights_at()[0]->set_data(Tensor<float_t>(weights));
   l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
-  auto out     = l.forward({{in}});
+  auto out     = l.forward({{Tensor<>(in)}});
   vec_t result = (*out[0])[0];
 
   for (size_t i = 0; i < result.size(); i++) {

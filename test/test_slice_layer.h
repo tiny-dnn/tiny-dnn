@@ -42,7 +42,7 @@ TEST(slice, forward_data) {
   // clang-format on
 
   {
-    std::vector<const tensor_t*> out;
+    std::vector<const Tensor<>*> out;
     sl.forward({in}, out);
 
     for (size_t i = 0; i < 6; i++) {
@@ -98,7 +98,7 @@ TEST(slice, forward_channels) {
   // clang-format on
 
   {
-    std::vector<const tensor_t*> out;
+    std::vector<const Tensor<>*> out;
     sl.forward({in}, out);
 
     for (size_t i = 0; i < 4; i++) {

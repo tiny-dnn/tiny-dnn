@@ -28,7 +28,7 @@ TEST(power, forward) {
                            {5 * 5 * 1.5, 4 * 4 * 1.5, 3 * 3 * 1.5, 2 * 2 * 1.5,
                             1 * 1 * 1.5, 0 * 0 * 1.5}};
 
-  std::vector<const tensor_t*> out;
+  std::vector<const Tensor<>*> out;
   pw.forward({in}, out);
 
   for (size_t i = 0; i < 6; i++) {

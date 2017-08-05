@@ -202,12 +202,12 @@ TEST(batchnorm, forward) {
     };
 
   // clang-format on
-  std::vector<const tensor_t *> result;
-  bn.forward({in}, result);
+  std::vector<const Tensor<> *> result;
+  bn.forward({Tensor<>(in)}, result);
 
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 3 * 4; j++) {
-      EXPECT_NEAR(expect[i][j], (*result[0])[i][j], 1e-3);
+      EXPECT_NEAR(expect[i][j], (*result[0]).host_at(i, j), 1e-3);
     }
   }
 
@@ -215,10 +215,10 @@ TEST(batchnorm, forward) {
 
   // confirming that calculating the moving average doesn't affect the result
   // while we feed the same data
-  bn.forward({in}, result);
+  bn.forward({Tensor<>(in)}, result);
   for (size_t i = 0; i < 2; i++) {
     for (size_t j = 0; j < 3 * 4; j++) {
-      EXPECT_NEAR(expect[i][j], (*result[0])[i][j], 1e-3);
+      EXPECT_NEAR(expect[i][j], (*result[0]).host_at(i, j), 1e-3);
     }
   }
 }

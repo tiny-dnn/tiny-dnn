@@ -198,17 +198,22 @@ TEST(core, ocl_conv) {
 
     uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-    std::vector<tensor_t *> in_data, out_data;
-    in_data.push_back(&in_tensor);
-    in_data.push_back(&weight_tensor);
-    in_data.push_back(&bias_tensor);
-    out_data.push_back(&out_tensor);
-    out_data.push_back(&a_tensor);
+    // TODO(Randl)
+    Tensor<> in_tensor_(in_tensor), out_tensor_(out_tensor),
+      a_tensor_(a_tensor), weight_tensor_(weight_tensor),
+      bias_tensor_(bias_tensor);
+    std::vector<Tensor<> *> in_data, out_data;
+    in_data.push_back(&in_tensor_);
+    in_data.push_back(&weight_tensor_);
+    in_data.push_back(&bias_tensor_);
+    out_data.push_back(&out_tensor_);
+    out_data.push_back(&a_tensor_);
     l.setup(false);
     {
       l.forward_propagation(in_data, out_data);
 
-      for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
+      for (auto o : out_tensor_[0].toVec())
+        EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.5));
     }
 
     // clang-format off
@@ -227,9 +232,11 @@ TEST(core, ocl_conv) {
         in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
     // clang-format on
+    in_tensor_     = Tensor<>(in_tensor);
+    weight_tensor_ = Tensor<>(weight_tensor);
     {
       l.forward_propagation(in_data, out_data);
-
+      out = out_tensor_[0].toVec();
       EXPECT_NEAR(0.4875026, out[0], 1e-5);
       EXPECT_NEAR(0.8388910, out[1], 1e-5);
       EXPECT_NEAR(0.8099984, out[2], 1e-5);

@@ -88,11 +88,13 @@ inline std::string unique_path() {
 
 vec_t forward_pass(layer &src, const vec_t &vec) {
   src.setup(false);
-  (*src.inputs()[0]->get_data())[0] = vec;
+  (*src.inputs()[0]->get_data())
+    .subView(TensorSingleIndex(0), TensorAll())
+    .assign(Tensor<>(vec));
   src.forward();
-  std::vector<const tensor_t *> out;
+  std::vector<const Tensor<> *> out;
   src.output(out);
-  return (*out[0])[0];
+  return (*out[0]).toTensor()[0];
 }
 
 template <typename N>

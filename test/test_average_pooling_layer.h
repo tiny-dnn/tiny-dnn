@@ -102,8 +102,8 @@ TEST(ave_pool, forward) {
   l.bias_init_f(parameter_init::constant(0.0));
   l.setup(false);
 
-  auto out  = l.forward({{in}});
-  vec_t res = (*out[0])[0];
+  auto out  = l.forward({{Tensor<>(in)}});
+  vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_NEAR(expected[i], res[i], 1E-7);
@@ -131,8 +131,8 @@ TEST(ave_pool, forward_stride) {
   l.bias_init_f(parameter_init::constant(0.0));
   l.setup(false);
 
-  auto out  = l.forward({{in}});
-  vec_t res = (*out[0])[0];
+  auto out  = l.forward({{Tensor<>(in)}});
+  vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_NEAR(expected[i], res[i], 1E-7);
@@ -174,9 +174,8 @@ TEST(ave_pool, backward) {
   vec_t db_expected = {10};
   // clang-format on
 
-  std::vector<tensor_t> in_grad =
-    l.backward(std::vector<tensor_t>{{curr_delta}});
-  vec_t prev_delta_result = in_grad[0][0];
+  auto in_grad = l.backward(std::vector<Tensor<>>{{Tensor<>(curr_delta)}});
+  vec_t prev_delta_result = in_grad[0].toTensor()[0];
   vec_t dw_result         = l.weights_at()[0]->data()->toTensor()[0];
   vec_t db_result         = l.bias_at()[0]->data()->toTensor()[0];
 
