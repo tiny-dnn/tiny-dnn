@@ -486,10 +486,10 @@ class network {
       if (current->weights().size() < 2) {
         continue;
       }
-      vec_t &w     = *current->weights()[0];
-      vec_t &b     = *current->weights()[1];
-      tensor_t &dw = (*current->weights_grads()[0]);
-      tensor_t &db = (*current->weights_grads()[1]);
+      vec_t &w    = *current->weights()[0];
+      vec_t &b    = *current->weights()[1];
+      tensor_t dw = (*current->weights_grads()[0]).toTensor();
+      tensor_t db = (*current->weights_grads()[1]).toTensor();
 
       if (w.empty()) continue;
 

@@ -531,7 +531,7 @@ class layer : public node {
 /// visualization.
 #ifdef DNN_USE_IMAGE_API
   virtual image<> output_to_image(size_t channel = 0) const {
-    // TODO
+    // TODO(Randl)
     const vec_t *output = &(*(outputs()[channel]->get_data())).toTensor()[0];
     return vec2image<unsigned char>(*output, out_shape()[channel]);
   }
