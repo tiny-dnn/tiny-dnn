@@ -418,7 +418,7 @@ class quantized_convolutional_layer : public layer {
 
     const size_t sample_count = in.size();
 
-    cws.prev_out_padded_.resize(sample_count);
+    cws.prev_out_padded_.clear();
 
     if (params_.pad_type == padding::same) {
       cws.prev_out_buf_.repeat(
@@ -431,8 +431,8 @@ class quantized_convolutional_layer : public layer {
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
       if (params_.pad_type == padding::valid) {
-        cws.prev_out_padded_[sample] =
-          std::move(in.subView(TensorSingleIndex(sample), TensorAll()));
+        cws.prev_out_padded_.emplace_back(
+          in.subView(TensorSingleIndex(sample), TensorAll()));
       } else {
         auto dst =
           cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll());
@@ -452,8 +452,8 @@ class quantized_convolutional_layer : public layer {
           }
         }
 
-        cws.prev_out_padded_[sample] =
-          cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll());
+        cws.prev_out_padded_.emplace_back(
+          cws.prev_out_buf_.subView(TensorSingleIndex(sample), TensorAll()));
       }
     }
   }

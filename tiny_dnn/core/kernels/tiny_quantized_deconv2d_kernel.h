@@ -318,7 +318,9 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   // output range
   float_t min_output_value;
   float_t max_output_value;
-  quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>( in_r.host_at(0), in_r.host_at(1), min_filter, max_filter, &min_output_value, &max_output_value);
+  quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
+    in_r.host_at(0), in_r.host_at(1), min_filter, max_filter, &min_output_value,
+    &max_output_value);
   // data type restore
   Tensor<uint8_t> in_quantized({in.size()}), W_quantized({W.size()}),
     bias_quantized({bias.size()});
@@ -337,8 +339,9 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   out_quantized.fill(int32_t(0));
 
   // calculating offset
-  const int32_t offset_input = int64_to_int32(
-    float_to_quantized_unclamped<uint8_t>(0.0f, in_r.host_at(0), in_r.host_at(1)));
+  const int32_t offset_input =
+    int64_to_int32(float_to_quantized_unclamped<uint8_t>(0.0f, in_r.host_at(0),
+                                                         in_r.host_at(1)));
   const int32_t offset_filter = int64_to_int32(
     float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
   const int32_t zero_in_total_space = int64_to_int32(

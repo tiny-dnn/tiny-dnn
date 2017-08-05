@@ -59,8 +59,10 @@ inline void recurrent_cell_op_internal(
       next_state.host_at(o) = next_state_;
     }
 
-    //TODO(Randl)
-    ConstViewTensor c_next_state = ((const  Tensor<float_t, S9> )out_h).subView(TensorSingleIndex(sample), TensorAll());
+    // TODO(Randl)
+    ConstViewTensor c_next_state =
+      ((const Tensor<float_t, S9>)out_h)
+        .subView(TensorSingleIndex(sample), TensorAll());
     params.activation_->forward_activation(c_next_state, next_state);
 
     // V matrix is out_size_ x out_size_
@@ -139,10 +141,12 @@ inline void recurrent_cell_op_internal(
     }
 
     // h'(t)
-    //TODO(Randl)
-    ConstViewTensor c_curr_state_delta_ = ((const Tensor<float_t, S12>)curr_state_delta).subView(TensorSingleIndex(sample), TensorAll());
-    params.activation_->backward_activation(
-      prev_h_, out_h_, curr_state_delta_, c_curr_state_delta_);
+    // TODO(Randl)
+    ConstViewTensor c_curr_state_delta_ =
+      ((const Tensor<float_t, S12>)curr_state_delta)
+        .subView(TensorSingleIndex(sample), TensorAll());
+    params.activation_->backward_activation(prev_h_, out_h_, curr_state_delta_,
+                                            c_curr_state_delta_);
 
     // \delta h(t) -W-> h(t-1)
     for (size_t o = 0; o < params.out_size_; o++) {
