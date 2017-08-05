@@ -297,8 +297,8 @@ auto host_data() {
    * @param tensor
    * @return
    */
-  template <typename S>
-  Tensor &repeat(size_t size, Tensor<U, S> tensor) {
+  template <typename S1>
+  Tensor &repeat(size_t size, Tensor<U, S1> tensor) {
     auto shape = tensor.shape();
     shape.insert(shape.begin(), size);
     storage_.reshape(shape);
@@ -306,8 +306,8 @@ auto host_data() {
     return *this;
   }
 
-  template <typename S>
-  Tensor &assign(Tensor<U, S> tensor) {
+  template <typename S1>
+  Tensor &assign(Tensor<U, S1> tensor) {
     auto in  = tensor.host_begin();
     auto out = host_begin();
     for (; in != tensor.host_end(); ++in, ++out) *out = *in;

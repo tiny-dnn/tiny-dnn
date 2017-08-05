@@ -272,7 +272,7 @@ inline void tiny_quantized_deconv2d_back_kernel(
 
     for (size_t outc = 0; outc < params.out.depth_; outc++) {
       size_t idx            = params.out.get_index(0, 0, outc);
-      const float_t *delta  = &curr_delta[idx];
+      const float_t *delta  = curr_delta.host_pointer(idx);
       const float_t *deltaa = delta + params.out.width_ * params.out.height_;
       db.host_at(outc) += std::accumulate(delta, deltaa, float_t{0});
     }
@@ -302,7 +302,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   // filter range
   float_t min_filter(W_r.host_at(0));
   float_t max_filter(W_r.host_at(1));
-  if (W_r[0] == W_r[1]) {
+  if (min_filter == max_filter) {
     max_filter += 1e-3f;
     min_filter -= 1e-3f;
   }
@@ -318,9 +318,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   // output range
   float_t min_output_value;
   float_t max_output_value;
-  quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
-    in_r[0], in_r[1], min_filter, max_filter, &min_output_value,
-    &max_output_value);
+  quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>( in_r.host_at(0), in_r.host_at(1), min_filter, max_filter, &min_output_value, &max_output_value);
   // data type restore
   Tensor<uint8_t> in_quantized({in.size()}), W_quantized({W.size()}),
     bias_quantized({bias.size()});
@@ -340,7 +338,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
 
   // calculating offset
   const int32_t offset_input = int64_to_int32(
-    float_to_quantized_unclamped<uint8_t>(0.0f, in_r[0], in_r[1]));
+    float_to_quantized_unclamped<uint8_t>(0.0f, in_r.host_at(0), in_r.host_at(1)));
   const int32_t offset_filter = int64_to_int32(
     float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter));
   const int32_t zero_in_total_space = int64_to_int32(
@@ -384,7 +382,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
       int32_t *poutout_quantized =
         pout_quantized + params.out.width_ * params.out.height_;
       std::for_each(pout_quantized, poutout_quantized, [&](int32_t &f) {
-        f += static_cast<int32_t>((bias[o] - zero_in_total_space));
+        f += static_cast<int32_t>((bias.host_at(o) - zero_in_total_space));
       });
     }
   });
