@@ -440,9 +440,7 @@ TEST(convolutional, bprop_avx_wstride) {
 
   for (size_t ch = 0; ch < l.out_channels(); ch++) {
     vec_t &out_noavx = grad1.in_at(ch).toTensor()[0];
-    ;
-    vec_t &out_avx = grad2.in_at(ch).toTensor()[0];
-    ;
+    vec_t &out_avx   = grad2.in_at(ch).toTensor()[0];
     for (size_t i = 0; i < out_avx.size(); i++) {
       EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }

@@ -694,8 +694,8 @@ TEST(caffe_converter, sigmoid) {
 
   vec_t ret  = model->predict(in);
   vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  Tensor<> tmp(ret2);
-  ViewTensor r2 = tmp.subView(TensorAll());
+  Tensor<> tmp(tensor_t{{ret2}});
+  ViewTensor r2 = tmp.subView(TensorSingleIndex(0), TensorAll());
   sigmoid_layer sig(5);
   sig.forward_activation(ConstViewTensor(in), r2);
 
