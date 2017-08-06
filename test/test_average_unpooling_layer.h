@@ -15,6 +15,63 @@
 
 namespace tiny_dnn {
 
+TEST(ave_unpool, forward) {
+  average_unpooling_layer l(2, 2, 1, 2);
+  l.weight_init_f(parameter_init::constant(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.init_parameters();
+
+  // clang-format off
+    vec_t in = {
+        4, 3,
+        1.5, -0.5
+    };
+
+    vec_t expected = {
+        4,     4,    3,    3,
+        4,     4,    3,    3,
+        1.5, 1.5, -0.5, -0.5,
+        1.5, 1.5, -0.5, -0.5,
+    };
+  // clang-format on
+
+  auto out  = l.forward({{in}});
+  vec_t res = (*out[0])[0];
+
+  for (size_t i = 0; i < expected.size(); i++) {
+    EXPECT_FLOAT_EQ(expected[i], res[i]);
+  }
+}
+
+TEST(ave_unpool, forward_stride) {
+  average_unpooling_layer l(3, 3, 1, 2, 1);
+  l.weight_init_f(parameter_init::constant(1.0));
+  l.bias_init_f(parameter_init::constant(0.0));
+  l.init_parameters();
+
+  // clang-format off
+    vec_t in = {
+        0, 1, 2,
+        8, 7, 5,
+        4, 3, 1,
+    };
+
+    vec_t expected = {
+        0,   1,  3, 2,
+        8,  16, 15, 7,
+        12, 22, 16, 6,
+        4,  7,  4,  1
+    };
+  // clang-format on
+
+  auto out  = l.forward({{in}});
+  vec_t res = (*out[0])[0];
+
+  for (size_t i = 0; i < expected.size(); i++) {
+    EXPECT_FLOAT_EQ(expected[i], res[i]);
+  }
+}
+
 TEST(ave_unpool, gradient_check) {  // sigmoid - mse
   using loss_func  = mse;           // TODO(Randl): fails with cross-entropy
   using activation = sigmoid;
@@ -32,75 +89,15 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - mse
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-TEST(ave_unpool, forward) {
-  average_unpooling_layer l(2, 2, 1, 2);
-
-  // clang-format off
-    vec_t in = {
-        4, 3,
-        1.5, -0.5
-    };
-
-    vec_t expected = {
-        4,     4,    3,    3,
-        4,     4,    3,    3,
-        1.5, 1.5, -0.5, -0.5,
-        1.5, 1.5, -0.5, -0.5,
-    };
-  // clang-format on
-
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
-  l.init_weight();
-
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
-  vec_t res = (*out[0])[0];
-
-  for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_FLOAT_EQ(expected[i], res[i]);
-  }
-}
-
-TEST(ave_unpool, forward_stride) {
-  average_unpooling_layer l(3, 3, 1, 2, 1);
-
-  // clang-format off
-    vec_t in = {
-        0, 1, 2,
-        8, 7, 5,
-        4, 3, 1,
-    };
-
-    vec_t expected = {
-        0,   1,  3, 2,
-        8,  16, 15, 7,
-        12, 22, 16, 6,
-        4,  7,  4,  1
-    };
-  // clang-format on
-
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
-  l.init_weight();
-
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
-  vec_t res = (*out[0])[0];
-
-  for (size_t i = 0; i < expected.size(); i++) {
-    EXPECT_FLOAT_EQ(expected[i], res[i]);
-  }
-}
-
+/* todo (karandesai) Deal with serialization tests of all layers together later.
 TEST(ave_unpool, read_write) {
   average_unpooling_layer l1(100, 100, 5, 2);
   average_unpooling_layer l2(100, 100, 5, 2);
 
-  l1.setup(true);
-  l2.setup(true);
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
-
+*/
 }  // namespace tiny_dnn

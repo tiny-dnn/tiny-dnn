@@ -22,62 +22,52 @@ namespace tiny_dnn {
 
 // forward_propagation
 inline void tiny_average_unpooling_kernel(
-  const std::vector<tensor_t *> &in_data,
-  std::vector<tensor_t *> &out_data,
+  const Tensor<> &in_data,
+  const Tensor<> &weights,
+  const Tensor<> &biases,
+  Tensor<> &out_data,
   const core::aveunpool_params &params,
   const core::average_unpooling_layer_worker_specific_storage &auws,
   bool parallelize) {
-  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const Tensor<> in((*in_data[0])[sample]);
-    const Tensor<> W((*in_data[1])[0]);
-    const Tensor<> b((*in_data[2])[0]);
-    Tensor<> out((*out_data[0])[sample]);
-
+  for_i(parallelize, in_data.size(), [&](size_t sample) {
     auto oarea = params.out.area();
     size_t idx = 0;
     for (size_t d = 0; d < params.out.depth_; ++d) {
-      float_t weight = W.host_at(d);  // * scale_factor;
-      float_t bias   = b.host_at(d);
+      float_t weight = weights.host_at(d);  // * scale_factor;
+      float_t bias   = biases.host_at(d);
       for (size_t i = 0; i < oarea; ++i, ++idx) {
         const auto &connections = auws.out2wi[idx];
         float_t value{0};
         for (auto connection : connections)
-          value += in.host_at(connection.second);
+          value += in_data.host_at(sample, connection.second);
         value *= weight;
         value += bias;
-        out.host_at(idx) = value;
+        out_data.host_at(sample, idx) = value;
       }
     }
-
-    assert(out.size() == auws.out2wi.size());
-    (*out_data[0])[sample] = out.toVec();
+    assert(out_data.size() == auws.out2wi.size());
   });
 }
 
 // back_propagation
 inline void tiny_average_unpooling_back_kernel(
-  const std::vector<tensor_t *> &in_data,
-  const std::vector<tensor_t *> &out_data,
-  std::vector<tensor_t *> &out_grad,
-  std::vector<tensor_t *> &in_grad,
+  const Tensor<> &prev_out,
+  const Tensor<> &weights,
+  Tensor<> &weights_grads,
+  Tensor<> &bias_grads,
+  Tensor<> &curr_delta,
+  Tensor<> &prev_delta,
   const core::aveunpool_params &params,
   const core::average_unpooling_layer_worker_specific_storage &auws,
   bool parallelize) {
-  for_i(parallelize, in_data[0]->size(), [&](size_t sample) {
-    const Tensor<> prev_out((*in_data[0])[sample]);
-    const Tensor<> W((*in_data[1])[0]);
-    Tensor<> dW((*in_grad[1])[sample]);
-    Tensor<> db((*in_grad[2])[sample]);
-    Tensor<> prev_delta((*in_grad[0])[sample]);
-    Tensor<> curr_delta((*out_grad[0])[sample]);
-
+  for_i(parallelize, curr_delta.size(), [&](size_t sample) {
     auto inarea = params.in.area();
     size_t idx  = 0;
     for (size_t i = 0; i < params.in.depth_; ++i) {
-      float_t weight = W.host_at(i);  // * scale_factor;
+      float_t weight = weights.host_at(i);  // * scale_factor;
       for (size_t j = 0; j < inarea; ++j, ++idx) {
-        prev_delta.host_at(idx) =
-          weight * curr_delta.host_at(auws.in2wo[idx][0].second);
+        prev_delta.host_at(sample, idx) =
+          weight * curr_delta.host_at(sample, auws.in2wo[idx][0].second);
       }
     }
 
@@ -86,24 +76,20 @@ inline void tiny_average_unpooling_back_kernel(
       float_t diff            = 0.0;
 
       for (auto connection : connections)
-        diff += prev_out.host_at(connection.first) *
-                curr_delta.host_at(connection.second);
+        diff += prev_out.host_at(sample, connection.first) *
+                curr_delta.host_at(sample, connection.second);
 
-      dW.host_at(i) += diff;  // * scale_factor;
+      weights_grads.host_at(sample, i) += diff;  // * scale_factor;
     }
 
     for (size_t i = 0; i < auws.bias2out.size(); i++) {
       const std::vector<size_t> &outs = auws.bias2out[i];
       float_t diff                    = 0.0;
 
-      for (auto o : outs) diff += curr_delta.host_at(o);
+      for (auto o : outs) diff += curr_delta.host_at(sample, o);
 
-      db.host_at(i) += diff;
+      bias_grads.host_at(sample, i) += diff;
     }
-    (*in_grad[1])[sample]  = dW.toVec();
-    (*in_grad[2])[sample]  = db.toVec();
-    (*in_grad[0])[sample]  = prev_delta.toVec();
-    (*out_grad[0])[sample] = curr_delta.toVec();
   });
 }
 
@@ -138,8 +124,10 @@ class average_unpooling_layer : public layer {
                           size_t in_channels,
                           size_t pooling_size,
                           size_t stride)
-    : layer({vector_type::data, vector_type::weight, vector_type::bias},
-            {vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
+    layer::add_parameter(in_channels, in_channels, in_height, in_width,
+                         parameter_type::weight);
+    layer::add_parameter(1, 1, 1, in_channels, parameter_type::bias);
     aveunpool_set_params(in_width, in_height, in_channels, pooling_size,
                          stride);
     auws_ = core::average_unpooling_layer_worker_specific_storage(
@@ -147,9 +135,7 @@ class average_unpooling_layer : public layer {
     init_connection(pooling_size);
   }
 
-  std::vector<shape3d> in_shape() const override {
-    return {params_.in, params_.window, params_.out};
-  }
+  std::vector<shape3d> in_shape() const override { return {params_.in}; }
 
   std::vector<shape3d> out_shape() const override { return {params_.out}; }
 
@@ -157,16 +143,44 @@ class average_unpooling_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    tiny_average_unpooling_kernel(in_data, out_data, params_, auws_,
+    // todo (karandesai) : transfer all this into OpKernel
+    // OpKernels do not accept worker storage so currently tricky to do so
+
+    const Tensor<> in = Tensor<>(*in_data[0]);
+    Tensor<> out      = Tensor<>(*out_data[0]);
+    out.fill(0);
+
+    const Tensor<> weights = *(layer::ith_parameter(0).data());
+    const Tensor<> biases  = *(layer::ith_parameter(1).data());
+
+    tiny_average_unpooling_kernel(in, weights, biases, out, params_, auws_,
                                   parallelize());
+    *out_data[0] = out.toTensor();
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tiny_average_unpooling_back_kernel(in_data, out_data, out_grad, in_grad,
-                                       params_, auws_, parallelize());
+    // todo (karandesai) : transfer all this into OpKernel
+
+    const Tensor<> prev_out = Tensor<>(*in_data[0]);
+    Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
+    Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
+
+    const Tensor<> weights = *(layer::ith_parameter(0).data());
+    const Tensor<> bias    = *(layer::ith_parameter(1).data());
+    Tensor<> weights_grads = *(layer::ith_parameter(0).grad());
+    Tensor<> bias_grads    = *(layer::ith_parameter(1).grad());
+
+    prev_delta.fill(0);
+
+    tiny_average_unpooling_back_kernel(prev_out, weights, weights_grads,
+                                       bias_grads, curr_delta, prev_delta,
+                                       params_, auws_, parallelize_);
+    *in_grad[0] = prev_delta.toTensor();
+    layer::ith_parameter(0).set_data(weights_grads);
+    layer::ith_parameter(1).set_data(bias_grads);
   }
 
   friend struct serialization_buddy;
