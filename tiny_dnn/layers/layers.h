@@ -21,7 +21,6 @@
 #include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 #include "tiny_dnn/layers/max_unpooling_layer.h"
-#include "tiny_dnn/layers/partial_connected_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
