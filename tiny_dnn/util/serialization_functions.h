@@ -629,9 +629,10 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar,
                                tiny_dnn::average_unpooling_layer &layer) {
-    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_),
-                  ::detail::make_nvp("pool_size", layer.w_.width_),
-                  ::detail::make_nvp("stride", layer.stride_));
+    auto &params_ = layer.params_;
+    ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in),
+                  ::detail::make_nvp("pool_size", params_.window.width_),
+                  ::detail::make_nvp("stride", params_.stride));
   }
 
   template <class Archive>
