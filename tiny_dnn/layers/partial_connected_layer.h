@@ -26,7 +26,7 @@ class partial_connected_layer : public layer {
                           size_t weight_dim,
                           size_t bias_dim,
                           float_t scale_factor = float_t{1})
-    : layer(std_input_order(bias_dim > 0), {vector_type::data}),
+    : layer({vector_type::data}, {vector_type::data}),
       weight2io_(weight_dim),
       out2wi_(out_dim),
       in2wo_(in_dim),

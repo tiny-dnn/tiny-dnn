@@ -305,14 +305,6 @@ inline bool is_trainable_weight(vector_type vtype) {
   return (vtype & vector_type::weight) == vector_type::weight;
 }
 
-inline std::vector<vector_type> std_input_order(bool has_bias) {
-  if (has_bias) {
-    return {vector_type::data, vector_type::weight, vector_type::bias};
-  } else {
-    return {vector_type::data, vector_type::weight};
-  }
-}
-
 inline void fill_tensor(tensor_t &tensor, float_t value) {
   for (auto &t : tensor) {
     vectorize::fill(&t[0], t.size(), value);

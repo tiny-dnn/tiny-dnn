@@ -33,11 +33,11 @@ using namespace tiny_dnn::activation;
 #include "test_node.h"
 #include "test_nodes.h"
 #include "test_power_layer.h"
-#include "test_quantization.h"
-#include "test_quantized_convolutional_layer.h"
-#include "test_quantized_deconvolutional_layer.h"
 // TODO(karandesa-96): enable once parameter api is ready
 // #include "test_recurrent_cell_layer.h"
+//#include "test_quantization.h"
+//#include "test_quantized_convolutional_layer.h"
+//#include "test_quantized_deconvolutional_layer.h"
 #include "test_slice_layer.h"
 // todo (karandesai) : fix after parameter integration
 // #include "test_target_cost.h"
@@ -50,7 +50,7 @@ using namespace tiny_dnn::activation;
 //#endif  // CNN_NO_SERIALIZATION
 
 #ifdef CNN_USE_GEMMLOWP
-#include "test_quantized_fully_connected_layer.h"
+//#include "test_quantized_fully_connected_layer.h"
 #endif  // CNN_USE_GEMMLOOP
 
 // todo (karandesai) : fix after parameter integration

@@ -69,12 +69,18 @@ class quantized_deconvolutional_layer : public layer {
     size_t w_stride              = 1,
     size_t h_stride              = 1,
     core::backend_t backend_type = core::backend_t::internal)
-    : layer(std_input_order(has_bias), {vector_type::data}) {
-    deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
-                      window_size, out_channels, pad_type, has_bias, w_stride,
-                      h_stride);
-    init_backend(backend_type);
-  }
+    : quantized_deconvolutional_layer(in_width,
+                                      in_height,
+                                      window_size,
+                                      window_size,
+                                      in_channels,
+                                      out_channels,
+                                      core::connection_table(),
+                                      pad_type,
+                                      has_bias,
+                                      w_stride,
+                                      h_stride,
+                                      backend_type) {}
 
   /**
    * constructing deconvolutional layer
@@ -113,12 +119,18 @@ class quantized_deconvolutional_layer : public layer {
     size_t w_stride              = 1,
     size_t h_stride              = 1,
     core::backend_t backend_type = core::backend_t::internal)
-    : layer(std_input_order(has_bias), {vector_type::data}) {
-    deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
-                      window_height, out_channels, pad_type, has_bias, w_stride,
-                      h_stride);
-    init_backend(backend_type);
-  }
+    : quantized_deconvolutional_layer(in_width,
+                                      in_height,
+                                      window_width,
+                                      window_height,
+                                      in_channels,
+                                      out_channels,
+                                      core::connection_table(),
+                                      pad_type,
+                                      has_bias,
+                                      w_stride,
+                                      h_stride,
+                                      backend_type) {}
 
   /**
    * constructing deconvolutional layer
@@ -157,12 +169,18 @@ class quantized_deconvolutional_layer : public layer {
     size_t w_stride              = 1,
     size_t h_stride              = 1,
     core::backend_t backend_type = core::backend_t::internal)
-    : layer(std_input_order(has_bias), {vector_type::data}) {
-    deconv_set_params(shape3d(in_width, in_height, in_channels), window_size,
-                      window_size, out_channels, pad_type, has_bias, w_stride,
-                      h_stride, connection_table);
-    init_backend(backend_type);
-  }
+    : quantized_deconvolutional_layer(in_width,
+                                      in_height,
+                                      window_size,
+                                      window_size,
+                                      in_channels,
+                                      out_channels,
+                                      connection_table,
+                                      pad_type,
+                                      has_bias,
+                                      w_stride,
+                                      h_stride,
+                                      backend_type) {}
 
   /**
    * constructing deconvolutional layer
@@ -203,7 +221,12 @@ class quantized_deconvolutional_layer : public layer {
     size_t w_stride              = 1,
     size_t h_stride              = 1,
     core::backend_t backend_type = core::backend_t::internal)
-    : layer(std_input_order(has_bias), {vector_type::data}) {
+    : layer({vector_type::data}, {vector_type::data}) {
+    layer::add_parameter(out_channels, in_channels, window_height, window_width,
+                         parameter_type::weight, true);
+    if (has_bias) {
+      layer::add_parameter(1, 1, 1, out_channels, parameter_type::bias, true);
+    }
     deconv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                       window_height, out_channels, pad_type, has_bias, w_stride,
                       h_stride, connection_table);
@@ -234,12 +257,12 @@ class quantized_deconvolutional_layer : public layer {
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
     // launch deconvolutional kernel
-    if (in_data.size() == 3) {
+    if (in_data.size() == 1) {
       layer::backend_->deconv2d_q(in_data, out_data);
-
-    } else if (in_data.size() == 6) {
-      layer::backend_->deconv2d_eq(in_data, out_data);
     }
+    //    else if (in_data.size() == 6) {
+    //      layer::backend_->deconv2d_eq(in_data, out_data);
+    //    }
   }
 
   /**
@@ -261,16 +284,9 @@ class quantized_deconvolutional_layer : public layer {
     layer::backend_->deconv2d_q(in_data, out_data, out_grad, in_grad);
   }
 
-  std::vector<index3d<size_t>> in_shape() const override {
-    if (params_.has_bias) {
-      return {params_.in, params_.weight,
-              index3d<size_t>(1, 1, params_.out.depth_)};
-    } else {
-      return {params_.in, params_.weight};
-    }
-  }
+  std::vector<shape3d> in_shape() const override { return {params_.in}; }
 
-  std::vector<index3d<size_t>> out_shape() const override {
+  std::vector<shape3d> out_shape() const override {
     return {params_.out_unpadded};
   }
 
