@@ -412,10 +412,9 @@ class layer : public node {
    */
   Parameters parameters(bool trainable_only = false) {
     Parameters parameters;
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      if (!trainable_only ||
-          (parameter_at(i).is_trainable() && trainable_only)) {
-        parameters.push_back(&parameter_at(i));
+    for (auto &parameter : parameters_) {
+      if (!trainable_only || (parameter->is_trainable() && trainable_only)) {
+        parameters.push_back(parameter.get());
       }
     }
     return parameters;
@@ -423,10 +422,9 @@ class layer : public node {
 
   ConstParameters parameters(bool trainable_only = false) const {
     ConstParameters parameters;
-    for (size_t i = 0; i < parameters_.size(); i++) {
-      if (!trainable_only ||
-          (parameter_at(i).is_trainable() && trainable_only)) {
-        parameters.push_back(&parameter_at(i));
+    for (auto &parameter : parameters_) {
+      if (!trainable_only || (parameter->is_trainable() && trainable_only)) {
+        parameters.push_back(parameter.get());
       }
     }
     return parameters;
@@ -449,8 +447,8 @@ class layer : public node {
           fetched   = true;
         } else {
           nn_warn("Layer " + layer_type() +
-                  " contains more than "
-                  "one weights parameters, returning first only!\n");
+                  " contains more than one weights"
+                  " parameters, returning first only!\n");
         }
       }
     }
@@ -469,9 +467,9 @@ class layer : public node {
         bias_p  = parameter.get();
         fetched = true;
       } else if (fetched) {
-        nn_warn(
-          "Layer " + layer_type() +
-          "contains more than one bias parameters, returning first only!");
+        nn_warn("Layer " + layer_type() +
+                " contains more than one bias"
+                " parameters, returning first only!\n");
       }
     }
     return *bias_p;

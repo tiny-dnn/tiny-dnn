@@ -95,9 +95,9 @@ class tiny_backend : public backend {
   void conv2d_q(const std::vector<tensor_t *> &in_data,
                 std::vector<tensor_t *> &out_data) override {
     copy_and_pad_input(*in_data[0]);
-    const vec_t W = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W = layer_->parameter_at(0).data()->toVec();
     const vec_t b =
-      params_c_->has_bias ? layer_->ith_parameter(1).data()->toVec() : vec_t();
+      params_c_->has_bias ? layer_->parameter_at(1).data()->toVec() : vec_t();
     tensor_t &out = *out_data[0];
     const std::vector<const vec_t *> &in =
       (*conv_layer_worker_storage_).prev_out_padded_;  // input // NOLINT
@@ -114,15 +114,15 @@ class tiny_backend : public backend {
   void conv2d_eq(const std::vector<tensor_t *> &in_data,
                  std::vector<tensor_t *> &out_data) override {
     copy_and_pad_input(*in_data[0]);
-    const vec_t W = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W = layer_->parameter_at(0).data()->toVec();
     const vec_t b =
-      params_c_->has_bias ? layer_->ith_parameter(1).data()->toVec() : vec_t();
+      params_c_->has_bias ? layer_->parameter_at(1).data()->toVec() : vec_t();
     const tensor_t &in_r = *in_data[1];
     const vec_t W_r      = params_c_->has_bias
-                        ? layer_->ith_parameter(2).data()->toVec()
-                        : layer_->ith_parameter(1).data()->toVec();
+                        ? layer_->parameter_at(2).data()->toVec()
+                        : layer_->parameter_at(1).data()->toVec();
     const vec_t b_r =
-      params_c_->has_bias ? layer_->ith_parameter(3).data()->toVec() : vec_t();
+      params_c_->has_bias ? layer_->parameter_at(3).data()->toVec() : vec_t();
     tensor_t &out   = *out_data[0];
     tensor_t &out_r = *out_data[1];
 
@@ -144,9 +144,9 @@ class tiny_backend : public backend {
     conv_layer_worker_specific_storage &cws = (*conv_layer_worker_storage_);
 
     std::vector<const vec_t *> &prev_out = cws.prev_out_padded_;
-    const vec_t W        = layer_->ith_parameter(0).data()->toVec();
-    tensor_t dW          = layer_->ith_parameter(0).grad()->toTensor();
-    tensor_t db          = layer_->ith_parameter(1).grad()->toTensor();
+    const vec_t W        = layer_->parameter_at(0).data()->toVec();
+    tensor_t dW          = layer_->parameter_at(0).grad()->toTensor();
+    tensor_t db          = layer_->parameter_at(1).grad()->toTensor();
     tensor_t &curr_delta = *out_grad[0];
     tensor_t *prev_delta = (params_c_->pad_type == padding::same)
                              ? &cws.prev_delta_padded_
@@ -164,8 +164,8 @@ class tiny_backend : public backend {
       kernels::tiny_quantized_conv2d_back_kernel(*params_c_, *prev_out[i], W,
                                                  dW[i], db[i], curr_delta[i],
                                                  &(*prev_delta)[i]);
-      layer_->ith_parameter(0).set_grad(Tensor<>(dW));
-      layer_->ith_parameter(1).set_grad(Tensor<>(db));
+      layer_->parameter_at(0).set_grad(Tensor<>(dW));
+      layer_->parameter_at(1).set_grad(Tensor<>(db));
     }
 
     if (params_c_->pad_type == padding::same) {
@@ -178,9 +178,9 @@ class tiny_backend : public backend {
                   std::vector<tensor_t *> &out_data) override {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
     const tensor_t &in                        = *in_data[0];  // input
-    const vec_t W = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W = layer_->parameter_at(0).data()->toVec();
     const vec_t b =
-      params_d_->has_bias ? layer_->ith_parameter(1).data()->toVec() : vec_t();
+      params_d_->has_bias ? layer_->parameter_at(1).data()->toVec() : vec_t();
     tensor_t &out = *out_data[0];
 
     fill_tensor(
@@ -201,15 +201,15 @@ class tiny_backend : public backend {
                    std::vector<tensor_t *> &out_data) override {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
     const tensor_t &in                        = *in_data[0];  // input
-    const vec_t W = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W = layer_->parameter_at(0).data()->toVec();
     const vec_t b =
-      params_d_->has_bias ? layer_->ith_parameter(1).data()->toVec() : vec_t();
+      params_d_->has_bias ? layer_->parameter_at(1).data()->toVec() : vec_t();
     const tensor_t &in_r = *in_data[1];
     const vec_t W_r      = params_d_->has_bias
-                        ? layer_->ith_parameter(2).data()->toVec()
-                        : layer_->ith_parameter(1).data()->toVec();
+                        ? layer_->parameter_at(2).data()->toVec()
+                        : layer_->parameter_at(1).data()->toVec();
     const vec_t b_r =
-      params_d_->has_bias ? layer_->ith_parameter(3).data()->toVec() : vec_t();
+      params_d_->has_bias ? layer_->parameter_at(3).data()->toVec() : vec_t();
     tensor_t &out   = *out_data[0];
     tensor_t &out_r = *out_data[1];
 
@@ -236,9 +236,9 @@ class tiny_backend : public backend {
       copy_and_pad_delta(cws.curr_delta_padded, *in_grad[0]);
 
     const tensor_t &prev_out = *(cws.prev_out_);
-    const vec_t W            = layer_->ith_parameter(0).data()->toVec();
-    tensor_t dW              = layer_->ith_parameter(0).grad()->toTensor();
-    tensor_t db              = layer_->ith_parameter(1).grad()->toTensor();
+    const vec_t W            = layer_->parameter_at(0).data()->toVec();
+    tensor_t dW              = layer_->parameter_at(0).grad()->toTensor();
+    tensor_t db              = layer_->parameter_at(1).grad()->toTensor();
     tensor_t &curr_delta     = (params_d_->pad_type == padding::same)
                              ? cws.curr_delta_padded
                              : *out_grad[1];
@@ -256,8 +256,8 @@ class tiny_backend : public backend {
       kernels::tiny_quantized_deconv2d_back_kernel(*params_d_, prev_out[i], W,
                                                    dW[i], db[i], curr_delta[i],
                                                    &(*prev_delta)[i]);
-      layer_->ith_parameter(0).set_grad(Tensor<>(dW));
-      layer_->ith_parameter(1).set_grad(Tensor<>(db));
+      layer_->parameter_at(0).set_grad(Tensor<>(dW));
+      layer_->parameter_at(1).set_grad(Tensor<>(db));
     }
   }
 
@@ -265,7 +265,7 @@ class tiny_backend : public backend {
                std::vector<tensor_t *> &out_data) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &in = *in_data[0];
-    const vec_t W      = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W      = layer_->parameter_at(0).data()->toVec();
     tensor_t &out      = *out_data[0];
 
     for (size_t i = 0; i < in.size(); i++) {
@@ -286,15 +286,15 @@ class tiny_backend : public backend {
                 std::vector<tensor_t *> &out_data) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &in = *in_data[0];
-    const vec_t W      = layer_->ith_parameter(0).data()->toVec();
+    const vec_t W      = layer_->parameter_at(0).data()->toVec();
     vec_t b =
-      params_f_->has_bias_ ? layer_->ith_parameter(1).data()->toVec() : vec_t();
+      params_f_->has_bias_ ? layer_->parameter_at(1).data()->toVec() : vec_t();
     const tensor_t &in_r = *in_data[1];
     const vec_t W_r      = params_f_->has_bias_
-                        ? layer_->ith_parameter(2).data()->toVec()
-                        : layer_->ith_parameter(1).data()->toVec();
+                        ? layer_->parameter_at(2).data()->toVec()
+                        : layer_->parameter_at(1).data()->toVec();
     const vec_t b_r =
-      params_f_->has_bias_ ? layer_->ith_parameter(3).data()->toVec() : vec_t();
+      params_f_->has_bias_ ? layer_->parameter_at(3).data()->toVec() : vec_t();
     tensor_t &out   = *out_data[0];
     tensor_t &out_r = *out_data[1];
 
@@ -318,9 +318,9 @@ class tiny_backend : public backend {
                std::vector<tensor_t *> &in_grad) override {
 #ifdef CNN_USE_GEMMLOWP
     const tensor_t &prev_out = *in_data[0];
-    const vec_t W            = layer_->ith_parameter(0).data()->toVec();
-    tensor_t dW              = layer_->ith_parameter(0).grad()->toTensor();
-    tensor_t db              = layer_->ith_parameter(1).grad()->toTensor();
+    const vec_t W            = layer_->parameter_at(0).data()->toVec();
+    tensor_t dW              = layer_->parameter_at(0).grad()->toTensor();
+    tensor_t db              = layer_->parameter_at(1).grad()->toTensor();
     tensor_t &prev_delta     = *in_grad[0];
     tensor_t &curr_delta     = *out_grad[0];
 
@@ -330,8 +330,8 @@ class tiny_backend : public backend {
       kernels::tiny_quantized_fully_connected_back_kernel(
         *params_f_, prev_out[i], W, dW[i], prev_delta[i], curr_delta[i], db[i],
         layer_->parallelize());
-      layer_->ith_parameter(0).set_grad(Tensor<>(dW));
-      layer_->ith_parameter(1).set_grad(Tensor<>(db));
+      layer_->parameter_at(0).set_grad(Tensor<>(dW));
+      layer_->parameter_at(1).set_grad(Tensor<>(db));
     }
 #else
     CNN_UNREFERENCED_PARAMETER(in_data);
