@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -13,6 +13,7 @@
 #include <initializer_list>
 #include <utility>
 
+#include "xbuffer_adaptor.hpp"
 #include "xcontainer.hpp"
 #include "xsemantic.hpp"
 
@@ -34,6 +35,7 @@ namespace xt
         using inner_strides_type = strides_type;
         using inner_backstrides_type = backstrides_type;
         using temporary_type = xarray_container<EC, L, SC>;
+        static constexpr layout_type layout = L;
     };
 
     template <class EC, layout_type L, class SC>
@@ -55,14 +57,13 @@ namespace xt
      * @sa xarray
      */
     template <class EC, layout_type L, class SC>
-    class xarray_container : public xstrided_container<xarray_container<EC, L, SC>, L>,
+    class xarray_container : public xstrided_container<xarray_container<EC, L, SC>>,
                              public xcontainer_semantic<xarray_container<EC, L, SC>>
     {
-
     public:
 
         using self_type = xarray_container<EC, L, SC>;
-        using base_type = xstrided_container<self_type, L>;
+        using base_type = xstrided_container<self_type>;
         using semantic_base = xcontainer_semantic<self_type>;
         using container_type = typename base_type::container_type;
         using value_type = typename base_type::value_type;
@@ -73,6 +74,7 @@ namespace xt
         using shape_type = typename base_type::shape_type;
         using inner_shape_type = typename base_type::inner_shape_type;
         using strides_type = typename base_type::strides_type;
+        using backstrides_type = typename base_type::backstrides_type;
         using inner_strides_type = typename base_type::inner_strides_type;
 
         xarray_container();
@@ -134,6 +136,7 @@ namespace xt
         using inner_strides_type = strides_type;
         using inner_backstrides_type = backstrides_type;
         using temporary_type = xarray_container<EC, L, SC>;
+        static constexpr layout_type layout = L;
     };
 
     template <class EC, layout_type L, class SC>
@@ -157,22 +160,24 @@ namespace xt
      * @tparam SC The type of the containers holding the shape and the strides.
      */
     template <class EC, layout_type L, class SC>
-    class xarray_adaptor : public xstrided_container<xarray_adaptor<EC, L, SC>, L>,
+    class xarray_adaptor : public xstrided_container<xarray_adaptor<EC, L, SC>>,
                            public xadaptor_semantic<xarray_adaptor<EC, L, SC>>
     {
-
     public:
 
         using self_type = xarray_adaptor<EC, L, SC>;
-        using base_type = xstrided_container<self_type, L>;
+        using base_type = xstrided_container<self_type>;
         using semantic_base = xadaptor_semantic<self_type>;
         using container_type = typename base_type::container_type;
         using shape_type = typename base_type::shape_type;
         using strides_type = typename base_type::strides_type;
+        using backstrides_type = typename base_type::backstrides_type;
 
-        xarray_adaptor(container_type& data);
-        xarray_adaptor(container_type& data, const shape_type& shape, layout_type l = L);
-        xarray_adaptor(container_type& data, const shape_type& shape, const strides_type& strides);
+        using container_closure_type = adaptor_closure_t<container_type>;
+
+        xarray_adaptor(container_closure_type data);
+        xarray_adaptor(container_closure_type data, const shape_type& shape, layout_type l = L);
+        xarray_adaptor(container_closure_type data, const shape_type& shape, const strides_type& strides);
 
         ~xarray_adaptor() = default;
 
@@ -187,13 +192,13 @@ namespace xt
 
     private:
 
-        container_type& m_data;
+        container_closure_type m_data;
 
         container_type& data_impl() noexcept;
         const container_type& data_impl() const noexcept;
 
         using temporary_type = typename xcontainer_inner_types<self_type>::temporary_type;
-        void assign_temporary_impl(temporary_type& tmp);
+        void assign_temporary_impl(temporary_type&& tmp);
 
 
         friend class xcontainer<xarray_adaptor<EC, L, SC>>;
@@ -312,7 +317,7 @@ namespace xt
         : base_type()
     {
         base_type::reshape(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
@@ -324,7 +329,7 @@ namespace xt
         : base_type()
     {
         base_type::reshape(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
@@ -336,7 +341,7 @@ namespace xt
         : base_type()
     {
         base_type::reshape(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
@@ -348,7 +353,7 @@ namespace xt
         : base_type()
     {
         base_type::reshape(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     /**
@@ -360,7 +365,7 @@ namespace xt
         : base_type()
     {
         base_type::reshape(xt::shape<shape_type>(t));
-        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->xbegin(), t);
+        L == layout_type::row_major ? nested_copy(m_data.begin(), t) : nested_copy(this->template begin<layout_type::row_major>(), t);
     }
 
     template <class EC, layout_type L, class SC>
@@ -430,8 +435,8 @@ namespace xt
      * @param data the container to adapt
      */
     template <class EC, layout_type L, class SC>
-    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_type& data)
-        : base_type(), m_data(data)
+    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_closure_type data)
+        : base_type(), m_data(std::forward<container_closure_type>(data))
     {
     }
 
@@ -443,8 +448,8 @@ namespace xt
      * @param l the layout_type of the xarray_adaptor
      */
     template <class EC, layout_type L, class SC>
-    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_type& data, const shape_type& shape, layout_type l)
-        : base_type(), m_data(data)
+    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_closure_type data, const shape_type& shape, layout_type l)
+        : base_type(), m_data(std::forward<container_closure_type>(data))
     {
         base_type::reshape(shape, l);
     }
@@ -457,8 +462,8 @@ namespace xt
      * @param strides the strides of the xarray_adaptor
      */
     template <class EC, layout_type L, class SC>
-    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_type& data, const shape_type& shape, const strides_type& strides)
-        : base_type(), m_data(data)
+    inline xarray_adaptor<EC, L, SC>::xarray_adaptor(container_closure_type data, const shape_type& shape, const strides_type& strides)
+        : base_type(), m_data(std::forward<container_closure_type>(data))
     {
         base_type::reshape(shape, strides);
     }
@@ -508,15 +513,12 @@ namespace xt
     }
 
     template <class EC, layout_type L, class SC>
-    inline void xarray_adaptor<EC, L, SC>::assign_temporary_impl(temporary_type& tmp)
+    inline void xarray_adaptor<EC, L, SC>::assign_temporary_impl(temporary_type&& tmp)
     {
-        // TODO (performance improvement) : consider moving tmps
-        // shape and strides
-        base_type::shape_impl() = tmp.shape();
-        base_type::strides_impl() = tmp.strides();
-        base_type::backstrides_impl() = tmp.backstrides();
-        m_data.resize(tmp.size());
-        std::copy(tmp.data().cbegin(), tmp.data().cend(), m_data.begin());
+        base_type::shape_impl() = std::move(const_cast<shape_type&>(tmp.shape()));
+        base_type::strides_impl() = std::move(const_cast<strides_type&>(tmp.strides()));
+        base_type::backstrides_impl() = std::move(const_cast<backstrides_type&>(tmp.backstrides()));
+        m_data = std::move(tmp.data());
     }
 }
 

@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -46,28 +46,6 @@ namespace xt
             constexpr result_type operator()(const T& t1, const T& t2, const T& t3) const noexcept
             {
                 return t1 ? t2 : t3;
-            }
-        };
-
-        template <class T>
-        struct minimum
-        {
-            using result_type = T;
-
-            constexpr result_type operator()(const T& t1, const T& t2) const noexcept
-            {
-                return (t1 < t2) ? t1 : t2;
-            }
-        };
-
-        template <class T>
-        struct maximum
-        {
-            using result_type = T;
-
-            constexpr result_type operator()(const T& t1, const T& t2) const noexcept
-            {
-                return (t1 > t2) ? t1 : t2;
             }
         };
 
@@ -348,9 +326,9 @@ namespace xt
         const E1& de1 = e1.derived_cast();
         const E2& de2 = e2.derived_cast();
         bool res = de1.dimension() == de2.dimension() && std::equal(de1.shape().begin(), de1.shape().end(), de2.shape().begin());
-        auto iter1 = de1.xbegin();
-        auto iter2 = de2.xbegin();
-        auto iter_end = de1.xend();
+        auto iter1 = de1.begin();
+        auto iter2 = de2.begin();
+        auto iter_end = de1.end();
         while (res && iter1 != iter_end)
         {
             res = (*iter1++ == *iter2++);
@@ -429,120 +407,6 @@ namespace xt
     }
 
     /**
-    * @ingroup logical_operators
-    * @brief Elementwise maximum
-    *
-    * Returns an \ref xfunction for the element-wise
-    * maximum between e1 and e2.
-    * @param e1 an \ref xexpression
-    * @param e2 an \ref xexpression
-    * @return an \ref xfunction
-    */
-    template <class E1, class E2>
-    inline auto maximum(E1&& e1, E2&& e2) noexcept
-        -> detail::xfunction_type_t<detail::maximum, E1, E2>
-    {
-        return detail::make_xfunction<detail::maximum>(std::forward<E1>(e1), std::forward<E2>(e2));
-    }
-
-    /**
-    * @ingroup logical_operators
-    * @brief Elementwise minimum
-    *
-    * Returns an \ref xfunction for the element-wise
-    * minimum between e1 and e2.
-    * @param e1 an \ref xexpression
-    * @param e2 an \ref xexpression
-    * @return an \ref xfunction
-    */
-    template <class E1, class E2>
-    inline auto minimum(E1&& e1, E2&& e2) noexcept
-        -> detail::xfunction_type_t<detail::minimum, E1, E2>
-    {
-        return detail::make_xfunction<detail::minimum>(std::forward<E1>(e1), std::forward<E2>(e2));
-    }
-
-    /**
-     * @ingroup logical_operators
-     * @brief Maximum element along given axis.
-     *
-     * Returns an \ref xreducer for the maximum of elements over given
-     * \em axes.
-     * @param e an \ref xexpression
-     * @param axes the axes along which the maximum is found (optional)
-     * @return an \ref xreducer
-     */
-    template <class E, class X>
-    inline auto amax(E&& e, X&& axes) noexcept
-    {
-        using functor_type = detail::maximum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), std::forward<X>(axes));
-    }
-
-    template <class E>
-    inline auto amax(E&& e) noexcept
-    {
-        using functor_type = detail::maximum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e));
-    }
-
-#ifdef X_OLD_CLANG
-    template <class E, class I>
-    inline auto amax(E&& e, std::initializer_list<I> axes) noexcept
-    {
-        using functor_type = detail::maximum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), axes);
-    }
-#else
-    template <class E, class I, std::size_t N>
-    inline auto amax(E&& e, const I (&axes)[N]) noexcept
-    {
-        using functor_type = detail::maximum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), axes);
-    }
-#endif
-
-    /**
-     * @ingroup logical_operators
-     * @brief Minimum element along given axis.
-     *
-     * Returns an \ref xreducer for the minimum of elements over given
-     * \em axes.
-     * @param e an \ref xexpression
-     * @param axes the axes along which the minimum is found (optional)
-     * @return an \ref xreducer
-     */
-    template <class E, class X>
-    inline auto amin(E&& e, X&& axes) noexcept
-    {
-        using functor_type = detail::minimum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), std::forward<X>(axes));
-    }
-
-    template <class E>
-    inline auto amin(E&& e) noexcept
-    {
-        using functor_type = detail::minimum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e));
-    }
-
-#ifdef X_OLD_CLANG
-    template <class E, class I>
-    inline auto amin(E&& e, std::initializer_list<I> axes) noexcept
-    {
-        using functor_type = detail::minimum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), axes);
-    }
-#else
-    template <class E, class I, std::size_t N>
-    inline auto amin(E&& e, const I (&axes)[N]) noexcept
-    {
-        using functor_type = detail::minimum<typename std::decay_t<E>::value_type>;
-        return reduce(functor_type(), std::forward<E>(e), axes);
-    }
-#endif
-
-    /**
      * @ingroup logical_operators
      * @brief return vector of indices where T is not zero
      * 
@@ -557,7 +421,7 @@ namespace xt
         using index_type = xindex_type_t<typename T::shape_type>;
         using size_type = typename T::size_type;
 
-        index_type idx(arr.dimension(), 0);
+        auto idx = make_sequence<index_type>(arr.dimension(), 0);
         std::vector<index_type> indices;
 
         auto next_idx = [&shape](index_type& idx)
@@ -581,7 +445,7 @@ namespace xt
         size_type total_size = compute_size(shape);
         for (size_type i = 0; i < total_size; i++, next_idx(idx))
         {
-            if (arr[idx])
+            if (arr.element(std::begin(idx), std::end(idx)))
             {
                 indices.push_back(idx);
             }
@@ -624,7 +488,7 @@ namespace xt
         }
         else
         {
-            return std::any_of(e.xbegin(), e.xend(),
+            return std::any_of(e.begin(), e.end(),
                                [](const typename std::decay_t<E>::value_type& el) { return el; });
         }
     }
@@ -649,7 +513,7 @@ namespace xt
         }
         else
         {
-            return std::all_of(e.xbegin(), e.xend(),
+            return std::all_of(e.begin(), e.end(),
                                [](const typename std::decay_t<E>::value_type& el) { return el; });
         }
     }

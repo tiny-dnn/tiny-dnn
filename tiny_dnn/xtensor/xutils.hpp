@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -83,11 +83,11 @@ namespace xt
 
     // equivalent to std::size(c) in c++17
     template <class C>
-    constexpr auto container_size(const C& c) -> decltype(c.size());
+    constexpr auto sequence_size(const C& c) -> decltype(c.size());
 
     // equivalent to std::size(a) in c++17
     template <class T, std::size_t N>
-    constexpr std::size_t container_size(const T (&a)[N]);
+    constexpr std::size_t sequence_size(const T (&a)[N]);
 
     /*******************************
      * remove_class implementation *
@@ -262,7 +262,7 @@ namespace xt
         R apply(std::size_t index, F&& func, std::index_sequence<I...> /*seq*/, const std::tuple<S...>& s) noexcept(noexcept(std::declval<F>()))
         {
             using FT = std::add_pointer_t<R(F&&, const std::tuple<S...>&)>;
-            static const std::array<FT, sizeof...(I)> ar = {&apply_one<R, F, I, S...>...};
+            static const std::array<FT, sizeof...(I)> ar = {{&apply_one<R, F, I, S...>...}};
             return ar[index](std::forward<F>(func), s);
         }
     }
@@ -366,7 +366,7 @@ namespace xt
         constexpr R initializer_shape(U t, std::index_sequence<I...>)
         {
             using size_type = typename R::value_type;
-            return { size_type(initializer_shape_impl<I>::value(t))... };
+            return {size_type(initializer_shape_impl<I>::value(t))...};
         }
     }
 
@@ -880,20 +880,20 @@ namespace xt
         return detail::to_array_impl(a, std::make_index_sequence<N>{});
     }
 
-    /*********************************
-     * container_size implementation *
-     *********************************/
+    /********************************
+     * sequence_size implementation *
+     ********************************/
 
     // equivalent to std::size(c) in c++17
     template <class C>
-    constexpr auto container_size(const C& c) -> decltype(c.size())
+    constexpr auto sequence_size(const C& c) -> decltype(c.size())
     {
         return c.size();
     }
 
     // equivalent to std::size(a) in c++17
     template <class T, std::size_t N>
-    constexpr std::size_t container_size(const T (&)[N])
+    constexpr std::size_t sequence_size(const T (&)[N])
     {
         return N;
     }
@@ -912,8 +912,129 @@ namespace xt
         static std::false_type test(...);
 
     public:
+
         constexpr static bool value = decltype(test<T>(std::size_t(0)))::value == true;
     };
+
+    /******************
+     * enable_if_type *
+     ******************/
+
+    template <class T>
+    struct enable_if_type
+    {
+        using type = void;
+    };
+
+    /*****************************
+     * is_complete implemenation * 
+     *****************************/
+
+    namespace detail
+    {
+        template <typename T>
+        struct is_complete_impl
+        {
+            template <typename U>
+            static auto test(U*)  -> std::integral_constant<bool, sizeof(U) == sizeof(U)>;
+            static auto test(...) -> std::false_type;
+            using type = decltype(test((T*)0));
+        };
+    }
+
+    template <typename T>
+    struct is_complete : detail::is_complete_impl<T>::type {};
+
+    /*************
+     * static_if *
+     *************/
+
+    namespace static_if_detail
+    {
+        struct identity
+        {
+            template <class T>
+            T&& operator()(T&& x) const
+            {
+                return std::forward<T>(x);
+            }
+        };
+    }
+
+    template <class TF, class FF>
+    auto static_if(std::true_type, const TF& tf, const FF&)
+    {
+        return tf(static_if_detail::identity());
+    }
+
+    template <class TF, class FF>
+    auto static_if(std::false_type, const TF&, const FF& ff)
+    {
+        return ff(static_if_detail::identity());
+    }
+
+    template <bool cond, class TF, class FF>
+    auto static_if(const TF& tf, const FF& ff)
+    {
+        return static_if(std::integral_constant<bool, cond>(), tf, ff);
+    }
+
+    /********************************************
+     * xtrivial_default_construct implemenation * 
+     ********************************************/
+
+#if defined(__clang__)
+#if !(defined(__APPLE__))
+// CLANG && LINUX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+
+}
+namespace std { template <class T> struct is_trivially_default_constructible; }
+namespace std { template <class T> struct has_trivial_default_constructor; }
+namespace xt
+{
+
+    namespace detail
+    {
+        template <bool C, class T>
+        struct xtrivial_default_construct_impl;
+
+        template <class T>
+        struct xtrivial_default_construct_impl<true, T> : std::is_trivially_default_constructible<T> {};
+
+        template <class T>
+        struct xtrivial_default_construct_impl<false, T> : std::has_trivial_default_constructor<T> {};
+    }
+
+    template <class T> 
+    using xtrivially_default_constructible = detail::xtrivial_default_construct_impl<is_complete<std::is_trivially_default_constructible<double>>::value, T>;
+
+#pragma clang diagnostic pop
+#else
+// CLANG && APPLE
+
+    template <class T> 
+    using xtrivially_default_constructible = std::is_trivially_default_constructible<T>;
+
+#endif
+#else
+// NOT CLANG
+    #if defined(__GNUC__) && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1))
+    // OLD GCC
+
+    template <class T> 
+    using xtrivially_default_constructible = std::has_trivial_default_constructor<T>;
+
+    #else
+
+    template <class T> 
+    using xtrivially_default_constructible = std::is_trivially_default_constructible<T>;
+
+    #endif
+
+#endif
+    
 }
 
 #endif

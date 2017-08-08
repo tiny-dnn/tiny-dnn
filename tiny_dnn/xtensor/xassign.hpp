@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -44,10 +44,9 @@ namespace xt
      * data_assigner *
      *****************/
 
-    template <class E1, class E2>
+    template <class E1, class E2, layout_type L>
     class data_assigner
     {
-
     public:
 
         using lhs_iterator = typename E1::stepper;
@@ -63,7 +62,7 @@ namespace xt
         void step(size_type i);
         void reset(size_type i);
 
-        void to_end();
+        void to_end(layout_type);
 
     private:
 
@@ -74,6 +73,17 @@ namespace xt
         rhs_iterator m_rhs_end;
 
         index_type m_index;
+    };
+
+    /********************
+     * trivial_assigner *
+     ********************/
+
+    template <bool index_assign>
+    struct trivial_assigner
+    {
+        template <class E1, class E2>
+        static void run(E1& e1, const E2& e2);
     };
 
     /***********************************
@@ -104,11 +114,12 @@ namespace xt
         bool trivial_broadcast = trivial && detail::is_trivial_broadcast(de1, de2);
         if (trivial_broadcast)
         {
-            std::copy(de2.cbegin(), de2.cend(), de1.begin());
+            constexpr bool contiguous_layout = E1::contiguous_layout && E2::contiguous_layout;
+            trivial_assigner<contiguous_layout>::run(de1, de2);
         }
         else
         {
-            data_assigner<E1, E2> assigner(de1, de2);
+            data_assigner<E1, E2, default_assignable_layout(E1::static_layout)> assigner(de1, de2);
             assigner.run();
         }
     }
@@ -143,14 +154,14 @@ namespace xt
         const E2& de2 = e2.derived_cast();
 
         size_type dim = de2.dimension();
-        shape_type shape(dim, size_type(1));
+        shape_type shape = make_sequence<shape_type>(dim, size_type(1));
         bool trivial_broadcast = de2.broadcast_shape(shape);
 
         if (dim > de1.dimension() || shape > de1.shape())
         {
             typename E1::temporary_type tmp(shape);
             assign_data(tmp, e2, trivial_broadcast);
-            de1.assign_temporary(tmp);
+            de1.assign_temporary(std::move(tmp));
         }
         else
         {
@@ -174,7 +185,7 @@ namespace xt
         const E1& de1 = e1.derived_cast();
         const E2& de2 = e2.derived_cast();
         size_type size = de2.dimension();
-        shape_type shape(size, size_type(1));
+        shape_type shape = make_sequence<shape_type>(size, size_type(1));
         de2.broadcast_shape(shape);
         if (shape.size() > de1.shape().size() || shape > de1.shape())
         {
@@ -186,45 +197,67 @@ namespace xt
      * data_assigner implementation *
      ********************************/
 
-    template <class E1, class E2>
-    inline data_assigner<E1, E2>::data_assigner(E1& e1, const E2& e2)
+    template <class E1, class E2, layout_type L>
+    inline data_assigner<E1, E2, L>::data_assigner(E1& e1, const E2& e2)
         : m_e1(e1), m_lhs(e1.stepper_begin(e1.shape())),
-          m_rhs(e2.stepper_begin(e1.shape())), m_rhs_end(e2.stepper_end(e1.shape())),
+          m_rhs(e2.stepper_begin(e1.shape())), m_rhs_end(e2.stepper_end(e1.shape(), L)),
           m_index(make_sequence<index_type>(e1.shape().size(), size_type(0)))
     {
     }
 
-    template <class E1, class E2>
-    inline void data_assigner<E1, E2>::run()
+    template <class E1, class E2, layout_type L>
+    inline void data_assigner<E1, E2, L>::run()
     {
         while (m_rhs != m_rhs_end)
         {
             *m_lhs = *m_rhs;
-            stepper_tools<default_assignable_layout(E1::static_layout)>::increment_stepper(*this, m_index, m_e1.shape());
+            stepper_tools<L>::increment_stepper(*this, m_index, m_e1.shape());
         }
     }
 
-    template <class E1, class E2>
-    inline void data_assigner<E1, E2>::step(size_type i)
+    template <class E1, class E2, layout_type L>
+    inline void data_assigner<E1, E2, L>::step(size_type i)
     {
         m_lhs.step(i);
         m_rhs.step(i);
     }
 
-    template <class E1, class E2>
-    inline void data_assigner<E1, E2>::reset(size_type i)
+    template <class E1, class E2, layout_type L>
+    inline void data_assigner<E1, E2, L>::reset(size_type i)
     {
         m_lhs.reset(i);
         m_rhs.reset(i);
     }
 
-    template <class E1, class E2>
-    inline void data_assigner<E1, E2>::to_end()
+    template <class E1, class E2, layout_type L>
+    inline void data_assigner<E1, E2, L>::to_end(layout_type l)
     {
-        m_lhs.to_end();
-        m_rhs.to_end();
+        m_lhs.to_end(l);
+        m_rhs.to_end(l);
+    }
+
+    /***********************************
+     * trivial_assigner implementation *
+     ***********************************/
+
+    template <bool index_assign>
+    template <class E1, class E2>
+    inline void trivial_assigner<index_assign>::run(E1& e1, const E2& e2)
+    {
+        using size_type = typename E1::size_type;
+        size_type size = e1.size();
+        for (size_type i = 0; i < size; ++i)
+        {
+            e1.data_element(i) = e2.data_element(i);
+        }
+    }
+
+    template <>
+    template <class E1, class E2>
+    inline void trivial_assigner<false>::run(E1& e1, const E2& e2)
+    {
+        std::copy(e2.storage_cbegin(), e2.storage_cend(), e1.storage_begin());
     }
 }
 
 #endif
-
