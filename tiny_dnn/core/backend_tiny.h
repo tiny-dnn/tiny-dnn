@@ -119,11 +119,14 @@ class tiny_backend : public backend {
   void conv2d_eq(const std::vector<Tensor<> *> &in_data,
                  std::vector<Tensor<> *> &out_data) override {
     copy_and_pad_input(*in_data[0]);
-    auto W    = layer_->parameter_at(0).data();
-    auto bias = params_c_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
+    const Tensor<> &W = *layer_->parameter_at(0).data();
+    const Tensor<> &bias =
+      params_c_->has_bias ? *layer_->parameter_at(1).data() : Tensor<>();
     const Tensor<> &in_r = *in_data[1];
-    auto W_r        = layer_->parameter_at(params_c_->has_bias ? 2:1).data();
-    auto b_r        = params_c_->has_bias ? layer_->parameter_at(3).data() : Tensor<>();
+    const Tensor<> &W_r =
+      *layer_->parameter_at(params_c_->has_bias ? 2 : 1).data();
+    const Tensor<> &b_r =
+      params_c_->has_bias ? *layer_->parameter_at(3).data() : Tensor<>();
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
     // input
@@ -148,9 +151,9 @@ class tiny_backend : public backend {
 
     std::vector<ConstViewTensor> &prev_out = cws.prev_out_padded_;
 
-    auto W = layer_->parameter_at(0).data();
-    Tensor<> &dW         = layer_->parameter_at(0).grad();
-    Tensor<> &db         = layer_->parameter_at(1).grad();
+    Tensor<> &W          = *layer_->parameter_at(0).data();
+    Tensor<> &dW         = *layer_->parameter_at(0).grad();
+    Tensor<> &db         = *layer_->parameter_at(1).grad();
     Tensor<> &curr_delta = *out_grad[0];
     Tensor<> *prev_delta = (params_c_->pad_type == padding::same)
                              ? &cws.prev_delta_padded_
@@ -185,9 +188,10 @@ class tiny_backend : public backend {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
 
     const Tensor<> &in = *in_data[0];  // input
-    auto W             = layer_->parameter_at(0).data();
-    auto bias          = params_d_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
-    Tensor<> &out      = *out_data[0];
+    const Tensor<> &W  = *layer_->parameter_at(0).data();
+    const Tensor<> &bias =
+      params_d_->has_bias ? *layer_->parameter_at(1).data() : Tensor<>();
+    Tensor<> &out = *out_data[0];
 
     // deconv2d-kernel requires padded size buffer
     out.resize_axis(params_d_->out.size());
@@ -209,13 +213,15 @@ class tiny_backend : public backend {
                    std::vector<Tensor<> *> &out_data) override {
     (*deconv_layer_worker_storage_).prev_out_ = in_data[0];
 
-    const Tensor<> &in = *in_data[0];  // input
+    const Tensor<> &in   = *in_data[0];  // input
     const Tensor<> &in_r = *in_data[1];
-
-    auto W             = layer_->parameter_at(0).data();
-    auto bias          = params_d_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
-    auto W_r        = layer_->parameter_at(params_d_->has_bias ?2:1).data();
-    auto b_r        = params_d_->has_bias ? layer_->parameter_at(3).data() :  Tensor<>();
+    const Tensor<> &W    = *layer_->parameter_at(0).data();
+    const Tensor<> &bias =
+      params_d_->has_bias ? *layer_->parameter_at(1).data() : Tensor<>();
+    const Tensor<> &W_r =
+      *layer_->parameter_at(params_d_->has_bias ? 2 : 1).data();
+    const Tensor<> &b_r =
+      params_d_->has_bias ? *layer_->parameter_at(3).data() : Tensor<>();
 
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
@@ -248,9 +254,9 @@ class tiny_backend : public backend {
 
     const Tensor<> &prev_out = *(cws.prev_out_);
 
-    auto W       = layer_->parameter_at(0).data();
-    Tensor<> &dW = layer_->parameter_at(0).grad();
-    Tensor<> &db = layer_->parameter_at(1).grad();
+    const Tensor<> &W    = *layer_->parameter_at(0).data();
+    Tensor<> &dW         = *layer_->parameter_at(0).grad();
+    Tensor<> &db         = *layer_->parameter_at(1).grad();
     Tensor<> &curr_delta = (params_d_->pad_type == padding::same)
                              ? cws.curr_delta_padded
                              : *out_grad[1];
@@ -280,7 +286,7 @@ class tiny_backend : public backend {
 #ifdef CNN_USE_GEMMLOWP
     const Tensor<> &in = *in_data[0];
     auto W             = layer_->parameter_at(0).data();
-    Tensor<> &out = *out_data[0];
+    Tensor<> &out      = *out_data[0];
 
     for (size_t i = 0; i < in.size(); i++) {
       kernels::tiny_quantized_fully_connected_kernel(
@@ -301,10 +307,12 @@ class tiny_backend : public backend {
 #ifdef CNN_USE_GEMMLOWP
     const Tensor<> &in = *in_data[0];
     auto W             = layer_->parameter_at(0).data();
-    auto b             = params_f_->has_bias_ ? layer_->parameter_at(1).data() : Tensor<>();
+    auto b =
+      params_f_->has_bias_ ? layer_->parameter_at(1).data() : Tensor<>();
     const Tensor<> &in_r = *in_data[1];
-    auto W_r        = layer_->parameter_at(params_f_->has_bias_?2:1).data();
-    auto b_r        = params_f_->has_bias_ ? layer_->parameter_at(3).data(): Tensor<>();
+    auto W_r = layer_->parameter_at(params_f_->has_bias_ ? 2 : 1).data();
+    auto b_r =
+      params_f_->has_bias_ ? layer_->parameter_at(3).data() : Tensor<>();
     Tensor<> &out   = *out_data[0];
     Tensor<> &out_r = *out_data[1];
 
@@ -329,9 +337,9 @@ class tiny_backend : public backend {
 #ifdef CNN_USE_GEMMLOWP
     const Tensor<> &prev_out = *in_data[0];
 
-    auto W       = layer_->parameter_at(0).data();
-    Tensor<> &dW = layer_->parameter_at(0).grad();
-    Tensor<> &db = layer_->parameter_at(1).grad();
+    auto W               = layer_->parameter_at(0).data();
+    Tensor<> &dW         = layer_->parameter_at(0).grad();
+    Tensor<> &db         = layer_->parameter_at(1).grad();
     Tensor<> &prev_delta = *in_grad[0];
     Tensor<> &curr_delta = *out_grad[0];
 

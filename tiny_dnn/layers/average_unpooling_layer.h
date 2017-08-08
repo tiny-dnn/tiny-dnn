@@ -147,7 +147,7 @@ class average_unpooling_layer : public layer {
     // OpKernels do not accept worker storage so currently tricky to do so
 
     const Tensor<> in = *in_data[0];
-    Tensor<> &out      = *out_data[0];
+    Tensor<> &out     = *out_data[0];
     out.fill(0);
 
     const Tensor<> weights = *(layer::weights_at()[0]->data());
@@ -164,7 +164,7 @@ class average_unpooling_layer : public layer {
     // todo (karandesai) : transfer all this into OpKernel
 
     const Tensor<> prev_out = *in_data[0];
-    Tensor<> &prev_delta     = *in_grad[0];
+    Tensor<> &prev_delta    = *in_grad[0];
     Tensor<> curr_delta     = *out_grad[0];
 
     const Tensor<> weights = *(layer::weights_at()[0]->data());
