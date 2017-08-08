@@ -54,6 +54,9 @@ TEST(quantized_deconvolutional, fprop) {
            weight_tensor = create_simple_tensor(18),
            bias_tensor   = create_simple_tensor(2);
 
+  Tensor<> in_tensor_t(in_tensor), out_tensor_t(out_tensor),
+    weight_tensor_t(weight_tensor), bias_tensor_t(bias_tensor);
+
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
@@ -61,16 +64,16 @@ TEST(quantized_deconvolutional, fprop) {
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  std::vector<tensor_t *> in_data, out_data;
-  in_data.push_back(&in_tensor);
-  in_data.push_back(&weight_tensor);
-  in_data.push_back(&bias_tensor);
-  out_data.push_back(&out_tensor);
+  std::vector<Tensor<> *> in_data, out_data;
+  in_data.push_back(&in_tensor_t);
+  in_data.push_back(&weight_tensor_t);
+  in_data.push_back(&bias_tensor_t);
+  out_data.push_back(&out_tensor_t);
   l.setup(false);
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
+    for (auto o : out_tensor_t.toTensor()[0]) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
@@ -84,28 +87,31 @@ TEST(quantized_deconvolutional, fprop) {
 
     in[0] = 3;  in[1] = 2;
     in[2] = 3;  in[3] = 0;
-
-    {
-        l.forward_propagation(in_data, out_data);
-
-        EXPECT_NEAR(0.9017647, out[0], 1e-2);
-        EXPECT_NEAR(0.9017647, out[1], 1e-2);
-        EXPECT_NEAR(0.8049019, out[2], 1e-2);
-        EXPECT_NEAR(0.4025490, out[3], 1e-2);
-        EXPECT_NEAR(0.9017647, out[4], 1e-2);
-        EXPECT_NEAR(0.0001960, out[5], 1e-2);
-        EXPECT_NEAR(0.1045097, out[6], 1e-2);
-        EXPECT_NEAR(-0.200980, out[7], 1e-2);
-        EXPECT_NEAR(0.1566666, out[8], 1e-2);
-        EXPECT_NEAR(-0.797058, out[9], 1e-2);
-        EXPECT_NEAR(-0.551176, out[10], 1e-2);
-        EXPECT_NEAR(0.1045097, out[11], 1e-2);
-        EXPECT_NEAR(0.1566666, out[12], 1e-2);
-        EXPECT_NEAR(-0.603333, out[13], 1e-2);
-        EXPECT_NEAR(0.1566666, out[14], 1e-2);
-        EXPECT_NEAR(0.0001960, out[15], 1e-2);
-    }
   // clang-format on
+  in_tensor_t     = Tensor<>(in_tensor);
+  weight_tensor_t = Tensor<>(weight_tensor);
+
+  {
+    l.forward_propagation(in_data, out_data);
+    out = out_tensor_t.toTensor()[0];
+
+    EXPECT_NEAR(0.9017647, out[0], 1e-2);
+    EXPECT_NEAR(0.9017647, out[1], 1e-2);
+    EXPECT_NEAR(0.8049019, out[2], 1e-2);
+    EXPECT_NEAR(0.4025490, out[3], 1e-2);
+    EXPECT_NEAR(0.9017647, out[4], 1e-2);
+    EXPECT_NEAR(0.0001960, out[5], 1e-2);
+    EXPECT_NEAR(0.1045097, out[6], 1e-2);
+    EXPECT_NEAR(-0.200980, out[7], 1e-2);
+    EXPECT_NEAR(0.1566666, out[8], 1e-2);
+    EXPECT_NEAR(-0.797058, out[9], 1e-2);
+    EXPECT_NEAR(-0.551176, out[10], 1e-2);
+    EXPECT_NEAR(0.1045097, out[11], 1e-2);
+    EXPECT_NEAR(0.1566666, out[12], 1e-2);
+    EXPECT_NEAR(-0.603333, out[13], 1e-2);
+    EXPECT_NEAR(0.1566666, out[14], 1e-2);
+    EXPECT_NEAR(0.0001960, out[15], 1e-2);
+  }
 }
 
 TEST(quantized_deconvolutional, fprop2) {
@@ -122,6 +128,8 @@ TEST(quantized_deconvolutional, fprop2) {
            out_tensor    = create_simple_tensor(32),
            weight_tensor = create_simple_tensor(18),
            bias_tensor   = create_simple_tensor(2);
+  Tensor<> in_tensor_t(in_tensor), out_tensor_t(out_tensor),
+    weight_tensor_t(weight_tensor), bias_tensor_t(bias_tensor);
 
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
@@ -130,17 +138,17 @@ TEST(quantized_deconvolutional, fprop2) {
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  std::vector<tensor_t *> in_data, out_data;
-  in_data.push_back(&in_tensor);
-  in_data.push_back(&weight_tensor);
-  in_data.push_back(&bias_tensor);
-  out_data.push_back(&out_tensor);
+  std::vector<Tensor<> *> in_data, out_data;
+  in_data.push_back(&in_tensor_t);
+  in_data.push_back(&weight_tensor_t);
+  in_data.push_back(&bias_tensor_t);
+  out_data.push_back(&out_tensor_t);
 
   l.setup(false);
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
+    for (auto o : out_tensor_t.toTensor()[0]) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
@@ -154,9 +162,13 @@ TEST(quantized_deconvolutional, fprop2) {
 
   in[0] = 3;  in[1] = 2;
   in[2] = 3;  in[3] = 0;
+  // clang-format on
+  in_tensor_t     = Tensor<>(in_tensor);
+  weight_tensor_t = Tensor<>(weight_tensor);
 
   {
     l.forward_propagation(in_data, out_data);
+    out = out_tensor_t.toTensor()[0];
 
     EXPECT_NEAR(0.0001960, out[0], 1e-2);
     EXPECT_NEAR(0.1045097, out[1], 1e-2);
@@ -175,7 +187,6 @@ TEST(quantized_deconvolutional, fprop2) {
     EXPECT_NEAR(0.1566666, out[14], 1e-2);
     EXPECT_NEAR(0.0001960, out[15], 1e-2);
   }
-  // clang-format on
 }
 
 /*

@@ -79,7 +79,7 @@ class Tensor {
     : storage_(shape, value) {}
 
   /**
-   * Temporal method to create a new Tensor from old tensor_t
+   * Temporary method to create a new Tensor from old tensor_t
    */
   explicit Tensor(const tensor_t &data) {
     std::vector<size_t> shape = {data.size(), data[0].size()};
@@ -94,9 +94,24 @@ class Tensor {
   }
 
   /**
-   * Temporal method to create a new Tensor from old vec_t
+   * Temporary method to create a new Tensor from old vec_t
    */
   explicit Tensor(const vec_t &data) {
+    std::vector<size_t> shape = {data.size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      storage_(i) = data[i];
+    }
+  }
+
+  /**
+   * Constructor of 1D Tensor from vecotr
+   * TODO(Randl): extend
+   * @param data
+   */
+  explicit Tensor(const std::vector<U> &data) {
     std::vector<size_t> shape = {data.size()};
     storage_                  = Storage(shape);
 
@@ -173,6 +188,7 @@ class Tensor {
     return storage_(args...);
   }
 
+  // TODO(Randl): remove host_*
   /**
    *
    * @return Iterator pointing to the beginning of Tensor

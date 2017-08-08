@@ -87,7 +87,7 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
       int32_t *ppout_quantized =
         pout_quantized + params.out.width_ * params.out.height_;
       std::for_each(pout_quantized, ppout_quantized, [&](int32_t &f) {
-        f += (bias_quantized[o] - zero_in_total_space);
+        f += (bias_quantized.host_at(o) - zero_in_total_space);
       });
     }
   });

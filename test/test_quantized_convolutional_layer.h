@@ -55,6 +55,8 @@ TEST(quantized_convolutional, fprop) {
            weight_tensor = create_simple_tensor(18),
            bias_tensor   = create_simple_tensor(2);
 
+  Tensor<> in_tensor_t(in_tensor), out_tensor_t(out_tensor),
+    weight_tensor_t(weight_tensor), bias_tensor_t(bias_tensor);
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
@@ -62,16 +64,16 @@ TEST(quantized_convolutional, fprop) {
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  std::vector<tensor_t *> in_data, out_data;
-  in_data.push_back(&in_tensor);
-  in_data.push_back(&weight_tensor);
-  in_data.push_back(&bias_tensor);
-  out_data.push_back(&out_tensor);
+  std::vector<Tensor<> *> in_data, out_data;
+  in_data.push_back(&in_tensor_t);
+  in_data.push_back(&weight_tensor_t);
+  in_data.push_back(&bias_tensor_t);
+  out_data.push_back(&out_tensor_t);
   l.setup(false);
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
+    for (auto o : out_tensor_t.toTensor()[0]) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
@@ -90,29 +92,32 @@ TEST(quantized_convolutional, fprop) {
     in[15] = 3; in[16] =-1; in[17] = 2; in[18] = 9; in[19] = 0;
     in[20] = 1; in[21] = 2; in[22] = 1; in[23] = 5; in[24] = 5;
 
-    {
-        l.forward_propagation(in_data, out_data);
-
-        EXPECT_NEAR(-0.043426, out[0], 2e-2);
-        EXPECT_NEAR(1.6769816, out[1], 2e-2);
-        EXPECT_NEAR(1.4731820, out[2], 2e-2);
-        EXPECT_NEAR(1.0822733, out[3], 2e-2);
-        EXPECT_NEAR(0.0415336, out[4], 2e-2);
-        EXPECT_NEAR(-1.997466, out[5], 2e-2);
-        EXPECT_NEAR(0.4238461, out[6], 2e-2);
-        EXPECT_NEAR(1.1756143, out[7], 2e-2);
-        EXPECT_NEAR(0.8273983, out[8], 2e-2);
-        EXPECT_NEAR(-0.192101, out[9], 2e-2);
-        EXPECT_NEAR(1.2309504, out[10], 2e-2);
-        EXPECT_NEAR(2.2292108, out[11], 2e-2);
-        EXPECT_NEAR(0.5300441, out[12], 2e-2);
-        EXPECT_NEAR(1.7407004, out[13], 2e-2);
-        EXPECT_NEAR(1.6345025, out[14], 2e-2);
-        EXPECT_NEAR(0.6362420, out[15], 2e-2);
-        EXPECT_NEAR(3.4186277, out[16], 2e-2);
-        EXPECT_NEAR(-0.489455, out[17], 2e-2);
-    }
   // clang-format on
+  in_tensor_t     = Tensor<>(in_tensor);
+  weight_tensor_t = Tensor<>(weight_tensor);
+  {
+    l.forward_propagation(in_data, out_data);
+    out = out_tensor_t.toTensor()[0];
+
+    EXPECT_NEAR(-0.043426, out[0], 2e-2);
+    EXPECT_NEAR(1.6769816, out[1], 2e-2);
+    EXPECT_NEAR(1.4731820, out[2], 2e-2);
+    EXPECT_NEAR(1.0822733, out[3], 2e-2);
+    EXPECT_NEAR(0.0415336, out[4], 2e-2);
+    EXPECT_NEAR(-1.997466, out[5], 2e-2);
+    EXPECT_NEAR(0.4238461, out[6], 2e-2);
+    EXPECT_NEAR(1.1756143, out[7], 2e-2);
+    EXPECT_NEAR(0.8273983, out[8], 2e-2);
+    EXPECT_NEAR(-0.192101, out[9], 2e-2);
+    EXPECT_NEAR(1.2309504, out[10], 2e-2);
+    EXPECT_NEAR(2.2292108, out[11], 2e-2);
+    EXPECT_NEAR(0.5300441, out[12], 2e-2);
+    EXPECT_NEAR(1.7407004, out[13], 2e-2);
+    EXPECT_NEAR(1.6345025, out[14], 2e-2);
+    EXPECT_NEAR(0.6362420, out[15], 2e-2);
+    EXPECT_NEAR(3.4186277, out[16], 2e-2);
+    EXPECT_NEAR(-0.489455, out[17], 2e-2);
+  }
 }
 
 #ifdef CNN_USE_NNPACK
