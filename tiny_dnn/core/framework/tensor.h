@@ -318,7 +318,12 @@ auto host_data() {
     auto shape = tensor.shape();
     shape.insert(shape.begin(), size);
     storage_.reshape(shape);
-    for (size_t i = 0; i < size; ++i) storage_[i] = tensor.storage_;
+    auto it_to = host_begin();
+    for (size_t i = 0; i < size; ++i) {
+      auto it_from = tensor.host_begin();
+      for (; it_from != tensor.host_end(); ++it_from, ++it_to)
+        *it_to = *it_from;
+    }
     return *this;
   }
 

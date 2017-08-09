@@ -711,7 +711,7 @@ TEST(convolutional, copy_and_pad_input_same) {
   };
 
   tensor_t in_tensor = create_tensor(1, 1 * 5 * 5);
-  Tensor<> out_tensor;
+  Tensor<> out_tensor_t;
 
   fill_tensor(in_tensor, float_t(1));
 
@@ -724,7 +724,8 @@ TEST(convolutional, copy_and_pad_input_same) {
    *                      0 0 0 0 0
    */
 
-  conv2d_padding.copy_and_pad_input(Tensor<>(in_tensor), out_tensor);
+  conv2d_padding.copy_and_pad_input(Tensor<>(in_tensor), out_tensor_t);
+  tensor_t out_tensor = out_tensor_t.toTensor();
 
   EXPECT_EQ(out_tensor[0][7], float_t(0));
   EXPECT_EQ(out_tensor[0][8], float_t(1));
@@ -776,7 +777,7 @@ TEST(convolutional, copy_and_unpad_delta_same) {
   conv2d_padding.copy_and_unpad_delta(Tensor<>(in_tensor), out_tensor);
 
   for (size_t i = 0; i < out_tensor[0].size(); ++i) {
-    EXPECT_EQ(out_tensor[0][i], float_t(1));
+    EXPECT_EQ(out_tensor.host_at(0, i), float_t(1));
   }
 }
 
