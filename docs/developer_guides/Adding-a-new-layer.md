@@ -22,7 +22,7 @@ layer::layer(const std::vector<vector_type>& in_type,
              const std::vector<vector_type>& out_type)
 ```
 
-For example, consider calculating fully-connected operation:  ```y = Wx + b```. In this caluculation, Input (right hand of this eq) is data ```x```, weight ```W``` and bias ```b```. Output  is, of course ```y```. So it's constructor should pass {data,weight,bias} as input and {data} as output.
+For example, consider calculating fully-connected operation:  ```y = Wx + b```. In this calculation, Input (right hand of this eq) is data ```x```, weight ```W``` and bias ```b```. Output  is, of course ```y```. So it's constructor should pass {data,weight,bias} as input and {data} as output.
 
 ```cpp
 // calculate y = Wx + b
@@ -142,7 +142,7 @@ the ```in_data/out_data``` are just same as forward_propagation, and ```in_grad/
 
 > Note: Gradient of weight/bias are collected over mini-batch and zero-cleared automatically, so you can't use assignment operator to these elements (layer will forget previous training data in mini-batch!). like this example, use ```operator += ``` instead. Gradient of data (```prev_delta``` in the example) may already have meaningful values if two or more layers share this data, so you can't overwrite this value too.
 
-### Verify backward caluculation
+### Verify backward calculation
 It is always a good idea to check if your backward implementation is correct. ```network``` class provides ```gradient_check``` method for this purpose.
 Let's add following lines to test/test_network.h and execute test.
 ```
