@@ -93,7 +93,7 @@ class power_layer : public layer {
             dy.host_at(i, j) * factor_ * y.host_at(i, j) / x.host_at(i, j);
         } else {
           dx.host_at(i, j) = dy.host_at(i, j) * scale_ * factor_ *
-                             std::pow(x.host_at(i, j), factor_ - 1.0f);
+                             std::pow(scale_ * x.host_at(i, j), factor_ - 1.0f);
         }
       }
     }

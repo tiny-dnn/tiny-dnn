@@ -99,7 +99,7 @@ class selu_layer : public activation_layer {
     auto itdy = dy.host_begin();
     for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
       // dx = dy * (gradient of selu)
-      *itdx = *itdy * (*ity > float_t(0) ? lambda_ : (*ity + lambda_ * alpha_));
+      *itdx = *itdy *lambda_* (*itx > float_t(0) ? 1.0 : (alpha_*std::exp(*itx)));
     }
   }
 
