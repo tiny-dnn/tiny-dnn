@@ -150,8 +150,8 @@ class average_unpooling_layer : public layer {
     Tensor<> out      = Tensor<>(*out_data[0]);
     out.fill(0);
 
-    const Tensor<> weights = *(layer::weights_at().data());
-    const Tensor<> biases  = *(layer::bias_at().data());
+    const Tensor<> weights = *(layer::weights_at()[0]->data());
+    const Tensor<> biases  = *(layer::bias_at()[0]->data());
 
     tiny_average_unpooling_kernel(in, weights, biases, out, params_, auws_,
                                   parallelize());
@@ -168,10 +168,10 @@ class average_unpooling_layer : public layer {
     Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
     Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
 
-    const Tensor<> weights = *(layer::weights_at().data());
-    const Tensor<> bias    = *(layer::bias_at().data());
-    Tensor<> weights_grads = *(layer::weights_at().grad());
-    Tensor<> bias_grads    = *(layer::bias_at().grad());
+    const Tensor<> weights = *(layer::weights_at()[0]->data());
+    const Tensor<> bias    = *(layer::bias_at()[0]->data());
+    Tensor<> weights_grads = *(layer::weights_at()[0]->grad());
+    Tensor<> bias_grads    = *(layer::bias_at()[0]->grad());
 
     prev_delta.fill(0);
 
@@ -179,8 +179,8 @@ class average_unpooling_layer : public layer {
                                        bias_grads, curr_delta, prev_delta,
                                        params_, auws_, parallelize_);
     *in_grad[0] = prev_delta.toTensor();
-    layer::weights_at().set_data(weights_grads);
-    layer::bias_at().set_data(bias_grads);
+    layer::weights_at()[0]->set_data(weights_grads);
+    layer::bias_at()[0]->set_data(bias_grads);
   }
 
   friend struct serialization_buddy;

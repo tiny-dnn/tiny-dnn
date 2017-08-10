@@ -20,16 +20,16 @@ namespace tiny_dnn {
 TEST(fully_connected, setup_internal) {
   fully_connected_layer l(32, 10, true, core::backend_t::internal);
 
-  EXPECT_EQ(l.parallelize(), true);        // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), 1u);          // num of input tensors
-  EXPECT_EQ(l.out_channels(), 1u);         // num of output tensors
-  EXPECT_EQ(l.in_data_size(), 32u);        // size of input tensors
-  EXPECT_EQ(l.out_data_size(), 10u);       // size of output tensors
-  EXPECT_EQ(l.fan_in_size(), 32u);         // num of incoming connections
-  EXPECT_EQ(l.fan_out_size(), 10u);        // num of outgoing connections
-  EXPECT_EQ(l.parameters().size(), 2u);    // num of trainable parameters
-  EXPECT_EQ(l.weights_at().size(), 320u);  // size of weight parameter
-  EXPECT_EQ(l.bias_at().size(), 10u);      // size of bias parameter
+  EXPECT_EQ(l.parallelize(), true);            // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 1u);              // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);             // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 32u);            // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 10u);           // size of output tensors
+  EXPECT_EQ(l.fan_in_size(), 32u);             // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 10u);            // num of outgoing connections
+  EXPECT_EQ(l.parameters().size(), 2u);        // num of trainable parameters
+  EXPECT_EQ(l.weights_at()[0]->size(), 320u);  // size of weight parameter
+  EXPECT_EQ(l.bias_at()[0]->size(), 10u);      // size of bias parameter
   EXPECT_STREQ(l.layer_type().c_str(),
                "fully-connected");  // string with layer type
 }
@@ -47,8 +47,8 @@ TEST(fully_connected, forward) {
   // clang-format on
   vec_t expected = {24, 42};
 
-  l.weights_at().set_data(Tensor<float_t>(weights));
-  l.bias_at().set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<float_t>(weights));
+  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
   auto out     = l.forward({{in}});
   vec_t result = (*out[0])[0];

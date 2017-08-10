@@ -437,46 +437,48 @@ class layer : public node {
   const Parameter &parameter_at(size_t i) const { return *parameters_[i]; }
 
   /** Convenience method to access and manipulate weights. */
-  Parameter &weights_at() {
-    Parameter *weights_p = nullptr;
-    bool fetched         = false;
+  Parameters weights_at() {
+    Parameters weights;
     for (auto &parameter : parameters_) {
       if (parameter->type() == parameter_type::weight) {
-        if (!fetched) {
-          weights_p = parameter.get();
-          fetched   = true;
-        } else {
-          nn_warn("Layer " + layer_type() +
-                  " contains more than one weights"
-                  " parameters, returning first only!\n");
-        }
+        weights.push_back(parameter.get());
       }
     }
-    return *weights_p;
+    return weights;
   }
 
   /** Convenience method to access and analyze particular weights. */
-  const Parameter &weights_at() const { return weights_at(); }
-
-  /** Convenience method to access and manipulate particular bias. */
-  Parameter &bias_at() {
-    Parameter *bias_p = nullptr;
-    bool fetched      = false;
+  ConstParameters weights_at() const {
+    ConstParameters weights;
     for (auto &parameter : parameters_) {
-      if (parameter->type() == parameter_type::bias && !fetched) {
-        bias_p  = parameter.get();
-        fetched = true;
-      } else if (fetched) {
-        nn_warn("Layer " + layer_type() +
-                " contains more than one bias"
-                " parameters, returning first only!\n");
+      if (parameter->type() == parameter_type::weight) {
+        weights.push_back(parameter.get());
       }
     }
-    return *bias_p;
+    return weights;
+  }
+
+  /** Convenience method to access and manipulate particular bias. */
+  Parameters bias_at() {
+    Parameters biases;
+    for (auto &parameter : parameters_) {
+      if (parameter->type() == parameter_type::bias) {
+        biases.push_back(parameter.get());
+      }
+    }
+    return biases;
   }
 
   /** Convenience method to access and analyze particular biases. */
-  const Parameter &bias_at() const { return bias_at(); }
+  ConstParameters bias_at() const {
+    ConstParameters biases;
+    for (auto &parameter : parameters_) {
+      if (parameter->type() == parameter_type::bias) {
+        biases.push_back(parameter.get());
+      }
+    }
+    return biases;
+  }
 
   /** @} */  // Parameter Getters and Setters
 

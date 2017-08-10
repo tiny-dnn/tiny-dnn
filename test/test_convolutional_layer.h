@@ -25,8 +25,8 @@ TEST(convolutional, setup_internal) {
   EXPECT_EQ(l.out_data_size(), 18u);             // size of output tensors
   EXPECT_EQ(l.fan_in_size(), 9u);                // num of incoming connections
   EXPECT_EQ(l.fan_out_size(), 18u);              // num of outgoing connections
-  EXPECT_EQ(l.weights_at().size(), 18u);         // size of weights
-  EXPECT_EQ(l.bias_at().size(), 2u);             // size of bias
+  EXPECT_EQ(l.weights_at()[0]->size(), 18u);     // size of weights
+  EXPECT_EQ(l.bias_at()[0]->size(), 2u);         // size of bias
   EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
   EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type
 }
@@ -139,7 +139,7 @@ TEST(convolutional, forward) {
   };
   // clang-format on
 
-  l.weights_at().set_data(Tensor<float_t>(weight));
+  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
   auto out     = l.forward({{in}});
   vec_t result = (*out[0])[0];
 
@@ -178,8 +178,8 @@ TEST(convolutional, with_stride) {
   };
   // clang-format on
 
-  l.weights_at().set_data(Tensor<float_t>(weight));
-  l.bias_at().set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
+  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
   auto out         = l.forward({{in}});
   vec_t result_out = (*out[0])[0];
@@ -213,13 +213,13 @@ TEST(convolutional, with_stride) {
   };
   // clang-format on
 
-  l.weights_at().clear_grads();
-  l.bias_at().clear_grads();
+  l.weights_at()[0]->clear_grads();
+  l.bias_at()[0]->clear_grads();
 
   vec_t result_prev_delta =
     l.backward(std::vector<tensor_t>{{curr_delta}})[0][0];
-  vec_t result_dw = l.weights_at().grad()->toTensor()[0];
-  vec_t result_db = l.bias_at().grad()->toTensor()[0];
+  vec_t result_dw = l.weights_at()[0]->grad()->toTensor()[0];
+  vec_t result_db = l.bias_at()[0]->grad()->toTensor()[0];
 
   for (size_t i = 0; i < result_prev_delta.size(); i++) {
     EXPECT_FLOAT_EQ(expected_prev_delta[i], result_prev_delta[i]);
@@ -249,15 +249,15 @@ TEST(convolutional, bprop_avx) {
   l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
-  Tensor<> *w_grads_noavx = l.weights_at().grad();
-  Tensor<> *b_grads_noavx = l.bias_at().grad();
+  Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
+  Tensor<> *b_grads_noavx = l.bias_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
-  Tensor<> *w_grads_avx = l.weights_at().grad();
-  Tensor<> *b_grads_avx = l.bias_at().grad();
+  Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
+  Tensor<> *b_grads_avx = l.bias_at()[0]->grad();
 
   EXPECT_EQ(result_avx.size(), result_noavx.size());
   for (size_t i = 0; i < result_avx.size(); i++) {
@@ -306,13 +306,13 @@ TEST(convolutional, bprop_avx_1x1out) {
   l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
-  Tensor<> *w_grads_noavx = l.weights_at().grad();
+  Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
-  Tensor<> *w_grads_avx = l.weights_at().grad();
+  Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
   EXPECT_EQ(result_avx.size(), result_noavx.size());
   for (size_t i = 0; i < result_avx.size(); i++) {
@@ -358,13 +358,13 @@ TEST(convolutional, bprop_avx_hstride) {
   l.set_backend_type(core::backend_t::internal);
   auto prev_grads_noavx   = l.backward({{out_grads}});
   vec_t result_noavx      = prev_grads_noavx[0][0];
-  Tensor<> *w_grads_noavx = l.weights_at().grad();
+  Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
   auto prev_grads_avx   = l.backward({{out_grads}});
   vec_t result_avx      = prev_grads_avx[0][0];
-  Tensor<> *w_grads_avx = l.weights_at().grad();
+  Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
   EXPECT_EQ(result_avx.size(), result_noavx.size());
   for (size_t i = 0; i < result_avx.size(); i++) {
