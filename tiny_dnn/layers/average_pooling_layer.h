@@ -198,8 +198,8 @@ class average_pooling_layer : public layer {
     Tensor<> out      = Tensor<>(*out_data[0]);
     out.fill(0);
 
-    const Tensor<> weights = *(layer::ith_parameter(0).data());
-    const Tensor<> bias    = *(layer::ith_parameter(1).data());
+    const Tensor<> weights = *(layer::parameter_at(0).data());
+    const Tensor<> bias    = *(layer::parameter_at(1).data());
 
     tiny_average_pooling_kernel(in, weights, bias, out, params_, aws_,
                                 parallelize_);
@@ -216,10 +216,10 @@ class average_pooling_layer : public layer {
     Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
     Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
 
-    const Tensor<> weights = *(layer::ith_parameter(0).data());
-    const Tensor<> bias    = *(layer::ith_parameter(1).data());
-    Tensor<> weights_grads = *(layer::ith_parameter(0).grad());
-    Tensor<> bias_grads    = *(layer::ith_parameter(1).grad());
+    const Tensor<> weights = *(layer::parameter_at(0).data());
+    const Tensor<> bias    = *(layer::parameter_at(1).data());
+    Tensor<> weights_grads = *(layer::parameter_at(0).grad());
+    Tensor<> bias_grads    = *(layer::parameter_at(1).grad());
 
     prev_delta.fill(0);
 
@@ -227,8 +227,8 @@ class average_pooling_layer : public layer {
                                      bias_grads, curr_delta, prev_delta,
                                      params_, aws_, parallelize_);
     *in_grad[0] = prev_delta.toTensor();
-    layer::ith_parameter(0).set_data(weights_grads);
-    layer::ith_parameter(1).set_data(bias_grads);
+    layer::parameter_at(0).set_data(weights_grads);
+    layer::parameter_at(1).set_data(bias_grads);
   }
 
   std::pair<size_t, size_t> pool_size() const {

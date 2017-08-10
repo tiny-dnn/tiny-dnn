@@ -28,8 +28,8 @@ TEST(fully_connected, setup_internal) {
   EXPECT_EQ(l.fan_in_size(), 32u);             // num of incoming connections
   EXPECT_EQ(l.fan_out_size(), 10u);            // num of outgoing connections
   EXPECT_EQ(l.parameters().size(), 2u);        // num of trainable parameters
-  EXPECT_EQ(l.ith_parameter(0).size(), 320u);  // size of weight parameter
-  EXPECT_EQ(l.ith_parameter(1).size(), 10u);   // size of bias parameter
+  EXPECT_EQ(l.weights_at()[0]->size(), 320u);  // size of weight parameter
+  EXPECT_EQ(l.bias_at()[0]->size(), 10u);      // size of bias parameter
   EXPECT_STREQ(l.layer_type().c_str(),
                "fully-connected");  // string with layer type
 }
@@ -47,8 +47,8 @@ TEST(fully_connected, forward) {
   // clang-format on
   vec_t expected = {24, 42};
 
-  l.ith_parameter(0).set_data(Tensor<float_t>(weights));
-  l.ith_parameter(1).set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<float_t>(weights));
+  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
   auto out     = l.forward({{in}});
   vec_t result = (*out[0])[0];
