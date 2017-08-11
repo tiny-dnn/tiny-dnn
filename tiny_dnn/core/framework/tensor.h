@@ -391,7 +391,7 @@ auto host_data() {
   auto subView(InputRanges<Values>... ranges) const {
     // TODO(Randl): stride
     using ViewType =
-      decltype(xt::view((const Storage)storage_, ranges.get_range()...));
+      const decltype(xt::view((const Storage)storage_, ranges.get_range()...));
     using SharedTensor = Tensor<U, ViewType>;
     return SharedTensor(
       xt::view((const Storage)storage_, ranges.get_range()...));

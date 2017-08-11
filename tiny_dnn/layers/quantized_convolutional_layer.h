@@ -453,8 +453,8 @@ class quantized_convolutional_layer : public layer {
         }
 
         cws.prev_out_padded_.push_back(
-          ((const Tensor<>)cws.prev_out_buf)_.subView(TensorSingleIndex(sample),
-                                                      TensorAll()));
+          ((const Tensor<>)cws.prev_out_buf_)
+            .subView(TensorSingleIndex(sample), TensorAll()));
       }
     }
   }
