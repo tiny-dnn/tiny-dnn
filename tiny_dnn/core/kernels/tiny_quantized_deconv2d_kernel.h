@@ -104,8 +104,8 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
 
   // dequantize to float, this could be removed within concatenated quantized
   // network
-  out = quantized_tensor_to_float<uint8_t>(
-    out_requantized, min_output_requantized, max_output_requantized);
+  out.assign(quantized_tensor_to_float<uint8_t>(
+    out_requantized, min_output_requantized, max_output_requantized));
 }
 
 template <typename S1,
@@ -216,7 +216,7 @@ inline void tiny_quantized_deconv2d_back_kernel(
   auto prev_delta_vec = quantized_tensor_to_float<uint8_t>(
     prev_delta_requantized, min_prev_delta_requantized,
     max_prev_delta_requantized);
-  prev_delta = &prev_delta_vec;
+  prev_delta->assign(prev_delta_vec);
 
   // Accumulate dw
   for_i(params.in.depth_, [&](size_t inc) {
@@ -263,8 +263,8 @@ inline void tiny_quantized_deconv2d_back_kernel(
 
   // dequantize to float, this could be removed within concatenated quantized
   // network
-  dW = quantized_tensor_to_float<uint8_t>(dW_requantized, min_dW_requantized,
-                                          max_dW_requantized);
+  dW.assign(quantized_tensor_to_float<uint8_t>(
+    dW_requantized, min_dW_requantized, max_dW_requantized));
 
   // Accumulate db
   if (params.has_bias) {
