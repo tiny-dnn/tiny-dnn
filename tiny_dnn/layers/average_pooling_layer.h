@@ -207,14 +207,12 @@ class average_pooling_layer : public layer {
                         std::vector<Tensor<> *> &out_grad,
                         std::vector<Tensor<> *> &in_grad) override {
     in_grad[0]->fill(0);
-  // todo (karandesai) : transfer all this into OpKernel
+    // todo (karandesai) : transfer all this into OpKernel
 
     const Tensor<> weights = *(layer::parameter_at(0).data());
     const Tensor<> bias    = *(layer::parameter_at(1).data());
     Tensor<> weights_grads = *(layer::parameter_at(0).grad());
     Tensor<> bias_grads    = *(layer::parameter_at(1).grad());
-
-    prev_delta.fill(0);
 
     tiny_average_pooling_back_kernel(*in_data[0], weights, weights_grads,
                                      bias_grads, *out_grad[0], *in_grad[0],

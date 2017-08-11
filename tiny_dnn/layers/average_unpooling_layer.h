@@ -177,7 +177,7 @@ class average_unpooling_layer : public layer {
     tiny_average_unpooling_back_kernel(prev_out, weights, weights_grads,
                                        bias_grads, curr_delta, prev_delta,
                                        params_, auws_, parallelize_);
-    //TODO(karandesai): remove unnecessary assignments
+    // TODO(karandesai): remove unnecessary assignments
     layer::weights_at()[0]->set_data(weights_grads);
     layer::bias_at()[0]->set_data(bias_grads);
   }

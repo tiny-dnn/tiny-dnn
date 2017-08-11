@@ -95,8 +95,9 @@ class tiny_backend : public backend {
   void conv2d_q(const std::vector<Tensor<> *> &in_data,
                 std::vector<Tensor<> *> &out_data) override {
     copy_and_pad_input(*in_data[0]);
-    auto W        = layer_->parameter_at(0).data();
-    auto bias     = params_c_->has_bias ? layer_->parameter_at(1).data() : Tensor<>();
+    const Tensor<> &W = *layer_->parameter_at(0).data();
+    const Tensor<> &bias =
+      params_d_->has_bias ? *layer_->parameter_at(1).data() : Tensor<>();
     Tensor<> &out = *out_data[0];
     // input
     std::vector<ConstViewTensor> &in =
@@ -307,8 +308,7 @@ class tiny_backend : public backend {
 #ifdef CNN_USE_GEMMLOWP
     const Tensor<> &in = *in_data[0];
     auto W             = layer_->parameter_at(0).data();
-    auto b =
-      params_f_->has_bias_ ? layer_->parameter_at(1).data() : Tensor<>();
+    auto b = params_f_->has_bias_ ? layer_->parameter_at(1).data() : Tensor<>();
     const Tensor<> &in_r = *in_data[1];
     auto W_r = layer_->parameter_at(params_f_->has_bias_ ? 2 : 1).data();
     auto b_r =

@@ -112,7 +112,7 @@ TEST(convolutional, forward) {
   };
   // clang-format on
 
-  l.ith_parameter(0).set_data(Tensor<float_t>(weight));
+  l.parameter_at(0).set_data(Tensor<float_t>(weight));
   auto out     = l.forward({{Tensor<>(in)}});
   vec_t result = (*out[0]).toTensor()[0];
 
