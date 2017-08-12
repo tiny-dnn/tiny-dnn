@@ -29,7 +29,8 @@ inline void tiny_average_unpooling_kernel(
   const core::aveunpool_params &params,
   const core::average_unpooling_layer_worker_specific_storage &auws,
   bool parallelize) {
-  for_i(parallelize, in_data.size(), [&](size_t sample) {
+  out_data.reshape({in_data.shape()[0], params.out.area() * params.out.depth_});
+  for_i(parallelize, in_data.shape()[0], [&](size_t sample) {
     auto oarea = params.out.area();
     size_t idx = 0;
     for (size_t d = 0; d < params.out.depth_; ++d) {
