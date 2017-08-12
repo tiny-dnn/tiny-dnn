@@ -174,7 +174,8 @@ TEST(ave_pool, backward) {
   vec_t db_expected = {10};
   // clang-format on
 
-  auto in_grad = l.backward(std::vector<Tensor<>>{{Tensor<>(curr_delta)}});
+  auto in_grad =
+    l.backward(std::vector<Tensor<>>{{Tensor<>(tensor_t{{curr_delta}})}});
   vec_t prev_delta_result = in_grad[0].toTensor()[0];
   vec_t dw_result         = l.weights_at()[0]->data()->toTensor()[0];
   vec_t db_result         = l.bias_at()[0]->data()->toTensor()[0];

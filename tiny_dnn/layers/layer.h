@@ -225,11 +225,11 @@ class layer : public node {
       assert(n < cnt);
       const auto &src_grad = grad[n++];
       size_t sz            = src_grad.size();
-      dst_grad.resize_axis(sz);
+      dst_grad.reshape({sz, src_grad[0]->size()});
       for (size_t j = 0; j < sz; ++j) {
         // TODO(Randl)
         std::copy(src_grad[j]->begin(), src_grad[j]->end(),
-                  dst_grad[j].host_begin());
+                  dst_grad.host_iter(j, 0));
       }
     }
   }
@@ -636,8 +636,10 @@ class layer : public node {
     std::vector<std::vector<const vec_t *>> grads2;
     std::vector<std::vector<vec_t>> grads2_st;  // TODO(Randl) temporary
     grads2.resize(out_grads.size());
+    grads2_st.resize(out_grads.size());
     for (size_t i = 0; i < out_grads.size(); ++i) {
-      grads2[i].resize(out_grads[i].size());
+      grads2[i].resize(out_grads[i].shape()[0]);
+      grads2_st[i].resize(out_grads[i].shape()[0]);
       for (size_t j = 0; j < out_grads[i].shape()[0]; ++j) {
         // TODO(Randl)
         grads2_st[i][j] = out_grads[i].lineToVec(j);
