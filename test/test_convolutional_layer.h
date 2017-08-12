@@ -113,8 +113,8 @@ TEST(convolutional, forward) {
   // clang-format on
 
   l.parameter_at(0).set_data(Tensor<float_t>(weight));
-  auto out     = l.forward({{Tensor<>(in)}});
-  vec_t result = (*out[0]).toTensor()[0];
+  auto out     = l.forward({{Tensor<>(tensor_t{{in}})}});
+  vec_t result = out[0]->toVec();
 
   for (size_t i = 0; i < result.size(); i++) {
     EXPECT_NEAR(expected[i], result[i], 1E-5);

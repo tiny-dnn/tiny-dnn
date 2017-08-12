@@ -353,7 +353,8 @@ auto host_data() {
    * @param shape new shape
    */
   void resize_axis(const size_t value, const size_t axis = 0) {
-    auto curr  = shape();
+    auto curr = shape();
+    while (curr.size() <= axis) curr.push_back(1);
     curr[axis] = value;
     storage_.reshape(curr);
   }
