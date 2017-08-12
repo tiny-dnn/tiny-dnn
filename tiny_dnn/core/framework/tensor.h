@@ -414,6 +414,7 @@ auto host_data() {
    * @return
    */
   tensor_t toTensor() const {
+    assert(shape().size() == 2);
     tensor_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
       tensor[i].resize(storage_.shape()[1]);
@@ -429,7 +430,7 @@ auto host_data() {
    * @return
    */
   vec_t toVec() const {
-    vec_t tensor(storage_.shape()[0]);
+    vec_t tensor(size());
     auto vec = tensor.begin();
     auto ten = host_begin();
     for (; vec != tensor.end(); ++vec, ++ten) {

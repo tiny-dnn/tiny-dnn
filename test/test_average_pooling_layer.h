@@ -102,8 +102,8 @@ TEST(ave_pool, forward) {
   l.bias_init_f(parameter_init::constant(0.0));
   l.setup(false);
 
-  auto out  = l.forward({{Tensor<>(in)}});
-  vec_t res = (*out[0]).toTensor()[0];
+  auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
+  vec_t res = out[0]->toVec();
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_NEAR(expected[i], res[i], 1E-7);

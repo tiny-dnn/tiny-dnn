@@ -31,6 +31,7 @@ inline void tiny_average_pooling_kernel(
   const core::avepool_params &params,
   const core::average_pooling_layer_worker_specific_storage &aws,
   const bool layer_parallelize) {
+  out_data.reshape({in_data.shape()[0], params.out.area() * params.out.depth_});
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
     auto oarea = params.out.area();
     size_t idx = 0;

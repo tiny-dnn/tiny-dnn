@@ -243,11 +243,11 @@ class layer : public node {
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
-      dst_data.resize_axis(sz);
+      dst_data.reshape({sz, src_data[0]->size()});
       for (size_t j = 0; j < sz; ++j) {
         // TODO(Randl)
         std::copy(src_data[j]->begin(), src_data[j]->end(),
-                  dst_data[j].host_begin());
+                  dst_data.host_iter(j, 0));
       }
     }
   }
@@ -609,8 +609,10 @@ class layer : public node {
     std::vector<std::vector<const vec_t *>> input2;
     std::vector<std::vector<vec_t>> input2_st;  // TODO(Randl) temporary
     input2.resize(input.size());
+    input2_st.resize(input.size());
     for (size_t i = 0; i < input.size(); ++i) {
-      input2[i].resize(input[i].size());
+      input2[i].resize(input[i].shape()[0]);
+      input2_st[i].resize(input[i].shape()[0]);
       for (size_t j = 0; j < input[i].shape()[0]; ++j) {
         // TODO(Randl)
         input2_st[i][j] = input[i].lineToVec(j);
