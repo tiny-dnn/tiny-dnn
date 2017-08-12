@@ -131,7 +131,7 @@ TEST(ave_pool, forward_stride) {
   l.bias_init_f(parameter_init::constant(0.0));
   l.setup(false);
 
-  auto out  = l.forward({{Tensor<>(in)}});
+  auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {

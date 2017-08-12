@@ -46,7 +46,7 @@ inline void tiny_average_unpooling_kernel(
         out_data.host_at(sample, idx) = value;
       }
     }
-    assert(out_data.size() == auws.out2wi.size());
+    assert(out_data.shape()[1] == auws.out2wi.size());
   });
 }
 

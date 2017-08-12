@@ -94,7 +94,7 @@ class batch_normalization_layer : public layer {
     Tensor<> &prev_delta     = *in_grad[0];
     Tensor<> &curr_delta     = *out_grad[0];
     const Tensor<> &curr_out = *out_data[0];
-    const size_t num_samples = curr_out.size();
+    const size_t num_samples = curr_out.shape()[0];
 
     CNN_UNREFERENCED_PARAMETER(in_data);
 

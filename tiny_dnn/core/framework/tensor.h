@@ -455,8 +455,9 @@ auto host_data() {
    * @return
    */
   vec_t lineToVec(size_t line) const {
-    vec_t tensor(storage_.shape()[0]);
-    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+    assert(line < shape()[0]);
+    vec_t tensor(storage_.shape()[1]);
+    for (size_t i = 0; i < storage_.shape()[1]; ++i) {
       tensor[i] = storage_(line, i);
     }
     return tensor;
@@ -474,6 +475,13 @@ auto host_data() {
   template <typename T, typename S>
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);
+
+  std::ostream &printShape(std::ostream &os) const {
+    os << "Tensor of size:" << size() << ", shape: ";
+    for (size_t i = 0; i < shape().size() - 1; ++i) os << shape()[i] << "x";
+    os << shape().back();
+    return os;
+  }
 
  private:
   Storage storage_;

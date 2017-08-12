@@ -602,8 +602,7 @@ class layer : public node {
    */
   void forward(const std::vector<Tensor<>> &input,
                std::vector<const Tensor<> *> &out) {  // for test
-    // allocate data in the computational graph without
-    // resetting the weights.
+    // allocate data in the computational graph without resetting the weights.
     setup(false);
 
     std::vector<std::vector<const vec_t *>> input2;
@@ -614,6 +613,7 @@ class layer : public node {
       input2[i].resize(input[i].shape()[0]);
       input2_st[i].resize(input[i].shape()[0]);
       for (size_t j = 0; j < input[i].shape()[0]; ++j) {
+        assert(input[i].shape().size() == 2);
         // TODO(Randl)
         input2_st[i][j] = input[i].lineToVec(j);
         input2[i][j]    = &input2_st[i][j];
