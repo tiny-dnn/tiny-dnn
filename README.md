@@ -29,23 +29,23 @@ Check out the [documentation](http://tiny-dnn.readthedocs.io/) for more info.
 ## What's New
 - 2016/11/30 [v1.0.0a3 is released!](https://github.com/tiny-dnn/tiny-dnn/tree/v1.0.0a3)
 - 2016/9/14 [tiny-dnn v1.0.0alpha is released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v1.0.0a)
-- 2016/8/7  tiny-dnn is now moved to organization account, and rename into tiny-dnn :)
+- 2016/8/7  tiny-dnn is now moved to organization account, and renamed into tiny-dnn :)
 - 2016/7/27 [tiny-dnn v0.1.1 released!](https://github.com/tiny-dnn/tiny-dnn/releases/tag/v0.1.1)
 
 ## Features
-- reasonably fast, without GPU
-    - with TBB threading and SSE/AVX vectorization
-    - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M)
-- portable & header-only
-    - Run anywhere as long as you have a compiler which supports C++14
+- Reasonably fast, without GPU:
+    - With TBB threading and SSE/AVX vectorization.
+    - 98.8% accuracy on MNIST in 13 minutes training (@Core i7-3520M).
+- Portable & header-only:
+    - Runs anywhere as long as you have a compiler which supports C++14.
     - Just include tiny_dnn.h and write your model in C++. There is nothing to install.
-- easy to integrate with real applications
-    - no output to stdout/stderr
-    - a constant throughput (simple parallelization model, no garbage collection)
-    - work without throwing an exception
-    - [can import caffe's model](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/caffe_converter)
-- simply implemented
-    - be a good library for learning neural networks
+- Easy to integrate with real applications:
+    - No output to stdout/stderr.
+    - A constant throughput (simple parallelization model, no garbage collection).
+    - Works without throwing an exception.
+    - [Can import caffe's model](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/caffe_converter).
+- Simply implemented:
+    - A good library for learning neural networks.
 
 ## Comparison with other libraries
 
@@ -140,13 +140,13 @@ Some cmake options are available:
 |BUILD_DOCS|Build documentation|OFF|[Doxygen](http://www.doxygen.org/)|
 |PROFILE|Build unit tests|OFF|gprof|
 
-<sup>1</sup> tiny-dnn use C++14 standard library for parallelization by default
+<sup>1</sup> tiny-dnn use C++14 standard library for parallelization by default.
 
 <sup>2</sup> If you don't use serialization, you can switch off to speedup compilation time.
 
 <sup>3</sup> tiny-dnn uses [Google Test](https://github.com/google/googletest) as default framework to run unit tests. No pre-installation required, it's  automatically downloaded during CMake configuration.
 
-For example, type the following commands if you want to use intel TBB and build tests:
+For example, type the following commands if you want to use Intel TBB and build tests:
 ```bash
 cmake -DUSE_TBB=ON -DBUILD_TESTS=ON .
 ```
@@ -155,7 +155,7 @@ cmake -DUSE_TBB=ON -DBUILD_TESTS=ON .
 You can edit include/config.h to customize default behavior.
 
 ## Examples
-construct convolutional neural networks
+Construct convolutional neural networks
 
 ```cpp
 #include "tiny_dnn/tiny_dnn.h"
@@ -198,7 +198,7 @@ void construct_cnn() {
     // net2.load("net");
 }
 ```
-construct multi-layer perceptron(mlp)
+Construct multi-layer perceptron (mlp)
 
 ```cpp
 #include "tiny_dnn/tiny_dnn.h"
@@ -216,7 +216,7 @@ void construct_mlp() {
 }
 ```
 
-another way to construct mlp
+Another way to construct mlp
 
 ```cpp
 #include "tiny_dnn/tiny_dnn.h"
@@ -231,7 +231,7 @@ void construct_mlp() {
 }
 ```
 
-more sample, read examples/main.cpp or [MNIST example](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist) page.
+For more samples, read examples/main.cpp or [MNIST example](https://github.com/tiny-dnn/tiny-dnn/tree/master/examples/mnist) page.
 
 ## Contributing
 Since deep learning community is rapidly growing, we'd love to get contributions from you to accelerate tiny-dnn development!
@@ -244,7 +244,7 @@ For a quick guide to contributing, take a look at the [Contribution Documents](C
 [2] Y. LeCun, L. Bottou, Y. Bengio, and P. Haffner, [Gradient-based learning applied to document recognition.](http://yann.lecun.com/exdb/publis/pdf/lecun-01a.pdf)
     Proceedings of the IEEE, 86, 2278-2324.
 
-other useful reference lists:
+Other useful reference lists:
 - [UFLDL Recommended Readings](http://deeplearning.stanford.edu/wiki/index.php/UFLDL_Recommended_Readings)
 - [deeplearning.net reading list](http://deeplearning.net/reading-list/)
 
@@ -252,7 +252,7 @@ other useful reference lists:
 The BSD 3-Clause License
 
 ## Gitter rooms
-We have a gitter rooms for discussing new features & QA.
+We have gitter rooms for discussing new features & QA.
 Feel free to join us!
 
 <table>
