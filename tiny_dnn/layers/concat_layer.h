@@ -71,12 +71,13 @@ class concat_layer : public layer {
 
     for_i(num_samples, [&](size_t s) {
       // TODO(Randl): efficient?
-      float_t *outs = out_data[0]->host_pointer(s, 0);
+      auto outs = out_data[0]->host_iter(s, 0);
 
       for (size_t i = 0; i < in_shapes_.size(); i++) {
-        const float_t *ins = in_data[i]->host_pointer(s, 0);
-        size_t dim         = in_shapes_[i].size();
-        outs               = std::copy(ins, ins + dim, outs);
+        const auto ins = in_data[i]->host_iter(s, 0);
+        size_t dim     = in_shapes_[i].size();
+
+        outs = std::copy(ins, ins + dim, outs);
       }
     });
   }

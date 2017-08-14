@@ -22,6 +22,7 @@
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/core/framework/tensor.h"
+#include "tiny_dnn/core/framework/tensor_utils.h"
 #include "tiny_dnn/node.h"
 #include "tiny_dnn/parameter.h"
 
@@ -687,7 +688,7 @@ class layer : public node {
 
     // resize outs and stuff to have room for every input sample in
     // the batch
-    set_sample_count(fwd_in_data_[0]->size());
+    set_sample_count(fwd_in_data_[0]->shape()[0]);
 
     // Internally ith_out_node() will create a connection/edge to the
     // computational graph and will allocate memory in case that it's not

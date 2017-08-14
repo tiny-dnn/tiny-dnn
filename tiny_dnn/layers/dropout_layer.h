@@ -91,7 +91,7 @@ class dropout_layer : public layer {
                            std::vector<Tensor<> *> &out_data) override {
     const Tensor<> &in = *in_data[0];
     Tensor<> &out      = *out_data[0];
-
+    out.reshape(in.shape());
     const size_t sample_count = in.shape()[0];
 
     if (mask_.size() < sample_count) {

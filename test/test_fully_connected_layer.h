@@ -50,8 +50,8 @@ TEST(fully_connected, forward) {
   l.weights_at()[0]->set_data(Tensor<float_t>(weights));
   l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
-  auto out     = l.forward({{Tensor<>(in)}});
-  vec_t result = (*out[0]).toTensor()[0];
+  auto out     = l.forward({{Tensor<>(tensor_t{{in}})}});
+  vec_t result = out[0]->toVec();
 
   for (size_t i = 0; i < result.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], result[i]);

@@ -108,7 +108,7 @@ TEST(deconvolutional, fprop) {
   // clang-format on
 
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
-  out        = l.forward({{Tensor<>(in)}});
+  out        = l.forward({{Tensor<>(tensor_t{{in}})}});
   out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
@@ -124,7 +124,7 @@ TEST(deconvolutional, fprop_padding_same) {
   vec_t out_expected(8, 0);
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
-  auto out         = l.forward({{Tensor<>(in)}});
+  auto out         = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_result.size(); i++) {
@@ -158,7 +158,7 @@ TEST(deconvolutional, fprop_padding_same) {
 
   // resize tensor because its dimension changed in above used test case
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
-  out        = l.forward({{Tensor<>(in)}});
+  out        = l.forward({{Tensor<>(tensor_t{{in}})}});
   out_result = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < out_expected.size(); i++) {

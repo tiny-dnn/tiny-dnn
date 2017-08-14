@@ -154,7 +154,7 @@ TEST(convolutional, with_stride) {
   l.weights_at()[0]->set_data(Tensor<float_t>(weight));
   l.bias_at()[0]->set_data(Tensor<float_t>(bias));
 
-  auto out         = l.forward({{Tensor<>(in)}});
+  auto out         = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_out = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < result_out.size(); i++) {
@@ -257,11 +257,11 @@ TEST(convolutional, fprop_avx_1x1out) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  auto out_noavx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{Tensor<>(in)}});
+  auto out_avx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
   for (size_t i = 0; i < result_avx.size(); i++) {
@@ -308,11 +308,11 @@ TEST(convolutional, fprop_avx_hstride) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  auto out_noavx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{Tensor<>(in)}});
+  auto out_avx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
   for (size_t i = 0; i < result_avx.size(); i++) {
@@ -408,11 +408,11 @@ TEST(convolutional, fprop_avx_wstride) {
   uniform_rand(in.begin(), in.end(), -1, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto out_noavx     = l.forward({{Tensor<>(in)}});
+  auto out_noavx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_noavx = (*out_noavx[0]).toTensor()[0];
 
   l.set_backend_type(core::backend_t::avx);
-  auto out_avx     = l.forward({{Tensor<>(in)}});
+  auto out_avx     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_avx = (*out_avx[0]).toTensor()[0];
 
   for (size_t i = 0; i < result_avx.size(); i++) {
