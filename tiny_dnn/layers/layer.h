@@ -686,8 +686,7 @@ class layer : public node {
       fwd_in_data_[i] = ith_in_node(i)->get_data();
     }
 
-    // resize outs and stuff to have room for every input sample in
-    // the batch
+    // resize outs and stuff to have room for every input sample in the batch
     set_sample_count(fwd_in_data_[0]->shape()[0]);
 
     // Internally ith_out_node() will create a connection/edge to the
@@ -948,7 +947,8 @@ class layer : public node {
   virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
     auto resize = [sample_count](Tensor<> *tensor) {
-      tensor->resize_axis(sample_count);
+      if (tensor->dim() < 1 || tensor->shape()[0] <= sample_count)
+        tensor->resize_axis(sample_count);
     };
 
     for (size_t i = 0; i < in_channels_; i++) {
