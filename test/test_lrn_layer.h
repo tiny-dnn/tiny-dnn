@@ -37,6 +37,35 @@ TEST(lrn, cross) {
   EXPECT_NEAR(expected[3], out[3], epsilon<float_t>());
 }
 
+/* Backprop not implemented
+TEST(lrn, gradient_check) {
+  const size_t in_width = 2;
+  const size_t in_height = 2;
+  const size_t local_size = 3;
+  const size_t channels = 4;
+  lrn_layer lrn(in_width, in_height, local_size, channels);
+  std::vector<tensor_t> input_data = generate_test_data({1},
+{in_width*in_height*channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({1},
+{in_width*in_height*channels});
+  std::vector<tensor_t> out_grad = generate_test_data({1},
+{in_width*in_height*channels});
+  const size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge = uniform_idx(input_data);
+    const size_t in_idx = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(lrn, input_data, in_edge, in_idx, out_data,
+out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(lrn, input_data, in_edge, in_idx,
+out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+*/
+
 TEST(lrn, read_write) {
   lrn_layer l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
   lrn_layer l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
