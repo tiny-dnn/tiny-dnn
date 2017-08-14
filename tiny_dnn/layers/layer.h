@@ -221,6 +221,7 @@ class layer : public node {
       size_t sz            = src_grad.size();
       dst_grad.resize(sz);
       for (size_t j = 0; j < sz; ++j) {
+        assert(dst_grad[j].size() == src_grad[j]->size());
         dst_grad[j] = *src_grad[j];
       }
     }
@@ -237,6 +238,7 @@ class layer : public node {
       size_t sz            = src_data.size();
       dst_data.resize(sz);
       for (size_t j = 0; j < sz; ++j) {
+        assert(dst_data[j].size() == src_data[j]->size());
         dst_data[j] = *src_data[j];
       }
     }

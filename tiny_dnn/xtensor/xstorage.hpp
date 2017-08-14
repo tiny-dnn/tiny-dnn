@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -16,10 +16,7 @@
 #include <memory>
 #include <type_traits>
 
-// Compiler bug workaround
-#if (__GNUC__ && (__GNUC__ < 5 || (__GNUC__ == 5 && __GNUC_MINOR__ < 1)) ) && !(defined(__APPLE__)) || defined(X_OLD_CLANG)
-#define is_trivially_default_constructible has_trivial_default_constructor
-#endif
+#include "xutils.hpp"
 
 namespace xt
 {
@@ -34,7 +31,6 @@ namespace xt
     template <class T, class Allocator = std::allocator<T>>
     class uvector
     {
-
     public:
 
         using allocator_type = Allocator;
@@ -159,7 +155,7 @@ namespace xt
             using pointer = typename A::pointer;
             using value_type = typename A::value_type;
             pointer res = alloc.allocate(size);
-            if (!std::is_trivially_default_constructible<value_type>::value)
+            if (!xtrivially_default_constructible<value_type>::value)
             {
                 for (pointer p = res; p != res + size; ++p)
                 {
@@ -176,7 +172,7 @@ namespace xt
             using value_type = typename A::value_type;
             if (ptr != nullptr)
             {
-                if (!std::is_trivially_default_constructible<value_type>::value)
+                if (!xtrivially_default_constructible<value_type>::value)
                 {
                     for (pointer p = ptr; p != ptr + size; ++p)
                     {
@@ -295,7 +291,7 @@ namespace xt
         {
             m_allocator = std::allocator_traits<allocator_type>::select_on_container_copy_construction(rhs.get_allocator());
             resize_impl(rhs.size());
-            if (std::is_trivially_default_constructible<value_type>::value)
+            if (xtrivially_default_constructible<value_type>::value)
             {
                 std::uninitialized_copy(rhs.p_begin, rhs.p_end, p_begin);
             }

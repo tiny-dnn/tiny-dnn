@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -23,16 +23,15 @@ namespace xt
             using const_reference = const M&;
             using pointer = M*;
             using const_pointer = const M*;
-           
+
             template <class T>
-            decltype(auto) operator()(T&&t) const
+            decltype(auto) operator()(T&& t) const
             {
                 return forward_offset<M, I>(t);
             }
         };
     }
 
-        
     template <class CT, class M, std::size_t I>
     using xoffsetview = xfunctorview<detail::offset_forwarder<M, I>, CT>;
 }

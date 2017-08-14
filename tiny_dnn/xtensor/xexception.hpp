@@ -1,3 +1,11 @@
+/***************************************************************************
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+*                                                                          *
+* Distributed under the terms of the BSD 3-Clause License.                 *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
+
 #ifndef XEXCEPTION_HPP
 #define XEXCEPTION_HPP
 
@@ -15,7 +23,6 @@ namespace xt
 
     class broadcast_error : public std::exception
     {
-
     public:
 
         template <class S1, class S2>
@@ -62,7 +69,6 @@ namespace xt
 
     class transpose_error : public std::exception
     {
-
     public:
 
         transpose_error(const std::string& msg);
@@ -79,7 +85,7 @@ namespace xt
      **********************************/
 
     inline transpose_error::transpose_error(const std::string& msg)
-        : m_message(msg){}
+        : m_message(msg) {}
 
     inline const char* transpose_error::what() const noexcept
     {
@@ -98,13 +104,13 @@ namespace xt
 
     namespace detail
     {
-        template <class S, size_t dim>
+        template <class S, std::size_t dim>
         inline void check_index_impl(const S&)
         {
         }
 
-        template <class S, size_t dim, class... Args>
-        inline void check_index_impl(const S& shape, size_t i, Args... args)
+        template <class S, std::size_t dim, class... Args>
+        inline void check_index_impl(const S& shape, std::size_t arg, Args... args)
         {
             if (sizeof...(Args) + 1 > shape.size())
             {
@@ -112,9 +118,9 @@ namespace xt
             }
             else
             {
-                if (i >= shape[dim] && shape[dim] != 1)
+                if (arg >= shape[dim] && shape[dim] != 1)
                 {
-                    throw std::out_of_range("index " + std::to_string(i) + " is out of bounds for axis "
+                    throw std::out_of_range("index " + std::to_string(arg) + " is out of bounds for axis "
                         + std::to_string(dim) + " with size " + std::to_string(shape[dim]));
                 }
                 check_index_impl<S, dim + 1>(shape, args...);
@@ -133,7 +139,7 @@ namespace xt
     {
         auto dst = static_cast<typename S::size_type>(last - first);
         It efirst = last - std::min(shape.size(), dst);
-        size_t axis = 0;
+        std::size_t axis = 0;
         while (efirst != last)
         {
             if (*efirst >= shape[axis] && shape[axis] != 1)
@@ -147,14 +153,15 @@ namespace xt
 
 #ifdef XTENSOR_ENABLE_ASSERT
 #define XTENSOR_ASSERT(expr) XTENSOR_ASSERT_IMPL(expr, __FILE__, __LINE__)
-#define XTENSOR_ASSERT_IMPL(expr, file, line)\
-    try {\
-        expr;\
-    }\
-    catch (std::exception& e)\
-    {\
-        throw std::runtime_error(std::string(file) + ':' + std::to_string(line)\
-            + ": check failed\n\t" + std::string(e.what()));\
+#define XTENSOR_ASSERT_IMPL(expr, file, line)                                                                                    \
+    try                                                                                                                          \
+    {                                                                                                                            \
+        expr;                                                                                                                    \
+    }                                                                                                                            \
+    catch (std::exception & e)                                                                                                   \
+    {                                                                                                                            \
+        throw std::runtime_error(std::string(file) + ':' + std::to_string(line)                                                  \
+            + ": check failed\n\t" + std::string(e.what()));                                                                     \
     }
 #else
 #define XTENSOR_ASSERT(expr)

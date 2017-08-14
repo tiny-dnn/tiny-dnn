@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -98,7 +98,8 @@ namespace xt
         using const_stepper = typename iterable_base::const_stepper;
 
         static constexpr layout_type static_layout = xexpression_type::static_layout;
-        static constexpr bool contiguous_layout = xexpression_type::contiguous_layout;
+        //static constexpr bool contiguous_layout = xexpression_type::contiguous_layout;
+        static constexpr bool contiguous_layout = false;
 
         template <class CTA, class S>
         xbroadcast(CTA&& e, S&& s) noexcept;
@@ -125,7 +126,7 @@ namespace xt
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
     private:
         CT m_e;
@@ -274,17 +275,14 @@ namespace xt
      * Returns a constant reference to the element at the specified position in the expression.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the function.
      */
     template <class CT, class X>
     template <class It>
     inline auto xbroadcast<CT, X>::element(It, It last) const -> const_reference
     {
-        // Workaround MSVC bug. m_e.element(last - dimension(), last) does not build.
-        It first = last;
-        first -= dimension();
-        return m_e.element(first, last);
+        return m_e.element(last - dimension(), last);
     }
     //@}
 
@@ -329,10 +327,10 @@ namespace xt
 
     template <class CT, class X>
     template <class S>
-    inline auto xbroadcast<CT, X>::stepper_end(const S& shape) const noexcept -> const_stepper
+    inline auto xbroadcast<CT, X>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
         // Could check if (broadcastable(shape, m_shape)
-        return m_e.stepper_end(shape);
+        return m_e.stepper_end(shape, l);
     }
 }
 

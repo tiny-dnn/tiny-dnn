@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -46,14 +46,12 @@ namespace xt
         using stepper = xscalar_stepper<false, CT>;
         using reverse_iterator = std::reverse_iterator<iterator>;
         using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-
     };
 
     template <class CT>
     class xscalar : public xexpression<xscalar<CT>>,
                     public xiterable<xscalar<CT>>
     {
-
     public:
 
         using self_type = xscalar<CT>;
@@ -122,18 +120,21 @@ namespace xt
         template <class S>
         stepper stepper_begin(const S& shape) noexcept;
         template <class S>
-        stepper stepper_end(const S& shape) noexcept;
+        stepper stepper_end(const S& shape, layout_type l) noexcept;
 
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type l) const noexcept;
 
         dummy_iterator dummy_begin() noexcept;
         dummy_iterator dummy_end() noexcept;
 
         const_dummy_iterator dummy_begin() const noexcept;
         const_dummy_iterator dummy_end() const noexcept;
+
+        reference data_element(size_type i) noexcept;
+        const_reference data_element(size_type i) const noexcept;
 
     private:
 
@@ -153,7 +154,6 @@ namespace xt
     template <bool is_const, class CT>
     class xscalar_stepper
     {
-
     public:
 
         using self_type = xscalar_stepper<is_const, CT>;
@@ -181,7 +181,7 @@ namespace xt
         void reset_back(size_type dim) noexcept;
 
         void to_begin() noexcept;
-        void to_end() noexcept;
+        void to_end(layout_type l) noexcept;
 
         bool equal(const self_type& rhs) const noexcept;
 
@@ -198,14 +198,13 @@ namespace xt
     bool operator!=(const xscalar_stepper<is_const, CT>& lhs,
                     const xscalar_stepper<is_const, CT>& rhs) noexcept;
 
-    /********************
+    /*******************
      * xdummy_iterator *
-     ********************/
+     *******************/
 
     template <bool is_const, class CT>
     class xdummy_iterator
     {
-
     public:
 
         using self_type = xdummy_iterator<is_const, CT>;
@@ -422,7 +421,7 @@ namespace xt
 
     template <class CT>
     template <class S>
-    inline auto xscalar<CT>::stepper_end(const S&) noexcept -> stepper
+    inline auto xscalar<CT>::stepper_end(const S&, layout_type) noexcept -> stepper
     {
         return stepper(this + 1);
     }
@@ -436,7 +435,7 @@ namespace xt
 
     template <class CT>
     template <class S>
-    inline auto xscalar<CT>::stepper_end(const S&) const noexcept -> const_stepper
+    inline auto xscalar<CT>::stepper_end(const S&, layout_type) const noexcept -> const_stepper
     {
         return const_stepper(this + 1);
     }
@@ -463,6 +462,18 @@ namespace xt
     inline auto xscalar<CT>::dummy_end() const noexcept -> const_dummy_iterator
     {
         return const_dummy_iterator(this);
+    }
+
+    template <class CT>
+    inline auto xscalar<CT>::data_element(size_type) noexcept->reference
+    {
+        return m_value;
+    }
+    
+    template <class CT>
+    inline auto xscalar<CT>::data_element(size_type) const noexcept->const_reference
+    {
+        return m_value;
     }
 
     template <class T>
@@ -520,9 +531,9 @@ namespace xt
     }
 
     template <bool is_const, class CT>
-    inline void xscalar_stepper<is_const, CT>::to_end() noexcept
+    inline void xscalar_stepper<is_const, CT>::to_end(layout_type l) noexcept
     {
-        p_c = p_c->stepper_end(p_c->shape()).p_c;
+        p_c = p_c->stepper_end(p_c->shape(), l).p_c;
     }
 
     template <bool is_const, class CT>
@@ -545,9 +556,9 @@ namespace xt
         return !(lhs.equal(rhs));
     }
 
-    /***********************************
+    /**********************************
      * xdummy_iterator implementation *
-     ***********************************/
+     **********************************/
 
     template <bool is_const, class CT>
     inline xdummy_iterator<is_const, CT>::xdummy_iterator(container_type* c) noexcept

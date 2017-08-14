@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -86,7 +86,6 @@ namespace xt
         return (l == layout_type::row_major || l == layout_type::column_major) ?
             l : layout_type::row_major;
     }
-
 }
 
 #endif
