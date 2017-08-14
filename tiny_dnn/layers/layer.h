@@ -642,6 +642,7 @@ class layer : public node {
       grads2[i].resize(out_grads[i].shape()[0]);
       grads2_st[i].resize(out_grads[i].shape()[0]);
       for (size_t j = 0; j < out_grads[i].shape()[0]; ++j) {
+        assert(out_grads[i].shape().size() == 2);
         // TODO(Randl)
         grads2_st[i][j] = out_grads[i].lineToVec(j);
         grads2[i][j]    = &grads2_st[i][j];

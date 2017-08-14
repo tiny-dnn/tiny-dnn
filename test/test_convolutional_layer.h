@@ -220,14 +220,14 @@ TEST(convolutional, bprop_avx) {
   vec_t out_grads(18, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_noavx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
   Tensor<> *b_grads_noavx = l.bias_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_avx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
   Tensor<> *b_grads_avx = l.bias_at()[0]->grad();
@@ -277,13 +277,13 @@ TEST(convolutional, bprop_avx_1x1out) {
   vec_t out_grads(2, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_noavx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_avx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
@@ -329,13 +329,13 @@ TEST(convolutional, bprop_avx_hstride) {
   vec_t out_grads(18, 1);
 
   l.set_backend_type(core::backend_t::internal);
-  auto prev_grads_noavx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_noavx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_noavx      = prev_grads_noavx[0].toTensor()[0];
   Tensor<> *w_grads_noavx = l.weights_at()[0]->grad();
 
   l.clear_grads();
   l.set_backend_type(core::backend_t::avx);
-  auto prev_grads_avx   = l.backward({{Tensor<>(out_grads)}});
+  auto prev_grads_avx   = l.backward({{Tensor<>(tensor_t{{out_grads}})}});
   vec_t result_avx      = prev_grads_avx[0].toTensor()[0];
   Tensor<> *w_grads_avx = l.weights_at()[0]->grad();
 
@@ -363,8 +363,8 @@ TEST(convolutional, fprop_avx_hstride_1x1out) {
 
   l.forward_propagation(buf.in_buf(), buf2.out_buf());
 
-  vec_t &out_avx   = buf2.out_at(0).toTensor()[0];
-  vec_t &out_noavx = buf.out_at(0).toTensor()[0];
+  vec_t out_avx   = buf2.out_at(0).toTensor()[0];
+  vec_t out_noavx = buf.out_at(0).toTensor()[0];
 
   for (size_t i = 0; i < out_avx.size(); i++) {
     EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
@@ -390,8 +390,8 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
                      grad2.in_buf());
 
   for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch).toTensor()[0];
-    vec_t &out_avx   = grad2.in_at(ch).toTensor()[0];
+    vec_t out_noavx = grad1.in_at(ch).toTensor()[0];
+    vec_t out_avx   = grad2.in_at(ch).toTensor()[0];
     for (size_t i = 0; i < out_avx.size(); i++) {
       EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }
@@ -439,8 +439,8 @@ TEST(convolutional, bprop_avx_wstride) {
                      grad2.in_buf());
 
   for (size_t ch = 0; ch < l.out_channels(); ch++) {
-    vec_t &out_noavx = grad1.in_at(ch).toTensor()[0];
-    vec_t &out_avx   = grad2.in_at(ch).toTensor()[0];
+    vec_t out_noavx = grad1.in_at(ch).toTensor()[0];
+    vec_t out_avx   = grad2.in_at(ch).toTensor()[0];
     for (size_t i = 0; i < out_avx.size(); i++) {
       EXPECT_NEAR(out_avx[i], out_noavx[i], 1E-5);
     }
