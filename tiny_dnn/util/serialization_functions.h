@@ -43,7 +43,8 @@ template <class Archive,
           typename std::enable_if<std::is_base_of<cereal::BinaryOutputArchive,
                                                   Archive>::value>::type = 0>
 void arc(Archive &ar, cereal::NameValuePair<size_t> &&arg) {
-  cereal::NameValuePair<serial_size_t> arg2(arg.name, std::forward<cereal::NameValuePair<size_t>>(arg).value);
+  cereal::NameValuePair<serial_size_t> arg2(
+    arg.name, std::forward<cereal::NameValuePair<size_t>>(arg).value);
   ar(arg2);
 }
 
