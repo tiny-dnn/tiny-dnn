@@ -29,7 +29,7 @@ class Conv2dOp : public core::OpKernel {
 
     const Tensor<> weights(*(context.ith_parameter(0)->data()));
     const Tensor<> bias(params.has_bias ? *(context.ith_parameter(1)->data())
-                                        : Tensor<float_t>());
+                                        : Tensor<>());
 
     // initialize outputs
     out_data_t.fill(0.0f);

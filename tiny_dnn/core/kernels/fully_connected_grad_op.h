@@ -29,11 +29,11 @@ class FullyConnectedGradOp : public core::OpKernel {
 
     const Tensor<> weights(*(context.ith_parameter(0)->data()));
     const Tensor<> bias(params.has_bias_ ? *(context.ith_parameter(1)->data())
-                                         : Tensor<float_t>());
+                                         : Tensor<>());
 
     Tensor<> weights_grads(*(context.ith_parameter(0)->grad()));
     Tensor<> bias_grads(params.has_bias_ ? *(context.ith_parameter(1)->grad())
-                                         : Tensor<float_t>());
+                                         : Tensor<>());
 
     // initialize outputs
     prev_delta.fill(float_t{0});

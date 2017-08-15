@@ -47,8 +47,8 @@ TEST(fully_connected, forward) {
   // clang-format on
   vec_t expected = {24, 42};
 
-  l.weights_at()[0]->set_data(Tensor<float_t>(weights));
-  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<>(weights));
+  l.bias_at()[0]->set_data(Tensor<>(bias));
 
   auto out     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result = out[0]->toVec();

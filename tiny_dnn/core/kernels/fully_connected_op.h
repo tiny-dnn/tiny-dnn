@@ -30,7 +30,7 @@ class FullyConnectedOp : public core::OpKernel {
 
     const Tensor<> weights(*(context.ith_parameter(0)->data()));
     const Tensor<> bias(params.has_bias_ ? *(context.ith_parameter(1)->data())
-                                         : Tensor<float_t>());
+                                         : Tensor<>());
 
     // initialize outputs
     out_data.fill(0);

@@ -312,12 +312,12 @@ class deconvolutional_layer : public layer {
     const auto width          = params_.out.depth_ * pitch + border_width;
     const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const vec_t &W                      = *this->weights()[0];
+    const Tensor<> &W                   = *this->weights()[0];
 
     img.resize(width, height);
     img.fill(bg_color);
 
-    auto minmax = std::minmax_element(W.begin(), W.end());
+    auto minmax = std::minmax_element(W.host_begin(), W.host_end());
 
     for (size_t r = 0; r < params_.in.depth_; ++r) {
       for (size_t c = 0; c < params_.out.depth_; ++c) {
@@ -331,7 +331,7 @@ class deconvolutional_layer : public layer {
         for (size_t y = 0; y < params_.weight.height_; ++y) {
           for (size_t x = 0; x < params_.weight.width_; ++x) {
             idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
-            const float_t w = W[idx];
+            const float_t w = W.host_at(idx);
 
             img.at(left + x, top + y) = static_cast<image<>::intensity_t>(
               rescale(w, *minmax.first, *minmax.second, 0, 255));

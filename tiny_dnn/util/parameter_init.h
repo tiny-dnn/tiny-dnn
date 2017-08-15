@@ -18,7 +18,7 @@ namespace parameter_init {
 
 class function {
  public:
-  virtual void fill(Tensor<float_t> &tensor,
+  virtual void fill(Tensor<> &tensor,
                     const size_t &fan_in,
                     const size_t &fan_out) {}
 };
@@ -45,7 +45,7 @@ class xavier : public scalable {
   xavier() : scalable(float_t{6}) {}
   explicit xavier(float_t value) : scalable(value) {}
 
-  void fill(Tensor<float_t> &tensor,
+  void fill(Tensor<> &tensor,
             const size_t &fan_in,
             const size_t &fan_out) override {
     const float_t weight_base = std::sqrt(scale_ / (fan_in + fan_out));
@@ -60,7 +60,7 @@ class constant : public scalable {
   constant() : scalable(float_t{0}) {}
   explicit constant(float_t value) : scalable(value) {}
 
-  void fill(Tensor<float_t> &tensor,
+  void fill(Tensor<> &tensor,
             const size_t &fan_in,
             const size_t &fan_out) override {
     CNN_UNREFERENCED_PARAMETER(fan_in);

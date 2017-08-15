@@ -34,7 +34,7 @@ TEST(max_pool, forward) {
   vec_t expected = {8, 6, 4, 2};
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -81,7 +81,7 @@ TEST(max_pool, forward_stride_internal) {
   // clang-format on
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -110,7 +110,7 @@ TEST(max_pool, forward_padding_same) {
   // clang-format on
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -140,7 +140,7 @@ TEST(max_pool, forward_stride_x) {
   EXPECT_EQ(l.out_shape()[0].height_, 4u);
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -168,7 +168,7 @@ TEST(max_pool, forward_stride_y) {
   EXPECT_EQ(l.out_shape()[0].height_, 2u);
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -249,7 +249,7 @@ TEST(max_pool, forward_stride) {
   // clang-format on
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
@@ -281,9 +281,10 @@ TEST(max_pool, backward) {
   // clang-format on
 
   std::vector<const Tensor<>*> out;
-  l.forward({{Tensor<>(in)}}, out);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
   vec_t in_grad =
-    l.backward(std::vector<Tensor<>>{{Tensor<>(out_grad)}})[0].toTensor()[0];
+    l.backward(std::vector<Tensor<>>{{Tensor<>(tensor_t{{out_grad}})}})[0]
+      .toTensor()[0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
@@ -311,8 +312,8 @@ TEST(max_pool, serialization) {
   // clang-format on
 
   std::vector<const Tensor<>*> out1, out2;
-  src.forward({{Tensor<>(in)}}, out1);
-  dst->forward({{Tensor<>(in)}}, out2);
+  src.forward({{Tensor<>(tensor_t{{in}})}}, out1);
+  dst->forward({{Tensor<>(tensor_t{{in}})}}, out2);
   vec_t res1 = (*out1[0]).toTensor()[0];
   vec_t res2 = (*out2[0]).toTensor()[0];
 
@@ -341,8 +342,8 @@ TEST(max_pool, serialization_stride) {
   // clang-format on
 
   std::vector<const Tensor<>*> out1, out2;
-  src.forward({{Tensor<>(in)}}, out1);
-  dst->forward({{Tensor<>(in)}}, out2);
+  src.forward({{Tensor<>(tensor_t{{in}})}}, out1);
+  dst->forward({{Tensor<>(tensor_t{{in}})}}, out2);
   vec_t res1 = (*out1[0]).toTensor()[0];
   vec_t res2 = (*out2[0]).toTensor()[0];
 
@@ -371,8 +372,8 @@ TEST(max_pool, serialization_padding) {
   // clang-format on
 
   std::vector<const Tensor<>*> out1, out2;
-  src.forward({{Tensor<>(in)}}, out1);
-  dst->forward({{Tensor<>(in)}}, out2);
+  src.forward({{Tensor<>(tensor_t{{in}})}}, out1);
+  dst->forward({{Tensor<>(tensor_t{{in}})}}, out2);
   vec_t res1 = (*out1[0]).toTensor()[0];
   vec_t res2 = (*out2[0]).toTensor()[0];
 

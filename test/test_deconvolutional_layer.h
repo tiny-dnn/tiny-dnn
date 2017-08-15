@@ -107,7 +107,7 @@ TEST(deconvolutional, fprop) {
   };
   // clang-format on
 
-  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
+  l.weights_at()[0]->set_data(Tensor<>(weight));
   out        = l.forward({{Tensor<>(tensor_t{{in}})}});
   out_result = (*out[0]).toTensor()[0];
 
@@ -157,7 +157,7 @@ TEST(deconvolutional, fprop_padding_same) {
   // clang-format on
 
   // resize tensor because its dimension changed in above used test case
-  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
+  l.weights_at()[0]->set_data(Tensor<>(weight));
   out        = l.forward({{Tensor<>(tensor_t{{in}})}});
   out_result = (*out[0]).toTensor()[0];
 

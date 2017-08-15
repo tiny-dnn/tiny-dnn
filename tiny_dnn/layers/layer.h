@@ -78,7 +78,7 @@ class layer : public node {
     weight_init_f_   = std::make_shared<parameter_init::xavier>();
     bias_init_f_     = std::make_shared<parameter_init::constant>();
     trainable_       = true;
-    parameters_diff_ = Tensor<float_t>();
+    parameters_diff_ = Tensor<>();
   }
 
   layer(const layer &) = default;
@@ -163,8 +163,8 @@ class layer : public node {
   ///! @deprecated use out_data_size() instead
   size_t out_size() const { return out_data_size(); }
 
-  std::vector<const vec_t *> weights() const {
-    std::vector<const vec_t *> v;
+  std::vector<const Tensor<> *> weights() const {
+    std::vector<const Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(get_weight_data(i));
@@ -173,8 +173,8 @@ class layer : public node {
     return v;
   }
 
-  std::vector<vec_t *> weights() {
-    std::vector<vec_t *> v;
+  std::vector<Tensor<> *> weights() {
+    std::vector<Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(get_weight_data(i));
@@ -499,7 +499,8 @@ class layer : public node {
     os << std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto w : *weight) os << w << " ";
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        os << *it << " ";
     }
   }
 
@@ -510,7 +511,8 @@ class layer : public node {
     is >> std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto &w : *weight) is >> w;
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        is >> *it;
     }
     initialized_ = true;
   }
@@ -518,7 +520,8 @@ class layer : public node {
   virtual void load(const std::vector<float_t> &src, int &idx) {  // NOLINT
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto &w : *weight) w = src[idx++];
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        *it = src[idx++];
     }
     initialized_ = true;
   }
@@ -868,13 +871,13 @@ class layer : public node {
     auto &diff             = weights_diff_;
     for (size_t i = 0; i < in_type_.size(); i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
-        vec_t &target = *get_weight_data(i);
+        Tensor<> &target = *get_weight_data(i);
         ith_in_node(i)->merge_grads(&diff);
         for (size_t j = 0; j < diff.size(); ++j) {
           diff[j] *= rcp_batch_size;
         }
-        // parallelize only when target size is big enough to mitigate
-        // thread spawning overhead.
+        // parallelize only when target size is big enough to mitigate thread
+        // spawning overhead.
         bool parallelize = (target.size() >= 512);
         o->update(diff, target, parallelize);
       }
@@ -900,11 +903,11 @@ class layer : public node {
       bool parallelize = (parameter->size() >= 512);
 
       // todo (karandesai) : remove this workaround later
-      vec_t diff_t   = diff.toVec();
-      vec_t target_t = parameter->data()->toVec();
+      vec_t diff_t      = diff.toVec();
+      Tensor<> target_t = *parameter->data();
       optimizer_ptr->update(diff_t, target_t, parallelize);
-      diff = Tensor<float_t>(diff_t);
-      parameter->set_data(Tensor<float_t>(target_t));
+      diff = Tensor<>(diff_t);
+      parameter->set_data(Tensor<>(target_t));
     }
     clear_grads();
     post_update();
@@ -917,10 +920,12 @@ class layer : public node {
     if (w1.size() != w2.size()) return false;
 
     for (size_t i = 0; i < w1.size(); i++) {
-      if (w1[i]->size() != w2[i]->size()) return false;
+      if (w1[i]->shape() != w2[i]->shape()) return false;
 
-      for (size_t j = 0; j < w1[i]->size(); j++) {
-        if (std::abs(w1[i]->at(j) - w2[i]->at(j)) > eps) return false;
+      auto it1 = w1[i]->host_begin();
+      auto it2 = w2[i]->host_begin();
+      for (; it1 != w1[i]->host_end(); ++it1, ++it2) {
+        if (std::abs(*it1 - *it2) > eps) return false;
       }
     }
     return true;
@@ -934,8 +939,8 @@ class layer : public node {
     for (size_t i = 0; i < parameters_.size(); i++) {
       if (lhs_parameters[i]->size() != rhs_parameters[i]->size()) return false;
 
-      const Tensor<float_t> *lhs_data = lhs_parameters[i]->data();
-      const Tensor<float_t> *rhs_data = rhs_parameters[i]->data();
+      const Tensor<> *lhs_data = lhs_parameters[i]->data();
+      const Tensor<> *rhs_data = rhs_parameters[i]->data();
       for (size_t j = 0; j < lhs_parameters[i]->size(); j++) {
         if (std::abs(lhs_data->host_at(j) - rhs_data->host_at(j)) > eps)
           return false;
@@ -1009,7 +1014,7 @@ class layer : public node {
   vec_t weights_diff_;
   /** Used in ``update_parameters`` method. Kept as a member variable
    * to reduce frequent memory allocation */
-  Tensor<float_t> parameters_diff_;
+  Tensor<> parameters_diff_;
 
   template <typename T, typename Func>
   inline void for_i(T size, Func f, size_t grainsize = 100) {
@@ -1112,10 +1117,10 @@ class layer : public node {
    *
    * Returns the mutable pointer to the edge raw data.
    */
-  vec_t *get_weight_data(size_t i) {
-    return nullptr;
-    // assert(is_trainable_weight(in_type_[i]));
-    // return &(*(ith_in_node(i)->get_data()))[0];
+  Tensor<> *get_weight_data(size_t i) {
+    // TODO(Randl): dims
+    assert(is_trainable_weight(in_type_[i]));
+    return ith_in_node(i)->get_data();
   }
 
   /* @brief Retrieves weight vector from incoming edge
@@ -1123,10 +1128,9 @@ class layer : public node {
    *
    * Returns the non mutable pointer to the edge raw data.
    */
-  const vec_t *get_weight_data(size_t i) const {
-    return nullptr;
-    // assert(is_trainable_weight(in_type_[i]));
-    // return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
+  const Tensor<> *get_weight_data(size_t i) const {
+    assert(is_trainable_weight(in_type_[i]));
+    return const_cast<layer *>(this)->ith_in_node(i)->get_data();
   }
 };
 

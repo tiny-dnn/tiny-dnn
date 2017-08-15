@@ -24,14 +24,16 @@ TEST(optimizers, adagrad_update) {
   vec_t second_update = {0.1829, 0.4170, 0.0230, -0.7870, -0.0270};
 
   // Testing
-
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);
@@ -51,13 +53,16 @@ TEST(optimizers, rmsprop_update) {
 
   // Testing
 
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);
@@ -77,13 +82,16 @@ TEST(optimizers, adam_update) {
 
   // Testing
 
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);
@@ -103,13 +111,16 @@ TEST(optimizers, naive_sgd_update) {
 
   // Testing
 
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);
@@ -129,13 +140,16 @@ TEST(optimizers, momentum_update) {
 
   // Testing
 
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);
@@ -155,13 +169,16 @@ TEST(optimizers, nesterov_momentum_update) {
 
   // Testing
 
-  optimizer.update(gradients, weights, false);
+  Tensor<> weights_t(weights);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(first_update[i], weights[i], 1e-3);
   }
 
-  optimizer.update(gradients, weights, false);
+  optimizer.update(gradients, weights_t, false);
+  weights = weights_t.toVec();
 
   for (size_t i = 0; i < weights.size(); i++) {
     EXPECT_NEAR(second_update[i], weights[i], 1e-3);

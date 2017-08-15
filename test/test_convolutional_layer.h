@@ -112,7 +112,7 @@ TEST(convolutional, forward) {
   };
   // clang-format on
 
-  l.parameter_at(0).set_data(Tensor<float_t>(weight));
+  l.parameter_at(0).set_data(Tensor<>(weight));
   auto out     = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result = out[0]->toVec();
 
@@ -151,8 +151,8 @@ TEST(convolutional, with_stride) {
   };
   // clang-format on
 
-  l.weights_at()[0]->set_data(Tensor<float_t>(weight));
-  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<>(weight));
+  l.bias_at()[0]->set_data(Tensor<>(bias));
 
   auto out         = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t result_out = (*out[0]).toTensor()[0];
