@@ -27,7 +27,7 @@ TEST(dropout, randomized) {
   l.forward({{Tensor<>(tensor_t{{v}})}}, out);
   const auto mask1 = l.get_mask(0);
 
-  l.forward({{Tensor<>(v)}}, out);
+  l.forward({{Tensor<>(tensor_t{{v}})}}, out);
   const auto mask2 = l.get_mask(0);
 
   // mask should change for each fprop

@@ -356,12 +356,11 @@ class sequential : public nodes {
     const std::vector<const Tensor<> *> &out) {
     // normalize indexing back to [sample][layer][feature]
     std::vector<tensor_t> normalized_output;
-
-    const size_t sample_count = out[0]->size();
+    const size_t sample_count = out[0]->shape()[0];
     normalized_output.resize(sample_count, tensor_t(1));
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      normalized_output[sample][0] = ((*out[0])[sample]).toVec();
+      normalized_output[sample][0] = out[0]->lineToVec(sample);
     }
 
     return normalized_output;

@@ -75,7 +75,7 @@ class activation_layer : public layer {
                            std::vector<Tensor<> *> &out_data) override {
     const Tensor<> &x = *in_data[0];
     Tensor<> &y       = *out_data[0];
-    for_i(x.size(), [&](size_t i) {
+    for_i(x.shape()[0], [&](size_t i) {
       forward_activation(x.subView(TensorSingleIndex(i), TensorAll()),
                          y.subView(TensorSingleIndex(i), TensorAll()));
     });
@@ -89,7 +89,7 @@ class activation_layer : public layer {
     const Tensor<> &dy = *out_grad[0];
     const Tensor<> &x  = *in_data[0];
     const Tensor<> &y  = *out_data[0];
-    for_i(x.size(), [&](size_t i) {
+    for_i(x.shape()[0], [&](size_t i) {
       backward_activation(x.subView(TensorSingleIndex(i), TensorAll()),
                           y.subView(TensorSingleIndex(i), TensorAll()),
                           dx.subView(TensorSingleIndex(i), TensorAll()),
