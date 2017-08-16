@@ -190,9 +190,9 @@ inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100u) {
        [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
-        for (int i = (int)r.begin(); i < (int)r.end(); i++) {
-          f(i);
-        }
+         for (int i = (int)r.begin(); i < (int)r.end(); i++) {
+           f(i);
+         }
 #else
          for (size_t i = r.begin(); i < r.end(); i++) {
            f(i);
