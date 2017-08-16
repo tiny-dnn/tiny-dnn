@@ -23,8 +23,8 @@ class RecurrentCellGradOp : public core::OpKernel {
     // incoming/outcoming data
 
     const Tensor<> prev_out(context.input(0)), h(context.input(1));
-    const Tensor<> U(context.input(2)[0]), W(context.input(3)[0]),
-      V(context.input(4)[0]);
+    const Tensor<> U(context.input(2)), W(context.input(3)),
+      V(context.input(4));
     Tensor<> dU(context.input_grad(2)), dV(context.input_grad(3)),
       dW(context.input_grad(4));
     Tensor<> db =
@@ -40,7 +40,6 @@ class RecurrentCellGradOp : public core::OpKernel {
     // initialize outputs
     prev_output_delta.fill(float_t(0.0));
     prev_state_delta.fill(float_t(0.0));
-
     // call the algorithm depending on the selected engine type
     kernels::recurrent_cell_op_internal(
       prev_out, h, U, W, V, dU, dW, dV, db, dc, curr_output_delta,
