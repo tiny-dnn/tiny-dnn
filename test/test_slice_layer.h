@@ -43,7 +43,7 @@ TEST(slice, forward_data) {
 
   {
     std::vector<const Tensor<>*> out;
-    sl.forward({{Tensor<>(in)}}, out);
+    sl.forward({{Tensor<>(tensor_t{{in}})}}, out);
 
     for (size_t i = 0; i < 6; i++) {
       EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0]).toTensor()[0][i]);

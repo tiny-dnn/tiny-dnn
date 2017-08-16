@@ -116,7 +116,7 @@ class slice_layer : public layer {
   void slice_data_forward(const Tensor<> &in_data,
                           std::vector<Tensor<> *> &out_data) {
     for (size_t i = 0, index = 0; i < num_outputs_;
-         i++, index += slice_size_[i]) {
+         index += slice_size_[i], ++i) {
       auto in_view = in_data.subView(TensorRange(index, index + slice_size_[i]),
                                      TensorAll());
       auto out_view =
@@ -129,7 +129,7 @@ class slice_layer : public layer {
   void slice_data_backward(std::vector<Tensor<> *> &out_grad,
                            Tensor<> &in_grad) {
     for (size_t i = 0, index = 0; i < num_outputs_;
-         i++, index += slice_size_[i]) {
+         index += slice_size_[i], ++i) {
       auto in_view = in_grad.subView(TensorRange(index, index + slice_size_[i]),
                                      TensorAll());
       auto out_view =
