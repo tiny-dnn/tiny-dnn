@@ -39,6 +39,21 @@ inline std::ostream &operator<<(std::ostream &os, const Tensor<T, S> &tensor) {
   return os;
 }
 
+template <class T, class S1, class S2>
+bool operator==(const Tensor<T, S1> &t1, const Tensor<T, S2> &t2) {
+  if (t1.shape() != t2.shape()) return false;
+  auto it1 = t1.host_begin(), it2 = t2.host_begin();
+  for (; it1 != t1.host_end(); ++it1, ++it2) {
+    if (*it1 != *it2) return false;
+  }
+  return true;
+}
+
+template <class T, class S1, class S2>
+bool operator!=(const Tensor<T, S1> &t1, const Tensor<T, S2> &t2) {
+  return !(t1 == t2);
+}
+
 // utilities for element-wise and tensor-scalar/scalar-tensor operations
 
 template <typename TD,
