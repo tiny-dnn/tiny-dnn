@@ -233,12 +233,18 @@ class layer : public node {
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
       tensor_t &dst_data = *ith_in_node(i)->get_data();
+      size_t in_size     = ith_in_node(i)->shape().size();
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
       dst_data.resize(sz);
+
+      CNN_UNREFERENCED_PARAMETER(in_size);
+
       for (size_t j = 0; j < sz; ++j) {
-        assert(dst_data[j].size() == src_data[j]->size());
+        assert(
+          src_data[j]->size() ==
+          in_size);  // checking if training data is consistent with layer shape
         dst_data[j] = *src_data[j];
       }
     }
