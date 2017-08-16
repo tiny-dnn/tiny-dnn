@@ -87,7 +87,7 @@ void parallel_for(size_t begin,
                   const Func &f,
                   size_t /*grainsize*/) {
   assert(end >= begin);
-  // unsigned index isn't allowed in OpenMP 2.0
+// unsigned index isn't allowed in OpenMP 2.0
 #pragma omp parallel for
   for (int i = (int)begin; i < (int)end; ++i) f(blocked_range(i, i + 1));
 }
