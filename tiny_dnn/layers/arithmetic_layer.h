@@ -43,17 +43,15 @@ class elementwise_add_layer : public layer {
 
   void forward_propagation(const std::vector<Tensor<> *> &in_data,
                            std::vector<Tensor<> *> &out_data) override {
-    const Tensor<> &in1 = *in_data[0];
-    Tensor<> &out       = *out_data[0];
-
-    out = in1;
-
+    out_data[0]->fill(0);
     // TODO(Randl): parallelize
-    for (size_t sample = 0; sample < in1.size(); ++sample) {
-      for (size_t i = 1; i < num_args_; i++) {
-        std::transform((*in_data[i])[sample].host_begin(),
-                       (*in_data[i])[sample].host_end(),
-                       out[sample].host_begin(), out[sample].host_begin(),
+    for (size_t sample = 0; sample < in_data[0]->shape()[0]; ++sample) {
+      for (size_t i = 0; i < num_args_; i++) {
+        auto in_s = in_data[i]->subView(TensorSingleIndex(sample), TensorAll());
+        auto out_s =
+          out_data[0]->subView(TensorSingleIndex(sample), TensorAll());
+        std::transform(in_s.host_begin(), in_s.host_end(), out_s.host_begin(),
+                       out_s.host_begin(),
                        [](float_t x, float_t y) { return x + y; });
       }
     }

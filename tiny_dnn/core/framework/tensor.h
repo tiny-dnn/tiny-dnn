@@ -329,6 +329,7 @@ auto host_data() {
 
   template <typename S1>
   Tensor &assign(Tensor<U, S1> tensor) {
+    assert(size() <= tensor.size());
     auto in  = tensor.host_begin();
     auto out = host_begin();
     for (; in != tensor.host_end(); ++in, ++out) *out = *in;

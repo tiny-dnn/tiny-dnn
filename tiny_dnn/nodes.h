@@ -561,7 +561,7 @@ class graph : public nodes {
          ++output_channel) {
       output_layers_[output_channel]->output(out);
 
-      size_t sample_count = out[0]->size();
+      size_t sample_count = out[0]->shape()[0];
       if (output_channel == 0) {
         assert(merged.empty());
         merged.resize(sample_count, tensor_t(output_channel_count));
@@ -570,7 +570,8 @@ class graph : public nodes {
       assert(merged.size() == sample_count);
 
       for (size_t sample = 0; sample < sample_count; ++sample) {
-        merged[sample][output_channel] = ((*out[0])[sample]).toVec();
+        merged[sample][output_channel] =
+          out[0]->subView(TensorSingleIndex(sample), TensorAll()).toVec();
       }
     }
     return merged;
