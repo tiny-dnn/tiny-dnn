@@ -159,11 +159,11 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
   // tiny-dnn has trainable parameter in average-pooling layer
   float_t weight = 1.0 / (pool_size_w * pool_size_h);
 
-  vec_t &w = *ap->weights()[0];
-  vec_t &b = *ap->weights()[1];
+  Tensor<> &w = *ap->weights()[0];
+  Tensor<> &b = *ap->weights()[1];
 
-  vectorize::fill(&w[0], w.size(), weight);
-  vectorize::fill(&b[0], b.size(), float_t{0});
+  w.fill(weight);
+  b.fill(0.0);
 
   *top_shape = ap->out_shape()[0];
   ap->init_weight();
@@ -356,8 +356,8 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
                    dst->layer_type() + "):" + to_string(dst->weights().size()));
   }
 
-  vec_t &w = *dst->weights()[0];
-  vec_t &b = *dst->weights()[1];
+  Tensor<> &w = *dst->weights()[0];
+  Tensor<> &b = *dst->weights()[1];
 
   // fill weights
   for (size_t o = 0; o < dst_out_size; o++) {
@@ -365,7 +365,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
       // TODO(karandesai): how to access to weights?
       // dst->weight()[i * dst->out_size() + o] = weights.data(curr++); //
       // transpose
-      w[i * dst_out_size + o] = weights.data(curr++);  // transpose
+      w.host_at(i * dst_out_size + o) = weights.data(curr++);  // transpose
     }
   }
 
@@ -375,7 +375,7 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
     for (size_t o = 0; o < dst_out_size; o++) {
       // TODO(karandesai): how to access to biases?
       // dst->bias()[o] = biases.data(o);
-      b[o] = biases.data(o);
+      b.host_at(o) = biases.data(o);
     }
   }
 }
@@ -441,8 +441,8 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
       core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
-  vec_t &w = *dst->weights()[0];
-  vec_t &b = *dst->weights()[1];
+  Tensor<> &w = *dst->weights()[0];
+  Tensor<> &b = *dst->weights()[1];
 
   // fill weights
   for (int o = 0; o < out_channels; o++) {
@@ -453,7 +453,7 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
       }
       for (int x = 0; x < window_size * window_size; x++) {
         // dst->weight()[dst_idx++] = weights.data(src_idx++);
-        w[dst_idx++] = weights.data(src_idx++);
+        w.host_at(dst_idx++) = weights.data(src_idx++);
       }
     }
   }
@@ -463,7 +463,7 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
     auto biases = src.blobs(1);
     for (int o = 0; o < out_channels; o++) {
       // dst->bias()[o] = biases.data(o);
-      b[o] = biases.data(o);
+      b.host_at(o) = biases.data(o);
     }
   }
 }
@@ -523,16 +523,10 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
         dst->init_bias();
     }*/
 
-    vec_t &w = *dst->weights()[0];
-    vec_t &b = *dst->weights()[1];
-
-    if (!w.empty()) {
-      vectorize::fill(&w[0], w.size(), weight);
-    }
-    if (!b.empty()) {
-      vectorize::fill(&b[0], b.size(), float_t{0});
-      // dst->init_bias();
-    }
+    Tensor<> &w = *dst->weights()[0];
+    Tensor<> &b = *dst->weights()[1];
+    w.fill(weight);
+    b.fill(0.0);
   }
 }
 
