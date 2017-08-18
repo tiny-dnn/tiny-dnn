@@ -160,7 +160,7 @@ class Tensor {
    *
    * @return is tensor is empty
    */
-  bool empty() const { return size() == 0; }
+  bool empty() const { return dim() == 0 || size() == 0; }
 
   /**
    *

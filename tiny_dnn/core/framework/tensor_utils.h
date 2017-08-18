@@ -29,12 +29,13 @@ namespace tiny_dnn {
  */
 template <typename T, typename S>
 inline std::ostream &operator<<(std::ostream &os, const Tensor<T, S> &tensor) {
-  std::cout << "Tensor of dim " << tensor.dim() << ", size " << tensor.size()
-            << " and shape ";
+  os << "Tensor of dim " << tensor.dim();
+  if (tensor.dim() == 0) return os;
+  os << ", size " << tensor.size() << " and shape ";
   for (size_t i = 0; i < tensor.dim() - 1; ++i) {
-    std::cout << tensor.shape()[i] << "x";
+    os << tensor.shape()[i] << "x";
   }
-  std::cout << tensor.shape().back() << ":" << std::endl;
+  os << tensor.shape().back() << ":" << std::endl;
   os << tensor.storage_;
   return os;
 }

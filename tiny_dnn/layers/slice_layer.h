@@ -134,7 +134,7 @@ class slice_layer : public layer {
                                      TensorAll());
       auto out_view =
         out_grad[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
-      out_view.assign(in_view);
+      in_view.assign(out_view);
     }
   }
 

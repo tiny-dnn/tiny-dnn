@@ -40,9 +40,13 @@ struct stateful_optimizer : public optimizer {
   template <int Index>
   Tensor<> &get(const Tensor<> &key) {
     static_assert(Index < N, "index out of range");
-    if (E_[Index][&key].empty()) E_[Index][&key].reshape(key.shape());
+    if (E_[Index][&key].empty()) {
+      E_[Index][&key].reshape(key.shape());
+      E_[Index][&key].fill(0);
+    }
     return E_[Index][&key];
   }
+
   std::unordered_map<const Tensor<> *, Tensor<> > E_[N];
 };
 
@@ -58,10 +62,14 @@ struct adagrad : public stateful_optimizer<1> {
 
   void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &g = get<0>(W);
+    std::cout << "g before " << g << std::endl;
+    std::cout << "W before " << W << std::endl;
     for_i(parallelize, W.size(), [&](size_t i) {
       g.host_at(i) += dW[i] * dW[i];
       W.host_at(i) -= alpha * dW[i] / (std::sqrt(g.host_at(i)) + eps);
     });
+    std::cout << "g after " << g << std::endl;
+    std::cout << "W after " << W << std::endl;
   }
 
   float_t alpha;  // learning rate
