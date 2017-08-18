@@ -94,7 +94,8 @@ class edge {
     dst->resize(sz);
     float_t *pdst = &(*dst)[0];
     // dst = grad_[0]
-    std::copy(grad_head, grad_head + grad_.shape()[0], pdst);
+    auto grad_0 = grad_.subView(TensorSingleIndex(0), TensorAll());
+    std::copy(grad_0.host_begin(), grad_0.host_end(), pdst);
     // @todo consider adding parallelism
     for (size_t sample = 1, sample_count = grad_.shape()[0];
          sample < sample_count; ++sample) {
