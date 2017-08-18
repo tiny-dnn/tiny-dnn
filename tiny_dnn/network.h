@@ -899,6 +899,7 @@ class network {
     assert(v[0].size() == 1);
 
     // clear previous results, if any
+    dw.resize(sample_count, dw[0]);  // TODO(Randl)
     for (vec_t &dw_sample : dw) {
       vectorize::fill(&dw_sample[0], dw_sample.size(), float_t(0));
     }

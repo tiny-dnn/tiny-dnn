@@ -485,6 +485,10 @@ auto host_data() {
     return os;
   }
 
+  // TODO(Randl)
+  template <class Archive>
+  void serialize(Archive &archive) {}
+
  private:
   Storage storage_;
 };
