@@ -25,7 +25,7 @@ class tanh_layer : public activation_layer {
     auto iterx = x.host_begin();
     auto itery = y.host_begin();
     for (; iterx != x.host_end(); ++iterx, ++itery) {
-      *itery = *iterx;
+      *itery = std::tanh(*iterx);
     }
   }
 

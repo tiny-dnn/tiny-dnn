@@ -723,6 +723,7 @@ class layer : public node {
       bwd_out_data_[i] = nd->get_data();
       bwd_out_grad_[i] = nd->get_gradient();
     }
+
     back_propagation(bwd_in_data_, bwd_out_data_, bwd_out_grad_, bwd_in_grad_);
   }
 

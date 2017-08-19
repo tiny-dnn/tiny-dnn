@@ -697,7 +697,10 @@ TEST(caffe_converter, sigmoid) {
   Tensor<> tmp(tensor_t{{ret2}});
   ViewTensor r2 = tmp.subView(TensorSingleIndex(0), TensorAll());
   sigmoid_layer sig(5);
-  sig.forward_activation(ConstViewTensor(in), r2);
+
+  const Tensor<> tmp1(tensor_t{{in}});  // TODO(Randl)
+  auto tmp2 = tmp1.subView(TensorSingleIndex(0), TensorAll());
+  sig.forward_activation(tmp2, r2);
 
   for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], r2.host_at(i));
@@ -733,9 +736,15 @@ TEST(caffe_converter, tanh) {
 
   vec_t ret  = model->predict(in);
   vec_t ret2 = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
-  ViewTensor r2(ret2);
+
+  Tensor<> tmp(tensor_t{{ret2}});
+  ViewTensor r2 = tmp.subView(TensorSingleIndex(0), TensorAll());
+
+  const Tensor<> tmp1(tensor_t{{in}});  // TODO(Randl)
+  auto tmp2 = tmp1.subView(TensorSingleIndex(0), TensorAll());
+
   tanh_layer tanh(5);
-  tanh.forward_activation(ConstViewTensor(in), r2);
+  tanh.forward_activation(tmp2, r2);
 
   for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], r2.host_at(i));
@@ -827,15 +836,15 @@ TEST(caffe_converter, conv_with_weights) {
 
   ASSERT_EQ(model->depth(), size_t(1));
 
-  const vec_t *W = (*model)[0]->weights()[0];
-  const vec_t *b = (*model)[0]->weights()[1];
+  const Tensor<> *W = (*model)[0]->weights()[0];
+  const Tensor<> *b = (*model)[0]->weights()[1];
 
   EXPECT_EQ(W->size(), size_t(9));
   for (int i = 0; i < 9; i++) {
-    EXPECT_FLOAT_EQ(W->at(i), (float_t)i);
+    EXPECT_FLOAT_EQ(W->host_at(i), (float_t)i);
   }
   EXPECT_EQ(b->size(), size_t(1));
-  EXPECT_FLOAT_EQ(b->at(0), 9.0f);
+  EXPECT_FLOAT_EQ(b->host_at(0), 9.0f);
 }
 
 TEST(caffe_converter, fully_with_weights) {
@@ -901,22 +910,22 @@ TEST(caffe_converter, fully_with_weights) {
    3 7
   */
 
-  const vec_t *W = (*model)[0]->weights()[0];
-  const vec_t *b = (*model)[0]->weights()[1];
+  const Tensor<> *W = (*model)[0]->weights()[0];
+  const Tensor<> *b = (*model)[0]->weights()[1];
 
   EXPECT_EQ(W->size(), size_t(8));
-  EXPECT_FLOAT_EQ(W->at(0), 0.0f);
-  EXPECT_FLOAT_EQ(W->at(1), 4.0f);
-  EXPECT_FLOAT_EQ(W->at(2), 1.0f);
-  EXPECT_FLOAT_EQ(W->at(3), 5.0f);
-  EXPECT_FLOAT_EQ(W->at(4), 2.0f);
-  EXPECT_FLOAT_EQ(W->at(5), 6.0f);
-  EXPECT_FLOAT_EQ(W->at(6), 3.0f);
-  EXPECT_FLOAT_EQ(W->at(7), 7.0f);
+  EXPECT_FLOAT_EQ(W->host_at(0), 0.0f);
+  EXPECT_FLOAT_EQ(W->host_at(1), 4.0f);
+  EXPECT_FLOAT_EQ(W->host_at(2), 1.0f);
+  EXPECT_FLOAT_EQ(W->host_at(3), 5.0f);
+  EXPECT_FLOAT_EQ(W->host_at(4), 2.0f);
+  EXPECT_FLOAT_EQ(W->host_at(5), 6.0f);
+  EXPECT_FLOAT_EQ(W->host_at(6), 3.0f);
+  EXPECT_FLOAT_EQ(W->host_at(7), 7.0f);
 
   EXPECT_EQ(b->size(), size_t(2));
-  EXPECT_FLOAT_EQ(b->at(0), 8.0f);
-  EXPECT_FLOAT_EQ(b->at(1), 9.0f);
+  EXPECT_FLOAT_EQ(b->host_at(0), 8.0f);
+  EXPECT_FLOAT_EQ(b->host_at(1), 9.0f);
 }
 
 TEST(caffe_converter, load_weights_batchnorm) {
