@@ -166,7 +166,7 @@ TEST(recurrent_cell, forward) {
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;
-  l.forward({{Tensor<>(in)}}, o);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, o);
   vec_t out          = (*o[0]).toTensor()[0];
   vec_t out_expected = {2.5, 2.5};  // 0+1+2+3+0.5
 
@@ -183,7 +183,7 @@ TEST(recurrent_cell, forward_nobias) {
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;
-  l.forward({{Tensor<>(in)}}, o);
+  l.forward({{Tensor<>(tensor_t{{in}})}}, o);
   vec_t out          = (*o[0]).toTensor()[0];
   vec_t out_expected = {2.0, 2.0};  // 0+1+2+3
 
