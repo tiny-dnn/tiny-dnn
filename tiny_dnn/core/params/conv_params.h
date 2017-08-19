@@ -108,6 +108,7 @@ class Conv2dPadding {
     size_t sample_num = in.shape()[0];
     // alloc temporary buffer.
     Tensor<> buf({sample_num, params_.in_padded.size()});
+    buf.fill(0);
 
     for_i(true, sample_num, [&](size_t sample) {
       // make padded version in order to avoid corner-case in fprop/bprop
