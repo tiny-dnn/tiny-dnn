@@ -495,6 +495,6 @@ auto host_data() {
 
 using ViewTensor =
   decltype(Tensor<>({2, 2}).subView(TensorSingleIndex(1), TensorAll()));
-using ConstViewTensor = decltype(((const Tensor<>)Tensor<>({2, 2}))
+using ConstViewTensor = decltype(((const Tensor<> &)Tensor<>({2, 2}))
                                    .subView(TensorSingleIndex(1), TensorAll()));
 }  // namespace tiny_dnn

@@ -61,7 +61,7 @@ inline void recurrent_cell_op_internal(
 
     // TODO(Randl)
     ConstViewTensor c_next_state =
-      ((const Tensor<float_t, S9>)out_h)
+      ((const Tensor<float_t, S9> &)out_h)
         .subView(TensorSingleIndex(sample), TensorAll());
     params.activation_->forward_activation(c_next_state, next_state);
 
@@ -143,7 +143,7 @@ inline void recurrent_cell_op_internal(
     // h'(t)
     // TODO(Randl)
     ConstViewTensor c_curr_state_delta_ =
-      ((const Tensor<float_t, S12>)curr_state_delta)
+      ((const Tensor<float_t, S12> &)curr_state_delta)
         .subView(TensorSingleIndex(sample), TensorAll());
     params.activation_->backward_activation(prev_h_, out_h_, curr_state_delta_,
                                             c_curr_state_delta_);
