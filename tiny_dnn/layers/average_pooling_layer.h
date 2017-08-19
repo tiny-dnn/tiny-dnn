@@ -63,12 +63,6 @@ inline void tiny_average_pooling_back_kernel(
   const core::avepool_params &params,
   const core::average_pooling_layer_worker_specific_storage &aws,
   const bool layer_parallelize) {
-  prev_delta.reshape(
-    {prev_out.shape()[0], params.in.area() * params.in.depth_});
-  weights_grads.reshape(
-    {prev_out.shape()[0], params.in.area() * params.in.depth_});
-  bias_grads.reshape(
-    {prev_out.shape()[0], params.in.area() * params.in.depth_});
   for_i(layer_parallelize, prev_out.shape()[0], [&](size_t sample) {
     auto inarea = params.in.area();
     size_t idx  = 0;
