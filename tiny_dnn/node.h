@@ -21,7 +21,6 @@
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/weight_init.h"
 
 #ifdef DNN_USE_IMAGE_API
 #include "tiny_dnn/util/image.h"
