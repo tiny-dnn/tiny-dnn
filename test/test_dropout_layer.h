@@ -48,8 +48,8 @@ TEST(dropout, read_write) {
   dropout_layer l1(1024, 0.5, net_phase::test);
   dropout_layer l2(1024, 0.5, net_phase::test);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }

@@ -80,7 +80,7 @@ class tensor_buf {
 
 TEST(convolutional, forward) {
   convolutional_layer l(5, 5, 3, 1, 2);
-  l.setup(false);
+  l.init_parameters();
 
   // clang-format off
   vec_t in = {

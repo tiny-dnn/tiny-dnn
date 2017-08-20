@@ -959,7 +959,7 @@ TEST(serialization, sequential_weights) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+  EXPECT_TRUE(net1.has_same_parameters(net2, 1e-3));
 
   for (int i = 0; i < 2; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);
@@ -988,7 +988,7 @@ TEST(serialization, sequential_weights2) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+  EXPECT_TRUE(net1.has_same_parameters(net2, 1e-3));
 
   for (int i = 0; i < 6; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);

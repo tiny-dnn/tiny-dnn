@@ -26,6 +26,8 @@
 #include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 
+#include "tiny_dnn/util/parameter_init.h"
+
 typedef tiny_dnn::shape3d shape_t;
 
 #if defined(_MSC_VER) || defined(WIN32)
@@ -78,14 +80,14 @@ inline void read_proto_from_binary(const std::string &protobinary,
   }
 }
 
-inline std::shared_ptr<weight_init::function> create_filler(
+inline std::shared_ptr<parameter_init::function> create_filler(
   const std::string &filler) {
   if (filler == "xavier") {
-    return std::make_shared<weight_init::xavier>();
+    return std::make_shared<parameter_init::xavier>();
   } else if (filler == "constant") {
-    return std::make_shared<weight_init::constant>();
+    return std::make_shared<parameter_init::constant>();
   } else if (filler == "gaussian") {
-    return std::make_shared<weight_init::gaussian>();
+    return std::make_shared<parameter_init::gaussian>();
   } else {
     throw nn_error("unsupported filler type");
   }
@@ -139,7 +141,7 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
     pool_size_h, stride_w, stride_h, pad_type);
 
   *top_shape = mp->out_shape()[0];
-  mp->init_weight();
+  mp->init_parameters();
 
   return mp;
 }
@@ -156,17 +158,14 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
     bottom_shape.width_, bottom_shape.height_, bottom_shape.depth_, pool_size_w,
     pool_size_h, stride_w, stride_h, pad_type);
 
-  // tiny-dnn has trainable parameter in average-pooling layer
-  float_t weight = 1.0 / (pool_size_w * pool_size_h);
+  Tensor<> &weights = *ap->weights_at()[0]->data();
+  Tensor<> &bias    = *ap->bias_at()[0]->data();
 
-  Tensor<> &w = *ap->weights()[0];
-  Tensor<> &b = *ap->weights()[1];
-
-  w.fill(weight);
-  b.fill(0.0);
+  weights.fill(1.0 / (pool_size_w * pool_size_h));
+  bias.fill(0.0);
 
   *top_shape = ap->out_shape()[0];
-  ap->init_weight();
+  ap->init_parameters();
   ap->set_trainable(false);
 
   return ap;
@@ -176,7 +175,7 @@ inline std::shared_ptr<layer> create_softmax(const caffe::LayerParameter &layer,
                                              const shape_t &bottom_shape,
                                              shape_t *) {
   auto sm = std::make_shared<softmax_layer>(bottom_shape.size());
-  sm->init_weight();
+  sm->init_parameters();
   return sm;
 }
 
@@ -353,18 +352,16 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
   if (dst_out_size * dst_in_size != static_cast<size_t>(weights.data_size())) {
     throw nn_error(std::string("layer size mismatch!") + "caffe(" + src.name() +
                    "):" + to_string(weights.data_size()) + "\n" + "tiny-dnn(" +
-                   dst->layer_type() + "):" + to_string(dst->weights().size()));
+                   dst->layer_type() +
+                   "):" + to_string(dst->weights_at().size()));
   }
 
-  Tensor<> &w = *dst->weights()[0];
-  Tensor<> &b = *dst->weights()[1];
+  Tensor<> &w = *dst->weights_at()[0]->data();
+  Tensor<> &b = *dst->bias_at()[0]->data();
 
   // fill weights
   for (size_t o = 0; o < dst_out_size; o++) {
     for (size_t i = 0; i < dst_in_size; i++) {
-      // TODO(karandesai): how to access to weights?
-      // dst->weight()[i * dst->out_size() + o] = weights.data(curr++); //
-      // transpose
       w.host_at(i * dst_out_size + o) = weights.data(curr++);  // transpose
     }
   }
@@ -373,8 +370,6 @@ inline void load_weights_fullyconnected(const caffe::LayerParameter &src,
   if (src.inner_product_param().bias_term()) {
     auto biases = src.blobs(1);
     for (size_t o = 0; o < dst_out_size; o++) {
-      // TODO(karandesai): how to access to biases?
-      // dst->bias()[o] = biases.data(o);
       b.host_at(o) = biases.data(o);
     }
   }
@@ -441,8 +436,8 @@ inline void load_weights_conv(const caffe::LayerParameter &src, layer *dst) {
       core::connection_table(conv_param.group(), in_channels, out_channels);
   }
 
-  Tensor<> &w = *dst->weights()[0];
-  Tensor<> &b = *dst->weights()[1];
+  Tensor<> &w = *dst->weights_at()[0]->data();
+  Tensor<> &b = *dst->bias_at()[0]->data();
 
   // fill weights
   for (int o = 0; o < out_channels; o++) {
@@ -504,7 +499,7 @@ inline void load_weights_batchnorm(const caffe::LayerParameter &src,
 inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
   auto pool_param = src.pooling_param();
 
-  if (dst->weights().size()) {
+  if (dst->weights_at().size()) {
     layer_size_t pool_size = 0;
 
     if (!get_kernel_size_2d(pool_param, &pool_size)) {
@@ -514,19 +509,15 @@ inline void load_weights_pool(const caffe::LayerParameter &src, layer *dst) {
     // tiny-dnn has trainable parameter in average-pooling layer
     float_t weight = 1.0 / sqr(pool_size);
 
-    // TODO(karan)
-    /*if (!dst->weight().empty()) {
-        std::fill(dst->weight().begin(), dst->weight().end(), weight);
-    }
-    if (!dst->bias().empty()) {
-        std::fill(dst->bias().begin(), dst->bias().end(), float_t{0});
-        dst->init_bias();
-    }*/
+    dst->weight_init(parameter_init::constant(weight));
+    dst->bias_init(parameter_init::constant(0.0));
+    dst->init_parameters();
 
-    Tensor<> &w = *dst->weights()[0];
-    Tensor<> &b = *dst->weights()[1];
+    Tensor<> &w = *dst->weights_at()[0]->data();
+    Tensor<> &b = *dst->bias_at()[0]->data();
+
     w.fill(weight);
-    b.fill(0.0);
+    b.fill(0);
   }
 }
 

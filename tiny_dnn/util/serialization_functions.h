@@ -601,11 +601,10 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::layer &layer) {
-    auto all_weights = layer.weights();
-    for (auto weight : all_weights) {
-      ar(*weight);
+    auto all_parameters = layer.parameters();
+    for (auto &parameter : all_parameters) {
+      ar(parameter->data()->toVec());
     }
-    layer.initialized_ = true;
   }
 
   template <class Archive>

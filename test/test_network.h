@@ -137,9 +137,9 @@ TEST(network, manual_init) {
 
   adagrad opt;
 
-  Parameter c1_w = net[0]->ith_parameter(0);
-  Parameter c1_b = net[0]->ith_parameter(1);
-  Parameter f1_w = net[1]->ith_parameter(0);
+  Parameter c1_w = net[0]->parameter_at(0);
+  Parameter c1_b = net[0]->parameter_at(1);
+  Parameter f1_w = net[1]->parameter_at(0);
 
   EXPECT_EQ(c1_w.size(), 9u);
   EXPECT_EQ(c1_b.size(), 1u);
@@ -386,8 +386,8 @@ TEST(network, weight_init) {
   net.weight_init(parameter_init::constant(2.0));
   net.init_parameters();
 
-  Parameter w1 = net[0]->ith_parameter(0);
-  Parameter w2 = net[0]->ith_parameter(0);
+  Parameter w1 = net[0]->parameter_at(0);
+  Parameter w2 = net[0]->parameter_at(0);
 
   for (size_t i = 0; i < w1.size(); i++) {
     EXPECT_NEAR(*(w1.data_at(i)), 2.0, 1e-10);
@@ -409,11 +409,10 @@ TEST(network, weight_init_per_layer) {
   net[1]->weight_init(parameter_init::constant(1.0));
   net.init_parameters();
 
-  Tensor<> &w1 = *net[0]->weights()[0];
-  Tensor<> &w2 = *net[1]->weights()[0];
+  Tensor<> &w1 = *net[0]->weights_at()[0]->data();
+  Tensor<> &w2 = *net[1]->weights_at()[0]->data();
 
   for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
-
   for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 1.0, 1e-10);
 }
 
@@ -423,15 +422,14 @@ TEST(network, bias_init) {
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
       << average_pooling_layer(32, 32, 6, 2);
 
-  net.bias_init(weight_init::constant(2.0));
+  net.bias_init(parameter_init::constant(2.0));
   net.init_parameters();
 
-  Tensor<> &w1 = *net[0]->weights()[1];
-  Tensor<> &w2 = *net[1]->weights()[1];
+  Tensor<> &b1 = *net[0]->bias_at()[0]->data();
+  Tensor<> &b2 = *net[1]->bias_at()[0]->data();
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
-
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 2.0, 1e-10);
+  for (size_t i = 0; i < b1.size(); i++) EXPECT_NEAR(b1.host_at(i), 2.0, 1e-10);
+  for (size_t i = 0; i < b2.size(); i++) EXPECT_NEAR(b2.host_at(i), 2.0, 1e-10);
 }
 
 TEST(network, bias_init_per_layer) {
@@ -440,16 +438,15 @@ TEST(network, bias_init_per_layer) {
   net << convolutional_layer(32, 32, 5, 3, 6, padding::same)
       << average_pooling_layer(32, 32, 6, 2);
 
-  net[0]->bias_init(weight_init::constant(2.0));
-  net[1]->bias_init(weight_init::constant(1.0));
+  net[0]->bias_init(parameter_init::constant(2.0));
+  net[1]->bias_init(parameter_init::constant(1.0));
   net.init_parameters();
 
-  Tensor<> &w1 = *net[0]->weights()[1];
-  Tensor<> &w2 = *net[1]->weights()[1];
+  Tensor<> &b1 = *net[0]->bias_at()[0]->data();
+  Tensor<> &b2 = *net[1]->bias_at()[0]->data();
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
-
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 1.0, 1e-10);
+  for (size_t i = 0; i < b1.size(); i++) EXPECT_NEAR(b1.host_at(i), 2.0, 1e-10);
+  for (size_t i = 0; i < b2.size(); i++) EXPECT_NEAR(b2.host_at(i), 1.0, 1e-10);
 }
 
 TEST(network, gradient_check) {  // sigmoid - cross-entropy
@@ -665,8 +662,7 @@ TEST(network, read_write) {
 
   auto res1 = n1.predict(in);
   auto res2 = n2.predict(in);
-
-  ASSERT_TRUE(n1.has_same_weights(n2, epsilon<float_t>()));
+  ASSERT_TRUE(n1.has_same_parameters(n2, epsilon<float_t>()));
 
   for (int i = 0; i < 10; i++) {
     tiny_dnn::float_t eps = std::abs(res1[i]) * 1e-5f;
@@ -681,22 +677,21 @@ TEST(network, trainable) {
 
   // trainable=false, or "freeze" 2nd layer fc(3,2)
   net[2]->set_trainable(false);
-
   vec_t w0 = {0, 1, 2, 3, 4, 5};
   vec_t w2 = {6, 7, 8, 9, 8, 7};
   vec_t w4 = {6, 5};
 
-  *net[0]->weights()[0] = Tensor<>({0., 1., 2., 3., 4., 5.});
-  *net[2]->weights()[0] = Tensor<>({6., 7., 8., 9., 8., 7.});
-  *net[4]->weights()[0] = Tensor<>({6., 5.});
+  net[0]->weights_at()[0]->set_data(Tensor<>({0., 1., 2., 3., 4., 5.}));
+  net[2]->weights_at()[0]->set_data(Tensor<>({6., 7., 8., 9., 8., 7.}));
+  net[4]->weights_at()[0]->set_data(Tensor<>({6., 5.}));
 
   adam a;
 
   net.init_parameters();
 
-  auto w0_standby = *net[0]->weights()[0];
-  auto w2_standby = *net[2]->weights()[0];
-  auto w4_standby = *net[4]->weights()[0];
+  auto w0_standby = *net[0]->weights_at()[0]->data();
+  auto w2_standby = *net[2]->weights_at()[0]->data();
+  auto w4_standby = *net[4]->weights_at()[0]->data();
 
   EXPECT_NE(Tensor<>(w0), w0_standby);
   EXPECT_EQ(Tensor<>(w2), w2_standby);
@@ -707,9 +702,9 @@ TEST(network, trainable) {
 
   net.fit<mse>(a, data, out, 1, 1);
 
-  auto w0_after_update = *net[0]->weights()[0];
-  auto w2_after_update = *net[2]->weights()[0];
-  auto w4_after_update = *net[4]->weights()[0];
+  auto w0_after_update = *net[0]->weights_at()[0]->data();
+  auto w2_after_update = *net[2]->weights_at()[0]->data();
+  auto w4_after_update = *net[4]->weights_at()[0]->data();
 
   EXPECT_NE(Tensor<>(w0), w0_after_update);
   EXPECT_EQ(Tensor<>(w2), w2_after_update);

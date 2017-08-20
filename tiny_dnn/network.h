@@ -483,13 +483,13 @@ class network {
     }
 
     for (auto current : net_) {  // ignore first input layer
-      if (current->weights().size() < 2) {
+      if (current->weights_at().size() < 2) {
         continue;
       }
-      Tensor<> &w = *current->weights()[0];
-      Tensor<> &b = *current->weights()[1];
-      tensor_t dw = (*current->weights_grads()[0]).toTensor();
-      tensor_t db = (*current->weights_grads()[1]).toTensor();
+      Tensor<> &w  = *current->weights_at()[0]->data();
+      Tensor<> &b  = *current->weights_at()[1]->data();
+      Tensor<> &dw = *current->weights_at()[0]->grad();
+      Tensor<> &db = *current->weights_at()[1]->grad();
 
       if (w.empty()) continue;
 
@@ -567,7 +567,6 @@ class network {
   /**
    * set weight initializer to all layers
    **/
-  // todo (karandesai) : remove after parameter integration
   template <typename WeightInit>
   network &weight_init(const WeightInit &f) {
     auto ptr = std::make_shared<WeightInit>(f);
@@ -578,7 +577,6 @@ class network {
   /**
    * set bias initializer to all layers
    **/
-  // todo (karandesai) : remove after parameter integration
   template <typename BiasInit>
   network &bias_init(const BiasInit &f) {
     auto ptr = std::make_shared<BiasInit>(f);
@@ -587,37 +585,17 @@ class network {
   }
 
   /**
-   * set weight initializer to all layers
-   **/
-  template <typename WeightInit>
-  network &weight_init_f(const WeightInit &f) {
-    auto ptr = std::make_shared<WeightInit>(f);
-    for (auto &l : net_) l->weight_init_f(ptr);
-    return *this;
-  }
-
-  /**
-   * set bias initializer to all layers
-   **/
-  template <typename BiasInit>
-  network &bias_init_f(const BiasInit &f) {
-    auto ptr = std::make_shared<BiasInit>(f);
-    for (auto &l : net_) l->bias_init_f(ptr);
-    return *this;
-  }
-
-  /**
-   * returns if 2 networks have almost(<eps) the same weights
+   * returns if 2 networks have almost(<eps) the same parameters
    **/
   template <typename T>
-  bool has_same_weights(const network<T> &rhs, float_t eps) const {
+  bool has_same_parameters(const network<T> &rhs, float_t eps) const {
     auto first1 = net_.begin();
     auto first2 = rhs.net_.begin();
     auto last1  = net_.end();
     auto last2  = rhs.net_.end();
 
     for (; first1 != last1 && first2 != last2; ++first1, ++first2)
-      if (!(*first1)->has_same_weights(**first2, eps)) return false;
+      if (!(*first1)->has_same_parameters(**first2, eps)) return false;
     return true;
   }
 
@@ -838,7 +816,6 @@ class network {
     if (size == 1) {
       bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
       net_.update_parameters(&optimizer, 1);
-      net_.update_weights(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
     }
@@ -869,7 +846,6 @@ class network {
 
     bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
     net_.update_parameters(&optimizer, batch_size);
-    net_.update_weights(&optimizer, batch_size);
   }
 
   vec_t fprop(const vec_t &in) {
@@ -904,7 +880,7 @@ class network {
   bool calc_delta(const std::vector<tensor_t> &in,
                   const std::vector<tensor_t> &v,
                   Tensor<> &w,
-                  tensor_t &dw,
+                  Tensor<> &dw,
                   size_t check_index,
                   double eps) {
     static const float_t delta =
@@ -922,9 +898,7 @@ class network {
 
     // clear previous results, if any
     dw.resize(sample_count, dw[0]);  // TODO(Randl)
-    for (vec_t &dw_sample : dw) {
-      vectorize::fill(&dw_sample[0], dw_sample.size(), float_t(0));
-    }
+    dw.fill(0);
 
     // calculate dw/dE by numeric
     float_t prev_w = w.host_at(check_index);
@@ -949,7 +923,7 @@ class network {
 
     float_t delta_by_bprop = 0;
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      delta_by_bprop += dw[sample][check_index];
+      delta_by_bprop += dw.host_at(sample, check_index);
     }
     net_.clear_grads();
 

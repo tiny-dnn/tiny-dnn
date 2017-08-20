@@ -41,8 +41,8 @@ TEST(lrn, read_write) {
   lrn_layer l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
   lrn_layer l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }

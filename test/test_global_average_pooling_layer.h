@@ -21,8 +21,8 @@ TEST(global_ave_pool, read_write) {
   global_average_pooling_layer l1(100, 100, 5);
   global_average_pooling_layer l2(100, 100, 5);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }

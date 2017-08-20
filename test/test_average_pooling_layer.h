@@ -193,15 +193,14 @@ TEST(ave_pool, backward) {
   }
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration
 TEST(ave_pool, read_write) {
   average_pooling_layer l1(100, 100, 5, 2);
   average_pooling_layer l2(100, 100, 5, 2);
 
-  l1.setup(false);
-  l2.setup(false);
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
-*/
+
 }  // namespace tiny_dnn

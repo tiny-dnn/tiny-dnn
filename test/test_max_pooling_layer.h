@@ -21,8 +21,8 @@ TEST(max_pool, read_write) {
   max_pooling_layer l1(100, 100, 5, 2);
   max_pooling_layer l2(100, 100, 5, 2);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }

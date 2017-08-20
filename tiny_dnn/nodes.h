@@ -98,15 +98,6 @@ class nodes {
     const std::vector<tensor_t> &first) = 0;  // NOLINT
 
   /**
-   * update weights and clear all gradients
-   **/
-  virtual void update_weights(optimizer *opt, int batch_size) {
-    for (auto l : nodes_) {
-      l->update_weight(opt, batch_size);
-    }
-  }
-
-  /**
    * update parameters and clear all gradients
    **/
   virtual void update_parameters(optimizer *opt, int batch_size) {
@@ -175,14 +166,6 @@ class nodes {
     setup(false);
     for (auto &l : nodes_) {
       l->load(is);
-    }
-  }
-
-  virtual void load(const std::vector<float_t> &vec) {
-    int idx = 0;
-    setup(false);
-    for (auto &l : nodes_) {
-      l->load(vec, idx);
     }
   }
 
