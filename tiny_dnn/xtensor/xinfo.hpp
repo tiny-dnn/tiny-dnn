@@ -1,43 +1,52 @@
+/***************************************************************************
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
+*                                                                          *
+* Distributed under the terms of the BSD 3-Clause License.                 *
+*                                                                          *
+* The full license is in the file LICENSE, distributed with this software. *
+****************************************************************************/
+
 #include <string>
-
-struct static_string
-{
-    template <std::size_t N>
-    constexpr static_string(const char(&a)[N]) noexcept
-        : data(a), size(N-1)
-    {
-    }
-
-    constexpr static_string(const char* a, const std::size_t sz) noexcept
-        : data(a), size(sz)
-    {
-    }
-
-    const char* const data;
-    const std::size_t size;
-};
-
-template <class T>
-constexpr static_string type_name()
-{
-#ifdef __clang__
-    static_string p = __PRETTY_FUNCTION__;
-    return static_string(p.data + 31, p.size - 31 - 1);
-#elif defined(__GNUC__)
-    static_string p = __PRETTY_FUNCTION__;
-#  if __cplusplus < 201402
-    return static_string(p.data + 36, p.size - 36 - 1);
-#  else
-    return static_string(p.data + 46, p.size - 46 - 1);
-#  endif
-#elif defined(_MSC_VER)
-    static_string p = __FUNCSIG__;
-    return static_string(p.data + 38, p.size - 38 - 7);
-#endif
-}
 
 namespace xt
 {
+    // see http://stackoverflow.com/a/20170989
+    struct static_string
+    {
+        template <std::size_t N>
+        constexpr static_string(const char (&a)[N]) noexcept
+            : data(a), size(N - 1)
+        {
+        }
+
+        constexpr static_string(const char* a, const std::size_t sz) noexcept
+            : data(a), size(sz)
+        {
+        }
+
+        const char* const data;
+        const std::size_t size;
+    };
+
+    template <class T>
+    constexpr static_string type_name()
+    {
+#ifdef __clang__
+        static_string p = __PRETTY_FUNCTION__;
+        return static_string(p.data + 31, p.size - 31 - 1);
+#elif defined(__GNUC__)
+        static_string p = __PRETTY_FUNCTION__;
+#if __cplusplus < 201402
+        return static_string(p.data + 36, p.size - 36 - 1);
+#else
+        return static_string(p.data + 46, p.size - 46 - 1);
+#endif
+#elif defined(_MSC_VER)
+        static_string p = __FUNCSIG__;
+        return static_string(p.data + 38, p.size - 38 - 7);
+#endif
+    }
+
     template <class T>
     constexpr std::string type_to_string()
     {
@@ -78,7 +87,7 @@ namespace xt
         }
         s += "\nShape: (";
         bool first = true;
-        for (auto& el : t.shape())
+        for (const auto& el : t.shape())
         {
             if (!first)
             {
@@ -89,7 +98,7 @@ namespace xt
         }
         s += ")\nStrides: (";
         first = true;
-        for (auto& el : t.strides())
+        for (const auto& el : t.strides())
         {
             if (!first)
             {

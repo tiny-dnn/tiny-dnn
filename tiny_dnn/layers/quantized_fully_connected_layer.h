@@ -59,8 +59,8 @@ class quantized_fully_connected_layer : public layer {
     return {shape3d(params_.out_size_, 1, 1)};
   }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     if (in_data.size() == 2 || in_data.size() == 3) {
       layer::backend_->fully_q(in_data, out_data);
 
@@ -69,10 +69,10 @@ class quantized_fully_connected_layer : public layer {
     }
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     layer::backend_->fully_q(in_data, out_data, out_grad, in_grad);
   }
 

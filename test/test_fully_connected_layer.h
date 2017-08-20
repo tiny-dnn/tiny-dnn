@@ -47,11 +47,11 @@ TEST(fully_connected, forward) {
   // clang-format on
   vec_t expected = {24, 42};
 
-  l.weights_at()[0]->set_data(Tensor<float_t>(weights));
-  l.bias_at()[0]->set_data(Tensor<float_t>(bias));
+  l.weights_at()[0]->set_data(Tensor<>(weights));
+  l.bias_at()[0]->set_data(Tensor<>(bias));
 
-  auto out     = l.forward({{in}});
-  vec_t result = (*out[0])[0];
+  auto out     = l.forward({{Tensor<>(tensor_t{{in}})}});
+  vec_t result = out[0]->toVec();
 
   for (size_t i = 0; i < result.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], result[i]);
@@ -256,9 +256,10 @@ TEST(fully_connected, forward_nobias) {
   l.weight_init_f(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
-  std::vector<const tensor_t *> o;
-  l.forward({{in}}, o);
-  vec_t out          = (*o[0])[0];
+  std::vector<const Tensor<> *> o;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, o);
+  // vec_t out = o[0]->toVec();
+  vec_t out          = (*o[0]).toTensor()[0];
   vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {

@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -21,7 +21,6 @@ namespace xt
     template <class CT>
     class xaxis_iterator
     {
-
     public:
 
         using self_type = xaxis_iterator<CT>;
@@ -158,7 +157,7 @@ namespace xt
         return nullptr;
     }
 
-    template<class CT>
+    template <class CT>
     inline bool xaxis_iterator<CT>::equal(const self_type& rhs) const
     {
         return p_expression == rhs.p_expression && m_index == rhs.m_index;

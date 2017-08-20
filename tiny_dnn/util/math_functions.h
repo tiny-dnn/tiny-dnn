@@ -25,12 +25,12 @@ namespace detail {
 inline void moments_impl_calc_mean(size_t num_examples,
                                    size_t channels,
                                    size_t spatial_dim,
-                                   const tensor_t &in,
+                                   const Tensor<> &in,
                                    vec_t &mean) {
   for (size_t i = 0; i < num_examples; i++) {
     for (size_t j = 0; j < channels; j++) {
       float_t &rmean = mean.at(j);
-      const auto it  = in[i].begin() + (j * spatial_dim);
+      const auto it  = in.host_pointer(i, 0) + (j * spatial_dim);
       rmean          = std::accumulate(it, it + spatial_dim, rmean);
     }
   }
@@ -39,14 +39,14 @@ inline void moments_impl_calc_mean(size_t num_examples,
 inline void moments_impl_calc_variance(size_t num_examples,
                                        size_t channels,
                                        size_t spatial_dim,
-                                       const tensor_t &in,
+                                       const Tensor<> &in,
                                        const vec_t &mean,
                                        vec_t &variance) {
   assert(mean.size() >= channels);
   for (size_t i = 0; i < num_examples; i++) {
     for (size_t j = 0; j < channels; j++) {
       float_t &rvar    = variance[j];
-      const auto it    = in[i].begin() + (j * spatial_dim);
+      const auto it    = in.host_pointer(i, 0) + (j * spatial_dim);
       const float_t ex = mean[j];
       rvar             = std::accumulate(it, it + spatial_dim, rvar,
                              [ex](float_t current, float_t x) {
@@ -65,12 +65,12 @@ inline void moments_impl_calc_variance(size_t num_examples,
 /**
  * calculate mean/variance across channels
  */
-inline void moments(const tensor_t &in,
+inline void moments(const Tensor<> &in,
                     size_t spatial_dim,
                     size_t channels,
                     vec_t &mean) {
-  const size_t num_examples = in.size();
-  assert(in[0].size() == spatial_dim * channels);
+  const size_t num_examples = in.shape()[0];
+  assert(in.shape()[1] == spatial_dim * channels);
 
   mean.resize(channels);
   vectorize::fill(&mean[0], mean.size(), float_t{0.0});
@@ -78,14 +78,13 @@ inline void moments(const tensor_t &in,
   vector_div(mean, (float_t)num_examples * spatial_dim);
 }
 
-inline void moments(const tensor_t &in,
+inline void moments(const Tensor<> &in,
                     size_t spatial_dim,
                     size_t channels,
                     vec_t &mean,
                     vec_t &variance) {
-  const size_t num_examples = in.size();
-  assert(in[0].size() == spatial_dim * channels);
-
+  const size_t num_examples = in.shape()[0];
+  assert(in.shape()[1] == spatial_dim * channels);
   // calc mean
   moments(in, spatial_dim, channels, mean);
 

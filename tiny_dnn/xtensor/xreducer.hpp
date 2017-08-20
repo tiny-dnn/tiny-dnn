@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -68,10 +68,6 @@ namespace xt
         using inner_shape_type = typename xreducer_shape_type<typename xexpression_type::shape_type, X>::type;
         using const_stepper = xreducer_stepper<F, CT, X>;
         using stepper = const_stepper;
-        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
-        using iterator = const_iterator;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
     };
 
     /**
@@ -90,9 +86,8 @@ namespace xt
      */
     template <class F, class CT, class X>
     class xreducer : public xexpression<xreducer<F, CT, X>>,
-                     public xexpression_const_iterable<xreducer<F, CT, X>>
+                     public xconst_iterable<xreducer<F, CT, X>>
     {
-
     public:
 
         using self_type = xreducer<F, CT, X>;
@@ -109,7 +104,7 @@ namespace xt
         using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
 
-        using iterable_base = xexpression_const_iterable<self_type>;
+        using iterable_base = xconst_iterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
         using shape_type = inner_shape_type;
 
@@ -144,7 +139,7 @@ namespace xt
         template <class S>
         const_stepper stepper_begin(const S& shape) const noexcept;
         template <class S>
-        const_stepper stepper_end(const S& shape) const noexcept;
+        const_stepper stepper_end(const S& shape, layout_type) const noexcept;
 
     private:
 
@@ -214,7 +209,6 @@ namespace xt
     template <class F, class CT, class X>
     class xreducer_stepper
     {
-
     public:
 
         using self_type = xreducer_stepper<F, CT, X>;
@@ -230,7 +224,7 @@ namespace xt
         using substepper_type = typename xexpression_type::const_stepper;
         using shape_type = typename xreducer_type::shape_type;
 
-        xreducer_stepper(const xreducer_type& red, size_type offset, bool end = false);
+        xreducer_stepper(const xreducer_type& red, size_type offset, bool end = false, layout_type l = layout_type::row_major);
 
         reference operator*() const;
 
@@ -240,7 +234,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type l);
 
         bool equal(const self_type& rhs) const;
 
@@ -287,8 +281,8 @@ namespace xt
     {
         template <class InputIt, class ExcludeIt, class OutputIt>
         inline void excluding_copy(InputIt first, InputIt last,
-            ExcludeIt e_first, ExcludeIt e_last,
-            OutputIt d_first, OutputIt map_first)
+                                   ExcludeIt e_first, ExcludeIt e_last,
+                                   OutputIt d_first, OutputIt map_first)
         {
             using difference_type = typename std::iterator_traits<InputIt>::difference_type;
             InputIt iter = first;
@@ -399,7 +393,7 @@ namespace xt
     template <class... Args>
     inline auto xreducer<F, CT, X>::operator()(Args... args) const -> const_reference
     {
-        std::array<std::size_t, sizeof...(Args)> arg_array = {static_cast<std::size_t>(args)...};
+        std::array<std::size_t, sizeof...(Args)> arg_array = {{static_cast<std::size_t>(args)...}};
         return element(arg_array.cbegin(), arg_array.cend());
     }
 
@@ -425,7 +419,7 @@ namespace xt
      * Returns a constant reference to the element at the specified position in the reducer.
      * @param first iterator starting the sequence of indices
      * @param last iterator ending the sequence of indices
-     * The number of indices in the squence should be equal to or greater
+     * The number of indices in the sequence should be equal to or greater
      * than the number of dimensions of the reducer.
      */
     template <class F, class CT, class X>
@@ -481,10 +475,10 @@ namespace xt
 
     template <class F, class CT, class X>
     template <class S>
-    inline auto xreducer<F, CT, X>::stepper_end(const S& shape) const noexcept -> const_stepper
+    inline auto xreducer<F, CT, X>::stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
     {
         size_type offset = shape.size() - dimension();
-        return const_stepper(*this, offset, true);
+        return const_stepper(*this, offset, true, l);
     }
 
     /***********************************
@@ -492,13 +486,13 @@ namespace xt
      ***********************************/
 
     template <class F, class CT, class X>
-    inline xreducer_stepper<F, CT, X>::xreducer_stepper(const xreducer_type& red, size_type offset, bool end)
+    inline xreducer_stepper<F, CT, X>::xreducer_stepper(const xreducer_type& red, size_type offset, bool end, layout_type l)
         : m_reducer(red), m_offset(offset),
           m_stepper(get_substepper_begin())
     {
         if (end)
         {
-            to_end();
+            to_end(l);
         }
     }
 
@@ -544,9 +538,9 @@ namespace xt
     }
 
     template <class F, class CT, class X>
-    inline void xreducer_stepper<F, CT, X>::to_end()
+    inline void xreducer_stepper<F, CT, X>::to_end(layout_type l)
     {
-        m_stepper.to_end();
+        m_stepper.to_end(l);
     }
 
     template <class F, class CT, class X>

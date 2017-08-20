@@ -77,8 +77,8 @@ class slice_layer : public layer {
 
   std::vector<shape3d> out_shape() const override { return out_shapes_; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     switch (slice_type_) {
       case slice_type::slice_samples:
         slice_data_forward(*in_data[0], out_data);
@@ -90,10 +90,10 @@ class slice_layer : public layer {
     }
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
 
@@ -113,42 +113,42 @@ class slice_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  void slice_data_forward(const tensor_t &in_data,
-                          std::vector<tensor_t *> &out_data) {
-    const vec_t *in = &in_data[0];
+  void slice_data_forward(const Tensor<> &in_data,
+                          std::vector<Tensor<> *> &out_data) {
+    for (size_t i = 0, index = 0; i < num_outputs_;
+         index += slice_size_[i], ++i) {
+      auto in_view = in_data.subView(TensorRange(index, index + slice_size_[i]),
+                                     TensorAll());
+      auto out_view =
+        out_data[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
 
-    for (size_t i = 0; i < num_outputs_; i++) {
-      tensor_t &out = *out_data[i];
-
-      std::copy(in, in + slice_size_[i], &out[0]);
-
-      in += slice_size_[i];
+      out_view.assign(in_view);
     }
   }
 
-  void slice_data_backward(std::vector<tensor_t *> &out_grad,
-                           tensor_t &in_grad) {
-    vec_t *in = &in_grad[0];
-
-    for (size_t i = 0; i < num_outputs_; i++) {
-      tensor_t &out = *out_grad[i];
-
-      std::copy(&out[0], &out[0] + slice_size_[i], in);
-
-      in += slice_size_[i];
+  void slice_data_backward(std::vector<Tensor<> *> &out_grad,
+                           Tensor<> &in_grad) {
+    for (size_t i = 0, index = 0; i < num_outputs_;
+         index += slice_size_[i], ++i) {
+      auto in_view = in_grad.subView(TensorRange(index, index + slice_size_[i]),
+                                     TensorAll());
+      auto out_view =
+        out_grad[i]->subView(TensorRange(0, slice_size_[i]), TensorAll());
+      in_view.assign(out_view);
     }
   }
 
-  void slice_channels_forward(const tensor_t &in_data,
-                              std::vector<tensor_t *> &out_data) {
+  void slice_channels_forward(const Tensor<> &in_data,
+                              std::vector<Tensor<> *> &out_data) {
     size_t channel_idx       = 0;
-    const size_t num_samples = in_data.size();
+    const size_t num_samples = in_data.shape()[0];
     const size_t spatial_dim = in_shape_.area();
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
-        float_t *out      = &(*out_data[i])[s][0];
-        const float_t *in = &in_data[s][0] + channel_idx * spatial_dim;
+        float_t *out = out_data[i]->host_pointer(s, 0);
+        const float_t *in =
+          in_data.host_pointer(s, 0) + channel_idx * spatial_dim;
 
         std::copy(in, in + slice_size_[i] * spatial_dim, out);
       }
@@ -156,16 +156,16 @@ class slice_layer : public layer {
     }
   }
 
-  void slice_channels_backward(std::vector<tensor_t *> &out_grad,
-                               tensor_t &in_grad) {
+  void slice_channels_backward(std::vector<Tensor<> *> &out_grad,
+                               Tensor<> &in_grad) {
     size_t channel_idx       = 0;
-    const size_t num_samples = in_grad.size();
+    const size_t num_samples = in_grad.shape()[0];
     const size_t spatial_dim = in_shape_.area();
 
     for (size_t i = 0; i < num_outputs_; i++) {
       for (size_t s = 0; s < num_samples; s++) {
-        const float_t *out = &(*out_grad[i])[s][0];
-        float_t *in        = &in_grad[s][0] + channel_idx * spatial_dim;
+        const float_t *out = out_grad[i]->host_pointer(s, 0);
+        float_t *in = in_grad.host_pointer(s, 0) + channel_idx * spatial_dim;
 
         std::copy(out, out + slice_size_[i] * spatial_dim, in);
       }

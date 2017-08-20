@@ -28,12 +28,12 @@ TEST(power, forward) {
                            {5 * 5 * 1.5, 4 * 4 * 1.5, 3 * 3 * 1.5, 2 * 2 * 1.5,
                             1 * 1 * 1.5, 0 * 0 * 1.5}};
 
-  std::vector<const tensor_t*> out;
-  pw.forward({in}, out);
+  std::vector<const Tensor<>*> out;
+  pw.forward({Tensor<>(in)}, out);
 
   for (size_t i = 0; i < 6; i++) {
-    EXPECT_FLOAT_EQ(out_expected[0][i], (*out[0])[0][i]);
-    EXPECT_FLOAT_EQ(out_expected[1][i], (*out[0])[1][i]);
+    EXPECT_FLOAT_EQ(out_expected[0][i], (*out[0]).toTensor()[0][i]);
+    EXPECT_FLOAT_EQ(out_expected[1][i], (*out[0]).toTensor()[1][i]);
   }
 }
 

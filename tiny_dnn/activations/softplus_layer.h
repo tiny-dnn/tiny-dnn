@@ -81,23 +81,30 @@ class softplus_layer : public activation_layer {
 
   float_t threshold_value() const { return threshold_; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      float_t betain = beta_ * x[j];
-      y[j]           = (betain > threshold_) ? x[j]
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx = x.host_begin();
+    auto ity = y.host_begin();
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      float_t betain = beta_ * *itx;
+
+      *ity = (betain > threshold_) ? *itx
                                    : (1 / beta_) * std::log1p(std::exp(betain));
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      float_t betaout = beta_ * y[j];
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    auto itx  = x.host_begin();
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    auto itdy = dy.host_begin();
+    for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
+      float_t betaout = beta_ * *ity;
       float_t exp_bo  = std::exp(betaout);
       // dx = dy * (gradient of softplus)
-      dx[j] = (betaout > threshold_) ? dy[j] : dy[j] * (exp_bo - 1) / exp_bo;
+      *itdx = (betaout > threshold_) ? *itdy : *itdy * (exp_bo - 1) / exp_bo;
     }
   }
 

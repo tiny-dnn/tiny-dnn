@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -39,10 +39,6 @@ namespace xt
         using inner_shape_type = std::array<std::size_t, 1>;
         using const_stepper = xindexed_stepper<xindexview<CT, I>>;
         using stepper = xindexed_stepper<xindexview<CT, I>, false>;
-        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
-        using iterator = xiterator<stepper, inner_shape_type*, DEFAULT_LAYOUT>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
     };
 
     /**************
@@ -65,9 +61,8 @@ namespace xt
      */
     template <class CT, class I>
     class xindexview : public xview_semantic<xindexview<CT, I>>,
-                       public xexpression_iterable<xindexview<CT, I>>
+                       public xiterable<xindexview<CT, I>>
     {
-
     public:
 
         using self_type = xindexview<CT, I>;
@@ -82,7 +77,7 @@ namespace xt
         using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
 
-        using iterable_base = xexpression_iterable<self_type>;
+        using iterable_base = xiterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
         using shape_type = inner_shape_type;
         using strides_type = shape_type;
@@ -139,12 +134,12 @@ namespace xt
         template <class ST>
         stepper stepper_begin(const ST& shape);
         template <class ST>
-        stepper stepper_end(const ST& shape);
+        stepper stepper_end(const ST& shape, layout_type);
 
         template <class ST>
         const_stepper stepper_begin(const ST& shape) const;
         template <class ST>
-        const_stepper stepper_end(const ST& shape) const;
+        const_stepper stepper_end(const ST& shape, layout_type) const;
 
     private:
 
@@ -152,7 +147,7 @@ namespace xt
         const indices_type m_indices;
         const inner_shape_type m_shape;
 
-        void assign_temporary_impl(temporary_type& tmp);
+        void assign_temporary_impl(temporary_type&& tmp);
 
         friend class xview_semantic<xindexview<CT, I>>;
     };
@@ -182,7 +177,6 @@ namespace xt
     template <class ECT, class CCT>
     class xfiltration
     {
-
     public:
 
         using self_type = xfiltration<ECT, CCT>;
@@ -262,9 +256,9 @@ namespace xt
     }
 
     template <class CT, class I>
-    inline void xindexview<CT, I>::assign_temporary_impl(temporary_type& tmp)
+    inline void xindexview<CT, I>::assign_temporary_impl(temporary_type&& tmp)
     {
-        std::copy(tmp.cbegin(), tmp.cend(), this->xbegin());
+        std::copy(tmp.cbegin(), tmp.cend(), this->begin());
     }
 
     /**
@@ -367,7 +361,7 @@ namespace xt
     /**
      * Returns a reference to the element at the specified position in the xindexview.
      * @param first iterator starting the sequence of indices
-     * The number of indices in the squence should be equal to or greater 1.
+     * The number of indices in the sequence should be equal to or greater 1.
      */
     template <class CT, class I>
     template <class It>
@@ -427,7 +421,7 @@ namespace xt
 
     template <class CT, class I>
     template <class ST>
-    inline auto xindexview<CT, I>::stepper_end(const ST& shape) -> stepper
+    inline auto xindexview<CT, I>::stepper_end(const ST& shape, layout_type) -> stepper
     {
         size_type offset = shape.size() - dimension();
         return stepper(this, offset, true);
@@ -443,7 +437,7 @@ namespace xt
 
     template <class CT, class I>
     template <class ST>
-    inline auto xindexview<CT, I>::stepper_end(const ST& shape) const -> const_stepper
+    inline auto xindexview<CT, I>::stepper_end(const ST& shape, layout_type) const -> const_stepper
     {
         size_type offset = shape.size() - dimension();
         return const_stepper(this, offset, true);

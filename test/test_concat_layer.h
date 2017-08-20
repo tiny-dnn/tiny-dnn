@@ -46,8 +46,8 @@ TEST(concat, forward_data) {
     };
 
     tensor_t out_expected = {
-        { 0, 1, 2, 3, 4, 5 },
-        { 6, 7, 8, 9, 10, 11 },
+        { 0,   1,  2,  3,  4,  5 },
+        { 6,   7,  8,  9, 10, 11 },
         { 12, 13, 14, 15, 16, 17 },
         { 18, 19, 20, 21, 22, 23 }
     };
@@ -55,24 +55,24 @@ TEST(concat, forward_data) {
   // clang-format on
 
   {
-    std::vector<const tensor_t*> out;
-    cl.forward({in0, in1, in2}, out);
+    std::vector<const Tensor<>*> out;
+    cl.forward({Tensor<>(in0), Tensor<>(in1), Tensor<>(in2)}, out);
 
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 2; j++) {
-        EXPECT_FLOAT_EQ(out_expected[i][j], (*out[0])[i][j]);
+        EXPECT_FLOAT_EQ(out_expected[i][j], (*out[0]).host_at(i, j));
       }
     }
   }
 
   {
-    auto out = cl.backward({out_expected});
+    auto out = cl.backward({Tensor<>(out_expected)});
 
     for (size_t i = 0; i < 4; i++) {
       for (size_t j = 0; j < 2; j++) {
-        EXPECT_FLOAT_EQ(in0[i][j], out[0][i][j]);
-        EXPECT_FLOAT_EQ(in1[i][j], out[1][i][j]);
-        EXPECT_FLOAT_EQ(in2[i][j], out[2][i][j]);
+        EXPECT_FLOAT_EQ(in0[i][j], out[0].host_at(i, j));
+        EXPECT_FLOAT_EQ(in1[i][j], out[1].host_at(i, j));
+        EXPECT_FLOAT_EQ(in2[i][j], out[2].host_at(i, j));
       }
     }
   }

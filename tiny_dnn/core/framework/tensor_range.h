@@ -19,6 +19,12 @@ class TensorRangeClass {
   xt::xrange<T> range;
 };
 
+/**
+ * Continuoius range of current axis
+ * @param begin
+ * @param end
+ * @return
+ */
 inline TensorRangeClass<size_t> TensorRange(const size_t begin,
                                             const size_t end) {
   return TensorRangeClass<size_t>(begin, end);
@@ -34,6 +40,11 @@ class TensorSingleIndexClass {
   T range;
 };
 
+/**
+ * Single index of current axis. Reduces dimensions by 1
+ * @param index
+ * @return
+ */
 inline TensorSingleIndexClass<size_t> TensorSingleIndex(const size_t index) {
   return TensorSingleIndexClass<size_t>(index);
 }
@@ -44,5 +55,9 @@ class TensorAllClass {
   xt::xall_tag get_range() { return xt::all(); }
 };
 
+/**
+ * All indexes of current axis
+ * @return
+ */
 inline TensorAllClass<size_t> TensorAll() { return TensorAllClass<size_t>(); }
 }  // namespace tiny_dnn

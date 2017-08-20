@@ -21,6 +21,8 @@
 
 #include "tiny_dnn/core/backend.h"
 #include "tiny_dnn/core/framework/device.fwd.h"
+#include "tiny_dnn/core/framework/tensor.h"
+#include "tiny_dnn/core/framework/tensor_utils.h"
 #include "tiny_dnn/node.h"
 #include "tiny_dnn/parameter.h"
 
@@ -76,7 +78,7 @@ class layer : public node {
     weight_init_f_   = std::make_shared<parameter_init::xavier>();
     bias_init_f_     = std::make_shared<parameter_init::constant>();
     trainable_       = true;
-    parameters_diff_ = Tensor<float_t>();
+    parameters_diff_ = Tensor<>();
   }
 
   layer(const layer &) = default;
@@ -161,8 +163,8 @@ class layer : public node {
   ///! @deprecated use out_data_size() instead
   size_t out_size() const { return out_data_size(); }
 
-  std::vector<const vec_t *> weights() const {
-    std::vector<const vec_t *> v;
+  std::vector<const Tensor<> *> weights() const {
+    std::vector<const Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(get_weight_data(i));
@@ -171,8 +173,8 @@ class layer : public node {
     return v;
   }
 
-  std::vector<vec_t *> weights() {
-    std::vector<vec_t *> v;
+  std::vector<Tensor<> *> weights() {
+    std::vector<Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(get_weight_data(i));
@@ -181,8 +183,8 @@ class layer : public node {
     return v;
   }
 
-  std::vector<tensor_t *> weights_grads() {
-    std::vector<tensor_t *> v;
+  std::vector<Tensor<> *> weights_grads() {
+    std::vector<Tensor<> *> v;
     for (size_t i = 0; i < in_channels_; i++) {
       if (is_trainable_weight(in_type_[i])) {
         v.push_back(ith_in_node(i)->get_gradient());
@@ -220,13 +222,15 @@ class layer : public node {
     size_t n = 0;
     for (size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] != vector_type::data) continue;
-      tensor_t &dst_grad = *ith_out_node(i)->get_gradient();
+      Tensor<> &dst_grad = *ith_out_node(i)->get_gradient();
       assert(n < cnt);
       const auto &src_grad = grad[n++];
       size_t sz            = src_grad.size();
-      dst_grad.resize(sz);
+      dst_grad.reshape({sz, src_grad[0]->size()});
       for (size_t j = 0; j < sz; ++j) {
-        dst_grad[j] = *src_grad[j];
+        // TODO(Randl)
+        std::copy(src_grad[j]->begin(), src_grad[j]->end(),
+                  dst_grad.host_iter(j, 0));
       }
     }
   }
@@ -236,18 +240,20 @@ class layer : public node {
     size_t n = 0;
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
-      tensor_t &dst_data = *ith_in_node(i)->get_data();
+      Tensor<> &dst_data = *ith_in_node(i)->get_data();
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
-      dst_data.resize(sz);
+      dst_data.reshape({sz, src_data[0]->size()});
       for (size_t j = 0; j < sz; ++j) {
-        dst_data[j] = *src_data[j];
+        // TODO(Randl)
+        std::copy(src_data[j]->begin(), src_data[j]->end(),
+                  dst_data.host_iter(j, 0));
       }
     }
   }
 
-  void output(std::vector<const tensor_t *> &out) const {
+  void output(std::vector<const Tensor<> *> &out) const {
     out.clear();
     for (size_t i = 0; i < out_channels_; i++) {
       if (out_type_[i] == vector_type::data) {
@@ -493,7 +499,8 @@ class layer : public node {
     os << std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto w : *weight) os << w << " ";
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        os << *it << " ";
     }
   }
 
@@ -504,7 +511,8 @@ class layer : public node {
     is >> std::setprecision(precision);
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto &w : *weight) is >> w;
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        is >> *it;
     }
     initialized_ = true;
   }
@@ -512,7 +520,8 @@ class layer : public node {
   virtual void load(const std::vector<float_t> &src, int &idx) {  // NOLINT
     auto all_weights = weights();
     for (auto &weight : all_weights) {
-      for (auto &w : *weight) w = src[idx++];
+      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
+        *it = src[idx++];
     }
     initialized_ = true;
   }
@@ -526,7 +535,8 @@ class layer : public node {
 /// visualization.
 #ifdef DNN_USE_IMAGE_API
   virtual image<> output_to_image(size_t channel = 0) const {
-    const vec_t *output = &(*(outputs()[channel]->get_data()))[0];
+    // TODO(Randl)
+    const vec_t *output = &(*(outputs()[channel]->get_data())).toTensor()[0];
     return vec2image<unsigned char>(*output, out_shape()[channel]);
   }
 #endif
@@ -538,8 +548,8 @@ class layer : public node {
    * @param in_data  input vectors of this layer (data, weight, bias)
    * @param out_data output vectors
    **/
-  virtual void forward_propagation(const std::vector<tensor_t *> &in_data,
-                                   std::vector<tensor_t *> &out_data) = 0;
+  virtual void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                                   std::vector<Tensor<> *> &out_data) = 0;
 
   /**
    * return delta of previous layer (delta=\frac{dE}{da}, a=wx in
@@ -551,10 +561,10 @@ class layer : public node {
    * @param in_grad  gradient of input vectors (i-th vector correspond with
    *in_data[i])
    **/
-  virtual void back_propagation(const std::vector<tensor_t *> &in_data,
-                                const std::vector<tensor_t *> &out_data,
-                                std::vector<tensor_t *> &out_grad,
-                                std::vector<tensor_t *> &in_grad) = 0;
+  virtual void back_propagation(const std::vector<Tensor<> *> &in_data,
+                                const std::vector<Tensor<> *> &out_data,
+                                std::vector<Tensor<> *> &out_grad,
+                                std::vector<Tensor<> *> &in_grad) = 0;
 
   /**
    * return delta2 of previous layer (delta2=\frac{d^2E}{da^2}, diagonal of
@@ -573,9 +583,9 @@ class layer : public node {
   virtual void set_context(net_phase ctx) { CNN_UNREFERENCED_PARAMETER(ctx); }
 
   // convenience wrapper for function below
-  std::vector<const tensor_t *> forward(
-    const std::vector<tensor_t> &input) {  // for test
-    std::vector<const tensor_t *> output;
+  std::vector<const Tensor<> *> forward(
+    const std::vector<Tensor<>> &input) {  // for test
+    std::vector<const Tensor<> *> output;
     forward(input, output);
     return output;
   }
@@ -583,7 +593,7 @@ class layer : public node {
   /* @brief Performs layer forward operation given an input tensor and
    * returns the computed data in tensor form.
    *
-   * @param input Vector of `tensor_t` with incoming data.
+   * @param input Vector of `Tensor<>` with incoming data.
    *
    * Internally, it first allocates data without resetting the weights,
    * forwards the input data to the computational graph, inside the
@@ -594,18 +604,23 @@ class layer : public node {
    * graph. Will be this overhead reduced once we have the Tensor
    * class integrated?
    */
-  void forward(const std::vector<tensor_t> &input,
-               std::vector<const tensor_t *> &out) {  // for test
-    // allocate data in the computational graph without
-    // resetting the weights.
+  void forward(const std::vector<Tensor<>> &input,
+               std::vector<const Tensor<> *> &out) {  // for test
+    // allocate data in the computational graph without resetting the weights.
     setup(false);
 
     std::vector<std::vector<const vec_t *>> input2;
+    std::vector<std::vector<vec_t>> input2_st;  // TODO(Randl) temporary
     input2.resize(input.size());
+    input2_st.resize(input.size());
     for (size_t i = 0; i < input.size(); ++i) {
-      input2[i].resize(input[i].size());
-      for (size_t j = 0; j < input[i].size(); ++j) {
-        input2[i][j] = &input[i][j];
+      input2[i].resize(input[i].shape()[0]);
+      input2_st[i].resize(input[i].shape()[0]);
+      for (size_t j = 0; j < input[i].shape()[0]; ++j) {
+        assert(input[i].shape().size() == 2);
+        // TODO(Randl)
+        input2_st[i][j] = input[i].lineToVec(j);
+        input2[i][j]    = &input2_st[i][j];
       }
     }
 
@@ -618,22 +633,28 @@ class layer : public node {
     output(out);
   }
 
-  std::vector<tensor_t> backward(
-    const std::vector<tensor_t> &out_grads) {  // for test
+  std::vector<Tensor<>> backward(
+    const std::vector<Tensor<>> &out_grads) {  // for test
     setup(false);
 
     std::vector<std::vector<const vec_t *>> grads2;
+    std::vector<std::vector<vec_t>> grads2_st;  // TODO(Randl) temporary
     grads2.resize(out_grads.size());
+    grads2_st.resize(out_grads.size());
     for (size_t i = 0; i < out_grads.size(); ++i) {
-      grads2[i].resize(out_grads[i].size());
-      for (size_t j = 0; j < out_grads[i].size(); ++j) {
-        grads2[i][j] = &out_grads[i][j];
+      grads2[i].resize(out_grads[i].shape()[0]);
+      grads2_st[i].resize(out_grads[i].shape()[0]);
+      for (size_t j = 0; j < out_grads[i].shape()[0]; ++j) {
+        assert(out_grads[i].shape().size() == 2);
+        // TODO(Randl)
+        grads2_st[i][j] = out_grads[i].lineToVec(j);
+        grads2[i][j]    = &grads2_st[i][j];
       }
     }
 
     set_out_grads(&grads2[0], grads2.size());
     backward();
-    return map_<tensor_t>(inputs(),
+    return map_<Tensor<>>(inputs(),
                           [](edgeptr_t e) { return *e->get_gradient(); });
   }
 
@@ -646,9 +667,9 @@ class layer : public node {
    * Additionally, the sample count a.k.a number of batches is set.
    *
    * Note: in_data and out_data attempt to contain tensors. However, they
-   * are not real tensors since tensor_t have three dimensions instead of
+   * are not real tensors since Tensor<> have three dimensions instead of
    * four. For this reason they are embedded in to std::vector. Also note
-   * that when std::vector<tensor_t*> it's constructed we cannot assure
+   * that when std::vector<Tensor<>*> it's constructed we cannot assure
    * that data is contiguous.
    *
    * After Tensor class integration we should be able to avoid to have
@@ -669,9 +690,8 @@ class layer : public node {
       fwd_in_data_[i] = ith_in_node(i)->get_data();
     }
 
-    // resize outs and stuff to have room for every input sample in
-    // the batch
-    set_sample_count(fwd_in_data_[0]->size());
+    // resize outs and stuff to have room for every input sample in the batch
+    set_sample_count(fwd_in_data_[0]->shape()[0]);
 
     // Internally ith_out_node() will create a connection/edge to the
     // computational graph and will allocate memory in case that it's not
@@ -703,6 +723,7 @@ class layer : public node {
       bwd_out_data_[i] = nd->get_data();
       bwd_out_grad_[i] = nd->get_gradient();
     }
+
     back_propagation(bwd_in_data_, bwd_out_data_, bwd_out_grad_, bwd_in_grad_);
   }
 
@@ -851,13 +872,13 @@ class layer : public node {
     auto &diff             = weights_diff_;
     for (size_t i = 0; i < in_type_.size(); i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
-        vec_t &target = *get_weight_data(i);
+        Tensor<> &target = *get_weight_data(i);
         ith_in_node(i)->merge_grads(&diff);
         for (size_t j = 0; j < diff.size(); ++j) {
           diff[j] *= rcp_batch_size;
         }
-        // parallelize only when target size is big enough to mitigate
-        // thread spawning overhead.
+        // parallelize only when target size is big enough to mitigate thread
+        // spawning overhead.
         bool parallelize = (target.size() >= 512);
         o->update(diff, target, parallelize);
       }
@@ -883,11 +904,11 @@ class layer : public node {
       bool parallelize = (parameter->size() >= 512);
 
       // todo (karandesai) : remove this workaround later
-      vec_t diff_t   = diff.toVec();
-      vec_t target_t = parameter->data()->toVec();
+      vec_t diff_t      = diff.toVec();
+      Tensor<> target_t = *parameter->data();
       optimizer_ptr->update(diff_t, target_t, parallelize);
-      diff = Tensor<float_t>(diff_t);
-      parameter->set_data(Tensor<float_t>(target_t));
+      diff = Tensor<>(diff_t);
+      parameter->set_data(Tensor<>(target_t));
     }
     clear_grads();
     post_update();
@@ -900,10 +921,12 @@ class layer : public node {
     if (w1.size() != w2.size()) return false;
 
     for (size_t i = 0; i < w1.size(); i++) {
-      if (w1[i]->size() != w2[i]->size()) return false;
+      if (w1[i]->shape() != w2[i]->shape()) return false;
 
-      for (size_t j = 0; j < w1[i]->size(); j++) {
-        if (std::abs(w1[i]->at(j) - w2[i]->at(j)) > eps) return false;
+      auto it1 = w1[i]->host_begin();
+      auto it2 = w2[i]->host_begin();
+      for (; it1 != w1[i]->host_end(); ++it1, ++it2) {
+        if (std::abs(*it1 - *it2) > eps) return false;
       }
     }
     return true;
@@ -917,8 +940,8 @@ class layer : public node {
     for (size_t i = 0; i < parameters_.size(); i++) {
       if (lhs_parameters[i]->size() != rhs_parameters[i]->size()) return false;
 
-      const Tensor<float_t> *lhs_data = lhs_parameters[i]->data();
-      const Tensor<float_t> *rhs_data = rhs_parameters[i]->data();
+      const Tensor<> *lhs_data = lhs_parameters[i]->data();
+      const Tensor<> *rhs_data = rhs_parameters[i]->data();
       for (size_t j = 0; j < lhs_parameters[i]->size(); j++) {
         if (std::abs(lhs_data->host_at(j) - rhs_data->host_at(j)) > eps)
           return false;
@@ -930,8 +953,9 @@ class layer : public node {
   // todo (karandesai) : remove redundancies after parameter integration
   virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
-    auto resize = [sample_count](tensor_t *tensor) {
-      tensor->resize(sample_count, (*tensor)[0]);
+    auto resize = [sample_count](Tensor<> *tensor) {
+      if (tensor->dim() < 1 || tensor->shape()[0] <= sample_count)
+        tensor->resize_axis(sample_count);
     };
 
     for (size_t i = 0; i < in_channels_; i++) {
@@ -991,7 +1015,7 @@ class layer : public node {
   vec_t weights_diff_;
   /** Used in ``update_parameters`` method. Kept as a member variable
    * to reduce frequent memory allocation */
-  Tensor<float_t> parameters_diff_;
+  Tensor<> parameters_diff_;
 
   template <typename T, typename Func>
   inline void for_i(T size, Func f, size_t grainsize = 100) {
@@ -1018,12 +1042,12 @@ class layer : public node {
   /** Pointer to the function for biases initialization */
   std::shared_ptr<parameter_init::function> bias_init_f_;
 
-  std::vector<tensor_t *> fwd_in_data_;
-  std::vector<tensor_t *> fwd_out_data_;
-  std::vector<tensor_t *> bwd_in_data_;
-  std::vector<tensor_t *> bwd_in_grad_;
-  std::vector<tensor_t *> bwd_out_data_;
-  std::vector<tensor_t *> bwd_out_grad_;
+  std::vector<Tensor<> *> fwd_in_data_;
+  std::vector<Tensor<> *> fwd_out_data_;
+  std::vector<Tensor<> *> bwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_grad_;
+  std::vector<Tensor<> *> bwd_out_data_;
+  std::vector<Tensor<> *> bwd_out_grad_;
 
   /* @brief Allocates the necessary edge memory in a specific
    * incoming connection.
@@ -1094,9 +1118,10 @@ class layer : public node {
    *
    * Returns the mutable pointer to the edge raw data.
    */
-  vec_t *get_weight_data(size_t i) {
+  Tensor<> *get_weight_data(size_t i) {
+    // TODO(Randl): dims
     assert(is_trainable_weight(in_type_[i]));
-    return &(*(ith_in_node(i)->get_data()))[0];
+    return ith_in_node(i)->get_data();
   }
 
   /* @brief Retrieves weight vector from incoming edge
@@ -1104,9 +1129,9 @@ class layer : public node {
    *
    * Returns the non mutable pointer to the edge raw data.
    */
-  const vec_t *get_weight_data(size_t i) const {
+  const Tensor<> *get_weight_data(size_t i) const {
     assert(is_trainable_weight(in_type_[i]));
-    return &(*(const_cast<layer *>(this)->ith_in_node(i)->get_data()))[0];
+    return const_cast<layer *>(this)->ith_in_node(i)->get_data();
   }
 };
 

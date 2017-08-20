@@ -137,17 +137,17 @@ TEST(network, manual_init) {
 
   adagrad opt;
 
-  vec_t *c1_w = net[0]->weights()[0];
-  vec_t *c1_b = net[0]->weights()[1];
-  vec_t *f1_w = net[1]->weights()[0];
+  Tensor<> *c1_w = net[0]->weights()[0];
+  Tensor<> *c1_b = net[0]->weights()[1];
+  Tensor<> *f1_w = net[1]->weights()[0];
 
   EXPECT_EQ(c1_w->size(), 9u);
   EXPECT_EQ(c1_b->size(), 1u);
   EXPECT_EQ(f1_w->size(), 2u);
 
-  *c1_w = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-  *c1_b = {1};
-  *f1_w = {1, 2};
+  *c1_w = Tensor<>({0., 1., 2., 3., 4., 5., 6., 7., 8.});
+  *c1_b = Tensor<>({1.});
+  *f1_w = Tensor<>({1., 2.});
 
   // check if the training and predicting works
   // https://github.com/tiny-dnn/tiny-dnn/issues/330
@@ -386,12 +386,12 @@ TEST(network, weight_init) {
   net.weight_init(weight_init::constant(2.0));
   net.init_weight();
 
-  vec_t &w1 = *net[0]->weights()[0];
-  vec_t &w2 = *net[1]->weights()[0];
+  Tensor<> &w1 = *net[0]->weights()[0];
+  Tensor<> &w2 = *net[1]->weights()[0];
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
 
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 2.0, 1e-10);
 }
 
 TEST(network, weight_init_per_layer) {
@@ -405,12 +405,12 @@ TEST(network, weight_init_per_layer) {
   net[1]->weight_init(weight_init::constant(1.0));
   net.init_weight();
 
-  vec_t &w1 = *net[0]->weights()[0];
-  vec_t &w2 = *net[1]->weights()[0];
+  Tensor<> &w1 = *net[0]->weights()[0];
+  Tensor<> &w2 = *net[1]->weights()[0];
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
 
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2[i], 1.0, 1e-10);
+  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 1.0, 1e-10);
 }
 
 TEST(network, bias_init) {
@@ -422,12 +422,12 @@ TEST(network, bias_init) {
   net.bias_init(weight_init::constant(2.0));
   net.init_weight();
 
-  vec_t &w1 = *net[0]->weights()[1];
-  vec_t &w2 = *net[1]->weights()[1];
+  Tensor<> &w1 = *net[0]->weights()[1];
+  Tensor<> &w2 = *net[1]->weights()[1];
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
 
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 2.0, 1e-10);
 }
 
 TEST(network, bias_init_per_layer) {
@@ -440,12 +440,12 @@ TEST(network, bias_init_per_layer) {
   net[1]->bias_init(weight_init::constant(1.0));
   net.init_weight();
 
-  vec_t &w1 = *net[0]->weights()[1];
-  vec_t &w2 = *net[1]->weights()[1];
+  Tensor<> &w1 = *net[0]->weights()[1];
+  Tensor<> &w2 = *net[1]->weights()[1];
 
-  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1[i], 2.0, 1e-10);
+  for (size_t i = 0; i < w1.size(); i++) EXPECT_NEAR(w1.host_at(i), 2.0, 1e-10);
 
-  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2[i], 1.0, 1e-10);
+  for (size_t i = 0; i < w2.size(); i++) EXPECT_NEAR(w2.host_at(i), 1.0, 1e-10);
 }
 
 TEST(network, gradient_check) {  // sigmoid - cross-entropy
@@ -682,9 +682,9 @@ TEST(network, trainable) {
   vec_t w2 = {6, 7, 8, 9, 8, 7};
   vec_t w4 = {6, 5};
 
-  *net[0]->weights()[0] = {0, 1, 2, 3, 4, 5};
-  *net[2]->weights()[0] = {6, 7, 8, 9, 8, 7};
-  *net[4]->weights()[0] = {6, 5};
+  *net[0]->weights()[0] = Tensor<>({0., 1., 2., 3., 4., 5.});
+  *net[2]->weights()[0] = Tensor<>({6., 7., 8., 9., 8., 7.});
+  *net[4]->weights()[0] = Tensor<>({6., 5.});
 
   adam a;
 
@@ -694,9 +694,9 @@ TEST(network, trainable) {
   auto w2_standby = *net[2]->weights()[0];
   auto w4_standby = *net[4]->weights()[0];
 
-  EXPECT_NE(w0, w0_standby);
-  EXPECT_EQ(w2, w2_standby);
-  EXPECT_NE(w4, w4_standby);
+  EXPECT_NE(Tensor<>(w0), w0_standby);
+  EXPECT_EQ(Tensor<>(w2), w2_standby);
+  EXPECT_NE(Tensor<>(w4), w4_standby);
 
   std::vector<vec_t> data{{1, 0}, {0, 2}};
   std::vector<vec_t> out{{2}, {1}};
@@ -707,9 +707,9 @@ TEST(network, trainable) {
   auto w2_after_update = *net[2]->weights()[0];
   auto w4_after_update = *net[4]->weights()[0];
 
-  EXPECT_NE(w0, w0_after_update);
-  EXPECT_EQ(w2, w2_after_update);
-  EXPECT_NE(w4, w4_after_update);
+  EXPECT_NE(Tensor<>(w0), w0_after_update);
+  EXPECT_EQ(Tensor<>(w2), w2_after_update);
+  EXPECT_NE(Tensor<>(w4), w4_after_update);
 }
 
 }  // namespace tiny_dnn

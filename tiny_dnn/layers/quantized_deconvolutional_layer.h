@@ -254,8 +254,8 @@ class quantized_deconvolutional_layer : public layer {
            (params_.weight.height_ * params_.h_stride) * params_.out.depth_;
   }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // launch deconvolutional kernel
     if (in_data.size() == 1) {
       layer::backend_->deconv2d_q(in_data, out_data);
@@ -277,10 +277,10 @@ class quantized_deconvolutional_layer : public layer {
    *with
    *in_data[i])
    **/
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     layer::backend_->deconv2d_q(in_data, out_data, out_grad, in_grad);
   }
 
@@ -300,12 +300,12 @@ class quantized_deconvolutional_layer : public layer {
     const auto width          = params_.out.depth_ * pitch + border_width;
     const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const vec_t &W                      = *this->weights()[0];
+    const Tensor<> &W                   = *this->weights()[0];
 
     img.resize(width, height);
     img.fill(bg_color);
 
-    auto minmax = std::minmax_element(W.begin(), W.end());
+    auto minmax = std::minmax_element(W.host_begin(), W.host_end());
 
     for (size_t r = 0; r < params_.in.depth_; ++r) {
       for (size_t c = 0; c < params_.out.depth_; ++c) {
@@ -319,7 +319,7 @@ class quantized_deconvolutional_layer : public layer {
         for (size_t y = 0; y < params_.weight.height_; ++y) {
           for (size_t x = 0; x < params_.weight.width_; ++x) {
             idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
-            const float_t w = W[idx];
+            const float_t w = W.host_at(idx);
 
             img.at(left + x, top + y) = static_cast<image<>::intensity_t>(
               rescale(w, *minmax.first, *minmax.second, 0, 255));
@@ -341,8 +341,8 @@ class quantized_deconvolutional_layer : public layer {
     if (backend_type == core::backend_t::internal) {
       backend = std::make_shared<core::tiny_backend>(
         &params_,
-        [this](const tensor_t &in) { return copy_and_unpad_output(in); },
-        [this](const tensor_t &delta, tensor_t &dst) {
+        [this](const Tensor<> &in) { return copy_and_unpad_output(in); },
+        [this](const Tensor<> &delta, Tensor<> &dst) {
           return copy_and_pad_delta(delta, dst);
         },
         &deconv_layer_worker_storage_);
@@ -388,8 +388,10 @@ class quantized_deconvolutional_layer : public layer {
       deconv_layer_worker_storage_;
 
     if (params_.pad_type == padding::same) {
-      dws.curr_out_buf_.resize(1, vec_t(params_.in.size(), float_t{0}));
-      dws.curr_delta_padded.resize(1, vec_t(params_.out.size(), float_t{0}));
+      dws.curr_out_buf_.reshape({1, params_.in.size()});
+      dws.curr_out_buf_.fill(float_t(0.0));
+      dws.curr_delta_padded.reshape({1, params_.out.size()});
+      dws.curr_delta_padded.fill(float_t(0.0));
     } else {
       dws.curr_out_buf_.clear();
     }
@@ -443,17 +445,17 @@ class quantized_deconvolutional_layer : public layer {
                                       pad_type);
   }
 
-  void copy_and_pad_delta(const tensor_t &delta, tensor_t &delta_padded) {
+  void copy_and_pad_delta(const Tensor<> &delta, Tensor<> &delta_padded) {
     if (params_.pad_type == padding::valid) {
       delta_padded = delta;
     } else {
       for (size_t sample = 0; sample < delta.size(); sample++) {
-        vec_t &dst       = delta_padded[sample];
-        const vec_t &src = delta[sample];
+        auto dst = delta_padded.subView(TensorSingleIndex(sample), TensorAll());
+        const auto src = delta[sample];
 
         for (size_t c = 0; c < params_.in.depth_; c++) {
-          float_t *pdst      = &dst[params_.in.get_index(0, 0, c)];
-          const float_t *pin = &src[params_.in.get_index(0, 0, c)];
+          float_t *pdst      = dst.host_pointer(params_.in.get_index(0, 0, c));
+          const float_t *pin = src.host_pointer(params_.in.get_index(0, 0, c));
 
           for (size_t y = 0; y < params_.in.height_;
                y++, pdst += params_.in.width_, pin += params_.in.width_) {
@@ -464,13 +466,13 @@ class quantized_deconvolutional_layer : public layer {
     }
   }
 
-  void copy_and_unpad_output(const tensor_t &out) {
+  void copy_and_unpad_output(const Tensor<> &out) {
     core::deconv_layer_worker_specific_storage &dws =
       deconv_layer_worker_storage_;
 
-    dws.curr_out_buf_ =
-      tensor_t(out.size(), vec_t(params_.out_unpadded.size(), 0));
-    tensor_t *dst_tensor = &dws.curr_out_buf_;
+    dws.curr_out_buf_.reshape({out.size(), params_.out_unpadded.size()});
+    dws.curr_out_buf_.fill(0);
+    Tensor<> *dst_tensor = &dws.curr_out_buf_;
 
     if (params_.pad_type == padding::valid) {
       dws.curr_out_unpadded_ = &out;
@@ -478,14 +480,16 @@ class quantized_deconvolutional_layer : public layer {
       // make unpadded version in order to restore scale in fprop/bprop
       for (size_t sample = 0; sample < out.size(); sample++) {
         size_t idx = 0;
-        vec_t &dst = (*dst_tensor)[sample];
+        auto dst = dst_tensor->subView(TensorSingleIndex(sample), TensorAll());
 
         for (size_t c = 0; c < params_.out_unpadded.depth_; c++) {
-          float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
-          idx           = params_.out.get_index(params_.weight.width_ / 2,
+          float_t *pimg =
+            dst.host_pointer(params_.out_unpadded.get_index(0, 0, c));
+
+          idx = params_.out.get_index(params_.weight.width_ / 2,
                                       params_.weight.height_ / 2, c);
 
-          const float_t *pout = &out[sample][idx];
+          const float_t *pout = out.host_pointer(sample, idx);
 
           for (size_t y = params_.weight.height_ / 2;
                y <

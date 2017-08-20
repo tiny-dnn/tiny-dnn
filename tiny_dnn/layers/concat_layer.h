@@ -65,36 +65,38 @@ class concat_layer : public layer {
 
   std::vector<shape3d> out_shape() const override { return {out_shape_}; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
-    const size_t num_samples = (*out_data[0]).size();
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
+    const size_t num_samples = out_data[0]->shape()[0];
 
     for_i(num_samples, [&](size_t s) {
-      float_t *outs = &(*out_data[0])[s][0];
+      // TODO(Randl): efficient?
+      auto outs = out_data[0]->host_iter(s, 0);
 
       for (size_t i = 0; i < in_shapes_.size(); i++) {
-        const float_t *ins = &(*in_data[i])[s][0];
-        size_t dim         = in_shapes_[i].size();
-        outs               = std::copy(ins, ins + dim, outs);
+        const auto ins = in_data[i]->host_iter(s, 0);
+        size_t dim     = in_shapes_[i].size();
+
+        outs = std::copy(ins, ins + dim, outs);
       }
     });
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
 
-    size_t num_samples = (*out_grad[0]).size();
+    size_t num_samples = out_grad[0]->shape()[0];
 
     for_i(num_samples, [&](size_t s) {
-      const float_t *outs = &(*out_grad[0])[s][0];
+      const float_t *outs = out_grad[0]->host_pointer(s, 0);
 
       for (size_t i = 0; i < in_shapes_.size(); i++) {
         size_t dim   = in_shapes_[i].size();
-        float_t *ins = &(*in_grad[i])[s][0];
+        float_t *ins = in_grad[i]->host_pointer(s, 0);
         std::copy(outs, outs + dim, ins);
         outs += dim;
       }

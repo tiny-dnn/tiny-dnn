@@ -24,13 +24,12 @@ class Conv2dOp : public core::OpKernel {
     auto params = OpKernel::params_->conv();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    Tensor<float_t> in_data_t(context.input(0));
-    Tensor<float_t> out_data_t(context.output(0));
+    Tensor<> in_data_t(context.input(0));
+    Tensor<> out_data_t(context.output(0));
 
-    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
-    const Tensor<float_t> bias(params.has_bias
-                                 ? *(context.ith_parameter(1)->data())
-                                 : Tensor<float_t>());
+    const Tensor<> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<> bias(params.has_bias ? *(context.ith_parameter(1)->data())
+                                        : Tensor<>());
 
     // initialize outputs
     out_data_t.fill(0.0f);
@@ -43,24 +42,19 @@ class Conv2dOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::conv2d_op_internal(in_data_t, weights, bias, out_data_t, params,
                                   context.parallelize());
-
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
       kernels::conv2d_op_nnpack(in_data_t, weights, bias, out_data_t, params,
                                 context.parallelize());
 
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::conv2d_op_avx(in_data_t, weights, bias, out_data_t, params,
                              context.parallelize());
 
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data_t.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    context.output(0) = out_data_t;
   }
 };
 

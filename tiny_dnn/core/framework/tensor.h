@@ -79,7 +79,7 @@ class Tensor {
     : storage_(shape, value) {}
 
   /**
-   * Temporal method to create a new Tensor from old tensor_t
+   * Temporary method to create a new Tensor from old tensor_t
    */
   explicit Tensor(const tensor_t &data) {
     std::vector<size_t> shape = {data.size(), data[0].size()};
@@ -94,7 +94,7 @@ class Tensor {
   }
 
   /**
-   * Temporal method to create a new Tensor from old vec_t
+   * Temporary method to create a new Tensor from old vec_t
    */
   explicit Tensor(const vec_t &data) {
     std::vector<size_t> shape = {data.size()};
@@ -107,16 +107,27 @@ class Tensor {
   }
 
   /**
-   *
-   * @param T
-   * @return
+   * Constructor of 1D Tensor from vecotr
+   * TODO(Randl): extend
+   * @param data
    */
-  Tensor<U> &operator=(const Tensor<U> &T) {
-    storage_ = T.storage_;
-    return *this;
+  explicit Tensor(const std::vector<U> &data) {
+    std::vector<size_t> shape = {data.size()};
+    storage_                  = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      storage_(i) = data[i];
+    }
   }
 
-// ~Tensor() = default;
+  Tensor(const Tensor &other) = default;         // copy ctor
+  Tensor &operator=(const Tensor &T) = default;  // copy assign
+
+  // ~Tensor() = default;
+
+  Tensor(Tensor &&other) = default;             // move ctor
+  Tensor &operator=(Tensor &&other) = default;  // move assign
 
 // TODO(Randl): implement copy and move constructors
 #if 0
@@ -130,10 +141,7 @@ class Tensor {
         // device_data_ is intentionally left uninitialized.
     }
     // TODO(Randl): Move constructors for Tensor and TensorStorage
-    Tensor &operator = (const Tensor& other) {}
 
-    Tensor(Tensor&& other) = default;         // move ctor
-    Tensor &operator = (Tensor&&) = default;  // move assign
 #endif
 
   /**
@@ -152,7 +160,7 @@ class Tensor {
    *
    * @return is tensor is empty
    */
-  bool empty() const { return size() == 0; }
+  bool empty() const { return dim() == 0 || size() == 0; }
 
   /**
    *
@@ -180,6 +188,7 @@ class Tensor {
     return storage_(args...);
   }
 
+  // TODO(Randl): remove host_*
   /**
    *
    * @return Iterator pointing to the beginning of Tensor
@@ -304,14 +313,29 @@ auto host_data() {
    * @param tensor
    * @return
    */
-  template <typename S>
-  Tensor &fill(size_t size, Tensor<U, S> tensor) {
+  template <typename S1>
+  Tensor &repeat(size_t size, Tensor<U, S1> tensor) {
     auto shape = tensor.shape();
     shape.insert(shape.begin(), size);
     storage_.reshape(shape);
-    for (size_t i = 0; i < size; ++i) storage_[i] = tensor.storage_;
+    auto it_to = host_begin();
+    for (size_t i = 0; i < size; ++i) {
+      auto it_from = tensor.host_begin();
+      for (; it_from != tensor.host_end(); ++it_from, ++it_to)
+        *it_to = *it_from;
+    }
     return *this;
   }
+
+  template <typename S1>
+  Tensor &assign(Tensor<U, S1> tensor) {
+    assert(size() <= tensor.size());
+    auto in  = tensor.host_begin();
+    auto out = host_begin();
+    for (; in != tensor.host_end(); ++in, ++out) *out = *in;
+    return *this;
+  }
+
   // TODO(Randl): checked version
   /**
    * Reshape tensor
@@ -330,7 +354,8 @@ auto host_data() {
    * @param shape new shape
    */
   void resize_axis(const size_t value, const size_t axis = 0) {
-    auto curr  = shape();
+    auto curr = shape();
+    while (curr.size() <= axis) curr.push_back(1);
     curr[axis] = value;
     storage_.reshape(curr);
   }
@@ -368,7 +393,7 @@ auto host_data() {
   auto subView(InputRanges<Values>... ranges) const {
     // TODO(Randl): stride
     using ViewType =
-      decltype(xt::view((const Storage)storage_, ranges.get_range()...));
+      const decltype(xt::view((const Storage)storage_, ranges.get_range()...));
     using SharedTensor = Tensor<U, ViewType>;
     return SharedTensor(
       xt::view((const Storage)storage_, ranges.get_range()...));
@@ -391,6 +416,7 @@ auto host_data() {
    * @return
    */
   tensor_t toTensor() const {
+    assert(shape().size() == 2);
     tensor_t tensor(storage_.shape()[0]);
     for (size_t i = 0; i < storage_.shape()[0]; ++i) {
       tensor[i].resize(storage_.shape()[1]);
@@ -406,7 +432,7 @@ auto host_data() {
    * @return
    */
   vec_t toVec() const {
-    vec_t tensor(storage_.shape()[0]);
+    vec_t tensor(size());
     auto vec = tensor.begin();
     auto ten = host_begin();
     for (; vec != tensor.end(); ++vec, ++ten) {
@@ -431,8 +457,9 @@ auto host_data() {
    * @return
    */
   vec_t lineToVec(size_t line) const {
-    vec_t tensor(storage_.shape()[0]);
-    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+    assert(line < shape()[0]);
+    vec_t tensor(storage_.shape()[1]);
+    for (size_t i = 0; i < storage_.shape()[1]; ++i) {
       tensor[i] = storage_(line, i);
     }
     return tensor;
@@ -451,12 +478,23 @@ auto host_data() {
   friend inline std::ostream &operator<<(std::ostream &os,
                                          const Tensor<T, S> &tensor);
 
+  std::ostream &printShape(std::ostream &os) const {
+    os << "Tensor of size:" << size() << ", shape: ";
+    for (size_t i = 0; i < shape().size() - 1; ++i) os << shape()[i] << "x";
+    os << shape().back();
+    return os;
+  }
+
+  // TODO(Randl)
+  template <class Archive>
+  void serialize(Archive &archive) {}
+
  private:
   Storage storage_;
 };
 
 using ViewTensor =
   decltype(Tensor<>({2, 2}).subView(TensorSingleIndex(1), TensorAll()));
-using ConstViewTensor = decltype(((const Tensor<>)Tensor<>({2, 2}))
+using ConstViewTensor = decltype(((const Tensor<> &)Tensor<>({2, 2}))
                                    .subView(TensorSingleIndex(1), TensorAll()));
 }  // namespace tiny_dnn

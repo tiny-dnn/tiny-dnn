@@ -238,11 +238,10 @@ TEST(quantization_utils, float_tensor_to_quantized) {
   const vec_t input     = {1.0f,   -1.0f,  10.0f, 10.25f, 127.0f,
                        255.0f, 512.0f, 0.0f,  23.0f};
   uint8_t expected[9] = {1, 0, 10, 10, 127, 255, 255, 0, 23};
-  std::vector<uint8_t> output =
-    core::kernels::float_tensor_to_quantized<uint8_t>(input, input_min,
-                                                      input_max);
+  auto output         = core::kernels::float_tensor_to_quantized<uint8_t>(
+    Tensor<>(input), input_min, input_max);
   for (size_t value_index = 0; value_index < 9; ++value_index) {
-    EXPECT_EQ(expected[value_index], output[value_index]);
+    EXPECT_EQ(expected[value_index], output.host_at(value_index));
   }
 }
 
@@ -252,10 +251,10 @@ TEST(quantization_utils, quantized_tensor_to_float) {
   const std::vector<uint8_t> input = {0, 128, 255, 23, 24, 25, 243, 244, 245};
   vec_t expected                   = {-128.0f, 0.0f,   127.0f, -105.0f, -104.0f,
                     -103.0f, 115.0f, 116.0f, 117.0f};
-  vec_t output = core::kernels::quantized_tensor_to_float<uint8_t>(
-    input, input_min, input_max);
+  auto output = core::kernels::quantized_tensor_to_float<uint8_t>(
+    Tensor<uint8_t>(input), input_min, input_max);
   for (size_t value_index = 0; value_index < 9; ++value_index) {
-    EXPECT_EQ(expected[value_index], output[value_index]);
+    EXPECT_EQ(expected[value_index], output.host_at(value_index));
   }
 }
 
@@ -271,8 +270,10 @@ TEST(quantization_utils, quantize_down_and_shrink_range) {
   const float_t input_max = 256.0f;
   float_t output_min;
   float_t output_max;
-  std::vector<int32_t> input = {-(1 << 23), 0, (1 << 23)};
-  std::vector<uint8_t> output(input.size(), static_cast<uint8_t>(0));
+  std::vector<int32_t> input_t = {-(1 << 23), 0, (1 << 23)};
+  Tensor<uint8_t> output({input_t.size()});
+  output.fill(0);
+  Tensor<int32_t> input(input_t);
   core::kernels::quantize_down_and_shrink_range<int32_t, uint8_t>(
     input, input_min, input_max, &output_min, &output_max, &output);
   const std::vector<uint8_t> expected = {0, 127, 255};

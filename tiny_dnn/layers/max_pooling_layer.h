@@ -115,8 +115,8 @@ class max_pooling_layer : public layer {
 
   size_t fan_out_size() const override { return 1; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // forward convolutional op context
     fwd_ctx_.set_in_out(in_data, out_data);
     fwd_ctx_.setParallelize(layer::parallelize());
@@ -126,10 +126,10 @@ class max_pooling_layer : public layer {
     kernel_fwd_->compute(fwd_ctx_);
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     // backward convolutional op context
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParallelize(layer::parallelize());

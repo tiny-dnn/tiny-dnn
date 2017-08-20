@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -50,10 +50,6 @@ namespace xt
         using inner_shape_type = typename xview_shape_type<typename xexpression_type::shape_type, S...>::type;
         using stepper = xview_stepper<false, CT, S...>;
         using const_stepper = xview_stepper<true, CT, S...>;
-        using iterator = xiterator<stepper, inner_shape_type*, DEFAULT_LAYOUT>;
-        using const_iterator = xiterator<const_stepper, inner_shape_type*, DEFAULT_LAYOUT>;
-        using reverse_iterator = std::reverse_iterator<iterator>;
-        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     };
 
     /**
@@ -72,9 +68,8 @@ namespace xt
      */
     template <class CT, class... S>
     class xview : public xview_semantic<xview<CT, S...>>,
-                  public xexpression_iterable<xview<CT, S...>>
+                  public xiterable<xview<CT, S...>>
     {
-
     public:
 
         using self_type = xview<CT, S...>;
@@ -89,7 +84,7 @@ namespace xt
         using size_type = typename xexpression_type::size_type;
         using difference_type = typename xexpression_type::difference_type;
 
-        using iterable_base = xexpression_iterable<self_type>;
+        using iterable_base = xiterable<self_type>;
         using inner_shape_type = typename iterable_base::inner_shape_type;
         using shape_type = inner_shape_type;
         using strides_type = shape_type;
@@ -102,8 +97,13 @@ namespace xt
         static constexpr layout_type static_layout = layout_type::dynamic;
         static constexpr bool contiguous_layout = false;
 
-        template <class CTA, class... SL>
-        explicit xview(CTA&& e, SL&&... slices) noexcept;
+        // The argument FSL avoids the compiler to call this constructor
+        // instead of the copy constructor when sizeof...(SL) == 0.
+        template <class CTA, class FSL, class... SL>
+        explicit xview(CTA&& e, FSL&& first_slice, SL&&... slices) noexcept;
+
+        xview(const xview&) = default;
+        self_type& operator=(const xview& rhs);
 
         template <class E>
         self_type& operator=(const xexpression<E>& e);
@@ -141,12 +141,12 @@ namespace xt
         template <class ST>
         stepper stepper_begin(const ST& shape);
         template <class ST>
-        stepper stepper_end(const ST& shape);
+        stepper stepper_end(const ST& shape, layout_type l);
 
         template <class ST>
         const_stepper stepper_begin(const ST& shape) const;
         template <class ST>
-        const_stepper stepper_end(const ST& shape) const;
+        const_stepper stepper_end(const ST& shape, layout_type l) const;
 
         template <class T = xexpression_type>
         std::enable_if_t<has_raw_data_interface<T>::value, const typename T::container_type&>
@@ -210,7 +210,7 @@ namespace xt
         template <class It>
         base_index_type make_index(It first, It last) const;
 
-        void assign_temporary_impl(temporary_type& tmp);
+        void assign_temporary_impl(temporary_type&& tmp);
 
         friend class xview_semantic<xview<CT, S...>>;
     };
@@ -245,7 +245,6 @@ namespace xt
     template <bool is_const, class CT, class... S>
     class xview_stepper
     {
-
     public:
 
         using view_type = std::conditional_t<is_const,
@@ -273,7 +272,7 @@ namespace xt
         void reset_back(size_type dim);
 
         void to_begin();
-        void to_end();
+        void to_end(layout_type);
 
         bool equal(const xview_stepper& rhs) const;
 
@@ -328,13 +327,14 @@ namespace xt
      * Users should not call directly this constructor but
      * use the view function instead.
      * @param e the xexpression to adapt
+     * @param first_slice the first slice describing the view
      * @param slices the slices list describing the view
      * @sa view
      */
     template <class CT, class... S>
-    template <class CTA, class... SL>
-    inline xview<CT, S...>::xview(CTA&& e, SL&&... slices) noexcept
-        : m_e(std::forward<CTA>(e)), m_slices(std::forward<SL>(slices)...),
+    template <class CTA, class FSL, class... SL>
+    inline xview<CT, S...>::xview(CTA&& e, FSL&& first_slice, SL&&... slices) noexcept
+        : m_e(std::forward<CTA>(e)), m_slices(std::forward<FSL>(first_slice), std::forward<SL>(slices)...),
           m_shape(make_sequence<shape_type>(m_e.dimension() - integral_count<S...>() + newaxis_count<S...>(), 0))
     {
         auto func = [](const auto& s) noexcept { return get_size(s); };
@@ -346,6 +346,13 @@ namespace xt
         }
     }
     //@}
+
+    template <class CT, class... S>
+    inline auto xview<CT, S...>::operator=(const xview& rhs) -> self_type&
+    {
+        temporary_type tmp(rhs);
+        return this->assign_temporary(std::move(tmp));
+    }
 
     /**
      * @name Extended copy semantic
@@ -419,7 +426,7 @@ namespace xt
     {
         return m_slices;
     }
-        
+
     /**
      * Returns the slices of the view.
      */
@@ -466,6 +473,7 @@ namespace xt
     template <class It>
     inline auto xview<CT, S...>::element(It first, It last) -> reference
     {
+        // TODO: avoid memory allocation
         auto index = make_index(first, last);
         return m_e.element(index.cbegin(), index.cend());
     }
@@ -502,6 +510,7 @@ namespace xt
     template <class It>
     inline auto xview<CT, S...>::element(It first, It last) const -> const_reference
     {
+        // TODO: avoid memory allocation
         auto index = make_index(first, last);
         return m_e.element(index.cbegin(), index.cend());
     }
@@ -534,7 +543,8 @@ namespace xt
         auto func = [](const auto& s) { return xt::step_size(s); };
         size_type i = 0, idx;
 
-        for (; i < sizeof...(S); ++i) {
+        for (; i < sizeof...(S); ++i)
+        {
             idx = integral_skip<S...>(i);
             if (idx >= sizeof...(S))
             {
@@ -542,7 +552,8 @@ namespace xt
             }
             strides[i] = m_e.strides()[idx] * apply<size_type>(idx, func, m_slices);
         }
-        for (; i < strides.size(); ++i) {
+        for (; i < strides.size(); ++i)
+        {
             strides[i] = m_e.strides()[idx++];
         }
 
@@ -705,9 +716,9 @@ namespace xt
     }
 
     template <class CT, class... S>
-    inline void xview<CT, S...>::assign_temporary_impl(temporary_type& tmp)
+    inline void xview<CT, S...>::assign_temporary_impl(temporary_type&& tmp)
     {
-        std::copy(tmp.cbegin(), tmp.cend(), this->xbegin());
+        std::copy(tmp.cbegin(), tmp.cend(), this->begin());
     }
 
     namespace detail
@@ -756,10 +767,10 @@ namespace xt
 
     template <class CT, class... S>
     template <class ST>
-    inline auto xview<CT, S...>::stepper_end(const ST& shape) -> stepper
+    inline auto xview<CT, S...>::stepper_end(const ST& shape, layout_type l) -> stepper
     {
         size_type offset = shape.size() - dimension();
-        return stepper(this, m_e.stepper_end(m_e.shape()), offset, true);
+        return stepper(this, m_e.stepper_end(m_e.shape(), l), offset, true);
     }
 
     template <class CT, class... S>
@@ -773,11 +784,11 @@ namespace xt
 
     template <class CT, class... S>
     template <class ST>
-    inline auto xview<CT, S...>::stepper_end(const ST& shape) const -> const_stepper
+    inline auto xview<CT, S...>::stepper_end(const ST& shape, layout_type l) const -> const_stepper
     {
         size_type offset = shape.size() - dimension();
         const xexpression_type& e = m_e;
-        return const_stepper(this, e.stepper_end(m_e.shape()), offset, true);
+        return const_stepper(this, e.stepper_end(m_e.shape(), l), offset, true);
     }
 
     /********************************
@@ -849,9 +860,9 @@ namespace xt
     }
 
     template <bool is_const, class CT, class... S>
-    inline void xview_stepper<is_const, CT, S...>::to_end()
+    inline void xview_stepper<is_const, CT, S...>::to_end(layout_type l)
     {
-        m_it.to_end();
+        m_it.to_end(l);
         to_end_impl();
     }
 

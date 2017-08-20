@@ -25,13 +25,12 @@ class FullyConnectedOp : public core::OpKernel {
 
     // incomimg/outcoming data
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> in_data(context.input(0));
-    Tensor<float_t> out_data(context.output(0));
+    const Tensor<> in_data(context.input(0));
+    Tensor<> out_data(context.output(0));
 
-    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
-    const Tensor<float_t> bias(params.has_bias_
-                                 ? *(context.ith_parameter(1)->data())
-                                 : Tensor<float_t>());
+    const Tensor<> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<> bias(params.has_bias_ ? *(context.ith_parameter(1)->data())
+                                         : Tensor<>());
 
     // initialize outputs
     out_data.fill(0);
@@ -43,24 +42,17 @@ class FullyConnectedOp : public core::OpKernel {
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
                                            context.parallelize());
-
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::nnpack) {
       kernels::fully_connected_op_nnpack(in_data, weights, bias, out_data,
                                          context.parallelize());
-
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data.toTensor();
     } else if (engine == core::backend_t::avx) {
       kernels::fully_connected_op_avx(in_data, weights, bias, out_data,
                                       context.parallelize());
-
-      // TODO(Randl): Remove once layers forward and backward by themself.
-      context.output(0) = out_data.toTensor();
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
+    // TODO(Randl): Remove once layers forward and backward by themself.
+    context.output(0) = out_data;
   }
 };
 

@@ -35,9 +35,9 @@ TEST(ave_unpool, forward) {
     };
   // clang-format on
 
-  auto out  = l.forward({{in}});
-  vec_t res = (*out[0])[0];
-
+  std::vector<const Tensor<>*> out;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
+  vec_t res = out[0]->toVec();
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);
   }
@@ -64,8 +64,9 @@ TEST(ave_unpool, forward_stride) {
     };
   // clang-format on
 
-  auto out  = l.forward({{in}});
-  vec_t res = (*out[0])[0];
+  std::vector<const Tensor<>*> out;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
+  vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);

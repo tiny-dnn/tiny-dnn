@@ -29,13 +29,30 @@ namespace tiny_dnn {
  */
 template <typename T, typename S>
 inline std::ostream &operator<<(std::ostream &os, const Tensor<T, S> &tensor) {
-  std::cout << "Tensor of shape ";
+  os << "Tensor of dim " << tensor.dim();
+  if (tensor.dim() == 0) return os;
+  os << ", size " << tensor.size() << " and shape ";
   for (size_t i = 0; i < tensor.dim() - 1; ++i) {
-    std::cout << tensor.shape()[i] << "x";
+    os << tensor.shape()[i] << "x";
   }
-  std::cout << tensor.shape().back() << ":" << std::endl;
+  os << tensor.shape().back() << ":" << std::endl;
   os << tensor.storage_;
   return os;
+}
+
+template <class T, class S1, class S2>
+bool operator==(const Tensor<T, S1> &t1, const Tensor<T, S2> &t2) {
+  if (t1.shape() != t2.shape()) return false;
+  auto it1 = t1.host_begin(), it2 = t2.host_begin();
+  for (; it1 != t1.host_end(); ++it1, ++it2) {
+    if (*it1 != *it2) return false;
+  }
+  return true;
+}
+
+template <class T, class S1, class S2>
+bool operator!=(const Tensor<T, S1> &t1, const Tensor<T, S2> &t2) {
+  return !(t1 == t2);
 }
 
 // utilities for element-wise and tensor-scalar/scalar-tensor operations

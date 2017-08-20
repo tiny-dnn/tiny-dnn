@@ -82,26 +82,26 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     clear_grads();
   }
 
-  Tensor<float_t> *data() { return &data_; }
+  Tensor<> *data() { return &data_; }
 
-  const Tensor<float_t> *data() const { return &data_; }
+  const Tensor<> *data() const { return &data_; }
 
-  void set_data(const Tensor<float_t> &data) {
+  void set_data(const Tensor<> &data) {
     data_        = data;
     initialized_ = true;
   }
 
-  Tensor<float_t> *grad() { return &grad_; }
+  Tensor<> *grad() { return &grad_; }
 
-  const Tensor<float_t> *grad() const { return &grad_; }
+  const Tensor<> *grad() const { return &grad_; }
 
-  void set_grad(const Tensor<float_t> &grad) { grad_ = grad; }
+  void set_grad(const Tensor<> &grad) { grad_ = grad; }
 
   void resize_grad(size_t sample_count) {
     grad_.reshape({sample_count, size()});
   }
 
-  void merge_grads(Tensor<float_t> *dst) {
+  void merge_grads(Tensor<> *dst) {
     tensor_t grad_t = grad_.toTensor();
     vec_t dst_t{0};
     const auto &grad_head = grad_t[0];
@@ -113,7 +113,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
          sample < sample_count; ++sample) {
       vectorize::reduce<float_t>(&grad_t[sample][0], sz, &dst_t[0]);
     }
-    *dst = Tensor<float_t>(dst_t);
+    *dst = Tensor<>(dst_t);
   }
 
   void clear_grads() { grad_.fill(float_t{0}); }
@@ -135,8 +135,8 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   bool trainable_;
   bool initialized_;
 
-  Tensor<float_t> data_;
-  Tensor<float_t> grad_;
+  Tensor<> data_;
+  Tensor<> grad_;
 };  // class parameter
 
 // todo (karandesai) : analyze performance between raw pointer and shared_ptr

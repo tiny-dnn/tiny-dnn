@@ -29,7 +29,8 @@ inline void tiny_average_unpooling_kernel(
   const core::aveunpool_params &params,
   const core::average_unpooling_layer_worker_specific_storage &auws,
   bool parallelize) {
-  for_i(parallelize, in_data.size(), [&](size_t sample) {
+  out_data.reshape({in_data.shape()[0], params.out.area() * params.out.depth_});
+  for_i(parallelize, in_data.shape()[0], [&](size_t sample) {
     auto oarea = params.out.area();
     size_t idx = 0;
     for (size_t d = 0; d < params.out.depth_; ++d) {
@@ -45,7 +46,7 @@ inline void tiny_average_unpooling_kernel(
         out_data.host_at(sample, idx) = value;
       }
     }
-    assert(out_data.size() == auws.out2wi.size());
+    assert(out_data.shape()[1] == auws.out2wi.size());
   });
 }
 
@@ -141,13 +142,13 @@ class average_unpooling_layer : public layer {
 
   std::string layer_type() const override { return "ave-unpool"; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // todo (karandesai) : transfer all this into OpKernel
     // OpKernels do not accept worker storage so currently tricky to do so
 
-    const Tensor<> in = Tensor<>(*in_data[0]);
-    Tensor<> out      = Tensor<>(*out_data[0]);
+    const Tensor<> in = *in_data[0];
+    Tensor<> &out     = *out_data[0];
     out.fill(0);
 
     const Tensor<> weights = *(layer::weights_at()[0]->data());
@@ -155,18 +156,17 @@ class average_unpooling_layer : public layer {
 
     tiny_average_unpooling_kernel(in, weights, biases, out, params_, auws_,
                                   parallelize());
-    *out_data[0] = out.toTensor();
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     // todo (karandesai) : transfer all this into OpKernel
 
-    const Tensor<> prev_out = Tensor<>(*in_data[0]);
-    Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
-    Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
+    const Tensor<> prev_out = *in_data[0];
+    Tensor<> &prev_delta    = *in_grad[0];
+    Tensor<> curr_delta     = *out_grad[0];
 
     const Tensor<> weights = *(layer::weights_at()[0]->data());
     const Tensor<> bias    = *(layer::bias_at()[0]->data());
@@ -178,7 +178,7 @@ class average_unpooling_layer : public layer {
     tiny_average_unpooling_back_kernel(prev_out, weights, weights_grads,
                                        bias_grads, curr_delta, prev_delta,
                                        params_, auws_, parallelize_);
-    *in_grad[0] = prev_delta.toTensor();
+    // TODO(karandesai): remove unnecessary assignments
     layer::weights_at()[0]->set_data(weights_grads);
     layer::bias_at()[0]->set_data(bias_grads);
   }

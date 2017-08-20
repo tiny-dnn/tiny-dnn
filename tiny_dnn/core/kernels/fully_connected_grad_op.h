@@ -23,19 +23,17 @@ class FullyConnectedGradOp : public core::OpKernel {
     auto params = OpKernel::params_->fully();
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    const Tensor<float_t> prev_out(context.input(0));
-    Tensor<float_t> prev_delta(context.input_grad(0));
-    Tensor<float_t> curr_delta(context.output_grad(0));
+    const Tensor<> prev_out(context.input(0));
+    Tensor<> prev_delta(context.input_grad(0));
+    Tensor<> curr_delta(context.output_grad(0));
 
-    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
-    const Tensor<float_t> bias(params.has_bias_
-                                 ? *(context.ith_parameter(1)->data())
-                                 : Tensor<float_t>());
+    const Tensor<> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<> bias(params.has_bias_ ? *(context.ith_parameter(1)->data())
+                                         : Tensor<>());
 
-    Tensor<float_t> weights_grads(*(context.ith_parameter(0)->grad()));
-    Tensor<float_t> bias_grads(params.has_bias_
-                                 ? *(context.ith_parameter(1)->grad())
-                                 : Tensor<float_t>());
+    Tensor<> weights_grads(*(context.ith_parameter(0)->grad()));
+    Tensor<> bias_grads(params.has_bias_ ? *(context.ith_parameter(1)->grad())
+                                         : Tensor<>());
 
     // initialize outputs
     prev_delta.fill(float_t{0});
@@ -59,7 +57,7 @@ class FullyConnectedGradOp : public core::OpKernel {
     if (params.has_bias_) {
       context.ith_parameter(1)->set_grad(bias_grads);
     }
-    context.input_grad(0) = prev_delta.toTensor();
+    context.input_grad(0) = prev_delta;
   }
 };
 

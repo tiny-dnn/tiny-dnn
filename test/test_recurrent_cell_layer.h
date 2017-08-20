@@ -165,9 +165,9 @@ TEST(recurrent_cell, forward) {
   l.bias_init(weight_init::constant(0.5));
 
   vec_t in = {0, 1, 2, 3};
-  std::vector<const tensor_t *> o;
-  l.forward({{in}}, o);
-  vec_t out          = (*o[0])[0];
+  std::vector<const Tensor<> *> o;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, o);
+  vec_t out          = (*o[0]).toTensor()[0];
   vec_t out_expected = {2.5, 2.5};  // 0+1+2+3+0.5
 
   for (size_t i = 0; i < out_expected.size(); i++) {
@@ -182,9 +182,9 @@ TEST(recurrent_cell, forward_nobias) {
   l.weight_init(weight_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
-  std::vector<const tensor_t *> o;
-  l.forward({{in}}, o);
-  vec_t out          = (*o[0])[0];
+  std::vector<const Tensor<> *> o;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, o);
+  vec_t out          = (*o[0]).toTensor()[0];
   vec_t out_expected = {2.0, 2.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {

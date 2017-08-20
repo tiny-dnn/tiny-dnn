@@ -13,6 +13,12 @@
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
+#if HAS_CXX11_THREAD_LOCAL
+#define TINY_DNN_THREAD_LOCAL thread_local
+#else
+#define TINY_DNN_THREAD_LOCAL
+#endif
+
 namespace tiny_dnn {
 
 class softmax_layer : public activation_layer {
@@ -21,36 +27,39 @@ class softmax_layer : public activation_layer {
 
   std::string layer_type() const override { return "softmax-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    const float_t alpha = *std::max_element(x.begin(), x.end());
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx            = x.host_begin();
+    auto ity            = y.host_begin();
+    const float_t alpha = *std::max_element(x.host_begin(), x.host_end());
     float_t denominator(0);
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] = std::exp(x[j] - alpha);
-      denominator += y[j];
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      *ity = std::exp(*itx - alpha);
+      denominator += *ity;
     }
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] /= denominator;
+    for (ity = y.host_begin(); ity != y.host_end(); ++ity) {
+      *ity /= denominator;
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    const size_t len = dy.size();
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    const size_t len = dy.shape()[0];
 
-// auxilliary vector to store element wise softmax gradients of all elements
+    // auxilliary vector to store element wise softmax gradients of all elements
+    TINY_DNN_THREAD_LOCAL Tensor<> df({len});
 
-#if HAS_CXX11_THREAD_LOCAL
-    thread_local
-#endif
-      vec_t df(len, 0);
-    for (size_t j = 0; j < x.size(); j++) {
-      for (size_t k = 0; k < x.size(); k++) {
-        df[k] = (k == j) ? y[j] * (float_t(1) - y[j]) : -y[k] * y[j];
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    for (; itdx != dx.host_end(); ++ity, ++itdx) {
+      auto itdf = df.host_begin();
+      auto ity2 = y.host_begin();
+      for (; ity2 != y.host_end(); ++ity2, ++itdf) {
+        *itdf = (ity == ity2) ? *ity * (float_t(1) - *ity) : -*ity2 * *ity;
       }
       // dx = dy * (gradient of softmax)
-      dx[j] = vectorize::dot(&dy[0], &df[0], len);
+      *itdx = vectorize::dot(dy.host_begin(), df.host_begin(), len);
     }
   }
 

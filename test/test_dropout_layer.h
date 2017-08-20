@@ -23,11 +23,11 @@ TEST(dropout, randomized) {
   dropout_layer l(num_units, dropout_rate, net_phase::train);
   vec_t v(num_units, 1.0);
 
-  std::vector<const tensor_t*> out;
-  l.forward({{v}}, out);
+  std::vector<const Tensor<>*> out;
+  l.forward({{Tensor<>(tensor_t{{v}})}}, out);
   const auto mask1 = l.get_mask(0);
 
-  l.forward({{v}}, out);
+  l.forward({{Tensor<>(tensor_t{{v}})}}, out);
   const auto mask2 = l.get_mask(0);
 
   // mask should change for each fprop

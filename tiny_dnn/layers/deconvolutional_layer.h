@@ -247,10 +247,10 @@ class deconvolutional_layer : public layer {
            (params_.weight.height_ * params_.h_stride) * params_.out.depth_;
   }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     dws_.prev_out_ = in_data[0];
-    tensor_t &out  = *out_data[0];
+    Tensor<> &out  = *out_data[0];
 
     fwd_ctx_.set_in_out(in_data, out_data);
     fwd_ctx_.setParallelize(layer::parallelize());
@@ -276,10 +276,10 @@ class deconvolutional_layer : public layer {
    *with
    *in_data[i])
    **/
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     if (params_.pad_type == padding::same) {
       copy_and_pad_delta(dws_.curr_delta_padded, *in_grad[0]);
     }
@@ -312,12 +312,12 @@ class deconvolutional_layer : public layer {
     const auto width          = params_.out.depth_ * pitch + border_width;
     const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const vec_t &W                      = *this->weights()[0];
+    const Tensor<> &W                   = *this->weights()[0];
 
     img.resize(width, height);
     img.fill(bg_color);
 
-    auto minmax = std::minmax_element(W.begin(), W.end());
+    auto minmax = std::minmax_element(W.host_begin(), W.host_end());
 
     for (size_t r = 0; r < params_.in.depth_; ++r) {
       for (size_t c = 0; c < params_.out.depth_; ++c) {
@@ -331,7 +331,7 @@ class deconvolutional_layer : public layer {
         for (size_t y = 0; y < params_.weight.height_; ++y) {
           for (size_t x = 0; x < params_.weight.width_; ++x) {
             idx = params_.weight.get_index(x, y, c * params_.in.depth_ + r);
-            const float_t w = W[idx];
+            const float_t w = W.host_at(idx);
 
             img.at(left + x, top + y) = static_cast<image<>::intensity_t>(
               rescale(w, *minmax.first, *minmax.second, 0, 255));
@@ -452,17 +452,18 @@ class deconvolutional_layer : public layer {
                                       pad_type);
   }
 
-  void copy_and_pad_delta(const tensor_t &delta, tensor_t &delta_padded) {
+  void copy_and_pad_delta(const Tensor<> &delta, Tensor<> &delta_padded) {
     if (params_.pad_type == padding::valid) {
       delta_padded = delta;
     } else {
-      for (size_t sample = 0; sample < delta.size(); sample++) {
-        vec_t &dst       = delta_padded[sample];
-        const vec_t &src = delta[sample];
+      size_t sample_num = delta.shape()[0];
+      for (size_t sample = 0; sample < sample_num; sample++) {
+        auto dst = delta_padded.subView(TensorSingleIndex(sample), TensorAll());
+        const auto src = delta.subView(TensorSingleIndex(sample), TensorAll());
 
         for (size_t c = 0; c < params_.in.depth_; c++) {
-          float_t *pdst      = &dst[params_.in.get_index(0, 0, c)];
-          const float_t *pin = &src[params_.in.get_index(0, 0, c)];
+          float_t *pdst      = dst.host_pointer(params_.in.get_index(0, 0, c));
+          const float_t *pin = src.host_pointer(params_.in.get_index(0, 0, c));
 
           for (size_t y = 0; y < params_.in.height_;
                y++, pdst += params_.in.width_, pin += params_.in.width_) {
@@ -473,25 +474,27 @@ class deconvolutional_layer : public layer {
     }
   }
 
-  void copy_and_unpad_output(const tensor_t &out) {
-    dws_.curr_out_buf_ =
-      tensor_t(out.size(), vec_t(params_.out_unpadded.size(), 0));
-    tensor_t *dst_tensor = &dws_.curr_out_buf_;
+  void copy_and_unpad_output(const Tensor<> &out) {
+    size_t sample_num    = out.shape()[0];
+    dws_.curr_out_buf_   = Tensor<>({sample_num, params_.out_unpadded.size()});
+    Tensor<> *dst_tensor = &dws_.curr_out_buf_;
 
     if (params_.pad_type == padding::valid) {
       dws_.curr_out_unpadded_ = &out;
     } else {
       // make unpadded version in order to restore scale in fprop/bprop
-      for (size_t sample = 0; sample < out.size(); sample++) {
-        size_t idx           = 0;
-        vec_t &dst           = (*dst_tensor)[sample];
+      for (size_t sample = 0; sample < sample_num; ++sample) {
+        size_t idx = 0;
+        auto dst = dst_tensor->subView(TensorSingleIndex(sample), TensorAll());
+
         size_t weight_w_half = params_.weight.width_ / 2;
         size_t weight_h_half = params_.weight.height_ / 2;
 
         for (size_t c = 0; c < params_.out_unpadded.depth_; c++) {
-          float_t *pimg = &dst[params_.out_unpadded.get_index(0, 0, c)];
+          float_t *pimg =
+            dst.host_pointer(params_.out_unpadded.get_index(0, 0, c));
           idx = params_.out.get_index(weight_w_half, weight_h_half, c);
-          const float_t *pout = &out[sample][idx];
+          const float_t *pout = out.host_pointer(sample, idx);
 
           for (size_t y = weight_h_half;
                y < params_.out_unpadded.height_ + weight_h_half;

@@ -31,6 +31,7 @@ inline void tiny_average_pooling_kernel(
   const core::avepool_params &params,
   const core::average_pooling_layer_worker_specific_storage &aws,
   const bool layer_parallelize) {
+  out_data.reshape({in_data.shape()[0], params.out.area() * params.out.depth_});
   for_i(layer_parallelize, in_data.shape()[0], [&](size_t sample) {
     auto oarea = params.out.area();
     size_t idx = 0;
@@ -189,44 +190,35 @@ class average_pooling_layer : public layer {
 
   std::string layer_type() const override { return "ave-pool"; }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // todo (karandesai) : transfer all this into OpKernel
     // OpKernels do not accept worker storage so currently tricky to do so
-
-    const Tensor<> in = Tensor<>(*in_data[0]);
-    Tensor<> out      = Tensor<>(*out_data[0]);
-    out.fill(0);
+    out_data[0]->fill(0);
 
     const Tensor<> weights = *(layer::parameter_at(0).data());
     const Tensor<> bias    = *(layer::parameter_at(1).data());
 
-    tiny_average_pooling_kernel(in, weights, bias, out, params_, aws_,
-                                parallelize_);
-    *out_data[0] = out.toTensor();
+    tiny_average_pooling_kernel(*in_data[0], weights, bias, *out_data[0],
+                                params_, aws_, parallelize_);
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
+    in_grad[0]->fill(0);
     // todo (karandesai) : transfer all this into OpKernel
-
-    const Tensor<> prev_out = Tensor<>(*in_data[0]);
-    Tensor<> prev_delta     = Tensor<>(*in_grad[0]);
-    Tensor<> curr_delta     = Tensor<>(*out_grad[0]);
 
     const Tensor<> weights = *(layer::parameter_at(0).data());
     const Tensor<> bias    = *(layer::parameter_at(1).data());
     Tensor<> weights_grads = *(layer::parameter_at(0).grad());
     Tensor<> bias_grads    = *(layer::parameter_at(1).grad());
 
-    prev_delta.fill(0);
-
-    tiny_average_pooling_back_kernel(prev_out, weights, weights_grads,
-                                     bias_grads, curr_delta, prev_delta,
+    tiny_average_pooling_back_kernel(*in_data[0], weights, weights_grads,
+                                     bias_grads, *out_grad[0], *in_grad[0],
                                      params_, aws_, parallelize_);
-    *in_grad[0] = prev_delta.toTensor();
+    // TODO(Randl): pass by reference?
     layer::parameter_at(0).set_data(weights_grads);
     layer::parameter_at(1).set_data(bias_grads);
   }

@@ -38,9 +38,9 @@ TEST(global_ave_pool, forward) {
   // clang-format on
 
   vec_t expected = {2.25};
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
-  vec_t res = (*out[0])[0];
+  std::vector<const Tensor<>*> out;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
+  vec_t res = (*out[0]).toTensor()[0];
 
   EXPECT_FLOAT_EQ(expected[0], res[0]);
 }
@@ -76,9 +76,9 @@ TEST(global_ave_pool, forward_multichannel) {
 
   vec_t expected = {1.5, 6.5, 2.5};
 
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
-  vec_t res = (*out[0])[0];
+  std::vector<const Tensor<>*> out;
+  l.forward({{Tensor<>(tensor_t{{in}})}}, out);
+  vec_t res = (*out[0]).toTensor()[0];
 
   for (size_t i = 0; i < expected.size(); i++) {
     EXPECT_FLOAT_EQ(expected[i], res[i]);
@@ -100,7 +100,9 @@ TEST(global_ave_pool, backward) {
                             1, 1, 1, 1,
                             1, 1, 1, 1};
   // clang-format on
-  vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
+  vec_t in_grad =
+    l.backward(std::vector<Tensor<>>{{Tensor<>(tensor_t{{out_grad}})}})[0]
+      .toTensor()[0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
@@ -123,7 +125,9 @@ TEST(global_ave_pool, backward_multichannel) {
                                         3, 3};
   // clang-format on
 
-  vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
+  vec_t in_grad =
+    l.backward(std::vector<Tensor<>>{{Tensor<>(tensor_t{{out_grad}})}})[0]
+      .toTensor()[0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);

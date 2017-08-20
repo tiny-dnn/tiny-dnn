@@ -258,8 +258,8 @@ class convolutional_layer : public layer {
    * @param in_data      input vectors of this layer (data, weight, bias)
    * @param out_data     output vectors
    **/
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
     // apply padding to the input tensor
     padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
@@ -289,10 +289,10 @@ class convolutional_layer : public layer {
    *with
    *in_data[i])
    **/
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     bwd_in_data_.resize(in_data.size());
     std::copy(in_data.begin(), in_data.end(), bwd_in_data_.begin());
     bwd_in_data_[0] = in_data_padded(in_data);
@@ -318,8 +318,7 @@ class convolutional_layer : public layer {
 
   void set_sample_count(size_t sample_count) override {
     layer::set_sample_count(sample_count);
-    cws_.prev_delta_padded_.resize(sample_count,
-                                   vec_t(params_.in_padded.size(), float_t(0)));
+    cws_.prev_delta_padded_.resize_axis(sample_count);
   }
 
   std::vector<index3d<size_t>> in_shape() const override {
@@ -362,12 +361,12 @@ class convolutional_layer : public layer {
     const auto width          = params_.out.depth_ * pitch + border_width;
     const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const vec_t &W                      = *this->weights()[0];
+    const Tensor<> &W                   = *this->weights()[0];
 
     img.resize(width, height);
     img.fill(bg_color);
 
-    auto minmax = std::minmax_element(W.begin(), W.end());
+    auto minmax = std::minmax_element(W.host_begin(), W.host_end());
 
     for (size_t r = 0; r < params_.in.depth_; ++r) {
       for (size_t c = 0; c < params_.out.depth_; ++c) {
@@ -382,7 +381,7 @@ class convolutional_layer : public layer {
           for (size_t x = 0; x < params_.weight.width_; ++x) {
             idx             = c * params_.in.depth_ + r;
             idx             = params_.weight.get_index(x, y, idx);
-            const float_t w = W[idx];
+            const float_t w = W.host_at(idx);
 
             img.at(left + x, top + y) = static_cast<image<>::intensity_t>(
               rescale(w, *minmax.first, *minmax.second, 0, 255));
@@ -397,7 +396,7 @@ class convolutional_layer : public layer {
   friend struct serialization_buddy;
 
  private:
-  tensor_t *in_data_padded(const std::vector<tensor_t *> &in) {
+  Tensor<> *in_data_padded(const std::vector<Tensor<> *> &in) {
     return (params_.pad_type == padding::valid) ? in[0]
                                                 : &cws_.prev_out_padded_;
   }
@@ -428,8 +427,7 @@ class convolutional_layer : public layer {
 
     // init padding buffer
     if (params_.pad_type == padding::same) {
-      cws_.prev_delta_padded_.resize(
-        1, vec_t(params_.in_padded.size(), float_t(0)));
+      cws_.prev_delta_padded_.reshape({1, params_.in_padded.size()});
     }
 
     // set parameters to padding operation
@@ -508,14 +506,14 @@ class convolutional_layer : public layer {
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
 
-  std::vector<tensor_t *> fwd_in_data_;
-  std::vector<tensor_t *> bwd_in_data_;
-  std::vector<tensor_t *> bwd_in_grad_;
+  std::vector<Tensor<> *> fwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_data_;
+  std::vector<Tensor<> *> bwd_in_grad_;
 
   /* Buffer to store padded data */
   struct conv_layer_worker_specific_storage {
-    tensor_t prev_out_padded_;
-    tensor_t prev_delta_padded_;
+    Tensor<> prev_out_padded_;
+    Tensor<> prev_delta_padded_;
   } cws_;
 };
 

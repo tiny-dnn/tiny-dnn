@@ -305,7 +305,7 @@ class sequential : public nodes {
       l->forward();
     }
 
-    std::vector<const tensor_t *> out;
+    std::vector<const Tensor<> *> out;
     nodes_.back()->output(out);
 
     return normalize_out(out);
@@ -353,15 +353,14 @@ class sequential : public nodes {
   friend class nodes;
 
   std::vector<tensor_t> normalize_out(
-    const std::vector<const tensor_t *> &out) {
+    const std::vector<const Tensor<> *> &out) {
     // normalize indexing back to [sample][layer][feature]
     std::vector<tensor_t> normalized_output;
-
-    const size_t sample_count = out[0]->size();
+    const size_t sample_count = out[0]->shape()[0];
     normalized_output.resize(sample_count, tensor_t(1));
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      normalized_output[sample][0] = (*out[0])[sample];
+      normalized_output[sample][0] = out[0]->lineToVec(sample);
     }
 
     return normalized_output;
@@ -556,13 +555,13 @@ class graph : public nodes {
   // normalize indexing back to [sample][layer][feature]
   std::vector<tensor_t> merge_outs() {
     std::vector<tensor_t> merged;
-    std::vector<const tensor_t *> out;
+    std::vector<const Tensor<> *> out;
     size_t output_channel_count = output_layers_.size();
     for (size_t output_channel = 0; output_channel < output_channel_count;
          ++output_channel) {
       output_layers_[output_channel]->output(out);
 
-      size_t sample_count = out[0]->size();
+      size_t sample_count = out[0]->shape()[0];
       if (output_channel == 0) {
         assert(merged.empty());
         merged.resize(sample_count, tensor_t(output_channel_count));
@@ -571,7 +570,8 @@ class graph : public nodes {
       assert(merged.size() == sample_count);
 
       for (size_t sample = 0; sample < sample_count; ++sample) {
-        merged[sample][output_channel] = (*out[0])[sample];
+        merged[sample][output_channel] =
+          out[0]->subView(TensorSingleIndex(sample), TensorAll()).toVec();
       }
     }
     return merged;

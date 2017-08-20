@@ -54,8 +54,15 @@ inline int32_t int64_to_int32(int64_t src) {
   return static_cast<int32_t>(src);
 }
 
-// This converts the float into the final quantized type, clamping/saturating
-// any over or underflows.
+/**
+ * Converts the float into the final quantized type, clamping/saturating any
+ * over or underflows.
+ * @tparam T final quantized type
+ * @param input
+ * @param range_min
+ * @param range_max
+ * @return
+ */
 template <class T>
 T float_to_quantized(float_t input, float_t range_min, float_t range_max) {
   int64_t quantized =
@@ -124,6 +131,7 @@ inline T2 requantize_in_new_range(T1 input,
   return float_to_quantized<T2>(input_float, min_new, max_new);
 }
 
+// TODO(Randl): refactor with iterators (stl-style)
 template <class T1, class T2>
 inline void requantize_many_in_new_range(T1 *input,
                                          size_t count,
@@ -185,72 +193,99 @@ inline void requantize_many_in_new_range<int32_t, uint8_t>(int32_t *input,
   }
 }
 
-// REQUIRES: 'result->NumElements() == input.NumElements()'
-template <class T>
-void float_tensor_to_quantized_in_place(const vec_t &input,
+// REQUIRES: 'result->size() == input.size()'
+template <typename Q, typename S>
+void float_tensor_to_quantized_in_place(const Tensor<float_t, S> &input,
                                         float_t min,
                                         float_t max,
-                                        std::vector<T> *result) {
-  const size_t data_size = input.size();
-  for (size_t i = 0; i < data_size; ++i) {
-    (*result)[i] = float_to_quantized<T>(input[i], min, max);
+                                        Tensor<Q> *result) {
+  auto in_iter  = input.host_begin();
+  auto res_iter = result->host_begin();
+  for (; in_iter != input.host_end(); ++in_iter, ++res_iter) {
+    *res_iter = float_to_quantized<Q>(*in_iter, min, max);
   }
 }
 
-template <class T>
-std::vector<T> float_tensor_to_quantized(const vec_t &input,
-                                         float_t min,
-                                         float_t max) {
-  std::vector<T> result(input.size(), static_cast<T>(0));
-  float_tensor_to_quantized_in_place<T>(input, min, max, &result);
+template <typename Q, typename S>
+Tensor<Q> float_tensor_to_quantized(const Tensor<float_t, S> &input,
+                                    float_t min,
+                                    float_t max) {
+  Tensor<Q> result(input.shape());
+  result.fill(static_cast<Q>(0));
+  float_tensor_to_quantized_in_place<Q>(input, min, max, &result);
   return result;
 }
 
-// REQUIRES: 'result->NumElements() == input.NumElements()'
-template <class T>
-void quantized_tensor_to_float_in_place(const std::vector<T> &input,
+// REQUIRES: 'result->size() == input.size()'
+template <typename Q, typename S>
+void quantized_tensor_to_float_in_place(const Tensor<Q, S> &input,
                                         float_t min,
                                         float_t max,
-                                        vec_t *result) {
-  const size_t data_size = input.size();
-  for (size_t i = 0; i < data_size; ++i) {
-    (*result)[i] = quantized_to_float<T>(input[i], min, max);
+                                        Tensor<> *result) {
+  auto in_iter  = input.host_begin();
+  auto res_iter = result->host_begin();
+  for (; in_iter != input.host_end(); ++in_iter, ++res_iter) {
+    *res_iter = quantized_to_float<Q>(*in_iter, min, max);
   }
 }
 
-template <class T>
-vec_t quantized_tensor_to_float(const std::vector<T> &input,
-                                float_t min,
-                                float_t max) {
-  vec_t result(input.size(), static_cast<float_t>(0));
-  quantized_tensor_to_float_in_place<T>(input, min, max, &result);
+template <typename Q, typename S>
+Tensor<> quantized_tensor_to_float(const Tensor<Q, S> &input,
+                                   float_t min,
+                                   float_t max) {
+  Tensor<> result({input.size()});
+  result.fill(float_t(0));
+  quantized_tensor_to_float_in_place<Q>(input, min, max, &result);
   return result;
 }
 
-template <class T1, class T2>
-void quantize_down_and_shrink_range(std::vector<T1> &input,
+template <class T1, class T2, class S1, class S2>
+void quantize_down_and_shrink_range(Tensor<T1, S1> &input,
                                     float_t min_input,
                                     float_t max_input,
                                     float_t *min_new,
                                     float_t *max_new,
-                                    std::vector<T2> *output) {
+                                    Tensor<T2, S2> *output) {
   const int32_t input_lowest_quantized  = static_cast<int32_t>(lowest<T1>());
   const int32_t input_highest_quantized = static_cast<int32_t>(highest<T1>());
-  T1 actual_min_quantized               = input_highest_quantized;
-  T1 actual_max_quantized               = input_lowest_quantized;
-  for (size_t i = 0; i < input.size(); ++i) {
-    const T1 value       = input[i];
-    actual_min_quantized = std::min(actual_min_quantized, value);
-    actual_max_quantized = std::max(actual_max_quantized, value);
-  }
+
+  auto in_minmax = std::minmax_element(input.host_begin(), input.host_end());
+  T1 actual_min_quantized = std::min(input_highest_quantized, *in_minmax.first);
+  T1 actual_max_quantized = std::min(input_lowest_quantized, *in_minmax.second);
+
   // We want to make sure that the minimum is no larger than zero, so that the
   // convolution operation can run efficiently.
   *min_new = std::min(
     0.0f, quantized_to_float(actual_min_quantized, min_input, max_input));
   *max_new = quantized_to_float(actual_max_quantized, min_input, max_input);
-  requantize_many_in_new_range<int32_t, uint8_t>(&input[0], input.size(),
-                                                 min_input, max_input, *min_new,
-                                                 *max_new, &(*output)[0]);
+  requantize_many_in_new_range<int32_t, uint8_t>(
+    input.host_pbegin(), input.size(), min_input, max_input, *min_new, *max_new,
+    output->host_pbegin());
+}
+
+/**
+ * Quantize tensor to givin type, and return minimal and maximal elements by
+ * reference
+ * @tparam Q type to quantize
+ * @tparam S
+ * @param tensor Tensor to quantize
+ * @param min_el minimal value returned by reference
+ * @param max_el maximal value returned by reference
+ * @return
+ */
+template <typename Q, typename S>
+Tensor<Q> quantize_tensor(Tensor<float_t, S> tensor,
+                          float_t &min_el,
+                          float_t &max_el) {
+  auto minmax = std::minmax_element(tensor.host_begin(), tensor.host_end());
+  min_el      = *minmax.first;
+  max_el      = *minmax.second;
+  if (max_el == min_el) {
+    // TODO(Randl): magic numbers
+    min_el -= 10e-3;
+    max_el += 10e-3;
+  }
+  return float_tensor_to_quantized<Q>(tensor, min_el, max_el);
 }
 
 }  // namespace kernels

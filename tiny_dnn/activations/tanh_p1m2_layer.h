@@ -21,21 +21,27 @@ class tanh_p1m2_layer : public activation_layer {
 
   std::string layer_type() const override { return "tanh-scaled-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx = x.host_begin();
+    auto ity = y.host_begin();
     float_t ep;
-    for (size_t j = 0; j < x.size(); j++) {
-      ep   = std::exp(x[j]);
-      y[j] = ep / (ep + (float_t(1) / ep));
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      ep   = std::exp(*itx);
+      *ity = ep / (ep + (float_t(1) / ep));
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
-    for (size_t j = 0; j < x.size(); j++) {
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
+    auto itx  = x.host_begin();
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    auto itdy = dy.host_begin();
+    for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
       // dx = dy * (gradient of tanh-scaled)
-      dx[j] = dy[j] * (2 * y[j] * (float_t(1) - y[j]));
+      *itdx = *itdy * (2 * *ity * (float_t(1) - *ity));
     }
   }
 

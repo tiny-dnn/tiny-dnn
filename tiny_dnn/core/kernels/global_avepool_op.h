@@ -22,8 +22,8 @@ class GlobalAvePoolOp : public core::OpKernel {
     auto &params = OpKernel::params_->global_avepool();
 
     // incomimg / outcoming data
-    const Tensor<float_t> in_data(context.input(0));
-    Tensor<float_t> out_data(context.output(0));
+    const Tensor<> in_data(context.input(0));
+    Tensor<> out_data(context.output(0));
 
     // initialize outputs
     out_data.fill(0.0f);
@@ -39,7 +39,7 @@ class GlobalAvePoolOp : public core::OpKernel {
       kernels::global_avepool_op_internal(in_data, out_data, params,
                                           context.parallelize());
     }
-    context.output(0) = out_data.toTensor();
+    context.output(0) = out_data;
   }
 };
 

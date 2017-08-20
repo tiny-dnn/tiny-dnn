@@ -11,15 +11,16 @@
 #include <deque>
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/core/params/params.h"
 
 namespace tiny_dnn {
 namespace core {
 
 struct conv_layer_worker_specific_storage {
-  std::vector<const vec_t *> prev_out_padded_;
-  std::vector<vec_t> prev_out_buf_;
-  std::vector<vec_t> prev_delta_padded_;
+  std::vector<ConstViewTensor> prev_out_padded_;
+  Tensor<> prev_out_buf_;
+  Tensor<> prev_delta_padded_;
 };
 
 struct connection_table {
@@ -94,27 +95,30 @@ class Conv2dPadding {
   Conv2dPadding() {}
   explicit Conv2dPadding(const conv_params &params) : params_(params) {}
 
-  /* Applies padding to an input tensor given the convolution parameters
-   *
+  /**
+   * Applies padding to an input tensor given the convolution parameters
    * @param in The input tensor
    * @param out The output tensor with padding applied
    */
-  void copy_and_pad_input(const tensor_t &in, tensor_t &out) {
+  void copy_and_pad_input(const Tensor<> &in, Tensor<> &out) const {
     if (params_.pad_type == padding::valid) {
       return;
     }
 
-    tensor_t buf(in.size());
+    size_t sample_num = in.shape()[0];
+    // alloc temporary buffer.
+    Tensor<> buf({sample_num, params_.in_padded.size()});
+    buf.fill(0);
 
-    for_i(true, buf.size(), [&](size_t sample) {
-      // alloc temporary buffer.
-      buf[sample].resize(params_.in_padded.size());
-
+    for_i(true, sample_num, [&](size_t sample) {
       // make padded version in order to avoid corner-case in fprop/bprop
       for (size_t c = 0; c < params_.in.depth_; c++) {
-        float_t *pimg = &buf[sample][params_.in_padded.get_index(
-          params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
-        const float_t *pin = &in[sample][params_.in.get_index(0, 0, c)];
+        float_t *pimg = buf.host_pointer(
+          sample,
+          params_.in_padded.get_index(params_.weight.width_ / 2,
+                                      params_.weight.height_ / 2, c));
+        const float_t *pin =
+          in.host_pointer(sample, params_.in.get_index(0, 0, c));
 
         for (size_t y = 0; y < params_.in.height_; y++) {
           std::copy(pin, pin + params_.in.width_, pimg);
@@ -125,29 +129,32 @@ class Conv2dPadding {
     });
 
     // shrink buffer to output
+    // TODO(Randl): write directly to output?
     out = buf;
   }
 
-  /* Applies unpadding to an input tensor given the convolution parameters
-   *
-   * @param in The input tensor
-   * @param out The output tensor with unpadding applied
+  /**
+   * Applies unpadding to an input tensor given the convolution parameters
+   * @param delta The input tensor
+   * @param delta_unpadded The output tensor with unpadding applied
    */
-  void copy_and_unpad_delta(const tensor_t &delta, tensor_t &delta_unpadded) {
+  void copy_and_unpad_delta(const Tensor<> &delta,
+                            Tensor<> &delta_unpadded) const {
     if (params_.pad_type == padding::valid) {
       return;
     }
 
-    tensor_t buf(delta.size());
+    size_t sample_num = delta.shape()[0];
+    // alloc temporary buffer.
+    Tensor<> buf({sample_num, params_.in.size()});
 
-    for_i(true, buf.size(), [&](size_t sample) {
-      // alloc temporary buffer.
-      buf[sample].resize(params_.in.size());
-
+    for_i(true, sample_num, [&](size_t sample) {
       for (size_t c = 0; c < params_.in.depth_; c++) {
-        const float_t *pin = &delta[sample][params_.in_padded.get_index(
-          params_.weight.width_ / 2, params_.weight.height_ / 2, c)];
-        float_t *pdst = &buf[sample][params_.in.get_index(0, 0, c)];
+        const float_t *pin = delta.host_pointer(
+          sample,
+          params_.in_padded.get_index(params_.weight.width_ / 2,
+                                      params_.weight.height_ / 2, c));
+        float_t *pdst = buf.host_pointer(sample, params_.in.get_index(0, 0, c));
 
         for (size_t y = 0; y < params_.in.height_; y++) {
           std::copy(pin, pin + params_.in.width_, pdst);

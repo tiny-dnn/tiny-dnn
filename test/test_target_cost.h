@@ -150,14 +150,15 @@ TEST(target_cost, create_balanced_target_cost_0_5) {
 }
 
 TEST(target_cost, train_unbalanced_data_1dim) {
-  // train a really simple function with noisy, unbalanced training data:
-  // 1) assuming equal cost for each training sample, in which case the total
-  // cost
-  //    (error) is rightly minimized by always guessing the majority class
-  //    (1),
-  //    and
-  // 2) assuming equal cost for each class, in which case the "true" function
-  //    (identity) can be learned
+  /*
+   * train a really simple function with noisy, unbalanced training data:
+   * 1) assuming equal cost for each training sample, in which case the total
+   * cost (error) is rightly minimized by always guessing the majority class
+   * (1),
+   *  and
+   * 2) assuming equal cost for each class, in which case the "true" function
+   * (identity) can be learned
+   */
 
   const float_t p  = 0.9f;  // p(in == 1)
   const float_t p0 = 0.6f;  // p(label == 1 | in == 0)

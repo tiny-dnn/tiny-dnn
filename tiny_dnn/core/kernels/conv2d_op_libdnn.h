@@ -43,10 +43,10 @@ class Conv2dLibDNNForwardOp : public core::OpKernel {
     // Conv2d::setParams(context.params());
 
     // TODO(Randl): Remove once layers forward and backward by themself.
-    Tensor<float_t> in_data_t(context.input(0));
-    const Tensor<float_t> weights_t(context.input(1)),
-      bias_t = Tensor<float_t>(context.input(2));  // TODO(Randl): has_bias
-    Tensor<float_t> out_data_t(context.output(0));
+    Tensor<> in_data_t(context.input(0));
+    const Tensor<> weights_t(context.input(1)),
+      bias_t = Tensor<>(context.input(2));  // TODO(Randl): has_bias
+    Tensor<> out_data_t(context.output(0));
 
     // initialize outputs
     out_data_t.fill(0.0f);

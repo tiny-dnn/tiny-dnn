@@ -101,7 +101,6 @@ TEST(tensor, const_view1) {
   EXPECT_EQ(t_view.shape()[0], size_t(5));
   EXPECT_EQ(tensor.host_at(2), 2);
 }
-
 TEST(tensor, reshape) {
   Tensor<> tensor({1, 2, 2, 2}, 2);
   tensor.reshape({4, 1, 2});

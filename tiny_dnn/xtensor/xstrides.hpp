@@ -1,5 +1,5 @@
 /***************************************************************************
-* Copyright (c) 2016, Johan Mabille and Sylvain Corlay                     *
+* Copyright (c) 2016, Johan Mabille, Sylvain Corlay and Wolf Vollprecht    *
 *                                                                          *
 * Distributed under the terms of the BSD 3-Clause License.                 *
 *                                                                          *
@@ -20,7 +20,7 @@ namespace xt
 {
 
     template <class shape_type>
-    typename shape_type::value_type compute_size(const shape_type& shape) noexcept;
+    auto compute_size(const shape_type& shape) noexcept;
 
     /***************
      * data offset *
@@ -29,8 +29,8 @@ namespace xt
     template <class size_type, class S, size_t dim = 0>
     size_type data_offset(const S& strides) noexcept;
 
-    template <class size_type, class S, size_t dim = 0, class... Args>
-    size_type data_offset(const S& strides, size_type i, Args... args) noexcept;
+    template <class size_type, class S, size_t dim = 0, class Arg, class... Args>
+    size_type data_offset(const S& strides, Arg arg, Args... args) noexcept;
 
     template <class size_type, class S, class It>
     size_type element_offset(const S& strides, It first, It last) noexcept;
@@ -68,33 +68,60 @@ namespace xt
      ******************/
 
     template <class shape_type>
-    inline typename shape_type::value_type compute_size(const shape_type& shape) noexcept
+    inline auto compute_size(const shape_type& shape) noexcept
     {
-        using size_type = typename shape_type::value_type;
-        return std::accumulate(shape.begin(), shape.end(), size_type(1), std::multiplies<size_type>());
+        using size_type = std::decay_t<typename shape_type::value_type>;
+        return std::accumulate(shape.cbegin(), shape.cend(), size_type(1), std::multiplies<size_type>());
     }
 
-    template <class size_type, class S, size_t dim>
-    inline size_type data_offset(const S& /*strides*/) noexcept
+    namespace detail
+    {
+        template <class size_type, class S, std::size_t dim>
+        inline size_type raw_data_offset(const S&) noexcept
+        {
+            return 0;
+        }
+
+        template <class size_type, class S, std::size_t dim, class Arg, class... Args>
+        inline size_type raw_data_offset(const S& strides, Arg arg, Args... args) noexcept
+        {
+            return arg * strides[dim] + raw_data_offset<size_type, S, dim + 1>(strides, args...);
+        }
+    }
+
+    template <class size_type, class S, std::size_t dim>
+    inline size_type data_offset(const S&) noexcept
     {
         return 0;
     }
 
-    template <class size_type, class S, size_t dim, class... Args>
-    inline size_type data_offset(const S& strides, size_type i, Args... args) noexcept
+    template <class size_type, class S, std::size_t dim, class Arg, class... Args>
+    inline size_type data_offset(const S& strides, Arg arg, Args... args) noexcept
     {
-        if (sizeof...(Args) + 1 > strides.size())
+        constexpr std::size_t nargs = sizeof...(Args) + dim + 1;
+        if (nargs == strides.size())
+        {
+            // Correct number of arguments: iterate
+            return detail::raw_data_offset<size_type, S, dim, Arg, Args...>(strides, arg, args...);
+        }
+        else if (nargs > strides.size())
+        {
+            // Too many arguments: drop the first
             return data_offset<size_type, S, dim>(strides, args...);
+        }
         else
-            return i * strides[dim] + data_offset<size_type, S, dim + 1>(strides, args...);
+        {
+            // Too few arguments: right to left scalar product
+            auto view = strides.cend() - nargs;
+            return detail::raw_data_offset<size_type, const typename S::const_iterator, dim, Arg, Args...>(view, arg, args...);
+        }
     }
 
     template <class size_type, class S, class It>
     inline size_type element_offset(const S& strides, It first, It last) noexcept
     {
-        auto dst = static_cast<typename S::size_type>(std::distance(first, last));
-        It efirst = last - std::min(strides.size(), dst);
-        return std::inner_product(efirst, last, strides.begin(), size_type(0));
+        auto size = std::min(static_cast<typename S::size_type>(std::distance(first, last)), strides.size());
+        return std::inner_product(last - size, last, strides.cend() - size, size_type(0));
     }
 
     namespace detail

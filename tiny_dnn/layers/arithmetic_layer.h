@@ -41,28 +41,26 @@ class elementwise_add_layer : public layer {
     return {shape3d(dim_, 1, 1)};
   }
 
-  void forward_propagation(const std::vector<tensor_t *> &in_data,
-                           std::vector<tensor_t *> &out_data) override {
-    const tensor_t &in1 = *in_data[0];
-    tensor_t &out       = *out_data[0];
-
-    out = in1;
-
-    // @todo parallelize
-    for (size_t sample = 0; sample < in1.size(); ++sample) {
-      for (size_t i = 1; i < num_args_; i++) {
-        std::transform((*in_data[i])[sample].begin(),
-                       (*in_data[i])[sample].end(), out[sample].begin(),
-                       out[sample].begin(),
+  void forward_propagation(const std::vector<Tensor<> *> &in_data,
+                           std::vector<Tensor<> *> &out_data) override {
+    out_data[0]->fill(0);
+    // TODO(Randl): parallelize
+    for (size_t sample = 0; sample < in_data[0]->shape()[0]; ++sample) {
+      for (size_t i = 0; i < num_args_; i++) {
+        auto in_s = in_data[i]->subView(TensorSingleIndex(sample), TensorAll());
+        auto out_s =
+          out_data[0]->subView(TensorSingleIndex(sample), TensorAll());
+        std::transform(in_s.host_begin(), in_s.host_end(), out_s.host_begin(),
+                       out_s.host_begin(),
                        [](float_t x, float_t y) { return x + y; });
       }
     }
   }
 
-  void back_propagation(const std::vector<tensor_t *> &in_data,
-                        const std::vector<tensor_t *> &out_data,
-                        std::vector<tensor_t *> &out_grad,
-                        std::vector<tensor_t *> &in_grad) override {
+  void back_propagation(const std::vector<Tensor<> *> &in_data,
+                        const std::vector<Tensor<> *> &out_data,
+                        std::vector<Tensor<> *> &out_grad,
+                        std::vector<Tensor<> *> &in_grad) override {
     CNN_UNREFERENCED_PARAMETER(in_data);
     CNN_UNREFERENCED_PARAMETER(out_data);
     for (size_t i = 0; i < num_args_; i++) *in_grad[i] = *out_grad[0];

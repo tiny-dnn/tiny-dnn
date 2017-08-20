@@ -21,21 +21,27 @@ class softsign_layer : public activation_layer {
 
   std::string layer_type() const override { return "softsign-activation"; }
 
-  void forward_activation(const vec_t &x, vec_t &y) override {
-    for (size_t j = 0; j < x.size(); j++) {
-      y[j] = x[j] / (1.0 + std::abs(x[j]));
+  void forward_activation(const ConstViewTensor x, ViewTensor y) override {
+    auto itx = x.host_begin();
+    auto ity = y.host_begin();
+    for (; itx != x.host_end(); ++itx, ++ity) {
+      *ity = *itx / (1.0 + std::abs(*itx));
     }
   }
 
-  void backward_activation(const vec_t &x,
-                           const vec_t &y,
-                           vec_t &dx,
-                           const vec_t &dy) override {
+  void backward_activation(const ConstViewTensor x,
+                           const ConstViewTensor y,
+                           ViewTensor dx,
+                           const ConstViewTensor dy) override {
     CNN_UNREFERENCED_PARAMETER(y);
-    for (size_t j = 0; j < x.size(); j++) {
+    auto itx  = x.host_begin();
+    auto ity  = y.host_begin();
+    auto itdx = dx.host_begin();
+    auto itdy = dy.host_begin();
+    for (; itdx != dx.host_end(); ++itx, ++ity, ++itdx, ++itdy) {
       // dx = dy * (gradient of softsign)
-      auto d = 1.0 + std::abs(x[j]);
-      dx[j]  = dy[j] / (d * d);
+      auto d = 1.0 + std::abs(*itx);
+      *itdx  = *itdy / (d * d);
     }
   }
 
