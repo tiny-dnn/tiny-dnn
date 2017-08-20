@@ -101,7 +101,8 @@ TEST(optimizers, adam_update) {
 TEST(optimizers, adamax_update) {
   adamax optimizer;
 
-  vec_t weights   = {1.00, 0.081, -0.6201, 0.96, -0.007};
+  vec_t _weights = {1.00, 0.081, -0.6201, 0.96, -0.007};
+  Tensor<> weights(_weights);
   vec_t gradients = {6.45, -3.240, -0.6000, 2.79, 1.820};
 
   // Defining the expected updates
@@ -114,13 +115,13 @@ TEST(optimizers, adamax_update) {
   optimizer.update(gradients, weights, false);
 
   for (size_t i = 0; i < weights.size(); i++) {
-    EXPECT_NEAR(first_update[i], weights[i], 1e-3);
+    EXPECT_NEAR(first_update[i], weights.host_at(i), 1e-3);
   }
 
   optimizer.update(gradients, weights, false);
 
   for (size_t i = 0; i < weights.size(); i++) {
-    EXPECT_NEAR(second_update[i], weights[i], 1e-3);
+    EXPECT_NEAR(second_update[i], weights.host_at(i), 1e-3);
   }
 }
 

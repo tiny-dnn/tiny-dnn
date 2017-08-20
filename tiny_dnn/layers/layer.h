@@ -208,7 +208,7 @@ class layer : public node {
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
-      dst_data.resize(sz);
+      dst_data.resize_axis(sz);
 
       CNN_UNREFERENCED_PARAMETER(in_size);
 

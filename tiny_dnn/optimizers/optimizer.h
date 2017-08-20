@@ -154,16 +154,17 @@ struct adamax : public stateful_optimizer<2> {
       b1_t(b1),
       eps(float_t(1e-8)) {}
 
-  void update(const vec_t &dW, vec_t &W, bool parallelize) {
-    vec_t &mt = get<0>(W);
-    vec_t &ut = get<1>(W);
+  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+    Tensor<> &mt = get<0>(W);
+    Tensor<> &ut = get<1>(W);
 
     for_i(parallelize, W.size(), [&](int i) {
-      mt[i] = b1 * mt[i] + (float_t(1) - b1) * dW[i];
-      ut[i] = std::max(b2 * ut[i], std::abs(dW[i]));
+      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW[i];
+      ut.host_at(i) = std::max(b2 * ut.host_at(i), std::abs(dW[i]));
 
       // Lp norm based update rule
-      W[i] -= (alpha / (1.0 - b1_t)) * (mt[i] / (ut[i] + eps));
+      W.host_at(i) -=
+        (alpha / (1.0 - b1_t)) * (mt.host_at(i) / (ut.host_at(i) + eps));
     });
 
     b1_t *= b1;
@@ -223,7 +224,6 @@ struct momentum : public stateful_optimizer<1> {
   float_t mu;      // momentum
 };
 
-
 /**
  * SGD with Nesterov momentum
  *
@@ -236,13 +236,14 @@ struct nesterov_momentum : public stateful_optimizer<1> {
   nesterov_momentum()
     : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
-  void update(const vec_t &dW, vec_t &W, bool parallelize) {
-    vec_t &dWprev = get<0>(W);
+  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+    Tensor<> &dWprev = get<0>(W);
 
     for_i(parallelize, W.size(), [&](size_t i) {
-      float_t V = mu * dWprev[i] - alpha * (dW[i] + W[i] * lambda);
-      W[i] += (-mu) * dWprev[i] + (1 + mu) * V;
-      dWprev[i] = V;
+      float_t V =
+        mu * dWprev.host_at(i) - alpha * (dW[i] + W.host_at(i) * lambda);
+      W.host_at(i) += (-mu) * dWprev.host_at(i) + (1 + mu) * V;
+      dWprev.host_at(i) = V;
     });
   }
 

@@ -90,21 +90,6 @@ TEST(ave_unpool, forward_stride) {
   }
 }
 
-TEST(ave_unpool, gradient_check) {
-  using loss_func  = cross_entropy;
-  using activation = sigmoid;
-  using network    = network<sequential>;
-
-  network nn;
-  nn << average_pooling_layer(4, 2, 1, 2);  // 4x2 => 2x1
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-
-  EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
-                                           epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
 TEST(ave_unpool, read_write) {
   average_unpooling_layer l1(100, 100, 5, 2);
   average_unpooling_layer l2(100, 100, 5, 2);
