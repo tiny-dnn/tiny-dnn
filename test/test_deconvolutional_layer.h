@@ -65,7 +65,9 @@ TEST(deconvolutional, setup_nnp) {
 
 TEST(deconvolutional, fprop) {
   deconvolutional_layer l(2, 2, 3, 1, 2);
-  l.weight_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(0.0));
+  l.bias_init(parameter_init::constant(0.0));
+  l.init_parameters();
 
   vec_t in(4, 0);
   vec_t out_expected(32, 0);
@@ -118,7 +120,9 @@ TEST(deconvolutional, fprop) {
 
 TEST(deconvolutional, fprop_padding_same) {
   deconvolutional_layer l(2, 2, 3, 1, 2, padding::same);
-  l.weight_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(0.0));
+  l.bias_init(parameter_init::constant(0.0));
+  l.init_parameters();
 
   vec_t in(4, 0);
   vec_t out_expected(8, 0);

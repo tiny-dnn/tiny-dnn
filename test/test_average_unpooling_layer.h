@@ -17,8 +17,8 @@ namespace tiny_dnn {
 
 TEST(ave_unpool, forward) {
   average_unpooling_layer l(2, 2, 1, 2);
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   // clang-format off
@@ -45,8 +45,8 @@ TEST(ave_unpool, forward) {
 
 TEST(ave_unpool, forward_stride) {
   average_unpooling_layer l(3, 3, 1, 2, 1);
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   // clang-format off

@@ -26,8 +26,8 @@ TEST(models, alexnet) {
   uniform_rand(in.begin(), in.end(), 0, 1);
 
   // init wieghts and biases
-  nn.weight_init(weight_init::constant(2.0));
-  nn.bias_init(weight_init::constant(2.0));
+  nn.weight_init(parameter_init::constant(2.0));
+  nn.bias_init(parameter_init::constant(2.0));
   nn.init_parameters();
 
   // predict

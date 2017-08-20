@@ -329,7 +329,7 @@ TEST(network, test) {
   int data_num = 300;
 
   net << fc;
-  net.weight_init_f(parameter_init::constant(1.0));
+  net.weight_init(parameter_init::constant(1.0));
   net.init_parameters();
 
   std::vector<vec_t> in, expected;
@@ -383,7 +383,7 @@ TEST(network, weight_init) {
       << average_pooling_layer(32, 32, 6, 2);
 
   // change all layers at once
-  net.weight_init_f(parameter_init::constant(2.0));
+  net.weight_init(parameter_init::constant(2.0));
   net.init_parameters();
 
   Parameter w1 = net[0]->ith_parameter(0);
@@ -405,8 +405,8 @@ TEST(network, weight_init_per_layer) {
       << average_pooling_layer(32, 32, 6, 2);
 
   // change specific layer
-  net[0]->weight_init(weight_init::constant(2.0));
-  net[1]->weight_init(weight_init::constant(1.0));
+  net[0]->weight_init(parameter_init::constant(2.0));
+  net[1]->weight_init(parameter_init::constant(1.0));
   net.init_parameters();
 
   Tensor<> &w1 = *net[0]->weights()[0];

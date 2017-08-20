@@ -30,7 +30,6 @@
 #include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/weight_init.h"
 
 #include "tiny_dnn/optimizers/optimizer.h"
 
@@ -65,20 +64,14 @@ class layer : public node {
   layer(const std::vector<vector_type> &in_type,
         const std::vector<vector_type> &out_type)
     : node(in_type.size(), out_type.size()),
-      initialized_(false),
       parallelize_(true),
       in_channels_(in_type.size()),
       out_channels_(out_type.size()),
       in_type_(in_type),
       out_type_(out_type) {
-    // todo (karandesai) : remove these after parameter integration
-    weight_init_ = std::make_shared<weight_init::xavier>();
-    bias_init_   = std::make_shared<weight_init::constant>();
-
-    weight_init_f_   = std::make_shared<parameter_init::xavier>();
-    bias_init_f_     = std::make_shared<parameter_init::constant>();
-    trainable_       = true;
-    parameters_diff_ = Tensor<>();
+    weight_init_     = std::make_shared<parameter_init::xavier>();
+    bias_init_       = std::make_shared<parameter_init::constant>();
+    parameters_diff_ = Tensor<float_t>();
   }
 
   layer(const layer &) = default;
@@ -336,8 +329,10 @@ class layer : public node {
   }
 
   /////////////////////////////////////////////////////////////////////////
-  // setter
-  // todo (karandesai) : remove after parameter integration
+  /**
+   * @name Parameter Init Methods
+   * @{
+   */
   template <typename WeightInit>
   layer &weight_init(const WeightInit &f) {
     weight_init_ = std::make_shared<WeightInit>(f);
@@ -359,34 +354,6 @@ class layer : public node {
   template <typename BiasInit>
   layer &bias_init(std::shared_ptr<BiasInit> f) {
     bias_init_ = f;
-    return *this;
-  }
-
-  /**
-   * @name Parameter Init Methods
-   * @{
-   */
-  template <typename WeightInit>
-  layer &weight_init_f(const WeightInit &f) {
-    weight_init_f_ = std::make_shared<WeightInit>(f);
-    return *this;
-  }
-
-  template <typename BiasInit>
-  layer &bias_init_f(const BiasInit &f) {
-    bias_init_f_ = std::make_shared<BiasInit>(f);
-    return *this;
-  }
-
-  template <typename WeightInit>
-  layer &weight_init_f(std::shared_ptr<WeightInit> f) {
-    weight_init_f_ = f;
-    return *this;
-  }
-
-  template <typename BiasInit>
-  layer &bias_init_f(std::shared_ptr<BiasInit> f) {
-    bias_init_f_ = f;
     return *this;
   }
   /** @} */  // Parameter Init Methods
@@ -831,21 +798,18 @@ class layer : public node {
       switch (parameters_[i]->type()) {
         // fill parameters of weight type
         case parameter_type::weight:
-          parameters_[i]->initialize(*weight_init_f_, fan_in_size(i),
+          parameters_[i]->initialize(*weight_init_, fan_in_size(i),
                                      fan_out_size(i));
           break;
         // fill vector of bias type
         case parameter_type::bias:
-          parameters_[i]->initialize(*bias_init_f_, fan_in_size(i),
+          parameters_[i]->initialize(*bias_init_, fan_in_size(i),
                                      fan_out_size(i));
           break;
         default: break;
       }
       parameters_[i]->set_initialized();
     }
-    // in case we succeed with data initialization, we mark the
-    // layer/node as initialized.
-    initialized_ = true;
   }
 
   void clear_grads() {
@@ -1023,16 +987,10 @@ class layer : public node {
   /** Flag indicating whether the layer/node parameters are trainable */
   bool trainable_;
 
-  // todo (karandesai) : remove after parameter integration
   /** Pointer to the function for weights initialization */
-  std::shared_ptr<weight_init::function> weight_init_;
+  std::shared_ptr<parameter_init::function> weight_init_;
   /** Pointer to the function for biases initialization */
-  std::shared_ptr<weight_init::function> bias_init_;
-
-  /** Pointer to the function for weights initialization */
-  std::shared_ptr<parameter_init::function> weight_init_f_;
-  /** Pointer to the function for biases initialization */
-  std::shared_ptr<parameter_init::function> bias_init_f_;
+  std::shared_ptr<parameter_init::function> bias_init_;
 
   std::vector<Tensor<> *> fwd_in_data_;
   std::vector<Tensor<> *> fwd_out_data_;

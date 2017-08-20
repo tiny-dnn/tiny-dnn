@@ -147,6 +147,7 @@ TEST(fully_connected, train2) {
 
   nn << fully_connected_layer(4, 6) << tanh_layer()
      << fully_connected_layer(6, 3) << tanh_layer();
+  nn.init_parameters();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -203,7 +204,7 @@ TEST(fully_connected, read_write) {
 #ifdef CNN_USE_NNPACK
 TEST(fully_connected, forward_nnp) {
   fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
-  l.weight_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
   l.bias_init_f(parameter_init::constant(0.5));
 
   vec_t in = {0, 1, 2, 3};
@@ -219,7 +220,7 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nnp_nobias) {
   fully_connected_layer l(4, 2, false, core::backend_t::nnpack);
-  l.weight_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const tensor_t *> o;
@@ -234,7 +235,7 @@ TEST(fully_connected, forward_nnp_nobias) {
 
 TEST(fully_connected, forward_nnp_nobias) {
   fully_connected_layer l(4, 2, false, core::backend_t::nnpack);
-  l.weight_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const tensor_t *> o;
@@ -250,7 +251,7 @@ TEST(fully_connected, forward_nnp_nobias) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  l.weight_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;

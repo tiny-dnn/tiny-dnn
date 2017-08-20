@@ -52,8 +52,6 @@ TEST(max_pool, setup_internal) {
   EXPECT_EQ(l.out_data_size(), 4u);          // size of output tensors
   EXPECT_EQ(l.in_data_shape().size(), 1u);   // num of inputs shapes
   EXPECT_EQ(l.out_data_shape().size(), 1u);  // num of output shapes
-  EXPECT_EQ(l.weights().size(), 0u);         // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(), 0u);   // the wieghts vector size
   EXPECT_EQ(l.inputs().size(), 1u);          // num of input edges
   EXPECT_EQ(l.outputs().size(), 1u);         // num of outpus edges
   EXPECT_EQ(l.in_types().size(), 1u);        // num of input data types

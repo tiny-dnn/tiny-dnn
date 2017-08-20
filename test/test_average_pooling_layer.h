@@ -98,8 +98,8 @@ TEST(ave_pool, forward) {
     };
   // clang-format on
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
@@ -127,8 +127,8 @@ TEST(ave_pool, forward_stride) {
     };
   // clang-format on
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
@@ -142,8 +142,8 @@ TEST(ave_pool, forward_stride) {
 TEST(ave_pool, backward) {
   average_pooling_layer l(4, 4, 1, 2);
 
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(1.0));
   l.setup(false);
 
   // clang-format off

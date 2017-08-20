@@ -213,8 +213,8 @@ TEST(convolutional, with_stride) {
 #ifdef CNN_USE_AVX
 TEST(convolutional, bprop_avx) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true);
-  l.weight_init_f(parameter_init::xavier(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::xavier(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.setup(false);
 
   vec_t out_grads(18, 1);
@@ -250,7 +250,7 @@ TEST(convolutional, bprop_avx) {
 
 TEST(convolutional, fprop_avx_1x1out) {
   convolutional_layer l(5, 5, 5, 1, 2);
-  l.weight_init_f(parameter_init::xavier(1.0));
+  l.weight_init(parameter_init::xavier(1.0));
   l.setup(false);
 
   vec_t in(25, 0);
@@ -271,7 +271,7 @@ TEST(convolutional, fprop_avx_1x1out) {
 
 TEST(convolutional, bprop_avx_1x1out) {
   convolutional_layer l(5, 5, 5, 1, 2);
-  l.weight_init_f(parameter_init::xavier(1.0));
+  l.weight_init(parameter_init::xavier(1.0));
   l.setup(false);
 
   vec_t out_grads(2, 1);
@@ -300,8 +300,8 @@ TEST(convolutional, bprop_avx_1x1out) {
 
 TEST(convolutional, fprop_avx_hstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
-  l.weight_init_f(parameter_init::xavier(1.0));
-  l.bias_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::xavier(1.0));
+  l.bias_init(parameter_init::constant(1.0));
   l.setup(false);
 
   vec_t in(49, 0);
@@ -322,8 +322,8 @@ TEST(convolutional, fprop_avx_hstride) {
 
 TEST(convolutional, bprop_avx_hstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 1, 2);
-  l.weight_init_f(parameter_init::xavier(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::xavier(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.setup(false);
 
   vec_t out_grads(18, 1);
@@ -400,8 +400,8 @@ TEST(convolutional, bprop_avx_hstride_1x1out) {
 
 TEST(convolutional, fprop_avx_wstride) {
   convolutional_layer l(7, 7, 5, 1, 2, padding::valid, true, 2, 1);
-  l.weight_init_f(parameter_init::xavier(1.0));
-  l.bias_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::xavier(1.0));
+  l.bias_init(parameter_init::constant(1.0));
   l.setup(false);
 
   vec_t in(49, 0);
