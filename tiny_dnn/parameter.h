@@ -8,6 +8,7 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "tiny_dnn/core/framework/tensor.h"
@@ -44,8 +45,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
             parameter_type type,
             bool trainable = true)
     : type_(type),
-      shape_(width, height, in_channels),
-      out_channels_(out_channels),
+      shape_(width, height, in_channels * out_channels),
       trainable_(trainable),
       initialized_(false),
       data_({shape_.size() * out_channels}, 1),
@@ -55,7 +55,6 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   Parameter(const Parameter &other)
     : type_(other.type()),
       shape_(other.shape()),
-      out_channels_(other.size() / other.shape().size()),
       trainable_(other.is_trainable()),
       initialized_(other.initialized()),
       data_(*(other.data())),
@@ -152,7 +151,6 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   // todo (karandesai) : replace with vector<size_t> for n-dimensional
   // parameters
   shape3d shape_;
-  size_t out_channels_;
 
   bool trainable_;
   bool initialized_;

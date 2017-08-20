@@ -14,9 +14,9 @@ int main() {
   tiny_dnn::models::alexnet nn;
 
   // change all layers at once
-  nn.weight_init(tiny_dnn::weight_init::constant(2.0));
-  nn.bias_init(tiny_dnn::weight_init::constant(2.0));
-  nn.init_weight();
+  nn.weight_init(tiny_dnn::parameter_init::constant(2.0));
+  nn.bias_init(tiny_dnn::parameter_init::constant(2.0));
+  nn.init_parameters();
 
   tiny_dnn::vec_t in(224 * 224 * 3);
 

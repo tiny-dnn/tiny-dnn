@@ -15,7 +15,6 @@ using namespace tiny_dnn::activation;
 
 #include "test_activation_layer.h"
 #include "test_average_pooling_layer.h"
-// todo (karandesai) : fix after parameter integration
 //#include "test_network.h"
 #include "test_average_unpooling_layer.h"
 #include "test_batch_norm_layer.h"
@@ -45,7 +44,7 @@ using namespace tiny_dnn::activation;
 #include "test_tensor.h"
 
 #ifndef CNN_NO_SERIALIZATION
-//#include "test_serialization.h"
+#include "test_serialization.h"
 #endif  // CNN_NO_SERIALIZATION
 
 #ifdef CNN_USE_GEMMLOWP

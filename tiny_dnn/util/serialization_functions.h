@@ -95,17 +95,16 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
   static void load_and_construct(
     Archive &ar,
     cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
-    tiny_dnn::shape3d in;
-    size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    tiny_dnn::shape3d in, window;
+    size_t stride_x, stride_y;
     tiny_dnn::padding pad_type;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in),
-                  ::detail::make_nvp("pool_size_x", pool_size_x),
-                  ::detail::make_nvp("pool_size_y", pool_size_y),
+                  ::detail::make_nvp("window", window),
                   ::detail::make_nvp("stride_x", stride_x),
                   ::detail::make_nvp("stride_y", stride_y),
                   ::detail::make_nvp("pad_type", pad_type));
-    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
+    construct(in.width_, in.height_, in.depth_, window.width_, window.height_,
               stride_x, stride_y, pad_type);
   }
 };
@@ -602,8 +601,11 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::layer &layer) {
     auto all_parameters = layer.parameters();
+    vec_t data;
     for (auto &parameter : all_parameters) {
-      ar(parameter->data()->toVec());
+      data = parameter->data()->toVec();
+      ar(data);
+      parameter->set_data(Tensor<>{data});
     }
   }
 

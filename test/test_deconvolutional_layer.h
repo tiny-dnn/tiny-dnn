@@ -33,7 +33,7 @@ TEST(deconvolutional, setup_tiny) {
   EXPECT_EQ(l.fan_in_size(), 9u);             // num of incoming connections
   EXPECT_EQ(l.fan_out_size(), 18u);           // num of outgoing connections
   EXPECT_EQ(l.parameters().size(), 2u);       // num of trainable parameters
-  EXPECT_EQ(l.weights_at()[0]->size(), 18u);  // size of weight parameter
+  EXPECT_EQ(l.weights_at()[0]->size(), 36u);  // size of weight parameter
   EXPECT_EQ(l.bias_at()[0]->size(), 2u);      // size of bias parameter
   EXPECT_STREQ(l.layer_type().c_str(), "deconv");  // string with layer type
 }

@@ -143,8 +143,8 @@ void serialization_test(T &src, T &dst) {
   float_t epsilon = std::numeric_limits<float_t>::epsilon() * 2;
   EXPECT_TRUE(src.has_same_parameters(dst, epsilon));
 
-  vec_t r1 = (*(src.forward({{v}}))[0])[0];
-  vec_t r2 = (*(dst.forward({{v}}))[0])[0];
+  vec_t r1 = (*(src.forward({{Tensor<>(tensor_t{{v}})}})[0]))[0].toVec();
+  vec_t r2 = (*(dst.forward({{Tensor<>(tensor_t{{v}})}})[0]))[0].toVec();
 
   EXPECT_TRUE(is_near_container(r1, r2, epsilon * 10));
 }

@@ -25,7 +25,7 @@ TEST(convolutional, setup_internal) {
   EXPECT_EQ(l.out_data_size(), 18u);             // size of output tensors
   EXPECT_EQ(l.fan_in_size(), 9u);                // num of incoming connections
   EXPECT_EQ(l.fan_out_size(), 18u);              // num of outgoing connections
-  EXPECT_EQ(l.weights_at()[0]->size(), 18u);     // size of weights
+  EXPECT_EQ(l.weights_at()[0]->size(), 36u);     // size of weights
   EXPECT_EQ(l.bias_at()[0]->size(), 2u);         // size of bias
   EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
   EXPECT_STREQ(l.layer_type().c_str(), "conv");  // string with layer type

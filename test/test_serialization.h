@@ -46,8 +46,11 @@ TEST(serialization, serialize_avepool) {
                     "height": 10,
                     "depth": 3
                 },
-                "pool_size_x": 2,
-                "pool_size_y": 2,
+                "window": {
+                    "width": 2,
+                    "height": 2,
+                    "depth": 3
+                },
                 "stride_x": 2,
                 "stride_y": 2,
                 "pad_type": 0
@@ -202,7 +205,7 @@ TEST(serialization, serialize_conv) {
 
   EXPECT_EQ(net[0]->layer_type(), "conv");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
-  EXPECT_EQ(net[0]->in_shape()[1], shape3d(5, 5, 10 * 5));
+  EXPECT_EQ(net[0]->parameter_at(0).shape(), shape3d(5, 5, 10 * 5));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 5));
   check_sequential_network_model_serialization(net);
 }
@@ -241,7 +244,7 @@ TEST(serialization, serialize_deconv) {
 
   EXPECT_EQ(net[0]->layer_type(), "deconv");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
-  EXPECT_EQ(net[0]->in_shape()[1], shape3d(5, 5, 10 * 5));
+  EXPECT_EQ(net[0]->parameter_at(0).shape(), shape3d(5, 5, 10 * 5));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(40, 40, 5));
   check_sequential_network_model_serialization(net);
 }
@@ -503,7 +506,7 @@ TEST(serialization, serialize_q_conv) {
 
   EXPECT_EQ(net[0]->layer_type(), "q_conv");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
-  EXPECT_EQ(net[0]->in_shape()[1], shape3d(5, 5, 10 * 5));
+  EXPECT_EQ(net[0]->parameter_at(0).shape(), shape3d(5, 5, 10 * 5));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 5));
   check_sequential_network_model_serialization(net);
 }
@@ -542,7 +545,7 @@ TEST(serialization, serialize_q_deconv) {
 
   EXPECT_EQ(net[0]->layer_type(), "q_deconv");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
-  EXPECT_EQ(net[0]->in_shape()[1], shape3d(5, 5, 10 * 5));
+  EXPECT_EQ(net[0]->parameter_at(0).shape(), shape3d(5, 5, 10 * 5));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(40, 40, 5));
   check_sequential_network_model_serialization(net);
 }

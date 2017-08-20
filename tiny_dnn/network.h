@@ -897,7 +897,7 @@ class network {
     assert(v[0].size() == 1);
 
     // clear previous results, if any
-    dw.resize(sample_count, dw[0]);  // TODO(Randl)
+    dw.resize_axis(0, sample_count);
     dw.fill(0);
 
     // calculate dw/dE by numeric

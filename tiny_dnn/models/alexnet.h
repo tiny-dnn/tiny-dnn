@@ -17,7 +17,6 @@ class alexnet : public tiny_dnn::network<tiny_dnn::sequential> {
  public:
   explicit alexnet(const std::string &name = "")
     : tiny_dnn::network<tiny_dnn::sequential>(name) {
-    // todo: (karandesai) shift this to tiny_dnn::activation
     using relu     = tiny_dnn::activation::relu;
     using conv     = tiny_dnn::layers::conv;
     using max_pool = tiny_dnn::layers::max_pool;

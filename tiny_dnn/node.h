@@ -88,8 +88,7 @@ class edge {
 
   void merge_grads(vec_t *dst) {
     assert(!grad_.empty());
-    const auto &grad_head = grad_.host_pbegin();
-    size_t sz             = grad_.shape()[1];
+    size_t sz = grad_.shape()[1];
     dst->resize(sz);
     float_t *pdst = &(*dst)[0];
     // dst = grad_[0]
