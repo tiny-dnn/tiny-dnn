@@ -233,12 +233,18 @@ class layer : public node {
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
       tensor_t &dst_data = *ith_in_node(i)->get_data();
+      size_t in_size     = ith_in_node(i)->shape().size();
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
       dst_data.resize(sz);
+
+      CNN_UNREFERENCED_PARAMETER(in_size);
+
       for (size_t j = 0; j < sz; ++j) {
-        assert(dst_data[j].size() == src_data[j]->size());
+        assert(
+          src_data[j]->size() ==
+          in_size);  // checking if training data is consistent with layer shape
         dst_data[j] = *src_data[j];
       }
     }
@@ -654,16 +660,12 @@ class layer : public node {
     }
   }
 
-  void update_weight(optimizer *o, size_t batch_size) {
-    float_t rcp_batch_size = float_t(1) / float_t(batch_size);
-    auto &diff             = weights_diff_;
+  void update_weight(optimizer *o) {
+    auto &diff = weights_diff_;
     for (size_t i = 0; i < in_type_.size(); i++) {
       if (trainable() && is_trainable_weight(in_type_[i])) {
         vec_t &target = *get_weight_data(i);
         ith_in_node(i)->merge_grads(&diff);
-        for (size_t j = 0; j < diff.size(); ++j) {
-          diff[j] *= rcp_batch_size;
-        }
         // parallelize only when target size is big enough to mitigate
         // thread spawning overhead.
         bool parallelize = (target.size() >= 512);
