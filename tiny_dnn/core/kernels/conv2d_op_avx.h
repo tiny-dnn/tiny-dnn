@@ -472,7 +472,7 @@ inline void conv2d_op_avx(Tensor<float_t, S1> &in_data,
                           const bool layer_parallelize) {
 #ifdef CNN_USE_AVX
   if (params.weight.height_ == 5 && params.weight.width_ == 5) {
-    // @todo consider better parallelization
+    // TODO(beru) consider better parallelization
     for_i(layer_parallelize, in_data.shape()[0], [&](size_t i) {
       auto in = in_data.subView(TensorSingleIndex(i),
                                 TensorRange(0, in_data.shape()[1]));
