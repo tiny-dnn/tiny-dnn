@@ -100,9 +100,9 @@ class nodes {
   /**
    * update weights and clear all gradients
    **/
-  virtual void update_weights(optimizer *opt, int batch_size) {
+  virtual void update_weights(optimizer *opt) {
     for (auto l : nodes_) {
-      l->update_weight(opt, batch_size);
+      l->update_weight(opt);
     }
   }
 
