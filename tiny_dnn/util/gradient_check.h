@@ -63,22 +63,27 @@ float_t numeric_gradient(layer &layer,
   std::vector<Tensor<> *> in_tens_, out_tens_, out_grads_tens_;
   for (auto &t : in_data) {
     in_tens.emplace_back(t);
-    in_tens_.push_back(&in_tens.back());
   }
-  for (auto &t : out_data) {
-    out_tens.emplace_back(t);
-    out_tens_.push_back(&out_tens.back());
+  for (size_t i = 0; i < in_tens.size(); ++i) {
+    in_tens_.push_back(&in_tens[i]);
   }
+
   for (auto &t : out_data) {
     out_tens.emplace_back(t);
     out_tens.back().fill(0.0);
-    out_tens_.push_back(&out_tens.back());
   }
+  for (size_t i = 0; i < out_tens.size(); ++i) {
+    out_tens_.push_back(&out_tens[i]);
+  }
+
   for (auto &t : out_grads) {
     out_grads_tens.emplace_back(t);
     out_grads_tens.back().fill(0.0);
-    out_grads_tens_.push_back(&out_grads_tens.back());
   }
+  for (size_t i = 0; i < out_grads_tens.size(); ++i) {
+    out_grads_tens_.push_back(&out_grads_tens[i]);
+  }
+
   // Set output gradient to 1 so that input grad is 1*f'(x)
   out_grads_tens[out_edge].host_at(0, out_pos) = 1.0;
   // Save current input value to perturb
@@ -86,11 +91,11 @@ float_t numeric_gradient(layer &layer,
   // Perturb by a small amount (-h)
   in_tens[in_edge].host_at(0, in_pos) = prev_in - h;
   layer.forward_propagation(in_tens_, out_tens_);
-  float_t out_1 = out_tens_[out_edge]->host_at(0, in_pos);
+  float_t out_1 = out_tens_[out_edge]->host_at(0, out_pos);
   // Perturb by a small amount (+h)
   in_tens[in_edge].host_at(0, in_pos) = prev_in + h;
   layer.forward_propagation(in_tens_, out_tens_);
-  float_t out_2 = out_tens_[out_edge]->host_at(0, in_pos);
+  float_t out_2 = out_tens_[out_edge]->host_at(0, out_pos);
   // numerical gradient
   return (out_2 - out_1) / (2 * h);
 }
@@ -122,26 +127,33 @@ float_t analytical_gradient(layer &layer,
   std::vector<Tensor<> *> in_tens_, in_grads_tens_, out_tens_, out_grads_tens_;
   for (auto &t : in_data) {
     in_tens.emplace_back(t);
-    in_tens_.push_back(&in_tens.back());
   }
+  for (size_t i = 0; i < in_tens.size(); ++i) {
+    in_tens_.push_back(&in_tens[i]);
+  }
+
   in_grads_tens = in_tens;  // copy
-  for (auto &t : in_data) {
-    in_grads_tens_.push_back(&in_tens.back());
+  for (size_t i = 0; i < in_grads_tens.size(); ++i) {
+    in_grads_tens_.push_back(&in_grads_tens[i]);
   }
-  for (auto &t : out_data) {
-    out_tens.emplace_back(t);
-    out_tens_.push_back(&out_tens.back());
-  }
+
   for (auto &t : out_data) {
     out_tens.emplace_back(t);
     out_tens.back().fill(0.0);
-    out_tens_.push_back(&out_tens.back());
   }
+  for (size_t i = 0; i < out_tens.size(); ++i) {
+    out_tens_.push_back(&out_tens[i]);
+  }
+
   for (auto &t : out_grads) {
     out_grads_tens.emplace_back(t);
     out_grads_tens.back().fill(0.0);
     out_grads_tens_.push_back(&out_grads_tens.back());
   }
+  for (size_t i = 0; i < out_grads_tens.size(); ++i) {
+    out_grads_tens_.push_back(&out_grads_tens[i]);
+  }
+
   out_tens[out_edge].host_at(0, out_pos) = 1.0;  // set target grad to 1.
   // get gradient by plain backpropagation
   layer.forward_propagation(in_tens_, out_tens_);
