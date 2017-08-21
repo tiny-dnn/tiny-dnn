@@ -34,12 +34,12 @@ inline bool is_near_container(const Container &expected,
   auto i1 = std::begin(expected);
   auto i2 = std::begin(actual);
 
-  bool result = true;
+
   for (; i1 != std::end(expected); ++i1, ++i2) {
     EXPECT_NEAR(*i1, *i2, abs_error);
-    if (std::abs(*i1 - *i2) > abs_error) result = false;
+    if (std::abs(*i1 - *i2) > abs_error) return false;
   }
-  return result;
+  return true;
 }
 
 template <typename Container>
