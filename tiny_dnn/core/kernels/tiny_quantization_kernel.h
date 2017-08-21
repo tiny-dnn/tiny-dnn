@@ -80,7 +80,7 @@ float quantized_to_float(T input, float_t range_min, float_t range_max) {
     return range_min;
   }
   const int number_of_bits       = sizeof(T) * 8;
-  const int64_t number_of_steps  = static_cast<int64_t>(1) << number_of_bits;
+  const uint64_t number_of_steps = static_cast<uint64_t>(1) << number_of_bits;
   const double range_adjust      = (number_of_steps / (number_of_steps - 1.0));
   const double range             = ((range_max - range_min) * range_adjust);
   const double range_scale       = (range / number_of_steps);
@@ -246,21 +246,21 @@ void quantize_down_and_shrink_range(Tensor<T1, S1> &input,
                                     float_t *min_new,
                                     float_t *max_new,
                                     Tensor<T2, S2> *output) {
-  const int32_t input_lowest_quantized  = static_cast<int32_t>(lowest<T1>());
-  const int32_t input_highest_quantized = static_cast<int32_t>(highest<T1>());
+  const T1 input_lowest_quantized  = lowest<T1>();
+  const T1 input_highest_quantized = highest<T1>();
 
   auto in_minmax = std::minmax_element(input.host_begin(), input.host_end());
   T1 actual_min_quantized = std::min(input_highest_quantized, *in_minmax.first);
-  T1 actual_max_quantized = std::min(input_lowest_quantized, *in_minmax.second);
+  T1 actual_max_quantized = std::max(input_lowest_quantized, *in_minmax.second);
 
   // We want to make sure that the minimum is no larger than zero, so that the
   // convolution operation can run efficiently.
   *min_new = std::min(
     0.0f, quantized_to_float(actual_min_quantized, min_input, max_input));
   *max_new = quantized_to_float(actual_max_quantized, min_input, max_input);
-  requantize_many_in_new_range<int32_t, uint8_t>(
-    input.host_pbegin(), input.size(), min_input, max_input, *min_new, *max_new,
-    output->host_pbegin());
+  requantize_many_in_new_range<T1, T2>(input.host_pbegin(), input.size(),
+                                       min_input, max_input, *min_new, *max_new,
+                                       output->host_pbegin());
 }
 
 /**

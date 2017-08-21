@@ -493,6 +493,36 @@ auto host_data() {
   Storage storage_;
 };
 
+// TODO(Randl, edgar): default init from data and special constructor from
+// shape?
+/**
+ * Creates Tensor from 1D vector of values.
+ * @tparam U
+ * @param vec
+ * @return
+ */
+template <typename U>
+Tensor<U> fromVector(std::vector<U> vec) {
+  Tensor<U> ten({vec.size()});
+  std::copy(vec.begin(), vec.end(), ten.host_begin());
+  return ten;
+}
+
+/**
+ * Creates Tensor from 2D vector of values.
+ * @tparam U
+ * @param vec
+ * @return
+ */
+template <typename U>
+Tensor<U> fromVector(std::vector<std::vector<U>> vec) {
+  assert(vec.size() > 0);
+  Tensor<U> ten({vec.size(), vec[0].size()});  // assuming squared shape
+  for (size_t i = 0; i < vec.size(); ++i)
+    std::copy(vec[i].begin(), vec[i].end(), ten.host_iter(i, 0));
+  return ten;
+}
+
 using ViewTensor =
   decltype(Tensor<>({2, 2}).subView(TensorSingleIndex(1), TensorAll()));
 using ConstViewTensor = decltype(((const Tensor<> &)Tensor<>({2, 2}))

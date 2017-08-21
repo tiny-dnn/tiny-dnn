@@ -47,7 +47,7 @@ std::vector<tensor_t *> tensor2ptr(std::vector<tensor_t> &input) {
  * @param out_pos Position in the matrix to calculate the increment after
  *perturbation.
  * @return The numeric gradient for the desired position and matrix.
-**/
+ **/
 float_t numeric_gradient(layer &layer,
                          std::vector<tensor_t> in_data,  //  copy is safer
                          const size_t in_edge,
