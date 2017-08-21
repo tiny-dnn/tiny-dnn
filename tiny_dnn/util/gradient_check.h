@@ -154,7 +154,7 @@ float_t analytical_gradient(layer &layer,
     out_grads_tens_.push_back(&out_grads_tens[i]);
   }
 
-  out_tens[out_edge].host_at(0, out_pos) = 1.0;  // set target grad to 1.
+  out_grads_tens[out_edge].host_at(0, out_pos) = 1.0;  // set target grad to 1.
   // get gradient by plain backpropagation
   layer.forward_propagation(in_tens_, out_tens_);
   layer.back_propagation(in_tens_, out_tens_, out_grads_tens_, in_grads_tens_);
