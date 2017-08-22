@@ -17,8 +17,8 @@ namespace tiny_dnn {
 
 TEST(ave_unpool, forward) {
   average_unpooling_layer l(2, 2, 1, 2);
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   // clang-format off
@@ -45,8 +45,8 @@ TEST(ave_unpool, forward) {
 
 TEST(ave_unpool, forward_stride) {
   average_unpooling_layer l(3, 3, 1, 2, 1);
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
   l.init_parameters();
 
   // clang-format off
@@ -84,21 +84,19 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - mse
      << activation() << average_pooling_layer(4, 4, 1, 2) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
 }
 
-/* todo (karandesai) Deal with serialization tests of all layers together later.
 TEST(ave_unpool, read_write) {
-  average_unpooling_layer l1(100, 100, 5, 2);
-  average_unpooling_layer l2(100, 100, 5, 2);
+  average_unpooling_layer l1(10, 10, 5, 2);
+  average_unpooling_layer l2(10, 10, 5, 2);
 
   l1.init_parameters();
   l2.init_parameters();
 
   serialization_test(l1, l2);
 }
-*/
 }  // namespace tiny_dnn

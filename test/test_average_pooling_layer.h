@@ -26,7 +26,7 @@ TEST(ave_pool, gradient_check) {  // sigmoid - cross-entropy
      << average_pooling_layer(4, 2, 1, 2) << activation();  // 4x2 => 2x1
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -43,7 +43,7 @@ TEST(ave_pool, gradient_check2) {  // x-stride
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -60,7 +60,7 @@ TEST(ave_pool, gradient_check3) {  // y-stride
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -76,7 +76,7 @@ TEST(ave_pool, gradient_check4) {  // padding-same
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -98,9 +98,9 @@ TEST(ave_pool, forward) {
     };
   // clang-format on
 
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
-  l.setup(false);
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
+  l.init_parameters();
 
   auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t res = out[0]->toVec();
@@ -127,9 +127,9 @@ TEST(ave_pool, forward_stride) {
     };
   // clang-format on
 
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.0));
-  l.setup(false);
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.0));
+  l.init_parameters();
 
   auto out  = l.forward({{Tensor<>(tensor_t{{in}})}});
   vec_t res = (*out[0]).toTensor()[0];
@@ -142,8 +142,8 @@ TEST(ave_pool, forward_stride) {
 TEST(ave_pool, backward) {
   average_pooling_layer l(4, 4, 1, 2);
 
-  l.weight_init_f(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(1.0));
   l.setup(false);
 
   // clang-format off
@@ -193,15 +193,14 @@ TEST(ave_pool, backward) {
   }
 }
 
-/* todo (karandesai) : deal with serialization after parameter integration
 TEST(ave_pool, read_write) {
   average_pooling_layer l1(100, 100, 5, 2);
   average_pooling_layer l2(100, 100, 5, 2);
 
-  l1.setup(false);
-  l2.setup(false);
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
-*/
+
 }  // namespace tiny_dnn

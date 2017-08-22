@@ -312,7 +312,7 @@ class deconvolutional_layer : public layer {
     const auto width          = params_.out.depth_ * pitch + border_width;
     const auto height         = params_.in.depth_ * pitch + border_width;
     const image<>::intensity_t bg_color = 255;
-    const Tensor<> &W                   = *this->weights()[0];
+    const Tensor<> &W                   = *(layer::parameter_at(0).data());
 
     img.resize(width, height);
     img.fill(bg_color);

@@ -161,8 +161,8 @@ TEST(recurrent_cell, forward) {
   recurrent_cell_layer l(4, 2);
   EXPECT_EQ(l.in_channels(), size_t(7));  // in, h, U, W, V, b and c
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.5));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.5));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;
@@ -179,7 +179,7 @@ TEST(recurrent_cell, forward_nobias) {
   recurrent_cell_layer l(4, 2, false);
   EXPECT_EQ(l.in_channels(), size_t(5));  // in, h, U, W, V, b and c
 
-  l.weight_init(weight_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;

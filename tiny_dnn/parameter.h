@@ -8,6 +8,7 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
 #include <vector>
 
 #include "tiny_dnn/core/framework/tensor.h"
@@ -44,18 +45,16 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
             parameter_type type,
             bool trainable = true)
     : type_(type),
-      shape_(width, height, in_channels),
-      out_channels_(out_channels),
+      shape_(width, height, in_channels * out_channels),
       trainable_(trainable),
       initialized_(false),
-      data_({shape_.size() * out_channels}, 1),
-      grad_({1, shape_.size() * out_channels}, 0) {}
+      data_({shape_.size()}, 1),
+      grad_({1, shape_.size()}, 0) {}
 
   // copy constructor
   Parameter(const Parameter &other)
     : type_(other.type()),
       shape_(other.shape()),
-      out_channels_(other.size() / other.shape().size()),
       trainable_(other.is_trainable()),
       initialized_(other.initialized()),
       data_(*(other.data())),
@@ -124,13 +123,34 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     return &grad_.host_at(sample, i);
   }
 
+  // todo (karandesai) : introduce support for HDF
+  /**
+   * @name Serialization - Deserialization Utilities
+   * @{
+   */
+  void save(std::ostream &os,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2) {
+    os << std::setprecision(precision);
+    for (size_t i = 0; i < data_.size(); i++) {
+      os << *data_at(i) << " ";
+    }
+  }
+
+  void load(std::istream &is,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2) {
+    is >> std::setprecision(precision);
+    for (size_t i = 0; i < data_.size(); i++) {
+      is >> *data_at(i);
+    }
+  }
+  /** @} */  // Serialization - Deserialization Utilities
+
  private:
   parameter_type type_;
 
   // todo (karandesai) : replace with vector<size_t> for n-dimensional
   // parameters
   shape3d shape_;
-  size_t out_channels_;
 
   bool trainable_;
   bool initialized_;

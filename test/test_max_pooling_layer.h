@@ -21,8 +21,8 @@ TEST(max_pool, read_write) {
   max_pooling_layer l1(100, 100, 5, 2);
   max_pooling_layer l2(100, 100, 5, 2);
 
-  l1.init_weight();
-  l2.init_weight();
+  l1.init_parameters();
+  l2.init_parameters();
 
   serialization_test(l1, l2);
 }
@@ -52,8 +52,6 @@ TEST(max_pool, setup_internal) {
   EXPECT_EQ(l.out_data_size(), 4u);          // size of output tensors
   EXPECT_EQ(l.in_data_shape().size(), 1u);   // num of inputs shapes
   EXPECT_EQ(l.out_data_shape().size(), 1u);  // num of output shapes
-  EXPECT_EQ(l.weights().size(), 0u);         // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(), 0u);   // the wieghts vector size
   EXPECT_EQ(l.inputs().size(), 1u);          // num of input edges
   EXPECT_EQ(l.outputs().size(), 1u);         // num of outpus edges
   EXPECT_EQ(l.in_types().size(), 1u);        // num of input data types

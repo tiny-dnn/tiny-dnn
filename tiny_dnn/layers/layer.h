@@ -30,7 +30,6 @@
 #include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/product.h"
 #include "tiny_dnn/util/util.h"
-#include "tiny_dnn/util/weight_init.h"
 
 #include "tiny_dnn/optimizers/optimizer.h"
 
@@ -65,20 +64,14 @@ class layer : public node {
   layer(const std::vector<vector_type> &in_type,
         const std::vector<vector_type> &out_type)
     : node(in_type.size(), out_type.size()),
-      initialized_(false),
       parallelize_(true),
       in_channels_(in_type.size()),
       out_channels_(out_type.size()),
       in_type_(in_type),
       out_type_(out_type) {
-    // todo (karandesai) : remove these after parameter integration
-    weight_init_ = std::make_shared<weight_init::xavier>();
-    bias_init_   = std::make_shared<weight_init::constant>();
-
-    weight_init_f_   = std::make_shared<parameter_init::xavier>();
-    bias_init_f_     = std::make_shared<parameter_init::constant>();
-    trainable_       = true;
-    parameters_diff_ = Tensor<>();
+    weight_init_     = std::make_shared<parameter_init::xavier>();
+    bias_init_       = std::make_shared<parameter_init::constant>();
+    parameters_diff_ = Tensor<float_t>();
   }
 
   layer(const layer &) = default;
@@ -163,36 +156,6 @@ class layer : public node {
   ///! @deprecated use out_data_size() instead
   size_t out_size() const { return out_data_size(); }
 
-  std::vector<const Tensor<> *> weights() const {
-    std::vector<const Tensor<> *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(get_weight_data(i));
-      }
-    }
-    return v;
-  }
-
-  std::vector<Tensor<> *> weights() {
-    std::vector<Tensor<> *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(get_weight_data(i));
-      }
-    }
-    return v;
-  }
-
-  std::vector<Tensor<> *> weights_grads() {
-    std::vector<Tensor<> *> v;
-    for (size_t i = 0; i < in_channels_; i++) {
-      if (is_trainable_weight(in_type_[i])) {
-        v.push_back(ith_in_node(i)->get_gradient());
-      }
-    }
-    return v;
-  }
-
   std::vector<edgeptr_t> inputs() {
     std::vector<edgeptr_t> nodes(in_channels_);
     for (size_t i = 0; i < in_channels_; i++) {
@@ -266,9 +229,11 @@ class layer : public node {
 
   std::vector<vector_type> out_types() const { return out_type_; }
 
-  void set_trainable(bool trainable) { trainable_ = trainable; }
-
-  bool trainable() const { return trainable_; }
+  void set_trainable(bool trainable) {
+    for (auto &parameter : parameters_) {
+      parameter->set_trainable(trainable);
+    }
+  }
 
   /**
    * return output value range
@@ -336,8 +301,10 @@ class layer : public node {
   }
 
   /////////////////////////////////////////////////////////////////////////
-  // setter
-  // todo (karandesai) : remove after parameter integration
+  /**
+   * @name Parameter Init Methods
+   * @{
+   */
   template <typename WeightInit>
   layer &weight_init(const WeightInit &f) {
     weight_init_ = std::make_shared<WeightInit>(f);
@@ -359,34 +326,6 @@ class layer : public node {
   template <typename BiasInit>
   layer &bias_init(std::shared_ptr<BiasInit> f) {
     bias_init_ = f;
-    return *this;
-  }
-
-  /**
-   * @name Parameter Init Methods
-   * @{
-   */
-  template <typename WeightInit>
-  layer &weight_init_f(const WeightInit &f) {
-    weight_init_f_ = std::make_shared<WeightInit>(f);
-    return *this;
-  }
-
-  template <typename BiasInit>
-  layer &bias_init_f(const BiasInit &f) {
-    bias_init_f_ = std::make_shared<BiasInit>(f);
-    return *this;
-  }
-
-  template <typename WeightInit>
-  layer &weight_init_f(std::shared_ptr<WeightInit> f) {
-    weight_init_f_ = f;
-    return *this;
-  }
-
-  template <typename BiasInit>
-  layer &bias_init_f(std::shared_ptr<BiasInit> f) {
-    bias_init_f_ = f;
     return *this;
   }
   /** @} */  // Parameter Init Methods
@@ -491,16 +430,10 @@ class layer : public node {
   virtual void save(
     std::ostream &os,
     const int precision = std::numeric_limits<float_t>::digits10 + 2
-    /*by default, we want there to be enough precision*/) const {
-    /*
-     if (is_exploded()) {
-       throw nn_error("failed to save weights because of infinite weight");
-    }*/
+    /*by default, we want there to be enough precision*/) const {  // NOLINT
     os << std::setprecision(precision);
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
-        os << *it << " ";
+    for (auto &parameter : parameters_) {
+      parameter->save(os, precision);
     }
   }
 
@@ -509,21 +442,9 @@ class layer : public node {
     const int precision = std::numeric_limits<float_t>::digits10 + 2
     /*by default, we want there to be enough precision*/) {  // NOLINT
     is >> std::setprecision(precision);
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
-        is >> *it;
+    for (auto &parameter : parameters_) {
+      parameter->load(is, precision);
     }
-    initialized_ = true;
-  }
-
-  virtual void load(const std::vector<float_t> &src, int &idx) {  // NOLINT
-    auto all_weights = weights();
-    for (auto &weight : all_weights) {
-      for (auto it = weight->host_begin(); it != weight->host_end(); ++it)
-        *it = src[idx++];
-    }
-    initialized_ = true;
   }
 
 /////////////////////////////////////////////////////////////////////////
@@ -761,53 +682,9 @@ class layer : public node {
 
     // reset the weights if necessary, or in case that the data is
     // still not initialized.
-    if (reset_weight || !initialized_) {
-      // todo (karandesai) : remove this call after parameter integration
-      init_weight();
+    if (reset_weight) {
       init_parameters();
     }
-  }
-
-  // todo (karandesai) : remove this after parameter integration
-  /* @brief Initializes the vectors containing the trainable data.
-   *
-   * In case that a layer/node is set to be not trainable, it does
-   * nothing and returns a void. Otherwise, for each input connection
-   * and depending of the data nature (weight or bias) calls their
-   * pertinent initialization function and fill the vectors with the
-   * data generated by the mentioned functions.
-   *
-   */
-  void init_weight() {
-    // layer/node is not trainable, do nothing and mark the layer/node
-    // as initialized.
-    if (!trainable_) {
-      initialized_ = true;
-      return;
-    }
-
-    // Fill vector values with data generated by the initialization
-    // function. The pointer to the data is obtained from the
-    // computational graph and the methods fan_in_size() and fan_out_size()
-    // return the number of incoming/outcoming connections for each
-    // input/output unit.
-    for (size_t i = 0; i < in_channels_; i++) {
-      switch (in_type_[i]) {
-        // fill vectors of weight type
-        case vector_type::weight:
-          weight_init_->fill(get_weight_data(i), fan_in_size(i),
-                             fan_out_size(i));
-          break;
-        // fill vector of bias type
-        case vector_type::bias:
-          bias_init_->fill(get_weight_data(i), fan_in_size(i), fan_out_size(i));
-          break;
-        default: break;
-      }
-    }
-    // in case we succeed with data initialization, we mark the
-    // layer/node as initialized.
-    initialized_ = true;
   }
 
   /** @brief Initializes the trainable parameters of this layer.
@@ -820,13 +697,6 @@ class layer : public node {
    *
    */
   void init_parameters() {
-    // layer/node is not trainable, do nothing and mark the layer/node
-    // as initialized.
-    if (!trainable_) {
-      initialized_ = true;
-      return;
-    }
-
     // Fill parameter values with data generated by the initialization
     // function. The pointer to the data is obtained from the
     // computational graph and the methods fan_in_size() and fan_out_size()
@@ -839,21 +709,18 @@ class layer : public node {
       switch (parameters_[i]->type()) {
         // fill parameters of weight type
         case parameter_type::weight:
-          parameters_[i]->initialize(*weight_init_f_, fan_in_size(i),
+          parameters_[i]->initialize(*weight_init_, fan_in_size(i),
                                      fan_out_size(i));
           break;
         // fill vector of bias type
         case parameter_type::bias:
-          parameters_[i]->initialize(*bias_init_f_, fan_in_size(i),
+          parameters_[i]->initialize(*bias_init_, fan_in_size(i),
                                      fan_out_size(i));
           break;
         default: break;
       }
       parameters_[i]->set_initialized();
     }
-    // in case we succeed with data initialization, we mark the
-    // layer/node as initialized.
-    initialized_ = true;
   }
 
   void clear_grads() {
@@ -866,32 +733,11 @@ class layer : public node {
     }
   }
 
-  // todo (karandesai) : remove after parameter integration
-  void update_weight(optimizer *o, size_t batch_size) {
-    float_t rcp_batch_size = float_t(1) / float_t(batch_size);
-    auto &diff             = weights_diff_;
-    for (size_t i = 0; i < in_type_.size(); i++) {
-      if (trainable() && is_trainable_weight(in_type_[i])) {
-        Tensor<> &target = *get_weight_data(i);
-        ith_in_node(i)->merge_grads(&diff);
-        for (size_t j = 0; j < diff.size(); ++j) {
-          diff[j] *= rcp_batch_size;
-        }
-        // parallelize only when target size is big enough to mitigate thread
-        // spawning overhead.
-        bool parallelize = (target.size() >= 512);
-        o->update(diff, target, parallelize);
-      }
-    }
-    clear_grads();
-    post_update();
-  }
-
   void update_parameters(optimizer *optimizer_ptr, size_t batch_size) {
     float_t rcp_batch_size = float_t(1) / float_t(batch_size);
     auto &diff             = parameters_diff_;
     for (auto &parameter : parameters_) {
-      if (!trainable() || !parameter->is_trainable()) {
+      if (!parameter->is_trainable()) {
         continue;
       }
       parameter->merge_grads(&diff);
@@ -914,24 +760,6 @@ class layer : public node {
     post_update();
   }
 
-  // todo (karandesai) : remove after parameter integration
-  bool has_same_weights(const layer &rhs, float_t eps) const {
-    auto w1 = weights();
-    auto w2 = rhs.weights();
-    if (w1.size() != w2.size()) return false;
-
-    for (size_t i = 0; i < w1.size(); i++) {
-      if (w1[i]->shape() != w2[i]->shape()) return false;
-
-      auto it1 = w1[i]->host_begin();
-      auto it2 = w2[i]->host_begin();
-      for (; it1 != w1[i]->host_end(); ++it1, ++it2) {
-        if (std::abs(*it1 - *it2) > eps) return false;
-      }
-    }
-    return true;
-  }
-
   bool has_same_parameters(const layer &rhs, float_t eps) const {
     ConstParameters lhs_parameters = parameters();
     ConstParameters rhs_parameters = rhs.parameters();
@@ -950,7 +778,6 @@ class layer : public node {
     return true;
   }
 
-  // todo (karandesai) : remove redundancies after parameter integration
   virtual void set_sample_count(size_t sample_count) {
     // increase the size if necessary - but do not decrease
     auto resize = [sample_count](Tensor<> *tensor) {
@@ -959,16 +786,12 @@ class layer : public node {
     };
 
     for (size_t i = 0; i < in_channels_; i++) {
-      if (!is_trainable_weight(in_type_[i])) {
-        resize(ith_in_node(i)->get_data());
-      }
+      resize(ith_in_node(i)->get_data());
       resize(ith_in_node(i)->get_gradient());
     }
 
     for (size_t i = 0; i < out_channels_; i++) {
-      if (!is_trainable_weight(out_type_[i])) {
-        resize(ith_out_node(i)->get_data());
-      }
+      resize(ith_out_node(i)->get_data());
       resize(ith_out_node(i)->get_gradient());
     }
 
@@ -990,10 +813,6 @@ class layer : public node {
   void serialize_prolog(Archive &ar);
 
  protected:
-  // todo (karandesai) : remove this after parameter integration
-  /** Flag indication whether the layer/node is initialized */
-  bool initialized_;
-
   /** Flag indicating whether the layer/node operations ara paralellized */
   bool parallelize_;
   /** The number of input vectors/edges */
@@ -1028,19 +847,10 @@ class layer : public node {
   /** A vector of trainable and constant parameters. */
   std::vector<std::shared_ptr<Parameter>> parameters_;
 
-  /** Flag indicating whether the layer/node parameters are trainable */
-  bool trainable_;
-
-  // todo (karandesai) : remove after parameter integration
   /** Pointer to the function for weights initialization */
-  std::shared_ptr<weight_init::function> weight_init_;
+  std::shared_ptr<parameter_init::function> weight_init_;
   /** Pointer to the function for biases initialization */
-  std::shared_ptr<weight_init::function> bias_init_;
-
-  /** Pointer to the function for weights initialization */
-  std::shared_ptr<parameter_init::function> weight_init_f_;
-  /** Pointer to the function for biases initialization */
-  std::shared_ptr<parameter_init::function> bias_init_f_;
+  std::shared_ptr<parameter_init::function> bias_init_;
 
   std::vector<Tensor<> *> fwd_in_data_;
   std::vector<Tensor<> *> fwd_out_data_;
@@ -1112,27 +922,6 @@ class layer : public node {
     return next()[i];
   }
   edgeptr_t ith_out_node(size_t i) const { return next()[i]; }
-
-  /* @brief Retrieves weight vector from incoming edge
-   * @param i The position of incoming edge.
-   *
-   * Returns the mutable pointer to the edge raw data.
-   */
-  Tensor<> *get_weight_data(size_t i) {
-    // TODO(Randl): dims
-    assert(is_trainable_weight(in_type_[i]));
-    return ith_in_node(i)->get_data();
-  }
-
-  /* @brief Retrieves weight vector from incoming edge
-   * @param i The position of incoming edge.
-   *
-   * Returns the non mutable pointer to the edge raw data.
-   */
-  const Tensor<> *get_weight_data(size_t i) const {
-    assert(is_trainable_weight(in_type_[i]));
-    return const_cast<layer *>(this)->ith_in_node(i)->get_data();
-  }
 };
 
 inline void connect(layer *head,

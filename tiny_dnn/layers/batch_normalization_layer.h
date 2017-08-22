@@ -196,12 +196,6 @@ class batch_normalization_layer : public layer {
     for (auto &v : variance_) is >> v;
   }
 
-  void load(const std::vector<float_t> &src, int &idx) override {
-    Base::load(src, idx);
-    for (auto &m : mean_) m     = src[idx++];
-    for (auto &v : variance_) v = src[idx++];
-  }
-
   void update_immidiately(bool update) { update_immidiately_ = update; }
 
   void set_stddev(const vec_t &stddev) { stddev_ = stddev; }

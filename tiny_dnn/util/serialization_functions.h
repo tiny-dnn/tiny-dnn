@@ -95,17 +95,18 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
   static void load_and_construct(
     Archive &ar,
     cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
-    tiny_dnn::shape3d in;
-    size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    tiny_dnn::shape3d in, window;
+    size_t stride_x, stride_y;
     tiny_dnn::padding pad_type;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in),
-                  ::detail::make_nvp("pool_size_x", pool_size_x),
-                  ::detail::make_nvp("pool_size_y", pool_size_y),
+                  ::detail::make_nvp("pool_size_x", window.width_),
+                  ::detail::make_nvp("pool_size_y", window.height_),
                   ::detail::make_nvp("stride_x", stride_x),
                   ::detail::make_nvp("stride_y", stride_y),
                   ::detail::make_nvp("pad_type", pad_type));
-    construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
+    window.depth_ = in.depth_;
+    construct(in.width_, in.height_, in.depth_, window.width_, window.height_,
               stride_x, stride_y, pad_type);
   }
 };
@@ -601,11 +602,13 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::layer &layer) {
-    auto all_weights = layer.weights();
-    for (auto weight : all_weights) {
-      ar(*weight);
+    auto all_parameters = layer.parameters();
+    vec_t data;
+    for (auto &parameter : all_parameters) {
+      data = parameter->data()->toVec();
+      ar(data);
+      parameter->set_data(Tensor<>{data});
     }
-    layer.initialized_ = true;
   }
 
   template <class Archive>
@@ -620,7 +623,8 @@ struct serialization_buddy {
                                tiny_dnn::average_pooling_layer &layer) {
     auto &params_ = layer.params_;
     ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in),
-                  ::detail::make_nvp("window", params_.window),
+                  ::detail::make_nvp("pool_size_x", params_.window.width_),
+                  ::detail::make_nvp("pool_size_y", params_.window.height_),
                   ::detail::make_nvp("stride_x", params_.stride_x),
                   ::detail::make_nvp("stride_y", params_.stride_y),
                   ::detail::make_nvp("pad_type", params_.pad_type));

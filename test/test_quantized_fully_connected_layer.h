@@ -122,8 +122,8 @@ TEST(quantized_fully_connected, forward) {
   quantized_fully_connected_layer l(4, 2);
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.5));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.5));
 
   vec_t in           = {0, 1, 2, 3};
   vec_t out          = l.forward({{in}})[0][0];
@@ -139,8 +139,8 @@ TEST(quantized_fully_connected, forward_nnp) {
   quantized_fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
-  l.weight_init(weight_init::constant(1.0));
-  l.bias_init(weight_init::constant(0.5));
+  l.weight_init(parameter_init::constant(1.0));
+  l.bias_init(parameter_init::constant(0.5));
 
   vec_t in           = {0, 1, 2, 3};
   vec_t out          = l.forward({{in}})[0][0];
@@ -156,7 +156,7 @@ TEST(quantized_fully_connected, forward_nobias) {
   quantized_fully_connected_layer l(4, 2, false);
   EXPECT_EQ(l.in_channels(), 2u);  // in and W
 
-  l.weight_init(weight_init::constant(1.0));
+  l.weight_init(parameter_init::constant(1.0));
 
   vec_t in           = {0, 1, 2, 3};
   vec_t out          = l.forward({{in}})[0][0];
