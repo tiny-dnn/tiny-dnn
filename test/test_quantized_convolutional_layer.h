@@ -213,7 +213,7 @@ TEST(quantized_convolutional, gradient_check) { // tanh - mse
     label_t t = 3;
 
     uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
+    nn.init_parameters();
     EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(),
 GRAD_CHECK_ALL));
 }
@@ -226,7 +226,7 @@ TEST(quantized_convolutional, gradient_check2) { // sigmoid - mse
     label_t t = 3;
 
     uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
+    nn.init_parameters();
     EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(),
 GRAD_CHECK_ALL));
 }
@@ -239,7 +239,7 @@ TEST(quantized_convolutional, gradient_check3) { // rectified - mse
     label_t t = 3;
 
     uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
+    nn.init_parameters();
     EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(),
 GRAD_CHECK_ALL));
 }
@@ -252,7 +252,7 @@ TEST(quantized_convolutional, gradient_check4) { // identity - mse
     label_t t = 3;
 
     uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
+    nn.init_parameters();
     EXPECT_TRUE(nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(),
 GRAD_CHECK_ALL));
 }
@@ -265,7 +265,7 @@ TEST(quantized_convolutional, gradient_check5) { // sigmoid - cross-entropy
     label_t t = 3;
 
     uniform_rand(a.begin(), a.end(), -1, 1);
-    nn.init_weight();
+    nn.init_parameters();
     EXPECT_TRUE(nn.gradient_check<cross_entropy>(&a, &t, 1, epsilon<float_t>(),
 GRAD_CHECK_ALL));
 }

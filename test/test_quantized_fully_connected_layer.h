@@ -101,7 +101,7 @@ TEST(quantized_fully_connected, gradient_check) {
   label_t t = 9;
 
   uniform_rand(a.begin(), a.end(), -1, 1);
-  nn.init_weight();
+  nn.init_parameters();
   EXPECT_TRUE(
     nn.gradient_check<mse>(&a, &t, 1, epsilon<float_t>(), GRAD_CHECK_ALL));
 }

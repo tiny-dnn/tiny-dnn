@@ -482,8 +482,8 @@ class network {
       net_.label2vec(t[sample], v[sample]);
     }
 
-    for (auto current : net_) {  // ignore first input layer
-      if (current->weights_at().size() < 2) { //TODO(Randl): artificial
+    for (auto current : net_) {                // ignore first input layer
+      if (current->weights_at().size() < 2) {  // TODO(Randl): artificial
         continue;
       }
 
@@ -499,9 +499,10 @@ class network {
                 return false;
               }
             }
+          }
           break;
         case GRAD_CHECK_RANDOM:
-          for (size_t i = 0; i < grads.size(); i++) {
+          for (size_t i = 0; i < current->weights_at().size(); i++) {
             Tensor<> &w  = *current->weights_at()[i]->data();
             Tensor<> &dw = *current->weights_at()[i]->grad();
             for (size_t j = 0; j < 10; j++) {
@@ -509,6 +510,7 @@ class network {
                 return false;
               }
             }
+          }
           break;
         default: throw nn_error("unknown grad-check type");
       }

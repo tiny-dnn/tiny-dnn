@@ -26,7 +26,7 @@ TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
      << activation() << average_pooling_layer(4, 4, 1, 2) << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
+  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));

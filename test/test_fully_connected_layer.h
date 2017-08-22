@@ -55,7 +55,7 @@ TEST(fully_connected, forward) {
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.5));
+  l.bias_init(parameter_init::constant(0.5));
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;
@@ -75,7 +75,7 @@ TEST(fully_connected, forward_nnp) {
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(parameter_init::constant(1.0));
-  l.bias_init_f(parameter_init::constant(0.5));
+  l.bias_init(parameter_init::constant(0.5));
 
   vec_t in           = {0, 1, 2, 3};
   vec_t out          = l.forward({Tensor<>({{in}})})[0][0];
