@@ -52,10 +52,11 @@ TEST(fully_connected, read_write) {
 
 TEST(fully_connected, forward) {
   fully_connected_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
+  EXPECT_EQ(l.in_channels(), 1u);  // in
 
   l.weight_init(parameter_init::constant(1.0));
   l.bias_init(parameter_init::constant(0.5));
+  l.init_parameters();
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;
@@ -72,10 +73,11 @@ TEST(fully_connected, forward) {
 TEST(fully_connected, forward_nnp) {
   nnp_initialize();
   fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
-  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
+  EXPECT_EQ(l.in_channels(), 1u);  // in
 
   l.weight_init(parameter_init::constant(1.0));
   l.bias_init(parameter_init::constant(0.5));
+  l.init_parameters();
 
   vec_t in           = {0, 1, 2, 3};
   vec_t out          = l.forward({Tensor<>({{in}})})[0][0];
@@ -89,9 +91,10 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), 2u);  // in and W
+  EXPECT_EQ(l.in_channels(), 1u);  // in and W
 
   l.weight_init(parameter_init::constant(1.0));
+  l.init_parameters();
 
   vec_t in = {0, 1, 2, 3};
   std::vector<const Tensor<> *> o;

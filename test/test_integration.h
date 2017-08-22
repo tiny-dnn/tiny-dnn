@@ -25,6 +25,7 @@ TEST(integration, train1) {
 
   nn << fully_connected_layer(3, 2) << sigmoid() << recurrent_cell_layer(2, 2)
      << tanh_layer();
+  nn.init_parameters();
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -68,6 +69,7 @@ TEST(integration, train_different_batches1) {
 
     nn << fully_connected_layer(3, 2) << sigmoid() << recurrent_cell_layer(2, 2)
        << tanh_layer();
+    nn.init_parameters();
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -108,6 +110,7 @@ TEST(integration, train2) {
 
   nn << fully_connected_layer(4, 6) << selu() << fully_connected_layer(6, 3)
      << tanh_layer();
+  nn.init_parameters();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
