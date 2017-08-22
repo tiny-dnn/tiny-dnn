@@ -100,10 +100,12 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
     tiny_dnn::padding pad_type;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in),
-                  ::detail::make_nvp("window", window),
+                  ::detail::make_nvp("pool_size_x", window.width_),
+                  ::detail::make_nvp("pool_size_y", window.height_),
                   ::detail::make_nvp("stride_x", stride_x),
                   ::detail::make_nvp("stride_y", stride_y),
                   ::detail::make_nvp("pad_type", pad_type));
+    window.depth_ = in.depth_;
     construct(in.width_, in.height_, in.depth_, window.width_, window.height_,
               stride_x, stride_y, pad_type);
   }
@@ -621,7 +623,8 @@ struct serialization_buddy {
                                tiny_dnn::average_pooling_layer &layer) {
     auto &params_ = layer.params_;
     ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in),
-                  ::detail::make_nvp("window", params_.window),
+                  ::detail::make_nvp("pool_size_x", params_.window.width_),
+                  ::detail::make_nvp("pool_size_y", params_.window.height_),
                   ::detail::make_nvp("stride_x", params_.stride_x),
                   ::detail::make_nvp("stride_y", params_.stride_y),
                   ::detail::make_nvp("pad_type", params_.pad_type));

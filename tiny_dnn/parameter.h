@@ -48,8 +48,8 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
       shape_(width, height, in_channels * out_channels),
       trainable_(trainable),
       initialized_(false),
-      data_({shape_.size() * out_channels}, 1),
-      grad_({1, shape_.size() * out_channels}, 0) {}
+      data_({shape_.size()}, 1),
+      grad_({1, shape_.size()}, 0) {}
 
   // copy constructor
   Parameter(const Parameter &other)

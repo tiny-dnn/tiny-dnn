@@ -46,11 +46,8 @@ TEST(serialization, serialize_avepool) {
                     "height": 10,
                     "depth": 3
                 },
-                "window": {
-                    "width": 2,
-                    "height": 2,
-                    "depth": 3
-                },
+                "pool_size_x": 2,
+                "pool_size_y": 2,
                 "stride_x": 2,
                 "stride_y": 2,
                 "pad_type": 0
