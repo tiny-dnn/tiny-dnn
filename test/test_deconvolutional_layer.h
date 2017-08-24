@@ -172,6 +172,39 @@ TEST(deconvolutional, fprop_padding_same) {
 
 // TODO(karan): check
 /*
+TEST(deconvolutional, gradient_check) {
+  const size_t in_width = 2;
+  const size_t in_height = 2;
+  const size_t kernel_size = 3;
+  const size_t in_channels = 10;
+  const size_t out_channels = 5;
+
+  deconvolutional_layer deconv(in_width, in_height, kernel_size, in_channels,
+out_channels, padding::valid);
+  std::vector<tensor_t> input_data = generate_test_data({1,1,1},
+{in_width*in_height*in_channels,
+kernel_size*kernel_size*in_channels*out_channels, out_channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({1},
+{in_width*in_width*in_height*in_height*out_channels});
+  std::vector<tensor_t> out_grad = generate_test_data({1},
+{in_width*in_width*in_height*in_height*out_channels});
+  const size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge = uniform_idx(input_data);
+    const size_t in_idx = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(deconv, input_data, in_edge, in_idx,
+out_data, out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(deconv, input_data, in_edge, in_idx,
+out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+*/
+
+/*
 TEST(deconvolutional, gradient_check) {  // tanh - mse
   network<sequential> nn;
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh();

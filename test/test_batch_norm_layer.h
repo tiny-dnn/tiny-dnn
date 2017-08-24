@@ -16,7 +16,7 @@
 
 namespace tiny_dnn {
 
-TEST(batchnorm, gradient_check) {
+TEST(batchnorm, gradient_check1) {
   size_t num         = 4;
   size_t spatial_dim = 4;
   size_t channels    = 2;
@@ -81,6 +81,35 @@ TEST(batchnorm, gradient_check) {
     }
   }
 }
+
+/*
+TEST(batchnorm, gradient_check2) {
+  size_t num         = 4;
+  size_t spatial_dim = 4;
+  size_t channels    = 2;
+  batch_normalization_layer bn(spatial_dim, channels, );
+
+  std::vector<tensor_t> input_data = generate_test_data({num},
+{spatial_dim*channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({num},
+{spatial_dim*channels});
+  std::vector<tensor_t> out_grad = generate_test_data({num},
+{spatial_dim*channels});
+
+  size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t edge = 0;
+    const size_t idx = uniform_idx(input_data[edge][0]);
+    float_t ngrad = numeric_gradient(bn, input_data, edge, idx, out_data,
+out_grad, edge, idx);
+    float_t cgrad = analytical_gradient(bn, input_data, edge, idx, out_data,
+out_grad, edge, idx);
+    std::cout << "relative error" << relative_error(cgrad, ngrad) << std::endl;
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+*/
 
 TEST(batchnorm, forward) {
   batch_normalization_layer bn(/*spatial-size=*/4, /*channel=*/3);

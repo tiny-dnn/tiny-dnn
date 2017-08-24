@@ -517,151 +517,40 @@ TEST(convolutional, fprop_nnp) {
 }
 #endif  // CNN_USE_NNPACK
 
-TEST(convolutional, gradient_check) {  // tanh - mse
-  network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << activation::tanh();
+TEST(convolutional, gradient_check) {
+  const size_t in_width     = 5;
+  const size_t in_height    = 5;
+  const size_t kernel_size  = 3;
+  const size_t in_channels  = 5;
+  const size_t out_channels = 10;
 
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
+  convolutional_layer conv(in_width, in_height, kernel_size, in_channels,
+                           out_channels);
 
-TEST(convolutional, gradient_check2) {  // sigmoid - mse
-  network<sequential> nn;
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
+  conv.weight_init(parameter_init::xavier());
+  conv.bias_init(parameter_init::xavier());
+  conv.init_parameters();
 
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
+  std::vector<tensor_t> input_data =
+    generate_test_data({1}, {in_width * in_height * in_channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data =
+    generate_test_data({1}, {(in_width - 2) * (in_height - 2) * out_channels});
+  std::vector<tensor_t> out_grad =
+    generate_test_data({1}, {(in_width - 2) * (in_height - 2) * out_channels});
 
-TEST(convolutional, gradient_check3) {  // rectified - mse
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1) << relu();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check4) {  // identity - mse
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1);
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check5) {  // sigmoid - cross-entropy
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<cross_entropy>(
-    test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check6) {  // sigmoid - absolute
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first, test_data.second,
-                                          epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check7) {  // sigmoid - absolute eps
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(
-    test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check8_pad_same) {  // sigmoid - mse - padding same
-  network<sequential> nn;
-
-  nn << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
-                            core::backend_t::internal)
-     << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional, gradient_check9_w_stride) {  // sigmoid - mse - w_stride > 1
-  network<sequential> nn;
-
-  nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 2, 1,
-                            core::backend_t::internal)
-     << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional,
-     gradient_check10_h_stride) {  // sigmoid - mse - h_stride > 1
-  network<sequential> nn;
-
-  nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 1, 2,
-                            core::backend_t::internal)
-     << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional,
-     gradient_check11_connection_tbl) {  // sigmoid - mse - has connection-tbl
-  network<sequential> nn;
-  bool tbl[3 * 3] = {true, false, true, false, true, false, true, true, false};
-
-  core::connection_table connections(tbl, 3, 3);
-
-  nn << convolutional_layer(7, 7, 3, 3, 1, connections, padding::valid, true, 1,
-                            1, core::backend_t::internal)
-     << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
-}
-
-TEST(convolutional,
-     gradient_check12_pad_same) {  // sigmoid - mse - padding same
-  network<sequential> nn;
-
-  nn << fully_connected_layer(10, 5 * 5)
-     << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
-                            core::backend_t::internal)
-     << sigmoid();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
+  const size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge  = uniform_idx(input_data);
+    const size_t in_idx   = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx  = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad         = numeric_gradient(conv, input_data, in_edge, in_idx,
+                                     out_data, out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(conv, input_data, in_edge, in_idx,
+                                        out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
 }
 
 TEST(convolutional, read_write) {

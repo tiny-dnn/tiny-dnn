@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <unordered_map>
 
 #include "tiny_dnn/util/util.h"
@@ -116,16 +117,17 @@ struct adam : public stateful_optimizer<2> {
     Tensor<> &mt = get<0>(W);
     Tensor<> &vt = get<1>(W);
 
-    b1_t *= b1;
-    b2_t *= b2;
-
     for_i(parallelize, W.size(), [&](size_t i) {
       mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW[i];
       vt.host_at(i) = b2 * vt.host_at(i) + (float_t(1) - b2) * dW[i] * dW[i];
 
+      // L2 norm based update rule
       W.host_at(i) -= alpha * (mt.host_at(i) / (float_t(1) - b1_t)) /
                       std::sqrt((vt.host_at(i) / (float_t(1) - b2_t)) + eps);
     });
+
+    b1_t *= b1;
+    b2_t *= b2;
   }
 
   float_t alpha;  // learning rate
@@ -133,6 +135,45 @@ struct adam : public stateful_optimizer<2> {
   float_t b2;     // decay term
   float_t b1_t;   // decay term power t
   float_t b2_t;   // decay term power t
+
+ private:
+  float_t eps;  // constant value to avoid zero-division
+};
+
+/**
+ * @brief [a new optimizer (2015)]
+ * @details [see Adam: A Method for Stochastic Optimization (Algorithm 2)
+ *               http://arxiv.org/abs/1412.6980]
+ *
+ */
+struct adamax : public stateful_optimizer<2> {
+  adamax()
+    : alpha(float_t(0.002)),
+      b1(float_t(0.9)),
+      b2(float_t(0.999)),
+      b1_t(b1),
+      eps(float_t(1e-8)) {}
+
+  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+    Tensor<> &mt = get<0>(W);
+    Tensor<> &ut = get<1>(W);
+
+    for_i(parallelize, W.size(), [&](int i) {
+      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW[i];
+      ut.host_at(i) = std::max(b2 * ut.host_at(i), std::abs(dW[i]));
+
+      // Lp norm based update rule
+      W.host_at(i) -=
+        (alpha / (1.0 - b1_t)) * (mt.host_at(i) / (ut.host_at(i) + eps));
+    });
+
+    b1_t *= b1;
+  }
+
+  float_t alpha;  // learning rate
+  float_t b1;     // decay term
+  float_t b2;     // decay term
+  float_t b1_t;   // decay term power t
 
  private:
   float_t eps;  // constant value to avoid zero-division

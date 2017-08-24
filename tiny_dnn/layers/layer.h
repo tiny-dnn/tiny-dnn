@@ -204,11 +204,18 @@ class layer : public node {
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
       Tensor<> &dst_data = *ith_in_node(i)->get_data();
+      size_t in_size     = ith_in_node(i)->shape().size();
       assert(n < cnt);
       const auto &src_data = data[n++];
       size_t sz            = src_data.size();
-      dst_data.reshape({sz, src_data[0]->size()});
+      dst_data.resize_axis(sz);
+
+      CNN_UNREFERENCED_PARAMETER(in_size);
+
       for (size_t j = 0; j < sz; ++j) {
+        assert(
+          src_data[j]->size() ==
+          in_size);  // checking if training data is consistent with layer shape
         // TODO(Randl)
         std::copy(src_data[j]->begin(), src_data[j]->end(),
                   dst_data.host_iter(j, 0));

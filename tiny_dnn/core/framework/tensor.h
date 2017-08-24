@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -89,6 +90,24 @@ class Tensor {
     for (size_t i = 0; i < data.size(); ++i) {
       for (size_t j = 0; j < data[i].size(); ++j) {
         storage_(i, j) = data[i][j];
+      }
+    }
+  }
+
+  /**
+   * Temporary method to create a new Tensor from old vec of tensor_t
+   */
+  explicit Tensor(const std::vector<tensor_t> &data) {
+    std::vector<size_t> shape = {data.size(), data[0].size(),
+                                 data[0][0].size()};
+    storage_ = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      for (size_t j = 0; j < data[i].size(); ++j) {
+        for (size_t k = 0; k < data[i][j].size(); ++k) {
+          storage_(i, j, k) = data[i][j][k];
+        }
       }
     }
   }
@@ -492,6 +511,36 @@ auto host_data() {
  private:
   Storage storage_;
 };
+
+// TODO(Randl, edgar): default init from data and special constructor from
+// shape?
+/**
+ * Creates Tensor from 1D vector of values.
+ * @tparam U
+ * @param vec
+ * @return
+ */
+template <typename U>
+Tensor<U> fromVector(std::vector<U> vec) {
+  Tensor<U> ten({vec.size()});
+  std::copy(vec.begin(), vec.end(), ten.host_begin());
+  return ten;
+}
+
+/**
+ * Creates Tensor from 2D vector of values.
+ * @tparam U
+ * @param vec
+ * @return
+ */
+template <typename U>
+Tensor<U> fromVector(std::vector<std::vector<U>> vec) {
+  assert(vec.size() > 0);
+  Tensor<U> ten({vec.size(), vec[0].size()});  // assuming squared shape
+  for (size_t i = 0; i < vec.size(); ++i)
+    std::copy(vec[i].begin(), vec[i].end(), ten.host_iter(i, 0));
+  return ten;
+}
 
 using ViewTensor =
   decltype(Tensor<>({2, 2}).subView(TensorSingleIndex(1), TensorAll()));

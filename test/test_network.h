@@ -557,12 +557,13 @@ TEST(network, gradient_check7) {  // leaky-relu - mse
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_parameters();
-  // We need to use larger threshold here, because
-  // relu/elu/leaky-relu has non-smooth region of the form
-  //
-  // @todo improve gradient-checker to ignore non-smooth region like
-  //       caffe's GradientChecker (they have kink/kink-range parameter to
-  //       handle it)
+
+  // We need to use larger threshold here, because elu/elu/leaky-relu has
+  // non-smooth region of the form
+
+  /* TODO(edgarriba) improve gradient-checker to ignore non-smooth region like
+   * caffe's GradientChecker (they have kink/kink-range parameter to handle it)
+   */
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            10 * epsilon<float_t>(),
                                            GRAD_CHECK_ALL));
@@ -577,12 +578,12 @@ TEST(network, gradient_check8) {  // elu - mse
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
   nn.init_parameters();
 
-  // We need to use larger threshold here, because
-  // relu/elu/leaky-relu has non-smooth region of the form
-  //
-  // @todo improve gradient-checker to ignore non-smooth region like
-  //       caffe's GradientChecker (they have kink/kink-range parameter to
-  //       handle it)
+  // We need to use larger threshold here, because elu/elu/leaky-relu has
+  // non-smooth region of the form
+
+  /* TODO(edgarriba) improve gradient-checker to ignore non-smooth region like
+   * caffe's GradientChecker (they have kink/kink-range parameter to handle it)
+   */
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            10 * epsilon<float_t>(),
                                            GRAD_CHECK_ALL));
