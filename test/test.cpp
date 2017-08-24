@@ -33,8 +33,7 @@ using namespace tiny_dnn::activation;
 #include "test_node.h"
 #include "test_nodes.h"
 #include "test_power_layer.h"
-// TODO(karandesai): enable once parameter api is ready
-// #include "test_recurrent_cell_layer.h"
+ #include "test_recurrent_cell_layer.h"
 #include "test_quantization.h"
 //#include "test_quantized_convolutional_layer.h"
 //#include "test_quantized_deconvolutional_layer.h"

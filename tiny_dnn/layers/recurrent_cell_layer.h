@@ -65,9 +65,18 @@ class recurrent_cell_layer : public layer {
                        bool has_bias                = true,
                        activation_layer *activation = new tanh_layer,
                        core::backend_t backend_type = core::default_engine())
-    : layer(recurrent_order(has_bias),  // output bias
-            {vector_type::data,         // output vector
-             vector_type::aux}) {
+    : layer({vector_type::data, vector_type::aux},
+            {vector_type::data, vector_type::aux}) {
+    // in order: input weights (U), transition weights (W), output weights (W)
+    layer::add_parameter(1, 1, out_dim, in_dim, parameter_type::weight);
+    layer::add_parameter(1, 1, out_dim, out_dim, parameter_type::weight);
+    layer::add_parameter(1, 1, out_dim, out_dim, parameter_type::weight);
+
+    if (has_bias) {
+      // in order: transition bias, output bias
+      layer::add_parameter(1, 1, 1, out_dim, parameter_type::bias);
+      layer::add_parameter(1, 1, 1, out_dim, parameter_type::bias);
+    }
     set_params(in_dim, out_dim, has_bias, activation);
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
@@ -82,26 +91,17 @@ class recurrent_cell_layer : public layer {
     init_backend(std::move(other.engine()));
   }
 
-  size_t fan_in_size(size_t i) const override { return in_shape()[i].width_; }
+  size_t fan_in_size(size_t i) const override {
+    return parameter_at(i).shape().width_;
+  }
 
-  size_t fan_out_size(size_t i) const override { return in_shape()[i].height_; }
+  size_t fan_out_size(size_t i) const override {
+    return parameter_at(i).shape().height_;
+  }
 
   std::vector<index3d<size_t>> in_shape() const override {
-    if (params_.has_bias_) {
-      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
-              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1),   // U
-              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // W
-              index3d<size_t>(params_.out_size_, params_.out_size_, 1),  // V
-              index3d<size_t>(params_.out_size_, 1, 1),                  // b
-              index3d<size_t>(params_.out_size_, 1, 1)};                 // c
-    } else {
-      return {index3d<size_t>(params_.in_size_, 1, 1),   // x
-              index3d<size_t>(params_.out_size_, 1, 1),  // h(t-1)
-              index3d<size_t>(params_.in_size_, params_.out_size_, 1),    // U
-              index3d<size_t>(params_.out_size_, params_.out_size_, 1),   // W
-              index3d<size_t>(params_.out_size_, params_.out_size_, 1)};  // V
-    }
+    return {index3d<size_t>(params_.in_size_, 1, 1),    // x
+            index3d<size_t>(params_.out_size_, 1, 1)};  // h(t-1)
   }
 
   std::vector<index3d<size_t>> out_shape() const override {
@@ -115,6 +115,7 @@ class recurrent_cell_layer : public layer {
     fwd_ctx_.set_in_out(in_data, out_data);
     fwd_ctx_.setParallelize(layer::parallelize());
     fwd_ctx_.setEngine(layer::engine());
+    fwd_ctx_.setParameters(parameters());
 
     // launch recurrent kernel
     kernel_fwd_->compute(fwd_ctx_);
@@ -128,6 +129,7 @@ class recurrent_cell_layer : public layer {
     bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
     bwd_ctx_.setParallelize(layer::parallelize());
     bwd_ctx_.setEngine(layer::engine());
+    bwd_ctx_.setParameters(parameters());
 
     // launch recurrent kernel
     kernel_back_->compute(bwd_ctx_);
