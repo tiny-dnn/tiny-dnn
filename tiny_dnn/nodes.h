@@ -222,21 +222,22 @@ class nodes {
   // transform indexing so that it's more suitable for per-layer operations
   // input:  [sample][channel][feature]
   // output: [channel][sample][feature]
-  void reorder_for_layerwise_processing(
-    const std::vector<tensor_t> &input,
-    std::vector<std::vector<const vec_t *>> &output) {
+  void reorder_for_layerwise_processing(const std::vector<tensor_t> &input,
+                                        std::vector<Tensor<>> &output) {
     size_t sample_count  = input.size();
     size_t channel_count = input[0].size();
+    size_t input_size    = input[0][0].size();
 
     output.resize(channel_count);
     for (size_t i = 0; i < channel_count; ++i) {
-      output[i].resize(sample_count);
+      output[i].reshape({sample_count, input_size});
     }
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
       assert(input[sample].size() == channel_count);
       for (size_t channel = 0; channel < channel_count; ++channel) {
-        output[channel][sample] = &input[sample][channel];
+        std::copy(input[sample][channel].begin(), input[sample][channel].end(),
+                  output[channel].host_iter(sample, 0));
       }
     }
   }
@@ -266,7 +267,7 @@ class nodes {
 class sequential : public nodes {
  public:
   void backward(const std::vector<tensor_t> &first) override {
-    std::vector<std::vector<const vec_t *>> reordered_grad;
+    std::vector<Tensor<>> reordered_grad;
     reorder_for_layerwise_processing(first, reordered_grad);
     assert(reordered_grad.size() == 1);
 
@@ -278,7 +279,7 @@ class sequential : public nodes {
   }
 
   std::vector<tensor_t> forward(const std::vector<tensor_t> &first) override {
-    std::vector<std::vector<const vec_t *>> reordered_data;
+    std::vector<Tensor<>> reordered_data;
     reorder_for_layerwise_processing(first, reordered_data);
     assert(reordered_data.size() == 1);
 
@@ -363,7 +364,7 @@ class graph : public nodes {
       throw nn_error("input size mismatch");
     }
 
-    std::vector<std::vector<const vec_t *>> reordered_grad;
+    std::vector<Tensor<>> reordered_grad;
     reorder_for_layerwise_processing(out_grad, reordered_grad);
     assert(reordered_grad.size() == output_channel_count);
 
@@ -383,7 +384,7 @@ class graph : public nodes {
       throw nn_error("input size mismatch");
     }
 
-    std::vector<std::vector<const vec_t *>> reordered_data;
+    std::vector<Tensor<>> reordered_data;
     reorder_for_layerwise_processing(in_data, reordered_data);
     assert(reordered_data.size() == input_data_channel_count);
 

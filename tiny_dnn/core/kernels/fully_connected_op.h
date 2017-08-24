@@ -23,15 +23,15 @@ class FullyConnectedOp : public core::OpKernel {
   void compute(core::OpKernelContext &context) override {
     auto params = OpKernel::params_->fully();
 
+    Tensor<> dummy = Tensor<>();
     // incomimg/outcoming data
-    // TODO(Randl): Remove once layers forward and backward by themself.
     const Tensor<> &in_data = context.input(0);
     Tensor<> &out_data      = context.output(0);
 
     const Tensor<> &weights = *(context.ith_parameter(0)->data());
     // TODO(randl)
-    const Tensor<> bias(params.has_bias_ ? *(context.ith_parameter(1)->data())
-                                         : Tensor<>());
+    const Tensor<> &bias =
+      params.has_bias_ ? *(context.ith_parameter(1)->data()) : dummy;
     // initialize outputs
     out_data.fill(0);
 
@@ -51,8 +51,6 @@ class FullyConnectedOp : public core::OpKernel {
     } else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
-    // TODO(Randl): Remove once layers forward and backward by themself.
-    context.output(0) = out_data;
   }
 };
 
