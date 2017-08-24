@@ -8,17 +8,29 @@
 #pragma once
 
 #include <string>
+#include "tiny_dnn/tiny_dnn.h"
 
+#include "tiny_dnn/util/nn_error.h"
+#include "tiny_dnn/util/parameter_init.h"
+
+namespace tiny_dnn {
 namespace models {
 
+/**
+ * VGG16 architecture for tiny-dnn model zoo.
+ *
+ * Reference:
+ * Very Deep Convolutional Networks for Large-Scale Image Recognition
+ * - (https://arxiv.org/abs/1409.1556)
+ */
 class vgg16 : public tiny_dnn::network<tiny_dnn::sequential> {
  public:
   explicit vgg16(const std::string &name = "vgg16", bool include_top = true)
     : tiny_dnn::network<tiny_dnn::sequential>(name) {
-    using conv     = tiny_dnn::layers::conv;
-    using relu     = tiny_dnn::activation::relu;
-    using max_pool = tiny_dnn::layers::max_pool;
-    using dense    = tiny_dnn::layers::dense;
+    using conv     = convolutional_layer;
+    using relu     = relu_layer;
+    using max_pool = max_pooling_layer;
+    using dense    = fully_connected_layer;
 
     // Block 1
     *this << conv(224, 224, 3, 3, 3, 64, padding::same) << relu();
@@ -53,8 +65,23 @@ class vgg16 : public tiny_dnn::network<tiny_dnn::sequential> {
       *this << dense(4096, 4096) << relu();
       *this << dense(4096, 1000) << relu();
       *this << softmax();
+    } else {
+      // following the Network-in-Network architecture to use a Global
+      // Average Pooling layer instead of Fully Connected Layers.
+      *this << global_average_pooling_layer(1000, 1, 1);
+    }
+
+    if (load_pretrained) {
+      throw nn_error("Pretrained weights loading support coming soon.");
+    } else {
+      // If not loading pretrained model then initialize as per strategy
+      // mentioned in paper.
+      this->weight_init(parameter_init::gaussian(0.01));
+      this->bias_init(parameter_init::constant(0.0));
+      this->init_parameters();
     }
   }
 };
 
 }  // namespace models
+}  // namespace tiny_dnn
