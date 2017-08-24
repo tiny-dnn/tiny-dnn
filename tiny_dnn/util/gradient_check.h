@@ -59,30 +59,13 @@ float_t numeric_gradient(layer &layer,
   // sqrt(machine epsilon) is assumed to be safe
   float_t h = std::sqrt(std::numeric_limits<float_t>::epsilon());
   // initialize input/output
-  std::vector<Tensor<>> in_tens, out_tens, out_grads_tens;
+  Tensor<> in_tens(in_data), out_tens(out_data), out_grads_tens(out_grads);
+  out_tens.fill(0);
+  out_grads_tens.fill(0);
   std::vector<Tensor<> *> in_tens_, out_tens_, out_grads_tens_;
-  for (auto &t : in_data) {
-    in_tens.emplace_back(t);
-  }
-  for (size_t i = 0; i < in_tens.size(); ++i) {
-    in_tens_.push_back(&in_tens[i]);
-  }
-
-  for (auto &t : out_data) {
-    out_tens.emplace_back(t);
-    out_tens.back().fill(0.0);
-  }
-  for (size_t i = 0; i < out_tens.size(); ++i) {
-    out_tens_.push_back(&out_tens[i]);
-  }
-
-  for (auto &t : out_grads) {
-    out_grads_tens.emplace_back(t);
-    out_grads_tens.back().fill(0.0);
-  }
-  for (size_t i = 0; i < out_grads_tens.size(); ++i) {
-    out_grads_tens_.push_back(&out_grads_tens[i]);
-  }
+  in_tens_.push_back(&in_tens);
+  out_tens_.push_back(&out_tens);
+  out_grads_tens_.push_back(&out_grads_tens);
 
   // Set output gradient to 1 so that input grad is 1*f'(x)
   out_grads_tens[out_edge].host_at(0, out_pos) = 1.0;
@@ -122,37 +105,17 @@ float_t analytical_gradient(layer &layer,
                             const size_t out_edge,
                             const size_t out_pos) {
   // initialize input/output
-  // initialize input/output
-  std::vector<Tensor<>> in_tens, in_grads_tens, out_tens, out_grads_tens;
+  Tensor<> in_tens(in_data), out_tens(out_data), out_grads_tens(out_grads),
+    in_grads_tens = in_tens;
+  out_tens.fill(0);
+  out_grads_tens.fill(0);
+  in_grads_tens = in_tens;
   std::vector<Tensor<> *> in_tens_, in_grads_tens_, out_tens_, out_grads_tens_;
-  for (auto &t : in_data) {
-    in_tens.emplace_back(t);
-  }
-  for (size_t i = 0; i < in_tens.size(); ++i) {
-    in_tens_.push_back(&in_tens[i]);
-  }
 
-  in_grads_tens = in_tens;  // copy
-  for (size_t i = 0; i < in_grads_tens.size(); ++i) {
-    in_grads_tens_.push_back(&in_grads_tens[i]);
-  }
-
-  for (auto &t : out_data) {
-    out_tens.emplace_back(t);
-    out_tens.back().fill(0.0);
-  }
-  for (size_t i = 0; i < out_tens.size(); ++i) {
-    out_tens_.push_back(&out_tens[i]);
-  }
-
-  for (auto &t : out_grads) {
-    out_grads_tens.emplace_back(t);
-    out_grads_tens.back().fill(0.0);
-    out_grads_tens_.push_back(&out_grads_tens.back());
-  }
-  for (size_t i = 0; i < out_grads_tens.size(); ++i) {
-    out_grads_tens_.push_back(&out_grads_tens[i]);
-  }
+  in_tens_.push_back(&in_tens);
+  out_tens_.push_back(&out_tens);
+  out_grads_tens_.push_back(&out_grads_tens);
+  in_grads_tens_.push_back(&in_grads_tens);
 
   out_grads_tens[out_edge].host_at(0, out_pos) = 1.0;  // set target grad to 1.
   // get gradient by plain backpropagation

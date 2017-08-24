@@ -95,6 +95,24 @@ class Tensor {
   }
 
   /**
+   * Temporary method to create a new Tensor from old vec of tensor_t
+   */
+  explicit Tensor(const std::vector<tensor_t> &data) {
+    std::vector<size_t> shape = {data.size(), data[0].size(),
+                                 data[0][0].size()};
+    storage_ = Storage(shape);
+
+    // deep copy tensor data
+    for (size_t i = 0; i < data.size(); ++i) {
+      for (size_t j = 0; j < data[i].size(); ++j) {
+        for (size_t k = 0; k < data[i][j].size(); ++k) {
+          storage_(i, j, k) = data[i][j][k];
+        }
+      }
+    }
+  }
+
+  /**
    * Temporary method to create a new Tensor from old vec_t
    */
   explicit Tensor(const vec_t &data) {

@@ -21,12 +21,18 @@ TEST(fully_connected, gradient_check) {
   const size_t in_size  = 50;
   const size_t out_size = 10;
   fully_connected_layer fc(in_size, out_size);
-  std::vector<tensor_t> input_data =
-    generate_test_data({1, 1, 1}, {in_size, in_size * out_size, out_size});
-  std::vector<tensor_t> in_grad  = input_data;  // copy constructor
-  std::vector<tensor_t> out_data = generate_test_data({1}, {out_size});
-  std::vector<tensor_t> out_grad = generate_test_data({1}, {out_size});
-  const size_t trials            = 100;
+
+  fc.weight_init(parameter_init::xavier());
+  fc.bias_init(parameter_init::xavier());
+  fc.init_parameters();
+
+  std::vector<tensor_t> input_data = generate_test_data({1}, {in_size});
+  std::vector<tensor_t> in_grad    = input_data;  // copy constructor
+  std::vector<tensor_t> out_data   = generate_test_data({1}, {out_size});
+  std::vector<tensor_t> out_grad   = generate_test_data({1}, {out_size});
+  const size_t trials              = 1;
+
+  // TODO(Randl, prlz77): allow changes in weights too
   for (size_t i = 0; i < trials; i++) {
     const size_t in_edge  = uniform_idx(input_data);
     const size_t in_idx   = uniform_idx(input_data[in_edge][0]);
