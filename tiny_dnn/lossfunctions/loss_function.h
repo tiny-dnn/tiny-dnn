@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -151,20 +152,21 @@ class cross_entropy_multiclass {
   }
 };
 
-template <typename E>
-vec_t gradient(const vec_t &y, const vec_t &t) {
+template <typename E, typename S>
+vec_t gradient(const Tensor<float_t, S> &y, const vec_t &t) {
   assert(y.size() == t.size());
-  return E::df(y, t);
+  return E::df(y.toVec(), t);
 }
 
-template <typename E>
-std::vector<vec_t> gradient(const std::vector<vec_t> &y,
+template <typename E, typename S>
+std::vector<vec_t> gradient(const Tensor<float_t, S> &y,
                             const std::vector<vec_t> &t) {
-  std::vector<vec_t> grads(y.size());
+  std::vector<vec_t> grads(y.shape()[0]);
 
-  assert(y.size() == t.size());
+  assert(y.shape()[0] == t.size());
 
-  for (size_t i = 0; i < y.size(); i++) grads[i] = gradient<E>(y[i], t[i]);
+  for (size_t i = 0; i < y.shape()[0]; i++)
+    grads[i] = gradient<E>(y.subView(TensorSingleIndex(i), TensorAll()), t[i]);
 
   return grads;
 }
@@ -187,28 +189,38 @@ inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
   }
 }
 
-// gradient for a minibatch
-template <typename E>
-std::vector<tensor_t> gradient(const std::vector<tensor_t> &y,
+// TODO(Randl): after full Tensor integration, create universal gradient
+// function
+/**
+ * gradient for a minibatch
+ * @tparam E
+ * @param y
+ * @param t
+ * @param t_cost
+ * @return
+ */
+template <typename E, typename S>
+std::vector<tensor_t> gradient(const Tensor<float_t, S> &y,
                                const std::vector<tensor_t> &t,
                                const std::vector<tensor_t> &t_cost) {
-  const size_t sample_count  = y.size();
-  const size_t channel_count = y[0].size();
+  const size_t sample_count  = y.shape()[0];
+  const size_t channel_count = y.shape()[1];
 
   std::vector<tensor_t> gradients(sample_count);
 
   CNN_UNREFERENCED_PARAMETER(channel_count);
-  assert(y.size() == t.size());
+  assert(sample_count == t.size());
   assert(t_cost.empty() || t_cost.size() == t.size());
 
   // @todo add parallelism
   for (size_t sample = 0; sample < sample_count; ++sample) {
-    assert(y[sample].size() == channel_count);
     assert(t[sample].size() == channel_count);
     assert(t_cost.empty() || t_cost[sample].empty() ||
            t_cost[sample].size() == channel_count);
 
-    gradients[sample] = gradient<E>(y[sample], t[sample]);
+    gradients[sample] = gradient<E>(
+      y.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()),
+      t[sample]);
 
     if (sample < t_cost.size()) {
       apply_cost_if_defined(gradients[sample], t_cost[sample]);

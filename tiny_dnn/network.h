@@ -812,8 +812,7 @@ class network {
                   const int nbThreads,
                   const tensor_t *t_cost) {
     if (size == 1) {
-      bprop<E>(fprop(in[0]).to3dTensor()[0], t[0],
-               t_cost ? t_cost[0] : tensor_t());
+      bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
       net_.update_parameters(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
@@ -843,7 +842,7 @@ class network {
       t_cost ? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
              : std::vector<tensor_t>();
 
-    bprop<E>(fprop(in_batch_).to3dTensor(), t_batch_, t_cost_batch);
+    bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
     net_.update_parameters(&optimizer, batch_size);
   }
 
@@ -909,7 +908,7 @@ class network {
     w.host_at(check_index)     = prev_w;
 
     // calculate dw/dE by bprop
-    bprop<E>(fprop(in).to3dTensor(), v, std::vector<tensor_t>());
+    bprop<E>(fprop(in), v, std::vector<tensor_t>());
 
     float_t delta_by_bprop = 0;
     for (size_t sample = 0; sample < sample_count; ++sample) {
@@ -922,15 +921,14 @@ class network {
 
   // convenience wrapper for the function below
   template <typename E>
-  void bprop(const std::vector<vec_t> &out,
+  void bprop(const Tensor<> &out,
              const std::vector<vec_t> &t,
              const std::vector<vec_t> &t_cost) {
-    bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t},
-             std::vector<tensor_t>{t_cost});
+    bprop<E>(out, std::vector<tensor_t>{t}, std::vector<tensor_t>{t_cost});
   }
 
   template <typename E>
-  void bprop(const std::vector<tensor_t> &out,
+  void bprop(const Tensor<> &out,
              const std::vector<tensor_t> &t,
              const std::vector<tensor_t> &t_cost) {
     std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
