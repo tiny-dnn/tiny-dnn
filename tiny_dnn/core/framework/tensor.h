@@ -431,9 +431,28 @@ auto host_data() {
                                          const Tensor<T, S> &tensor);
 
   /**
-   * Temporal method to convert new Tensor to tensor_t
+   * Temporary method to convert new Tensor to vector of tensor_t
    * @return
    */
+  std::vector<tensor_t> to3dTensor() const {
+    assert(shape().size() == 3);
+    std::vector<tensor_t> tensor(storage_.shape()[0],
+                                 tensor_t(storage_.shape()[1]));
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      for (size_t j = 0; j < storage_.shape()[1]; ++j) {
+        tensor[i][j].resize(storage_.shape()[2]);
+        for (size_t k = 0; k < storage_.shape()[2]; ++k) {
+          tensor[i][j][k] = storage_(i, j, k);
+        }
+      }
+    }
+    return tensor;
+  }
+
+  /**
+     * Temporary method to convert new Tensor to tensor_t
+     * @return
+     */
   tensor_t toTensor() const {
     assert(shape().size() == 2);
     tensor_t tensor(storage_.shape()[0]);

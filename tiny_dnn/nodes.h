@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
@@ -86,16 +87,13 @@ class nodes {
   /**
    * propagate gradient
    * @param first        : gradient of cost function(dE/dy)
-   * @param worker_index : id of worker-task
    **/
   virtual void backward(const std::vector<tensor_t> &first) = 0;
 
   /**
    * @param first input  : data vectors
-   * @param worker_index : id of worker-task
    **/
-  virtual std::vector<tensor_t> forward(
-    const std::vector<tensor_t> &first) = 0;  // NOLINT
+  virtual Tensor<> forward(const std::vector<tensor_t> &first) = 0;  // NOLINT
 
   /**
    * update parameters and clear all gradients
@@ -278,8 +276,8 @@ class sequential : public nodes {
     }
   }
 
-  std::vector<tensor_t> forward(const std::vector<tensor_t> &first) override {
-    std::vector<Tensor<>> reordered_data;
+  Tensor<> forward(const std::vector<tensor_t> &first) override {
+    std::vector<Tensor<>> reordered_data;  // TODO(Randl): Tensor<>
     reorder_for_layerwise_processing(first, reordered_data);
     assert(reordered_data.size() == 1);
 
@@ -336,15 +334,21 @@ class sequential : public nodes {
  private:
   friend class nodes;
 
-  std::vector<tensor_t> normalize_out(
-    const std::vector<const Tensor<> *> &out) {
-    // normalize indexing back to [sample][layer][feature]
-    std::vector<tensor_t> normalized_output;
+  /**
+   * normalize indexing back to [sample][layer][feature]
+   * @param out
+   * @return
+   */
+  Tensor<> normalize_out(const std::vector<const Tensor<> *> &out) {
     const size_t sample_count = out[0]->shape()[0];
-    normalized_output.resize(sample_count, tensor_t(1));
+    const size_t feature_size = out[0]->shape()[1];
+    Tensor<> normalized_output({sample_count, 1, feature_size});
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      normalized_output[sample][0] = out[0]->lineToVec(sample);
+      auto from = out[0]->subView(TensorSingleIndex(sample), TensorAll());
+      auto to   = normalized_output.subView(TensorSingleIndex(sample),
+                                          TensorSingleIndex(0), TensorAll());
+      to.assign(from);
     }
 
     return normalized_output;
@@ -377,7 +381,7 @@ class graph : public nodes {
     }
   }
 
-  std::vector<tensor_t> forward(const std::vector<tensor_t> &in_data) override {
+  Tensor<> forward(const std::vector<tensor_t> &in_data) override {
     size_t input_data_channel_count = in_data[0].size();
 
     if (input_data_channel_count != input_layers_.size()) {
@@ -536,26 +540,33 @@ class graph : public nodes {
 #endif  // CNN_NO_SERIALIZATION
   }
 
-  // normalize indexing back to [sample][layer][feature]
-  std::vector<tensor_t> merge_outs() {
-    std::vector<tensor_t> merged;
+  /**
+   * normalize indexing back to [sample][layer][feature]
+   * @return
+   */
+  Tensor<> merge_outs() {
+    Tensor<> merged;
     std::vector<const Tensor<> *> out;
     size_t output_channel_count = output_layers_.size();
     for (size_t output_channel = 0; output_channel < output_channel_count;
          ++output_channel) {
       output_layers_[output_channel]->output(out);
 
-      size_t sample_count = out[0]->shape()[0];
+      const size_t sample_count = out[0]->shape()[0];
+      const size_t feature_size = out[0]->shape()[1];
       if (output_channel == 0) {
         assert(merged.empty());
-        merged.resize(sample_count, tensor_t(output_channel_count));
+        merged.reshape({sample_count, output_channel_count, feature_size});
       }
 
-      assert(merged.size() == sample_count);
+      assert(merged.shape()[0] == sample_count);
 
       for (size_t sample = 0; sample < sample_count; ++sample) {
-        merged[sample][output_channel] =
-          out[0]->subView(TensorSingleIndex(sample), TensorAll()).toVec();
+        auto to =
+          merged.subView(TensorSingleIndex(sample),
+                         TensorSingleIndex(output_channel), TensorAll());
+        auto from = out[0]->subView(TensorSingleIndex(sample), TensorAll());
+        to.assign(from);
       }
     }
     return merged;

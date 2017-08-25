@@ -140,11 +140,13 @@ TEST(integration, train2) {
 
   EXPECT_NEAR(predicted[0], t[0], 1e-4);
   EXPECT_NEAR(predicted[1], t[1], 1e-4);
+  EXPECT_NEAR(predicted[1], t[2], 1e-4);
 
   predicted = nn.predict(a2);
 
   EXPECT_NEAR(predicted[0], t2[0], 1e-4);
   EXPECT_NEAR(predicted[1], t2[1], 1e-4);
+  EXPECT_NEAR(predicted[1], t2[2], 1e-4);
 }
 
 TEST(integration, gradient_check1) {

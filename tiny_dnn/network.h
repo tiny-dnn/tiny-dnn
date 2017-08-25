@@ -167,18 +167,18 @@ class network {
   /**
    * executes forward-propagation and returns output
    **/
-  vec_t predict(const vec_t &in) { return fprop(in); }
+  vec_t predict(const vec_t &in) { return fprop(in).to3dTensor()[0][0]; }
 
   /**
    * executes forward-propagation and returns output
    **/
-  tensor_t predict(const tensor_t &in) { return fprop(in); }
+  tensor_t predict(const tensor_t &in) { return fprop(in).to3dTensor()[0]; }
 
   /**
    * executes forward-propagation and returns output
    **/
   std::vector<tensor_t> predict(const std::vector<tensor_t> &in) {
-    return fprop(in);
+    return fprop(in).to3dTensor();
   }
 
   /**
@@ -812,7 +812,7 @@ class network {
                   const int nbThreads,
                   const tensor_t *t_cost) {
     if (size == 1) {
-      bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
+      bprop<E>(fprop(in[0]).toTensor(), t[0], t_cost ? t_cost[0] : tensor_t());
       net_.update_parameters(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
@@ -842,37 +842,28 @@ class network {
       t_cost ? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
              : std::vector<tensor_t>();
 
-    bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
+    bprop<E>(fprop(in_batch_).to3dTensor(), t_batch_, t_cost_batch);
     net_.update_parameters(&optimizer, batch_size);
   }
 
-  vec_t fprop(const vec_t &in) {
+  Tensor<> fprop(const vec_t &in) {
     if (in.size() != (size_t)in_data_size()) data_mismatch(**net_.begin(), in);
 #if 0
         return fprop(std::vector<vec_t>{ in })[0];
 #else
-    // a workaround to reduce memory consumption by skipping wrapper
-    // function
+    // a workaround to reduce memory consumption by skipping wrapper function
     std::vector<tensor_t> a(1);
     a[0].emplace_back(in);
-    return fprop(a)[0][0];
+    return fprop(a);
 #endif
   }
 
   // convenience wrapper for the function below
-  std::vector<vec_t> fprop(const std::vector<vec_t> &in) {
-    return fprop(std::vector<tensor_t>{in})[0];
+  Tensor<> fprop(const std::vector<vec_t> &in) {
+    return fprop(std::vector<tensor_t>{in});
   }
 
-  std::vector<tensor_t> fprop(const std::vector<tensor_t> &in) {
-    return net_.forward(in);
-  }
-
-  //    template <typename E>
-  //    float_t get_loss(const vec_t& out, const vec_t& t) {
-  //        assert(out.size() == t.size());
-  //        return E::f(out, t);
-  //    }
+  Tensor<> fprop(const std::vector<tensor_t> &in) { return net_.forward(in); }
 
   template <typename E>
   bool calc_delta(const std::vector<tensor_t> &in,
@@ -917,7 +908,7 @@ class network {
     w.host_at(check_index)     = prev_w;
 
     // calculate dw/dE by bprop
-    bprop<E>(fprop(in), v, std::vector<tensor_t>());
+    bprop<E>(fprop(in).to3dTensor(), v, std::vector<tensor_t>());
 
     float_t delta_by_bprop = 0;
     for (size_t sample = 0; sample < sample_count; ++sample) {
