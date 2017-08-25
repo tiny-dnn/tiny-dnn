@@ -863,7 +863,11 @@ class network {
     return fprop(std::vector<tensor_t>{in});
   }
 
-  Tensor<> fprop(const std::vector<tensor_t> &in) { return net_.forward(in); }
+  Tensor<> fprop(const std::vector<tensor_t> &in) {
+    std::vector<Tensor<>> in_t;
+    for (auto &i : in) in_t.push_back(Tensor<>(i));
+    return net_.forward(in_t);
+  }
 
   template <typename E>
   bool calc_delta(const std::vector<tensor_t> &in,
@@ -932,7 +936,9 @@ class network {
              const std::vector<tensor_t> &t,
              const std::vector<tensor_t> &t_cost) {
     std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
-    net_.backward(delta);
+    std::vector<Tensor<>> delta_t;
+    for (auto &d : delta) delta_t.push_back(Tensor<>(d));
+    net_.backward(delta_t);
   }
 
   void check_t(size_t i, label_t t, size_t dim_out) {
