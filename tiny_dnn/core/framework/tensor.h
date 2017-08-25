@@ -239,6 +239,12 @@ class Tensor {
 
   const U *host_pend() const { return &*storage_.cend(); }
 
+  // TODO(Randl): GPU
+  auto begin() { return storage_.begin(); }
+  const auto begin() const { return storage_.cbegin(); }
+  auto end() { return storage_.end(); }
+  const auto end() const { return storage_.cend(); }
+
   // TODO(Randl): check if strided.
   template <typename... Args>
   U *host_pointer(const Args... args) {
