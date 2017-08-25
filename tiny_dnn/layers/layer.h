@@ -607,12 +607,12 @@ class layer : public node {
     back_propagation(bwd_in_data_, bwd_out_data_, bwd_out_grad_, bwd_in_grad_);
   }
 
-  /* @brief Allocates data in the computational graph and reset weights if
+  /**
+   * @brief Allocates data in the computational graph and reset weights if
    * it's needed or the data is not already initialized.
    *
    * @param reset_weight Boolean value to force to reset the weights.
    * Weights will be automatically reset if the are not initialized.
-   *
    */
   void setup(bool reset_weight) {
     // The input shape (width x height x depth) must be equal to the number

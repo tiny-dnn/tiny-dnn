@@ -812,7 +812,8 @@ class network {
                   const int nbThreads,
                   const tensor_t *t_cost) {
     if (size == 1) {
-      bprop<E>(fprop(in[0]).toTensor(), t[0], t_cost ? t_cost[0] : tensor_t());
+      bprop<E>(fprop(in[0]).to3dTensor()[0], t[0],
+               t_cost ? t_cost[0] : tensor_t());
       net_.update_parameters(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);

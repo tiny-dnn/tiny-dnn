@@ -36,9 +36,7 @@ class FullyConnectedOp : public core::OpKernel {
     out_data.fill(0);
 
     // call the algorithm depending  on the selected engine type
-
     const core::backend_t engine = context.engine();
-
     if (engine == core::backend_t::internal) {
       kernels::fully_connected_op_internal(in_data, weights, bias, out_data,
                                            context.parallelize());
