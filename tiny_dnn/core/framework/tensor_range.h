@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include "tiny_dnn/xtensor/xview.hpp"
+
 namespace tiny_dnn {
 
 template <typename T = size_t>
@@ -56,7 +58,7 @@ class TensorAllClass {
 };
 
 /**
- * New axis of dim 1
+ * All indexes of current axis
  * @return
  */
 inline TensorAllClass<size_t> TensorAll() { return TensorAllClass<size_t>(); }

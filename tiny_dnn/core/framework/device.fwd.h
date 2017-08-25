@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#include "tiny_dnn/util/nn_error.h"
+
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
 #include "third_party/CLCudaAPI/clpp11.h"
@@ -29,7 +31,7 @@ inline std::ostream &operator<<(std::ostream &os, device_t type) {
     case device_t::GPU: os << "GPU"; break;
     default:
       throw nn_error("Not supported ostream enum: " +
-                     to_string(static_cast<int>(type)));
+                     std::to_string(static_cast<int>(type)));
       break;
   }
   return os;

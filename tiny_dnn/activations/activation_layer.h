@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 

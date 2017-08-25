@@ -15,6 +15,7 @@
 
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/core/framework/tensor_range.h"
+#include "tiny_dnn/util/util.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
