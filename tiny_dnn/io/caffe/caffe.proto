@@ -306,7 +306,7 @@ message ParamSpec {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available layer-specific ID: 146 (last added: parameter_param)
+// LayerParameter next available layer-specific ID: 147 (last added: squeezedet_infer_param)
 message LayerParameter {
   optional string name = 1; // the layer name
   optional string type = 2; // the layer type
@@ -398,6 +398,7 @@ message LayerParameter {
   optional SoftmaxParameter softmax_param = 125;
   optional SPPParameter spp_param = 132;
   optional SliceParameter slice_param = 126;
+  optional SqueezeDetInferParameter squeezedet_infer_param = 146;
   optional TanHParameter tanh_param = 127;
   optional ThresholdParameter threshold_param = 128;
   optional TileParameter tile_param = 138;
@@ -1116,6 +1117,34 @@ message TanHParameter {
     CUDNN = 2;
   }
   optional Engine engine = 1 [default = DEFAULT];
+}
+
+// Message that stores parameters used for infering bounding box predictions
+// Details can be found at : `https://arxiv.org/abs/1612.01051`
+message SqueezeDetInferParameter {
+  enum Engine {
+      DEFAULT = 0;
+      CAFFE = 1;
+      CUDNN = 2;
+   }
+  optional Engine engine = 1 [default = CAFFE];
+
+  // The number of classes an object is to be classified
+  required uint32 classes = 2;
+  // The number of anchors shapes
+  required uint32 anchors_per_grid = 3;
+  // Shapes of the corresponding anchors
+  // In total `2 * anchors` should be specified in the form
+  // (width,  height)
+  repeated uint32 anchor_shapes = 4;
+  // This maps the class index to the corresponding class label
+  repeated string class_labels = 5;
+  // a value to ensure that
+  optional double epsilon = 6 [default = 1e-7];
+  // The number of top predictions for bounding boxes to keep during test phase
+  optional int32 n_top_detections = 7 [default = 64];
+  // Intersection threshold
+  optional float intersection_thresh = 8 [default = 0.9];
 }
 
 // Message that stores parameters used by TileLayer
