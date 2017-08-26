@@ -388,8 +388,6 @@ class graph : public nodes {
   Tensor<> forward(const std::vector<Tensor<>> &in_data) override {
     size_t input_data_channel_count = in_data[0].shape()[0];
 
-    std::cout << input_layers_.size() << std::endl;
-    std::cout << in_data[0] << std::endl;
     if (input_data_channel_count != input_layers_.size()) {
       throw nn_error("input size mismatch");
     }

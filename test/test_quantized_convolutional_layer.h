@@ -74,7 +74,6 @@ TEST(quantized_convolutional, fprop) {
   {
     l.forward_propagation(in_data, out_data);
 
-    std::cout << out_tensor_t << std::endl;
     for (auto o : out_tensor_t.toTensor()[0]) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
