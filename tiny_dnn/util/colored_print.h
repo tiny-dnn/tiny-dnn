@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdarg>
 #include <string>
 
 #include "tiny_dnn/config.h"
