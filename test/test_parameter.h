@@ -98,6 +98,25 @@ TEST(parameter, constant_init) {
   }
 }
 
+TEST(parameter, hdf_load) {
+  network<sequential> net;
+  net << fully_connected_layer(2, 4, true) << relu()
+      << fully_connected_layer(4, 1, true) << sigmoid();
+
+  net[0]->parameter_at(0).load("test/testdata/xor_weights.h5",
+                               "dense_1/dense_1/kernel:0");
+  net[0]->parameter_at(1).load("test/testdata/xor_weights.h5",
+                               "dense_1/dense_1/bias:0");
+  net[2]->parameter_at(0).load("test/testdata/xor_weights.h5",
+                               "dense_2/dense_2/kernel:0");
+  net[2]->parameter_at(1).load("test/testdata/xor_weights.h5",
+                               "dense_2/dense_2/bias:0");
+
+  ASSERT_LE(net.predict({0, 0})[0], 0.5);
+  ASSERT_LE(net.predict({1, 1})[0], 0.5);
+  ASSERT_GE(net.predict({0, 1})[0], 0.5);
+  ASSERT_GE(net.predict({1, 0})[0], 0.5);
+}
 // todo (karandesai) : test getters and setters on fc layer
 
 }  // namespace tiny_dnn

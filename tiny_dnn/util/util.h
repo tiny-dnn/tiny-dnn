@@ -36,6 +36,10 @@
 #include <cereal/types/vector.hpp>
 #endif
 
+#ifdef CNN_USE_HDF
+#include <H5Cpp.h>
+#endif
+
 #include "tiny_dnn/util/aligned_allocator.h"
 #include "tiny_dnn/util/macro.h"
 #include "tiny_dnn/util/nn_error.h"
@@ -415,3 +419,20 @@ struct are_all<checker, T0, Ts...>
 template <typename... Ts>
 using are_all_xexpr = are_all<is_xexpression, Ts...>;
 }  // namespace tiny_dnn
+
+#ifdef CNN_USE_HDF
+/**
+ * Workaround code for accessing DataSpace of DataSet.
+ * API method H5::DataSet::getSpace() leaks memory.
+ *
+ * @param ds H5::DataSet
+ * @return H5::DataSpace object, DataSpace of the DataSet
+ */
+inline H5::DataSpace getDataSpace(H5::DataSet &ds) {
+  hid_t id2     = ds.getId();
+  hid_t myspace = H5Dget_space(id2);
+  H5::DataSpace origspace(myspace);
+  H5Sclose(myspace);
+  return origspace;
+}
+#endif

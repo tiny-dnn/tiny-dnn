@@ -11,6 +11,10 @@
 #include <limits>
 #include <vector>
 
+#ifdef CNN_USE_HDF
+#include <H5Cpp.h>
+#endif
+
 #include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/util.h"
@@ -143,6 +147,27 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
       is >> *data_at(i);
     }
   }
+
+#ifdef CNN_USE_HDF
+  void load(const std::string &file_path, const std::string &tensor_name) {
+    H5::H5File file(file_path, H5F_ACC_RDONLY);
+    H5::DataSet dset     = file.openDataSet(tensor_name);
+    H5::DataSpace dspace = getDataSpace(dset);
+    hsize_t vec_size     = dspace.getSimpleExtentNpoints();
+
+    assert(data_.size() == vec_size);
+    vec_t data_vec(vec_size);
+#ifdef CNN_USE_DOUBLE
+    dset.read(data_vec.data(), H5::PredType::NATIVE_DOUBLE);
+#else
+    dset.read(data_vec.data(), H5::PredType::NATIVE_FLOAT);
+#endif
+    data_ = data_.fromVec(data_vec);
+    dspace.close();
+    dset.close();
+    file.close();
+  }
+#endif
   /** @} */  // Serialization - Deserialization Utilities
 
  private:
