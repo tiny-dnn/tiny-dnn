@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <cassert>
 #include <string>
 
 #include "tiny_dnn/config.h"

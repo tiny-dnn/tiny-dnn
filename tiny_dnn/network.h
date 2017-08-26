@@ -1030,9 +1030,10 @@ class network {
     } else if (inputs.dim() == 1) {
       normalized.reshape({inputs.size(), 1, out_data_size()});
       net_.label2vec(inputs, normalized);
-    } else
+    } else {
       throw(nn_error("wrong number of dimensions: " +
                      std::to_string(inputs.dim())));
+    }
   }
 
   std::string name_;

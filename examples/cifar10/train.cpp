@@ -89,8 +89,11 @@ void train_cifar10(std::string data_dir_path,
 
   auto on_enumerate_minibatch = [&]() { disp += n_minibatch; };
 
+  tiny_dnn::Tensor<> train_images_t(train_images);
+  tiny_dnn::Tensor<tiny_dnn::label_t> train_labels_t({train_labels.size()});
+  train_labels_t.fromVec(train_labels);
   // training
-  nn.train<tiny_dnn::cross_entropy>(optimizer, train_images, train_labels,
+  nn.train<tiny_dnn::cross_entropy>(optimizer, train_images_t, train_labels_t,
                                     n_minibatch, n_train_epochs,
                                     on_enumerate_minibatch, on_enumerate_epoch);
 
