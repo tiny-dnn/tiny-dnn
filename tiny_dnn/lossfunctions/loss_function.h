@@ -203,12 +203,14 @@ template <typename E, typename S>
 std::vector<tensor_t> gradient(const Tensor<float_t, S> &y,
                                const std::vector<tensor_t> &t,
                                const std::vector<tensor_t> &t_cost) {
+  std::cout << y << std::endl;
   const size_t sample_count  = y.shape()[0];
   const size_t channel_count = y.shape()[1];
 
   std::vector<tensor_t> gradients(sample_count);
 
   CNN_UNREFERENCED_PARAMETER(channel_count);
+  std::cout << sample_count << "==" << t.size() << std::endl;
   assert(sample_count == t.size());
   assert(t_cost.empty() || t_cost.size() == t.size());
 

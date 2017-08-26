@@ -167,20 +167,22 @@ class nodes {
     }
   }
 
-  void label2vec(const label_t *t, size_t num, std::vector<vec_t> &vec) const {
-    size_t outdim = out_data_size();
-
-    vec.reserve(num);
-    for (size_t i = 0; i < num; i++) {
-      assert(t[i] < outdim);
-      vec.emplace_back(outdim, target_value_min());
-      vec.back()[t[i]] = target_value_max();
+  /**
+   * Converts vactor of labels to one-hot tensor
+   * @param labels
+   * @param ten
+   */
+  template <typename T = label_t, typename S>
+  void label2vec(const Tensor<T> &labels, Tensor<float_t, S> &ten) const {
+    // TODO(Randl): shape?
+    assert(ten.shape()[0] == labels.size());
+    assert(ten.shape()[1] == 1);
+    assert(ten.shape()[2] == out_data_size());
+    ten.fill(target_value_min());
+    for (size_t i = 0; i < labels.size(); ++i) {
+      ten.host_at(0, i, labels.host_at(i)) = target_value_max();
     }
-  }
-
-  void label2vec(const std::vector<label_t> &labels,
-                 std::vector<vec_t> &vec) const {
-    return label2vec(&labels[0], labels.size(), vec);
+    return ten;
   }
 
   template <typename OutputArchive>
@@ -285,7 +287,6 @@ class sequential : public nodes {
     std::vector<Tensor<>> reordered_data;  // TODO(Randl): Tensor<>
     reorder_for_layerwise_processing(first, reordered_data);
     assert(reordered_data.size() == 1);
-
     nodes_.front()->set_in_data(&reordered_data[0], 1);
 
     for (auto l : nodes_) {

@@ -126,12 +126,11 @@ class Tensor {
     }
   }
 
-  /**
-   * Constructor of 1D Tensor from vecotr
-   * TODO(Randl): extend
-   * @param data
-   */
-  explicit Tensor(const std::vector<U> &data) {
+  // TODO(Randl): dirty hack
+  template <
+    typename T = U,
+    typename std::enable_if<!std::is_same<T, size_t>::value, int>::type = 0>
+  explicit Tensor(const std::vector<T> &data) {
     std::vector<size_t> shape = {data.size()};
     storage_                  = Storage(shape);
 
@@ -353,8 +352,8 @@ auto host_data() {
     return *this;
   }
 
-  template <typename S1>
-  Tensor &assign(Tensor<U, S1> tensor) {
+  template <typename V, typename S1>
+  Tensor &assign(Tensor<V, S1> tensor) {
     assert(size() >= tensor.size());
     auto in  = tensor.host_begin();
     auto out = host_begin();
@@ -386,6 +385,7 @@ auto host_data() {
     storage_.reshape(curr);
   }
 
+  // TODO(Randl): is needed? given new overload
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
   const Tensor operator[](size_t index) const {
     return Tensor(storage_[index]);
@@ -457,9 +457,9 @@ auto host_data() {
   }
 
   /**
-     * Temporary method to convert new Tensor to tensor_t
-     * @return
-     */
+   * Temporary method to convert new Tensor to tensor_t
+   * @return
+   */
   tensor_t toTensor() const {
     assert(shape().size() == 2);
     tensor_t tensor(storage_.shape()[0]);
@@ -490,8 +490,10 @@ auto host_data() {
    * Temporary method.
    * @return
    */
-  Tensor &fromVec(vec_t vect) {
-    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+  template <typename T>
+  Tensor &fromVec(std::vector<T> vect) {
+    reshape({vect.size()});
+    for (size_t i = 0; i < vect.size(); ++i) {
       storage_(i) = vect[i];
     }
     return *this;
