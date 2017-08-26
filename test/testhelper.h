@@ -112,8 +112,8 @@ void network_serialization_test(T &src, T &dst) {
 
   EXPECT_TRUE(src.has_same_parameters(dst, epsilon));
 
-  vec_t r1 = (*(src.forward({{v}}))[0])[0];
-  vec_t r2 = (*(dst.forward({{v}}))[0])[0];
+  vec_t r1 = src.predict(v);
+  vec_t r2 = dst.predict(v);
 
   EXPECT_TRUE(is_near_container(r1, r2, epsilon * 10));
 }

@@ -233,7 +233,7 @@ TEST(network, train_predict) {
 
   net << fully_connected_layer(2, 10) << tanh_layer()
       << fully_connected_layer(10, 2) << tanh_layer();
-
+  net.init_parameters();
   net.train<mse>(optimizer, data, label, 10, 10);
 
   std::vector<tensor_t> parallel_input(tnum);
@@ -287,7 +287,7 @@ TEST(network, train_predict_different_batches) {
 
     net << fully_connected_layer(2, 10) << tanh_layer()
         << fully_connected_layer(10, 2) << tanh_layer();
-
+    net.init_parameters();
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 
     std::vector<tensor_t> parallel_input(data_size);
