@@ -954,10 +954,9 @@ class network {
   void bprop(const Tensor<> &out,
              const std::vector<tensor_t> &t,
              const std::vector<tensor_t> &t_cost) {
-    std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
-    std::vector<Tensor<>> delta_t;
-    for (auto &d : delta) delta_t.push_back(Tensor<>(d));
-    net_.backward(delta_t);
+    std::vector<Tensor<>> delta =
+      gradient<E>(out, Tensor<>(t), Tensor<>(t_cost));
+    net_.backward(delta);
   }
 
   void check_t(size_t i, label_t t, size_t dim_out) {

@@ -158,33 +158,23 @@ vec_t gradient(const Tensor<float_t, S> &y, const vec_t &t) {
   return E::df(y.toVec(), t);
 }
 
-template <typename E, typename S>
-std::vector<vec_t> gradient(const Tensor<float_t, S> &y,
-                            const std::vector<vec_t> &t) {
-  std::vector<vec_t> grads(y.shape()[0]);
-
-  assert(y.shape()[0] == t.size());
-
-  for (size_t i = 0; i < y.shape()[0]; i++)
-    grads[i] = gradient<E>(y.subView(TensorSingleIndex(i), TensorAll()), t[i]);
-
-  return grads;
+template <typename E, typename S1, typename S2>
+Tensor<> gradient(const Tensor<float_t, S1> &y, const Tensor<float_t, S2> &t) {
+  Tensor<> tmp(y.shape());
+  tmp.assign(Tensor<>(E::df(y.toVec(), t.toVec())));
+  return tmp;
 }
 
-inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
-                                  const std::vector<vec_t> &sample_cost) {
-  if (sample_gradient.size() == sample_cost.size()) {
+template <typename S1, typename S2>
+inline void apply_cost_if_defined(Tensor<float_t, S1> &sample_gradient,
+                                  const Tensor<float_t, S2> &sample_cost) {
+  if (sample_gradient.shape() == sample_cost.shape()) {
     // @todo consider adding parallelism
-    const size_t channel_count = sample_gradient.size();
-    for (size_t channel = 0; channel < channel_count; ++channel) {
-      if (sample_gradient[channel].size() == sample_cost[channel].size()) {
-        const size_t element_count = sample_gradient[channel].size();
 
-        // @todo optimize? (use AVX or so)
-        for (size_t element = 0; element < element_count; ++element) {
-          sample_gradient[channel][element] *= sample_cost[channel][element];
-        }
-      }
+    auto it1 = sample_gradient.begin();
+    auto it2 = sample_cost.begin();
+    for (; it1 < sample_gradient.end(); ++it1, ++it2) {
+      *it1 *= *it2;
     }
   }
 }
@@ -199,33 +189,30 @@ inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
  * @param t_cost
  * @return
  */
-template <typename E, typename S>
-std::vector<tensor_t> gradient(const Tensor<float_t, S> &y,
-                               const std::vector<tensor_t> &t,
-                               const std::vector<tensor_t> &t_cost) {
-  std::cout << y << std::endl;
+template <typename E, typename S1, typename S2, typename S3>
+std::vector<Tensor<>> gradient(const Tensor<float_t, S1> &y,
+                               const Tensor<float_t, S2> &t,
+                               const Tensor<float_t, S3> &t_cost) {
   const size_t sample_count  = y.shape()[0];
   const size_t channel_count = y.shape()[1];
 
-  std::vector<tensor_t> gradients(sample_count);
+  std::vector<Tensor<>> gradients(y.shape()[0]);
 
   CNN_UNREFERENCED_PARAMETER(channel_count);
-  std::cout << sample_count << "==" << t.size() << std::endl;
-  assert(sample_count == t.size());
-  assert(t_cost.empty() || t_cost.size() == t.size());
+  assert(t_cost.empty() || t_cost.shape() == t.shape());
+  assert(t.shape()[0] == sample_count);
+  assert(t.shape()[1] == channel_count);
 
   // @todo add parallelism
   for (size_t sample = 0; sample < sample_count; ++sample) {
-    assert(t[sample].size() == channel_count);
-    assert(t_cost.empty() || t_cost[sample].empty() ||
-           t_cost[sample].size() == channel_count);
-
     gradients[sample] = gradient<E>(
       y.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()),
-      t[sample]);
+      t.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()));
 
-    if (sample < t_cost.size()) {
-      apply_cost_if_defined(gradients[sample], t_cost[sample]);
+    if (!t_cost.empty() && sample < t_cost.shape()[0]) {
+      apply_cost_if_defined(
+        gradients[sample],
+        t_cost.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()));
     }
   }
 

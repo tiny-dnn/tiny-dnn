@@ -198,7 +198,6 @@ class layer : public node {
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
       Tensor<> &dst_data = *ith_in_node(i)->get_data();
-      size_t in_size     = ith_in_node(i)->shape().size();
       assert(n < cnt);
       const auto &src_data = data[n++];
       dst_data             = src_data;

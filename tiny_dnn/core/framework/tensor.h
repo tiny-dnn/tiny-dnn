@@ -99,6 +99,10 @@ class Tensor {
    * Temporary method to create a new Tensor from old vec of tensor_t
    */
   explicit Tensor(const std::vector<tensor_t> &data) {
+    if (data.empty() || data[0].empty()) {
+      storage_ = Storage();
+      return;
+    }
     std::vector<size_t> shape = {data.size(), data[0].size(),
                                  data[0][0].size()};
     storage_ = Storage(shape);
