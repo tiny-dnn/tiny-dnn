@@ -182,7 +182,6 @@ class nodes {
     for (size_t i = 0; i < labels.size(); ++i) {
       ten.host_at(0, i, labels.host_at(i)) = target_value_max();
     }
-    return ten;
   }
 
   template <typename OutputArchive>
