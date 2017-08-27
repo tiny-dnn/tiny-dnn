@@ -822,23 +822,25 @@ class network {
     assert(in.dim() == 3);
     if (size == 1) {
       // TODO(Randl): refactor
-      auto shape = t.shape();
+      auto shape = in.shape();
       shape[0]   = 1;
-      Tensor<> t_t(shape);
-      shape    = in.shape();
-      shape[0] = 1;
       shape.erase(shape.begin());
       Tensor<> in_t(shape);
+      shape    = t.shape();
+      shape[0] = 1;
+      Tensor<> t_t(shape);
       in_t.assign(
         in.subView(TensorSingleIndex(position), TensorAll(), TensorAll()));
       t_t.assign(
         t.subView(TensorSingleIndex(position), TensorAll(), TensorAll()));
-      tensor_t cost = t_cost.empty() ? tensor_t()
-                                     : t_cost
-                                         .subView(TensorSingleIndex(position),
-                                                  TensorAll(), TensorAll())
-                                         .toTensor();
-      bprop<E>(fprop(in_t), t_t, cost);
+      if (t_cost.empty()) {
+        bprop<E>(fprop(in_t), t_t);
+      } else {
+        Tensor<> cost(shape);
+        cost.assign(t_cost.subView(TensorSingleIndex(position), TensorAll(),
+                                   TensorAll()));
+        bprop<E>(fprop(in_t), t_t, cost);
+      }
       net_.update_parameters(&optimizer, 1);
     } else {
       train_onebatch<E>(optimizer, in, t, position, size, nbThreads, t_cost);
@@ -880,13 +882,16 @@ class network {
     }
     t_batch_.assign(t.subView(TensorRange(position, position + batch_size),
                               TensorAll(), TensorAll()));
-    std::vector<tensor_t> t_cost_batch =
-      !t_cost.empty()
-        ? t_cost.subView(TensorRange(0, batch_size), TensorAll(), TensorAll())
-            .to3dTensor()
-        : std::vector<tensor_t>();
 
-    bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
+    if (t_cost.empty()) {
+      bprop<E>(fprop(in_batch_), t_batch_);
+    } else {
+      Tensor<> cost(t_batch_.shape());
+      cost.assign(t_cost.subView(TensorRange(position, position + batch_size),
+                                 TensorAll(), TensorAll()));
+      bprop<E>(fprop(in_batch_), t_batch_, cost);
+    }
+
     net_.update_parameters(&optimizer, batch_size);
   }
 
@@ -947,7 +952,7 @@ class network {
     // calculate dw/dE by bprop
     std::vector<Tensor<>> in_t;
     for (auto &i : in) in_t.push_back(Tensor<>(i));
-    bprop<E>(fprop(in_t), Tensor<>(v), std::vector<tensor_t>());
+    bprop<E>(fprop(in_t), Tensor<>(v));
 
     float_t delta_by_bprop = 0;
     for (size_t sample = 0; sample < sample_count; ++sample) {
@@ -958,19 +963,16 @@ class network {
     return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
   }
 
-  // convenience wrapper for the function below
+  // no cost
   template <typename E>
-  void bprop(const Tensor<> &out,
-             const Tensor<> &t,
-             const std::vector<vec_t> &t_cost) {
-    bprop<E>(out, t, std::vector<tensor_t>{t_cost});
+  void bprop(const Tensor<> &out, const Tensor<> &t) {
+    std::vector<Tensor<>> delta = gradient<E>(out, t, Tensor<>());
+    net_.backward(delta);
   }
 
   template <typename E>
-  void bprop(const Tensor<> &out,
-             const Tensor<> &t,
-             const std::vector<tensor_t> &t_cost) {
-    std::vector<Tensor<>> delta = gradient<E>(out, t, Tensor<>(t_cost));
+  void bprop(const Tensor<> &out, const Tensor<> &t, const Tensor<> &t_cost) {
+    std::vector<Tensor<>> delta = gradient<E>(out, t, t_cost);
     net_.backward(delta);
   }
 
