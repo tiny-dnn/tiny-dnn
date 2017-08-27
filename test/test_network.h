@@ -675,12 +675,12 @@ TEST(network, read_write) {
 
 TEST(network, trainable) {
   auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
-
+  net.init_parameters();
   // trainable=false, or "freeze" 2nd layer fc(3,2)
   net[2]->set_trainable(false);
-  Tensor<> w0({0., 1., 2., 3., 4., 5.});
-  Tensor<> w2({6., 7., 8., 9., 8., 7.});
-  Tensor<> w4({6., 5.});
+  Tensor<> w0(vec_t{0., 1., 2., 3., 4., 5.});
+  Tensor<> w2(vec_t{6., 7., 8., 9., 8., 7.});
+  Tensor<> w4(vec_t{6., 5.});
 
   net[0]->weights_at()[0]->set_data(w0);
   net[2]->weights_at()[0]->set_data(w2);
@@ -688,15 +688,13 @@ TEST(network, trainable) {
 
   adam a;
 
-  net.init_parameters();
-
   auto w0_standby = *net[0]->weights_at()[0]->data();
   auto w2_standby = *net[2]->weights_at()[0]->data();
   auto w4_standby = *net[4]->weights_at()[0]->data();
 
-  EXPECT_NE(w0, w0_standby);
+  EXPECT_EQ(w0, w0_standby);
   EXPECT_EQ(w2, w2_standby);
-  EXPECT_NE(w4, w4_standby);
+  EXPECT_EQ(w4, w4_standby);
 
   std::vector<vec_t> data{{1, 0}, {0, 2}};
   std::vector<vec_t> out{{2}, {1}};
@@ -707,9 +705,9 @@ TEST(network, trainable) {
   auto w2_after_update = *net[2]->weights_at()[0]->data();
   auto w4_after_update = *net[4]->weights_at()[0]->data();
 
-  EXPECT_NE(Tensor<>(w0), w0_after_update);
-  EXPECT_EQ(Tensor<>(w2), w2_after_update);
-  EXPECT_NE(Tensor<>(w4), w4_after_update);
+  EXPECT_NE(w0, w0_after_update);
+  EXPECT_EQ(w2, w2_after_update);
+  EXPECT_NE(w4, w4_after_update);
 }
 
 }  // namespace tiny_dnn

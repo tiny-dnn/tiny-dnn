@@ -39,8 +39,7 @@ using namespace tiny_dnn::activation;
 //#include "test_quantized_convolutional_layer.h"
 //#include "test_quantized_deconvolutional_layer.h"
 #include "test_slice_layer.h"
-// todo (karandesai) : fix after parameter integration
-// #include "test_target_cost.h"
+#include "test_target_cost.h"
 #include "test_optimizers.h"
 #include "test_tensor.h"
 
