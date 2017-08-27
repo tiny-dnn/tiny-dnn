@@ -723,12 +723,17 @@ class network {
 
  protected:
   float_t fprop_max(const vec_t &in) {
-    const vec_t &prediction = fprop(in);
+    Tensor<> in_t(in);
+    in_t.reshape({1, in.size()});
+    const vec_t &prediction = fprop(in_t);
     return *std::max_element(std::begin(prediction), std::end(prediction));
   }
 
   label_t fprop_max_index(const vec_t &in) {
-    return label_t(max_index(fprop(in)));
+    Tensor<> in_t(in);
+    in_t.reshape({1, in.size()});
+
+    return label_t(max_index(fprop(in_t)));
   }
 
  private:
