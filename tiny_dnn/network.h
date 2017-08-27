@@ -420,30 +420,17 @@ class network {
   /**
    * calculate loss value (the smaller, the better) for regression task
    **/
-  template <typename E>
-  float_t get_loss(const std::vector<vec_t> &in, const std::vector<vec_t> &t) {
-    float_t sum_loss = float_t(0);
-
-    for (size_t i = 0; i < in.size(); i++) {
-      const vec_t predicted = predict(in[i]);
-      sum_loss += E::f(predicted, t[i]);
-    }
-    return sum_loss;
-  }
-
-  /**
-   * calculate loss value (the smaller, the better) for regression task
-   **/
   template <typename E, typename T>
-  float_t get_loss(const Tensor<T> &in, const std::vector<tensor_t> &t) {
+  float_t get_loss(const Tensor<T> &in, const Tensor<> &t) {
+    assert(t.dim() == 3);
     float_t sum_loss = float_t(0);
     Tensor<T> in_tensor;
     normalize_tensor(in, in_tensor);
 
     for (size_t i = 0; i < in.size(); i++) {
-      const tensor_t predicted = predict(in_tensor[i]);
+      const tensor_t predicted = predict(in_tensor.to3dTensor()[i]);
       for (size_t j = 0; j < predicted.size(); j++) {
-        sum_loss += E::f(predicted[j], t[i][j]);
+        sum_loss += E::f(predicted[j], t.to3dTensor()[i][j]);
       }
     }
     return sum_loss;
@@ -934,17 +921,11 @@ class network {
     // calculate dw/dE by numeric
     float_t prev_w = w.host_at(check_index);
 
-    float_t f_p            = float_t(0);
     w.host_at(check_index) = prev_w + delta;
-    for (size_t i = 0; i < sample_count; i++) {
-      f_p += get_loss<E>(in[i], v[i]);
-    }
+    float_t f_p            = get_loss<E>(Tensor<>(in), Tensor<>(v));
 
-    float_t f_m            = float_t(0);
     w.host_at(check_index) = prev_w - delta;
-    for (size_t i = 0; i < sample_count; i++) {
-      f_m += get_loss<E>(in[i], v[i]);
-    }
+    float_t f_m            = get_loss<E>(Tensor<>(in), Tensor<>(v));
 
     float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
     w.host_at(check_index)     = prev_w;
