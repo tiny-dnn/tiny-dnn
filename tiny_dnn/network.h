@@ -418,8 +418,12 @@ class network {
   }
 
   /**
-   * calculate loss value (the smaller, the better) for regression task
-   **/
+   * calculate loss
+   * @tparam E
+   * @param in
+   * @param t
+   * @return loss value (the smaller, the better) for regression task
+   */
   template <typename E, typename T>
   float_t get_loss(const Tensor<T> &in, const Tensor<> &t) {
     assert(t.dim() == 3);
@@ -944,13 +948,25 @@ class network {
     return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
   }
 
-  // no cost
+  /**
+   * backpropogation without cost
+   * @tparam E
+   * @param out
+   * @param t
+   */
   template <typename E>
   void bprop(const Tensor<> &out, const Tensor<> &t) {
     std::vector<Tensor<>> delta = gradient<E>(out, t, Tensor<>());
     net_.backward(delta);
   }
 
+  /**
+   *
+   * @tparam E
+   * @param out
+   * @param t
+   * @param t_cost
+   */
   template <typename E>
   void bprop(const Tensor<> &out, const Tensor<> &t, const Tensor<> &t_cost) {
     std::vector<Tensor<>> delta = gradient<E>(out, t, t_cost);
