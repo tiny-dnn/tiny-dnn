@@ -26,7 +26,7 @@ struct optimizer {
   optimizer &operator=(const optimizer &) = default;
   optimizer &operator=(optimizer &&) = default;
   virtual ~optimizer()               = default;
-  virtual void update(const vec_t &dW, Tensor<> &W, bool parallelize) = 0;
+  virtual void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) = 0;
   virtual void reset() {}  // override to implement pre-learning action
 };
 
@@ -61,11 +61,11 @@ struct stateful_optimizer : public optimizer {
 struct adagrad : public stateful_optimizer<1> {
   adagrad() : alpha(float_t(0.01)), eps(float_t(1e-8)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &g = get<0>(W);
     for_i(parallelize, W.size(), [&](size_t i) {
-      g.host_at(i) += dW[i] * dW[i];
-      W.host_at(i) -= alpha * dW[i] / (std::sqrt(g.host_at(i)) + eps);
+      g.host_at(i) += dW.host_at(i) * dW.host_at(i);
+      W.host_at(i) -= alpha * dW.host_at(i) / (std::sqrt(g.host_at(i)) + eps);
     });
   }
 
@@ -83,12 +83,13 @@ struct adagrad : public stateful_optimizer<1> {
 struct RMSprop : public stateful_optimizer<1> {
   RMSprop() : alpha(float_t(0.0001)), mu(float_t(0.99)), eps(float_t(1e-8)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &g = get<0>(W);
 
     for_i(parallelize, W.size(), [&](size_t i) {
-      g.host_at(i) = mu * g.host_at(i) + (1 - mu) * dW[i] * dW[i];
-      W.host_at(i) -= alpha * dW[i] / std::sqrt(g.host_at(i) + eps);
+      g.host_at(i) =
+        mu * g.host_at(i) + (1 - mu) * dW.host_at(i) * dW.host_at(i);
+      W.host_at(i) -= alpha * dW.host_at(i) / std::sqrt(g.host_at(i) + eps);
     });
   }
 
@@ -113,13 +114,14 @@ struct adam : public stateful_optimizer<2> {
       b2_t(float_t(0.999)),
       eps(float_t(1e-8)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &mt = get<0>(W);
     Tensor<> &vt = get<1>(W);
 
     for_i(parallelize, W.size(), [&](size_t i) {
-      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW[i];
-      vt.host_at(i) = b2 * vt.host_at(i) + (float_t(1) - b2) * dW[i] * dW[i];
+      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW.host_at(i);
+      vt.host_at(i) =
+        b2 * vt.host_at(i) + (float_t(1) - b2) * dW.host_at(i) * dW.host_at(i);
 
       // L2 norm based update rule
       W.host_at(i) -= alpha * (mt.host_at(i) / (float_t(1) - b1_t)) /
@@ -154,13 +156,13 @@ struct adamax : public stateful_optimizer<2> {
       b1_t(b1),
       eps(float_t(1e-8)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &mt = get<0>(W);
     Tensor<> &ut = get<1>(W);
 
     for_i(parallelize, W.size(), [&](int i) {
-      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW[i];
-      ut.host_at(i) = std::max(b2 * ut.host_at(i), std::abs(dW[i]));
+      mt.host_at(i) = b1 * mt.host_at(i) + (float_t(1) - b1) * dW.host_at(i);
+      ut.host_at(i) = std::max(b2 * ut.host_at(i), std::abs(dW.host_at(i)));
 
       // Lp norm based update rule
       W.host_at(i) -=
@@ -187,9 +189,10 @@ struct adamax : public stateful_optimizer<2> {
 struct gradient_descent : public optimizer {
   gradient_descent() : alpha(float_t(0.01)), lambda(float_t(0)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     for_i(parallelize, W.size(), [&](size_t i) {
-      W.host_at(i) = W.host_at(i) - alpha * (dW[i] + lambda * W.host_at(i));
+      W.host_at(i) =
+        W.host_at(i) - alpha * (dW.host_at(i) + lambda * W.host_at(i));
     });
   }
 
@@ -208,12 +211,12 @@ struct momentum : public stateful_optimizer<1> {
  public:
   momentum() : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &dWprev = get<0>(W);
 
     for_i(parallelize, W.size(), [&](size_t i) {
-      float_t V =
-        mu * dWprev.host_at(i) - alpha * (dW[i] + W.host_at(i) * lambda);
+      float_t V = mu * dWprev.host_at(i) -
+                  alpha * (dW.host_at(i) + W.host_at(i) * lambda);
       W.host_at(i) += V;
       dWprev.host_at(i) = V;
     });
@@ -236,12 +239,12 @@ struct nesterov_momentum : public stateful_optimizer<1> {
   nesterov_momentum()
     : alpha(float_t(0.01)), lambda(float_t(0)), mu(float_t(0.9)) {}
 
-  void update(const vec_t &dW, Tensor<> &W, bool parallelize) {
+  void update(const Tensor<> &dW, Tensor<> &W, bool parallelize) {
     Tensor<> &dWprev = get<0>(W);
 
     for_i(parallelize, W.size(), [&](size_t i) {
-      float_t V =
-        mu * dWprev.host_at(i) - alpha * (dW[i] + W.host_at(i) * lambda);
+      float_t V = mu * dWprev.host_at(i) -
+                  alpha * (dW.host_at(i) + W.host_at(i) * lambda);
       W.host_at(i) += (-mu) * dWprev.host_at(i) + (1 + mu) * V;
       dWprev.host_at(i) = V;
     });

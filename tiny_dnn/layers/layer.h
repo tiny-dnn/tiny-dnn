@@ -756,11 +756,8 @@ class layer : public node {
       // thread spawning overhead.
       bool parallelize = (parameter->size() >= 512);
 
-      // todo (karandesai) : remove this workaround later
-      vec_t diff_t      = diff.toVec();
-      Tensor<> target_t = *parameter->data();
-      optimizer_ptr->update(diff_t, target_t, parallelize);
-      diff = Tensor<>(diff_t);
+      Tensor<> &target_t = *parameter->data();
+      optimizer_ptr->update(diff, target_t, parallelize);
       parameter->set_data(Tensor<>(target_t));
     }
     clear_grads();
