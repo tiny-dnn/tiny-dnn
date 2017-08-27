@@ -34,8 +34,11 @@
 #include "tiny_dnn/layers/power_layer.h"
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
-#include "tiny_dnn/layers/recurrent_cell_layer.h"
+#include "tiny_dnn/layers/recurrent_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
+
+#include "tiny_dnn/layers/cell.h"
+#include "tiny_dnn/layers/cells.h"
 
 #include "tiny_dnn/activations/elu_layer.h"
 #include "tiny_dnn/activations/leaky_relu_layer.h"
@@ -100,7 +103,7 @@ using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
 
-using recurrent_cell = tiny_dnn::recurrent_cell_layer;
+// using rnn_cell = tiny_dnn::rnn_cell_layer;
 
 #ifdef CNN_USE_GEMMLOWP
 using q_fc = tiny_dnn::quantized_fully_connected_layer;

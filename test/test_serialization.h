@@ -271,24 +271,89 @@ TEST(serialization, serialize_dropout) {
   check_sequential_network_model_serialization(net);
 }
 
-TEST(serialization, serialize_recurrent_cell) {
+TEST(serialization, serialize_gru_cell) {
+  network<sequential> net;
+
+  std::string json = R"(
+        {
+            "nodes": [
+                {
+                    "type": "gru_cell",
+                    "in_size": 100,
+                    "out_size": 20,
+                    "has_bias": true
+                }
+            ]
+        }
+        )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "gru-cell");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
+}
+
+TEST(serialization, serialize_lstm_cell) {
   network<sequential> net;
 
   std::string json = R"(
       {
           "nodes": [
               {
-                  "type": "recurrent_cell",
+                  "type": "lstm_cell",
                   "in_size": 100,
                   "out_size": 20,
-                  "has_bias": true,
-                  "value0" : {
-                      "type": "tanh",
-                      "in_size": {
-                          "width": 0,
-                          "height": 0,
-                          "depth": 0
-                      }
+                  "has_bias": true
+              }
+          ]
+      }
+      )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "lstm-cell");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
+}
+
+TEST(serialization, serialize_rnn_cell) {
+  network<sequential> net;
+
+  std::string json = R"(
+      {
+          "nodes": [
+              {
+                  "type": "rnn_cell",
+                  "in_size": 100,
+                  "out_size": 20,
+                  "has_bias": true
+              }
+          ]
+      }
+      )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "rnn-cell");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
+}
+
+TEST(serialization, serialize_recurrent_layer) {
+  network<sequential> net;
+
+  std::string json = R"(
+      {
+          "nodes": [
+              {
+                  "type": "recurrent_layer",
+                  "seq_len": 5,
+                  "rnn_cell": {
+                      "type": "rnn_cell",
+                      "in_size": 100,
+                      "out_size": 20,
+                      "has_bias": false
                   }
               }
           ]
@@ -297,11 +362,10 @@ TEST(serialization, serialize_recurrent_cell) {
 
   net.from_json(json);
 
-  EXPECT_EQ(net[0]->layer_type(), "recurrent-cell");
+  EXPECT_EQ(net[0]->layer_type(), "recurrent-layer");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(100, 1, 1));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 1, 1));
 }
-
 TEST(serialization, serialize_fully) {
   network<sequential> net;
 
@@ -909,11 +973,11 @@ TEST(serialization, sequential_to_json) {
   net1 << fully_connected_layer(10, 100) << tanh_layer()
        << dropout_layer(100, 0.3, net_phase::test)
        << fully_connected_layer(100, 9) << softmax()
-       << recurrent_cell_layer(9, 9, false, new elu_layer)
-       << convolutional_layer(3, 3, 3, 1, 1) << tanh_layer();
+       << recurrent_layer(gru(9, 9), 1) << recurrent_layer(lstm(9, 9), 1)
+       << recurrent_layer(rnn(9, 9), 1) << convolutional_layer(3, 3, 3, 1, 1)
+       << tanh_layer();
 
   auto json = net1.to_json();
-
   net2.from_json(json);
 
   EXPECT_EQ(net1.in_data_size(), net2.in_data_size());

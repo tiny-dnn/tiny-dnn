@@ -14,7 +14,9 @@ class conv_params;
 class fully_params;
 class maxpool_params;
 class global_avepool_params;
-class recurrent_cell_params;
+class gru_cell_params;
+class rnn_cell_params;
+class lstm_cell_params;
 
 /* Base class to model operation parameters */
 class Params {
@@ -25,7 +27,9 @@ class Params {
   fully_params &fully();
   maxpool_params &maxpool();
   global_avepool_params &global_avepool();
-  recurrent_cell_params &recurrent_cell();
+  gru_cell_params &gru_cell();
+  rnn_cell_params &rnn_cell();
+  lstm_cell_params &lstm_cell();
 };
 
 }  // namespace core

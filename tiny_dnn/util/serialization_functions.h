@@ -428,22 +428,63 @@ struct LoadAndConstruct<tiny_dnn::quantized_fully_connected_layer> {
 };
 
 template <>
-struct LoadAndConstruct<tiny_dnn::recurrent_cell_layer> {
+struct LoadAndConstruct<tiny_dnn::recurrent_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::recurrent_cell_layer> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::recurrent_layer> &construct) {
+    size_t seq_len;
+    ::detail::arc(ar, ::detail::make_nvp("seq_len", seq_len));
+    auto cell_p = tiny_dnn::layer::load_layer(ar);
+
+    construct(std::static_pointer_cast<tiny_dnn::cell>(cell_p), seq_len);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::gru_cell> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::gru_cell> &construct) {
     size_t in_dim, out_dim;
     bool has_bias;
-
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_dim),
                   ::detail::make_nvp("out_size", out_dim),
                   ::detail::make_nvp("has_bias", has_bias));
-    auto al = tiny_dnn::layer::load_layer(ar);
-    // a nullptr is passed to avoid creating unused activation layer.
-    construct(in_dim, out_dim, has_bias, nullptr);
-    // set the activation to the loaded value
-    construct->set_activation(
-      std::static_pointer_cast<tiny_dnn::activation_layer>(al));
+    tiny_dnn::gru_cell_parameters params;
+    params.has_bias = has_bias;
+    construct(in_dim, out_dim, params);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::lstm_cell> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::lstm_cell> &construct) {
+    size_t in_dim, out_dim;
+    bool has_bias;
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_dim),
+                  make_nvp("out_size", out_dim),
+                  ::detail::make_nvp("has_bias", has_bias));
+    tiny_dnn::lstm_cell_parameters params;
+    params.has_bias = has_bias;
+    construct(in_dim, out_dim, params);
+  }
+};
+
+template <>
+struct LoadAndConstruct<tiny_dnn::rnn_cell> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::rnn_cell> &construct) {
+    size_t in_dim, out_dim;
+    bool has_bias;
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_dim),
+                  ::detail::make_nvp("out_size", out_dim),
+                  ::detail::make_nvp("has_bias", has_bias));
+    tiny_dnn::rnn_cell_parameters params;
+    params.has_bias = has_bias;
+    construct(in_dim, out_dim, params);
   }
 };
 
@@ -797,13 +838,34 @@ struct serialization_buddy {
   }
 
   template <class Archive>
-  static inline void serialize(Archive &ar,
-                               tiny_dnn::recurrent_cell_layer &layer) {
+  static inline void serialize(Archive &ar, tiny_dnn::recurrent_layer &layer) {
+    size_t seq_len = layer.seq_len_;
+    ::detail::arc(ar, ::detail::make_nvp("seq_len", seq_len));
+    tiny_dnn::layer::save_layer(ar, *layer.cell_);
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::gru_cell &layer) {
     auto &params_ = layer.params_;
     ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in_size_),
                   ::detail::make_nvp("out_size", params_.out_size_),
                   ::detail::make_nvp("has_bias", params_.has_bias_));
-    tiny_dnn::layer::save_layer(ar, *params_.activation_);
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::lstm_cell &layer) {
+    auto &params_ = layer.params_;
+    ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in_size_),
+                  ::detail::make_nvp("out_size", params_.out_size_),
+                  ::detail::make_nvp("has_bias", params_.has_bias_));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::rnn_cell &layer) {
+    auto &params_ = layer.params_;
+    ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in_size_),
+                  ::detail::make_nvp("out_size", params_.out_size_),
+                  ::detail::make_nvp("has_bias", params_.has_bias_));
   }
 
   template <class Archive>
