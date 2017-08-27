@@ -494,8 +494,8 @@ auto host_data() {
    * Temporary method.
    * @return
    */
-  template <typename T>
-  Tensor &fromVec(std::vector<T> vect) {
+  template <typename T, typename A>
+  Tensor &fromVec(std::vector<T, A> vect) {
     reshape({vect.size()});
     for (size_t i = 0; i < vect.size(); ++i) {
       storage_(i) = vect[i];
