@@ -164,6 +164,54 @@ class network {
    **/
   void init_weight() { net_.setup(true); }
 
+  // convenience wrapper for the function below
+  template <typename E>
+  void bprop(const std::vector<vec_t> &out,
+             const std::vector<vec_t> &t,
+             const std::vector<vec_t> &t_cost) {
+    bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t},
+             std::vector<tensor_t>{t_cost});
+  }
+
+  template <typename E>
+  void bprop(const std::vector<tensor_t> &out,
+             const std::vector<tensor_t> &t,
+             const std::vector<tensor_t> &t_cost) {
+    std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
+    net_.backward(delta);
+  }
+
+  vec_t fprop(const vec_t &in) {
+    if (in.size() != (size_t)in_data_size()) data_mismatch(**net_.begin(), in);
+#if 0
+    return fprop(std::vector<vec_t>{ in })[0];
+#else
+    // a workaround to reduce memory consumption by skipping wrapper
+    // function
+    std::vector<tensor_t> a(1);
+    a[0].emplace_back(in);
+    return fprop(a)[0][0];
+#endif
+  }
+
+  // convenience wrapper for the function below
+  std::vector<vec_t> fprop(const std::vector<vec_t> &in) {
+    return fprop(std::vector<tensor_t>{in})[0];
+  }
+
+  std::vector<tensor_t> fprop(const std::vector<tensor_t> &in) {
+    return net_.forward(in);
+  }
+
+  /**
+   * update weights and clear all gradients
+   * */
+  void update_weights(optimizer *opt) {
+    for (auto l : net_) {
+      l->update_weight(opt);
+    }
+  }
+
   /**
    * executes forward-propagation and returns output
    **/
@@ -430,6 +478,26 @@ class network {
       test_result[i] = predict(in[i]);
     }
     return test_result;
+  }
+
+  /**
+   * calculate loss value (the smaller, the better)
+   **/
+  template <typename E>
+  float_t get_loss(const std::vector<vec_t> &in,
+                   const std::vector<label_t> &t) {
+    float_t sum_loss = float_t(0);
+
+    std::vector<tensor_t> label_tensor;
+    normalize_tensor(t, label_tensor);
+
+    for (size_t i = 0; i < in.size(); i++) {
+      const vec_t predicted = predict(in[i]);
+      for (size_t j = 0; j < predicted.size(); j++) {
+        sum_loss += E::f(predicted, label_tensor[i][j]);
+      }
+    }
+    return sum_loss;
   }
 
   /**
@@ -849,28 +917,6 @@ class network {
     net_.update_weights(&optimizer);
   }
 
-  vec_t fprop(const vec_t &in) {
-    if (in.size() != (size_t)in_data_size()) data_mismatch(**net_.begin(), in);
-#if 0
-        return fprop(std::vector<vec_t>{ in })[0];
-#else
-    // a workaround to reduce memory consumption by skipping wrapper
-    // function
-    std::vector<tensor_t> a(1);
-    a[0].emplace_back(in);
-    return fprop(a)[0][0];
-#endif
-  }
-
-  // convenience wrapper for the function below
-  std::vector<vec_t> fprop(const std::vector<vec_t> &in) {
-    return fprop(std::vector<tensor_t>{in})[0];
-  }
-
-  std::vector<tensor_t> fprop(const std::vector<tensor_t> &in) {
-    return net_.forward(in);
-  }
-
   //    template <typename E>
   //    float_t get_loss(const vec_t& out, const vec_t& t) {
   //        assert(out.size() == t.size());
@@ -930,23 +976,6 @@ class network {
     net_.clear_grads();
 
     return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
-  }
-
-  // convenience wrapper for the function below
-  template <typename E>
-  void bprop(const std::vector<vec_t> &out,
-             const std::vector<vec_t> &t,
-             const std::vector<vec_t> &t_cost) {
-    bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t},
-             std::vector<tensor_t>{t_cost});
-  }
-
-  template <typename E>
-  void bprop(const std::vector<tensor_t> &out,
-             const std::vector<tensor_t> &t,
-             const std::vector<tensor_t> &t_cost) {
-    std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
-    net_.backward(delta);
   }
 
   void check_t(size_t i, label_t t, size_t dim_out) {

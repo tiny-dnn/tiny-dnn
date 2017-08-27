@@ -23,8 +23,8 @@ TEST(integration, train1) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << fully_connected_layer(3, 2) << tanh_layer()
-     << recurrent_cell_layer(2, 2) << sigmoid();
+  nn << fully_connected_layer(3, 10) << tanh_layer()
+     << recurrent_layer(rnn(10, 2), 1) << sigmoid();
   nn.weight_init(weight_init::xavier());
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -66,8 +66,9 @@ TEST(integration, train_different_batches1) {
     network<sequential> nn;
     adagrad optimizer;
 
-    nn << fully_connected_layer(3, 2) << tanh_layer()
-       << recurrent_cell_layer(2, 2) << sigmoid();
+    nn << fully_connected_layer(3, 10) << tanh_layer()
+       << recurrent_layer(rnn(10, 10), 1) << relu_layer()
+       << fully_connected_layer(10, 2) << sigmoid();
     nn.weight_init(weight_init::xavier());
 
     vec_t a(3), t(2), a2(3), t2(2);

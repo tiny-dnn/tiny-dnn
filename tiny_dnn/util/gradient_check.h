@@ -52,8 +52,8 @@ float_t numeric_gradient(layer &layer,
                          std::vector<tensor_t> in_data,  //  copy is safer
                          const size_t in_edge,
                          const size_t in_pos,
-                         std::vector<tensor_t> &out_data,
-                         std::vector<tensor_t> &out_grads,
+                         std::vector<tensor_t> out_data,
+                         std::vector<tensor_t> out_grads,
                          const size_t out_edge,
                          const size_t out_pos) {
   // sqrt(machine epsilon) is assumed to be safe
@@ -97,8 +97,8 @@ float_t analytical_gradient(layer &layer,
                             std::vector<tensor_t> in_data,
                             const size_t in_edge,
                             const size_t in_pos,
-                            std::vector<tensor_t> &out_data,
-                            std::vector<tensor_t> &out_grads,
+                            std::vector<tensor_t> out_data,
+                            std::vector<tensor_t> out_grads,
                             const size_t out_edge,
                             const size_t out_pos) {
   // initialize input/output

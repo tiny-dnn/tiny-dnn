@@ -92,14 +92,13 @@ class edge {
     size_t sz             = grad_head.size();
     dst->resize(sz);
     float_t *pdst = &(*dst)[0];
-    // dst = 0
-    std::fill((*dst).begin(), (*dst).end(), 0.0);
+    // dst = grad_[0]
+    std::copy(grad_head.begin(), grad_head.end(), pdst);
     // @todo consider adding parallelism
-    size_t batch_size      = grad_.size();
-    float_t rcp_batch_size = 1.0 / batch_size;
-    for (size_t sample = 0; sample < batch_size; ++sample) {
+    for (size_t sample = 1, sample_count = grad_.size(); sample < sample_count;
+         ++sample) {
       // dst += grad_[sample]
-      vectorize::muladd<float_t>(&grad_[sample][0], rcp_batch_size, sz, pdst);
+      vectorize::reduce<float_t>(&grad_[sample][0], sz, pdst);
     }
   }
 
