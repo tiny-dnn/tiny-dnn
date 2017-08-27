@@ -258,8 +258,9 @@ TEST(caffe_converter, lenet) {
 
   // conv1 28x28x1 -> 24x24x20
   EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));  // in: 28x28x1
-  EXPECT_EQ((*model)[0]->in_shape()[1], shape3d(5, 5, 20));   // weight: 5x5x20
-  EXPECT_EQ((*model)[0]->in_shape()[2], shape3d(1, 1, 20));   // bias: 1x1x20
+  EXPECT_EQ((*model)[0]->parameter_at(0).shape(),
+            shape3d(5, 5, 20));                         // weight: 5x5x20
+  EXPECT_EQ((*model)[0]->parameter_at(1).size(), 20u);  // bias: 20x1x1
   EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 24, 20));  // out:24x24x20
   EXPECT_EQ((*model)[0]->layer_type(), "conv");
 
@@ -270,8 +271,8 @@ TEST(caffe_converter, lenet) {
 
   // conv2 12x12x20 -> 8x8x50
   EXPECT_EQ((*model)[2]->in_shape()[0], shape3d(12, 12, 20));
-  EXPECT_EQ((*model)[2]->in_shape()[1], shape3d(5, 5, 1000));
-  EXPECT_EQ((*model)[2]->in_shape()[2], shape3d(1, 1, 50));
+  EXPECT_EQ((*model)[2]->parameter_at(0).shape(), shape3d(5, 5, 1000));
+  EXPECT_EQ((*model)[2]->parameter_at(1).size(), 50u);
   EXPECT_EQ((*model)[2]->out_shape()[0], shape3d(8, 8, 50));
   EXPECT_EQ((*model)[2]->layer_type(), "conv");
 
@@ -428,8 +429,9 @@ TEST(caffe_converter, lenet_v1) {
 
   // conv1 28x28x1 -> 24x24x20
   EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(28, 28, 1));  // in: 28x28x1
-  EXPECT_EQ((*model)[0]->in_shape()[1], shape3d(5, 5, 20));   // weight: 5x5x20
-  EXPECT_EQ((*model)[0]->in_shape()[2], shape3d(1, 1, 20));   // bias: 1x1x20
+  EXPECT_EQ((*model)[0]->parameter_at(0).shape(),
+            shape3d(5, 5, 20));                         // weight: 5x5x20
+  EXPECT_EQ((*model)[0]->parameter_at(1).size(), 20u);  // bias: 20x1x1
   EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(24, 24, 20));  // out:24x24x20
   EXPECT_EQ((*model)[0]->layer_type(), "conv");
 
@@ -440,8 +442,8 @@ TEST(caffe_converter, lenet_v1) {
 
   // conv2 12x12x20 -> 8x8x50
   EXPECT_EQ((*model)[2]->in_shape()[0], shape3d(12, 12, 20));
-  EXPECT_EQ((*model)[2]->in_shape()[1], shape3d(5, 5, 1000));
-  EXPECT_EQ((*model)[2]->in_shape()[2], shape3d(1, 1, 50));
+  EXPECT_EQ((*model)[2]->parameter_at(0).shape(), shape3d(5, 5, 1000));
+  EXPECT_EQ((*model)[2]->parameter_at(1).size(), 50u);
   EXPECT_EQ((*model)[2]->out_shape()[0], shape3d(8, 8, 50));
   EXPECT_EQ((*model)[2]->layer_type(), "conv");
 
@@ -533,7 +535,7 @@ TEST(caffe_converter, conv_with_stride) {
   ASSERT_EQ(model->depth(), size_t(1));
 
   EXPECT_EQ((*model)[0]->in_shape()[0], shape3d(24, 40, 2));
-  EXPECT_EQ((*model)[0]->in_shape().size(), size_t(2));  // doesn't have bias
+  EXPECT_EQ((*model)[0]->in_shape().size(), 1u);  // doesn't have bias
   EXPECT_EQ((*model)[0]->out_shape()[0], shape3d(8, 20, 3));
 }
 
@@ -836,8 +838,8 @@ TEST(caffe_converter, conv_with_weights) {
 
   ASSERT_EQ(model->depth(), size_t(1));
 
-  const Tensor<> *W = (*model)[0]->weights()[0];
-  const Tensor<> *b = (*model)[0]->weights()[1];
+  const Tensor<> *W = (*model)[0]->weights_at()[0]->data();
+  const Tensor<> *b = (*model)[0]->bias_at()[0]->data();
 
   EXPECT_EQ(W->size(), size_t(9));
   for (int i = 0; i < 9; i++) {
@@ -910,8 +912,8 @@ TEST(caffe_converter, fully_with_weights) {
    3 7
   */
 
-  const Tensor<> *W = (*model)[0]->weights()[0];
-  const Tensor<> *b = (*model)[0]->weights()[1];
+  const Tensor<> *W = (*model)[0]->weights_at()[0]->data();
+  const Tensor<> *b = (*model)[0]->bias_at()[0]->data();
 
   EXPECT_EQ(W->size(), size_t(8));
   EXPECT_FLOAT_EQ(W->host_at(0), 0.0f);

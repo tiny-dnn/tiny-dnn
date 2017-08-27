@@ -52,10 +52,9 @@ using namespace tiny_dnn::activation;
 //#include "test_quantized_fully_connected_layer.h"
 #endif  // CNN_USE_GEMMLOOP
 
-// todo (karandesai) : fix after parameter integration
-//#ifdef CNN_USE_CAFFE_CONVERTER
-//#include "test_caffe_converter.h"
-//#endif  // CNN_USE_CAFFE_CONVERTER
+#ifdef CNN_USE_CAFFE_CONVERTER
+#include "test_caffe_converter.h"
+#endif  // CNN_USE_CAFFE_CONVERTER
 
 #ifdef DNN_USE_IMAGE_API
 #include "test_image.h"
