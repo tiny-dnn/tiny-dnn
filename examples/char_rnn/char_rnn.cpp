@@ -38,8 +38,8 @@ class CharDataset {
               const int dims)
     : batch_size_(batch_size), dims_(dims) {
     // open input streams
-    fdata_   = std::ifstream(x);
-    flabels_ = std::ifstream(y);
+    fdata_.open(x);
+    flabels_.open(y);
     // resize internal data buffers
     data_buffer_.resize(batch_size);
     labels_buffer_.resize(batch_size);
