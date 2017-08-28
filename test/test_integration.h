@@ -91,7 +91,7 @@ TEST(integration, train_different_batches1) {
       train.push_back(t2);
     }
     optimizer.alpha = 0.1;
-    nn.train<mse>(optimizer, data, train, batch_sz, 10);
+    nn.train<mse>(optimizer, data, train, batch_sz, 20);
 
     vec_t predicted = nn.predict(a);
 

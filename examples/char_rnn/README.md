@@ -19,6 +19,7 @@ i did clang accept call can be benced for a gind general be change diff cecmfd .
 ```
 
 ## How to run the bot
+0. Requirements: Make sure pyCurl, SWIG, and distutils are installed.
 1. Build the tiny_dnn python wrappers:
 ```bash
 cd examples/char_rnn/python
@@ -41,6 +42,7 @@ It will start listening to messages with the format @tiny_char_rnn <message>, an
 ## How to train
 1. cd `examples/char_rnn/python` directory.
 2. Download and encode the dataset:
+Requirements: python3, this ``gitterpy`` [fork](https://github.com/prlz77/GitterPy)
 ```bash
 python3 prepare_dataset.py --help
 usage: prepare_dataset.py [-h] [--gitter_token GITTER_TOKEN]
