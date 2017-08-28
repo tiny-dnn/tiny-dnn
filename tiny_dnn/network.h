@@ -840,10 +840,9 @@ class network {
 
   /**
    * trains on one minibatch, i.e. runs forward and backward propagation to
-   * calculate
-   * the gradient of the loss function with respect to the network parameters
-   * (weights),
-   * then calls the optimizer algorithm to update the weights
+   * calculate the gradient of the loss function with respect to the network
+   * parameters (weights), then calls the optimizer algorithm to update the
+   * weights
    *
    * @param batch_size the number of data points to use in this batch
    */
