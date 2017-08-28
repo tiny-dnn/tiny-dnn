@@ -689,6 +689,12 @@ class layer : public node {
 
     // reset the weights if necessary, or in case that the data is
     // still not initialized.
+    for (auto &parameter : parameters_) {
+      if (!parameter->initialized()) {
+        init_parameters();
+        return;
+      }
+    }
     if (reset_weight) {
       init_parameters();
     }
@@ -710,9 +716,6 @@ class layer : public node {
     // return the number of incoming/outcoming connections for each
     // input/output unit.
     for (size_t i = 0; i < parameters_.size(); i++) {
-      if (parameters_[i]->initialized()) {
-        continue;
-      }
       switch (parameters_[i]->type()) {
         // fill parameters of weight type
         case parameter_type::weight:

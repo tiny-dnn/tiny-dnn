@@ -26,7 +26,7 @@ TEST(integration, train1) {
 
   nn << fully_connected_layer(3, 2) << sigmoid() << recurrent_cell_layer(2, 2)
      << tanh_layer();
-  nn.init_parameters();
+
 
   vec_t a(3), t(2), a2(3), t2(2);
 
@@ -70,7 +70,7 @@ TEST(integration, train_different_batches1) {
 
     nn << fully_connected_layer(3, 2) << sigmoid() << recurrent_cell_layer(2, 2)
        << tanh_layer();
-    nn.init_parameters();
+
 
     vec_t a(3), t(2), a2(3), t2(2);
 
@@ -114,7 +114,6 @@ TEST(integration, train2) {
 
   nn << fully_connected_layer(4, 6) << selu() << fully_connected_layer(6, 3)
      << tanh_layer();
-  nn.init_parameters();
 
   vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
 
@@ -153,7 +152,7 @@ TEST(integration, gradient_check1) {
   nn << fully_connected_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -163,7 +162,7 @@ TEST(integration, gradient_check2) {
   nn << recurrent_cell_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -174,7 +173,7 @@ TEST(integration, gradient_check3) {
      << recurrent_cell_layer(50, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -185,7 +184,7 @@ TEST(integratoin, gradient_check4) {  // tanh - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << activation::tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -195,7 +194,7 @@ TEST(integration, gradient_check5) {  // sigmoid - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -206,7 +205,7 @@ TEST(integration, gradient_check6) {  // rectified - mse
   nn << convolutional_layer(5, 5, 3, 1, 1) << relu();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -217,7 +216,7 @@ TEST(integration, gradient_check7) {  // identity - mse
   nn << convolutional_layer(5, 5, 3, 1, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -228,7 +227,7 @@ TEST(integration, gradient_check8) {  // sigmoid - cross-entropy
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -239,7 +238,7 @@ TEST(integration, gradient_check9) {  // sigmoid - absolute
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<absolute>(test_data.first, test_data.second,
                                           epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -250,7 +249,7 @@ TEST(integration, gradient_check10) {  // sigmoid - absolute eps
   nn << convolutional_layer(5, 5, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<absolute_eps<100>>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -263,7 +262,7 @@ TEST(integration, gradient_check11_pad_same) {  // sigmoid - mse - padding same
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -276,7 +275,7 @@ TEST(integration, gradient_check12_w_stride) {  // sigmoid - mse - w_stride > 1
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -289,7 +288,7 @@ TEST(integration, gradient_check13_h_stride) {  // sigmoid - mse - h_stride > 1
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -306,7 +305,7 @@ TEST(integration,
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -320,7 +319,7 @@ TEST(integration, gradient_check15_pad_same) {  // sigmoid - mse - padding same
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -334,7 +333,7 @@ TEST(integration, gradient_check16) {
      << fully_connected_layer(20, 10) << tanh_layer();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -345,7 +344,7 @@ TEST(integration, gradient_check17) {
   nn << selu(size_t{3}, size_t{3}, size_t{1});
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
+
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -361,7 +360,6 @@ TEST(integration, gradient_check18) {  // sigmoid - cross-entropy
      << average_pooling_layer(4, 2, 1, 2) << activation();  // 4x2 => 2x1
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -378,7 +376,6 @@ TEST(integration, gradient_check19) {  // x-stride
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -395,7 +392,6 @@ TEST(integration, gradient_check20) {  // y-stride
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));
@@ -411,7 +407,6 @@ TEST(integration, gradient_check21) {  // padding-same
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
 
   EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
                                            epsilon<float_t>(), GRAD_CHECK_ALL));

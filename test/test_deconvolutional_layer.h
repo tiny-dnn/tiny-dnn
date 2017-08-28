@@ -210,7 +210,6 @@ TEST(deconvolutional, gradient_check) {  // tanh - mse
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << tanh();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -220,7 +219,6 @@ TEST(deconvolutional, gradient_check2) {  // sigmoid - mse
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -231,7 +229,6 @@ TEST(deconvolutional, gradient_check3) {  // rectified - mse
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << relu();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -242,7 +239,6 @@ TEST(deconvolutional, gradient_check4) {  // identity - mse
   nn << deconvolutional_layer(2, 2, 3, 1, 1);
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
                                      epsilon<float_t>(), GRAD_CHECK_ALL));
 }
@@ -254,7 +250,6 @@ TEST(deconvolutional, gradient_check5) {  // sigmoid - cross-entropy
   nn << deconvolutional_layer(2, 2, 3, 1, 1) << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_parameters();
   EXPECT_TRUE(nn.gradient_check<cross_entropy>(
     test_data.first, test_data.second, epsilon<float_t>(), GRAD_CHECK_ALL));
 }

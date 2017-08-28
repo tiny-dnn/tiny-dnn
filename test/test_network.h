@@ -233,7 +233,7 @@ TEST(network, train_predict) {
 
   net << fully_connected_layer(2, 10) << tanh_layer()
       << fully_connected_layer(10, 2) << tanh_layer();
-  net.init_parameters();
+
   net.train<mse>(optimizer, data, label, 10, 10);
 
   std::vector<tensor_t> parallel_input(tnum);
@@ -287,7 +287,7 @@ TEST(network, train_predict_different_batches) {
 
     net << fully_connected_layer(2, 10) << tanh_layer()
         << fully_connected_layer(10, 2) << tanh_layer();
-    net.init_parameters();
+
     net.train<mse>(optimizer, data, label, batch_sz, 10);
 
     std::vector<tensor_t> parallel_input(data_size);
@@ -326,12 +326,12 @@ TEST(network, set_netphase) {
 TEST(network, test) {
   network<sequential> net;
   fully_connected_layer fc(30, 1);
-  int data_num = 300;
+  fc.weight_init(parameter_init::constant(1.0));
+  fc.init_parameters();
 
   net << fc;
-  net.weight_init(parameter_init::constant(1.0));
-  net.init_parameters();
 
+  int data_num = 300;
   std::vector<vec_t> in, expected;
 
   for (int i = 0; i < data_num; i++) {
@@ -360,7 +360,6 @@ TEST(network, at) {
   average_pooling_layer p1(32, 32, 6, 2);
 
   net << c1 << p1;
-  net.init_parameters();
 
   // auto& c = net.at<convolutional_layer>(0);
   // auto& p = net.at<average_pooling_layer>(1);
@@ -675,7 +674,7 @@ TEST(network, read_write) {
 
 TEST(network, trainable) {
   auto net = make_mlp<sigmoid>({2, 3, 2, 1});  // fc(2,3) - fc(3,2) - fc(2,1)
-  net.init_parameters();
+
   // trainable=false, or "freeze" 2nd layer fc(3,2)
   net[2]->set_trainable(false);
   Tensor<> w0(vec_t{0., 1., 2., 3., 4., 5.});
