@@ -84,7 +84,10 @@ class edge {
       vtype_(vtype),
       data_({1, shape.size()}),
       grad_({1, shape.size()}),
-      prev_(prev) {}
+      prev_(prev) {
+    data_.fill(0);  // zero initialize data and gradients
+    grad_.fill(0);
+  }
 
   void merge_grads(vec_t *dst) {
     assert(!grad_.empty());
