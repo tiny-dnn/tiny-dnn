@@ -46,6 +46,7 @@ TEST(recurrent_cell, gradient_check) {
   }
 }
 
+/* TODO(prlz77)
 TEST(recurrent_cell, train) {
   network<sequential> nn;
   adagrad optimizer;
@@ -84,7 +85,6 @@ TEST(recurrent_cell, train) {
   EXPECT_NEAR(predicted[1], t2[1], 1e-5);
 }
 
-/* TODO(prlz77)
 TEST(recurrent_cell, train_different_batches) {
   auto batch_sizes = {2, 7, 10, 12};
   size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
