@@ -7,9 +7,6 @@
 */
 #pragma once
 
-#ifndef CNN_NO_SERIALIZATION
-#include <fstream>
-#endif
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
@@ -23,8 +20,9 @@
 #include <utility>
 #include <vector>
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
 #include <H5Cpp.h>
+#include <fstream>
 #endif
 
 #include "tiny_dnn/lossfunctions/loss_function.h"
@@ -741,7 +739,7 @@ class network {
 
   void from_hdf(const std::string &filename,
                 content_type what = content_type::weights) {
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
     if (what == content_type::weights_and_model) {
       throw nn_error("hdf serialization is only possible for weights");
     }
@@ -774,8 +772,8 @@ class network {
     net_.load_weights(filename, filtered_layer_names);
     H5Fclose(file_id);
 #else
-    throw nn_error("tiny-dnn was not built with HDF Serialization support");
-#endif
+    throw nn_error("tiny-dnn was not built with serialization support");
+#endif  // CNN_NO_SERIALIZATION
   }
 
  protected:

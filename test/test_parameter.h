@@ -8,7 +8,6 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <string>
 
 #include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
@@ -99,7 +98,7 @@ TEST(parameter, constant_init) {
   }
 }
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
 TEST(parameter, hdf_load_individual_parameter) {
   std::string xor_hdf_path;
   resolve_path("testdata/xor.h5", xor_hdf_path);
@@ -162,7 +161,8 @@ TEST(parameter, hdf_load_network) {
   ASSERT_TRUE(net1.has_same_parameters(net2, 1e-5));
 }
 
-#endif
+#endif  // CNN_NO_SERIALIZATION
+
 // todo (karandesai) : test getters and setters on fc layer
 
 }  // namespace tiny_dnn
