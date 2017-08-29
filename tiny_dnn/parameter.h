@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <string>
 #include <vector>
 
 #ifdef CNN_USE_HDF
