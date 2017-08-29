@@ -40,4 +40,58 @@ TEST(serialization_hdf, load_parameter) {
   }
 }
 
+TEST(serialization_hdf, load_layer) {
+  std::string xor_hdf_path;
+  resolve_path("testdata/xor.h5", xor_hdf_path);
+
+  size_t in_dim(2), out_dim(4);
+  fully_connected_layer fc1(in_dim, out_dim);
+  fully_connected_layer fc2(in_dim, out_dim);
+
+  // load fc1 directly, fc2 parameter wise
+  fc1.load(xor_hdf_path, "dense_1");
+  fc2.weights_at()[0]->load(xor_hdf_path, "dense_1/dense_1/kernel:0");
+  fc2.bias_at()[0]->load(xor_hdf_path, "dense_1/dense_1/bias:0");
+
+  EXPECT_TRUE(fc1.has_same_parameters(fc2, 1E-5));
+}
+
+TEST(serialization_hdf, load_network) {
+  std::string xor_hdf_path;
+  resolve_path("testdata/xor.h5", xor_hdf_path);
+
+  network<sequential> net1;
+  network<sequential> net2;
+  net1 << fully_connected_layer(2, 4, true) << relu()
+       << fully_connected_layer(4, 1, true) << sigmoid();
+
+  net2 << fully_connected_layer(2, 4, true) << relu()
+       << fully_connected_layer(4, 1, true) << sigmoid();
+
+  // load net1 directly, net2 layer wise
+  net1.load(xor_hdf_path, content_type::weights, file_format::hdf);
+
+  net2[0]->load(xor_hdf_path, "dense_1");
+  net2[2]->load(xor_hdf_path, "dense_2");
+
+  EXPECT_TRUE(net1.has_same_parameters(net2, 1E-5));
+}
+
+TEST(serialization_hdf, load_network_and_predict) {
+  std::string xor_hdf_path;
+  resolve_path("testdata/xor.h5", xor_hdf_path);
+
+  network<sequential> net;
+  net << fully_connected_layer(2, 4, true) << relu()
+      << fully_connected_layer(4, 1, true) << sigmoid();
+
+  // load net1 directly, net2 layer wise
+  net.load(xor_hdf_path, content_type::weights, file_format::hdf);
+
+  EXPECT_NEAR(net.predict({0, 0})[0], 0.179693, 1E-5);  // near 0
+  EXPECT_NEAR(net.predict({1, 1})[0], 0.179809, 1E-5);  // near 0
+  EXPECT_NEAR(net.predict({0, 1})[0], 0.926772, 1E-5);  // near 1
+  EXPECT_NEAR(net.predict({1, 0})[0], 0.913209, 1E-5);  // near 1
+}
+
 }  // namespace tiny_dnn
