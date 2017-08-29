@@ -419,3 +419,30 @@ struct are_all<checker, T0, Ts...>
 template <typename... Ts>
 using are_all_xexpr = are_all<is_xexpression, Ts...>;
 }  // namespace tiny_dnn
+
+#ifdef CNN_USE_HDF
+inline std::vector<std::string> H5Aget_value_as_string_vec(hid_t attr_id) {
+  // type is required to read names from H5::Attribute as vector of string
+  hid_t type = H5Tget_native_type(H5Aget_type(attr_id), H5T_DIR_ASCEND);
+
+  // get the maximum character length of attribute value
+  H5A_info_t a_info;
+  H5Aget_info(attr_id, &a_info);
+  size_t max_length = H5Tget_size(type);
+
+  // string buffer to accumulate data from H5::Attribute
+  char attr_value_buf[1000];
+
+  // read attr value into vector of strings
+  H5Aread(attr_id, type, attr_value_buf);
+  std::vector<std::string> attr_value_names;
+  for (size_t i = 0; i < a_info.data_size / max_length; i++) {
+    std::string name(&attr_value_buf[i * max_length]);
+    if (name.length() > max_length) {
+      name = name.substr(0, max_length);
+    }
+    attr_value_names.push_back(name);
+  }
+  return attr_value_names;
+}
+#endif

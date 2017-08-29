@@ -150,8 +150,8 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
   }
 
 #ifdef CNN_USE_HDF
-  void load(const std::string &file_path, const std::string &parameter_name) {
-    hid_t file_id = H5Fopen(file_path.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  void load(const std::string &filename, const std::string &parameter_name) {
+    hid_t file_id      = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     hid_t parameter_id = H5Dopen1(file_id, parameter_name.c_str());
 
     hid_t dataspace_id = H5Dget_space(parameter_id);
