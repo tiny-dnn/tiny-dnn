@@ -16,9 +16,7 @@
 #ifndef CNN_NO_SERIALIZATION
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/utility.hpp>
-#endif
 
-#ifdef CNN_USE_HDF
 #include <H5Cpp.h>
 #endif
 
@@ -209,7 +207,7 @@ class nodes {
     }
   }
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
   void load_weights(const std::string &filename,
                     const std::vector<std::string> &layer_names) {
     size_t layer_names_idx = 0;

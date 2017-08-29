@@ -27,6 +27,7 @@
 #include "tiny_dnn/config.h"
 
 #ifndef CNN_NO_SERIALIZATION
+#include <H5Cpp.h>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
@@ -34,10 +35,6 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
-#endif
-
-#ifdef CNN_USE_HDF
-#include <H5Cpp.h>
 #endif
 
 #include "tiny_dnn/util/aligned_allocator.h"
@@ -418,9 +415,8 @@ struct are_all<checker, T0, Ts...>
 
 template <typename... Ts>
 using are_all_xexpr = are_all<is_xexpression, Ts...>;
-}  // namespace tiny_dnn
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
 inline std::vector<std::string> H5Aget_value_as_string_vec(hid_t attr_id) {
   // type is required to read names from H5::Attribute as vector of string
   hid_t type = H5Tget_native_type(H5Aget_type(attr_id), H5T_DIR_ASCEND);
@@ -446,3 +442,4 @@ inline std::vector<std::string> H5Aget_value_as_string_vec(hid_t attr_id) {
   return attr_value_names;
 }
 #endif
+}  // namespace tiny_dnn

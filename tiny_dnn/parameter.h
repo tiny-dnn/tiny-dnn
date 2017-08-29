@@ -12,11 +12,12 @@
 #include <string>
 #include <vector>
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
 #include <H5Cpp.h>
 #endif
 
 #include "tiny_dnn/core/framework/tensor.h"
+#include "tiny_dnn/util/nn_error.h"
 #include "tiny_dnn/util/parameter_init.h"
 #include "tiny_dnn/util/util.h"
 
@@ -128,7 +129,6 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     return &grad_.host_at(sample, i);
   }
 
-  // todo (karandesai) : introduce support for HDF
   /**
    * @name Serialization - Deserialization Utilities
    * @{
@@ -149,8 +149,8 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     }
   }
 
-#ifdef CNN_USE_HDF
   void load(const std::string &filename, const std::string &parameter_name) {
+#ifndef CNN_NO_SERIALIZATION
     hid_t file_id      = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
     hid_t parameter_id = H5Dopen1(file_id, parameter_name.c_str());
 
@@ -166,13 +166,15 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
 #else
     H5Dread(parameter_id, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT,
             data_vec.data());
-#endif
+#endif  // CNN_USE_DOUBLE
     data_ = data_.fromVec(data_vec);
     H5Sclose(dataspace_id);
     H5Dclose(parameter_id);
     H5Fclose(file_id);
+#else
+    throw nn_error("tiny-dnn was not built with serialization support");
+#endif  // CNN_NO_SERIALIZATION
   }
-#endif
   /** @} */  // Serialization - Deserialization Utilities
 
  private:

@@ -37,7 +37,7 @@
 #include "tiny_dnn/util/image.h"
 #endif
 
-#ifdef CNN_USE_HDF
+#ifndef CNN_NO_SERIALIZATION
 #include <H5Cpp.h>
 #endif
 
@@ -458,8 +458,8 @@ class layer : public node {
     }
   }
 
-#ifdef CNN_USE_HDF
   void load(const std::string &filename, const std::string &layer_name) {
+#ifndef CNN_NO_SERIALIZATION
     // this id can be seen as H5::File object
     hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
 
@@ -480,8 +480,10 @@ class layer : public node {
     }
     H5Gclose(layer_id);
     H5Fclose(file_id);
+#else
+    throw nn_error("tiny-dnn was not built with serialization support");
+#endif  // CNN_NO_SERIALIZATION
   }
-#endif
 
 /////////////////////////////////////////////////////////////////////////
 // visualize
