@@ -18,6 +18,10 @@
 #include <cereal/types/utility.hpp>
 #endif
 
+#ifdef CNN_USE_HDF
+#include <H5Cpp.h>
+#endif
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/optimizers/optimizer.h"
 #include "tiny_dnn/util/util.h"
@@ -204,6 +208,19 @@ class nodes {
       ia(*n);
     }
   }
+
+#ifdef CNN_USE_HDF
+  void load_weights(const std::string &filename,
+                    const std::vector<std::string> &layer_names) {
+    size_t layer_names_idx = 0;
+    for (auto n : nodes_) {
+      if (n->parameters().size() > 0) {
+        n->load(filename, layer_names[layer_names_idx]);
+        layer_names_idx++;
+      }
+    }
+  }
+#endif
 
  protected:
   template <typename T>

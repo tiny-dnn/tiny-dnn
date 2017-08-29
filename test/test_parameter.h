@@ -142,6 +142,26 @@ TEST(parameter, hdf_load_individual_layer) {
   ASSERT_TRUE(net1.has_same_parameters(net2, 1e-5));
 }
 
+TEST(parameter, hdf_load_network) {
+  std::string xor_hdf_path;
+  resolve_path("testdata/xor.h5", xor_hdf_path);
+
+  network<sequential> net1;
+  network<sequential> net2;
+  net1 << fully_connected_layer(2, 4, true) << relu()
+       << fully_connected_layer(4, 1, true) << sigmoid();
+
+  net2 << fully_connected_layer(2, 4, true) << relu()
+       << fully_connected_layer(4, 1, true) << sigmoid();
+
+  net1.load(xor_hdf_path, content_type::weights, file_format::hdf);
+
+  net2[0]->load(xor_hdf_path, "dense_1");
+  net2[2]->load(xor_hdf_path, "dense_2");
+
+  ASSERT_TRUE(net1.has_same_parameters(net2, 1e-5));
+}
+
 #endif
 // todo (karandesai) : test getters and setters on fc layer
 
