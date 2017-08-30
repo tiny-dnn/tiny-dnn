@@ -689,6 +689,12 @@ class layer : public node {
 
     // reset the weights if necessary, or in case that the data is
     // still not initialized.
+    for (auto &parameter : parameters_) {
+      if (!parameter->initialized()) {
+        init_parameters();
+        return;
+      }
+    }
     if (reset_weight) {
       init_parameters();
     }
@@ -710,9 +716,6 @@ class layer : public node {
     // return the number of incoming/outcoming connections for each
     // input/output unit.
     for (size_t i = 0; i < parameters_.size(); i++) {
-      if (parameters_[i]->initialized()) {
-        continue;
-      }
       switch (parameters_[i]->type()) {
         // fill parameters of weight type
         case parameter_type::weight:
@@ -756,11 +759,8 @@ class layer : public node {
       // thread spawning overhead.
       bool parallelize = (parameter->size() >= 512);
 
-      // todo (karandesai) : remove this workaround later
-      vec_t diff_t      = diff.toVec();
-      Tensor<> target_t = *parameter->data();
-      optimizer_ptr->update(diff_t, target_t, parallelize);
-      diff = Tensor<>(diff_t);
+      Tensor<> &target_t = *parameter->data();
+      optimizer_ptr->update(diff, target_t, parallelize);
       parameter->set_data(Tensor<>(target_t));
     }
     clear_grads();

@@ -15,7 +15,7 @@ using namespace tiny_dnn::activation;
 
 #include "test_activation_layer.h"
 #include "test_average_pooling_layer.h"
-//#include "test_network.h"
+#include "test_network.h"
 #include "test_average_unpooling_layer.h"
 #include "test_batch_norm_layer.h"
 #include "test_concat_layer.h"
@@ -38,8 +38,7 @@ using namespace tiny_dnn::activation;
 //#include "test_quantized_convolutional_layer.h"
 //#include "test_quantized_deconvolutional_layer.h"
 #include "test_slice_layer.h"
-// todo (karandesai) : fix after parameter integration
-// #include "test_target_cost.h"
+#include "test_target_cost.h"
 #include "test_optimizers.h"
 #include "test_tensor.h"
 
@@ -51,10 +50,9 @@ using namespace tiny_dnn::activation;
 //#include "test_quantized_fully_connected_layer.h"
 #endif  // CNN_USE_GEMMLOOP
 
-// todo (karandesai) : fix after parameter integration
-//#ifdef CNN_USE_CAFFE_CONVERTER
-//#include "test_caffe_converter.h"
-//#endif  // CNN_USE_CAFFE_CONVERTER
+#ifdef CNN_USE_CAFFE_CONVERTER
+#include "test_caffe_converter.h"
+#endif  // CNN_USE_CAFFE_CONVERTER
 
 #ifdef DNN_USE_IMAGE_API
 #include "test_image.h"

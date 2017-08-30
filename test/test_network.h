@@ -326,12 +326,12 @@ TEST(network, set_netphase) {
 TEST(network, test) {
   network<sequential> net;
   fully_connected_layer fc(30, 1);
-  int data_num = 300;
+  fc.weight_init(parameter_init::constant(1.0));
+  fc.init_parameters();
 
   net << fc;
-  net.weight_init(parameter_init::constant(1.0));
-  net.init_parameters();
 
+  int data_num = 300;
   std::vector<vec_t> in, expected;
 
   for (int i = 0; i < data_num; i++) {
@@ -360,7 +360,6 @@ TEST(network, at) {
   average_pooling_layer p1(32, 32, 6, 2);
 
   net << c1 << p1;
-  net.init_parameters();
 
   // auto& c = net.at<convolutional_layer>(0);
   // auto& p = net.at<average_pooling_layer>(1);
@@ -678,25 +677,23 @@ TEST(network, trainable) {
 
   // trainable=false, or "freeze" 2nd layer fc(3,2)
   net[2]->set_trainable(false);
-  vec_t w0 = {0, 1, 2, 3, 4, 5};
-  vec_t w2 = {6, 7, 8, 9, 8, 7};
-  vec_t w4 = {6, 5};
+  Tensor<> w0(vec_t{0., 1., 2., 3., 4., 5.});
+  Tensor<> w2(vec_t{6., 7., 8., 9., 8., 7.});
+  Tensor<> w4(vec_t{6., 5.});
 
-  net[0]->weights_at()[0]->set_data(Tensor<>({0., 1., 2., 3., 4., 5.}));
-  net[2]->weights_at()[0]->set_data(Tensor<>({6., 7., 8., 9., 8., 7.}));
-  net[4]->weights_at()[0]->set_data(Tensor<>({6., 5.}));
+  net[0]->weights_at()[0]->set_data(w0);
+  net[2]->weights_at()[0]->set_data(w2);
+  net[4]->weights_at()[0]->set_data(w4);
 
   adam a;
-
-  net.init_parameters();
 
   auto w0_standby = *net[0]->weights_at()[0]->data();
   auto w2_standby = *net[2]->weights_at()[0]->data();
   auto w4_standby = *net[4]->weights_at()[0]->data();
 
-  EXPECT_NE(Tensor<>(w0), w0_standby);
-  EXPECT_EQ(Tensor<>(w2), w2_standby);
-  EXPECT_NE(Tensor<>(w4), w4_standby);
+  EXPECT_EQ(w0, w0_standby);
+  EXPECT_EQ(w2, w2_standby);
+  EXPECT_EQ(w4, w4_standby);
 
   std::vector<vec_t> data{{1, 0}, {0, 2}};
   std::vector<vec_t> out{{2}, {1}};
@@ -707,9 +704,9 @@ TEST(network, trainable) {
   auto w2_after_update = *net[2]->weights_at()[0]->data();
   auto w4_after_update = *net[4]->weights_at()[0]->data();
 
-  EXPECT_NE(Tensor<>(w0), w0_after_update);
-  EXPECT_EQ(Tensor<>(w2), w2_after_update);
-  EXPECT_NE(Tensor<>(w4), w4_after_update);
+  EXPECT_NE(w0, w0_after_update);
+  EXPECT_EQ(w2, w2_after_update);
+  EXPECT_NE(w4, w4_after_update);
 }
 
 }  // namespace tiny_dnn

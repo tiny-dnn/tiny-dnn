@@ -934,8 +934,6 @@ TEST(serialization, sequential_model) {
        << average_pooling_layer(4, 4, 1, 2) << relu()
        << power_layer(shape3d(2, 2, 1), 0.5);
 
-  net1.init_parameters();
-
   check_sequential_network_model_serialization(net1);
 }
 
@@ -948,7 +946,6 @@ TEST(serialization, sequential_weights) {
        << fully_connected_layer(4, 2) << relu() << fully_connected_layer(2, 2)
        << softmax();
 
-  net1.init_parameters();
   net1.set_netphase(net_phase::test);
 
   auto path = unique_path();
@@ -975,7 +972,6 @@ TEST(serialization, sequential_weights2) {
        << linear_layer(3 * 2, 2.0, 0.5) << elu()
        << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu();
 
-  net1.init_parameters();
   net1.at<batch_normalization_layer>(0).update_immidiately(true);
   net1.predict(data);
   net1.set_netphase(net_phase::test);
@@ -1016,7 +1012,6 @@ TEST(serialization, graph_model_and_weights) {
 
   construct_graph(net1, {&f1}, {&c4});
 
-  net1.init_parameters();
   auto res1 = net1.predict(in);
 
   auto path = unique_path();

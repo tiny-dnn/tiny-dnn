@@ -255,6 +255,7 @@ TEST(target_cost, train_unbalanced_data) {
     network<sequential> net;
     net << fully_connected_layer(2, 10) << tanh_layer()
         << fully_connected_layer(10, 2) << tanh_layer();
+    net.init_parameters();
     return net;
   };
 

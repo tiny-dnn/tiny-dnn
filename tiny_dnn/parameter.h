@@ -98,6 +98,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
 
   void resize_grad(size_t sample_count) {
     grad_.reshape({sample_count, size()});
+    clear_grads();
   }
 
   void merge_grads(Tensor<> *dst) {
@@ -105,7 +106,7 @@ class Parameter : public std::enable_shared_from_this<Parameter> {
     vec_t dst_t{0};
     const auto &grad_head = grad_t[0];
     size_t sz             = grad_head.size();
-    dst_t.resize(sz);
+    dst_t.resize(sz, 0);
     std::copy(grad_head.begin(), grad_head.end(), dst_t.begin());
     // @todo consider adding parallelism
     for (size_t sample = 1, sample_count = grad_.shape()[0];
