@@ -252,10 +252,16 @@ class recurrent_layer : public layer {
         tensor_t &grad_buffer = *output_grad_buffer_[o];
         auto *data            = &(*out_data[o])[start];
         auto *grad            = &(*out_grad[o])[start];
-        for (size_t b = 0; b < batch_size; b++) {
-          buffer[b]      = data[b];
-          grad_buffer[b] = grad[b];
-        }
+	int end = seq_len_ - 1;
+	if (out_type_[o] == vector_type::aux && s == end) {
+	  fill_tensor(buffer, 0.0);
+	  fill_tensor(grad_buffer, 0.0);
+	} else {
+          for (size_t b = 0; b < batch_size; b++) {
+            buffer[b]      = data[b];
+            grad_buffer[b] = grad[b];
+          }
+	}
       }
       cell_->back_propagation(input_buffer_, output_buffer_,
                               output_grad_buffer_, input_grad_buffer_);
