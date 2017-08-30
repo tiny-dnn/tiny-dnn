@@ -44,7 +44,7 @@ TEST(integration, train1) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1;
+  optimizer.alpha = 0.01;
   nn.train<mse>(optimizer, data, train, 1, 20);
 
   vec_t predicted = nn.predict(a);
