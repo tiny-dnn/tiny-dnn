@@ -23,8 +23,8 @@ TEST(integration, train1) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << recurrent_layer(rnn(3, 20), 1)
-     << fully_connected_layer(20, 2) << sigmoid();
+  nn << recurrent_layer(rnn(3, 20), 1) << fully_connected_layer(20, 2)
+     << sigmoid();
   nn.weight_init(weight_init::xavier());
   vec_t a(3), t(2), a2(3), t2(2);
 
