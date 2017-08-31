@@ -147,7 +147,7 @@ TEST(global_ave_pool, gradient_check) {
     const size_t out_edge = uniform_idx(out_data);
     const size_t out_idx  = uniform_idx(out_data[out_edge][0]);
     float_t ngrad = numeric_gradient(l, input_data, in_edge, in_idx, out_data,
-                                     out_grad, out_edge, out_idx);
+                                     out_edge, out_idx);
     float_t cgrad = analytical_gradient(l, input_data, in_edge, in_idx,
                                         out_data, out_grad, out_edge, out_idx);
     EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
