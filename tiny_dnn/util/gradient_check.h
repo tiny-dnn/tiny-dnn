@@ -52,7 +52,6 @@ float_t numeric_gradient(layer &layer,
                          const size_t in_edge,
                          const size_t in_pos,
                          std::vector<tensor_t> out_data,
-                         std::vector<tensor_t> out_grads,
                          const size_t out_edge,
                          const size_t out_pos) {
   // sqrt(machine epsilon) is assumed to be safe
