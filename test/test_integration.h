@@ -23,7 +23,7 @@ TEST(integration, train1) {
   network<sequential> nn;
   adagrad optimizer;
 
-  nn << recurrent_layer(rnn(3, 20), 1) << selu_layer()
+  nn << recurrent_layer(rnn(3, 20), 1)
      << fully_connected_layer(20, 2) << sigmoid();
   nn.weight_init(weight_init::xavier());
   vec_t a(3), t(2), a2(3), t2(2);
@@ -44,8 +44,8 @@ TEST(integration, train1) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.01;
-  nn.train<mse>(optimizer, data, train, 1, 20);
+  optimizer.alpha = 0.1;
+  nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
 
