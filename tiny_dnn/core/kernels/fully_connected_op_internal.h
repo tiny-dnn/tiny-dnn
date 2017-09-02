@@ -33,11 +33,11 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &in_data,
       out_data.host_at(sample, i) = float_t{0};
       for (size_t c = 0; c < in_size; c++) {
         out_data.host_at(sample, i) +=
-          weights.host_at(0, c * out_size + i) * in_data.host_at(sample, c);
+          weights.host_at(c * out_size + i) * in_data.host_at(sample, c);
       }
 
       if (bias.size() >= out_size) {
-        out_data.host_at(sample, i) += bias.host_at(0, i);
+        out_data.host_at(sample, i) += bias.host_at(i);
       }
     }
   });
@@ -75,7 +75,7 @@ inline void fully_connected_op_internal(const Tensor<float_t, S1> &prev_out,
       // prev_delta[c] += current_delta[r] * W_[c * out_size_ + r]
       prev_delta.host_at(sample, c) +=
         vectorize::dot(curr_delta.host_pointer(sample, 0),
-                       weigths.host_pointer(0, c * out_size), out_size);
+                       weigths.host_pointer(c * out_size), out_size);
     }
 
     for_(layer_parallelize, 0, size_t(out_size), [&](const blocked_range &r) {
