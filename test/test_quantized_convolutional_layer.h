@@ -93,6 +93,15 @@ TEST(quantized_convolutional, fprop) {
     {
         l.forward_propagation(in_data, out_data);
 
+        EXPECT_NEAR(0.4875026, out[0], 3E-2);
+        EXPECT_NEAR(0.8388910, out[1], 3E-2);
+        EXPECT_NEAR(0.8099984, out[2], 3E-2);
+        EXPECT_NEAR(0.7407749, out[3], 3E-2);
+        EXPECT_NEAR(0.5000000, out[4], 3E-2);
+        EXPECT_NEAR(0.1192029, out[5], 3E-2);
+        EXPECT_NEAR(0.5986877, out[6], 3E-2);
+        EXPECT_NEAR(0.7595109, out[7], 3E-2);
+        EXPECT_NEAR(0.6899745, out[8], 3E-2);
         EXPECT_NEAR(-0.043426, out[0], 2e-2);
         EXPECT_NEAR(1.6769816, out[1], 2e-2);
         EXPECT_NEAR(1.4731820, out[2], 2e-2);
