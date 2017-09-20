@@ -1,6 +1,6 @@
-# tiny-dnn documentations
+# tiny-dnn documentation
 
-A built version of document is available at [http://tiny-dnn.readthedocs.io/en/latest/index.html](here).
+A built version of documentation is available [here](http://tiny-dnn.readthedocs.io/en/latest/index.html).
 
 ## Local build
 
@@ -12,13 +12,13 @@ $ pip install sphinx sphinx-autobuild
 $ pip install recommonmark
 ```
 
-#### build on Windows
+#### Build on Windows
 ```bach
 cd docs
 make.bat html
 ```
 
-#### build on Linux
+#### Build on Linux
 ```bash
 cd docs
 make html

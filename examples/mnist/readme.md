@@ -1,16 +1,16 @@
 # MNIST Digit Classification
 
-[MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digit recognition task. LeNet-5 is proposed by Y.LeCun, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
+[MNIST](http://yann.lecun.com/exdb/mnist/) is a well-known dataset of handwritten digits. We'll use [LeNet-5](http://yann.lecun.com/exdb/lenet/)-like architecture for MNIST digit recognition task. LeNet-5 is proposed by Y. LeCun<a id="cit_LeCun1998">[[LeCun1998]](#LeCun1998)</a>, which is known to work well on handwritten digit recognition. We replace LeNet-5's RBF layer with normal fully-connected layer.
 
 ## Constructing Model
-Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by operator <<.
+Let's define the LeNet network. At first, you have to specify loss-function and learning-algorithm. Then, you can add layers from top to bottom by `operator<<`.
 
 ```cpp
 // specify loss-function and learning strategy
 network<sequential> nn;
 adagrad optimizer;
 
-// connection table [Y.Lecun, 1998 Table.1]
+// connection table, see Table 1 in [LeCun1998]
 #define O true
 #define X false
 static const bool tbl [] = {
@@ -29,24 +29,30 @@ static const bool tbl [] = {
 // C : convolution
 // S : sub-sampling
 // F : fully connected
-nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
+nn << convolutional_layer(32, 32, 5, 1, 6,         // C1, 1@32x32-in, 6@28x28-out
         padding::valid, true, 1, 1, backend_type)
-   << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-   << convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-in
+   << tanh_layer(28, 28, 6)
+   << average_pooling_layer(28, 28, 6, 2)          // S2, 6@28x28-in, 6@14x14-out
+   << tanh_layer(14, 14, 6)
+   << convolutional_layer(14, 14, 5, 6, 16,        // C3, 6@14x14-in, 16@10x10-in
         connection_table(tbl, 6, 16),
         padding::valid, true, 1, 1, backend_type)
-   << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-   << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
+   << tanh_layer(10, 10, 16)
+   << average_pooling_layer(10, 10, 16, 2)         // S4, 16@10x10-in, 16@5x5-out
+   << tanh_layer(5, 5, 16)
+   << convolutional_layer(5, 5, 5, 16, 120,        // C5, 16@5x5-in, 120@1x1-out
         padding::valid, true, 1, 1, backend_type)
-   << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
-        true, backend_type)
+   << tanh_layer(1, 1, 120)
+   << fully_connected_layer(120, 10, true,         // F6, 120-in, 10-out
+        backend_type)
+   << tanh_layer(10);
 ```
 
-What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each of the feature maps gets different set of inputs (and hopefully they become compelemtary feature extractors).
+What does ```tbl``` mean? LeNet has "sparsity" between S2 and C3 layer. Specifically, each feature map in C3 is connected to a subset of S2's feature maps so that each of the feature maps gets different set of inputs (and hopefully they become complementary feature extractors).
 Tiny-dnn supports this sparsity by ```connection_table``` structure which parameters of constructor are ```bool``` table and number of in/out feature maps.
 
 ## Loading Dataset
-Tiny-dnn supports MNIST idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
+Tiny-dnn supports MNIST idx format, so all you have to do is calling `parse_mnist_images` and `parse_mnist_labels` functions.
 
 ```cpp
 // load MNIST dataset
@@ -69,8 +75,8 @@ parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
 
 If you want to use another format for learning nets, see [Data Format](https://github.com/tiny-dnn/tiny-dnn/wiki/Data-Format) page.
 
-# Defining Callback
-It's convenient if we can check recognition rate on test data, training time, and progress for each epoch while training. Tiny-dnn has callback mechanism for this purpose. We can use local variables(network, test-data, etc) in callback by using C++11's lambda.
+## Defining Callback
+It's convenient if we can check recognition rate on test data, training time, and progress for each epoch while training. Tiny-dnn has callback mechanism for this purpose. We can use local variables (network, test-data, etc) in callback by using C++11's lambda.
 
 ```cpp
 progress_display disp(static_cast<unsigned long>(train_images.size()));
@@ -96,7 +102,7 @@ auto on_enumerate_minibatch = [&](){
 ```
 
 ## Saving/Loading models
-Just use ```network::save(filename)``` and ```network.load(filename)``` to write your whole model as binary file.
+Just use ```network::save(filename)``` and ```network::load(filename)``` to write your whole model as binary file.
 
 ```cpp
 nn.save("LeNet-model");
@@ -113,7 +119,7 @@ using namespace tiny_dnn;
 using namespace tiny_dnn::activation;
 
 static void construct_net(network<sequential>& nn) {
-    // connection table [Y.Lecun, 1998 Table.1]
+    // connection table, see Table 1 in [LeCun1998]
 #define O true
 #define X false
     static const bool tbl[] = {
@@ -136,18 +142,28 @@ static void construct_net(network<sequential>& nn) {
     // C : convolution
     // S : sub-sampling
     // F : fully connected
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6,  // C1, 1@32x32-in, 6@28x28-out
-            padding::valid, true, 1, 1, backend_type)
-       << average_pooling_layer<tan_h>(28, 28, 6, 2)   // S2, 6@28x28-in, 6@14x14-out
-       << convolutional_layer<tan_h>(14, 14, 5, 6, 16, // C3, 6@14x14-in, 16@10x10-in
-            connection_table(tbl, 6, 16),
-            padding::valid, true, 1, 1, backend_type)
-       << average_pooling_layer<tan_h>(10, 10, 16, 2)  // S4, 16@10x10-in, 16@5x5-out
-       << convolutional_layer<tan_h>(5, 5, 5, 16, 120, // C5, 16@5x5-in, 120@1x1-out
-            padding::valid, true, 1, 1, backend_type)
-       << fully_connected_layer<tan_h>(120, 10,        // F6, 120-in, 10-out
-            true, backend_type)
-    ;
+    nn << convolutional_layer(32, 32, 5, 1,
+                              6,  // C1, 1@32x32-in, 6@28x28-out
+                              padding::valid, true, 1, 1, backend_type)
+       << tanh_layer(28, 28, 6)
+       << average_pooling_layer(28, 28, 6,
+                                2)  // S2, 6@28x28-in, 6@14x14-out
+       << tanh_layer(14, 14, 6)
+       << convolutional_layer(14, 14, 5, 6,
+                              16,  // C3, 6@14x14-in, 16@10x10-out
+                              connection_table(tbl, 6, 16), padding::valid, true,
+                              1, 1, backend_type)
+       << tanh_layer(10, 10, 16)
+       << average_pooling_layer(10, 10, 16,
+                                2)  // S4, 16@10x10-in, 16@5x5-out
+       << tanh_layer(5, 5, 16)
+       << convolutional_layer(5, 5, 5, 16,
+                              120,  // C5, 16@5x5-in, 120@1x1-out
+                              padding::valid, true, 1, 1, backend_type)
+       << tanh_layer(1, 1, 120)
+       << fully_connected_layer(120, 10, true,  // F6, 120-in, 10-out
+                                backend_type)
+       << tanh_layer(10);
 }
 
 static void train_lenet(const std::string& data_dir_path) {
@@ -222,7 +238,7 @@ int main(int argc, char **argv) {
 >Note:
 >Each image has 32x32 values, so dimension of first layer must be equal to 1024.
 
-You'll be able to get LeNet-model binary file after calling train_lenet() function. You can also download this file from [here](https://www.dropbox.com/s/mixgjhdi65jm7dl/LeNet-weights?dl=1).
+You'll be able to get LeNet-model binary file after calling `train_lenet()` function. You can also download this file from [here](https://www.dropbox.com/s/mixgjhdi65jm7dl/LeNet-weights?dl=1).
 
 ## Use Learned Nets
 Here is an example of CUI-based OCR tool.
@@ -274,7 +290,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
 
     // sort & print top-3
     for (int i = 0; i < 10; i++)
-        scores.emplace_back(rescale<tan_h>(res[i]), i);
+        scores.emplace_back(rescale<tanh>(res[i]), i);
 
     sort(scores.begin(), scores.end(), greater<pair<double, int>>());
 
@@ -289,7 +305,7 @@ void recognize(const std::string& dictionary, const std::string& filename) {
     }
     // save filter shape of first convolutional layer
     {
-        auto weight = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+        auto weight = nn.at<convolutional_layer>(0).weight_to_image();
         auto filename = "weights.png";
         weight.save(filename);
     }
@@ -335,3 +351,8 @@ You can also see some images like this:
 ![](https://github.com/tiny-dnn/tiny-dnn/wiki/layer5.bmp)
 
 The first one is learned weights(filter) of first convolutional layer, and others are output values of each of the layers.
+
+## References
+<b id="LeCun1998">[LeCun1998]</b> LeCun, Yann, et al. "Gradient-based learning applied to document recognition." *Proceedings of the IEEE* 86.11 (1998): 2278-2324.[↩](#cit_LeCun1998)
+
+

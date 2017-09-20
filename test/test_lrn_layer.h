@@ -1,64 +1,79 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi and the respective contributors
     All rights reserved.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
- #include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(lrn, cross) {
-    lrn_layer<identity> lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0, norm_region::across_channels);
+  lrn_layer lrn(1, 1, 3, 4, /*alpha=*/1.5, /*beta=*/2.0,
+                norm_region::across_channels);
 
-    tiny_dnn::float_t in[4] = { -1.0, 3.0, 2.0, 5.0 };
-    tiny_dnn::float_t expected[4] =
-    {
-        -1.0f/36.0f,    // -1.0 / (1+0.5*(1*1+3*3))^2
-        3.0f/64.0f,     //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
-        2.0f/400.0f,    //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
-        5.0f/15.5f/15.5f // 5.0 / (1+0.5*(2*2+5*5))^2
-    };
+  tiny_dnn::float_t in[4]       = {-1.0, 3.0, 2.0, 5.0};
+  tiny_dnn::float_t expected[4] = {
+    -1.0 / 36.0,       // -1.0 / (1+0.5*(1*1+3*3))^2
+    3.0 / 64.0,        //  3.0 / (1+0.5*(1*1+3*3+2*2))^2
+    2.0 / 400.0,       //  2.0 / (1+0.5*(3*3+2*2+5*5))^2
+    5.0 / 15.5 / 15.5  // 5.0 / (1+0.5*(2*2+5*5))^2
+  };
+  std::vector<const tensor_t*> o;
+  lrn.forward({{vec_t(in, in + 4)}}, o);
+  auto out = (*o[0])[0];
 
-    auto out = lrn.forward({ {vec_t(in, in + 4)} })[0][0];
-
-    EXPECT_NEAR(expected[0], out[0], epsilon<float_t>());
-    EXPECT_NEAR(expected[1], out[1], epsilon<float_t>());
-    EXPECT_NEAR(expected[2], out[2], epsilon<float_t>());
-    EXPECT_NEAR(expected[3], out[3], epsilon<float_t>());
+  EXPECT_NEAR(expected[0], out[0], epsilon<float_t>());
+  EXPECT_NEAR(expected[1], out[1], epsilon<float_t>());
+  EXPECT_NEAR(expected[2], out[2], epsilon<float_t>());
+  EXPECT_NEAR(expected[3], out[3], epsilon<float_t>());
 }
+
+/* Backprop not implemented
+TEST(lrn, gradient_check) {
+  const size_t in_width = 2;
+  const size_t in_height = 2;
+  const size_t local_size = 3;
+  const size_t channels = 4;
+  lrn_layer lrn(in_width, in_height, local_size, channels);
+  std::vector<tensor_t> input_data = generate_test_data({1},
+{in_width*in_height*channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({1},
+{in_width*in_height*channels});
+  std::vector<tensor_t> out_grad = generate_test_data({1},
+{in_width*in_height*channels});
+  const size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge = uniform_idx(input_data);
+    const size_t in_idx = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(lrn, input_data, in_edge, in_idx, out_data,
+out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(lrn, input_data, in_edge, in_idx,
+out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+*/
 
 TEST(lrn, read_write) {
-    lrn_layer<identity> l1(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
-    lrn_layer<identity> l2(10, 10, 3, 4, 1.5f, 2.0f, norm_region::across_channels);
+  lrn_layer l1(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
+  lrn_layer l2(10, 10, 3, 4, 1.5, 2.0, norm_region::across_channels);
 
-    l1.init_weight();
-    l2.init_weight();
+  l1.init_weight();
+  l2.init_weight();
 
-    serialization_test(l1, l2);
+  serialization_test(l1, l2);
 }
 
-} // namespace tiny-dnn
+}  // namespace tiny_dnn

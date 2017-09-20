@@ -9,7 +9,7 @@ element-wise add N vectors ```y_i = x0_i + x1_i + ... + xnum_i```
 ### Constructors
 
 ```cpp
-    elementwise_add_layer(serial_size_t num_args, serial_size_t dim)
+    elementwise_add_layer(size_t num_args, size_t dim)
 ```
 
 - **dim** number of elements for each input
@@ -24,10 +24,10 @@ average pooling with trainable weights
 ### Constructors
 
 ```cpp
-    average_pooling_layer(serial_size_t in_width,
-                          serial_size_t in_height,
-                          serial_size_t in_channels,
-                          serial_size_t pool_size)
+    average_pooling_layer(size_t in_width,
+                          size_t in_height,
+                          size_t in_channels,
+                          size_t pool_size)
 ```
 
 - **in_height** height of input image
@@ -39,11 +39,11 @@ average pooling with trainable weights
 - **pool_size** factor by which to downscale
 
 ```cpp
-    average_pooling_layer(serial_size_t in_width,
-                          serial_size_t in_height,
-                          serial_size_t in_channels,
-                          serial_size_t pool_size,
-                          serial_size_t stride)
+    average_pooling_layer(size_t in_width,
+                          size_t in_height,
+                          size_t in_channels,
+                          size_t pool_size,
+                          size_t stride)
 ```
 
 - **in_height** height of input image
@@ -57,13 +57,13 @@ average pooling with trainable weights
 - **pool_size** factor by which to downscale
 
 ```cpp
-    average_pooling_layer(serial_size_t     in_width,
-                          serial_size_t     in_height,
-                          serial_size_t     in_channels,
-                          serial_size_t     pool_size_x,
-                          serial_size_t     pool_size_y,
-                          serial_size_t     stride_x,
-                          serial_size_t     stride_y,
+    average_pooling_layer(size_t     in_width,
+                          size_t     in_height,
+                          size_t     in_channels,
+                          size_t     pool_size_x,
+                          size_t     pool_size_y,
+                          size_t     stride_x,
+                          size_t     stride_y,
                           padding        pad_type = padding::valid)
 ```
 
@@ -91,10 +91,10 @@ average pooling with trainable weights
 ### Constructors
 
 ```cpp
-    average_unpooling_layer(serial_size_t in_width,
-                            serial_size_t in_height,
-                            serial_size_t in_channels,
-                            serial_size_t pooling_size)
+    average_unpooling_layer(size_t in_width,
+                            size_t in_height,
+                            size_t in_channels,
+                            size_t pooling_size)
 ```
 
 - **in_height** height of input image
@@ -106,11 +106,11 @@ average pooling with trainable weights
 - **pooling_size** factor by which to upscale
 
 ```cpp
-    average_unpooling_layer(serial_size_t in_width,
-                            serial_size_t in_height,
-                            serial_size_t in_channels,
-                            serial_size_t pooling_size,
-                            serial_size_t stride)
+    average_unpooling_layer(size_t in_width,
+                            size_t in_height,
+                            size_t in_channels,
+                            size_t pooling_size,
+                            size_t stride)
 ```
 
 - **in_height** height of input image
@@ -148,8 +148,8 @@ Batch Normalization
 - **momentum** momentum in the computation of the exponential average of the mean/stddev of the data
 
 ```cpp
-    batch_normalization_layer(serial_size_t in_spatial_size, 
-                              serial_size_t in_channels,                        
+    batch_normalization_layer(size_t in_spatial_size, 
+                              size_t in_channels,                        
                               float_t epsilon = 1e-5,
                               float_t momentum = 0.999,
                               net_phase phase = net_phase::train)
@@ -187,7 +187,7 @@ concat N layers along depth
 - **in_shapes** shapes of input tensors
 
 ```cpp
-    concat_layer(serial_size_t num_args, serial_size_t ndim)
+    concat_layer(size_t num_args, size_t ndim)
 ```
 
 - **ndim** number of elements for each input
@@ -204,15 +204,15 @@ concat N layers along depth
 ### Constructors
 
 ```cpp
-    convolutional_layer(serial_size_t in_width,
-                        serial_size_t in_height,
-                        serial_size_t window_size,
-                        serial_size_t in_channels,
-                        serial_size_t out_channels,
+    convolutional_layer(size_t in_width,
+                        size_t in_height,
+                        size_t window_size,
+                        size_t in_channels,
+                        size_t out_channels,
                         padding    pad_type = padding::valid,
                         bool       has_bias = true,
-                        serial_size_t w_stride = 1,
-                        serial_size_t h_stride = 1,
+                        size_t w_stride = 1,
+                        size_t h_stride = 1,
                         backend_t  backend_type = core::default_engine())
 ```
 
@@ -239,16 +239,16 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    convolutional_layer(serial_size_t in_width,
-                        serial_size_t in_height,
-                        serial_size_t window_width,
-                        serial_size_t window_height,
-                        serial_size_t in_channels,
-                        serial_size_t out_channels,
+    convolutional_layer(size_t in_width,
+                        size_t in_height,
+                        size_t window_width,
+                        size_t window_height,
+                        size_t in_channels,
+                        size_t out_channels,
                         padding    pad_type = padding::valid,
                         bool       has_bias = true,
-                        serial_size_t w_stride = 1,
-                        serial_size_t h_stride = 1,
+                        size_t w_stride = 1,
+                        size_t h_stride = 1,
                         backend_t  backend_type = core::default_engine())
 ```
 
@@ -277,16 +277,16 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    convolutional_layer(serial_size_t              in_width,
-                        serial_size_t              in_height,
-                        serial_size_t              window_size,
-                        serial_size_t              in_channels,
-                        serial_size_t              out_channels,
+    convolutional_layer(size_t              in_width,
+                        size_t              in_height,
+                        size_t              window_size,
+                        size_t              in_channels,
+                        size_t              out_channels,
                         const connection_table& connection_table,
                         padding                 pad_type = padding::valid,
                         bool                    has_bias = true,
-                        serial_size_t              w_stride = 1,
-                        serial_size_t              h_stride = 1,
+                        size_t              w_stride = 1,
+                        size_t              h_stride = 1,
                         backend_t      backend_type = core::default_engine())
 ```
 
@@ -315,17 +315,17 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    convolutional_layer(serial_size_t              in_width,
-                        serial_size_t              in_height,
-                        serial_size_t              window_width,
-                        serial_size_t              window_height,
-                        serial_size_t              in_channels,
-                        serial_size_t              out_channels,
+    convolutional_layer(size_t              in_width,
+                        size_t              in_height,
+                        size_t              window_width,
+                        size_t              window_height,
+                        size_t              in_channels,
+                        size_t              out_channels,
                         const connection_table& connection_table,
                         padding                 pad_type = padding::valid,
                         bool                    has_bias = true,
-                        serial_size_t              w_stride = 1,
-                        serial_size_t              h_stride = 1,
+                        size_t              w_stride = 1,
+                        size_t              h_stride = 1,
                         backend_t      backend_type = core::default_engine())
 ```
 
@@ -365,15 +365,15 @@ concat N layers along depth
 ### Constructors
 
 ```cpp
-    deconvolutional_layer(serial_size_t     in_width,
-                          serial_size_t     in_height,
-                          serial_size_t     window_size,
-                          serial_size_t     in_channels,
-                          serial_size_t     out_channels,
+    deconvolutional_layer(size_t     in_width,
+                          size_t     in_height,
+                          size_t     window_size,
+                          size_t     in_channels,
+                          size_t     out_channels,
                           padding        pad_type = padding::valid,
                           bool           has_bias = true,
-                          serial_size_t     w_stride = 1,
-                          serial_size_t     h_stride = 1,
+                          size_t     w_stride = 1,
+                          size_t     h_stride = 1,
                           backend_t      backend_type = core::default_engine())
 ```
 
@@ -398,16 +398,16 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    deconvolutional_layer(serial_size_t     in_width,
-                          serial_size_t     in_height,
-                          serial_size_t     window_width,
-                          serial_size_t     window_height,
-                          serial_size_t     in_channels,
-                          serial_size_t     out_channels,
+    deconvolutional_layer(size_t     in_width,
+                          size_t     in_height,
+                          size_t     window_width,
+                          size_t     window_height,
+                          size_t     in_channels,
+                          size_t     out_channels,
                           padding        pad_type = padding::valid,
                           bool           has_bias = true,
-                          serial_size_t     w_stride = 1,
-                          serial_size_t     h_stride = 1,
+                          size_t     w_stride = 1,
+                          size_t     h_stride = 1,
                           backend_t      backend_type = core::default_engine())
 ```
 
@@ -434,16 +434,16 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    deconvolutional_layer(serial_size_t              in_width,
-                          serial_size_t              in_height,
-                          serial_size_t              window_size,
-                          serial_size_t              in_channels,
-                          serial_size_t              out_channels,
+    deconvolutional_layer(size_t              in_width,
+                          size_t              in_height,
+                          size_t              window_size,
+                          size_t              in_channels,
+                          size_t              out_channels,
                           const connection_table& connection_table,
                           padding                 pad_type = padding::valid,
                           bool                    has_bias = true,
-                          serial_size_t              w_stride = 1,
-                          serial_size_t              h_stride = 1,
+                          size_t              w_stride = 1,
+                          size_t              h_stride = 1,
                           backend_t               backend_type = core::default_engine())
 ```
 
@@ -470,17 +470,17 @@ concat N layers along depth
 - **in_width** input image width
 
 ```cpp
-    deconvolutional_layer(serial_size_t              in_width,
-                          serial_size_t              in_height,
-                          serial_size_t              window_width,
-                          serial_size_t              window_height,
-                          serial_size_t              in_channels,
-                          serial_size_t              out_channels,
+    deconvolutional_layer(size_t              in_width,
+                          size_t              in_height,
+                          size_t              window_width,
+                          size_t              window_height,
+                          size_t              in_channels,
+                          size_t              out_channels,
                           const connection_table& connection_table,
                           padding                 pad_type = padding::valid,
                           bool                    has_bias = true,
-                          serial_size_t              w_stride = 1,
-                          serial_size_t              h_stride = 1,
+                          size_t              w_stride = 1,
+                          size_t              h_stride = 1,
                           backend_t               backend_type = core::default_engine())
 ```
 
@@ -516,7 +516,7 @@ applies dropout to the input
 ### Constructors
 
 ```cpp
-    dropout_layer(serial_size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
+    dropout_layer(size_t in_dim, float_t dropout_rate, net_phase phase = net_phase::train)
 ```
 
 - **phase** initial state of the dropout
@@ -540,8 +540,8 @@ compute fully-connected(matmul) operation
 ### Constructors
 
 ```cpp
-    fully_connected_layer(serial_size_t in_dim,
-                          serial_size_t out_dim,
+    fully_connected_layer(size_t in_dim,
+                          size_t out_dim,
                           bool       has_bias = true,
                           backend_t  backend_type = core::default_engine())
 ```
@@ -565,7 +565,7 @@ element-wise operation: ```f(x) = h(scale*x+bias)```
 ### Constructors
 
 ```cpp
- linear_layer(serial_size_t dim, float_t scale = float_t(1)
+ linear_layer(size_t dim, float_t scale = float_t(1)
 ```
 
 - **dim** number of elements
@@ -583,7 +583,7 @@ local response normalization
 
 ```cpp
     lrn_layer(layer*      prev,
-              serial_size_t  local_size,
+              size_t  local_size,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
@@ -600,10 +600,10 @@ local response normalization
 - **local_size** the number of channels(depths) to sum over
 
 ```cpp
-    lrn_layer(serial_size_t  in_width,
-              serial_size_t  in_height,
-              serial_size_t  local_size,
-              serial_size_t  in_channels,
+    lrn_layer(size_t  in_width,
+              size_t  in_height,
+              size_t  local_size,
+              size_t  in_channels,
               float_t     alpha = 1.0,
               float_t     beta  = 5.0,
               norm_region region = norm_region::across_channels)
@@ -627,10 +627,10 @@ local response normalization
 ### Constructors
 
 ```cpp
-    max_pooling_layer(serial_size_t in_width,
-                      serial_size_t in_height,
-                      serial_size_t in_channels,
-                      serial_size_t pooling_size,
+    max_pooling_layer(size_t in_width,
+                      size_t in_height,
+                      size_t in_channels,
+                      size_t pooling_size,
                       backend_t  backend_type = core::default_engine())
 ```
 
@@ -643,13 +643,13 @@ local response normalization
 - **pooling_size** factor by which to downscale
 
 ```cpp
-    max_pooling_layer(serial_size_t in_width,
-                      serial_size_t in_height,
-                      serial_size_t in_channels,
-                      serial_size_t pooling_size_x,
-                      serial_size_t pooling_size_y,
-                      serial_size_t stride_x,
-                      serial_size_t stride_y,
+    max_pooling_layer(size_t in_width,
+                      size_t in_height,
+                      size_t in_channels,
+                      size_t pooling_size_x,
+                      size_t pooling_size_y,
+                      size_t stride_x,
+                      size_t stride_y,
                       padding    pad_type = padding::valid,
                       backend_t  backend_type = core::default_engine())
 ```
@@ -670,10 +670,10 @@ local response normalization
 ### Constructors
 
 ```cpp
-    max_unpooling_layer(serial_size_t in_width,
-                        serial_size_t in_height,
-                        serial_size_t in_channels,
-                        serial_size_t unpooling_size)
+    max_unpooling_layer(size_t in_width,
+                        size_t in_height,
+                        size_t in_channels,
+                        size_t unpooling_size)
 ```
 
 - **in_height** height of input image
@@ -685,11 +685,11 @@ local response normalization
 - **unpooling_size** factor by which to upscale
 
 ```cpp
-    max_unpooling_layer(serial_size_t in_width,
-                        serial_size_t in_height,
-                        serial_size_t in_channels,
-                        serial_size_t unpooling_size,
-                        serial_size_t stride)
+    max_unpooling_layer(size_t in_width,
+                        size_t in_height,
+                        size_t in_channels,
+                        size_t unpooling_size,
+                        size_t stride)
 ```
 
 - **in_height** height of input image
@@ -744,15 +744,15 @@ element-wise pow: ```y = scale*x^factor```
 ### Constructors
 
 ```cpp
-    quantized_convolutional_layer(serial_size_t     in_width,
-                                  serial_size_t     in_height,
-                                  serial_size_t     window_size,
-                                  serial_size_t     in_channels,
-                                  serial_size_t     out_channels,
+    quantized_convolutional_layer(size_t     in_width,
+                                  size_t     in_height,
+                                  size_t     window_size,
+                                  size_t     in_channels,
+                                  size_t     out_channels,
                                   padding        pad_type = padding::valid,
                                   bool           has_bias = true,
-                                  serial_size_t     w_stride = 1,
-                                  serial_size_t     h_stride = 1,
+                                  size_t     w_stride = 1,
+                                  size_t     h_stride = 1,
                                   backend_t      backend_type = core::backend_t::internal)
 ```
 
@@ -777,16 +777,16 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_convolutional_layer(serial_size_t     in_width,
-                                  serial_size_t     in_height,
-                                  serial_size_t     window_width,
-                                  serial_size_t     window_height,
-                                  serial_size_t     in_channels,
-                                  serial_size_t     out_channels,
+    quantized_convolutional_layer(size_t     in_width,
+                                  size_t     in_height,
+                                  size_t     window_width,
+                                  size_t     window_height,
+                                  size_t     in_channels,
+                                  size_t     out_channels,
                                   padding        pad_type = padding::valid,
                                   bool           has_bias = true,
-                                  serial_size_t     w_stride = 1,
-                                  serial_size_t     h_stride = 1,
+                                  size_t     w_stride = 1,
+                                  size_t     h_stride = 1,
                                   backend_t      backend_type = core::backend_t::internal)
 ```
 
@@ -813,16 +813,16 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_convolutional_layer(serial_size_t              in_width,
-                                  serial_size_t              in_height,
-                                  serial_size_t              window_size,
-                                  serial_size_t              in_channels,
-                                  serial_size_t              out_channels,
+    quantized_convolutional_layer(size_t              in_width,
+                                  size_t              in_height,
+                                  size_t              window_size,
+                                  size_t              in_channels,
+                                  size_t              out_channels,
                                   const connection_table& connection_table,
                                   padding                 pad_type = padding::valid,
                                   bool                    has_bias = true,
-                                  serial_size_t              w_stride = 1,
-                                  serial_size_t              h_stride = 1,
+                                  size_t              w_stride = 1,
+                                  size_t              h_stride = 1,
                                   backend_t backend_type = core::backend_t::internal)
 ```
 
@@ -849,17 +849,17 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_convolutional_layer(serial_size_t              in_width,
-                                  serial_size_t              in_height,
-                                  serial_size_t              window_width,
-                                  serial_size_t              window_height,
-                                  serial_size_t              in_channels,
-                                  serial_size_t              out_channels,
+    quantized_convolutional_layer(size_t              in_width,
+                                  size_t              in_height,
+                                  size_t              window_width,
+                                  size_t              window_height,
+                                  size_t              in_channels,
+                                  size_t              out_channels,
                                   const connection_table& connection_table,
                                   padding                 pad_type = padding::valid,
                                   bool                    has_bias = true,
-                                  serial_size_t              w_stride = 1,
-                                  serial_size_t              h_stride = 1,
+                                  size_t              w_stride = 1,
+                                  size_t              h_stride = 1,
                                   backend_t      backend_type = core::backend_t::internal)
 ```
 
@@ -897,15 +897,15 @@ element-wise pow: ```y = scale*x^factor```
 ### Constructors
 
 ```cpp
-    quantized_deconvolutional_layer(serial_size_t     in_width,
-                                    serial_size_t     in_height,
-                                    serial_size_t     window_size,
-                                    serial_size_t     in_channels,
-                                    serial_size_t     out_channels,
+    quantized_deconvolutional_layer(size_t     in_width,
+                                    size_t     in_height,
+                                    size_t     window_size,
+                                    size_t     in_channels,
+                                    size_t     out_channels,
                                     padding        pad_type = padding::valid,
                                     bool           has_bias = true,
-                                    serial_size_t     w_stride = 1,
-                                    serial_size_t     h_stride = 1,
+                                    size_t     w_stride = 1,
+                                    size_t     h_stride = 1,
                                     backend_t      backend_type = core::backend_t::internal)
 ```
 
@@ -930,16 +930,16 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_deconvolutional_layer(serial_size_t     in_width,
-                                    serial_size_t     in_height,
-                                    serial_size_t     window_width,
-                                    serial_size_t     window_height,
-                                    serial_size_t     in_channels,
-                                    serial_size_t     out_channels,
+    quantized_deconvolutional_layer(size_t     in_width,
+                                    size_t     in_height,
+                                    size_t     window_width,
+                                    size_t     window_height,
+                                    size_t     in_channels,
+                                    size_t     out_channels,
                                     padding        pad_type = padding::valid,
                                     bool           has_bias = true,
-                                    serial_size_t     w_stride = 1,
-                                    serial_size_t     h_stride = 1,
+                                    size_t     w_stride = 1,
+                                    size_t     h_stride = 1,
                                     backend_t      backend_type = core::backend_t::internal)
 ```
 
@@ -966,16 +966,16 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_deconvolutional_layer(serial_size_t              in_width,
-                                    serial_size_t              in_height,
-                                    serial_size_t              window_size,
-                                    serial_size_t              in_channels,
-                                    serial_size_t              out_channels,
+    quantized_deconvolutional_layer(size_t              in_width,
+                                    size_t              in_height,
+                                    size_t              window_size,
+                                    size_t              in_channels,
+                                    size_t              out_channels,
                                     const connection_table& connection_table,
                                     padding                 pad_type = padding::valid,
                                     bool                    has_bias = true,
-                                    serial_size_t              w_stride = 1,
-                                    serial_size_t              h_stride = 1,
+                                    size_t              w_stride = 1,
+                                    size_t              h_stride = 1,
                                     backend_t               backend_type = core::backend_t::internal)
 ```
 
@@ -1002,17 +1002,17 @@ element-wise pow: ```y = scale*x^factor```
 - **in_width** input image width
 
 ```cpp
-    quantized_deconvolutional_layer(serial_size_t              in_width,
-                                    serial_size_t              in_height,
-                                    serial_size_t              window_width,
-                                    serial_size_t              window_height,
-                                    serial_size_t              in_channels,
-                                    serial_size_t              out_channels,
+    quantized_deconvolutional_layer(size_t              in_width,
+                                    size_t              in_height,
+                                    size_t              window_width,
+                                    size_t              window_height,
+                                    size_t              in_channels,
+                                    size_t              out_channels,
                                     const connection_table& connection_table,
                                     padding                 pad_type = padding::valid,
                                     bool                    has_bias = true,
-                                    serial_size_t              w_stride = 1,
-                                    serial_size_t              h_stride = 1,
+                                    size_t              w_stride = 1,
+                                    size_t              h_stride = 1,
                                     backend_t               backend_type = core::backend_t::internal)
 ```
 
@@ -1048,8 +1048,8 @@ compute fully-connected(matmul) operation
 ### Constructors
 
 ```cpp
-    quantized_fully_connected_layer(serial_size_t in_dim,
-                                    serial_size_t out_dim,
+    quantized_fully_connected_layer(size_t in_dim,
+                                    size_t out_dim,
                                     bool       has_bias = true,
                                     backend_t  backend_type = core::backend_t::internal)
 ```
@@ -1068,7 +1068,7 @@ slice an input data into multiple outputs along a given slice dimension.
 ### Constructors
 
 ```cpp
-    slice_layer(const shape3d& in_shape, slice_type slice_type, serial_size_t num_outputs)
+    slice_layer(const shape3d& in_shape, slice_type slice_type, size_t num_outputs)
 ```
 
 - **num_outputs** number of output layers

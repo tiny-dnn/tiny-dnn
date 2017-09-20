@@ -1,163 +1,134 @@
 /*
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi and the respective contributors
     All rights reserved.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 
-#include "tiny_dnn/core/kernels/fully_connected_op.h"
 #include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
+#include "tiny_dnn/core/kernels/fully_connected_op.h"
 
 namespace tiny_dnn {
 
 /**
  * compute fully-connected(matmul) operation
  **/
-template <typename Activation>
-class fully_connected_layer : public feedforward_layer<Activation> {
+class fully_connected_layer : public layer {
  public:
-    typedef feedforward_layer<Activation> Base;
-    CNN_USE_LAYER_MEMBERS;
+  /**
+   * @param in_dim [in] number of elements of the input
+   * @param out_dim [in] number of elements of the output
+   * @param has_bias [in] whether to include additional bias to the layer
+   **/
+  fully_connected_layer(size_t in_dim,
+                        size_t out_dim,
+                        bool has_bias                = true,
+                        core::backend_t backend_type = core::default_engine())
+    : layer(std_input_order(has_bias), {vector_type::data}) {
+    set_params(in_dim, out_dim, has_bias);
+    init_backend(backend_type);
+    layer::set_backend_type(backend_type);
+  }
 
-    /**
-     * @param in_dim [in] number of elements of the input
-     * @param out_dim [in] number of elements of the output
-     * @param has_bias [in] whether to include additional bias to the layer
-     **/
-    fully_connected_layer(serial_size_t in_dim,
-                          serial_size_t out_dim,
-                          bool          has_bias = true,
-                          backend_t     backend_type = core::default_engine())
-        : Base(std_input_order(has_bias)) {
-        set_params(in_dim, out_dim, has_bias);
-        init_backend(backend_type);
-        Base::set_backend_type(backend_type);
+  // move constructor
+  fully_connected_layer(fully_connected_layer &&other)
+    : layer(std::move(other)),
+      params_(std::move(other.params_)),
+      kernel_fwd_(std::move(other.kernel_fwd_)),
+      kernel_back_(std::move(other.kernel_back_)) {
+    init_backend(std::move(other.engine()));
+  }
+
+  size_t fan_in_size() const override { return params_.in_size_; }
+
+  size_t fan_out_size() const override { return params_.out_size_; }
+
+  std::vector<index3d<size_t>> in_shape() const override {
+    if (params_.has_bias_) {
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),
+              index3d<size_t>(params_.out_size_, 1, 1)};
+    } else {
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1)};
     }
+  }
 
-    // move constructor
-    fully_connected_layer(fully_connected_layer&& other)
-        : Base(std::move(other)),
-          params_(std::move(other.params_)),
-          kernel_fwd_(std::move(other.kernel_fwd_)),
-          kernel_back_(std::move(other.kernel_back_)) {
-        init_backend(std::move(other.engine()));
-    }
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(params_.out_size_, 1, 1)};
+  }
 
-    serial_size_t fan_in_size() const override {
-        return params_.in_size_;
-    }
+  void forward_propagation(const std::vector<tensor_t *> &in_data,
+                           std::vector<tensor_t *> &out_data) override {
+    // forward fully connected op context
+    fwd_ctx_.set_in_out(in_data, out_data);
+    fwd_ctx_.setParallelize(layer::parallelize());
+    fwd_ctx_.setEngine(layer::engine());
 
-    serial_size_t fan_out_size() const override {
-        return params_.out_size_;
-    }
+    // launch fully connected kernel
+    kernel_fwd_->compute(fwd_ctx_);
+  }
 
-    std::vector<index3d<serial_size_t>> in_shape() const override {
-        if (params_.has_bias_) {
-            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
-                     index3d<serial_size_t>(params_.in_size_,
-                                            params_.out_size_, 1),
-                     index3d<serial_size_t>(params_.out_size_, 1, 1) };
-        } else {
-            return { index3d<serial_size_t>(params_.in_size_, 1, 1),
-                     index3d<serial_size_t>(params_.in_size_,
-                                            params_.out_size_, 1) };
-        }
-    }
+  void back_propagation(const std::vector<tensor_t *> &in_data,
+                        const std::vector<tensor_t *> &out_data,
+                        std::vector<tensor_t *> &out_grad,
+                        std::vector<tensor_t *> &in_grad) override {
+    // backward fully connected op context
+    bwd_ctx_.set_in_out(in_data, out_data, out_grad, in_grad);
+    bwd_ctx_.setParallelize(layer::parallelize());
+    bwd_ctx_.setEngine(layer::engine());
 
-    std::vector<index3d<serial_size_t>> out_shape() const override {
-        return { index3d<serial_size_t>(params_.out_size_, 1, 1),
-                 index3d<serial_size_t>(params_.out_size_, 1, 1) };
-    }
+    // launch fully connected kernel
+    kernel_back_->compute(bwd_ctx_);
+  }
 
-    void forward_propagation(const std::vector<tensor_t*>& in_data,
-                             std::vector<tensor_t*>&       out_data) override {
-        // forward convolutional op context
-        auto ctx = OpKernelContext(in_data, out_data);
-             ctx.setParallelize(layer::parallelize());
-             ctx.setEngine(layer::engine());
+  std::string layer_type() const override { return "fully-connected"; }
 
-        // launch convolutional kernel
-        kernel_fwd_->compute(ctx);
-
-        // activations
-        this->forward_activation(*out_data[0], *out_data[1]);
-    }
-
-    void back_propagation(const std::vector<tensor_t*>& in_data,
-                          const std::vector<tensor_t*>& out_data,
-                          std::vector<tensor_t*>&       out_grad,
-                          std::vector<tensor_t*>&       in_grad) override {
-        // activations
-        // TODO(edgar/nyanp): refactor and move activations outside
-        this->backward_activation(*out_grad[0], *out_data[0], *out_grad[1]);
-
-        // backward convolutional op context
-        auto ctx = OpKernelContext(in_data, out_data, out_grad, in_grad);
-             ctx.setParallelize(layer::parallelize());
-             ctx.setEngine(layer::engine());
-
-        // launch convolutional kernel
-        kernel_back_->compute(ctx);
-    }
-
-    std::string layer_type() const override { return "fully-connected"; }
-
-#ifndef CNN_NO_SERIALIZATION
-    friend struct serialization_buddy;
-#endif
+  friend struct serialization_buddy;
 
  protected:
-    void set_params(const serial_size_t in_size,
-                    const serial_size_t out_size,
-                    bool                has_bias) {
-        params_.in_size_  = in_size;
-        params_.out_size_ = out_size;
-        params_.has_bias_ = has_bias;
-    }
+  void set_params(const size_t in_size, const size_t out_size, bool has_bias) {
+    params_.in_size_  = in_size;
+    params_.out_size_ = out_size;
+    params_.has_bias_ = has_bias;
+  }
 
-    void init_backend(backend_t backend_type) {
-        core::OpKernelConstruction ctx =
-        core::OpKernelConstruction(layer::device(), &params_);
+  void init_backend(core::backend_t backend_type) {
+    core::OpKernelConstruction ctx =
+      core::OpKernelConstruction(layer::device(), &params_);
 
-        if (backend_type == backend_t::internal
-            || backend_type == backend_t::avx
-            || backend_type == backend_t::nnpack) {
-            kernel_fwd_.reset(new FullyConnectedOp(ctx));
-            kernel_back_.reset(new FullyConnectedGradOp(ctx));
-        } else {
-            throw nn_error("Not supported engine: " + to_string(backend_type));
-        }
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::avx ||
+        backend_type == core::backend_t::nnpack) {
+      kernel_fwd_.reset(new FullyConnectedOp(ctx));
+      kernel_back_.reset(new FullyConnectedGradOp(ctx));
+    } else {
+      throw nn_error("Not supported engine: " + to_string(backend_type));
     }
+  }
 
  private:
-    /* The layer parameters */
-    fully_params params_;
+  /* The layer parameters */
+  core::fully_params params_;
 
-    /* Forward and backward ops */
-    std::shared_ptr<core::OpKernel> kernel_fwd_;
-    std::shared_ptr<core::OpKernel> kernel_back_;
+  /* forward op context */
+  core::OpKernelContext fwd_ctx_;
+
+  /* backward op context */
+  core::OpKernelContext bwd_ctx_;
+
+  /* Forward and backward ops */
+  std::shared_ptr<core::OpKernel> kernel_fwd_;
+  std::shared_ptr<core::OpKernel> kernel_back_;
 };
 
 }  // namespace tiny_dnn

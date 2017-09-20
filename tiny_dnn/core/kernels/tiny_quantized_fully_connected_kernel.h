@@ -1,39 +1,25 @@
  /*
     Copyright (c) 2016, Taiga Nomi, Edgar Riba
+
     All rights reserved.
 
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-    names of its contributors may be used to endorse or promote products
-    derived from this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
-    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY
-    DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-    (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-    LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-    ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-    (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
 
+#include <algorithm>
+#include <vector>
+
 #ifdef CNN_USE_GEMMLOWP
-#include "tiny_dnn/core/params/fully_params.h"
 #include "tiny_dnn/core/kernels/tiny_quantization_kernel.h"
 #include "tiny_dnn/core/kernels/tiny_quantized_matmul_kernel.h"
+#include "tiny_dnn/core/params/fully_params.h"
 
 namespace tiny_dnn {
 namespace core {
 namespace kernels {
+
 
 inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
                                                   const vec_t&        in,
@@ -241,28 +227,77 @@ inline void tiny_quantized_fully_connected_back_kernel(const fully_params& param
 
     // dequantize to flaot, this could be removed within concatenated quantized network
     dW = quantized_tensor_to_float<uint8_t>(dW_requantized, min_dW_requantized, max_dW_requantized);
+
 }
 
-inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
-                                                  const vec_t&        in,
-                                                  const vec_t&        W,
-                                                  const vec_t&        b,
-                                                  const vec_t&        in_r,
-                                                  const vec_t&        W_r,
-                                                  const vec_t&        b_r,
-                                                  vec_t&              a,
-                                                  vec_t&              a_r,
-                                                  const bool          layer_parallelize) {
-    // filter range
-    float_t min_filter(W_r[0]);
-    float_t max_filter(W_r[1]);
-    if (min_filter == max_filter) {
-      max_filter = W_r[1] + 1e-3f;
-      min_filter = W_r[0] - 1e-3f;
+inline void tiny_quantized_fully_connected_kernel(
+  const fully_params &params,
+  const vec_t &in,
+  const vec_t &W,
+  const vec_t &b,
+  const vec_t &in_r,
+  const vec_t &W_r,
+  const vec_t &b_r,
+  vec_t &out,
+  vec_t &out_r,
+  const bool layer_parallelize) {
+  // filter range
+  float_t min_filter(W_r[0]);
+  float_t max_filter(W_r[1]);
+  if (min_filter == max_filter) {
+    max_filter = W_r[1] + 1e-3f;
+    min_filter = W_r[0] - 1e-3f;
+  }
+  // bias range
+  float_t min_bias(b_r[0]);
+  float_t max_bias(b_r[1]);
+  if (params.has_bias_) {
+    if (min_bias == max_bias) {
+      max_bias = b_r[1] + 1e-3f;
+      min_bias = b_r[0] - 1e-3f;
     }
-    // bias range
-    float_t min_bias(b_r[0]);
-    float_t max_bias(b_r[1]);
+  }
+  // output range
+  float_t min_output_value;
+  float_t max_output_value;
+  quantization_range_for_multiplication<uint8_t, uint8_t, int32_t>(
+    in_r[0], in_r[1], min_filter, max_filter, &min_output_value,
+    &max_output_value);
+  // data type restore
+  std::vector<uint8_t> in_quantized, W_quantized, bias_quantized;
+  for (size_t i = 0; i < in.size(); i++) {
+    in_quantized.push_back(static_cast<uint8_t>(in[i]));
+  }
+  for (size_t i = 0; i < W.size(); i++) {
+    W_quantized.push_back(static_cast<uint8_t>(W[i]));
+  }
+  for (size_t i = 0; i < b.size(); i++) {
+    bias_quantized.push_back(static_cast<uint8_t>(b[i]));
+  }
+  min_output_value += min_bias;
+  max_output_value += max_bias;
+
+  std::vector<int32_t> out_quantized(out.size(), static_cast<int32_t>(0));
+
+  // calculating offset
+  const int32_t offset_input =
+    float_to_quantized_unclamped<uint8_t>(0.0f, in_r[0], in_r[1]);
+  const int32_t offset_filter =
+    float_to_quantized_unclamped<uint8_t>(0.0f, min_filter, max_filter);
+  const int32_t zero_in_total_space =
+    float_to_quantized<int32_t>(0.0f, min_output_value, max_output_value);
+
+  const int32_t offset_output = 0;
+  const int32_t mult_output   = 1;
+  const int32_t shift_output  = 0;
+
+  bool use_gemm = false;
+  if (use_gemm) {
+    std::vector<size_t> shape{params.in_size_, 1, params.out_size_,
+                              params.in_size_};
+    tiny_quantized_matmul(in_quantized, W_quantized, out_quantized, shape,
+                          offset_input, offset_filter, offset_output,
+                          mult_output, shift_output);
     if (params.has_bias_) {
         if (min_bias == max_bias) {
           max_bias = b_r[1] + 1e-3f;
@@ -345,6 +380,7 @@ inline void tiny_quantized_fully_connected_kernel(const fully_params& params,
     }
     a_r[0] = min_output_requantized;
     a_r[1] = max_output_requantized;
+
 }
 
 }  // namespace kernels

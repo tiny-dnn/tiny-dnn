@@ -1,5 +1,6 @@
 sudo: required
 dist: trusty
+osx_image: xcode8
 
 language: cpp
 
@@ -19,27 +20,29 @@ cache:
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
-      - george-edison55-cmake-3.x
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise-3.6
     packages:
-      - gcc-4.8
-      - g++-4.8
-      - clang
-      - cmake
-      - git
-      # Optional dependencies
-      - libtbb-dev
-      # coveralls dependencies
-      - gem
-      - lcov
-      # caffe-importer dependencies
-      - libprotobuf-dev
-      - protobuf-compiler
+    - gcc-4.9
+    - g++-4.9
+    - clang-3.6
+    - cmake
+    - git
+    # Optional dependencies
+    - libtbb-dev
+    # coveralls dependencies
+    - gem
+    - lcov
+    # caffe-importer dependencies
+    - libprotobuf-dev
+    - protobuf-compiler
 
 branches:
   only:
     - master
-    - feat/tensor_integration
+    - feat/xtensor_integration
+    - feat/decouple_activations
+
 env:
   global:
     - USE_TBB=ON
@@ -59,8 +62,8 @@ matrix:
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
-       export CC="gcc-4.8";
-       export CXX="g++-4.8";
+      export CC="gcc-4.9";
+      export CXX="g++-4.9";
     fi
   - gcc --version
   - g++ --version
@@ -68,9 +71,10 @@ before_install:
 install:
   - bash -x .travis/install.sh
   - gem install coveralls-lcov
+  - pip install --user cpplint
 
 before_script:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
       lcov --directory . --zerocounters;
       cmake -DUSE_TBB=$USE_TBB
             -DUSE_SSE=$USE_SSE
@@ -78,6 +82,7 @@ before_script:
             -DUSE_DOUBLE=$USE_DOUBLE
             -DBUILD_TESTS=$BUILD_TESTS
             -DCOVERALLS=$COVERALLS
+            -DUSE_ASAN=ON
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "clang++" ]; then
@@ -91,17 +96,18 @@ before_script:
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      make test_lints;
+    fi
 
 script:
   - make -j2
   - test/tiny_dnn_test
 
 after_success:
-  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.8" ]; then
+  - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++-4.9" ]; then
       lcov --directory . --capture --output-file coverage.info;
       lcov --remove coverage.info 'test/*' 'third_party/*' 'cereal/*' '/usr/*' 'tiny_dnn/io/caffe/caffe.pb.*' --output-file coverage.info;
       lcov --list coverage.info;
       coveralls-lcov --source-encoding=ISO-8859-1 coverage.info;
     fi
-  # coding style test
-  - bash -x .travis/cpplint_test.sh

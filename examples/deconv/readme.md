@@ -5,7 +5,7 @@
 ## Prerequisites for this example
 - OpenCV
 
-## Intruduction on Implementation Method
+## Introduction on Implementation Method
 
 We implement the forward pass of deconvolution as a typical upsampling process with convolutional kernels. The backward pass codes are implemented based on the fact that the result of deconvolution is the same as padded convolution with a reversed kernel which means that the element indexs are reversed in view of the result.
 
@@ -15,15 +15,19 @@ You can add layers from top to bottom by operator <<, we recommand that the conv
 ```cpp
     // construct nets
 void construct_net(network<sequential>& nn) {
-    nn << convolutional_layer<tan_h>(32, 32, 5, 1, 6)
-       << convolutional_layer<tan_h>(28, 28, 3, 6, 16)
-       << deconvolutional_layer<tan_h>(26, 26, 3, 16, 6)
-       << deconvolutional_layer<tan_h>(28, 28, 5, 6, 1);
+    nn << convolutional_layer(32, 32, 5, 1, 6)
+       << tanh_layer(28, 28, 6)
+       << convolutional_layer(28, 28, 3, 6, 16)
+       << tanh_layer(26, 26, 16)
+       << deconvolutional_layer(26, 26, 3, 16, 6)
+       << tanh_layer(28, 28, 5)
+       << deconvolutional_layer(28, 28, 5, 6, 1)
+       << tanh_layer(32, 32, 1);
 }
 ```
 
 ## Loading Dataset
-Tiny-cnn supports idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
+Tiny-dnn supports idx format, so all you have to do is calling parse_mnist_images and parse_mnist_labels functions.
 
 ```cpp
 // load MNIST dataset
@@ -63,7 +67,7 @@ for (size_t i = 0; i < nn.layer_size(); i++) {
     cv::imshow("layer:" + std::to_string(i), image2mat(out_img));
 }
 // visualize filter shape of first convolutional layer
-auto weightc = nn.at<convolutional_layer<tan_h>>(0).weight_to_image();
+auto weightc = nn.at<convolutional_layer>(0).weight_to_image();
 cv::imshow("weights:", image2mat(weightc));
 ```
 

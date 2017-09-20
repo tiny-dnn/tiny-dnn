@@ -1,46 +1,9 @@
 /*
-    COPYRIGHT
-
-    All contributions by Taiga Nomi
-    Copyright (c) 2013, Taiga Nomi
+    Copyright (c) 2013, Taiga Nomi and the respective contributors
     All rights reserved.
 
-    All other contributions:
-    Copyright (c) 2013-2016, the respective contributors.
-    All rights reserved.
-
-    Each contributor holds copyright over their respective contributions.
-    The project versioning (Git) records all such contribution source information.
-
-    LICENSE
-
-    The BSD 3-Clause License
-
-
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice, this
-      list of conditions and the following disclaimer.
-
-    * Redistributions in binary form must reproduce the above copyright notice,
-      this list of conditions and the following disclaimer in the documentation
-      and/or other materials provided with the distribution.
-
-    * Neither the name of tiny-dnn nor the names of its
-      contributors may be used to endorse or promote products derived from
-      this software without specific prior written permission.
-
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    Use of this source code is governed by a BSD-style license that can be found
+    in the LICENSE file.
 */
 #pragma once
 
@@ -49,7 +12,6 @@
 #include <vector>
 
 #include "tiny_dnn/core/framework/device.fwd.h"
-#include "tiny_dnn/core/framework/tensor_storage.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -63,370 +25,245 @@ namespace tiny_dnn {
 
 /**
  * A tensor of the given dimension.
- * A tensor holds data in C-style nD array, i.e row-major order:
- * the rightmost index “varies the fastest”.
  *
- * Data is held by a std::vector with 64 bytes alignment.
- * Unmutable if kConst == true
+ * U is type of the data stored
+ * Storage is type of underlying storage
  */
-template <typename U = float_t, size_t kDimensions = 4, bool kConst = false,
-          typename Allocator = aligned_allocator<U, 64> >
+template <typename U = float_t, typename Storage = xt::xarray<U>>
 class Tensor {
-    // Define constant types for constant Tensor,
-    // and mutable ones for mutable Tensor
-    typedef typename std::conditional<kConst,
-                                      const TensorStorage<U, Allocator>,
-                                      TensorStorage<U, Allocator>>::type TensorStorageType;
-    typedef typename std::conditional<kConst, const U*, U*>::type
-        UPtr;
-    typedef typename std::shared_ptr<TensorStorageType> TensorStoragePointer;
-    typedef typename std::conditional<kConst,
-                              typename std::vector<U, Allocator>
-                                       ::const_iterator,
-                              typename std::vector<U, Allocator>
-                                       ::iterator>
-                     ::type StorageIterator;
+  typedef U *UPtr;
 
  public:
+  /**
+   * Initializes an empty tensor.
+   * @return
+   */
+  Tensor() {}
 
-    /**
-     * Initializes an empty tensor.
-     * @return
-     */
-    Tensor() {
-        offset_ = size_ = size_t(0);
-        storage_ptr_ = std::make_shared<TensorStorageType>();
-    }
+  /**
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
+   * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
+   * @param shape array containing N integers, sizes of dimensions
+   * @return
+   */
+  explicit Tensor(std::vector<size_t> const &shape) : storage_(shape) {}
 
-    /**
-     * Constructor that assepts an array of shape and create a Tensor with that
-     * shape. For example, given shape = {2,3,4,5,6}, tensor
-     * will be of size 2x3x4x5x6
-     * @param shape array containing N integers, sizes of dimensions
-     * @return
-     */
-    explicit Tensor(const std::array<size_t, kDimensions> &shape) {
-        offset_ = size_t(0);
-        shape_ = shape;
-        size_ = product(shape);
-        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
-    }
+  /**
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
+   * will be of size 2x3x4x5x6. Note: tensor isn't initialized by default
+   * @param shape array containing N integers, sizes of dimensions
+   * @return
+   */
+  explicit Tensor(std::initializer_list<size_t> const &shape)
+    : storage_(shape) {}
 
-    /**
-     * Constructor that assepts a vector of shape and create a Tensor with that
-     * shape. For example, given shape = {2,3,4,5,6}, tensor
-     * will be of size 2x3x4x5x6
-     * @param shape array containing N integers, sizes of dimensions
-     * @return
-     */
-    explicit Tensor(const std::vector<size_t> &shape) {
-        offset_ = size_t(0);
-        size_ = product(shape);
-        std::copy(shape.begin(), shape.end(), shape_.begin());
-        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
-    }
+  /**
+   * Constructor that accepts an initializer list of shape and create a
+   * Tensor with that shape and filling it with value. For example,
+   * given shape = {2,3,4,5,6}, value = 0 tensor will be of size 2x3x4x5x6
+   * filled with zeros
+   * @param shape  shape array containing N integers, sizes of dimensions
+   * @param value value to fill
+   */
+  explicit Tensor(std::initializer_list<size_t> const &shape, U value)
+    : storage_(shape, value) {}
 
-    /**
-     * Constructor that assepts an initializer list of shape and create a
-     * Tensor with that shape. For example, given shape = {2,3,4,5,6}, tensor
-     * will be of size 2x3x4x5x6
-     * @param shape array containing N integers, sizes of dimensions
-     * @return
-     */
-    explicit Tensor(std::initializer_list<size_t> const &shape) {
-        offset_ = size_t(0);
-        size_ = product(shape);
-        std::copy(shape.begin(), shape.end(), shape_.begin());
-        storage_ptr_ = std::make_shared<TensorStorageType>(shape);
-    }
+  /**
+   *
+   * @param T
+   * @return
+   */
+  Tensor<U> &operator=(const Tensor<U> &T) {
+    storage_ = T.storage_;
+    return *this;
+  }
 
-    ~Tensor() = default;
+// ~Tensor() = default;
 
-    //TODO(Randl): implement copy and move constructors
+// TODO(Randl): implement copy and move constructors
 #if 0
-    //TODO(Randl):deep copy
+    // TODO(Randl) :deep copy
     Tensor(const Tensor&other) {
         other.fromDevice();
         shape_ = other.shape_;
         storage_pointer_ = other.storage_pointer_;
         data_is_on_host_ = true;
         data_dirty_ = true;
-        //device_data_ is intentionally left uninitialized.
+        // device_data_ is intentionally left uninitialized.
     }
-    //TODO(Randl): Move constructors for Tensor and TensorStorage
+    // TODO(Randl): Move constructors for Tensor and TensorStorage
     Tensor &operator = (const Tensor& other) {}
 
-#ifdef CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
-    Tensor(Tensor&& other) = default;        // move ctor
-    Tensor &operator = (Tensor&&) = default; // move assign
-#else
-
-    Tensor(Tensor&& other) {}
-    Tensor &operator = (Tensor&& other) {}
-#endif // CNN_USE_DEFAULT_MOVE_CONSTRUCTORS
+    Tensor(Tensor&& other) = default;         // move ctor
+    Tensor &operator = (Tensor&&) = default;  // move assign
 #endif
 
-    /**
-     *
-     * @return the tensor shape
-     */
-    const std::array<size_t, kDimensions>& shape() const { return shape_; }
+  /**
+   *
+   * @return the tensor shape
+   */
+  const auto shape() const { return storage_.shape(); }
 
-    /**
-     * Checked version of access to indexes in tensor (throw exceptions
-     * for out-of-range error)
-     * @param args indexes in tensor
-     * @return the value of a specified index in the tensor
-     */
-    template <typename... Args>
-    U& host_at(const Args... args) {
-        static_assert(!kConst, "Non-constant operation on constant Tensor");
-        return *host_ptr(args...);
-    }
+  /**
+   *
+   * @return Tensor's number of dimensions
+   */
+  const auto dim() const { return storage_.dimension(); }
 
-    /**
-     * Checked version of access to indexes in tensor (throw exceptions
-     * for out-of-range error)
-     * @param args indexes in tensor
-     * @return the value of a specified index in the tensor
-     */
-    template <typename... Args>
-    U host_at(const Args... args) const {
-        return *host_ptr(args...);
-    }
+  /**
+   *
+   * @return the total number of elements in Tensor
+   */
+  const size_t size() const { return storage_.size(); }
 
-    /**
-     * Calculate an offset for last dimension.
-     * @param d an index of last dimension
-     * @return offest from the beginning of the dimesion
-     */
-    size_t host_pos(const size_t d) const { //TODO(Randl): unchecked version
-        if (d >= shape_.back())  {
-            throw nn_error("Access tensor out of range.");
-        }
-        return d;
-    }
+  /**
+   * Access to indexes in tensor
+   * @param args indexes in tensor
+   * @return the value of a specified index in the tensor
+   */
+  template <typename... Args>
+  U &host_at(const Args... args) {
+    return storage_(args...);
+  }
 
-    /**
-     * Calculate an offest in 1D representation of nD Tensor. Parameters are
-     * indexes of k last dimensions. If k is less than n, function returns an
-     * offset from the first index of (n-k+1)th dimension. This allows recursive
-     * call to acquire offset for generic number of dimensions
-     * @param d index of (k-n)th dimension. For external call, n=k usually holds
-     * @param args index of rest (k-1) dimensions.
-     * @return offset from the first index of (n-k)th dimension
-     */
-    template <typename... Args>
-    size_t host_pos(const size_t  d,
-                    const Args... args) const {
-        static_assert(sizeof...(args) < kDimensions,
-                      "Wrong number of dimensions");
-        size_t dim = kDimensions - sizeof...(args) - 1;
-        if (d >= shape_[dim]) {
-            throw nn_error("Access tensor out of range.");
-        }
-        size_t shift = 1;
-        for (size_t i = dim + 1; i < kDimensions; ++i)
-            shift *= shape_[i]; //TODO(Randl): optimize. Reverse argumets?
+  /**
+   * Constant access to indexes in tensor
+   * @param args indexes in tensor
+   * @return the value of a specified index in the tensor
+   */
+  template <typename... Args>
+  U host_at(const Args... args) const {
+    return storage_(args...);
+  }
 
-        return (d * shift + host_pos(args...));
-    }
+  /**
+   *
+   * @return Iterator pointing to the beginning of Tensor
+   */
+  auto host_begin() { return storage_.xbegin(); }
 
-    template <typename... Args>
-    UPtr host_ptr(const Args... args) const {
-        return &(*host_iter(args...));
-    }
+  const auto host_begin() const { return storage_.cxbegin(); }
 
-    template <typename... Args>
-    StorageIterator host_iter (const Args... args) const {
-        static_assert(!kConst, "Non-constant operation on constant Tensor");
-        static_assert(sizeof...(args) == kDimensions,
-                      "Wrong number of dimensions");
-        return storage_ptr_->host_data(offset_) + host_pos(args...);
-    }
+  auto host_end() { return storage_.xend(); }
 
-    StorageIterator host_begin() const {
-        return storage_ptr_->host_data(offset_);
-    }
+  const auto host_end() const { return storage_.cxend(); }
 
-    StorageIterator host_data() const {
-        //fromDevice();
-        return storage_ptr_->host_data(offset_);
-    }
+// TODO(Randl)
+/*
+const auto host_flatten() const {
+  // fromDevice();
+  return xt::broadcast(storage_, {size()});
+}
 
-//TODO: should we enable this again?
+auto host_data() {
+  // fromDevice();
+  return xt::broadcast(storage_, {size()});
+}*/
+// TODO(ּּRandl): should we enable this again?
 #if 0
     U* mutable_host_data() {
         static_assert(!kConst, "Non-constant operation on constant Tensor");
-        //fromDevice();
-        //data_dirty_ = true;
+        // fromDevice();
+        // data_dirty_ = true;
         return storage_pointer_->data(offset);
     }
 #endif
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
-    const void *device_data() const {
-        storage_ptr_->toDevice();
-        return (*storage_ptr_->device_data_)();
-    }
+  const void *device_data() const {
+    storage_ptr_->toDevice();
+    return (*storage_ptr_->device_data_)();
+  }
 
-    void *mutable_device_data() {
-        static_assert(!kConst, "Non-constant operation on constant Tensor");
-        storage_ptr_->toDevice();
-        storage_ptr_->data_dirty_ = true;
-        return (*storage_ptr_->device_data_)();
-    }
+  void *mutable_device_data() {
+    static_assert(!kConst, "Non-constant operation on constant Tensor");
+    storage_ptr_->toDevice();
+    storage_ptr_->data_dirty_ = true;
+    return (*storage_ptr_->device_data_)();
+  }
 #endif
 
-    Tensor& fill(U value) {
-        static_assert(!kConst, "Non-constant operation on constant Tensor");
-        //data_is_on_host_ = true;
-        //data_dirty_ = true;
-        std::fill(storage_ptr_->host_data(offset_),
-                  storage_ptr_->host_data(offset_) + size_,
-                  value);
-        return *this;
-    }
+  /**
+   * Fill tensor with particular value
+   * @param value
+   * @return
+   */
+  Tensor &fill(U value) {
+    // static_assert(!kConst, "Non-constant operation on constant Tensor");
+    // data_is_on_host_ = true;
+    // data_dirty_ = true;
+    std::fill(storage_.xbegin(), storage_.xend(), value);
+    return *this;
+  }
 
-    //TODO(Randl): variadic template version of reshape
-    //TODO(Randl): non-checked version
-    void reshape(const std::array<size_t, kDimensions>& sz) {
-        static_assert(!kConst, "Non-constant operation on constant Tensor");
-        //No size change for reshape
-        if (calcSize() != product(sz)) {
-            throw nn_error("Reshape to Tensor of different size.");
-        }
-        shape_ = sz;
-    }
+  // TODO(Randl): checked version
+  /**
+   * Reshape tensor
+   * @param shape new shape
+   */
+  void reshape(const std::vector<size_t> &shape) { storage_.reshape(shape); }
 
-    void resize(const std::array<size_t, kDimensions>& sz) {
-        if (offset_ != 0 || size_ != storage_ptr_->size()) {
-            throw nn_error("Resize of partial view is impossible.");
-        }
-        shape_ = sz;
-        storage_ptr_->resize(std::vector<size_t>(sz.begin(), sz.end()));
-    }
-    
-    size_t size() const {
-        return size_;
-    }
+  Tensor operator[](size_t index) { return Tensor(storage_[index]); }
 
-    Tensor operator[](size_t index) {
-        return Tensor(storage_ptr_,
-                      offset_ + index * size_ / shape_[0],
-                      std::array<size_t, kDimensions - 1>(shape_.begin() + 1,
-                                                          shape_.end()));
-    }
+  /**
+   * Returns new Tensor which has shared storage with current, but different
+   * shape
+   *
+   * Example:
+   * @code
+   * Tensor b({4,2});
+   * a = b.subView({2,2,2};
+   * @endcode
+   * b is Tensor of shape 4x2 and a is Tensor of shape 2x2x2. Changing a(0,0,0)
+   * will change b(0,0) too.
+   * @param new_shape
+   * @return
+   */
+  /*
+ Tensor<U,xt::xbroadcast<Storage, std::vector<size_t>>>
+ subView(std::initializer_list<size_t> const &new_shape) {
+   auto res = Tensor<U,xt::xbroadcast<Storage,
+ std::vector<size_t>>>(xt::broadcast(storage_, storage_.shape()));
+   res.storage_.reshape(new_shape);
+   return res;
+ }*/
 
-    /**
-     * @brief Returns a sub view from the current tensor with a given size.
-     * The new tensor will share data with its parent tensor so that each time
-     * that data is modified, it will be updated in both directions.
-     *
-     * The new sub view tensor will be extracted assuming continuous data.
-     * The offset to shared data is assumed to be 0.
-     *
-     * @param new_shape The size for the new tensor
-     * @return An instance to the new tensor
-     *
-     * Usage:
-     *
-     *  Tensor<float_t, 4> t({2,2,2,2});            // we create a 4D tensor
-     *  Tensor<float_t, 4> t_view = t.view({2,2});  // we create a 2x2 matrix view with offset zero
-     *
-     */
-    Tensor subView(std::initializer_list<size_t> const &new_shape) {
-        return subview_impl({}, new_shape);
-    }
+  /**
+   * Returns view of current Tensor
+   * @tparam Values index type
+   */
+  template <typename... Values>
+  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
+    std::initializer_list<Values>... lists) {
+    using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
+    return SharedTensor(storage_,
+                        xt::range(*(lists.begin()), *(lists.begin() + 1))...);
+  }
 
-    /**
-     * @brief Returns a sub view from the current tensor with a given size.
-     * The new tensor will share data with its parent tensor so that each time
-     * that data is modified, it will be updated in both directions.
-     *
-     * The new sub view tensor will be extracted assuming continuous data.
-     *
-     * @param start The offset from the parent tensor
-     * @param new_shape The size for the new tensor
-     * @return An instance to the new tensor
-     *
-     * Usage:
-     *
-     *  Tensor<float_t, 4> t({2,2,2,2});                   // we create a 4D tensor
-     *  Tensor<float_t, 4> t_view = t.view({2,2}, {2,2});  // we create a 2x2 matrix view from
-     *                                                     // offset 4.
-     */
-    Tensor subView(std::initializer_list<size_t> const &start,
-                   std::initializer_list<size_t> const &new_shape) {
-        return subview_impl(start, new_shape);
-    }
+  /*
+  // TODO: is needed?
+  bool isSubView() const {
+    return true; //std::is_same(Storage, xt::xview<U>);
+  }
+*/
 
-    /**
-     * @brief Returns whether the tensor is a view of another tensor
-     *
-     */
-    bool isSubView() const {
-        return size_ != storage_ptr_->size();
-    }
+  /**
+   * Creates Tensor given the storage
+   * @tparam T
+   * @param storage
+   */
+  template <class T, class S, class... Args>
+  explicit Tensor(T &storage, xt::xrange<S> r1, Args... args)
+    : storage_(xt::view(storage, r1, args...)) {}
 
+  template <typename T, typename S>
+  friend inline std::ostream &operator<<(std::ostream &os,
+                                         const Tensor<T, S> &tensor);
 
-private:
-    /**
-     * Constructor that accepts a pointer to existing TensorStorage, together
-     * with shape and offset.
-     * @param storage pointer to TensorStorage
-     * @param offset offset from first element of storage
-     * @param shape shape of the Tensor
-     * @return
-     */
-    explicit Tensor(const TensorStoragePointer storage,
-                    const size_t offset,
-                    std::initializer_list<size_t> const &shape) {
-        offset_ = offset;
-        size_ = product(shape);
-        storage_ptr_ = storage;
-        std::copy(shape.begin(), shape.end(), shape_.begin());
-    }
-
-    /*
-     * Implementation method to extract a view from a tensor
-     * Raises an exception when sizes of the starting offset and new_shape
-     * are bigger than the current dimensions number. Also raises an exception
-     * when the requested view size is not feasible.
-     */
-    Tensor subview_impl(std::initializer_list<size_t> const &start,
-                        std::initializer_list<size_t> const &new_shape) {
-        if (start.size() > kDimensions || new_shape.size() > kDimensions) {
-            throw nn_error("Overpassed number of existing dimensions.");
-        }
-
-        // compute the new offset and check that it's feasible to create
-        // the new view.
-        //TODO(edgarriba/randl): add proper tests to this
-        const size_t new_offset = offset_ + compute_offset(start, shape_);
-        if (new_offset + product(new_shape) > size_) {
-            throw nn_error("Cannot create a view from this tensor");
-        }
-
-        return Tensor(storage_ptr_, new_offset, new_shape);
-    }
-
-    size_t calcSize() const {
-        return product(shape_);
-    }
-
-    /**
-     * A tensor holds data in C-style nD array, i.e row-major order:
-     * the rightmost index “varies the fastest”.
-     */
-    std::array<size_t, kDimensions> shape_;
-
-    /* Offset from the beginning of TensorStorage */
-    size_t offset_;
-    size_t size_;
-
-    /* pointer to TensorStorage */
-    TensorStoragePointer storage_ptr_;
+ private:
+  Storage storage_;
 };
 
 }  // namespace tiny_dnn
