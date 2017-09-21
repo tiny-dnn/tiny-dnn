@@ -36,9 +36,9 @@ class partial_connected_layer : public layer {
 
   size_t param_size() const {
     size_t total_param = 0;
-    for (auto w : weight2io_)
+    for (auto& w : weight2io_)
       if (w.size() > 0) total_param++;
-    for (auto b : bias2out_)
+    for (auto& b : bias2out_)
       if (b.size() > 0) total_param++;
     return total_param;
   }
