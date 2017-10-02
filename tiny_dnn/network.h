@@ -334,8 +334,8 @@ class network {
            const std::vector<U> &desired_outputs,
            size_t batch_size = 1,
            int epoch         = 1) {
-    return fit<Error>(optimizer, inputs, desired_outputs, batch_size, epoch,
-                      nop, nop);
+    return fit<Error>(optimizer, Tensor<>(inputs), Tensor<>(desired_outputs),
+                      batch_size, epoch, nop, nop);
   }
 
   /**
@@ -351,7 +351,8 @@ class network {
              const std::vector<label_t> &class_labels,
              size_t batch_size = 1,
              int epoch         = 1) {
-    return train<Error>(optimizer, inputs, class_labels, batch_size, epoch, nop,
+    return train<Error>(optimizer, Tensor<>(inputs),
+                        Tensor<label_t>(class_labels), batch_size, epoch, nop,
                         nop);
   }
 
