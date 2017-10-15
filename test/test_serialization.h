@@ -723,6 +723,32 @@ TEST(serialization, serialize_sigmoid) {
   check_sequential_network_model_serialization(net);
 }
 
+TEST(serialization, serialize_asinh) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "asinh",
+                "in_size" : {
+                    "width": 20,
+                    "height" : 20,
+                    "depth" : 10
+                }
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "asinh-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(20, 20, 10));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(20, 20, 10));
+  check_sequential_network_model_serialization(net);
+}
+
 TEST(serialization, serialize_tanh) {
   network<sequential> net;
 

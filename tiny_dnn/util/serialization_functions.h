@@ -517,6 +517,18 @@ struct LoadAndConstruct<tiny_dnn::sigmoid_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::asinh_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::asinh_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
+    construct(in_shape);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::tanh_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -877,6 +889,11 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::sigmoid_layer &layer) {
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::asinh_layer &layer) {
     ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]));
   }
 
