@@ -89,7 +89,8 @@ void parallel_for(size_t begin,
   assert(end >= begin);
 // unsigned index isn't allowed in OpenMP 2.0
 #pragma omp parallel for
-  for (int i = (int)begin; i < (int)end; ++i) f(blocked_range(i, i + 1));
+  for (int i = static_cast<int>(begin); i < static_cast<int>(end); ++i)
+    f(blocked_range(i, i + 1));
 }
 
 #elif defined(CNN_USE_GCD)
@@ -142,9 +143,9 @@ void parallel_for(size_t begin,
 
   std::vector<std::future<void> > futures;
 
-  size_t blockBegin            = begin;
-  size_t blockEnd              = blockBegin + blockSize;
-  if (blockEnd > end) blockEnd = end;
+  size_t blockBegin = begin;
+  size_t blockEnd   = blockBegin + blockSize;
+  if (blockEnd > end) blockEnd= end;
 
   for (size_t i = 0; i < nthreads; i++) {
     futures.push_back(
@@ -190,7 +191,8 @@ inline void for_i(bool parallelize, T size, Func f, size_t grainsize = 100u) {
        [&](const blocked_range &r) {
 #ifdef CNN_USE_OMP
 #pragma omp parallel for
-         for (int i = (int)r.begin(); i < (int)r.end(); i++) {
+         for (int i = static_cast<int>(r.begin());
+              i < static_cast<int>(r.end()); i++) {
            f(i);
          }
 #else
