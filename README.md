@@ -81,6 +81,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * leaky relu
 * identity
 * exponential linear units(elu)
+* scaled exponential linear units(selu)
 
 ### loss functions
 * cross-entropy
