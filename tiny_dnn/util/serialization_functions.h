@@ -79,8 +79,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::elementwise_add_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::elementwise_add_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::elementwise_add_layer> &construct) {
     size_t num_args, dim;
 
     ::detail::arc(ar, ::detail::make_nvp("num_args", num_args),
@@ -93,8 +93,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -114,8 +114,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::average_unpooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::average_unpooling_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::average_unpooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t pool_size, stride;
 
@@ -130,8 +130,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::batch_normalization_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::batch_normalization_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::batch_normalization_layer> &construct) {
     size_t in_spatial_size, in_channels;
     tiny_dnn::float_t eps, momentum;
     tiny_dnn::net_phase phase;
@@ -154,7 +154,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::concat_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::concat_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::concat_layer> &construct) {
     std::vector<tiny_dnn::shape3d> in_shapes;
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shapes));
     construct(in_shapes);
@@ -165,7 +165,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::convolutional_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::convolutional_layer> &construct) {
     size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -191,8 +192,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::deconvolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::deconvolutional_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::deconvolutional_layer> &construct) {
     size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -218,7 +219,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::dropout_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::dropout_layer> &construct) {
     tiny_dnn::net_phase phase;
     tiny_dnn::float_t dropout_rate;
     size_t in_size;
@@ -234,8 +235,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::fully_connected_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::fully_connected_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::fully_connected_layer> &construct) {
     size_t in_dim, out_dim;
     bool has_bias;
 
@@ -250,8 +251,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::global_average_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::global_average_pooling_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::global_average_pooling_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_shape", in_shape));
@@ -263,7 +264,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::input_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::input_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::input_layer> &construct) {
     tiny_dnn::shape3d shape;
 
     ::detail::arc(ar, ::detail::make_nvp("shape", shape));
@@ -275,7 +276,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::linear_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::linear_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::linear_layer> &construct) {
     size_t dim;
     tiny_dnn::float_t scale, bias;
 
@@ -291,16 +292,16 @@ template <>
 struct LoadAndConstruct<tiny_dnn::lrn_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::lrn_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::lrn_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     size_t size;
     tiny_dnn::float_t alpha, beta;
     tiny_dnn::norm_region region;
 
     ::detail::arc(
-      ar, ::detail::make_nvp("in_shape", in_shape),
-      ::detail::make_nvp("size", size), ::detail::make_nvp("alpha", alpha),
-      ::detail::make_nvp("beta", beta), ::detail::make_nvp("region", region));
+        ar, ::detail::make_nvp("in_shape", in_shape),
+        ::detail::make_nvp("size", size), ::detail::make_nvp("alpha", alpha),
+        ::detail::make_nvp("beta", beta), ::detail::make_nvp("region", region));
     construct(in_shape, size, alpha, beta, region);
   }
 };
@@ -309,7 +310,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::max_pooling_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::max_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t stride_x, stride_y, pool_size_x, pool_size_y;
     tiny_dnn::padding pad_type;
@@ -329,7 +330,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::max_unpooling_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::max_unpooling_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::max_unpooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t stride, unpool_size;
 
@@ -344,7 +346,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::power_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::power_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::power_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t factor;
     tiny_dnn::float_t scale(1.0f);
@@ -360,8 +362,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::quantized_convolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::quantized_convolutional_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::quantized_convolutional_layer> &construct) {
     size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -387,8 +389,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::quantized_deconvolutional_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::quantized_deconvolutional_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::quantized_deconvolutional_layer> &construct) {
     size_t w_width, w_height, out_ch, w_stride, h_stride;
     bool has_bias;
     tiny_dnn::shape3d in;
@@ -414,8 +416,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::quantized_fully_connected_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::quantized_fully_connected_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::quantized_fully_connected_layer> &construct) {
     size_t in_dim, out_dim;
     bool has_bias;
 
@@ -430,7 +432,8 @@ template <>
 struct LoadAndConstruct<tiny_dnn::recurrent_cell_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::recurrent_cell_layer> &construct) {
+      Archive &ar,
+      cereal::construct<tiny_dnn::recurrent_cell_layer> &construct) {
     size_t in_dim, out_dim;
     bool has_bias;
 
@@ -442,7 +445,7 @@ struct LoadAndConstruct<tiny_dnn::recurrent_cell_layer> {
     construct(in_dim, out_dim, has_bias, nullptr);
     // set the activation to the loaded value
     construct->set_activation(
-      std::static_pointer_cast<tiny_dnn::activation_layer>(al));
+        std::static_pointer_cast<tiny_dnn::activation_layer>(al));
   }
 };
 
@@ -450,7 +453,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::slice_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::slice_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::slice_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::slice_type slice_type;
     size_t num_outputs;
@@ -466,7 +469,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::sigmoid_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::sigmoid_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::sigmoid_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -478,7 +481,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::tanh_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::tanh_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::tanh_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -490,7 +493,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::relu_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::relu_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::relu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -502,7 +505,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::softmax_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::softmax_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::softmax_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -514,7 +517,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::leaky_relu_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::leaky_relu_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::leaky_relu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t epsilon;
 
@@ -529,7 +532,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::selu_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::selu_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::selu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t lambda;
     tiny_dnn::float_t alpha;
@@ -545,10 +548,13 @@ template <>
 struct LoadAndConstruct<tiny_dnn::elu_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
-    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
-    construct(in_shape);
+    tiny_dnn::float_t alpha;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape),
+                  ::detail::make_nvp("alpha", alpha));
+    construct(in_shape, alpha);
   }
 };
 
@@ -556,7 +562,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::tanh_p1m2_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::tanh_p1m2_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::tanh_p1m2_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -568,7 +574,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::softplus_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::softplus_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::softplus_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     tiny_dnn::float_t beta;
     tiny_dnn::float_t threshold;
@@ -584,7 +590,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::softsign_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar, cereal::construct<tiny_dnn::softsign_layer> &construct) {
+      Archive &ar, cereal::construct<tiny_dnn::softsign_layer> &construct) {
     tiny_dnn::shape3d in_shape;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
@@ -770,7 +776,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-    Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
+      Archive &ar, tiny_dnn::quantized_deconvolutional_layer &layer) {
     auto &params_ = layer.params_;
     ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in),
                   ::detail::make_nvp("window_width", params_.weight.width_),
@@ -785,7 +791,7 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(
-    Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
+      Archive &ar, tiny_dnn::quantized_fully_connected_layer &layer) {
     auto &params_ = layer.params_;
     ::detail::arc(ar, ::detail::make_nvp("in_size", params_.in_size_),
                   ::detail::make_nvp("out_size", params_.out_size_),
@@ -837,8 +843,8 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
-    tiny_dnn::shape3d shape = layer.in_shape()[0];
-    ::detail::arc(ar, ::detail::make_nvp("in_size", shape));
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]),
+                  ::detail::make_nvp("alpha", layer.alpha_));
   }
 
   template <class Archive>
@@ -872,7 +878,7 @@ template <class Archive, typename T>
 typename std::enable_if<std::is_base_of<tiny_dnn::layer, T>::value>::type
 serialize(Archive &ar, T &layer) {
   auto &inconstant_layer =
-    const_cast<typename std::remove_const<T>::type &>(layer);
+      const_cast<typename std::remove_const<T>::type &>(layer);
   inconstant_layer.serialize_prolog(ar);
   serialization_buddy::serialize(ar, inconstant_layer);
 }
