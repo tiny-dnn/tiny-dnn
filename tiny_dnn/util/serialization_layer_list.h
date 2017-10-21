@@ -11,8 +11,7 @@
 
 namespace tiny_dnn {
 
-template <typename T>
-void register_layers(T* h) {
+template <typename T> void register_layers(T *h) {
   h->template register_layer<elementwise_add_layer>("elementwise_add");
   h->template register_layer<average_pooling_layer>("avepool");
   h->template register_layer<average_unpooling_layer>("aveunpool");
@@ -49,4 +48,4 @@ void register_layers(T* h) {
   h->template register_layer<selu_layer>("selu");
 }
 
-}  // namespace tiny_dnn
+} // namespace tiny_dnn
