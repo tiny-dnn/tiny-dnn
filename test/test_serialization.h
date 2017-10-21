@@ -18,7 +18,7 @@
 namespace tiny_dnn {
 
 inline void check_sequential_network_model_serialization(
-    const network<sequential>& net) {
+  const network<sequential>& net) {
   auto path = unique_path();
   network<sequential> net2;
   net.save(path, content_type::model);

@@ -12,7 +12,7 @@
 namespace tiny_dnn {
 
 template <typename T>
-void register_layers(T *h) {
+void register_layers(T* h) {
   h->template register_layer<elementwise_add_layer>("elementwise_add");
   h->template register_layer<average_pooling_layer>("avepool");
   h->template register_layer<average_unpooling_layer>("aveunpool");
@@ -23,7 +23,7 @@ void register_layers(T *h) {
   h->template register_layer<dropout_layer>("dropout");
   h->template register_layer<fully_connected_layer>("fully_connected");
   h->template register_layer<global_average_pooling_layer>(
-      "global_average_pooling");
+    "global_average_pooling");
   h->template register_layer<input_layer>("input");
   h->template register_layer<linear_layer>("linear");
   h->template register_layer<lrn_layer>("lrn");
@@ -33,7 +33,7 @@ void register_layers(T *h) {
   h->template register_layer<quantized_convolutional_layer>("q_conv");
   h->template register_layer<quantized_deconvolutional_layer>("q_deconv");
   h->template register_layer<quantized_fully_connected_layer>(
-      "q_fully_connected");
+    "q_fully_connected");
   h->template register_layer<recurrent_cell_layer>("recurrent_cell");
   h->template register_layer<slice_layer>("slice");
 
