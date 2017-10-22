@@ -220,13 +220,13 @@ TEST(batchnorm, forward) {
     /* y = (x - mean) ./ sqrt(variance + eps) */
     tensor_t expect = {
         {
-            0.0,    0.0,    0.0,   0.0,    // ch-0 of data#0
-           -1.225,  0.408,  0.0,   1.225,  // ch-1 of data#0
-           -0.573, -0.879, -0.573, 0.038,  // ch-2 of data#0
+           (float_t) 0.0,   (float_t) 0.0,   (float_t) 0.0,   (float_t)0.0,    // ch-0 of data#0
+           (float_t)-1.225, (float_t) 0.408, (float_t) 0.0,   (float_t)1.225,  // ch-1 of data#0
+           (float_t)-0.573, (float_t)-0.879, (float_t)-0.573, (float_t)0.038,  // ch-2 of data#0
         }, {
-            0.0,   0.0,    0.0,    0.0,    // ch-0 of data#1
-            1.225, 0.408, -1.225, -0.816,  // ch-1 of data#1
-           -0.268, 0.650, -0.573,  2.179f  // ch-2 of data#1
+           (float_t) 0.0,   (float_t) 0.0,   (float_t) 0.0,   (float_t) 0.0,    // ch-0 of data#1
+           (float_t) 1.225, (float_t) 0.408, (float_t)-1.225, (float_t)-0.816,  // ch-1 of data#1
+           (float_t)-0.268, (float_t) 0.650, (float_t)-0.573, (float_t) 2.179f  // ch-2 of data#1
         }
     };
 
