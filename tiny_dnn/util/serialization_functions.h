@@ -548,8 +548,11 @@ struct LoadAndConstruct<tiny_dnn::elu_layer> {
   static void load_and_construct(
     Archive &ar, cereal::construct<tiny_dnn::elu_layer> &construct) {
     tiny_dnn::shape3d in_shape;
-    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape));
-    construct(in_shape);
+    tiny_dnn::float_t alpha;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape),
+                  ::detail::make_nvp("alpha", alpha));
+    construct(in_shape, alpha);
   }
 };
 
@@ -838,8 +841,8 @@ struct serialization_buddy {
 
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::elu_layer &layer) {
-    tiny_dnn::shape3d shape = layer.in_shape()[0];
-    ::detail::arc(ar, ::detail::make_nvp("in_size", shape));
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]),
+                  ::detail::make_nvp("alpha", layer.alpha_));
   }
 
   template <class Archive>
