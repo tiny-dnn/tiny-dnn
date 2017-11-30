@@ -1008,7 +1008,7 @@ TEST(serialization, graph_model_and_weights) {
   fully_connected_layer f2(2, 2);
   softmax_layer a2(2);
   fully_connected_layer f3(2, 2);
-  elu_layer a3((size_t)2);
+  elu_layer a3(size_t(2));
   elementwise_add_layer c4(2, 2);
 
   f1 << a1 << s1;
