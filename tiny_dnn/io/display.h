@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <chrono>    // for high_resolution_clock, NOLINT
 #include <iostream>  // for ostream, cout, etc
 #include <string>    // for string
 
