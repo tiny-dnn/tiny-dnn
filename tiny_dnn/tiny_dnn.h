@@ -25,6 +25,7 @@
 #include "tiny_dnn/layers/deconvolutional_layer.h"
 #include "tiny_dnn/layers/dropout_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
+#include "tiny_dnn/layers/global_average_pooling_layer.h"
 #include "tiny_dnn/layers/input_layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
 #include "tiny_dnn/layers/lrn_layer.h"
@@ -33,14 +34,17 @@
 #include "tiny_dnn/layers/power_layer.h"
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
+#include "tiny_dnn/layers/recurrent_cell_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
 
 #include "tiny_dnn/activations/elu_layer.h"
 #include "tiny_dnn/activations/leaky_relu_layer.h"
 #include "tiny_dnn/activations/relu_layer.h"
+#include "tiny_dnn/activations/selu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
 #include "tiny_dnn/activations/softmax_layer.h"
 #include "tiny_dnn/activations/softplus_layer.h"
+#include "tiny_dnn/activations/softsign_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/activations/tanh_p1m2_layer.h"
 
@@ -68,6 +72,16 @@
 #ifndef CNN_NO_SERIALIZATION
 #include "tiny_dnn/util/deserialization_helper.h"
 #include "tiny_dnn/util/serialization_helper.h"
+// to allow upcasting
+CEREAL_REGISTER_TYPE(tiny_dnn::elu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::leaky_relu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::relu_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::sigmoid_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softmax_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softplus_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softsign_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::tanh_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::tanh_p1m2_layer)
 #endif  // CNN_NO_SERIALIZATION
 
 // shortcut version of layer names
@@ -85,6 +99,8 @@ using ave_pool = tiny_dnn::average_pooling_layer;
 using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
+
+using recurrent_cell = tiny_dnn::recurrent_cell_layer;
 
 #ifdef CNN_USE_GEMMLOWP
 using q_fc = tiny_dnn::quantized_fully_connected_layer;
@@ -126,9 +142,13 @@ using leaky_relu = tiny_dnn::leaky_relu_layer;
 
 using elu = tiny_dnn::elu_layer;
 
+using selu = tiny_dnn::selu_layer;
+
 using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
 
 using softplus = tiny_dnn::softplus_layer;
+
+using softsign = tiny_dnn::softsign_layer;
 
 }  // namespace activation
 

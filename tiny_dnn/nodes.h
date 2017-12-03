@@ -7,8 +7,10 @@
 */
 #pragma once
 
+#include <memory>
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #ifndef CNN_NO_SERIALIZATION
@@ -30,7 +32,7 @@ void save(Archive &ar, const std::vector<tiny_dnn::layer *> &v) {
     tiny_dnn::layer::save_layer(ar, *n);
   }
 #else
-  throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+  throw tiny_dnn::nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
 }
 
@@ -44,7 +46,7 @@ void load(Archive &ar, std::vector<std::shared_ptr<tiny_dnn::layer>> &v) {
     v.emplace_back(tiny_dnn::layer::load_layer(ar));
   }
 #else
-  throw tiny_dnn::nn_error("TinyDNN was not built with Serialization support");
+  throw tiny_dnn::nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
 }
 
@@ -98,9 +100,9 @@ class nodes {
   /**
    * update weights and clear all gradients
    **/
-  virtual void update_weights(optimizer *opt, int batch_size) {
+  virtual void update_weights(optimizer *opt) {
     for (auto l : nodes_) {
-      l->update_weight(opt, batch_size);
+      l->update_weight(opt);
     }
   }
 
@@ -126,8 +128,8 @@ class nodes {
   const_iterator end() const { return nodes_.end(); }
   layer *operator[](size_t index) { return nodes_[index]; }
   const layer *operator[](size_t index) const { return nodes_[index]; }
-  serial_size_t in_data_size() const { return nodes_.front()->in_data_size(); }
-  serial_size_t out_data_size() const { return nodes_.back()->out_data_size(); }
+  size_t in_data_size() const { return nodes_.front()->in_data_size(); }
+  size_t out_data_size() const { return nodes_.back()->out_data_size(); }
 
   template <typename T>
   const T &at(size_t index) const {
@@ -175,13 +177,11 @@ class nodes {
     }
   }
 
-  void label2vec(const label_t *t,
-                 serial_size_t num,
-                 std::vector<vec_t> &vec) const {
-    serial_size_t outdim = out_data_size();
+  void label2vec(const label_t *t, size_t num, std::vector<vec_t> &vec) const {
+    size_t outdim = out_data_size();
 
     vec.reserve(num);
-    for (serial_size_t i = 0; i < num; i++) {
+    for (size_t i = 0; i < num; i++) {
       assert(t[i] < outdim);
       vec.emplace_back(outdim, target_value_min());
       vec.back()[t[i]] = target_value_max();
@@ -190,8 +190,7 @@ class nodes {
 
   void label2vec(const std::vector<label_t> &labels,
                  std::vector<vec_t> &vec) const {
-    return label2vec(&labels[0], static_cast<serial_size_t>(labels.size()),
-                     vec);
+    return label2vec(&labels[0], labels.size(), vec);
   }
 
   template <typename OutputArchive>
@@ -318,7 +317,7 @@ class sequential : public nodes {
   }
 
   void check_connectivity() {
-    for (serial_size_t i = 0; i < nodes_.size() - 1; i++) {
+    for (size_t i = 0; i < nodes_.size() - 1; i++) {
       auto out = nodes_[i]->outputs();
       auto in  = nodes_[i + 1]->inputs();
 
@@ -331,7 +330,7 @@ class sequential : public nodes {
   template <typename InputArchive>
   void load_connections(InputArchive &ia) {
     CNN_UNREFERENCED_PARAMETER(ia);
-    for (serial_size_t i = 0; i < nodes_.size() - 1; i++) {
+    for (size_t i = 0; i < nodes_.size() - 1; i++) {
       auto head = nodes_[i];
       auto tail = nodes_[i + 1];
       connect(head, tail, 0, 0);
@@ -455,19 +454,19 @@ class graph : public nodes {
   friend class nodes;
 
   struct _graph_connection {
-    void add_connection(serial_size_t head,
-                        serial_size_t tail,
-                        serial_size_t head_index,
-                        serial_size_t tail_index) {
+    void add_connection(size_t head,
+                        size_t tail,
+                        size_t head_index,
+                        size_t tail_index) {
       if (!is_connected(head, tail, head_index, tail_index)) {
         connections.emplace_back(head, tail, head_index, tail_index);
       }
     }
 
-    bool is_connected(serial_size_t head,
-                      serial_size_t tail,
-                      serial_size_t head_index,
-                      serial_size_t tail_index) const {
+    bool is_connected(size_t head,
+                      size_t tail,
+                      size_t head_index,
+                      size_t tail_index) const {
       return std::find(connections.begin(), connections.end(),
                        std::make_tuple(head, tail, head_index, tail_index)) !=
              connections.end();
@@ -482,18 +481,16 @@ class graph : public nodes {
 #endif  // CNN_NO_SERIALIZATION
     }
 
-    std::vector<
-      std::tuple<serial_size_t, serial_size_t, serial_size_t, serial_size_t>>
-      connections;
-    std::vector<serial_size_t> in_nodes, out_nodes;
+    std::vector<std::tuple<size_t, size_t, size_t, size_t>> connections;
+    std::vector<size_t> in_nodes, out_nodes;
   };
 
   template <typename OutputArchive>
   void save_connections(OutputArchive &oa) const {
 #ifndef CNN_NO_SERIALIZATION
     _graph_connection gc;
-    std::unordered_map<node *, serial_size_t> node2id;
-    serial_size_t idx = 0;
+    std::unordered_map<node *, size_t> node2id;
+    size_t idx = 0;
 
     for (auto n : nodes_) {
       node2id[n] = idx++;
@@ -508,11 +505,11 @@ class graph : public nodes {
     for (auto l : input_layers_) {
       graph_traverse(l, [=](layer &l) { CNN_UNREFERENCED_PARAMETER(l); },
                      [&](edge &e) {
-                       auto next                = e.next();
-                       serial_size_t head_index = e.prev()->next_port(e);
+                       auto next         = e.next();
+                       size_t head_index = e.prev()->next_port(e);
 
                        for (auto n : next) {
-                         serial_size_t tail_index = n->prev_port(e);
+                         size_t tail_index = n->prev_port(e);
                          gc.add_connection(node2id[e.prev()], node2id[n],
                                            head_index, tail_index);
                        }
@@ -532,7 +529,7 @@ class graph : public nodes {
     ia(cereal::make_nvp("graph", gc));
 
     for (auto c : gc.connections) {
-      serial_size_t head, tail, head_index, tail_index;
+      size_t head, tail, head_index, tail_index;
       std::tie(head, tail, head_index, tail_index) = c;
       connect(nodes_[head], nodes_[tail], head_index, tail_index);
     }
@@ -571,8 +568,8 @@ class graph : public nodes {
     return merged;
   }
 
-  serial_size_t find_index(const std::vector<node *> &nodes, layer *target) {
-    for (serial_size_t i = 0; i < nodes.size(); i++) {
+  size_t find_index(const std::vector<node *> &nodes, layer *target) {
+    for (size_t i = 0; i < nodes.size(); i++) {
       if (nodes[i] == static_cast<node *>(&*target)) return i;
     }
     throw nn_error("invalid connection");

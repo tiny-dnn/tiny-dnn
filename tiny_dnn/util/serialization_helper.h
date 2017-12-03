@@ -7,13 +7,14 @@
 */
 #pragma once
 
-#include <cereal/archives/json.hpp>
-#include <cereal/types/memory.hpp>
 #include <functional>
 #include <map>
 #include <memory>
 #include <string>
 #include <typeindex>
+
+#include <cereal/archives/json.hpp>
+#include <cereal/types/memory.hpp>
 
 #include "tiny_dnn/layers/layers.h"
 #include "tiny_dnn/util/macro.h"
@@ -96,7 +97,6 @@ class serialization_helper {
   }
 
   serialization_helper() { register_layers(this); }
-
 };  // class serialization_helper
 
 template <typename OutputArchive>
@@ -117,9 +117,9 @@ void layer::save_layer(OutputArchive &oa, const layer &l) {
 
 template <class Archive>
 void layer::serialize_prolog(Archive &ar) {
-  ar(cereal::make_nvp(
-    "type",
-    serialization_helper<Archive>::get_instance().type_name(typeid(*this))));
+  std::string name =
+    serialization_helper<Archive>::get_instance().type_name(typeid(*this));
+  ar(cereal::make_nvp("type", name));
 }
 
 }  // namespace tiny_dnn

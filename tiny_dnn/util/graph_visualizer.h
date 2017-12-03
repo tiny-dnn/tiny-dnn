@@ -1,4 +1,4 @@
-﻿/*
+/*
     Copyright (c) 2013, Taiga Nomi and the respective contributors
     All rights reserved.
 
@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/network.h"
@@ -74,8 +78,8 @@ class graph_visualizer {
     auto prev = e.prev();
 
     for (auto n : next) {
-      serial_size_t dst_port = n->prev_port(e);
-      serial_size_t src_port = prev->next_port(e);
+      size_t dst_port = n->prev_port(e);
+      size_t src_port = prev->next_port(e);
       stream << "  " << node2name[prev] << ":out" << src_port << " -> "
              << node2name[n] << ":in" << dst_port << ";" << std::endl;
     }

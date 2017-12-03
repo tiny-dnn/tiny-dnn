@@ -7,6 +7,11 @@
 */
 #pragma once
 
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/product.h"
 
@@ -23,10 +28,10 @@ class quantized_fully_connected_layer : public layer {
    * @param has_bias [in] whether to include additional bias to the layer
    **/
   quantized_fully_connected_layer(
-    serial_size_t in_dim,
-    serial_size_t out_dim,
-    bool has_bias          = true,
-    backend_t backend_type = core::backend_t::internal)
+    size_t in_dim,
+    size_t out_dim,
+    bool has_bias                = true,
+    core::backend_t backend_type = core::backend_t::internal)
     : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
@@ -38,23 +43,23 @@ class quantized_fully_connected_layer : public layer {
     init_backend(core::backend_t::internal);
   }
 
-  serial_size_t fan_in_size() const override { return params_.in_size_; }
+  size_t fan_in_size() const override { return params_.in_size_; }
 
-  serial_size_t fan_out_size() const override { return params_.out_size_; }
+  size_t fan_out_size() const override { return params_.out_size_; }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     if (params_.has_bias_) {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),
-              index3d<serial_size_t>(params_.out_size_, 1, 1)};
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),
+              index3d<size_t>(params_.out_size_, 1, 1)};
     } else {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1)};
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1)};
     }
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
@@ -79,21 +84,19 @@ class quantized_fully_connected_layer : public layer {
   friend struct serialization_buddy;
 
  protected:
-  fully_params params_;
+  core::fully_params params_;
 
-  void set_params(const serial_size_t in_size,
-                  const serial_size_t out_size,
-                  bool has_bias) {
+  void set_params(const size_t in_size, const size_t out_size, bool has_bias) {
     params_.in_size_  = in_size;
     params_.out_size_ = out_size;
     params_.has_bias_ = has_bias;
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     std::shared_ptr<core::backend> backend = nullptr;
 
     // allocate new backend
-    if (backend_type == backend_t::internal) {
+    if (backend_type == core::backend_t::internal) {
       backend = std::make_shared<core::tiny_backend>(&params_);
     } else {
       throw nn_error("Not supported backend type.");

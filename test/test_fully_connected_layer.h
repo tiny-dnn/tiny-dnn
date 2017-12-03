@@ -6,142 +6,38 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <functional>
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
-TEST(fully_connected, train) {
-  network<sequential> nn;
-  adagrad optimizer;
-
-  nn << fully_connected_layer(3, 2) << sigmoid();
-
-  vec_t a(3), t(2), a2(3), t2(2);
-
-  // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
-
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
-  // clang-format on
-
-  std::vector<vec_t> data, train;
-
-  for (int i = 0; i < 100; i++) {
-    data.push_back(a);
-    data.push_back(a2);
-    train.push_back(t);
-    train.push_back(t2);
-  }
-  optimizer.alpha = 0.1f;
-  nn.train<mse>(optimizer, data, train, 1, 10);
-
-  vec_t predicted = nn.predict(a);
-
-  EXPECT_NEAR(predicted[0], t[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t[1], 1E-5);
-
-  predicted = nn.predict(a2);
-
-  EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-5);
-}
-
-TEST(fully_connected, train_different_batches) {
-  auto batch_sizes = {2, 7, 10, 12};
-  size_t data_size = std::accumulate(batch_sizes.begin(), batch_sizes.end(), 1,
-                                     std::multiplies<int>());
-  for (auto &batch_sz : batch_sizes) {
-    network<sequential> nn;
-    adagrad optimizer;
-
-    nn << fully_connected_layer(3, 2) << sigmoid();
-
-    vec_t a(3), t(2), a2(3), t2(2);
-
-    // clang-format off
-    a[0] = 3.0f; a[1] = 0.0f; a[2] = -1.0f;
-    t[0] = 0.3f; t[1] = 0.7f;
-
-    a2[0] = 0.2f; a2[1] = 0.5f; a2[2] = 4.0f;
-    t2[0] = 0.5f; t2[1] = 0.1f;
-    // clang-format on
-
-    std::vector<vec_t> data, train;
-
-    for (size_t i = 0; i < data_size; i++) {
-      data.push_back(a);
-      data.push_back(a2);
-      train.push_back(t);
-      train.push_back(t2);
-    }
-    optimizer.alpha = 0.1f;
-    nn.train<mse>(optimizer, data, train, batch_sz, 10);
-
-    vec_t predicted = nn.predict(a);
-
-    EXPECT_NEAR(predicted[0], t[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t[1], 1E-5);
-
-    predicted = nn.predict(a2);
-
-    EXPECT_NEAR(predicted[0], t2[0], 1E-5);
-    EXPECT_NEAR(predicted[1], t2[1], 1E-5);
-  }
-}
-
-TEST(fully_connected, train2) {
-  network<sequential> nn;
-  gradient_descent optimizer;
-
-  nn << fully_connected_layer(4, 6) << tanh() << fully_connected_layer(6, 3)
-     << tanh();
-
-  vec_t a(4, 0.0), t(3, 0.0), a2(4, 0.0), t2(3, 0.0);
-
-  // clang-format off
-    a[0] = 3.0f; a[1] = 1.0f; a[2] = -1.0f; a[3] = 4.0f;
-    t[0] = 0.3f; t[1] = 0.7f; t[2] = 0.3f;
-
-    a2[0] = 1.0f; a2[1] = 0.0f; a2[2] = 4.0f; a2[3] = 2.0f;
-    t2[0] = 0.6f; t2[1] = 0.0f; t2[2] = 0.1f;
-  // clang-format on
-
-  std::vector<vec_t> data, train;
-
-  for (int i = 0; i < 100; i++) {
-    data.push_back(a);
-    data.push_back(a2);
-    train.push_back(t);
-    train.push_back(t2);
-  }
-  optimizer.alpha = 0.1f;
-  nn.train<mse>(optimizer, data, train, 1, 10);
-
-  vec_t predicted = nn.predict(a);
-
-  EXPECT_NEAR(predicted[0], t[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t[1], 1E-4);
-
-  predicted = nn.predict(a2);
-
-  EXPECT_NEAR(predicted[0], t2[0], 1E-4);
-  EXPECT_NEAR(predicted[1], t2[1], 1E-4);
-}
-
 TEST(fully_connected, gradient_check) {
-  network<sequential> nn;
-  nn << fully_connected_layer(50, 10) << tanh();
-
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
-  nn.init_weight();
-  EXPECT_TRUE(nn.gradient_check<mse>(test_data.first, test_data.second,
-                                     epsilon<float_t>(), GRAD_CHECK_ALL));
+  const size_t in_size  = 50;
+  const size_t out_size = 10;
+  fully_connected_layer fc(in_size, out_size);
+  std::vector<tensor_t> input_data =
+    generate_test_data({1, 1, 1}, {in_size, in_size * out_size, out_size});
+  std::vector<tensor_t> in_grad  = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({1}, {out_size});
+  std::vector<tensor_t> out_grad = generate_test_data({1}, {out_size});
+  const size_t trials            = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge  = uniform_idx(input_data);
+    const size_t in_idx   = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx  = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(fc, input_data, in_edge, in_idx, out_data,
+                                     out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(fc, input_data, in_edge, in_idx,
+                                        out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
 }
 
 TEST(fully_connected, read_write) {
@@ -156,7 +52,7 @@ TEST(fully_connected, read_write) {
 
 TEST(fully_connected, forward) {
   fully_connected_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -176,7 +72,7 @@ TEST(fully_connected, forward) {
 TEST(fully_connected, forward_nnp) {
   nnp_initialize();
   fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
-  EXPECT_EQ(l.in_channels(), size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -193,7 +89,7 @@ TEST(fully_connected, forward_nnp) {
 
 TEST(fully_connected, forward_nobias) {
   fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), serial_size_t(2));  // in and W
+  EXPECT_EQ(l.in_channels(), 2u);  // in and W
 
   l.weight_init(weight_init::constant(1.0));
 
@@ -208,4 +104,4 @@ TEST(fully_connected, forward_nobias) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

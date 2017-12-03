@@ -6,38 +6,35 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(quantized_deconvolutional, setup_internal) {
   quantized_deconvolutional_layer l(2, 2, 3, 1, 2, padding::valid, true, 1, 1,
-                                    backend_t::internal);
+                                    core::backend_t::internal);
 
-  EXPECT_EQ(l.parallelize(), true);              // if layer can be parallelized
-  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // num of input tensors
-  EXPECT_EQ(l.out_channels(), serial_size_t(1));    // num of output tensors
-  EXPECT_EQ(l.in_data_size(), serial_size_t(4));    // size of input tensors
-  EXPECT_EQ(l.out_data_size(), serial_size_t(32));  // size of output tensors
-  EXPECT_EQ(l.in_data_shape().size(),
-            serial_size_t(1));  // number of inputs shapes
-  EXPECT_EQ(l.out_data_shape().size(),
-            serial_size_t(1));                      // num of output shapes
-  EXPECT_EQ(l.weights().size(), serial_size_t(2));  // the wieghts vector size
-  EXPECT_EQ(l.weights_grads().size(),
-            serial_size_t(2));                       // the wieghts vector size
-  EXPECT_EQ(l.inputs().size(), serial_size_t(3));    // num of input edges
-  EXPECT_EQ(l.outputs().size(), serial_size_t(1));   // num of outpus edges
-  EXPECT_EQ(l.in_types().size(), serial_size_t(3));  // num of input data types
-  EXPECT_EQ(l.out_types().size(),
-            serial_size_t(1));                   // num of output data types
-  EXPECT_EQ(l.fan_in_size(), serial_size_t(9));  // num of incoming connections
-  EXPECT_EQ(l.fan_out_size(),
-            serial_size_t(18));  // num of outgoing connections
+  EXPECT_EQ(l.parallelize(), true);          // if layer can be parallelized
+  EXPECT_EQ(l.in_channels(), 3u);            // num of input tensors
+  EXPECT_EQ(l.out_channels(), 1u);           // num of output tensors
+  EXPECT_EQ(l.in_data_size(), 4u);           // size of input tensors
+  EXPECT_EQ(l.out_data_size(), 32u);         // size of output tensors
+  EXPECT_EQ(l.in_data_shape().size(), 1u);   // number of inputs shapes
+  EXPECT_EQ(l.out_data_shape().size(), 1u);  // num of output shapes
+  EXPECT_EQ(l.weights().size(), 2u);         // the wieghts vector size
+  EXPECT_EQ(l.weights_grads().size(), 2u);   // the wieghts vector size
+  EXPECT_EQ(l.inputs().size(), 3u);          // num of input edges
+  EXPECT_EQ(l.outputs().size(), 1u);         // num of outpus edges
+  EXPECT_EQ(l.in_types().size(), 3u);        // num of input data types
+  EXPECT_EQ(l.out_types().size(), 1u);       // num of output data types
+  EXPECT_EQ(l.fan_in_size(), 9u);            // num of incoming connections
+  EXPECT_EQ(l.fan_out_size(), 18u);          // num of outgoing connections
   EXPECT_STREQ(l.layer_type().c_str(), "q_deconv");  // string with layer type
 }
 
@@ -60,7 +57,7 @@ TEST(quantized_deconvolutional, fprop) {
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-  ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18));  // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -73,17 +70,17 @@ TEST(quantized_deconvolutional, fprop) {
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1E-3);
+    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
-    weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
-    weight[3] = 0.0f;  weight[4] =-0.1f; weight[5] =-0.1f;
-    weight[6] = 0.05f; weight[7] =-0.2f; weight[8] = 0.05f;
+    weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+    weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+    weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
 
-    weight[9]  = 0.0f; weight[10] =-0.1f; weight[11] = 0.1f;
-    weight[12] = 0.1f; weight[13] =-0.2f; weight[14] = 0.3f;
-    weight[15] = 0.2f; weight[16] =-0.3f; weight[17] = 0.2f;
+    weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+    weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+    weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
 
     in[0] = 3;  in[1] = 2;
     in[2] = 3;  in[3] = 0;
@@ -91,22 +88,22 @@ TEST(quantized_deconvolutional, fprop) {
     {
         l.forward_propagation(in_data, out_data);
 
-        EXPECT_NEAR(0.9017647, out[0], 1E-2);
-        EXPECT_NEAR(0.9017647, out[1], 1E-2);
-        EXPECT_NEAR(0.8049019, out[2], 1E-2);
-        EXPECT_NEAR(0.4025490, out[3], 1E-2);
-        EXPECT_NEAR(0.9017647, out[4], 1E-2);
-        EXPECT_NEAR(0.0001960, out[5], 1E-2);
-        EXPECT_NEAR(0.1045097, out[6], 1E-2);
-        EXPECT_NEAR(-0.200980, out[7], 1E-2);
-        EXPECT_NEAR(0.1566666, out[8], 1E-2);
-        EXPECT_NEAR(-0.797058, out[9], 1E-2);
-        EXPECT_NEAR(-0.551176, out[10], 1E-2);
-        EXPECT_NEAR(0.1045097, out[11], 1E-2);
-        EXPECT_NEAR(0.1566666, out[12], 1E-2);
-        EXPECT_NEAR(-0.603333, out[13], 1E-2);
-        EXPECT_NEAR(0.1566666, out[14], 1E-2);
-        EXPECT_NEAR(0.0001960, out[15], 1E-2);
+        EXPECT_NEAR(0.9017647, out[0], 1e-2);
+        EXPECT_NEAR(0.9017647, out[1], 1e-2);
+        EXPECT_NEAR(0.8049019, out[2], 1e-2);
+        EXPECT_NEAR(0.4025490, out[3], 1e-2);
+        EXPECT_NEAR(0.9017647, out[4], 1e-2);
+        EXPECT_NEAR(0.0001960, out[5], 1e-2);
+        EXPECT_NEAR(0.1045097, out[6], 1e-2);
+        EXPECT_NEAR(-0.200980, out[7], 1e-2);
+        EXPECT_NEAR(0.1566666, out[8], 1e-2);
+        EXPECT_NEAR(-0.797058, out[9], 1e-2);
+        EXPECT_NEAR(-0.551176, out[10], 1e-2);
+        EXPECT_NEAR(0.1045097, out[11], 1e-2);
+        EXPECT_NEAR(0.1566666, out[12], 1e-2);
+        EXPECT_NEAR(-0.603333, out[13], 1e-2);
+        EXPECT_NEAR(0.1566666, out[14], 1e-2);
+        EXPECT_NEAR(0.0001960, out[15], 1e-2);
     }
   // clang-format on
 }
@@ -129,7 +126,7 @@ TEST(quantized_deconvolutional, fprop2) {
   // short-hand references to the payload vectors
   vec_t &in = in_tensor[0], &out = out_tensor[0], &weight = weight_tensor[0];
 
-  ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18));  // weight
+  ASSERT_EQ(l.in_shape()[1].size(), 18u);  // weight
 
   uniform_rand(in.begin(), in.end(), -1.0, 1.0);
 
@@ -143,17 +140,17 @@ TEST(quantized_deconvolutional, fprop2) {
   {
     l.forward_propagation(in_data, out_data);
 
-    for (auto o : out) EXPECT_NEAR(0.0, o, 1E-3);
+    for (auto o : out) EXPECT_NEAR(0.0, o, 1e-3);
   }
 
   // clang-format off
-  weight[0] = 0.3f;  weight[1] = 0.1f; weight[2] = 0.2f;
-  weight[3] = 0.0f;  weight[4] =-0.1f; weight[5] =-0.1f;
-  weight[6] = 0.05f; weight[7] =-0.2f; weight[8] = 0.05f;
+  weight[0] = 0.3;  weight[1] = 0.1; weight[2] = 0.2;
+  weight[3] = 0.0;  weight[4] =-0.1; weight[5] =-0.1;
+  weight[6] = 0.05; weight[7] =-0.2; weight[8] = 0.05;
 
-  weight[9]  = 0.0f; weight[10] =-0.1f; weight[11] = 0.1f;
-  weight[12] = 0.1f; weight[13] =-0.2f; weight[14] = 0.3f;
-  weight[15] = 0.2f; weight[16] =-0.3f; weight[17] = 0.2f;
+  weight[9]  = 0.0; weight[10] =-0.1; weight[11] = 0.1;
+  weight[12] = 0.1; weight[13] =-0.2; weight[14] = 0.3;
+  weight[15] = 0.2; weight[16] =-0.3; weight[17] = 0.2;
 
   in[0] = 3;  in[1] = 2;
   in[2] = 3;  in[3] = 0;
@@ -161,22 +158,22 @@ TEST(quantized_deconvolutional, fprop2) {
   {
     l.forward_propagation(in_data, out_data);
 
-    EXPECT_NEAR(0.0001960, out[0], 1E-2);
-    EXPECT_NEAR(0.1045097, out[1], 1E-2);
-    EXPECT_NEAR(-0.797058, out[2], 1E-2);
-    EXPECT_NEAR(-0.551176, out[3], 1E-2);
-    EXPECT_NEAR(-0.707647, out[4], 1E-2);
-    EXPECT_NEAR(0.8049019, out[5], 1E-2);
-    EXPECT_NEAR(-0.797058, out[6], 1E-2);
-    EXPECT_NEAR(1.1029412, out[7], 1E-2);
-    EXPECT_NEAR(0.1566666, out[8], 1E-2);
-    EXPECT_NEAR(-0.797058, out[9], 1E-2);
-    EXPECT_NEAR(-0.551176, out[10], 1E-2);
-    EXPECT_NEAR(0.1045097, out[11], 1E-2);
-    EXPECT_NEAR(0.1566666, out[12], 1E-2);
-    EXPECT_NEAR(-0.603333, out[13], 1E-2);
-    EXPECT_NEAR(0.1566666, out[14], 1E-2);
-    EXPECT_NEAR(0.0001960, out[15], 1E-2);
+    EXPECT_NEAR(0.0001960, out[0], 1e-2);
+    EXPECT_NEAR(0.1045097, out[1], 1e-2);
+    EXPECT_NEAR(-0.797058, out[2], 1e-2);
+    EXPECT_NEAR(-0.551176, out[3], 1e-2);
+    EXPECT_NEAR(-0.707647, out[4], 1e-2);
+    EXPECT_NEAR(0.8049019, out[5], 1e-2);
+    EXPECT_NEAR(-0.797058, out[6], 1e-2);
+    EXPECT_NEAR(1.1029412, out[7], 1e-2);
+    EXPECT_NEAR(0.1566666, out[8], 1e-2);
+    EXPECT_NEAR(-0.797058, out[9], 1e-2);
+    EXPECT_NEAR(-0.551176, out[10], 1e-2);
+    EXPECT_NEAR(0.1045097, out[11], 1e-2);
+    EXPECT_NEAR(0.1566666, out[12], 1e-2);
+    EXPECT_NEAR(-0.603333, out[13], 1e-2);
+    EXPECT_NEAR(0.1566666, out[14], 1e-2);
+    EXPECT_NEAR(0.0001960, out[15], 1e-2);
   }
   // clang-format on
 }
@@ -278,4 +275,4 @@ connection_table(connection, 3, 6));
     serialization_test(layer1, layer2);
 }*/
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

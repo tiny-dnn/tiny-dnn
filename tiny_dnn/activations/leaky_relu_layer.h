@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -19,7 +23,7 @@ class leaky_relu_layer : public activation_layer {
    * layer. Connection happens like ( layer1 << act_layer1 ) and shape of this
    * layer is inferred at that time.
    */
-  leaky_relu_layer(const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const float_t epsilon = 0.01)
     : leaky_relu_layer(shape3d(0, 0, 0), epsilon) {}
 
   /**
@@ -29,7 +33,7 @@ class leaky_relu_layer : public activation_layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  leaky_relu_layer(serial_size_t in_dim, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(size_t in_dim, const float_t epsilon = 0.01)
     : leaky_relu_layer(shape3d(in_dim, 1, 1), epsilon) {}
 
   /**
@@ -41,9 +45,9 @@ class leaky_relu_layer : public activation_layer {
    * @param in_height   [in] number of input elements along height
    * @param in_channels [in] number of channels (input elements along depth)
    */
-  leaky_relu_layer(serial_size_t in_width,
-                   serial_size_t in_height,
-                   serial_size_t in_channels,
+  leaky_relu_layer(size_t in_width,
+                   size_t in_height,
+                   size_t in_channels,
                    const float_t epsilon = 0.01)
     : leaky_relu_layer(shape3d(in_width, in_height, in_channels), epsilon) {}
 
@@ -52,14 +56,16 @@ class leaky_relu_layer : public activation_layer {
    *
    * @param in_shape [in] shape of input tensor
    */
-  leaky_relu_layer(const shape3d &in_shape, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const shape3d &in_shape,
+                            const float_t epsilon = 0.01)
     : activation_layer(in_shape), epsilon_(epsilon) {}
 
   /**
    * Construct a leaky ReLU layer given the previous layer.
    * @param prev_layer previous layer
    */
-  leaky_relu_layer(const layer &prev_layer, const float_t epsilon = 0.01)
+  explicit leaky_relu_layer(const layer &prev_layer,
+                            const float_t epsilon = 0.01)
     : activation_layer(prev_layer), epsilon_(epsilon) {}
 
   std::string layer_type() const override { return "leaky-relu-activation"; }
@@ -67,7 +73,7 @@ class leaky_relu_layer : public activation_layer {
   float_t epsilon_value() const { return epsilon_; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] = x[j] > float_t(0) ? x[j] : epsilon_ * x[j];
     }
   }
@@ -76,7 +82,7 @@ class leaky_relu_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of leaky relu)
       dx[j] = dy[j] * (y[j] > float_t(0) ? float_t(1) : epsilon_);
     }

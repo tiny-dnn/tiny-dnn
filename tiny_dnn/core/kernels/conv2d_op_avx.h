@@ -36,11 +36,11 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   auto &tbl       = params.tbl;
   auto w_stride   = params.w_stride;
 
-  const serial_size_t out_area = out.area();
-  serial_size_t oidx           = 0;
-  float bias_scale             = params.has_bias ? 1.0f : 0.0f;
-  const serial_size_t stride   = params.h_stride * in_padded.width_;
-  const serial_size_t inarea   = in_padded.area();
+  const size_t out_area = out.area();
+  size_t oidx           = 0;
+  float bias_scale      = params.has_bias ? 1.0f : 0.0f;
+  const size_t stride   = params.h_stride * in_padded.width_;
+  const size_t inarea   = in_padded.area();
 
   static const __m256i imask = _mm256_setr_epi32(-1, -1, -1, -1, -1, 0, 0, 0);
   // static const __m256 mask = _mm256_castsi256_ps(_mm256_setr_epi32(-1, -1,
@@ -49,13 +49,13 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const __m128 y_bias_scale = _mm_set_ss(bias_scale);
   if (out.height_ == 1 && out.width_ == 1) {
     const float *pw = (const float *)&W[0];
-    for (serial_size_t o = 0; o < out.depth_; ++o) {
+    for (size_t o = 0; o < out.depth_; ++o) {
       __m256 sum0     = _mm256_setzero_ps();
       __m256 sum1     = _mm256_setzero_ps();
       __m256 sum2     = _mm256_setzero_ps();
       __m128 sum3     = _mm_setzero_ps();
       const float *pi = (const float *)&in[0];
-      for (serial_size_t inc = 0; inc < params.in.depth_;
+      for (size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, pi += inarea) {
         if (!tbl.is_connected(o, inc)) {
           continue;
@@ -84,8 +84,8 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       _mm_store_ss(&a[o], _mm_add_ss(hsum, b));
     }
   } else {
-    const serial_size_t nblocks = out.width_ / 4;
-    for (serial_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
+    const size_t nblocks = out.width_ / 4;
+    for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
       float *pa = &a[oidx];
       // init to bias value
       float b = bias[o] * bias_scale;
@@ -109,7 +109,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
           pa[i] = b;
         }
       }
-      for (serial_size_t inc = 0; inc < params.in.depth_; ++inc) {
+      for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
         const float *pw = (const float *)&W[25 * (params.in.depth_ * o + inc)];
@@ -138,7 +138,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         float *ppa = pa;
         if (w_stride == 1) {
           if (nblocks) {
-            for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
+            for (size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
               const float *pi0 = (pi + y * stride);
               const float *pi1 = pi0 + 1 * in_padded.width_;
               const float *pi2 = pi0 + 2 * in_padded.width_;
@@ -205,7 +205,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
                 sum      = _mm_add_ps(sum, hsum0123);
                 _mm_storeu_ps(ppa + i * 4, sum);
               }
-              for (serial_size_t x = nblocks * 4; x < out.width_; ++x) {
+              for (size_t x = nblocks * 4; x < out.width_; ++x) {
                 sum         = _mm_load_ss(&ppa[x]);
                 i0          = _mm256_loadu_ps(pi0 + x);
                 i1          = _mm256_loadu_ps(pi1 + x);
@@ -222,13 +222,13 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
               }     // x loop
             }       // y loop
           } else {  // if (nblocks) {
-            for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
+            for (size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
               const float *pi0 = (pi + y * stride);
               const float *pi1 = pi0 + 1 * in_padded.width_;
               const float *pi2 = pi0 + 2 * in_padded.width_;
               const float *pi3 = pi0 + 3 * in_padded.width_;
               const float *pi4 = pi0 + 4 * in_padded.width_;
-              for (serial_size_t x = 0; x < out.width_; ++x) {
+              for (size_t x = 0; x < out.width_; ++x) {
                 __m128 sum  = _mm_load_ss(&ppa[x]);
                 __m256 i0   = _mm256_loadu_ps(pi0 + x);
                 __m256 i1   = _mm256_loadu_ps(pi1 + x);
@@ -246,13 +246,13 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
             }    // y loop
           }
         } else {  // if (w_stride == 1) {
-          for (serial_size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
+          for (size_t y = 0; y < out.height_; ++y, ppa += out.width_) {
             const float *pi0 = (pi + y * stride);
             const float *pi1 = pi0 + 1 * in_padded.width_;
             const float *pi2 = pi0 + 2 * in_padded.width_;
             const float *pi3 = pi0 + 3 * in_padded.width_;
             const float *pi4 = pi0 + 4 * in_padded.width_;
-            for (serial_size_t x = 0; x < out.width_; ++x) {
+            for (size_t x = 0; x < out.width_; ++x) {
               __m128 sum  = _mm_load_ss(&ppa[x]);
               __m256 i0   = _mm256_loadu_ps(pi0);
               __m256 i1   = _mm256_loadu_ps(pi1);
@@ -297,14 +297,14 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
   const size_t out_area      = out.area();
   double bias_scale          = params.has_bias ? 1.0 : 0.0;
   const __m128d y_bias_scale = _mm_set_sd(bias_scale);
-  serial_size_t oidx         = 0;
+  size_t oidx                = 0;
 
   const size_t in_stride      = params.h_stride * in_padded.width_;
   const size_t in_padded_area = in_padded.area();
 
   if (out.height_ == 1 && out.width_ == 1) {
     const double *pw = &W[0];
-    for (serial_size_t o = 0; o < out.depth_; ++o) {
+    for (size_t o = 0; o < out.depth_; ++o) {
       __m256d sum0 = _mm256_setzero_pd();
       __m256d sum1 = _mm256_setzero_pd();
       __m256d sum2 = _mm256_setzero_pd();
@@ -313,7 +313,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       __m256d sum5 = _mm256_setzero_pd();
       __m128d sum6 = _mm_setzero_pd();
       size_t inidx = 0;
-      for (serial_size_t inc = 0; inc < params.in.depth_;
+      for (size_t inc = 0; inc < params.in.depth_;
            ++inc, pw += 25, inidx += in_padded_area) {
         if (!tbl.is_connected(o, inc)) {
           continue;
@@ -359,7 +359,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
       _mm_store_sd(&a[o], _mm_add_sd(hsum, b));
     }
   } else {
-    for (serial_size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
+    for (size_t o = 0; o < out.depth_; ++o, oidx += out_area) {
       double *pa = &a[oidx];
       double b   = bias[o] * bias_scale;
       {
@@ -383,7 +383,7 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         }
       }
 
-      for (serial_size_t inc = 0; inc < params.in.depth_; ++inc) {
+      for (size_t inc = 0; inc < params.in.depth_; ++inc) {
         if (!tbl.is_connected(o, inc)) continue;
 
         const double *pw =
@@ -402,14 +402,14 @@ void avx_conv2d_5x5_kernel(const core::conv_params &params,
         __m128d w4b = _mm_load_sd(pw + 24);
 
         double *ppa = pa;
-        for (serial_size_t y = 0; y < out.height_;
+        for (size_t y = 0; y < out.height_;
              ++y, pi += in_stride, ppa += out.width_) {
           const double *pi0 = pi + 0 * in_padded.width_;
           const double *pi1 = pi + 1 * in_padded.width_;
           const double *pi2 = pi + 2 * in_padded.width_;
           const double *pi3 = pi + 3 * in_padded.width_;
           const double *pi4 = pi + 4 * in_padded.width_;
-          for (serial_size_t x = 0; x < out.width_; ++x) {
+          for (size_t x = 0; x < out.width_; ++x) {
             __m128d sum   = _mm_load_sd(&ppa[x]);
             __m256d i0a   = _mm256_loadu_pd(pi0);
             __m128d i0b   = _mm_load_sd(pi0 + 4);

@@ -6,10 +6,15 @@
     in the LICENSE file.
 */
 #pragma once
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
-#include "caffe.pb.h"
+
+#include <memory>
+#include <string>
+
+#include "tiny_dnn/io/caffe/caffe.pb.h"
 
 #include "tiny_dnn/io/caffe/layer_factory_impl.h"
 #include "tiny_dnn/lossfunctions/loss_function.h"
@@ -20,11 +25,11 @@
 namespace tiny_dnn {
 
 /**
-* create whole network and load weights from caffe's netparameter
-*
-* @param layer [in] netparameter of caffemodel
-* @param data_shape [in] size of input data (width x height x channels)
-*/
+ * create whole network and load weights from caffe's netparameter
+ *
+ * @param layer [in] netparameter of caffemodel
+ * @param data_shape [in] size of input data (width x height x channels)
+ */
 inline std::shared_ptr<network<sequential>> create_net_from_caffe_net(
   const caffe::NetParameter &layer, const shape3d &data_shape) {
   detail::caffe_layer_vector src_net(layer);

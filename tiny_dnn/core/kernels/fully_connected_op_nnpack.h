@@ -17,7 +17,7 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
                                       const vec_t &W,
                                       const vec_t &bias,
                                       tensor_t &out_data,
-                                      const fully_params &params,
+                                      const core::fully_params &params,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
@@ -27,7 +27,7 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
   const float *input_ptr  = in_data[0].data();
   float *output_ptr       = out_data[0].data();
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   const size_t num_mkl_threads = 1;
   pthreadpool_t threadpool     = pthreadpool_create(num_mkl_threads);
 
@@ -39,12 +39,12 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
     throw nn_error("Could not succeed with nnp_max_pooling_output");
   }
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   pthreadpool_destroy(threadpool);
 
   if (params.has_bias_) {
     for_i(layer_parallelize, params.out_size_,
-          [&](int i) { output_ptr[i] += bias[i]; });
+          [&](size_t i) { output_ptr[i] += bias[i]; });
   }
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);

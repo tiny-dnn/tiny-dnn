@@ -58,12 +58,13 @@ option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
 option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
 option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
 
-option(BUILD_TESTS    "Set to ON to build tests"              OFF)
-option(BUILD_EXAMPLES "Set to ON to build examples"           OFF)
-option(BUILD_DOCS     "Set to ON to build documentation"      OFF)
-option(COVERALLS      "Set to ON to build with code coverage" OFF)
-option(PROFILE        "Set to ON to build with profiling"     OFF)
-option(USE_ASAN       "Set to ON to build with ASan"          OFF)
+option(BUILD_TESTS      "Set to ON to build tests"              OFF)
+option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
+option(BUILD_DOCS       "Set to ON to build documentation"      OFF)
+option(BUILD_BENCHMARKS "Set to ON to build benchmarks"         OFF)
+option(COVERALLS        "Set to ON to build with code coverage" OFF)
+option(PROFILE          "Set to ON to build with profiling"     OFF)
+option(USE_ASAN         "Set to ON to build with ASan"          OFF)
 
 ####
 # Create the library target
@@ -199,13 +200,13 @@ endif()
 ####
 # Setup the compiler options
 
-# set c++ standard to c++11.
+# set c++ standard to c++14.
 # Note: not working on CMake 2.8. We assume that user has
-#       a compiler with C++11 support.
+#       a compiler with C++14 support.
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-message(STATUS "C++11 support has been enabled by default.")
+message(STATUS "C++14 support has been enabled by default.")
 
 include(cotire)
 
@@ -236,7 +237,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR MINGW OR
 
     # include extra flags to the compiler
     # TODO: add info about those flags.
-    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing")
+    set(EXTRA_C_FLAGS "${EXTRA_C_FLAGS} -Wall -Wpedantic -Wno-narrowing -Wno-deprecated")
     set(EXTRA_C_FLAGS_RELEASE "${EXTRA_C_FLAGS_RELEASE} -O3")
     set(EXTRA_C_FLAGS_DEBUG   "${EXTRA_C_FLAGS_DEBUG} -g3 -pthread")
 elseif(MSVC)
@@ -388,6 +389,10 @@ endif(BUILD_TESTS)
 if(BUILD_DOCS)
     add_subdirectory(docs)
 endif(BUILD_DOCS)
+
+if(BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
+endif(BUILD_BENCHMARKS)
 
 ####
 # Configuration summary

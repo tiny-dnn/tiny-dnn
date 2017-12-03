@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -18,7 +22,7 @@ class tanh_layer : public activation_layer {
   std::string layer_type() const override { return "tanh-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] = std::tanh(x[j]);
     }
   }
@@ -27,7 +31,7 @@ class tanh_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of tanh)
       dx[j] = dy[j] * (float_t(1) - sqr(y[j]));
     }

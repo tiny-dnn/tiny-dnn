@@ -6,13 +6,17 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
-TEST(batchnorm, gradient_check) {
+TEST(batchnorm, gradient_check1) {
   size_t num         = 4;
   size_t spatial_dim = 4;
   size_t channels    = 2;
@@ -161,6 +165,35 @@ TEST(batchnorm, gradient_check) {
   }
 }
 
+/*
+TEST(batchnorm, gradient_check2) {
+  size_t num         = 4;
+  size_t spatial_dim = 4;
+  size_t channels    = 2;
+  batch_normalization_layer bn(spatial_dim, channels, );
+
+  std::vector<tensor_t> input_data = generate_test_data({num},
+{spatial_dim*channels});
+  std::vector<tensor_t> in_grad = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({num},
+{spatial_dim*channels});
+  std::vector<tensor_t> out_grad = generate_test_data({num},
+{spatial_dim*channels});
+
+  size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t edge = 0;
+    const size_t idx = uniform_idx(input_data[edge][0]);
+    float_t ngrad = numeric_gradient(bn, input_data, edge, idx, out_data,
+out_grad, edge, idx);
+    float_t cgrad = analytical_gradient(bn, input_data, edge, idx, out_data,
+out_grad, edge, idx);
+    std::cout << "relative error" << relative_error(cgrad, ngrad) << std::endl;
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+*/
+
 TEST(batchnorm, forward) {
   batch_normalization_layer bn(/*spatial-size=*/4, /*channel=*/3);
 
@@ -174,26 +207,26 @@ TEST(batchnorm, forward) {
   // clang-format off
     tensor_t in = {
       {
-         0.0f,  0.0f,  0.0f,  0.0f, // ch-0 of data#0
-        -4.0f,  0.0f, -1.0f,  2.0f, // ch-1 of data#0
-         1.0f,  0.0f,  1.0f,  3.0f, // ch-2 of data#0
+         0.0,  0.0,  0.0,  0.0,  // ch-0 of data#0
+        -4.0,  0.0, -1.0,  2.0,  // ch-1 of data#0
+         1.0,  0.0,  1.0,  3.0,  // ch-2 of data#0
       }, {
-         0.0f,  0.0f,  0.0f,  0.0f,  // ch-0 of data#1  
-         2.0f,  0.0f, -4.0f, -3.0f,  // ch-1 of data#1
-         2.0f,  5.0f,  1.0f, 10.0f   // ch-2 of data#1
+         0.0,  0.0,  0.0,  0.0,  // ch-0 of data#1
+         2.0,  0.0, -4.0, -3.0,  // ch-1 of data#1
+         2.0,  5.0,  1.0, 10.0   // ch-2 of data#1
       }
     };
 
     /* y = (x - mean) ./ sqrt(variance + eps) */
     tensor_t expect = {
         {
-            0.0f,    0.0f,    0.0f,   0.0f,   // ch-0 of data#0
-           -1.225f,  0.408f,  0.0f,   1.225f, // ch-1 of data#0
-           -0.573f, -0.879f, -0.573f, 0.038f, // ch-2 of data#0
-        },{
-            0.0f,   0.0f,    0.0f,    0.0f,  // ch-0 of data#1  
-            1.225f, 0.408f, -1.225f, -0.816f,  // ch-1 of data#1
-           -0.268f, 0.650f, -0.573f,  2.179f   // ch-2 of data#1
+            0.0,    0.0,    0.0,   0.0,    // ch-0 of data#0
+           -1.225,  0.408,  0.0,   1.225,  // ch-1 of data#0
+           -0.573, -0.879, -0.573, 0.038,  // ch-2 of data#0
+        }, {
+            0.0,   0.0,    0.0,    0.0,    // ch-0 of data#1
+            1.225, 0.408, -1.225, -0.816,  // ch-1 of data#1
+           -0.268, 0.650, -0.573,  2.179f  // ch-2 of data#1
         }
     };
 
@@ -229,4 +262,4 @@ TEST(batchnorm, read_write) {
   serialization_test(l1, l2);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

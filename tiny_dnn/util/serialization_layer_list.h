@@ -34,6 +34,7 @@ void register_layers(T* h) {
   h->template register_layer<quantized_deconvolutional_layer>("q_deconv");
   h->template register_layer<quantized_fully_connected_layer>(
     "q_fully_connected");
+  h->template register_layer<recurrent_cell_layer>("recurrent_cell");
   h->template register_layer<slice_layer>("slice");
 
   h->template register_layer<sigmoid_layer>("sigmoid");
@@ -44,6 +45,8 @@ void register_layers(T* h) {
   h->template register_layer<elu_layer>("elu");
   h->template register_layer<tanh_p1m2_layer>("tanh_scaled");
   h->template register_layer<softplus_layer>("softplus");
+  h->template register_layer<softsign_layer>("softsign");
+  h->template register_layer<selu_layer>("selu");
 }
 
 }  // namespace tiny_dnn

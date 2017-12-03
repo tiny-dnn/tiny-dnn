@@ -6,9 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <gtest/gtest.h>
+
+#include <memory>
 #include <sstream>
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -692,7 +697,7 @@ TEST(caffe_converter, sigmoid) {
   sigmoid_layer sig(5);
   sig.forward_activation(in, ret2);
 
-  for (serial_size_t i = 0; i < 5; i++) {
+  for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], ret2[i]);
   }
 }
@@ -729,7 +734,7 @@ TEST(caffe_converter, tanh) {
   tanh_layer tanh(5);
   tanh.forward_activation(in, ret2);
 
-  for (serial_size_t i = 0; i < 5; i++) {
+  for (size_t i = 0; i < 5; i++) {
     EXPECT_FLOAT_EQ(ret[i], ret2[i]);
   }
 }
@@ -986,7 +991,7 @@ TEST(caffe_converter, batchnorm_load_weight_from_caffe_protobinary) {
   auto model       = create_net_from_json(json);
 
   // there should be two tiny_dnn layers
-  EXPECT_EQ(model->depth(), 2);
+  EXPECT_EQ(model->depth(), 2u);
 
   EXPECT_EQ((*model)[0]->layer_type(), "conv");
   EXPECT_EQ((*model)[1]->layer_type(), "batch-norm");
@@ -1026,4 +1031,4 @@ TEST(caffe_converter, batchnorm_load_weight_from_caffe_protobinary) {
   EXPECT_EQ(ser_buf.str(), "0 -1 1 0 1 1 ");
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

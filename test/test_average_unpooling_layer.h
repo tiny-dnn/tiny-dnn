@@ -6,11 +6,11 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -88,6 +88,21 @@ TEST(ave_unpool, forward_stride) {
   }
 }
 
+TEST(ave_unpool, gradient_check) {
+  using loss_func  = cross_entropy;
+  using activation = sigmoid;
+  using network    = network<sequential>;
+
+  network nn;
+  nn << average_pooling_layer(4, 2, 1, 2);  // 4x2 => 2x1
+
+  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  nn.init_weight();
+
+  EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
+                                           epsilon<float_t>(), GRAD_CHECK_ALL));
+}
+
 TEST(ave_unpool, read_write) {
   average_unpooling_layer l1(100, 100, 5, 2);
   average_unpooling_layer l2(100, 100, 5, 2);
@@ -98,4 +113,4 @@ TEST(ave_unpool, read_write) {
   serialization_test(l1, l2);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

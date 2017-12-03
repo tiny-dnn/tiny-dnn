@@ -6,6 +6,11 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <algorithm>
+#include <string>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
@@ -38,7 +43,7 @@ class concat_layer : public layer {
    * @param num_args [in] number of input tensors
    * @param ndim     [in] number of elements for each input
    */
-  concat_layer(serial_size_t num_args, serial_size_t ndim)
+  concat_layer(size_t num_args, size_t ndim)
     : layer(std::vector<vector_type>(num_args, vector_type::data),
             {vector_type::data}),
       in_shapes_(std::vector<shape3d>(num_args, shape3d(ndim, 1, 1))) {
@@ -62,15 +67,14 @@ class concat_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
-    serial_size_t num_samples =
-      static_cast<serial_size_t>((*out_data[0]).size());
+    const size_t num_samples = (*out_data[0]).size();
 
     for_i(num_samples, [&](size_t s) {
       float_t *outs = &(*out_data[0])[s][0];
 
-      for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
+      for (size_t i = 0; i < in_shapes_.size(); i++) {
         const float_t *ins = &(*in_data[i])[s][0];
-        serial_size_t dim  = in_shapes_[i].size();
+        size_t dim         = in_shapes_[i].size();
         outs               = std::copy(ins, ins + dim, outs);
       }
     });
@@ -88,9 +92,9 @@ class concat_layer : public layer {
     for_i(num_samples, [&](size_t s) {
       const float_t *outs = &(*out_grad[0])[s][0];
 
-      for (serial_size_t i = 0; i < in_shapes_.size(); i++) {
-        serial_size_t dim = in_shapes_[i].size();
-        float_t *ins      = &(*in_grad[i])[s][0];
+      for (size_t i = 0; i < in_shapes_.size(); i++) {
+        size_t dim   = in_shapes_[i].size();
+        float_t *ins = &(*in_grad[i])[s][0];
         std::copy(outs, outs + dim, ins);
         outs += dim;
       }

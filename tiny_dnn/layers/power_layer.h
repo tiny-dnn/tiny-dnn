@@ -7,7 +7,10 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <cmath>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
@@ -58,7 +61,7 @@ class power_layer : public layer {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
 
-    for (serial_size_t i = 0; i < x.size(); i++) {
+    for (size_t i = 0; i < x.size(); i++) {
       std::transform(x[i].begin(), x[i].end(), y[i].begin(),
                      [=](float_t x) { return scale_ * std::pow(x, factor_); });
     }
@@ -73,8 +76,8 @@ class power_layer : public layer {
     const tensor_t &x  = *in_data[0];
     const tensor_t &y  = *out_data[0];
 
-    for (serial_size_t i = 0; i < x.size(); i++) {
-      for (serial_size_t j = 0; j < x[i].size(); j++) {
+    for (size_t i = 0; i < x.size(); i++) {
+      for (size_t j = 0; j < x[i].size(); j++) {
         // f(x) = (scale*x)^factor
         // ->
         //   dx = dy * df(x)
@@ -85,8 +88,8 @@ class power_layer : public layer {
         if (std::abs(x[i][j]) > 1e-10) {
           dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
         } else {
-          dx[i][j] =
-            dy[i][j] * scale_ * factor_ * std::pow(x[i][j], factor_ - 1.0f);
+          dx[i][j] = dy[i][j] * scale_ * factor_ *
+                     std::pow(scale_ * x[i][j], factor_ - 1.0);
         }
       }
     }

@@ -7,10 +7,12 @@
 */
 #pragma once
 
-#include <string>
+#include <gtest/gtest.h>
 
-#include "gtest/gtest.h"
-#include "testhelper.h"
+#include <string>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -29,10 +31,10 @@ TEST(global_ave_pool, forward) {
   global_average_pooling_layer l(4, 4, 1);
 
   // clang-format off
-  vec_t in = {0, 1, 2, 3,
-              8, 7, 5, 6,
-              4, 3, 1, 2,
-              0,-1,-2,-3};
+  vec_t in = {0,  1,  2,  3,
+              8,  7,  5,  6,
+              4,  3,  1,  2,
+              0, -1, -2, -3};
   // clang-format on
 
   vec_t expected = {2.25};
@@ -86,20 +88,18 @@ TEST(global_ave_pool, forward_multichannel) {
 TEST(global_ave_pool, backward) {
   global_average_pooling_layer l(4, 4, 1);
   // clang-format off
-  vec_t in = {0, 1, 2, 3,
-              8, 7, 5, 6,
-              4, 3, 1, 2,
-              0,-1,-2,-3};
+  vec_t in = {0,  1,  2,  3,
+              8,  7,  5,  6,
+              4,  3,  1,  2,
+              0, -1, -2, -3};
 
-  vec_t out_grad = {16};
+  vec_t out_grad = { 16 };
 
   vec_t in_grad_expected = {1, 1, 1, 1,
                             1, 1, 1, 1,
                             1, 1, 1, 1,
                             1, 1, 1, 1};
   // clang-format on
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
   vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
@@ -122,12 +122,36 @@ TEST(global_ave_pool, backward_multichannel) {
                                   2, 2, 3, 3,
                                         3, 3};
   // clang-format on
-  std::vector<const tensor_t*> out;
-  l.forward({{in}}, out);
+
   vec_t in_grad = l.backward(std::vector<tensor_t>{{out_grad}})[0][0];
 
   for (size_t i = 0; i < in_grad.size(); i++) {
     EXPECT_FLOAT_EQ(in_grad_expected[i], in_grad[i]);
   }
 }
+
+TEST(global_ave_pool, gradient_check) {
+  const size_t in_width  = 2;
+  const size_t in_height = 2;
+  const size_t channels  = 3;
+  global_average_pooling_layer l(in_width, in_height, channels);
+  std::vector<tensor_t> input_data =
+    generate_test_data({1}, {in_width * in_height * channels});
+  std::vector<tensor_t> in_grad  = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data({1}, {channels});
+  std::vector<tensor_t> out_grad = generate_test_data({1}, {channels});
+  const size_t trials            = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge  = uniform_idx(input_data);
+    const size_t in_idx   = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx  = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(l, input_data, in_edge, in_idx, out_data,
+                                     out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(l, input_data, in_edge, in_idx,
+                                        out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
+}
+
 }  // namespace tiny_dnn

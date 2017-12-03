@@ -6,19 +6,20 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::layers;
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <memory>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
 TEST(nodes, sequential) {
   network<sequential> nn;
 
-  nn << fully_connected_layer(10, 100) << tanh()
+  nn << fully_connected_layer(10, 100) << tanh_layer()
      << fully_connected_layer(100, 10) << softmax();
 }
 
@@ -43,7 +44,7 @@ TEST(nodes, graph_branch) {
   // declare nodes
   auto in1   = std::make_shared<input_layer>(shape3d(3, 1, 1));
   auto in2   = std::make_shared<input_layer>(shape3d(3, 1, 1));
-  auto added = std::make_shared<add>(2, 3);
+  auto added = std::make_shared<layers::add>(2, 3);
   auto lin   = std::make_shared<linear_layer>(3);
   auto out   = std::make_shared<relu>(3);
 
@@ -66,7 +67,7 @@ TEST(nodes, graph_branch2) {
   // declare nodes
   input_layer in1(shape3d(3, 1, 1));
   input_layer in2(shape3d(3, 1, 1));
-  add added(2, 3);
+  layers::add added(2, 3);
   linear_layer out(3);
   relu_layer out_relu(3);
   // connect
@@ -84,4 +85,4 @@ TEST(nodes, graph_branch2) {
   EXPECT_FLOAT_EQ(static_cast<float_t>(res[2]), static_cast<float_t>(0.0));
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

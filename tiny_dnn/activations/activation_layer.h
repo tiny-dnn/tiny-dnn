@@ -7,6 +7,10 @@
 */
 #pragma once
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
@@ -28,7 +32,7 @@ class activation_layer : public layer {
    *
    * @param in_dim      [in] number of elements of the input
    */
-  activation_layer(serial_size_t in_dim)
+  explicit activation_layer(size_t in_dim)
     : activation_layer(shape3d(in_dim, 1, 1)) {}
 
   /**
@@ -40,9 +44,7 @@ class activation_layer : public layer {
    * @param in_height   [in] number of input elements along height
    * @param in_channels [in] number of channels (input elements along depth)
    */
-  activation_layer(serial_size_t in_width,
-                   serial_size_t in_height,
-                   serial_size_t in_channels)
+  activation_layer(size_t in_width, size_t in_height, size_t in_channels)
     : activation_layer(shape3d(in_width, in_height, in_channels)) {}
 
   /**
@@ -50,14 +52,14 @@ class activation_layer : public layer {
    *
    * @param in_shape [in] shape of input tensor
    */
-  activation_layer(const shape3d &in_shape)
+  explicit activation_layer(const shape3d &in_shape)
     : layer({vector_type::data}, {vector_type::data}), in_shape_(in_shape) {}
 
   /**
    * Construct an activation layer given the previous layer.
    * @param prev_layer previous layer
    */
-  activation_layer(const layer &prev_layer)
+  explicit activation_layer(const layer &prev_layer)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(prev_layer.out_shape()[0]) {}
 
@@ -73,7 +75,7 @@ class activation_layer : public layer {
                            std::vector<tensor_t *> &out_data) override {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
-    for_i(x.size(), [&](int i) { forward_activation(x[i], y[i]); });
+    for_i(x.size(), [&](size_t i) { forward_activation(x[i], y[i]); });
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
@@ -88,7 +90,7 @@ class activation_layer : public layer {
           [&](size_t i) { backward_activation(x[i], y[i], dx[i], dy[i]); });
   }
 
-  virtual std::string layer_type() const override = 0;
+  std::string layer_type() const override = 0;
 
   /**
    * Populate vec_t of elements 'y' according to activation y = f(x).

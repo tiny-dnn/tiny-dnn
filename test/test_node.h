@@ -6,8 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <memory>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -165,4 +170,4 @@ TEST(layer_tuple, chain_operator_layer_tuple2) {
   EXPECT_EQ(slice->next_nodes()[1], relu.get());
   EXPECT_EQ(slice->next_nodes()[2], elu.get());
 }
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

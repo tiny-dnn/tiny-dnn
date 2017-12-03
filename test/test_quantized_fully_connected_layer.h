@@ -6,11 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn::activation;
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -43,13 +45,13 @@ TEST(quantized_fully_connected, train) {
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 2E-2);
-  EXPECT_NEAR(predicted[1], t[1], 2E-2);
+  EXPECT_NEAR(predicted[0], t[0], 2e-2);
+  EXPECT_NEAR(predicted[1], t[1], 2e-2);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 5E-2);
-  EXPECT_NEAR(predicted[1], t2[1], 5E-2);
+  EXPECT_NEAR(predicted[0], t2[0], 5e-2);
+  EXPECT_NEAR(predicted[1], t2[1], 5e-2);
 }
 
 TEST(quantized_fully_connected, train2) {
@@ -82,13 +84,13 @@ TEST(quantized_fully_connected, train2) {
 
   vec_t predicted = nn.predict(a);
 
-  EXPECT_NEAR(predicted[0], t[0], 5E-2);
-  EXPECT_NEAR(predicted[1], t[1], 5E-2);
+  EXPECT_NEAR(predicted[0], t[0], 5e-2);
+  EXPECT_NEAR(predicted[1], t[1], 5e-2);
 
   predicted = nn.predict(a2);
 
-  EXPECT_NEAR(predicted[0], t2[0], 5E-2);
-  EXPECT_NEAR(predicted[1], t2[1], 5E-2);
+  EXPECT_NEAR(predicted[0], t2[0], 5e-2);
+  EXPECT_NEAR(predicted[1], t2[1], 5e-2);
 }
 
 TEST(quantized_fully_connected, gradient_check) {
@@ -118,7 +120,7 @@ TEST(quantized_fully_connected, read_write)
 
 TEST(quantized_fully_connected, forward) {
   quantized_fully_connected_layer l(4, 2);
-  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -128,14 +130,14 @@ TEST(quantized_fully_connected, forward) {
   vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
   for (size_t i = 0; i < out_expected.size(); i++) {
-    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+    EXPECT_NEAR(out_expected[i], out[i], 1e-2);
   }
 }
 
 #ifdef CNN_USE_NNPACK
 TEST(quantized_fully_connected, forward_nnp) {
   quantized_fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
-  EXPECT_EQ(l.in_channels(), serial_size_t(3));  // in, W and b
+  EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
@@ -145,14 +147,14 @@ TEST(quantized_fully_connected, forward_nnp) {
   vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
 
   for (size_t i = 0; i < out_expected.size(); i++) {
-    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+    EXPECT_NEAR(out_expected[i], out[i], 1e-2);
   }
 }
 #endif
 
 TEST(quantized_fully_connected, forward_nobias) {
   quantized_fully_connected_layer l(4, 2, false);
-  EXPECT_EQ(l.in_channels(), serial_size_t(2));  // in and W
+  EXPECT_EQ(l.in_channels(), 2u);  // in and W
 
   l.weight_init(weight_init::constant(1.0));
 
@@ -161,8 +163,8 @@ TEST(quantized_fully_connected, forward_nobias) {
   vec_t out_expected = {6.0, 6.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {
-    EXPECT_NEAR(out_expected[i], out[i], 1E-2);
+    EXPECT_NEAR(out_expected[i], out[i], 1e-2);
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -6,6 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 
 #include "tiny_dnn/core/kernels/fully_connected_grad_op.h"
@@ -23,10 +29,10 @@ class fully_connected_layer : public layer {
    * @param out_dim [in] number of elements of the output
    * @param has_bias [in] whether to include additional bias to the layer
    **/
-  fully_connected_layer(serial_size_t in_dim,
-                        serial_size_t out_dim,
-                        bool has_bias          = true,
-                        backend_t backend_type = core::default_engine())
+  fully_connected_layer(size_t in_dim,
+                        size_t out_dim,
+                        bool has_bias                = true,
+                        core::backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     set_params(in_dim, out_dim, has_bias);
     init_backend(backend_type);
@@ -42,23 +48,23 @@ class fully_connected_layer : public layer {
     init_backend(std::move(other.engine()));
   }
 
-  serial_size_t fan_in_size() const override { return params_.in_size_; }
+  size_t fan_in_size() const override { return params_.in_size_; }
 
-  serial_size_t fan_out_size() const override { return params_.out_size_; }
+  size_t fan_out_size() const override { return params_.out_size_; }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     if (params_.has_bias_) {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1),
-              index3d<serial_size_t>(params_.out_size_, 1, 1)};
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1),
+              index3d<size_t>(params_.out_size_, 1, 1)};
     } else {
-      return {index3d<serial_size_t>(params_.in_size_, 1, 1),
-              index3d<serial_size_t>(params_.in_size_, params_.out_size_, 1)};
+      return {index3d<size_t>(params_.in_size_, 1, 1),
+              index3d<size_t>(params_.in_size_, params_.out_size_, 1)};
     }
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(params_.out_size_, 1, 1)};
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(params_.out_size_, 1, 1)};
   }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
@@ -90,20 +96,19 @@ class fully_connected_layer : public layer {
   friend struct serialization_buddy;
 
  protected:
-  void set_params(const serial_size_t in_size,
-                  const serial_size_t out_size,
-                  bool has_bias) {
+  void set_params(const size_t in_size, const size_t out_size, bool has_bias) {
     params_.in_size_  = in_size;
     params_.out_size_ = out_size;
     params_.has_bias_ = has_bias;
   }
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
-    if (backend_type == backend_t::internal || backend_type == backend_t::avx ||
-        backend_type == backend_t::nnpack) {
+    if (backend_type == core::backend_t::internal ||
+        backend_type == core::backend_t::avx ||
+        backend_type == core::backend_t::nnpack) {
       kernel_fwd_.reset(new FullyConnectedOp(ctx));
       kernel_back_.reset(new FullyConnectedGradOp(ctx));
     } else {
@@ -113,13 +118,13 @@ class fully_connected_layer : public layer {
 
  private:
   /* The layer parameters */
-  fully_params params_;
+  core::fully_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;

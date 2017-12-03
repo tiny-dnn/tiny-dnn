@@ -6,11 +6,14 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
-using namespace tiny_dnn;
+#include <gtest/gtest.h>
+
+#include <string>
+#include <vector>
+
+#include "test/testhelper.h"
+#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -43,9 +46,9 @@ TEST(image, create_from_array_uint8) {
   {
     image<uint8_t> img(src, 3, 2, image_type::grayscale);
 
-    EXPECT_EQ(static_cast<serial_size_t>(3), img.width());
-    EXPECT_EQ(static_cast<serial_size_t>(2), img.height());
-    EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+    EXPECT_EQ(3u, img.width());
+    EXPECT_EQ(2u, img.height());
+    EXPECT_EQ(1u, img.depth());
     EXPECT_EQ((int)image_type::grayscale, (int)img.type());
     EXPECT_EQ(5, img.at(1, 1));
   }
@@ -53,11 +56,11 @@ TEST(image, create_from_array_uint8) {
   {
     image<uint8_t> img(src, 1, 2, image_type::rgb);
 
-    EXPECT_EQ(static_cast<serial_size_t>(1), img.width());
-    EXPECT_EQ(static_cast<serial_size_t>(2), img.height());
-    EXPECT_EQ(static_cast<serial_size_t>(3), img.depth());
+    EXPECT_EQ(1u, img.width());
+    EXPECT_EQ(2u, img.height());
+    EXPECT_EQ(3u, img.depth());
     EXPECT_EQ((int)image_type::rgb, (int)img.type());
-    EXPECT_EQ(static_cast<serial_size_t>(4), img.at(0, 1, 1));
+    EXPECT_EQ(4, img.at(0, 1, 1));
   }
 }
 
@@ -67,9 +70,9 @@ TEST(image, create_from_array_float) {
   {
     image<float> img(src, 3, 2, image_type::grayscale);
 
-    EXPECT_EQ(static_cast<serial_size_t>(3), img.width());
-    EXPECT_EQ(static_cast<serial_size_t>(2), img.height());
-    EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+    EXPECT_EQ(3u, img.width());
+    EXPECT_EQ(2u, img.height());
+    EXPECT_EQ(1u, img.depth());
     EXPECT_EQ((int)image_type::grayscale, (int)img.type());
     EXPECT_FLOAT_EQ(5.0f, img.at(1, 1));
   }
@@ -77,9 +80,9 @@ TEST(image, create_from_array_float) {
   {
     image<float> img(src, 1, 2, image_type::rgb);
 
-    EXPECT_EQ(static_cast<serial_size_t>(1), img.width());
-    EXPECT_EQ(static_cast<serial_size_t>(2), img.height());
-    EXPECT_EQ(static_cast<serial_size_t>(3), img.depth());
+    EXPECT_EQ(1u, img.width());
+    EXPECT_EQ(2u, img.height());
+    EXPECT_EQ(3u, img.depth());
     EXPECT_EQ((int)image_type::rgb, (int)img.type());
     EXPECT_FLOAT_EQ(4.0f, img.at(0, 1, 1));
   }
@@ -115,9 +118,9 @@ TEST(image, read_png_1bit) {
 
   image<uint8_t> img(path, image_type::grayscale);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
   EXPECT_EQ(255, img.at(0, 0));
   EXPECT_EQ(255, img.at(15, 15));
   EXPECT_EQ(0, img.at(31, 0));
@@ -132,9 +135,9 @@ TEST(image, read_png_2bit) {
 
   image<uint8_t> img(path, image_type::grayscale);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
   EXPECT_EQ(0, img.at(0, 0));
   EXPECT_EQ(85, img.at(4, 0));
   EXPECT_EQ(170, img.at(8, 0));
@@ -148,9 +151,9 @@ TEST(image, read_png_4bit) {
 
   image<uint8_t> img(path, image_type::grayscale);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
   EXPECT_EQ(0, img.at(0, 0));
   EXPECT_EQ(17, img.at(4, 0));
   EXPECT_EQ(34, img.at(8, 0));
@@ -164,9 +167,9 @@ TEST(image, read_png_8bit) {
 
   image<uint8_t> img(path, image_type::grayscale);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
   EXPECT_EQ(0, img.at(0, 0));
   EXPECT_EQ(32, img.at(0, 1));
   EXPECT_EQ(64, img.at(0, 2));
@@ -180,9 +183,9 @@ TEST(image, read_png_8bit_gray2bgr) {
 
   image<uint8_t> img(path, image_type::bgr);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(3), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(3u, img.depth());
   EXPECT_EQ(0, img.at(0, 0));
   EXPECT_EQ(0, img.at(0, 0, 0));
   EXPECT_EQ(0, img.at(0, 0, 1));
@@ -208,8 +211,7 @@ TEST(image, read_png_8bit_rgba) {
   {
     image<uint8_t> img(path, image_type::bgr);
 
-    EXPECT_EQ(static_cast<serial_size_t>(3),
-              img.depth());  // alpha channel is just ignored
+    EXPECT_EQ(3u, img.depth());  // alpha channel is just ignored
 
     // bgr order
     EXPECT_EQ(255, img.at(31, 31, 0));
@@ -234,9 +236,9 @@ TEST(image, read_png_8bit_rgba2gray) {
   image<uint8_t> img(path, image_type::grayscale);
   image<uint8_t> rgb(path, image_type::rgb);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
 
   for (size_t y = 0; y < 32; y++) {
     for (size_t x = 0; x < 32; x++) {
@@ -291,12 +293,10 @@ TEST(image, read_bmp_24bit) {
 
   ASSERT_TRUE(resolve_path("testimage/bmp/24bit.bmp", path));
 
-  image<uint8_t> img(path, image_type::rgb);
   {
     image<uint8_t> img(path, image_type::bgr);
 
-    EXPECT_EQ(static_cast<serial_size_t>(3),
-              img.depth());  // alpha channel is just ignored
+    EXPECT_EQ(3u, img.depth());  // alpha channel is just ignored
 
     // bgr order
     EXPECT_EQ(255, img.at(31, 31, 0));
@@ -321,9 +321,9 @@ TEST(image, read_bmp_24bit_rgb2gray) {
   image<uint8_t> img(path, image_type::grayscale);
   image<uint8_t> rgb(path, image_type::rgb);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(1), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(1u, img.depth());
 
   for (size_t y = 0; y < 32; y++) {
     for (size_t x = 0; x < 32; x++) {
@@ -349,11 +349,11 @@ TEST(image, resize) {
 
   img.resize(32, 32);
 
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.width());
-  EXPECT_EQ(static_cast<serial_size_t>(32), img.height());
-  EXPECT_EQ(static_cast<serial_size_t>(3), img.depth());
+  EXPECT_EQ(32u, img.width());
+  EXPECT_EQ(32u, img.height());
+  EXPECT_EQ(3u, img.depth());
   EXPECT_EQ((int)image_type::rgb, (int)img.type());
-  EXPECT_EQ(static_cast<serial_size_t>(32 * 32 * 3), img.data().size());
+  EXPECT_EQ(size_t(32 * 32 * 3), img.data().size());
 }
 
 TEST(image, empty) {
@@ -482,21 +482,21 @@ TEST(image, subtract_scalar) {
 TEST(image, subtract_image) {
   // clang-format off
     uint8_t src_pixels[] = {
-        0, 1, // r
-        32,33, // g
-        254,255 // b
+        0,     1,  // r
+        32,   33,  // g
+        254, 255   // b
     };
 
     uint8_t sub_pixels[] = {
-        1, 1,
-        31,33,
+        1,   1,
+        31, 33,
         0, 250
     };
 
     // should be saturated
     uint8_t expected_pixels[] = {
-        0, 0,
-        1, 0,
+        0,   0,
+        1,   0,
         254, 5
     };
   // clang-format on
@@ -513,4 +513,4 @@ TEST(image, subtract_image) {
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

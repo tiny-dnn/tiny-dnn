@@ -15,33 +15,25 @@ namespace kernels {
 
 inline void maxpool_op_nnpack(const tensor_t &in_data,
                               tensor_t &out_data,
-                              const maxpool_params &params) {
+                              const core::maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
   NNPackInitializer::getInstance().initialize();
 
-  const serial_size_t input_channels = params.in.depth_;
+  const size_t input_channels = params.in.depth_;
 
-  const nnp_size input_size = {static_cast<size_t>(params.in.width_),
-                               static_cast<size_t>(params.in.height_)};
+  const nnp_size input_size = {params.in.width_, params.in.height_};
 
-  const nnp_padding input_padding = {
-    static_cast<size_t>(0),  // top
-    static_cast<size_t>(0),  // right
-    static_cast<size_t>(0),  // bottom
-    static_cast<size_t>(0)   // left
-  };
+  const nnp_padding input_padding = {0, 0, 0, 0};
 
-  const nnp_size pooling_size = {static_cast<size_t>(params.pool_size_x),
-                                 static_cast<size_t>(params.pool_size_y)};
+  const nnp_size pooling_size = {params.pool_size_x, params.pool_size_y};
 
-  const nnp_size pooling_stride = {static_cast<size_t>(params.stride_x),
-                                   static_cast<size_t>(params.stride_y)};
+  const nnp_size pooling_stride = {params.stride_x, params.stride_y};
 
   const float *input_ptr = in_data[0].data();
   float *output_ptr      = out_data[0].data();
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   const size_t num_mkl_threads = 1;
   pthreadpool_t threadpool     = pthreadpool_create(num_mkl_threads);
 
@@ -55,7 +47,7 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
     throw nn_error("Could not succeed with nnp_max_pooling_output");
   }
 
-  // TODO: embed it into a class
+  // TODO(edgarriba): embed it into a class
   pthreadpool_destroy(threadpool);
 #else
   CNN_UNREFERENCED_PARAMETER(in_data);

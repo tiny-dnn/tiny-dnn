@@ -19,14 +19,14 @@ struct deconv_layer_worker_specific_storage {
 
 struct deconv_params {
   connection_table tbl;
-  index3d<serial_size_t> in;
-  index3d<serial_size_t> out;
-  index3d<serial_size_t> out_unpadded;
-  index3d<serial_size_t> weight;
+  index3d<size_t> in;
+  index3d<size_t> out;
+  index3d<size_t> out_unpadded;
+  index3d<size_t> weight;
   bool has_bias;
   padding pad_type;
-  serial_size_t w_stride;
-  serial_size_t h_stride;
+  size_t w_stride;
+  size_t h_stride;
 };
 
 }  // namespace core

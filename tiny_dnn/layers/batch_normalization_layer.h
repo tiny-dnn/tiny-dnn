@@ -8,6 +8,9 @@
 #pragma once
 
 #include <algorithm>
+#include <limits>
+#include <string>
+#include <vector>
 
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/math_functions.h"
@@ -25,12 +28,12 @@ class batch_normalization_layer : public layer {
   typedef layer Base;
 
   /**
-  * @param prev_layer      [in] previous layer to be connected with this layer
-  * @param epsilon         [in] small positive value to avoid zero-division
-  * @param momentum        [in] momentum in the computation of the exponential
-  *average of the mean/stddev of the data
-  * @param phase           [in] specify the current context (train/test)
-  **/
+   * @param prev_layer      [in] previous layer to be connected with this layer
+   * @param epsilon         [in] small positive value to avoid zero-division
+   * @param momentum        [in] momentum in the computation of the exponential
+   *average of the mean/stddev of the data
+   * @param phase           [in] specify the current context (train/test)
+   **/
   batch_normalization_layer(const layer &prev_layer,
                             float_t epsilon  = 1e-5,
                             float_t momentum = 0.999,
@@ -46,15 +49,15 @@ class batch_normalization_layer : public layer {
   }
 
   /**
-  * @param in_spatial_size [in] spatial size (WxH) of the input data
-  * @param in_channels     [in] channels of the input data
-  * @param epsilon         [in] small positive value to avoid zero-division
-  * @param momentum        [in] momentum in the computation of the exponential
-  *average of the mean/stddev of the data
-  * @param phase           [in] specify the current context (train/test)
-  **/
-  batch_normalization_layer(serial_size_t in_spatial_size,
-                            serial_size_t in_channels,
+   * @param in_spatial_size [in] spatial size (WxH) of the input data
+   * @param in_channels     [in] channels of the input data
+   * @param epsilon         [in] small positive value to avoid zero-division
+   * @param momentum        [in] momentum in the computation of the exponential
+   *average of the mean/stddev of the data
+   * @param phase           [in] specify the current context (train/test)
+   **/
+  batch_normalization_layer(size_t in_spatial_size,
+                            size_t in_channels,
                             float_t epsilon  = 1e-5,
                             float_t momentum = 0.999,
                             net_phase phase  = net_phase::train)
@@ -71,35 +74,35 @@ class batch_normalization_layer : public layer {
   virtual ~batch_normalization_layer() {}
 
   ///< number of incoming connections for each output unit
-  serial_size_t fan_in_size() const override { return 1; }
+  size_t fan_in_size() const override { return 1; }
 
   ///< number of outgoing connections for each input unit
-  serial_size_t fan_out_size() const override { return 1; }
+  size_t fan_out_size() const override { return 1; }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
-    return {index3d<serial_size_t>(in_spatial_size_, 1, in_channels_)};
+  std::vector<index3d<size_t>> in_shape() const override {
+    return {index3d<size_t>(in_spatial_size_, 1, in_channels_)};
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
-    return {index3d<serial_size_t>(in_spatial_size_, 1, in_channels_)};
+  std::vector<index3d<size_t>> out_shape() const override {
+    return {index3d<size_t>(in_spatial_size_, 1, in_channels_)};
   }
 
   void back_propagation(const std::vector<tensor_t *> &in_data,
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
-    tensor_t &prev_delta      = *in_grad[0];
-    tensor_t &curr_delta      = *out_grad[0];
-    const tensor_t &curr_out  = *out_data[0];
-    serial_size_t num_samples = static_cast<serial_size_t>(curr_out.size());
+    tensor_t &prev_delta     = *in_grad[0];
+    tensor_t &curr_delta     = *out_grad[0];
+    const tensor_t &curr_out = *out_data[0];
+    const size_t num_samples = curr_out.size();
 
     CNN_UNREFERENCED_PARAMETER(in_data);
 
     tensor_t delta_dot_y = curr_out;
     vec_t mean_delta_dot_y, mean_delta, mean_Y;
 
-    for (serial_size_t i = 0; i < num_samples; i++) {
-      for (serial_size_t j = 0; j < curr_out[0].size(); j++) {
+    for (size_t i = 0; i < num_samples; i++) {
+      for (size_t j = 0; j < curr_out[0].size(); j++) {
         delta_dot_y[i][j] *= curr_delta[i][j];
       }
     }
@@ -112,10 +115,10 @@ class batch_normalization_layer : public layer {
     //   (dE/dY - mean(dE/dY) - mean(dE/dY \cdot Y) \cdot Y)
     //     ./ sqrt(var(X) + eps)
     //
-    for_i(num_samples, [&](int i) {
-      for (serial_size_t j = 0; j < in_channels_; j++) {
-        for (serial_size_t k = 0; k < in_spatial_size_; k++) {
-          serial_size_t index = j * in_spatial_size_ + k;
+    for_i(num_samples, [&](size_t i) {
+      for (size_t j = 0; j < in_channels_; j++) {
+        for (size_t k = 0; k < in_spatial_size_; k++) {
+          size_t index = j * in_spatial_size_ + k;
 
           prev_delta[i][index] = curr_delta[i][index] - mean_delta[j] -
                                  mean_delta_dot_y[j] * curr_out[i][index];
@@ -143,7 +146,7 @@ class batch_normalization_layer : public layer {
     // y = (x - mean) ./ sqrt(variance + eps)
     calc_stddev(variance);
 
-    for_i(in_data[0]->size(), [&](int i) {
+    for_i(in_data[0]->size(), [&](size_t i) {
       const float_t *inptr = &in[i][0];
       float_t *outptr      = &out[i][0];
 
@@ -167,7 +170,7 @@ class batch_normalization_layer : public layer {
   std::string layer_type() const override { return "batch-norm"; }
 
   void post_update() override {
-    for (serial_size_t i = 0; i < mean_.size(); i++) {
+    for (size_t i = 0; i < mean_.size(); i++) {
       mean_[i] = momentum_ * mean_[i] + (1 - momentum_) * mean_current_[i];
       variance_[i] =
         momentum_ * variance_[i] + (1 - momentum_) * variance_current_[i];
@@ -230,8 +233,8 @@ class batch_normalization_layer : public layer {
     stddev_.resize(in_channels_);
   }
 
-  serial_size_t in_channels_;
-  serial_size_t in_spatial_size_;
+  size_t in_channels_;
+  size_t in_spatial_size_;
 
   net_phase phase_;
   float_t momentum_;

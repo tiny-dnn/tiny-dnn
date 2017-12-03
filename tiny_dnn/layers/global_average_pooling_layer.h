@@ -8,7 +8,9 @@
 #pragma once
 
 #include <algorithm>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/layers/layer.h"
@@ -24,8 +26,9 @@ namespace tiny_dnn {
  **/
 class global_average_pooling_layer : public layer {
  public:
-  global_average_pooling_layer(const shape3d &in_shape,
-                               backend_t backend_type = core::default_engine())
+  global_average_pooling_layer(
+    const shape3d &in_shape,
+    core::backend_t backend_type = core::default_engine())
     : global_average_pooling_layer(
         in_shape.width_, in_shape.height_, in_shape.depth_, backend_type) {}
 
@@ -34,10 +37,11 @@ class global_average_pooling_layer : public layer {
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels (depth)
   **/
-  global_average_pooling_layer(serial_size_t in_width,
-                               serial_size_t in_height,
-                               serial_size_t in_channels,
-                               backend_t backend_type = core::default_engine())
+  global_average_pooling_layer(
+    size_t in_width,
+    size_t in_height,
+    size_t in_channels,
+    core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
     set_global_avepool_params(shape3d(in_width, in_height, in_channels),
                               shape3d(in_channels, 1, 1));
@@ -51,11 +55,11 @@ class global_average_pooling_layer : public layer {
     init_backend(std::move(layer::engine()));
   }
 
-  serial_size_t fan_in_size() const override {
-    return static_cast<serial_size_t>(params_.in.width_ * params_.in.height_);
+  size_t fan_in_size() const override {
+    return params_.in.width_ * params_.in.height_;
   }
 
-  serial_size_t fan_out_size() const override { return 1; }
+  size_t fan_out_size() const override { return 1; }
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
@@ -77,11 +81,11 @@ class global_average_pooling_layer : public layer {
     kernel_back_->compute(bwd_ctx_);
   }
 
-  std::vector<index3d<serial_size_t>> in_shape() const override {
+  std::vector<index3d<size_t>> in_shape() const override {
     return {params_.in};
   }
 
-  std::vector<index3d<serial_size_t>> out_shape() const override {
+  std::vector<index3d<size_t>> out_shape() const override {
     return {params_.out};
   }
 
@@ -89,38 +93,41 @@ class global_average_pooling_layer : public layer {
     return std::string("global-ave-pool");
   }
 
-  std::pair<serial_size_t, serial_size_t> pool_size() const {
+  std::pair<size_t, size_t> pool_size() const {
     return std::make_pair(params_.in.width_, params_.in.height_);
   }
 
   friend struct serialization_buddy;
 
  private:
-  global_avepool_params params_;
+  core::global_avepool_params params_;
 
   /* forward op context */
-  OpKernelContext fwd_ctx_;
+  core::OpKernelContext fwd_ctx_;
 
   /* backward op context */
-  OpKernelContext bwd_ctx_;
+  core::OpKernelContext bwd_ctx_;
 
   /* Forward and backward ops */
   std::shared_ptr<core::OpKernel> kernel_fwd_;
   std::shared_ptr<core::OpKernel> kernel_back_;
 
-  void init_backend(backend_t backend_type) {
+  void init_backend(core::backend_t backend_type) {
     core::OpKernelConstruction ctx =
       core::OpKernelConstruction(layer::device(), &params_);
 
     layer::set_backend_type(backend_type);
-    if (backend_type == backend_t::internal || backend_type == backend_t::avx ||
-        backend_type == backend_t::nnpack) {
-      kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
-      kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
-      return;
-    } else {
-      throw nn_error("Not supported engine: " + to_string(backend_type));
+    if (backend_type == core::backend_t::avx) {
+#ifndef CNN_USE_AVX
+      nn_warn(
+        "tiny-dnn has not been compiled with AVX support, "
+        "fallback to internal backend for global avepool layer.\n");
+      layer::set_backend_type(core::backend_t::internal);
+#endif
     }
+    kernel_fwd_.reset(new GlobalAvePoolOp(ctx));
+    kernel_back_.reset(new GlobalAvePoolGradOp(ctx));
+    return;
   }
 
   void set_global_avepool_params(const shape3d &in, const shape3d &out) {

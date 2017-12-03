@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <unordered_map>
+
 #include "tiny_dnn/layers/layer.h"
 
 #include "tiny_dnn/core/framework/device.fwd.h"
@@ -116,11 +118,11 @@ class ProgramManager {
   }
 
   // Returns the number of registered programs
-  serial_size_t num_programs() const {
+  size_t num_programs() const {
 #if defined(USE_OPENCL) || defined(USE_CUDA)
     return programs_.size();
 #else
-    return serial_size_t(0);
+    return size_t(0);
 #endif
   }
 

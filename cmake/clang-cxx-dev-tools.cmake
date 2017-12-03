@@ -3,6 +3,7 @@
 
 file(GLOB_RECURSE ALL_CXX_SOURCE_FILES
   ${CMAKE_SOURCE_DIR}/tiny_dnn/*.h
+  ${CMAKE_SOURCE_DIR}/benchmarks/*.h
   ${CMAKE_SOURCE_DIR}/test/*.h
   ${CMAKE_SOURCE_DIR}/examples/*.h
   ${CMAKE_SOURCE_DIR}/examples/*.cpp
@@ -42,3 +43,9 @@ if(CLANG_TIDY)
     ${INCLUDE_DIRECTORIES}
     )
 endif()
+
+add_custom_target(
+   test_lints
+   COMMAND /bin/bash ${CMAKE_SOURCE_DIR}/scripts/run_lints.sh
+   ${ALL_CXX_SOURCE_FILES}
+   )

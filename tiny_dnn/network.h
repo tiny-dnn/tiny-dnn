@@ -16,9 +16,11 @@
 #include <iterator>
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "tiny_dnn/lossfunctions/loss_function.h"
@@ -173,8 +175,8 @@ class network {
   tensor_t predict(const tensor_t &in) { return fprop(in); }
 
   /**
-  * executes forward-propagation and returns output
-  **/
+   * executes forward-propagation and returns output
+   **/
   std::vector<tensor_t> predict(const std::vector<tensor_t> &in) {
     return fprop(in);
   }
@@ -258,57 +260,57 @@ class network {
   }
 
   /**
-  * trains the network for a fixed number of epochs to generate desired
-  * output.
-  *
-  * This method executes fixed number of training steps and invoke callbacks
-  * for
-  * each mini-batch/epochs.
-  * The network is trained to minimize given loss function(specified by
-  * template
-  * parameter).
-  *
-  * Shape of inputs and desired_outputs must be same to network inputs. For
-  * example, if your network
-  * has 2 input layers that takes N dimensional array, for each element of
-  * inputs must be [2xN]
-  * array.
-  *
-  * @code
-  * network<sequential> net;
-  * adagrad opt;
-  *
-  * net << layers::fc(2, 3) << activation::tanh()
-  *     << layers::fc(3, 1) << activation::relu();
-  *
-  * // 2training data, each data is float_t[2]
-  * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
-  * std::vector<vec_t> out  {    { 2 },    { 1 } };
-  *
-  * net.fit<mse>(opt, data, out, 1, 1);
-  *
-  * // 2training data, each data is float_t[1][2]
-  * // this form is also valid
-  * std::vector<tensor_t> data2{ { { 1, 0 } }, { { 0, 2 } } };
-  * std::vector<tensor_t> out2 { {    { 2 } }, {    { 1 } } };
-  *
-  * net.fit<mse>(opt, data2, out2, 1, 1);
-  * @endcode
-  *
-  *
-  * @param optimizer          optimizing algorithm for training
-  * @param inputs             array of input data
-  * @param desired_outputs    array of desired output
-  * @param batch_size         number of samples per parameter update
-  * @param epoch              number of training epochs
-  * @param on_batch_enumerate callback for each mini-batch enumerate
-  * @param on_epoch_enumerate callback for each epoch
-  * @param reset_weights      set true if reset current network weights
-  * @param n_threads          number of tasks
-  * @param t_cost             target costs (leave to nullptr in order to
-  * assume
-  * equal cost for every target)
-  */
+   * trains the network for a fixed number of epochs to generate desired
+   * output.
+   *
+   * This method executes fixed number of training steps and invoke callbacks
+   * for
+   * each mini-batch/epochs.
+   * The network is trained to minimize given loss function(specified by
+   * template
+   * parameter).
+   *
+   * Shape of inputs and desired_outputs must be same to network inputs. For
+   * example, if your network
+   * has 2 input layers that takes N dimensional array, for each element of
+   * inputs must be [2xN]
+   * array.
+   *
+   * @code
+   * network<sequential> net;
+   * adagrad opt;
+   *
+   * net << layers::fc(2, 3) << activation::tanh()
+   *     << layers::fc(3, 1) << activation::relu();
+   *
+   * // 2training data, each data is float_t[2]
+   * std::vector<vec_t> data { { 1, 0 }, { 0, 2 } };
+   * std::vector<vec_t> out  {    { 2 },    { 1 } };
+   *
+   * net.fit<mse>(opt, data, out, 1, 1);
+   *
+   * // 2training data, each data is float_t[1][2]
+   * // this form is also valid
+   * std::vector<tensor_t> data2{ { { 1, 0 } }, { { 0, 2 } } };
+   * std::vector<tensor_t> out2 { {    { 2 } }, {    { 1 } } };
+   *
+   * net.fit<mse>(opt, data2, out2, 1, 1);
+   * @endcode
+   *
+   *
+   * @param optimizer          optimizing algorithm for training
+   * @param inputs             array of input data
+   * @param desired_outputs    array of desired output
+   * @param batch_size         number of samples per parameter update
+   * @param epoch              number of training epochs
+   * @param on_batch_enumerate callback for each mini-batch enumerate
+   * @param on_epoch_enumerate callback for each epoch
+   * @param reset_weights      set true if reset current network weights
+   * @param n_threads          number of tasks
+   * @param t_cost             target costs (leave to nullptr in order to
+   * assume
+   * equal cost for every target)
+   */
   template <typename Error,
             typename Optimizer,
             typename OnBatchEnumerate,
@@ -463,10 +465,10 @@ class network {
   }
 
   /**
-  * checking gradients calculated by bprop
-  * detail information:
-  * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
-  **/
+   * checking gradients calculated by bprop
+   * detail information:
+   * http://ufldl.stanford.edu/wiki/index.php/Gradient_checking_and_advanced_optimization
+   **/
   template <typename E>
   bool gradient_check(const std::vector<tensor_t> &in,
                       const std::vector<std::vector<label_t>> &t,
@@ -475,8 +477,8 @@ class network {
     assert(in.size() == t.size());
 
     std::vector<tensor_t> v(t.size());
-    const serial_size_t sample_count = static_cast<serial_size_t>(t.size());
-    for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+    const size_t sample_count = t.size();
+    for (size_t sample = 0; sample < sample_count; ++sample) {
       net_.label2vec(t[sample], v[sample]);
     }
 
@@ -484,33 +486,34 @@ class network {
       if (current->weights().size() < 2) {
         continue;
       }
-      vec_t &w     = *current->weights()[0];
-      vec_t &b     = *current->weights()[1];
-      tensor_t &dw = (*current->weights_grads()[0]);
-      tensor_t &db = (*current->weights_grads()[1]);
+      std::vector<vec_t *> weights  = current->weights();
+      std::vector<tensor_t *> grads = current->weights_grads();
 
-      if (w.empty()) continue;
+      if (weights.empty() || (*weights[0]).empty()) continue;
+      assert(weights.size() == grads.size());
 
       switch (mode) {
         case GRAD_CHECK_ALL:
-          for (int i = 0; i < static_cast<int>(w.size()); i++)
-            if (!calc_delta<E>(in, v, w, dw, i, eps)) {
-              return false;
+          for (size_t i = 0; i < weights.size(); i++) {
+            vec_t &w     = *weights[i];
+            tensor_t &dw = *grads[i];
+            for (size_t j = 0; j < w.size(); j++) {
+              if (!calc_delta<E>(in, v, w, dw, j, eps)) {
+                return false;
+              }
             }
-          for (int i = 0; i < static_cast<int>(b.size()); i++)
-            if (!calc_delta<E>(in, v, b, db, i, eps)) {
-              return false;
-            }
+          }
           break;
         case GRAD_CHECK_RANDOM:
-          for (int i = 0; i < 10; i++)
-            if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
-              return false;
+          for (size_t i = 0; i < grads.size(); i++) {
+            vec_t &w     = *weights[i];
+            tensor_t &dw = *grads[i];
+            for (size_t j = 0; j < 10; j++) {
+              if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
+                return false;
+              }
             }
-          for (int i = 0; i < 10; i++)
-            if (!calc_delta<E>(in, v, b, db, uniform_idx(b), eps)) {
-              return false;
-            }
+          }
           break;
         default: throw nn_error("unknown grad-check type");
       }
@@ -555,16 +558,16 @@ class network {
   /**
    * return total number of elements of output data
    **/
-  serial_size_t out_data_size() const { return net_.out_data_size(); }
+  size_t out_data_size() const { return net_.out_data_size(); }
 
   /**
    * return total number of elements of input data
    */
-  serial_size_t in_data_size() const { return net_.in_data_size(); }
+  size_t in_data_size() const { return net_.in_data_size(); }
 
   /**
-  * set weight initializer to all layers
-  **/
+   * set weight initializer to all layers
+   **/
   template <typename WeightInit>
   network &weight_init(const WeightInit &f) {
     auto ptr = std::make_shared<WeightInit>(f);
@@ -573,8 +576,8 @@ class network {
   }
 
   /**
-  * set bias initializer to all layers
-  **/
+   * set bias initializer to all layers
+   **/
   template <typename BiasInit>
   network &bias_init(const BiasInit &f) {
     auto ptr = std::make_shared<BiasInit>(f);
@@ -621,7 +624,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -644,7 +647,7 @@ class network {
       default: throw nn_error("invalid serialization format");
     }
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -660,7 +663,7 @@ class network {
     }
     return ss.str();
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -675,7 +678,7 @@ class network {
     cereal::JSONInputArchive ia(ss);
     from_archive(ia, what);
 #else
-    throw nn_error("TinyDNN was not built with Serialization support");
+    throw nn_error("tiny-dnn was not built with Serialization support");
 #endif  // CNN_NO_SERIALIZATION
   }
 
@@ -692,9 +695,9 @@ class network {
   }
 
   /**
-  * load network weights from filepath, 30 times faster than stream reading
-  * @deprecated use load_weights instead.
-  **/
+   * load network weights from filepath, 30 times faster than stream reading
+   * @deprecated use load_weights instead.
+   **/
   void fast_load(const char *filepath) {
     FILE *stream = fopen(filepath, "r");
     std::vector<float_t> data;
@@ -783,8 +786,8 @@ class network {
            i += batch_size) {
         train_once<Error>(
           optimizer, &inputs[i], &desired_outputs[i],
-          static_cast<int>(std::min(batch_size, inputs.size() - i)), n_threads,
-          get_target_cost_sample_pointer(t_cost, i));
+          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)),
+          n_threads, get_target_cost_sample_pointer(t_cost, i));
         on_batch_enumerate();
 
         /* if (i % 100 == 0 && layers_.is_exploded()) {
@@ -813,7 +816,7 @@ class network {
                   const tensor_t *t_cost) {
     if (size == 1) {
       bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
-      net_.update_weights(&optimizer, 1);
+      net_.update_weights(&optimizer);
     } else {
       train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
     }
@@ -843,7 +846,7 @@ class network {
              : std::vector<tensor_t>();
 
     bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
-    net_.update_weights(&optimizer, batch_size);
+    net_.update_weights(&optimizer);
   }
 
   vec_t fprop(const vec_t &in) {
@@ -879,14 +882,14 @@ class network {
                   const std::vector<tensor_t> &v,
                   vec_t &w,
                   tensor_t &dw,
-                  int check_index,
+                  size_t check_index,
                   double eps) {
     static const float_t delta =
       std::sqrt(std::numeric_limits<float_t>::epsilon());
 
     assert(in.size() == v.size());
 
-    const serial_size_t sample_count = static_cast<serial_size_t>(in.size());
+    const size_t sample_count = in.size();
 
     assert(sample_count > 0);
 
@@ -904,13 +907,13 @@ class network {
 
     float_t f_p    = float_t(0);
     w[check_index] = prev_w + delta;
-    for (serial_size_t i = 0; i < sample_count; i++) {
+    for (size_t i = 0; i < sample_count; i++) {
       f_p += get_loss<E>(in[i], v[i]);
     }
 
     float_t f_m    = float_t(0);
     w[check_index] = prev_w - delta;
-    for (serial_size_t i = 0; i < sample_count; i++) {
+    for (size_t i = 0; i < sample_count; i++) {
       f_m += get_loss<E>(in[i], v[i]);
     }
 
@@ -921,7 +924,7 @@ class network {
     bprop<E>(fprop(in), v, std::vector<tensor_t>());
 
     float_t delta_by_bprop = 0;
-    for (serial_size_t sample = 0; sample < sample_count; ++sample) {
+    for (size_t sample = 0; sample < sample_count; ++sample) {
       delta_by_bprop += dw[sample][check_index];
     }
     net_.clear_grads();
@@ -946,7 +949,7 @@ class network {
     net_.backward(delta);
   }
 
-  void check_t(size_t i, label_t t, serial_size_t dim_out) {
+  void check_t(size_t i, label_t t, size_t dim_out) {
     if (t >= dim_out) {
       std::ostringstream os;
       os << format_str("t[%u]=%u, dim(net output)=%u\n", i, t, dim_out);
@@ -961,7 +964,7 @@ class network {
     }
   }
 
-  void check_t(size_t i, const vec_t &t, serial_size_t dim_out) {
+  void check_t(size_t i, const vec_t &t, size_t dim_out) {
     if (t.size() != dim_out) {
       throw nn_error(
         format_str("output dimension mismatch!\n dim(target[%u])=%u, "
@@ -973,8 +976,8 @@ class network {
   template <typename T>
   void check_training_data(const std::vector<vec_t> &in,
                            const std::vector<T> &t) {
-    serial_size_t dim_in  = in_data_size();
-    serial_size_t dim_out = out_data_size();
+    size_t dim_in  = in_data_size();
+    size_t dim_out = out_data_size();
 
     if (in.size() != t.size()) {
       throw nn_error("size of training data must be equal to label data");
@@ -1076,27 +1079,27 @@ class network {
  * @return [vector of vec_c (sample) to be passed to test function]
  */
 inline std::vector<vec_t> image2vec(const float_t *data,
-                                    const unsigned int rows,
-                                    const unsigned int cols,
-                                    const unsigned int sizepatch,
-                                    const unsigned int step = 1) {
+                                    const size_t rows,
+                                    const size_t cols,
+                                    const size_t sizepatch,
+                                    const size_t step = 1) {
   assert(step > 0);
   std::vector<vec_t> res(
     (cols - sizepatch) * (rows - sizepatch) / (step * step),
     vec_t(sizepatch * sizepatch));
   for_i((cols - sizepatch) * (rows - sizepatch) / (step * step),
-        [&](int count) {
-          const int j = step * (count / ((cols - sizepatch) / step));
-          const int i = step * (count % ((cols - sizepatch) / step));
+        [&](size_t count) {
+          const size_t j = step * (count / ((cols - sizepatch) / step));
+          const size_t i = step * (count % ((cols - sizepatch) / step));
 
           // vec_t sample(sizepatch*sizepatch);
 
           if ((i + sizepatch) < cols && (j + sizepatch) < rows) {
-            for (unsigned int k = 0; k < (sizepatch * sizepatch); k++) {
-              // for_i(sizepatch*sizepatch, [&](int k) {
-              unsigned int y = k / sizepatch + j;
-              unsigned int x = k % sizepatch + i;
-              res[count][k]  = data[x + y * cols];
+            for (size_t k = 0; k < (sizepatch * sizepatch); k++) {
+              // for_i(sizepatch*sizepatch, [&](size_t k) {
+              size_t y      = k / sizepatch + j;
+              size_t x      = k % sizepatch + i;
+              res[count][k] = data[x + y * cols];
             }
             //});
             // res[count] = (sample);

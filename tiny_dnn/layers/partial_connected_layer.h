@@ -6,6 +6,10 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <utility>
+#include <vector>
+
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
@@ -13,12 +17,12 @@ namespace tiny_dnn {
 
 class partial_connected_layer : public layer {
  public:
-  typedef std::vector<std::pair<serial_size_t, serial_size_t>> io_connections;
-  typedef std::vector<std::pair<serial_size_t, serial_size_t>> wi_connections;
-  typedef std::vector<std::pair<serial_size_t, serial_size_t>> wo_connections;
+  typedef std::vector<std::pair<size_t, size_t>> io_connections;
+  typedef std::vector<std::pair<size_t, size_t>> wi_connections;
+  typedef std::vector<std::pair<size_t, size_t>> wo_connections;
 
-  partial_connected_layer(serial_size_t in_dim,
-                          serial_size_t out_dim,
+  partial_connected_layer(size_t in_dim,
+                          size_t out_dim,
                           size_t weight_dim,
                           size_t bias_dim,
                           float_t scale_factor = float_t{1})
@@ -39,19 +43,19 @@ class partial_connected_layer : public layer {
     return total_param;
   }
 
-  serial_size_t fan_in_size() const override { return max_size(out2wi_); }
+  size_t fan_in_size() const override { return max_size(out2wi_); }
 
-  serial_size_t fan_out_size() const override { return max_size(in2wo_); }
+  size_t fan_out_size() const override { return max_size(in2wo_); }
 
-  void connect_weight(serial_size_t input_index,
-                      serial_size_t output_index,
-                      serial_size_t weight_index) {
+  void connect_weight(size_t input_index,
+                      size_t output_index,
+                      size_t weight_index) {
     weight2io_[weight_index].emplace_back(input_index, output_index);
     out2wi_[output_index].emplace_back(weight_index, input_index);
     in2wo_[input_index].emplace_back(weight_index, output_index);
   }
 
-  void connect_bias(serial_size_t bias_index, serial_size_t output_index) {
+  void connect_bias(size_t bias_index, size_t output_index) {
     out2bias_[output_index] = bias_index;
     bias2out_[bias_index].push_back(output_index);
   }
@@ -64,9 +68,8 @@ class partial_connected_layer : public layer {
     tensor_t &out      = *out_data[0];
 
     // @todo revise the parallelism strategy
-    for (serial_size_t sample       = 0,
-                       sample_count = static_cast<serial_size_t>(in.size());
-         sample < sample_count; ++sample) {
+    for (size_t sample = 0, sample_count = in.size(); sample < sample_count;
+         ++sample) {
       vec_t &out_sample = out[sample];
 
       for_i(out2wi_.size(), [&](size_t i) {
@@ -89,6 +92,7 @@ class partial_connected_layer : public layer {
                         const std::vector<tensor_t *> &out_data,
                         std::vector<tensor_t *> &out_grad,
                         std::vector<tensor_t *> &in_grad) override {
+    CNN_UNREFERENCED_PARAMETER(out_data);
     const tensor_t &prev_out = *in_data[0];
     const vec_t &W           = (*in_data[1])[0];
     vec_t &dW                = (*in_grad[1])[0];
@@ -97,9 +101,7 @@ class partial_connected_layer : public layer {
     tensor_t &curr_delta     = *out_grad[0];
 
     // @todo revise the parallelism strategy
-    for (serial_size_t
-           sample       = 0,
-           sample_count = static_cast<serial_size_t>(prev_out.size());
+    for (size_t sample = 0, sample_count = prev_out.size();
          sample < sample_count; ++sample) {
       for_i(in2wo_.size(), [&](size_t i) {
         const wo_connections &connections = in2wo_[i];
@@ -123,7 +125,7 @@ class partial_connected_layer : public layer {
       });
 
       for (size_t i = 0; i < bias2out_.size(); i++) {
-        const std::vector<serial_size_t> &outs = bias2out_[i];
+        const std::vector<size_t> &outs = bias2out_[i];
         float_t diff{0};
 
         for (auto o : outs) diff += curr_delta[sample][o];
@@ -139,7 +141,7 @@ class partial_connected_layer : public layer {
   std::vector<io_connections> weight2io_;  // weight_id -> [(in_id, out_id)]
   std::vector<wi_connections> out2wi_;     // out_id -> [(weight_id, in_id)]
   std::vector<wo_connections> in2wo_;      // in_id -> [(weight_id, out_id)]
-  std::vector<std::vector<serial_size_t>> bias2out_;
+  std::vector<std::vector<size_t>> bias2out_;
   std::vector<size_t> out2bias_;
   float_t scale_factor_;
 };

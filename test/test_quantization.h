@@ -6,8 +6,13 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <limits>
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -94,8 +99,8 @@ TEST(quantization_utils, quantized_to_float) {
 
 TEST(quantization_utils, avoid_bias) {
   for (int i = 0; i < 256; ++i) {
-    const float as_float =
-      core::kernels::quantized_to_float<uint8_t>(i, 0.0f, 2.0f);
+    const float as_float = core::kernels::quantized_to_float<uint8_t>(
+      static_cast<uint8_t>(i), 0.0f, 2.0f);
     const int back_to_int =
       core::kernels::float_to_quantized<uint8_t>(as_float, 0.0f, 2.0f);
     EXPECT_EQ(i, back_to_int);
@@ -202,8 +207,8 @@ TEST(quantization_utils, requantize_many_in_new_range_32_to_8bit) {
     const float input_max  = ranges[range_index][1];
     const float output_min = ranges[range_index][2];
     const float output_max = ranges[range_index][3];
-    int32_t values_quantized[values_count];
-    uint8_t expected_values[values_count];
+    int32_t values_quantized[values_count];  // NOLINT
+    uint8_t expected_values[values_count];   // NOLINT
     for (size_t value_index = 0; value_index < values_count; ++value_index) {
       const float value_float = values[value_index];
       values_quantized[value_index] =
@@ -214,7 +219,7 @@ TEST(quantization_utils, requantize_many_in_new_range_32_to_8bit) {
                                           input_min, input_max),
         output_min, output_max);
     }
-    uint8_t output_values[values_count];
+    uint8_t output_values[values_count];  // NOLINT
     core::kernels::requantize_many_in_new_range<int32_t, uint8_t>(
       values_quantized, values_count, input_min, input_max, output_min,
       output_max, output_values);
@@ -278,4 +283,4 @@ TEST(quantization_utils, quantize_down_and_shrink_range) {
   EXPECT_NEAR(1.0f, output_max, 1E-5);
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

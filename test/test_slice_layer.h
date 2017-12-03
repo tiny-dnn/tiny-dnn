@@ -6,8 +6,12 @@
     in the LICENSE file.
 */
 #pragma once
-#include "gtest/gtest.h"
-#include "testhelper.h"
+
+#include <gtest/gtest.h>
+
+#include <vector>
+
+#include "test/testhelper.h"
 #include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
@@ -17,18 +21,18 @@ TEST(slice, forward_data) {
 
   // clang-format off
     tensor_t in = {
-        { 0,1,2,3,4,5 },
-        { 6,7,8,9,10,11 },
-        { 12,13,14,15,16,17 },
-        { 18,19,20,21,22,23 }
+        {  0,  1,  2,  3,  4,  5 },
+        {  6,  7,  8,  9, 10, 11 },
+        { 12, 13, 14, 15, 16, 17 },
+        { 18, 19, 20, 21, 22, 23 }
     };
 
     tensor_t out0_expected = {
-        { 0,1,2,3,4,5 }
+        { 0, 1, 2, 3, 4, 5 }
     };
 
     tensor_t out1_expected = {
-        { 6,7,8,9,10,11 }
+        { 6, 7, 8, 9, 10, 11 }
     };
 
     tensor_t out2_expected = {
@@ -41,7 +45,7 @@ TEST(slice, forward_data) {
     std::vector<const tensor_t*> out;
     sl.forward({in}, out);
 
-    for (serial_size_t i = 0; i < 6; i++) {
+    for (size_t i = 0; i < 6; i++) {
       EXPECT_FLOAT_EQ(out0_expected[0][i], (*out[0])[0][i]);
       EXPECT_FLOAT_EQ(out1_expected[0][i], (*out[1])[0][i]);
       EXPECT_FLOAT_EQ(out2_expected[0][i], (*out[2])[0][i]);
@@ -52,8 +56,8 @@ TEST(slice, forward_data) {
   {
     auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 6; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 6; j++) {
         EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
       }
     }
@@ -97,8 +101,8 @@ TEST(slice, forward_channels) {
     std::vector<const tensor_t*> out;
     sl.forward({in}, out);
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 2; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 2; j++) {
         EXPECT_FLOAT_EQ(out0_expected[i][j], (*out[0])[i][j]);
         EXPECT_FLOAT_EQ(out1_expected[i][j], (*out[1])[i][j]);
         EXPECT_FLOAT_EQ(out2_expected[i][j], (*out[2])[i][j]);
@@ -109,12 +113,12 @@ TEST(slice, forward_channels) {
   {
     auto out = sl.backward({out0_expected, out1_expected, out2_expected});
 
-    for (serial_size_t i = 0; i < 4; i++) {
-      for (serial_size_t j = 0; j < 6; j++) {
+    for (size_t i = 0; i < 4; i++) {
+      for (size_t j = 0; j < 6; j++) {
         EXPECT_FLOAT_EQ(in[i][j], out[0][i][j]);
       }
     }
   }
 }
 
-}  // namespace tiny-dnn
+}  // namespace tiny_dnn

@@ -6,6 +6,11 @@
     in the LICENSE file.
 */
 #pragma once
+
+#include <algorithm>
+#include <string>
+#include <utility>
+
 #include "tiny_dnn/activations/activation_layer.h"
 #include "tiny_dnn/layers/layer.h"
 
@@ -18,7 +23,7 @@ class relu_layer : public activation_layer {
   std::string layer_type() const override { return "relu-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       y[j] = std::max(float_t(0), x[j]);
     }
   }
@@ -27,7 +32,7 @@ class relu_layer : public activation_layer {
                            const vec_t &y,
                            vec_t &dx,
                            const vec_t &dy) override {
-    for (serial_size_t j = 0; j < x.size(); j++) {
+    for (size_t j = 0; j < x.size(); j++) {
       // dx = dy * (gradient of relu)
       dx[j] = dy[j] * (y[j] > float_t(0) ? float_t(1) : float_t(0));
     }

@@ -96,7 +96,6 @@ class deserialization_helper {
   }
 
   deserialization_helper() { register_layers(this); }
-
 };  // class deserialization_helper
 
 template <typename InputArchive>
@@ -138,8 +137,8 @@ inline void finish_loading_layer(cereal::JSONInputArchive &ia) {
 }
 
 /**
-* generate layer from cereal's Archive
-**/
+ * generate layer from cereal's Archive
+ **/
 template <typename InputArchive>
 std::shared_ptr<layer> layer::load_layer(InputArchive &ia) {
   start_loading_layer(ia);
