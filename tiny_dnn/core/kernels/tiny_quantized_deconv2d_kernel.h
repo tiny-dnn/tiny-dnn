@@ -284,7 +284,6 @@ inline void tiny_quantized_deconv2d_back_kernel(const deconv_params &params,
   vec_t prev_delta_vec = quantized_tensor_to_float<uint8_t>(
     prev_delta_requantized, min_prev_delta_requantized,
     max_prev_delta_requantized);
-  prev_delta = &prev_delta_vec;
 
   // Accumulate dw
   for_i(params.in.depth_, [&](size_t inc) {
@@ -363,15 +362,6 @@ inline void tiny_quantized_deconv2d_kernel(const deconv_params &params,
   if (W_r[0] == W_r[1]) {
     max_filter = W_r[1] + 1e-3f;
     min_filter = W_r[0] - 1e-3f;
-  }
-  // bias range
-  float_t min_bias(b_r[0]);
-  float_t max_bias(b_r[1]);
-  if (params.has_bias) {
-    if (min_bias == max_bias) {
-      max_bias = b_r[1] + 1e-3f;
-      min_bias = b_r[0] - 1e-3f;
-    }
   }
   // output range
   float_t min_output_value;
