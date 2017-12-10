@@ -18,7 +18,7 @@ inline void maxpool_op_nnpack(const tensor_t &in_data,
                               const core::maxpool_params &params) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
-  NNPackInitializer::getInstance().initialize();
+  core::NNPackInitializer::getInstance().initialize();
 
   const size_t input_channels = params.in.depth_;
 
