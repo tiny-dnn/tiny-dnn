@@ -14,82 +14,78 @@
 
 #include "xutils.hpp"
 
-namespace xt
-{
+namespace xt {
 
-    /***************
-     * xvectorizer *
-     ***************/
+/***************
+ * xvectorizer *
+ ***************/
 
-    template <class F, class R>
-    class xvectorizer
-    {
-    public:
+template <class F, class R>
+class xvectorizer {
+ public:
+  template <class... E>
+  using xfunction_type = xfunction<F, R, xclosure_t<E>...>;
 
-        template <class... E>
-        using xfunction_type = xfunction<F, R, xclosure_t<E>...>;
+  template <class Func,
+            class = std::enable_if_t<
+              !std::is_same<std::decay_t<Func>, xvectorizer>::value>>
+  xvectorizer(Func&& f);
 
-        template <class Func, class = std::enable_if_t<!std::is_same<std::decay_t<Func>, xvectorizer>::value>>
-        xvectorizer(Func&& f);
+  template <class... E>
+  xfunction_type<E...> operator()(E&&... e) const;
 
-        template <class... E>
-        xfunction_type<E...> operator()(E&&... e) const;
+ private:
+  typename std::remove_reference<F>::type m_f;
+};
 
-    private:
+namespace detail {
+template <class F>
+using get_function_type =
+  remove_class_t<decltype(&std::remove_reference_t<F>::operator())>;
+}
 
-        typename std::remove_reference<F>::type m_f;
-    };
+template <class R, class... Args>
+xvectorizer<R (*)(Args...), R> vectorize(R (*f)(Args...));
 
-    namespace detail
-    {
-        template <class F>
-        using get_function_type = remove_class_t<decltype(&std::remove_reference_t<F>::operator())>;
-    }
+template <class F, class R, class... Args>
+xvectorizer<F, R> vectorize(F&& f, R (*)(Args...));
 
-    template <class R, class... Args>
-    xvectorizer<R (*)(Args...), R> vectorize(R (*f)(Args...));
+template <class F>
+auto vectorize(F&& f)
+  -> decltype(vectorize(std::forward<F>(f),
+                        (detail::get_function_type<F>*)nullptr));
 
-    template <class F, class R, class... Args>
-    xvectorizer<F, R> vectorize(F&& f, R (*)(Args...));
+/******************************
+ * xvectorizer implementation *
+ ******************************/
 
-    template <class F>
-    auto vectorize(F&& f) -> decltype(vectorize(std::forward<F>(f), (detail::get_function_type<F>*)nullptr));
+template <class F, class R>
+template <class Func, class>
+inline xvectorizer<F, R>::xvectorizer(Func&& f) : m_f(std::forward<Func>(f)) {}
 
-    /******************************
-     * xvectorizer implementation *
-     ******************************/
+template <class F, class R>
+template <class... E>
+inline auto xvectorizer<F, R>::operator()(E&&... e) const
+  -> xfunction_type<E...> {
+  return xfunction_type<E...>(m_f, std::forward<E>(e)...);
+}
 
-    template <class F, class R>
-    template <class Func, class>
-    inline xvectorizer<F, R>::xvectorizer(Func&& f)
-        : m_f(std::forward<Func>(f))
-    {
-    }
+template <class R, class... Args>
+inline xvectorizer<R (*)(Args...), R> vectorize(R (*f)(Args...)) {
+  return xvectorizer<R (*)(Args...), R>(f);
+}
 
-    template <class F, class R>
-    template <class... E>
-    inline auto xvectorizer<F, R>::operator()(E&&... e) const -> xfunction_type<E...>
-    {
-        return xfunction_type<E...>(m_f, std::forward<E>(e)...);
-    }
+template <class F, class R, class... Args>
+inline xvectorizer<F, R> vectorize(F&& f, R (*)(Args...)) {
+  return xvectorizer<F, R>(std::forward<F>(f));
+}
 
-    template <class R, class... Args>
-    inline xvectorizer<R (*)(Args...), R> vectorize(R (*f)(Args...))
-    {
-        return xvectorizer<R (*)(Args...), R>(f);
-    }
-
-    template <class F, class R, class... Args>
-    inline xvectorizer<F, R> vectorize(F&& f, R (*)(Args...))
-    {
-        return xvectorizer<F, R>(std::forward<F>(f));
-    }
-
-    template <class F>
-    inline auto vectorize(F&& f) -> decltype(vectorize(std::forward<F>(f), (detail::get_function_type<F>*)nullptr))
-    {
-        return vectorize(std::forward<F>(f), (detail::get_function_type<F>*)nullptr);
-    }
+template <class F>
+inline auto vectorize(F&& f)
+  -> decltype(vectorize(std::forward<F>(f),
+                        (detail::get_function_type<F>*)nullptr)) {
+  return vectorize(std::forward<F>(f), (detail::get_function_type<F>*)nullptr);
+}
 }
 
 #endif

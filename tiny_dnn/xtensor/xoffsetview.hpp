@@ -11,29 +11,25 @@
 
 #include "xtensor/xfunctorview.hpp"
 
-namespace xt
-{
-    namespace detail
-    {
-        template <class M, std::size_t I>
-        struct offset_forwarder
-        {
-            using value_type = M;
-            using reference = M&;
-            using const_reference = const M&;
-            using pointer = M*;
-            using const_pointer = const M*;
+namespace xt {
+namespace detail {
+template <class M, std::size_t I>
+struct offset_forwarder {
+  using value_type      = M;
+  using reference       = M&;
+  using const_reference = const M&;
+  using pointer         = M*;
+  using const_pointer   = const M*;
 
-            template <class T>
-            decltype(auto) operator()(T&& t) const
-            {
-                return forward_offset<M, I>(t);
-            }
-        };
-    }
+  template <class T>
+  decltype(auto) operator()(T&& t) const {
+    return forward_offset<M, I>(t);
+  }
+};
+}
 
-    template <class CT, class M, std::size_t I>
-    using xoffsetview = xfunctorview<detail::offset_forwarder<M, I>, CT>;
+template <class CT, class M, std::size_t I>
+using xoffsetview = xfunctorview<detail::offset_forwarder<M, I>, CT>;
 }
 
 #endif

@@ -11,1022 +11,816 @@
 
 #include "xiterator.hpp"
 
-namespace xt
-{
+namespace xt {
 
-    /*******************
-     * xconst_iterable *
-     *******************/
+/*******************
+ * xconst_iterable *
+ *******************/
 
-    template <class D>
-    struct xiterable_inner_types;
+template <class D>
+struct xiterable_inner_types;
 
 #define DL DEFAULT_LAYOUT
 
-    /**
-     * @class xconst_iterable
-     * @brief Base class for multidimensional iterable constant expressions
-     *
-     * The xconst_iterable class defines the interface for multidimensional
-     * constant expressions that can be iterated.
-     *
-     * @tparam D The derived type, i.e. the inheriting class for which xconst_iterable
-     *           provides the interface.
-     */
-    template <class D>
-    class xconst_iterable
-    {
-    public:
+/**
+ * @class xconst_iterable
+ * @brief Base class for multidimensional iterable constant expressions
+ *
+ * The xconst_iterable class defines the interface for multidimensional
+ * constant expressions that can be iterated.
+ *
+ * @tparam D The derived type, i.e. the inheriting class for which
+ * xconst_iterable
+ *           provides the interface.
+ */
+template <class D>
+class xconst_iterable {
+ public:
+  using derived_type = D;
 
-        using derived_type = D;
+  using iterable_types   = xiterable_inner_types<D>;
+  using inner_shape_type = typename iterable_types::inner_shape_type;
 
-        using iterable_types = xiterable_inner_types<D>;
-        using inner_shape_type = typename iterable_types::inner_shape_type;
+  using stepper       = typename iterable_types::stepper;
+  using const_stepper = typename iterable_types::const_stepper;
 
-        using stepper = typename iterable_types::stepper;
-        using const_stepper = typename iterable_types::const_stepper;
+  template <layout_type L>
+  using layout_iterator = xiterator<stepper, inner_shape_type*, L>;
+  template <layout_type L>
+  using const_layout_iterator = xiterator<const_stepper, inner_shape_type*, L>;
+  template <layout_type L>
+  using reverse_layout_iterator = std::reverse_iterator<layout_iterator<L>>;
+  template <layout_type L>
+  using const_reverse_layout_iterator =
+    std::reverse_iterator<const_layout_iterator<L>>;
 
-        using iterator = typename iterable_types::iterator;
-        using const_iterator = typename iterable_types::const_iterator;
+  template <class S, layout_type L>
+  using broadcast_iterator = xiterator<stepper, S, L>;
+  template <class S, layout_type L>
+  using const_broadcast_iterator = xiterator<const_stepper, S, L>;
+  template <class S, layout_type L>
+  using reverse_broadcast_iterator =
+    std::reverse_iterator<broadcast_iterator<S, L>>;
+  template <class S, layout_type L>
+  using const_reverse_broadcast_iterator =
+    std::reverse_iterator<const_broadcast_iterator<S, L>>;
 
-        template <layout_type L>
-        using broadcast_iterator = xiterator<stepper, inner_shape_type*, L>;
-        template <layout_type L>
-        using const_broadcast_iterator = xiterator<const_stepper, inner_shape_type*, L>;
+  using storage_iterator               = layout_iterator<DL>;
+  using const_storage_iterator         = const_layout_iterator<DL>;
+  using reverse_storage_iterator       = reverse_layout_iterator<DL>;
+  using const_reverse_storage_iterator = const_reverse_layout_iterator<DL>;
 
-        template <class S, layout_type L>
-        using shaped_xiterator = xiterator<stepper, S, L>;
-        template <class S, layout_type L>
-        using const_shaped_xiterator = xiterator<const_stepper, S, L>;
+  using iterator               = layout_iterator<DL>;
+  using const_iterator         = const_layout_iterator<DL>;
+  using reverse_iterator       = reverse_layout_iterator<DL>;
+  using const_reverse_iterator = const_reverse_layout_iterator<DL>;
 
-        using reverse_iterator = typename iterable_types::reverse_iterator;
-        using const_reverse_iterator = typename iterable_types::const_reverse_iterator;
+  template <layout_type L = DL>
+  const_layout_iterator<L> begin() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> end() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> cbegin() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> cend() const noexcept;
 
-        template <layout_type L>
-        using reverse_broadcast_iterator = std::reverse_iterator<broadcast_iterator<L>>;
-        template <layout_type L>
-        using const_reverse_broadcast_iterator = std::reverse_iterator<const_broadcast_iterator<L>>;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> rbegin() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> rend() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> crbegin() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> crend() const noexcept;
 
-        template <class S, layout_type L>
-        using reverse_shaped_xiterator = std::reverse_iterator<shaped_xiterator<S, L>>;
-        template <class S, layout_type L>
-        using const_reverse_shaped_xiterator = std::reverse_iterator<const_shaped_xiterator<S, L>>;
+  template <class S, layout_type L = DL>
+  const_broadcast_iterator<S, L> begin(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_broadcast_iterator<S, L> end(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_broadcast_iterator<S, L> cbegin(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_broadcast_iterator<S, L> cend(const S& shape) const noexcept;
 
-        template <layout_type L = DL>
-        const_broadcast_iterator<L> xbegin() const noexcept;
-        template <layout_type L = DL>
-        const_broadcast_iterator<L> xend() const noexcept;
-        template <layout_type L = DL>
-        const_broadcast_iterator<L> cxbegin() const noexcept;
-        template <layout_type L = DL>
-        const_broadcast_iterator<L> cxend() const noexcept;
+  template <class S, layout_type L = DL>
+  const_reverse_broadcast_iterator<S, L> rbegin(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_reverse_broadcast_iterator<S, L> rend(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_reverse_broadcast_iterator<S, L> crbegin(const S& shape) const noexcept;
+  template <class S, layout_type L = DL>
+  const_reverse_broadcast_iterator<S, L> crend(const S& shape) const noexcept;
 
-        template <class S, layout_type L = DL>
-        const_shaped_xiterator<S, L> xbegin(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_shaped_xiterator<S, L> xend(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_shaped_xiterator<S, L> cxbegin(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_shaped_xiterator<S, L> cxend(const S& shape) const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> storage_begin() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> storage_end() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> storage_cbegin() const noexcept;
+  template <layout_type L = DL>
+  const_layout_iterator<L> storage_cend() const noexcept;
 
-        template <layout_type L = DL>
-        const_reverse_broadcast_iterator<L> xrbegin() const noexcept;
-        template <layout_type L = DL>
-        const_reverse_broadcast_iterator<L> xrend() const noexcept;
-        template <layout_type L = DL>
-        const_reverse_broadcast_iterator<L> cxrbegin() const noexcept;
-        template <layout_type L = DL>
-        const_reverse_broadcast_iterator<L> cxrend() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> storage_rbegin() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> storage_rend() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> storage_crbegin() const noexcept;
+  template <layout_type L = DL>
+  const_reverse_layout_iterator<L> storage_crend() const noexcept;
 
-        template <class S, layout_type L = DL>
-        const_reverse_shaped_xiterator<S, L> xrbegin(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_reverse_shaped_xiterator<S, L> xrend(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_reverse_shaped_xiterator<S, L> cxrbegin(const S& shape) const noexcept;
-        template <class S, layout_type L = DL>
-        const_reverse_shaped_xiterator<S, L> cxrend(const S& shape) const noexcept;
+ protected:
+  const inner_shape_type& get_shape() const;
 
-    protected:
+ private:
+  template <layout_type L>
+  const_layout_iterator<L> get_cbegin(bool reverse) const noexcept;
+  template <layout_type L>
+  const_layout_iterator<L> get_cend(bool reverse) const noexcept;
 
-        const inner_shape_type& get_shape() const;
+  template <class S, layout_type L>
+  const_broadcast_iterator<S, L> get_cbegin(const S& shape, bool reverse) const
+    noexcept;
+  template <class S, layout_type L>
+  const_broadcast_iterator<S, L> get_cend(const S& shape, bool reverse) const
+    noexcept;
 
-    private:
+  template <class S>
+  const_stepper get_stepper_begin(const S& shape) const noexcept;
+  template <class S>
+  const_stepper get_stepper_end(const S& shape, layout_type l) const noexcept;
 
-        template <layout_type L>
-        const_broadcast_iterator<L> get_cxbegin(bool reverse) const noexcept;
-        template <layout_type L>
-        const_broadcast_iterator<L> get_cxend(bool reverse) const noexcept;
+  const derived_type& derived_cast() const;
+};
 
-        template <class S, layout_type L>
-        const_shaped_xiterator<S, L> get_cxbegin(const S& shape, bool reverse) const noexcept;
-        template <class S, layout_type L>
-        const_shaped_xiterator<S, L> get_cxend(const S& shape, bool reverse) const noexcept;
+/*************
+ * xiterable *
+ *************/
 
-        template <class S>
-        const_stepper get_stepper_begin(const S& shape) const noexcept;
-        template <class S>
-        const_stepper get_stepper_end(const S& shape, layout_type l) const noexcept;
+/**
+ * @class xiterable
+ * @brief Base class for multidimensional iterable expressions
+ *
+ * The xiterable class defines the interface for multidimensional
+ * expressions that can be iterated.
+ *
+ * @tparam D The derived type, i.e. the inheriting class for which xiterable
+ *           provides the interface.
+ */
+template <class D>
+class xiterable : public xconst_iterable<D> {
+ public:
+  using derived_type = D;
 
-        const derived_type& derived_cast() const;
-    };
+  using base_type        = xconst_iterable<D>;
+  using inner_shape_type = typename base_type::inner_shape_type;
 
-    /*************
-     * xiterable *
-     *************/
+  using stepper       = typename base_type::stepper;
+  using const_stepper = typename base_type::const_stepper;
 
-    /**
-     * @class xiterable
-     * @brief Base class for multidimensional iterable expressions
-     *
-     * The xiterable class defines the interface for multidimensional
-     * expressions that can be iterated.
-     *
-     * @tparam D The derived type, i.e. the inheriting class for which xiterable
-     *           provides the interface.
-     */
-    template <class D>
-    class xiterable : public xconst_iterable<D>
-    {
-    public:
+  template <layout_type L>
+  using layout_iterator = typename base_type::template layout_iterator<L>;
+  template <layout_type L>
+  using const_layout_iterator =
+    typename base_type::template const_layout_iterator<L>;
+  template <layout_type L>
+  using reverse_layout_iterator =
+    typename base_type::template reverse_layout_iterator<L>;
+  template <layout_type L>
+  using const_reverse_layout_iterator =
+    typename base_type::template const_reverse_layout_iterator<L>;
 
-        using derived_type = D;
+  template <class S, layout_type L>
+  using broadcast_iterator =
+    typename base_type::template broadcast_iterator<S, L>;
+  template <class S, layout_type L>
+  using const_broadcast_iterator =
+    typename base_type::template const_broadcast_iterator<S, L>;
+  template <class S, layout_type L>
+  using reverse_broadcast_iterator =
+    typename base_type::template reverse_broadcast_iterator<S, L>;
+  template <class S, layout_type L>
+  using const_reverse_broadcast_iterator =
+    typename base_type::template const_reverse_broadcast_iterator<S, L>;
 
-        using base_type = xconst_iterable<D>;
-        using inner_shape_type = typename base_type::inner_shape_type;
+  using iterator               = typename base_type::iterator;
+  using const_iterator         = typename base_type::const_iterator;
+  using reverse_iterator       = typename base_type::reverse_iterator;
+  using const_reverse_iterator = typename base_type::const_reverse_iterator;
 
-        using stepper = typename base_type::stepper;
-        using const_stepper = typename base_type::const_stepper;
+  using base_type::begin;
+  using base_type::end;
+  using base_type::rbegin;
+  using base_type::rend;
+  using base_type::storage_begin;
+  using base_type::storage_end;
 
-        using iterator = typename base_type::iterator;
-        using const_iterator = typename base_type::const_iterator;
+  template <layout_type L = DL>
+  layout_iterator<L> begin() noexcept;
+  template <layout_type L = DL>
+  layout_iterator<L> end() noexcept;
 
-        template <layout_type L>
-        using broadcast_iterator = typename base_type::template broadcast_iterator<L>;
-        template <layout_type L>
-        using const_broadcast_iterator = typename base_type::template const_broadcast_iterator<L>;
+  template <layout_type L = DL>
+  reverse_layout_iterator<L> rbegin() noexcept;
+  template <layout_type L = DL>
+  reverse_layout_iterator<L> rend() noexcept;
 
-        template <class S, layout_type L>
-        using shaped_xiterator = typename base_type::template shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_shaped_xiterator = typename base_type::template const_shaped_xiterator<S, L>;
+  template <class S, layout_type L = DL>
+  broadcast_iterator<S, L> begin(const S& shape) noexcept;
+  template <class S, layout_type L = DL>
+  broadcast_iterator<S, L> end(const S& shape) noexcept;
 
-        using reverse_iterator = typename base_type::reverse_iterator;
-        using const_reverse_iterator = typename base_type::const_reverse_iterator;
+  template <class S, layout_type L = DL>
+  reverse_broadcast_iterator<S, L> rbegin(const S& shape) noexcept;
+  template <class S, layout_type L = DL>
+  reverse_broadcast_iterator<S, L> rend(const S& shape) noexcept;
 
-        template <layout_type L>
-        using reverse_broadcast_iterator = typename base_type::template reverse_broadcast_iterator<L>;
-        template <layout_type L>
-        using const_reverse_broadcast_iterator = typename base_type::template const_reverse_broadcast_iterator<L>;
+  template <layout_type L = DL>
+  layout_iterator<L> storage_begin() noexcept;
+  template <layout_type L = DL>
+  layout_iterator<L> storage_end() noexcept;
 
-        template <class S, layout_type L>
-        using reverse_shaped_xiterator = typename base_type::template reverse_shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_reverse_shaped_xiterator = typename base_type::template const_reverse_shaped_xiterator<S, L>;
+  template <layout_type L = DL>
+  reverse_layout_iterator<L> storage_rbegin() noexcept;
+  template <layout_type L = DL>
+  reverse_layout_iterator<L> storage_rend() noexcept;
 
-        template <layout_type L = DL>
-        broadcast_iterator<L> xbegin() noexcept;
-        template <layout_type L = DL>
-        broadcast_iterator<L> xend() noexcept;
+ private:
+  template <layout_type L>
+  layout_iterator<L> get_begin(bool reverse) noexcept;
+  template <layout_type L>
+  layout_iterator<L> get_end(bool reverse) noexcept;
 
-        using base_type::xbegin;
-        using base_type::xend;
+  template <class S, layout_type L>
+  broadcast_iterator<S, L> get_begin(const S& shape, bool reverse) noexcept;
+  template <class S, layout_type L>
+  broadcast_iterator<S, L> get_end(const S& shape, bool reverse) noexcept;
 
-        template <class S, layout_type L = DL>
-        shaped_xiterator<S, L> xbegin(const S& shape) noexcept;
-        template <class S, layout_type L = DL>
-        shaped_xiterator<S, L> xend(const S& shape) noexcept;
+  template <class S>
+  stepper get_stepper_begin(const S& shape) noexcept;
+  template <class S>
+  stepper get_stepper_end(const S& shape, layout_type l) noexcept;
 
-        template <layout_type L = DL>
-        reverse_broadcast_iterator<L> xrbegin() noexcept;
-        template <layout_type L = DL>
-        reverse_broadcast_iterator<L> xrend() noexcept;
+  template <class S>
+  const_stepper get_stepper_begin(const S& shape) const noexcept;
+  template <class S>
+  const_stepper get_stepper_end(const S& shape, layout_type l) const noexcept;
 
-        using base_type::xrbegin;
-        using base_type::xrend;
-
-        template <class S, layout_type L = DL>
-        reverse_shaped_xiterator<S, L> xrbegin(const S& shape) noexcept;
-        template <class S, layout_type L = DL>
-        reverse_shaped_xiterator<S, L> xrend(const S& shape) noexcept;
-
-    private:
-
-        template <layout_type L>
-        broadcast_iterator<L> get_xbegin(bool reverse) noexcept;
-        template <layout_type L>
-        broadcast_iterator<L> get_xend(bool reverse) noexcept;
-
-        template <class S, layout_type L>
-        shaped_xiterator<S, L> get_xbegin(const S& shape, bool reverse) noexcept;
-        template <class S, layout_type L>
-        shaped_xiterator<S, L> get_xend(const S& shape, bool reverse) noexcept;
-
-        template <class S>
-        stepper get_stepper_begin(const S& shape) noexcept;
-        template <class S>
-        stepper get_stepper_end(const S& shape, layout_type l) noexcept;
-
-        derived_type& derived_cast();
-    };
+  derived_type& derived_cast();
+};
 
 #undef DL
 
-    /******************************
-     * xexpression_const_iterable *
-     ******************************/
-
-    /**
-     * @class xexpression_const_iterable
-     * @brief Base class for multidimensional iterable constant expressions
-     *        that don't store any data
-     *
-     * The xexpression_const_iterable class defines the interface for multidimensional
-     * constant expressions that don't store any data and that can be iterated.
-     *
-     * @tparam D The derived type, i.e. the inheriting class for which xexpression_const_iterable
-     *           provides the interface.
-     */
-    template <class D>
-    class xexpression_const_iterable : public xconst_iterable<D>
-    {
-    public:
-
-        using base_type = xconst_iterable<D>;
-        using inner_shape_type = typename base_type::inner_shape_type;
-
-        using stepper = typename base_type::stepper;
-        using const_stepper = typename base_type::const_stepper;
-
-        using iterator = typename base_type::iterator;
-        using const_iterator = typename base_type::const_iterator;
-
-        template <layout_type L>
-        using broadcast_iterator = typename base_type::template broadcast_iterator<L>;
-        template <layout_type L>
-        using const_broadcast_iterator = typename base_type::template const_broadcast_iterator<L>;
-
-        template <class S, layout_type L>
-        using shaped_xiterator = typename base_type::template shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_shaped_xiterator = typename base_type::template const_shaped_xiterator<S, L>;
-
-        using reverse_iterator = typename base_type::reverse_iterator;
-        using const_reverse_iterator = typename base_type::const_reverse_iterator;
-
-        template <layout_type L>
-        using reverse_broadcast_iterator = typename base_type::template reverse_broadcast_iterator<L>;
-        template <layout_type L>
-        using const_reverse_broadcast_iterator = typename base_type::template const_reverse_broadcast_iterator<L>;
-
-        template <class S, layout_type L>
-        using reverse_shaped_xiterator = typename base_type::template reverse_shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_reverse_shaped_xiterator = typename base_type::template const_reverse_shaped_xiterator<S, L>;
-
-        const_iterator begin() const noexcept;
-        const_iterator end() const noexcept;
-        const_iterator cbegin() const noexcept;
-        const_iterator cend() const noexcept;
-
-        const_reverse_iterator rbegin() const noexcept;
-        const_reverse_iterator rend() const noexcept;
-        const_reverse_iterator crbegin() const noexcept;
-        const_reverse_iterator crend() const noexcept;
-    };
-
-    /************************
-     * xexpression_iterable *
-     ************************/
-
-    /**
-     * @class xexpression_iterable
-     * @brief Base class for multidimensional iterable expressions
-     *        that don't store any data
-     *
-     * The xexpression_iterable class defines the interface for multidimensional
-     * expressions that don't store any data and that can be iterated.
-     *
-     * @tparam D The derived type, i.e.the inheriting class for which xexpression_iterable
-     *           provides the interface.
-     */
-    template <class D>
-    class xexpression_iterable : public xiterable<D>
-    {
-    public:
-
-        using base_type = xiterable<D>;
-        using inner_shape_type = typename base_type::inner_shape_type;
-
-        using stepper = typename base_type::stepper;
-        using const_stepper = typename base_type::const_stepper;
-
-        using iterator = typename base_type::iterator;
-        using const_iterator = typename base_type::const_iterator;
-
-        template <layout_type L>
-        using broadcast_iterator = typename base_type::template broadcast_iterator<L>;
-        template <layout_type L>
-        using const_broadcast_iterator = typename base_type::template const_broadcast_iterator<L>;
-
-        template <class S, layout_type L>
-        using shaped_xiterator = typename base_type::template shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_shaped_xiterator = typename base_type::template const_shaped_xiterator<S, L>;
-
-        using reverse_iterator = typename base_type::reverse_iterator;
-        using const_reverse_iterator = typename base_type::const_reverse_iterator;
-
-        template <layout_type L>
-        using reverse_broadcast_iterator = typename base_type::template reverse_broadcast_iterator<L>;
-        template <layout_type L>
-        using const_reverse_broadcast_iterator = typename base_type::template const_reverse_broadcast_iterator<L>;
-
-        template <class S, layout_type L>
-        using reverse_shaped_xiterator = typename base_type::template reverse_shaped_xiterator<S, L>;
-        template <class S, layout_type L>
-        using const_reverse_shaped_xiterator = typename base_type::template const_reverse_shaped_xiterator<S, L>;
-
-        iterator begin() noexcept;
-        iterator end() noexcept;
-
-        const_iterator begin() const noexcept;
-        const_iterator end() const noexcept;
-        const_iterator cbegin() const noexcept;
-        const_iterator cend() const noexcept;
-
-        reverse_iterator rbegin() noexcept;
-        reverse_iterator rend() noexcept;
-
-        const_reverse_iterator rbegin() const noexcept;
-        const_reverse_iterator rend() const noexcept;
-        const_reverse_iterator crbegin() const noexcept;
-        const_reverse_iterator crend() const noexcept;
-    };
-
-    /**********************************
-     * xconst_iterable implementation *
-     **********************************/
-
-    /**
-     * @name Constant broadcast iterators
-     */
-    //@{
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::xbegin() const noexcept -> const_broadcast_iterator<L>
-    {
-        return cxbegin<L>();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::xend() const noexcept -> const_broadcast_iterator<L>
-    {
-        return cxend<L>();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::cxbegin() const noexcept -> const_broadcast_iterator<L>
-    {
-        return get_cxbegin<L>(false);
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::cxend() const noexcept -> const_broadcast_iterator<L>
-    {
-        return get_cxend<L>(false);
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the expression. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::xbegin(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return cxbegin<S, L>(shape);
-    }
-
-    /**
-    * Returns a constant iterator to the element following the last element of the
-    * expression. The iteration is broadcasted to the specified shape.
-    * @param shape the shape used for broadcasting
-    * @tparam S type of the \c shape parameter.
-    * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-    */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::xend(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return cxend<S, L>(shape);
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the expression. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::cxbegin(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return get_cxbegin<S, L>(shape, false);
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element of the
-     * expression. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::cxend(const S& shape) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return get_cxend<S, L>(shape, false);
-    }
-    //@}
-
-    /**
-     * @name Constant reverse broadcast iterators
-     */
-    //@{
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::xrbegin() const noexcept -> const_reverse_broadcast_iterator<L>
-    {
-        return cxrbegin<L>();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::xrend() const noexcept -> const_reverse_broadcast_iterator<L>
-    {
-        return cxrend<L>();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::cxrbegin() const noexcept -> const_reverse_broadcast_iterator<L>
-    {
-        return const_reverse_broadcast_iterator<L>(get_cxend<L>(true));
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::cxrend() const noexcept -> const_reverse_broadcast_iterator<L>
-    {
-        return const_reverse_broadcast_iterator<L>(get_cxbegin<L>(true));
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     * The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::xrbegin(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
-    {
-        return cxrbegin<S, L>(shape);
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element of the
-     * reversed expression. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::xrend(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
-    {
-        return cxrend<S, L>(shape);
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     * The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::cxrbegin(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
-    {
-        return const_reverse_shaped_xiterator<S, L>(get_cxend<S, L>(shape, true));
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element of the
-     * reversed expression. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::cxrend(const S& shape) const noexcept -> const_reverse_shaped_xiterator<S, L>
-    {
-        return const_reverse_shaped_xiterator<S, L>(get_cxbegin<S, L>(shape, true));
-    }
-    //@}
-
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::get_cxbegin(bool reverse) const noexcept -> const_broadcast_iterator<L>
-    {
-        return const_broadcast_iterator<L>(get_stepper_begin(get_shape()), &get_shape(), reverse);
-    }
-
-    template <class D>
-    template <layout_type L>
-    inline auto xconst_iterable<D>::get_cxend(bool reverse) const noexcept -> const_broadcast_iterator<L>
-    {
-        return const_broadcast_iterator<L>(get_stepper_end(get_shape(), L), &get_shape(), reverse);
-    }
-
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::get_cxbegin(const S& shape, bool reverse) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return const_shaped_xiterator<S, L>(get_stepper_begin(shape), shape, reverse);
-    }
-
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xconst_iterable<D>::get_cxend(const S& shape, bool reverse) const noexcept -> const_shaped_xiterator<S, L>
-    {
-        return const_shaped_xiterator<S, L>(get_stepper_end(shape, L), shape, reverse);
-    }
-
-    template <class D>
-    template <class S>
-    inline auto xconst_iterable<D>::get_stepper_begin(const S& shape) const noexcept -> const_stepper
-    {
-        return derived_cast().stepper_begin(shape);
-    }
-
-    template <class D>
-    template <class S>
-    inline auto xconst_iterable<D>::get_stepper_end(const S& shape, layout_type l) const noexcept -> const_stepper
-    {
-        return derived_cast().stepper_end(shape, l);
-    }
-
-    template <class D>
-    inline auto xconst_iterable<D>::get_shape() const -> const inner_shape_type&
-    {
-        return derived_cast().shape();
-    }
-
-    template <class D>
-    inline auto xconst_iterable<D>::derived_cast() const -> const derived_type&
-    {
-        return *static_cast<const derived_type*>(this);
-    }
-
-    /****************************
-     * xiterable implementation *
-     ****************************/
-
-    /**
-     * @name Broadcast iterators
-     */
-    //@{
-    /**
-     * Returns an iterator to the first element of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::xbegin() noexcept -> broadcast_iterator<L>
-    {
-        return get_xbegin<L>(false);
-    }
-
-    /**
-     * Returns an iterator to the element following the last element
-     * of the expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::xend() noexcept -> broadcast_iterator<L>
-    {
-        return get_xend<L>(false);
-    }
-
-    /**
-     * Returns an iterator to the first element of the expression. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::xbegin(const S& shape) noexcept -> shaped_xiterator<S, L>
-    {
-        return get_xbegin<S, L>(shape, false);
-    }
-
-    /**
-     * Returns an iterator to the element following the last element of the
-     * expression. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::xend(const S& shape) noexcept -> shaped_xiterator<S, L>
-    {
-        return get_xend<S, L>(shape, false);
-    }
-    //@}
-
-    /**
-     * @name Reverse broadcast iterators
-     */
-    //@{
-    /**
-     * Returns an iterator to the first element of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::xrbegin() noexcept -> reverse_broadcast_iterator<L>
-    {
-        return reverse_broadcast_iterator<L>(get_xend<L>(true));
-    }
-
-    /**
-     * Returns an iterator to the element following the last element
-     * of the reversed expression.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::xrend() noexcept -> reverse_broadcast_iterator<L>
-    {
-        return reverse_broadcast_iterator<L>(get_xbegin<L>(true));
-    }
-
-    /**
-     * Returns an iterator to the first element of the reversed expression. The
-     * iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::xrbegin(const S& shape) noexcept -> reverse_shaped_xiterator<S, L>
-    {
-        return reverse_shaped_xiterator<S, L>(get_xend<S, L>(shape, true));
-    }
-
-    /**
-     * Returns an iterator to the element following the last element of the
-     * reversed expression. The iteration is broadcasted to the specified shape.
-     * @param shape the shape used for broadcasting
-     * @tparam S type of the \c shape parameter.
-     * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
-     */
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::xrend(const S& shape) noexcept -> reverse_shaped_xiterator<S, L>
-    {
-        return reverse_shaped_xiterator<S, L>(get_xbegin<S, L>(shape, true));
-    }
-    //@}
-
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::get_xbegin(bool reverse) noexcept -> broadcast_iterator<L>
-    {
-        return broadcast_iterator<L>(get_stepper_begin(this->get_shape()), &(this->get_shape()), reverse);
-    }
-
-    template <class D>
-    template <layout_type L>
-    inline auto xiterable<D>::get_xend(bool reverse) noexcept -> broadcast_iterator<L>
-    {
-        return broadcast_iterator<L>(get_stepper_end(this->get_shape(), L), &(this->get_shape()), reverse);
-    }
-
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::get_xbegin(const S& shape, bool reverse) noexcept -> shaped_xiterator<S, L>
-    {
-        return shaped_xiterator<S, L>(get_stepper_begin(shape), shape, reverse);
-    }
-
-    template <class D>
-    template <class S, layout_type L>
-    inline auto xiterable<D>::get_xend(const S& shape, bool reverse) noexcept -> shaped_xiterator<S, L>
-    {
-        return shaped_xiterator<S, L>(get_stepper_end(shape, L), shape, reverse);
-    }
-
-    template <class D>
-    template <class S>
-    inline auto xiterable<D>::get_stepper_begin(const S& shape) noexcept -> stepper
-    {
-        return derived_cast().stepper_begin(shape);
-    }
-
-    template <class D>
-    template <class S>
-    inline auto xiterable<D>::get_stepper_end(const S& shape, layout_type l) noexcept -> stepper
-    {
-        return derived_cast().stepper_end(shape, l);
-    }
-
-    template <class D>
-    inline auto xiterable<D>::derived_cast() -> derived_type&
-    {
-        return *static_cast<derived_type*>(this);
-    }
-
-    /*********************************************
-     * xexpression_const_iterable implementation *
-     *********************************************/
-
-    /**
-     * @name Constant Iterators
-     */
-    //@{
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::begin() const noexcept -> const_iterator
-    {
-        return this->cxbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::end() const noexcept -> const_iterator
-    {
-        return this->cxend();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::cbegin() const noexcept -> const_iterator
-    {
-        return this->cxbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::cend() const noexcept -> const_iterator
-    {
-        return this->cxend();
-    }
-    //@}
-
-    /**
-     * @name Constant Reverse Iterators
-     */
-    //@{
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::rbegin() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::rend() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrend();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::crbegin() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_const_iterable<D>::crend() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrend();
-    }
-    //@}
-
-    /***************************************
-     * xexpression_iterable implementation *
-     ***************************************/
-
-    /**
-     * @name Iterators
-     */
-    //@{
-    /**
-     * Returns an iterator to the first element of the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::begin() noexcept -> iterator
-    {
-        return this->xbegin();
-    }
-
-    /**
-     * Returns an iterator to the element following the last element of
-     * the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::end() noexcept -> iterator
-    {
-        return this->xend();
-    }
-    //@}
-
-    /**
-     * @name Constant Iterators
-     */
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::begin() const noexcept -> const_iterator
-    {
-        return this->cxbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::end() const noexcept -> const_iterator
-    {
-        return this->cxend();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::cbegin() const noexcept -> const_iterator
-    {
-        return this->cxbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::cend() const noexcept -> const_iterator
-    {
-        return this->cxend();
-    }
-    //@}
-
-    /**
-     * @name Reverse Iterators
-     */
-    //@{
-    /**
-     * Returns an iterator to the first element of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::rbegin() noexcept -> reverse_iterator
-    {
-        return this->xrbegin();
-    }
-
-    /**
-     * Returns an iterator to the element following the last element
-     * of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::rend() noexcept -> reverse_iterator
-    {
-        return this->xrend();
-    }
-    //@}
-
-    /**
-     * @name Constant Reverse Iterators
-     */
-    //@{
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::rbegin() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::rend() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrend();
-    }
-
-    /**
-     * Returns a constant iterator to the first element of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::crbegin() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrbegin();
-    }
-
-    /**
-     * Returns a constant iterator to the element following the last element
-     * of the reversed expression.
-     */
-    template <class D>
-    inline auto xexpression_iterable<D>::crend() const noexcept -> const_reverse_iterator
-    {
-        return this->cxrend();
-    }
-    //@}
+/**********************************
+ * xconst_iterable implementation *
+ **********************************/
+
+/**
+ * @name Constant iterators
+ */
+//@{
+/**
+ * Returns a constant iterator to the first element of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::begin() const noexcept
+  -> const_layout_iterator<L> {
+  return cbegin<L>();
+}
+
+/**
+ * Returns a constant iterator to the element following the last element
+ * of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::end() const noexcept
+  -> const_layout_iterator<L> {
+  return cend<L>();
+}
+
+/**
+ * Returns a constant iterator to the first element of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::cbegin() const noexcept
+  -> const_layout_iterator<L> {
+  return get_cbegin<L>(false);
+}
+
+/**
+ * Returns a constant iterator to the element following the last element
+ * of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::cend() const noexcept
+  -> const_layout_iterator<L> {
+  return get_cend<L>(false);
+}
+//@}
+
+/**
+ * @name Constant reverse iterators
+ */
+//@{
+/**
+ * Returns a constant iterator to the first element of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::rbegin() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crbegin<L>();
+}
+
+/**
+ * Returns a constant iterator to the element following the last element
+ * of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::rend() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crend<L>();
+}
+
+/**
+ * Returns a constant iterator to the first element of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::crbegin() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return const_reverse_layout_iterator<L>(get_cend<L>(true));
+}
+
+/**
+ * Returns a constant iterator to the element following the last element
+ * of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::crend() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return const_reverse_layout_iterator<L>(get_cbegin<L>(true));
+}
+//@}
+
+/**
+ * @name Constant broadcast iterators
+ */
+//@{
+/**
+ * Returns a constant iterator to the first element of the expression. The
+ * iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::begin(const S& shape) const noexcept
+  -> const_broadcast_iterator<S, L> {
+  return cbegin<S, L>(shape);
+}
+
+/**
+ * Returns a constant iterator to the element following the last element of the
+ * expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::end(const S& shape) const noexcept
+  -> const_broadcast_iterator<S, L> {
+  return cend<S, L>(shape);
+}
+
+/**
+ * Returns a constant iterator to the first element of the expression. The
+ * iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::cbegin(const S& shape) const noexcept
+  -> const_broadcast_iterator<S, L> {
+  return get_cbegin<S, L>(shape, false);
+}
+
+/**
+ * Returns a constant iterator to the element following the last element of the
+ * expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::cend(const S& shape) const noexcept
+  -> const_broadcast_iterator<S, L> {
+  return get_cend<S, L>(shape, false);
+}
+//@}
+
+/**
+ * Constant reverse broadcast iterators
+ */
+//@{
+/**
+ * Returns a constant iterator to the first element of the reversed expression.
+ * The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::rbegin(const S& shape) const noexcept
+  -> const_reverse_broadcast_iterator<S, L> {
+  return crbegin<S, L>(shape);
+}
+
+/**
+ * Returns a constant iterator to the element following the last element of the
+ * reversed expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::rend(const S& shape) const noexcept
+  -> const_reverse_broadcast_iterator<S, L> {
+  return crend<S, L>(shape);
+}
+
+/**
+ * Returns a constant iterator to the first element of the reversed expression.
+ * The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::crbegin(const S& shape) const noexcept
+  -> const_reverse_broadcast_iterator<S, L> {
+  return const_reverse_broadcast_iterator<S, L>(get_cend<S, L>(shape, true));
+}
+
+/**
+ * Returns a constant iterator to the element following the last element of the
+ * reversed expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::crend(const S& shape) const noexcept
+  -> const_reverse_broadcast_iterator<S, L> {
+  return const_reverse_broadcast_iterator<S, L>(get_cbegin<S, L>(shape, true));
+}
+//@}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_begin() const noexcept
+  -> const_layout_iterator<L> {
+  return cbegin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_end() const noexcept
+  -> const_layout_iterator<L> {
+  return cend<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_cbegin() const noexcept
+  -> const_layout_iterator<L> {
+  return cbegin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_cend() const noexcept
+  -> const_layout_iterator<L> {
+  return cend<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_rbegin() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crbegin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_rend() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crend<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_crbegin() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crbegin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::storage_crend() const noexcept
+  -> const_reverse_layout_iterator<L> {
+  return crend<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::get_cbegin(bool reverse) const noexcept
+  -> const_layout_iterator<L> {
+  return const_layout_iterator<L>(get_stepper_begin(get_shape()), &get_shape(),
+                                  reverse);
+}
+
+template <class D>
+template <layout_type L>
+inline auto xconst_iterable<D>::get_cend(bool reverse) const noexcept
+  -> const_layout_iterator<L> {
+  return const_layout_iterator<L>(get_stepper_end(get_shape(), L), &get_shape(),
+                                  reverse);
+}
+
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::get_cbegin(const S& shape, bool reverse) const
+  noexcept -> const_broadcast_iterator<S, L> {
+  return const_broadcast_iterator<S, L>(get_stepper_begin(shape), shape,
+                                        reverse);
+}
+
+template <class D>
+template <class S, layout_type L>
+inline auto xconst_iterable<D>::get_cend(const S& shape, bool reverse) const
+  noexcept -> const_broadcast_iterator<S, L> {
+  return const_broadcast_iterator<S, L>(get_stepper_end(shape, L), shape,
+                                        reverse);
+}
+
+template <class D>
+template <class S>
+inline auto xconst_iterable<D>::get_stepper_begin(const S& shape) const noexcept
+  -> const_stepper {
+  return derived_cast().stepper_begin(shape);
+}
+
+template <class D>
+template <class S>
+inline auto xconst_iterable<D>::get_stepper_end(const S& shape,
+                                                layout_type l) const noexcept
+  -> const_stepper {
+  return derived_cast().stepper_end(shape, l);
+}
+
+template <class D>
+inline auto xconst_iterable<D>::get_shape() const -> const inner_shape_type& {
+  return derived_cast().shape();
+}
+
+template <class D>
+inline auto xconst_iterable<D>::derived_cast() const -> const derived_type& {
+  return *static_cast<const derived_type*>(this);
+}
+
+/****************************
+ * xiterable implementation *
+ ****************************/
+
+/**
+ * @name Iterators
+ */
+//@{
+/**
+ * Returns an iterator to the first element of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::begin() noexcept -> layout_iterator<L> {
+  return get_begin<L>(false);
+}
+
+/**
+ * Returns an iterator to the element following the last element
+ * of the expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::end() noexcept -> layout_iterator<L> {
+  return get_end<L>(false);
+}
+//@}
+
+/**
+ * @name Reverse iterators
+ */
+//@{
+/**
+ * Returns an iterator to the first element of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::rbegin() noexcept -> reverse_layout_iterator<L> {
+  return reverse_layout_iterator<L>(get_end<L>(true));
+}
+
+/**
+ * Returns an iterator to the element following the last element
+ * of the reversed expression.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::rend() noexcept -> reverse_layout_iterator<L> {
+  return reverse_layout_iterator<L>(get_begin<L>(true));
+}
+//@}
+
+/**
+ * @name Broadcast iterators
+ */
+//@{
+/**
+ * Returns an iterator to the first element of the expression. The
+ * iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::begin(const S& shape) noexcept
+  -> broadcast_iterator<S, L> {
+  return get_begin<S, L>(shape, false);
+}
+
+/**
+ * Returns an iterator to the element following the last element of the
+ * expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::end(const S& shape) noexcept
+  -> broadcast_iterator<S, L> {
+  return get_end<S, L>(shape, false);
+}
+//@}
+
+/**
+ * @name Reverse broadcast iterators
+ */
+//@{
+/**
+ * Returns an iterator to the first element of the reversed expression. The
+ * iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::rbegin(const S& shape) noexcept
+  -> reverse_broadcast_iterator<S, L> {
+  return reverse_broadcast_iterator<S, L>(get_end<S, L>(shape, true));
+}
+
+/**
+ * Returns an iterator to the element following the last element of the
+ * reversed expression. The iteration is broadcasted to the specified shape.
+ * @param shape the shape used for broadcasting
+ * @tparam S type of the \c shape parameter.
+ * @tparam L layout used for the traversal. Default value is \c DEFAULT_LAYOUT.
+ */
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::rend(const S& shape) noexcept
+  -> reverse_broadcast_iterator<S, L> {
+  return reverse_broadcast_iterator<S, L>(get_begin<S, L>(shape, true));
+}
+//@}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::storage_begin() noexcept -> layout_iterator<L> {
+  return begin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::storage_end() noexcept -> layout_iterator<L> {
+  return end<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::storage_rbegin() noexcept
+  -> reverse_layout_iterator<L> {
+  return rbegin<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::storage_rend() noexcept
+  -> reverse_layout_iterator<L> {
+  return rend<L>();
+}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::get_begin(bool reverse) noexcept
+  -> layout_iterator<L> {
+  return layout_iterator<L>(get_stepper_begin(this->get_shape()),
+                            &(this->get_shape()), reverse);
+}
+
+template <class D>
+template <layout_type L>
+inline auto xiterable<D>::get_end(bool reverse) noexcept -> layout_iterator<L> {
+  return layout_iterator<L>(get_stepper_end(this->get_shape(), L),
+                            &(this->get_shape()), reverse);
+}
+
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::get_begin(const S& shape, bool reverse) noexcept
+  -> broadcast_iterator<S, L> {
+  return broadcast_iterator<S, L>(get_stepper_begin(shape), shape, reverse);
+}
+
+template <class D>
+template <class S, layout_type L>
+inline auto xiterable<D>::get_end(const S& shape, bool reverse) noexcept
+  -> broadcast_iterator<S, L> {
+  return broadcast_iterator<S, L>(get_stepper_end(shape, L), shape, reverse);
+}
+
+template <class D>
+template <class S>
+inline auto xiterable<D>::get_stepper_begin(const S& shape) noexcept
+  -> stepper {
+  return derived_cast().stepper_begin(shape);
+}
+
+template <class D>
+template <class S>
+inline auto xiterable<D>::get_stepper_end(const S& shape,
+                                          layout_type l) noexcept -> stepper {
+  return derived_cast().stepper_end(shape, l);
+}
+
+template <class D>
+template <class S>
+inline auto xiterable<D>::get_stepper_begin(const S& shape) const noexcept
+  -> const_stepper {
+  return derived_cast().stepper_begin(shape);
+}
+
+template <class D>
+template <class S>
+inline auto xiterable<D>::get_stepper_end(const S& shape, layout_type l) const
+  noexcept -> const_stepper {
+  return derived_cast().stepper_end(shape, l);
+}
+
+template <class D>
+inline auto xiterable<D>::derived_cast() -> derived_type& {
+  return *static_cast<derived_type*>(this);
+}
 }
 
 #endif
