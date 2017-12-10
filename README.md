@@ -77,10 +77,14 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * tanh
 * sigmoid
 * softmax
+* softplus
+* softsign
 * rectified linear(relu)
 * leaky relu
 * identity
+* scaled tanh
 * exponential linear units(elu)
+* scaled exponential linear units (selu)
 
 ### loss functions
 * cross-entropy
