@@ -10,16 +10,16 @@
 #define XTENSOR_CONFIG_HPP
 
 #define XTENSOR_VERSION_MAJOR 0
-#define XTENSOR_VERSION_MINOR 10
-#define XTENSOR_VERSION_PATCH 9
+#define XTENSOR_VERSION_MINOR 11
+#define XTENSOR_VERSION_PATCH 3
 
 // DETECT 3.6 <= clang < 3.8 for compiler bug workaround.
 #ifdef __clang__
-    #if __clang_major__ == 3 && __clang_minor__ < 8
-        #define X_OLD_CLANG
-        #include <initializer_list>
-        #include <vector>
-    #endif
+#if __clang_major__ == 3 && __clang_minor__ < 8
+#define X_OLD_CLANG
+#include <initializer_list>
+#include <vector>
+#endif
 #endif
 
 #ifndef DEFAULT_DATA_CONTAINER
@@ -28,7 +28,7 @@
 
 #ifndef DEFAULT_SHAPE_CONTAINER
 #define DEFAULT_SHAPE_CONTAINER(T, EA, SA) \
-    std::vector<typename DEFAULT_DATA_CONTAINER(T, EA)::size_type, SA>
+  std::vector<typename DEFAULT_DATA_CONTAINER(T, EA)::size_type, SA>
 #endif
 
 #ifndef DEFAULT_LAYOUT
