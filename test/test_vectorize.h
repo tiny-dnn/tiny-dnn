@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include <limits>
+#include <vector>
 #include "tiny_dnn/util/product.h"
 
 TEST(vectorize, accumulate) {
