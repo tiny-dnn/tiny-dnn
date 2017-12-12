@@ -17,7 +17,6 @@
 
 namespace tiny_dnn {
 
-/* todo (prlz77) : There's a runtime error, please verify
 TEST(recurrent_cell, gradient_check) {
   const size_t in_size  = 50;
   const size_t out_size = 10;
@@ -47,6 +46,7 @@ TEST(recurrent_cell, gradient_check) {
   }
 }
 
+/* TODO(prlz77)
 TEST(recurrent_cell, train) {
   network<sequential> nn;
   adagrad optimizer;
@@ -200,8 +200,9 @@ TEST(recurrent_cell, forward_nobias) {
   l.weight_init(parameter_init::constant(1.0));
   l.init_parameters();
 
-  vec_t in           = {0, 1, 2, 3};
-  auto out           = l.forward({{Tensor<>(tensor_t{{in}})}})[0][0].toVec();
+  vec_t in = {0, 1, 2, 3};
+  Tensor<> in_t(tensor_t{{in}});
+  auto out           = l.forward(std::vector<Tensor<>>{{in_t}})[0][0].toVec();
   vec_t out_expected = {2.0, 2.0};  // 0+1+2+3
 
   for (size_t i = 0; i < out_expected.size(); i++) {

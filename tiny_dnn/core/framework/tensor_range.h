@@ -7,6 +7,8 @@
 */
 #pragma once
 
+#include "tiny_dnn/xtensor/xview.hpp"
+
 namespace tiny_dnn {
 
 template <typename T = size_t>
@@ -60,4 +62,18 @@ class TensorAllClass {
  * @return
  */
 inline TensorAllClass<size_t> TensorAll() { return TensorAllClass<size_t>(); }
+
+template <typename T = size_t>  // Just for uniformity, not really needed
+class TensorNewAxisClass {
+ public:
+  xt::xnewaxis_tag get_range() { return xt::newaxis(); }
+};
+
+/**
+ * New axis of dim 1
+ * @return
+ */
+inline TensorNewAxisClass<size_t> TensorNewAxis() {
+  return TensorNewAxisClass<size_t>();
+}
 }  // namespace tiny_dnn

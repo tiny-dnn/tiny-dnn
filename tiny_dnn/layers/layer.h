@@ -180,7 +180,7 @@ class layer : public node {
     return nodes;
   }
 
-  void set_out_grads(const std::vector<const vec_t *> *grad, size_t cnt) {
+  void set_out_grads(const Tensor<> *grad, size_t cnt) {
     CNN_UNREFERENCED_PARAMETER(cnt);
     size_t n = 0;
     for (size_t i = 0; i < out_channels_; i++) {
@@ -188,38 +188,19 @@ class layer : public node {
       Tensor<> &dst_grad = *ith_out_node(i)->get_gradient();
       assert(n < cnt);
       const auto &src_grad = grad[n++];
-      size_t sz            = src_grad.size();
-      dst_grad.reshape({sz, src_grad[0]->size()});
-      for (size_t j = 0; j < sz; ++j) {
-        // TODO(Randl)
-        std::copy(src_grad[j]->begin(), src_grad[j]->end(),
-                  dst_grad.host_iter(j, 0));
-      }
+      dst_grad             = src_grad;
     }
   }
 
-  void set_in_data(const std::vector<const vec_t *> *data, size_t cnt) {
+  void set_in_data(const Tensor<> *data, size_t cnt) {
     CNN_UNREFERENCED_PARAMETER(cnt);
     size_t n = 0;
     for (size_t i = 0; i < in_channels_; i++) {
       if (in_type_[i] != vector_type::data) continue;
       Tensor<> &dst_data = *ith_in_node(i)->get_data();
-      size_t in_size     = ith_in_node(i)->shape().size();
       assert(n < cnt);
       const auto &src_data = data[n++];
-      size_t sz            = src_data.size();
-      dst_data.resize_axis(sz);
-
-      CNN_UNREFERENCED_PARAMETER(in_size);
-
-      for (size_t j = 0; j < sz; ++j) {
-        assert(
-          src_data[j]->size() ==
-          in_size);  // checking if training data is consistent with layer shape
-        // TODO(Randl)
-        std::copy(src_data[j]->begin(), src_data[j]->end(),
-                  dst_data.host_iter(j, 0));
-      }
+      dst_data             = src_data;
     }
   }
 
@@ -537,23 +518,8 @@ class layer : public node {
     // allocate data in the computational graph without resetting the weights.
     setup(false);
 
-    std::vector<std::vector<const vec_t *>> input2;
-    std::vector<std::vector<vec_t>> input2_st;  // TODO(Randl) temporary
-    input2.resize(input.size());
-    input2_st.resize(input.size());
-    for (size_t i = 0; i < input.size(); ++i) {
-      input2[i].resize(input[i].shape()[0]);
-      input2_st[i].resize(input[i].shape()[0]);
-      for (size_t j = 0; j < input[i].shape()[0]; ++j) {
-        assert(input[i].shape().size() == 2);
-        // TODO(Randl)
-        input2_st[i][j] = input[i].lineToVec(j);
-        input2[i][j]    = &input2_st[i][j];
-      }
-    }
-
     // the incoming data is forwarded to the computational graph.
-    set_in_data(&input2[0], input2.size());
+    set_in_data(&input[0], input.size());
     // pick up the data from the computational graph and perform
     // computation.
     forward();
@@ -565,22 +531,7 @@ class layer : public node {
     const std::vector<Tensor<>> &out_grads) {  // for test
     setup(false);
 
-    std::vector<std::vector<const vec_t *>> grads2;
-    std::vector<std::vector<vec_t>> grads2_st;  // TODO(Randl) temporary
-    grads2.resize(out_grads.size());
-    grads2_st.resize(out_grads.size());
-    for (size_t i = 0; i < out_grads.size(); ++i) {
-      grads2[i].resize(out_grads[i].shape()[0]);
-      grads2_st[i].resize(out_grads[i].shape()[0]);
-      for (size_t j = 0; j < out_grads[i].shape()[0]; ++j) {
-        assert(out_grads[i].shape().size() == 2);
-        // TODO(Randl)
-        grads2_st[i][j] = out_grads[i].lineToVec(j);
-        grads2[i][j]    = &grads2_st[i][j];
-      }
-    }
-
-    set_out_grads(&grads2[0], grads2.size());
+    set_out_grads(&out_grads[0], out_grads.size());
     backward();
     return map_<Tensor<>>(inputs(),
                           [](edgeptr_t e) { return *e->get_gradient(); });
@@ -655,12 +606,12 @@ class layer : public node {
     back_propagation(bwd_in_data_, bwd_out_data_, bwd_out_grad_, bwd_in_grad_);
   }
 
-  /* @brief Allocates data in the computational graph and reset weights if
+  /**
+   * @brief Allocates data in the computational graph and reset weights if
    * it's needed or the data is not already initialized.
    *
    * @param reset_weight Boolean value to force to reset the weights.
    * Weights will be automatically reset if the are not initialized.
-   *
    */
   void setup(bool reset_weight) {
     // The input shape (width x height x depth) must be equal to the number

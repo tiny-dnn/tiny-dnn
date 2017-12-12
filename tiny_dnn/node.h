@@ -82,9 +82,12 @@ class edge {
   edge(node *prev, const shape3d &shape, vector_type vtype)
     : shape_(shape),
       vtype_(vtype),
-      data_(tensor_t{{vec_t(shape.size())}}),
-      grad_(tensor_t{{vec_t(shape.size())}}),
-      prev_(prev) {}
+      data_({1, shape.size()}),
+      grad_({1, shape.size()}),
+      prev_(prev) {
+    data_.fill(0);  // zero initialize data and gradients
+    grad_.fill(0);
+  }
 
   void merge_grads(vec_t *dst) {
     assert(!grad_.empty());

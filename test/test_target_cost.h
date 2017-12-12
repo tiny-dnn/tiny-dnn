@@ -204,10 +204,12 @@ TEST(target_cost, train_unbalanced_data_1dim) {
 
   // train both networks - one with implicit cost (equal for each sample),
   // and the other with explicit cost (balanced, or equal for each class)
-  net_equal_sample_cost.train<mse>(optimizer1, data, labels, 10, 100, nop, nop,
+  net_equal_sample_cost.train<mse>(optimizer1, Tensor<>(data),
+                                   Tensor<label_t>(labels), 10, 100, nop, nop,
                                    true, CNN_TASK_SIZE);
-  net_equal_class_cost.train<mse>(optimizer2, data, labels, 10, 100, nop, nop,
-                                  true, CNN_TASK_SIZE, balanced_cost);
+  net_equal_class_cost.train<mse>(optimizer2, Tensor<>(data),
+                                  Tensor<label_t>(labels), 10, 100, nop, nop,
+                                  true, CNN_TASK_SIZE, Tensor<>(balanced_cost));
 
   // count errors
   size_t errors_equal_sample_cost = 0;
@@ -289,10 +291,12 @@ TEST(target_cost, train_unbalanced_data) {
 
   // train both networks - one with implicit cost (equal for each sample),
   // and the other with explicit cost (balanced, or equal for each class)
-  net_equal_sample_cost.train<mse>(optimizer1, data, labels, 10, 100, nop, nop,
+  net_equal_sample_cost.train<mse>(optimizer1, Tensor<>(data),
+                                   Tensor<label_t>(labels), 10, 100, nop, nop,
                                    true, CNN_TASK_SIZE);
-  net_equal_class_cost.train<mse>(optimizer2, data, labels, 10, 100, nop, nop,
-                                  true, CNN_TASK_SIZE, balanced_cost);
+  net_equal_class_cost.train<mse>(optimizer2, Tensor<>(data),
+                                  Tensor<label_t>(labels), 10, 100, nop, nop,
+                                  true, CNN_TASK_SIZE, Tensor<>(balanced_cost));
 
   // count errors
   size_t errors_equal_sample_cost = 0;

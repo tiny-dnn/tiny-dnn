@@ -73,6 +73,8 @@ class OpKernelContext {
                   std::vector<Tensor<> *> &out_data) {
     in_data_  = const_cast<std::vector<Tensor<> *> *>(&in_data);
     out_data_ = &out_data;
+    // TODO(Randl,karandesai-96): right place?
+    output(0).resize_axis(input(0).shape()[0]);
   }
 
   void set_in_out(const std::vector<Tensor<> *> &in_data,
@@ -83,6 +85,7 @@ class OpKernelContext {
     out_data_ = const_cast<std::vector<Tensor<> *> *>(&out_data);
     out_grad_ = &out_grad;
     in_grad_  = &in_grad;
+    output(0).resize_axis(input(0).shape()[0]);
   }
 
   Tensor<> &input(const int idx) { return *(*in_data_)[idx]; }

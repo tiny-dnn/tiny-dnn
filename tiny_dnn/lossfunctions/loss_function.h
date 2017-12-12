@@ -9,6 +9,7 @@
 
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/util/util.h"
 
 namespace tiny_dnn {
@@ -151,67 +152,67 @@ class cross_entropy_multiclass {
   }
 };
 
-template <typename E>
-vec_t gradient(const vec_t &y, const vec_t &t) {
+template <typename E, typename S>
+vec_t gradient(const Tensor<float_t, S> &y, const vec_t &t) {
   assert(y.size() == t.size());
-  return E::df(y, t);
+  return E::df(y.toVec(), t);
 }
 
-template <typename E>
-std::vector<vec_t> gradient(const std::vector<vec_t> &y,
-                            const std::vector<vec_t> &t) {
-  std::vector<vec_t> grads(y.size());
-
-  assert(y.size() == t.size());
-
-  for (size_t i = 0; i < y.size(); i++) grads[i] = gradient<E>(y[i], t[i]);
-
-  return grads;
+template <typename E, typename S1, typename S2>
+Tensor<> gradient(const Tensor<float_t, S1> &y, const Tensor<float_t, S2> &t) {
+  Tensor<> tmp(y.shape());
+  tmp.assign(Tensor<>(E::df(y.toVec(), t.toVec())));
+  return tmp;
 }
 
-inline void apply_cost_if_defined(std::vector<vec_t> &sample_gradient,
-                                  const std::vector<vec_t> &sample_cost) {
-  if (sample_gradient.size() == sample_cost.size()) {
+template <typename S1, typename S2>
+inline void apply_cost_if_defined(Tensor<float_t, S1> &sample_gradient,
+                                  const Tensor<float_t, S2> &sample_cost) {
+  if (sample_gradient.shape() == sample_cost.shape()) {
     // @todo consider adding parallelism
-    const size_t channel_count = sample_gradient.size();
-    for (size_t channel = 0; channel < channel_count; ++channel) {
-      if (sample_gradient[channel].size() == sample_cost[channel].size()) {
-        const size_t element_count = sample_gradient[channel].size();
 
-        // @todo optimize? (use AVX or so)
-        for (size_t element = 0; element < element_count; ++element) {
-          sample_gradient[channel][element] *= sample_cost[channel][element];
-        }
-      }
+    auto it1 = sample_gradient.begin();
+    auto it2 = sample_cost.begin();
+    for (; it1 < sample_gradient.end(); ++it1, ++it2) {
+      *it1 *= *it2;
     }
   }
 }
 
-// gradient for a minibatch
-template <typename E>
-std::vector<tensor_t> gradient(const std::vector<tensor_t> &y,
-                               const std::vector<tensor_t> &t,
-                               const std::vector<tensor_t> &t_cost) {
-  const size_t sample_count  = y.size();
-  const size_t channel_count = y[0].size();
+// TODO(Randl): after full Tensor integration, create universal gradient
+// function
+/**
+ * gradient for a minibatch
+ * @tparam E
+ * @param y
+ * @param t
+ * @param t_cost
+ * @return
+ */
+template <typename E, typename S1, typename S2, typename S3>
+std::vector<Tensor<>> gradient(const Tensor<float_t, S1> &y,
+                               const Tensor<float_t, S2> &t,
+                               const Tensor<float_t, S3> &t_cost) {
+  const size_t sample_count  = y.shape()[0];
+  const size_t channel_count = y.shape()[1];
 
-  std::vector<tensor_t> gradients(sample_count);
+  std::vector<Tensor<>> gradients(y.shape()[0]);
 
   CNN_UNREFERENCED_PARAMETER(channel_count);
-  assert(y.size() == t.size());
-  assert(t_cost.empty() || t_cost.size() == t.size());
+  assert(t_cost.empty() || t_cost.shape() == t.shape());
+  assert(t.shape()[0] == sample_count);
+  assert(t.shape()[1] == channel_count);
 
   // @todo add parallelism
   for (size_t sample = 0; sample < sample_count; ++sample) {
-    assert(y[sample].size() == channel_count);
-    assert(t[sample].size() == channel_count);
-    assert(t_cost.empty() || t_cost[sample].empty() ||
-           t_cost[sample].size() == channel_count);
+    gradients[sample] = gradient<E>(
+      y.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()),
+      t.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()));
 
-    gradients[sample] = gradient<E>(y[sample], t[sample]);
-
-    if (sample < t_cost.size()) {
-      apply_cost_if_defined(gradients[sample], t_cost[sample]);
+    if (!t_cost.empty() && sample < t_cost.shape()[0]) {
+      apply_cost_if_defined(
+        gradients[sample],
+        t_cost.subView(TensorSingleIndex(sample), TensorAll(), TensorAll()));
     }
   }
 

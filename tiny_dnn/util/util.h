@@ -64,9 +64,6 @@ typedef std::vector<float_t, aligned_allocator<float_t, 64>> vec_t;
 
 typedef std::vector<vec_t> tensor_t;
 
-template <typename T>
-using xtensor_t = xt::xexpression<T>;
-
 enum class net_phase { train, test };
 
 // TODO(Randl): add full and arbitary padding
@@ -396,22 +393,4 @@ using value_is_float = value_type_is<ValType, float>;
 template <class ValType>
 using value_is_double = value_type_is<ValType, double>;
 
-// check that whole tuple are xexpressions
-template <typename>
-struct is_xexpression : std::false_type {};
-
-template <typename T>
-struct is_xexpression<xt::xexpression<T>> : std::true_type {};
-
-template <template <typename> class checker, typename... Ts>
-struct are_all : std::true_type {};
-
-template <template <typename> class checker, typename T0, typename... Ts>
-struct are_all<checker, T0, Ts...>
-  : std::integral_constant<bool,
-                           checker<T0>::value &&
-                             are_all<checker, Ts...>::value> {};
-
-template <typename... Ts>
-using are_all_xexpr = are_all<is_xexpression, Ts...>;
 }  // namespace tiny_dnn

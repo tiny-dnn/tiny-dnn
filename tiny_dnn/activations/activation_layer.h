@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "tiny_dnn/core/framework/tensor.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
@@ -75,6 +76,7 @@ class activation_layer : public layer {
                            std::vector<Tensor<> *> &out_data) override {
     const Tensor<> &x = *in_data[0];
     Tensor<> &y       = *out_data[0];
+    y.resize_axis(x.shape()[0]);  // TODO(Randl)
     for_i(x.shape()[0], [&](size_t i) {
       forward_activation(x.subView(TensorSingleIndex(i), TensorAll()),
                          y.subView(TensorSingleIndex(i), TensorAll()));

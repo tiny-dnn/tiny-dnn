@@ -15,6 +15,7 @@
 
 #include "tiny_dnn/core/framework/device.fwd.h"
 #include "tiny_dnn/core/framework/tensor_range.h"
+#include "tiny_dnn/util/util.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #ifdef USE_OPENCL
@@ -98,6 +99,10 @@ class Tensor {
    * Temporary method to create a new Tensor from old vec of tensor_t
    */
   explicit Tensor(const std::vector<tensor_t> &data) {
+    if (data.empty() || data[0].empty()) {
+      storage_ = Storage();
+      return;
+    }
     std::vector<size_t> shape = {data.size(), data[0].size(),
                                  data[0][0].size()};
     storage_ = Storage(shape);
@@ -125,12 +130,11 @@ class Tensor {
     }
   }
 
-  /**
-   * Constructor of 1D Tensor from vecotr
-   * TODO(Randl): extend
-   * @param data
-   */
-  explicit Tensor(const std::vector<U> &data) {
+  // TODO(Randl): dirty hack
+  template <
+    typename T = U,
+    typename std::enable_if<!std::is_same<T, size_t>::value, int>::type = 0>
+  explicit Tensor(const std::vector<T> &data) {
     std::vector<size_t> shape = {data.size()};
     storage_                  = Storage(shape);
 
@@ -239,6 +243,12 @@ class Tensor {
 
   const U *host_pend() const { return &*storage_.cend(); }
 
+  // TODO(Randl): GPU
+  auto begin() { return storage_.begin(); }
+  const auto begin() const { return storage_.cbegin(); }
+  auto end() { return storage_.end(); }
+  const auto end() const { return storage_.cend(); }
+
   // TODO(Randl): check if strided.
   template <typename... Args>
   U *host_pointer(const Args... args) {
@@ -346,9 +356,9 @@ auto host_data() {
     return *this;
   }
 
-  template <typename S1>
-  Tensor &assign(Tensor<U, S1> tensor) {
-    assert(size() <= tensor.size());
+  template <typename V, typename S1>
+  Tensor &assign(Tensor<V, S1> tensor) {
+    assert(size() >= tensor.size());
     auto in  = tensor.host_begin();
     auto out = host_begin();
     for (; in != tensor.host_end(); ++in, ++out) *out = *in;
@@ -379,6 +389,7 @@ auto host_data() {
     storage_.reshape(curr);
   }
 
+  // TODO(Randl): is needed? given new overload
   Tensor operator[](size_t index) { return Tensor(storage_[index]); }
   const Tensor operator[](size_t index) const {
     return Tensor(storage_[index]);
@@ -431,7 +442,26 @@ auto host_data() {
                                          const Tensor<T, S> &tensor);
 
   /**
-   * Temporal method to convert new Tensor to tensor_t
+   * Temporary method to convert new Tensor to vector of tensor_t
+   * @return
+   */
+  std::vector<tensor_t> to3dTensor() const {
+    assert(shape().size() == 3);
+    std::vector<tensor_t> tensor(storage_.shape()[0],
+                                 tensor_t(storage_.shape()[1]));
+    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+      for (size_t j = 0; j < storage_.shape()[1]; ++j) {
+        tensor[i][j].resize(storage_.shape()[2]);
+        for (size_t k = 0; k < storage_.shape()[2]; ++k) {
+          tensor[i][j][k] = storage_(i, j, k);
+        }
+      }
+    }
+    return tensor;
+  }
+
+  /**
+   * Temporary method to convert new Tensor to tensor_t
    * @return
    */
   tensor_t toTensor() const {
@@ -464,8 +494,10 @@ auto host_data() {
    * Temporary method.
    * @return
    */
-  Tensor &fromVec(vec_t vect) {
-    for (size_t i = 0; i < storage_.shape()[0]; ++i) {
+  template <typename T, typename A>
+  Tensor &fromVec(std::vector<T, A> vect) {
+    reshape({vect.size()});
+    for (size_t i = 0; i < vect.size(); ++i) {
       storage_(i) = vect[i];
     }
     return *this;

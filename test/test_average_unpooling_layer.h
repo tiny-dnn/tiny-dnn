@@ -15,20 +15,37 @@
 
 namespace tiny_dnn {
 
-TEST(ave_unpool, gradient_check) {  // sigmoid - cross-entropy
-  using loss_func  = cross_entropy;
-  using activation = sigmoid;
-  using network    = network<sequential>;
+TEST(ave_unpool, gradient_check) {
+  const size_t in_width    = 8;
+  const size_t in_height   = 8;
+  const size_t kernel_size = 2;
+  const size_t in_channels = 4;
 
-  network nn;
-  nn << fully_connected_layer(3, 4) << activation()
-     << average_unpooling_layer(2, 2, 1, 2)  // 2x2 => 4x4
-     << activation() << average_pooling_layer(4, 4, 1, 2) << activation();
+  average_unpooling_layer aveunpool(in_width, in_height, in_channels,
+                                    kernel_size);
 
-  const auto test_data = generate_gradient_check_data(nn.in_data_size());
+  aveunpool.init_parameters();
 
-  EXPECT_TRUE(nn.gradient_check<loss_func>(test_data.first, test_data.second,
-                                           epsilon<float_t>(), GRAD_CHECK_ALL));
+  std::vector<tensor_t> input_data =
+    generate_test_data({1}, {in_width * in_height * in_channels});
+  std::vector<tensor_t> in_grad  = input_data;  // copy constructor
+  std::vector<tensor_t> out_data = generate_test_data(
+    {1}, {in_width * kernel_size * in_height * kernel_size * in_channels});
+  std::vector<tensor_t> out_grad = generate_test_data(
+    {1}, {in_width * kernel_size * in_height * kernel_size * in_channels});
+
+  const size_t trials = 100;
+  for (size_t i = 0; i < trials; i++) {
+    const size_t in_edge  = uniform_idx(input_data);
+    const size_t in_idx   = uniform_idx(input_data[in_edge][0]);
+    const size_t out_edge = uniform_idx(out_data);
+    const size_t out_idx  = uniform_idx(out_data[out_edge][0]);
+    float_t ngrad = numeric_gradient(aveunpool, input_data, in_edge, in_idx,
+                                     out_data, out_grad, out_edge, out_idx);
+    float_t cgrad = analytical_gradient(aveunpool, input_data, in_edge, in_idx,
+                                        out_data, out_grad, out_edge, out_idx);
+    EXPECT_NEAR(ngrad, cgrad, epsilon<float_t>());
+  }
 }
 
 TEST(ave_unpool, forward) {

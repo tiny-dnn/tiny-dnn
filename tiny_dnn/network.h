@@ -167,18 +167,27 @@ class network {
   /**
    * executes forward-propagation and returns output
    **/
-  vec_t predict(const vec_t &in) { return fprop(in); }
+  vec_t predict(const vec_t &in) {
+    Tensor<> in_t(in);
+    in_t.reshape({1, in.size()});
+
+    return fprop(in_t).to3dTensor()[0][0];
+  }
 
   /**
    * executes forward-propagation and returns output
    **/
-  tensor_t predict(const tensor_t &in) { return fprop(in); }
+  tensor_t predict(const tensor_t &in) {
+    return fprop(Tensor<>(in)).to3dTensor()[0];
+  }
 
   /**
    * executes forward-propagation and returns output
    **/
   std::vector<tensor_t> predict(const std::vector<tensor_t> &in) {
-    return fprop(in);
+    std::vector<Tensor<>> in_t;
+    for (auto &i : in) in_t.push_back(Tensor<>(i));
+    return fprop(in_t).to3dTensor();
   }
 
   /**
@@ -234,22 +243,22 @@ class network {
             typename OnBatchEnumerate,
             typename OnEpochEnumerate>
   bool train(Optimizer &optimizer,
-             const std::vector<vec_t> &inputs,
-             const std::vector<label_t> &class_labels,
+             const Tensor<> &inputs,
+             const Tensor<label_t> &class_labels,
              size_t batch_size,
              int epoch,
              OnBatchEnumerate on_batch_enumerate,
              OnEpochEnumerate on_epoch_enumerate,
-             const bool reset_weights         = false,
-             const int n_threads              = CNN_TASK_SIZE,
-             const std::vector<vec_t> &t_cost = std::vector<vec_t>()) {
-    if (inputs.size() != class_labels.size()) {
+             const bool reset_weights = false,
+             const int n_threads      = CNN_TASK_SIZE,
+             const Tensor<> &t_cost   = Tensor<>()) {
+    if (inputs.shape()[0] != class_labels.shape()[0]) {
       return false;
     }
-    if (inputs.size() < batch_size || class_labels.size() < batch_size) {
+    if (inputs.shape()[0] < batch_size) {
       return false;
     }
-    std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
+    Tensor<> input_tensor, output_tensor, t_cost_tensor;
     normalize_tensor(inputs, input_tensor);
     normalize_tensor(class_labels, output_tensor);
     if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
@@ -311,31 +320,6 @@ class network {
    * assume
    * equal cost for every target)
    */
-  template <typename Error,
-            typename Optimizer,
-            typename OnBatchEnumerate,
-            typename OnEpochEnumerate,
-            typename T,
-            typename U>
-  bool fit(Optimizer &optimizer,
-           const std::vector<T> &inputs,
-           const std::vector<U> &desired_outputs,
-           size_t batch_size,
-           int epoch,
-           OnBatchEnumerate on_batch_enumerate,
-           OnEpochEnumerate on_epoch_enumerate,
-           const bool reset_weights     = false,
-           const int n_threads          = CNN_TASK_SIZE,
-           const std::vector<U> &t_cost = std::vector<U>()) {
-    std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
-    normalize_tensor(inputs, input_tensor);
-    normalize_tensor(desired_outputs, output_tensor);
-    if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
-
-    return fit<Error>(optimizer, input_tensor, output_tensor, batch_size, epoch,
-                      on_batch_enumerate, on_epoch_enumerate, reset_weights,
-                      n_threads, t_cost_tensor);
-  }
 
   /**
    * @param optimizer          optimizing algorithm for training
@@ -350,8 +334,8 @@ class network {
            const std::vector<U> &desired_outputs,
            size_t batch_size = 1,
            int epoch         = 1) {
-    return fit<Error>(optimizer, inputs, desired_outputs, batch_size, epoch,
-                      nop, nop);
+    return fit<Error>(optimizer, Tensor<>(inputs), Tensor<>(desired_outputs),
+                      batch_size, epoch, nop, nop);
   }
 
   /**
@@ -367,7 +351,8 @@ class network {
              const std::vector<label_t> &class_labels,
              size_t batch_size = 1,
              int epoch         = 1) {
-    return train<Error>(optimizer, inputs, class_labels, batch_size, epoch, nop,
+    return train<Error>(optimizer, Tensor<>(inputs),
+                        Tensor<label_t>(class_labels), batch_size, epoch, nop,
                         nop);
   }
 
@@ -380,7 +365,8 @@ class network {
              const std::vector<vec_t> &t,
              size_t batch_size = 1,
              int epoch         = 1) {
-    return fit<Error>(optimizer, in, t, batch_size, epoch, nop, nop);
+    return fit<Error>(optimizer, Tensor<>(in), Tensor<>(t), batch_size, epoch,
+                      nop, nop);
   }
 
   /**
@@ -433,32 +419,23 @@ class network {
   }
 
   /**
-   * calculate loss value (the smaller, the better) for regression task
-   **/
-  template <typename E>
-  float_t get_loss(const std::vector<vec_t> &in, const std::vector<vec_t> &t) {
-    float_t sum_loss = float_t(0);
-
-    for (size_t i = 0; i < in.size(); i++) {
-      const vec_t predicted = predict(in[i]);
-      sum_loss += E::f(predicted, t[i]);
-    }
-    return sum_loss;
-  }
-
-  /**
-   * calculate loss value (the smaller, the better) for regression task
-   **/
+   * calculate loss
+   * @tparam E
+   * @param in
+   * @param t
+   * @return loss value (the smaller, the better) for regression task
+   */
   template <typename E, typename T>
-  float_t get_loss(const std::vector<T> &in, const std::vector<tensor_t> &t) {
+  float_t get_loss(const Tensor<T> &in, const Tensor<> &t) {
+    assert(t.dim() == 3);
     float_t sum_loss = float_t(0);
-    std::vector<tensor_t> in_tensor;
+    Tensor<T> in_tensor;
     normalize_tensor(in, in_tensor);
 
     for (size_t i = 0; i < in.size(); i++) {
-      const tensor_t predicted = predict(in_tensor[i]);
+      const tensor_t predicted = predict(in_tensor.to3dTensor()[i]);
       for (size_t j = 0; j < predicted.size(); j++) {
-        sum_loss += E::f(predicted[j], t[i][j]);
+        sum_loss += E::f(predicted[j], t.to3dTensor()[i][j]);
       }
     }
     return sum_loss;
@@ -476,10 +453,14 @@ class network {
                       grad_check_mode mode) {
     assert(in.size() == t.size());
 
-    std::vector<tensor_t> v(t.size());
     const size_t sample_count = t.size();
+    Tensor<> v({t[0].size(), sample_count, out_data_size()});
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      net_.label2vec(t[sample], v[sample]);
+      Tensor<label_t> tmp;
+      tmp.fromVec(t[sample]);
+      auto tmp2 =
+        v.subView(TensorAll(), TensorRange(sample, sample + 1), TensorAll());
+      net_.label2vec(tmp, tmp2);
     }
 
     for (auto current : net_) {                // ignore first input layer
@@ -495,7 +476,7 @@ class network {
             Tensor<> &w  = *current->weights_at()[i]->data();
             Tensor<> &dw = *current->weights_at()[i]->grad();
             for (size_t j = 0; j < w.size(); j++) {
-              if (!calc_delta<E>(in, v, w, dw, j, eps)) {
+              if (!calc_delta<E>(in, v.to3dTensor(), w, dw, j, eps)) {
                 return false;
               }
             }
@@ -506,7 +487,8 @@ class network {
             Tensor<> &w  = *current->weights_at()[i]->data();
             Tensor<> &dw = *current->weights_at()[i]->grad();
             for (size_t j = 0; j < 10; j++) {
-              if (!calc_delta<E>(in, v, w, dw, uniform_idx(w), eps)) {
+              if (!calc_delta<E>(in, v.to3dTensor(), w, dw, uniform_idx(w),
+                                 eps)) {
                 return false;
               }
             }
@@ -733,12 +715,17 @@ class network {
 
  protected:
   float_t fprop_max(const vec_t &in) {
-    const vec_t &prediction = fprop(in);
+    Tensor<> in_t(in);
+    in_t.reshape({1, in.size()});
+    const vec_t &prediction = fprop(in_t);
     return *std::max_element(std::begin(prediction), std::end(prediction));
   }
 
   label_t fprop_max_index(const vec_t &in) {
-    return label_t(max_index(fprop(in)));
+    Tensor<> in_t(in);
+    in_t.reshape({1, in.size()});
+
+    return label_t(max_index(fprop(in_t)));
   }
 
  private:
@@ -759,32 +746,40 @@ class network {
             typename OnBatchEnumerate,
             typename OnEpochEnumerate>
   bool fit(Optimizer &optimizer,
-           const std::vector<tensor_t> &inputs,
-           const std::vector<tensor_t> &desired_outputs,
+           const Tensor<> &inputs,
+           const Tensor<> &desired_outputs,
            size_t batch_size,
            int epoch,
            OnBatchEnumerate on_batch_enumerate,
            OnEpochEnumerate on_epoch_enumerate,
-           const bool reset_weights            = false,
-           const int n_threads                 = CNN_TASK_SIZE,
-           const std::vector<tensor_t> &t_cost = std::vector<tensor_t>()) {
+           const bool reset_weights = false,
+           const int n_threads      = CNN_TASK_SIZE,
+           const Tensor<> &t_cost   = Tensor<>()) {
+    Tensor<> input_tensor(inputs.shape()),
+      output_tensor(desired_outputs.shape()), t_cost_tensor(t_cost.shape());
+    normalize_tensor(inputs, input_tensor);
+    normalize_tensor(desired_outputs, output_tensor);
+    if (!t_cost.empty()) normalize_tensor(t_cost, t_cost_tensor);
+
     // check_training_data(in, t);
-    check_target_cost_matrix(desired_outputs, t_cost);
+    check_target_cost_matrix(output_tensor, t_cost_tensor);
     set_netphase(net_phase::train);
     net_.setup(reset_weights);
+
+    Tensor<> dummy;
 
     for (auto n : net_) n->set_parallelize(true);
     optimizer.reset();
     stop_training_ = false;
-    in_batch_.resize(batch_size);
-    t_batch_.resize(batch_size);
+    auto shape     = output_tensor.shape();
+    shape[0]       = batch_size;
+    t_batch_.reshape(shape);
     for (int iter = 0; iter < epoch && !stop_training_; iter++) {
-      for (size_t i = 0; i < inputs.size() && !stop_training_;
+      for (size_t i = 0; i < input_tensor.shape()[0] && !stop_training_;
            i += batch_size) {
-        train_once<Error>(
-          optimizer, &inputs[i], &desired_outputs[i],
-          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)),
-          n_threads, get_target_cost_sample_pointer(t_cost, i));
+        train_once<Error>(optimizer, input_tensor, output_tensor, i,
+                          std::min(batch_size, input_tensor.shape()[0] - i),
+                          n_threads, t_cost_tensor);
         on_batch_enumerate();
 
         /* if (i % 100 == 0 && layers_.is_exploded()) {
@@ -804,75 +799,104 @@ class network {
    *
    * @param size is the number of data points to use in this batch
    */
-  template <typename E, typename Optimizer>
+  template <typename E,
+            typename Optimizer,
+            typename S1,
+            typename S2,
+            typename S3>
   void train_once(Optimizer &optimizer,
-                  const tensor_t *in,
-                  const tensor_t *t,
-                  int size,
+                  const Tensor<float_t, S1> &in,
+                  const Tensor<float_t, S2> &t,
+                  size_t position,
+                  size_t size,
                   const int nbThreads,
-                  const tensor_t *t_cost) {
+                  const Tensor<float_t, S3> &t_cost) {
+    assert(in.dim() == 3);
     if (size == 1) {
-      bprop<E>(fprop(in[0]), t[0], t_cost ? t_cost[0] : tensor_t());
+      // TODO(Randl): refactor
+      auto shape = in.shape();
+      shape[0]   = 1;
+      shape.erase(shape.begin());
+      Tensor<> in_t(shape);
+      shape    = t.shape();
+      shape[0] = 1;
+      Tensor<> t_t(shape);
+      in_t.assign(
+        in.subView(TensorSingleIndex(position), TensorAll(), TensorAll()));
+      t_t.assign(
+        t.subView(TensorSingleIndex(position), TensorAll(), TensorAll()));
+      if (t_cost.empty()) {
+        bprop<E>(fprop(in_t), t_t);
+      } else {
+        Tensor<> cost(shape);
+        cost.assign(t_cost.subView(TensorSingleIndex(position), TensorAll(),
+                                   TensorAll()));
+        bprop<E>(fprop(in_t), t_t, cost);
+      }
       net_.update_parameters(&optimizer, 1);
     } else {
-      train_onebatch<E>(optimizer, in, t, size, nbThreads, t_cost);
+      train_onebatch<E>(optimizer, in, t, position, size, nbThreads, t_cost);
     }
   }
 
   /**
    * trains on one minibatch, i.e. runs forward and backward propagation to
-   * calculate
-   * the gradient of the loss function with respect to the network parameters
-   * (weights),
-   * then calls the optimizer algorithm to update the weights
+   * calculate the gradient of the loss function with respect to the network
+   * parameters (weights), then calls the optimizer algorithm to update the
+   * weights
    *
    * @param batch_size the number of data points to use in this batch
    */
-  template <typename E, typename Optimizer>
+  template <typename E,
+            typename Optimizer,
+            typename S1,
+            typename S2,
+            typename S3>
   void train_onebatch(Optimizer &optimizer,
-                      const tensor_t *in,
-                      const tensor_t *t,
-                      int batch_size,
+                      const Tensor<float_t, S1> &in,
+                      const Tensor<float_t, S2> &t,
+                      size_t position,
+                      size_t batch_size,
                       const int num_tasks,
-                      const tensor_t *t_cost) {
+                      const Tensor<float_t, S3> &t_cost) {
     CNN_UNREFERENCED_PARAMETER(num_tasks);
-    std::copy(&in[0], &in[0] + batch_size, &in_batch_[0]);
-    std::copy(&t[0], &t[0] + batch_size, &t_batch_[0]);
-    std::vector<tensor_t> t_cost_batch =
-      t_cost ? std::vector<tensor_t>(&t_cost[0], &t_cost[0] + batch_size)
-             : std::vector<tensor_t>();
+    in_batch_.clear();
+    t_batch_.resize_axis(batch_size);
+    for (size_t i = position; i < position + batch_size; ++i) {
+      auto shape = in.shape();
+      shape.erase(shape.begin());
+      Tensor<> in_t(shape);
+      // TODO(Randl): refactor
+      in_t.assign(
+        in.subView(TensorSingleIndex(position), TensorAll(), TensorAll()));
+      in_batch_.push_back(in_t);
+    }
+    t_batch_.assign(t.subView(TensorRange(position, position + batch_size),
+                              TensorAll(), TensorAll()));
 
-    bprop<E>(fprop(in_batch_), t_batch_, t_cost_batch);
+    if (t_cost.empty()) {
+      bprop<E>(fprop(in_batch_), t_batch_);
+    } else {
+      Tensor<> cost(t_batch_.shape());
+      cost.assign(t_cost.subView(TensorRange(position, position + batch_size),
+                                 TensorAll(), TensorAll()));
+      bprop<E>(fprop(in_batch_), t_batch_, cost);
+    }
+
     net_.update_parameters(&optimizer, batch_size);
   }
 
-  vec_t fprop(const vec_t &in) {
-    if (in.size() != (size_t)in_data_size()) data_mismatch(**net_.begin(), in);
-#if 0
-        return fprop(std::vector<vec_t>{ in })[0];
-#else
-    // a workaround to reduce memory consumption by skipping wrapper
-    // function
-    std::vector<tensor_t> a(1);
-    a[0].emplace_back(in);
-    return fprop(a)[0][0];
-#endif
+  Tensor<> fprop(const Tensor<> &in) {
+    assert(in.dim() == 2);
+    std::vector<Tensor<>> vec;
+    vec.push_back(in);
+    return fprop(vec);
   }
 
-  // convenience wrapper for the function below
-  std::vector<vec_t> fprop(const std::vector<vec_t> &in) {
-    return fprop(std::vector<tensor_t>{in})[0];
-  }
-
-  std::vector<tensor_t> fprop(const std::vector<tensor_t> &in) {
+  Tensor<> fprop(const std::vector<Tensor<>> &in) {
+    assert(in[0].dim() == 2);
     return net_.forward(in);
   }
-
-  //    template <typename E>
-  //    float_t get_loss(const vec_t& out, const vec_t& t) {
-  //        assert(out.size() == t.size());
-  //        return E::f(out, t);
-  //    }
 
   template <typename E>
   bool calc_delta(const std::vector<tensor_t> &in,
@@ -901,23 +925,19 @@ class network {
     // calculate dw/dE by numeric
     float_t prev_w = w.host_at(check_index);
 
-    float_t f_p            = float_t(0);
     w.host_at(check_index) = prev_w + delta;
-    for (size_t i = 0; i < sample_count; i++) {
-      f_p += get_loss<E>(in[i], v[i]);
-    }
+    float_t f_p            = get_loss<E>(Tensor<>(in), Tensor<>(v));
 
-    float_t f_m            = float_t(0);
     w.host_at(check_index) = prev_w - delta;
-    for (size_t i = 0; i < sample_count; i++) {
-      f_m += get_loss<E>(in[i], v[i]);
-    }
+    float_t f_m            = get_loss<E>(Tensor<>(in), Tensor<>(v));
 
     float_t delta_by_numerical = (f_p - f_m) / (float_t(2) * delta);
     w.host_at(check_index)     = prev_w;
 
     // calculate dw/dE by bprop
-    bprop<E>(fprop(in), v, std::vector<tensor_t>());
+    std::vector<Tensor<>> in_t;
+    for (auto &i : in) in_t.push_back(Tensor<>(i));
+    bprop<E>(fprop(in_t), Tensor<>(v));
 
     float_t delta_by_bprop = 0;
     for (size_t sample = 0; sample < sample_count; ++sample) {
@@ -928,20 +948,28 @@ class network {
     return std::abs(delta_by_bprop - delta_by_numerical) <= eps;
   }
 
-  // convenience wrapper for the function below
+  /**
+   * backpropogation without cost
+   * @tparam E
+   * @param out
+   * @param t
+   */
   template <typename E>
-  void bprop(const std::vector<vec_t> &out,
-             const std::vector<vec_t> &t,
-             const std::vector<vec_t> &t_cost) {
-    bprop<E>(std::vector<tensor_t>{out}, std::vector<tensor_t>{t},
-             std::vector<tensor_t>{t_cost});
+  void bprop(const Tensor<> &out, const Tensor<> &t) {
+    std::vector<Tensor<>> delta = gradient<E>(out, t, Tensor<>());
+    net_.backward(delta);
   }
 
+  /**
+   *
+   * @tparam E
+   * @param out
+   * @param t
+   * @param t_cost
+   */
   template <typename E>
-  void bprop(const std::vector<tensor_t> &out,
-             const std::vector<tensor_t> &t,
-             const std::vector<tensor_t> &t_cost) {
-    std::vector<tensor_t> delta = gradient<E>(out, t, t_cost);
+  void bprop(const Tensor<> &out, const Tensor<> &t, const Tensor<> &t_cost) {
+    std::vector<Tensor<>> delta = gradient<E>(out, t, t_cost);
     net_.backward(delta);
   }
 
@@ -992,75 +1020,40 @@ class network {
     }
   }
 
-  void check_target_cost_matrix(const std::vector<tensor_t> &t,
-                                const std::vector<tensor_t> &t_cost) {
+  template <typename S1, typename S2>
+  void check_target_cost_matrix(const Tensor<float_t, S1> &t,
+                                const Tensor<float_t, S2> &t_cost) {
     if (!t_cost.empty()) {
-      if (t.size() != t_cost.size()) {
+      if (t.shape() != t_cost.shape()) {
         throw nn_error(
-          "if target cost is supplied, "
-          "its length must equal that of target data");
-      }
-
-      for (size_t i = 0, end = t.size(); i < end; i++) {
-        check_target_cost_element(t[i], t_cost[i]);
+          "if target cost is supplied, its shape must equal that of target "
+          "data");
       }
     }
   }
 
-  // regression
-  void check_target_cost_element(const vec_t &t, const vec_t &t_cost) {
-    if (t.size() != t_cost.size()) {
-      throw nn_error(
-        "if target cost is supplied for a regression task, "
-        "its shape must be identical to the target data");
-    }
-  }
-
-  void check_target_cost_element(const tensor_t &t, const tensor_t &t_cost) {
-    if (t.size() != t_cost.size()) {
-      throw nn_error(
-        "if target cost is supplied for a regression task, "
-        "its shape must be identical to the target data");
-    }
-    for (size_t i = 0; i < t.size(); i++)
-      check_target_cost_element(t[i], t_cost[i]);
-  }
-
-  const tensor_t *get_target_cost_sample_pointer(
-    const std::vector<tensor_t> &t_cost, size_t i) {
-    if (!t_cost.empty()) {
-      assert(i < t_cost.size());
-      return &(t_cost[i]);
+  template <typename T>
+  void normalize_tensor(const Tensor<T> &inputs, Tensor<> &normalized) {
+    if (inputs.dim() == 3) {
+      normalized.reshape(inputs.shape());
+      normalized.assign(inputs);
+    } else if (inputs.dim() == 2) {
+      normalized.reshape({inputs.shape()[0], 1, inputs.shape()[1]});
+      normalized.assign(inputs);
+    } else if (inputs.dim() == 1) {
+      normalized.reshape({inputs.size(), 1, out_data_size()});
+      net_.label2vec(inputs, normalized);
     } else {
-      return nullptr;
+      throw(nn_error("wrong number of dimensions: " +
+                     std::to_string(inputs.dim())));
     }
-  }
-
-  void normalize_tensor(const std::vector<tensor_t> &inputs,
-                        std::vector<tensor_t> &normalized) {
-    normalized = inputs;
-  }
-
-  void normalize_tensor(const std::vector<vec_t> &inputs,
-                        std::vector<tensor_t> &normalized) {
-    normalized.reserve(inputs.size());
-    for (size_t i = 0; i < inputs.size(); i++)
-      normalized.emplace_back(tensor_t{inputs[i]});
-  }
-
-  void normalize_tensor(const std::vector<label_t> &inputs,
-                        std::vector<tensor_t> &normalized) {
-    std::vector<vec_t> vec;
-    normalized.reserve(inputs.size());
-    net_.label2vec(inputs, vec);
-    normalize_tensor(vec, normalized);
   }
 
   std::string name_;
   NetType net_;
   bool stop_training_;
-  std::vector<tensor_t> in_batch_;
-  std::vector<tensor_t> t_batch_;
+  std::vector<Tensor<>> in_batch_;
+  Tensor<> t_batch_;
 };
 
 /**
@@ -1070,8 +1063,8 @@ class network {
  * @param data [pointer to the data]
  * @param rows [self explained]
  * @param cols [self explained]
- * @param sizepatch [size of the patch, such as the total number of pixel in the
- * patch is sizepatch*sizepatch ]
+ * @param sizepatch [size of the patch, such as the total number of pixel in
+ * the patch is sizepatch*sizepatch ]
  * @return [vector of vec_c (sample) to be passed to test function]
  */
 inline std::vector<vec_t> image2vec(const float_t *data,

@@ -36,11 +36,17 @@ TEST(test_large_thread_count, test_large_thread_count) {
 
   const int n_threads = 200;
 
+  Tensor<> data_t(data);
+  Tensor<label_t> labels_t({labels.size()});
+  labels_t.fromVec(labels);
   // test different batch sizes
-  net.train<mse>(optimizer, data, labels, 1, 1, nop, nop, true, n_threads);
-  net.train<mse>(optimizer, data, labels, 100, 1, nop, nop, true, n_threads);
-  net.train<mse>(optimizer, data, labels, 200, 1, nop, nop, true, n_threads);
-  net.train<mse>(optimizer, data, labels, 300, 1, nop, nop, true, n_threads);
+  net.train<mse>(optimizer, data_t, labels_t, 1, 1, nop, nop, true, n_threads);
+  net.train<mse>(optimizer, data_t, labels_t, 100, 1, nop, nop, true,
+                 n_threads);
+  net.train<mse>(optimizer, data_t, labels_t, 200, 1, nop, nop, true,
+                 n_threads);
+  net.train<mse>(optimizer, data_t, labels_t, 300, 1, nop, nop, true,
+                 n_threads);
 }
 
 }  // namespace tiny_dnn

@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <algorithm>
 #include <memory>
 #include <tuple>
 #include <unordered_map>
@@ -86,16 +87,13 @@ class nodes {
   /**
    * propagate gradient
    * @param first        : gradient of cost function(dE/dy)
-   * @param worker_index : id of worker-task
    **/
-  virtual void backward(const std::vector<tensor_t> &first) = 0;
+  virtual void backward(const std::vector<Tensor<>> &first) = 0;
 
   /**
    * @param first input  : data vectors
-   * @param worker_index : id of worker-task
    **/
-  virtual std::vector<tensor_t> forward(
-    const std::vector<tensor_t> &first) = 0;  // NOLINT
+  virtual Tensor<> forward(const std::vector<Tensor<>> &first) = 0;  // NOLINT
 
   /**
    * update parameters and clear all gradients
@@ -169,20 +167,21 @@ class nodes {
     }
   }
 
-  void label2vec(const label_t *t, size_t num, std::vector<vec_t> &vec) const {
-    size_t outdim = out_data_size();
-
-    vec.reserve(num);
-    for (size_t i = 0; i < num; i++) {
-      assert(t[i] < outdim);
-      vec.emplace_back(outdim, target_value_min());
-      vec.back()[t[i]] = target_value_max();
+  /**
+   * Converts vactor of labels to one-hot tensor
+   * @param labels
+   * @param ten
+   */
+  template <typename T = label_t, typename S>
+  void label2vec(const Tensor<T> &labels, Tensor<float_t, S> &ten) const {
+    // TODO(Randl): shape?
+    assert(ten.shape()[0] == labels.size());
+    assert(ten.shape()[1] == 1);
+    assert(ten.shape()[2] == out_data_size());
+    ten.fill(target_value_min());
+    for (size_t i = 0; i < labels.size(); ++i) {
+      ten.host_at(0, i, labels.host_at(i)) = target_value_max();
     }
-  }
-
-  void label2vec(const std::vector<label_t> &labels,
-                 std::vector<vec_t> &vec) const {
-    return label2vec(&labels[0], labels.size(), vec);
   }
 
   template <typename OutputArchive>
@@ -219,24 +218,30 @@ class nodes {
     nodes_.push_back(own_nodes_.back().get());
   }
 
-  // transform indexing so that it's more suitable for per-layer operations
-  // input:  [sample][channel][feature]
-  // output: [channel][sample][feature]
-  void reorder_for_layerwise_processing(
-    const std::vector<tensor_t> &input,
-    std::vector<std::vector<const vec_t *>> &output) {
+  /**
+   * transform indexing so that it's more suitable for per-layer operations
+   * @param input [sample][channel][feature]
+   * @param output [channel][sample][feature]
+   */
+  void reorder_for_layerwise_processing(const std::vector<Tensor<>> &input,
+                                        std::vector<Tensor<>> &output) {
     size_t sample_count  = input.size();
-    size_t channel_count = input[0].size();
+    size_t channel_count = input[0].shape()[0];
+    size_t input_size    = input[0].shape()[1];
 
     output.resize(channel_count);
     for (size_t i = 0; i < channel_count; ++i) {
-      output[i].resize(sample_count);
+      output[i].reshape({sample_count, input_size});
     }
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      assert(input[sample].size() == channel_count);
+      assert(input[sample].shape()[0] == channel_count);
       for (size_t channel = 0; channel < channel_count; ++channel) {
-        output[channel][sample] = &input[sample][channel];
+        auto from =
+          input[sample].subView(TensorSingleIndex(channel), TensorAll());
+        auto to =
+          output[channel].subView(TensorSingleIndex(sample), TensorAll());
+        to.assign(from);
       }
     }
   }
@@ -265,8 +270,8 @@ class nodes {
  **/
 class sequential : public nodes {
  public:
-  void backward(const std::vector<tensor_t> &first) override {
-    std::vector<std::vector<const vec_t *>> reordered_grad;
+  void backward(const std::vector<Tensor<>> &first) override {
+    std::vector<Tensor<>> reordered_grad;
     reorder_for_layerwise_processing(first, reordered_grad);
     assert(reordered_grad.size() == 1);
 
@@ -277,11 +282,10 @@ class sequential : public nodes {
     }
   }
 
-  std::vector<tensor_t> forward(const std::vector<tensor_t> &first) override {
-    std::vector<std::vector<const vec_t *>> reordered_data;
+  Tensor<> forward(const std::vector<Tensor<>> &first) override {
+    std::vector<Tensor<>> reordered_data;  // TODO(Randl): Tensor<>
     reorder_for_layerwise_processing(first, reordered_data);
     assert(reordered_data.size() == 1);
-
     nodes_.front()->set_in_data(&reordered_data[0], 1);
 
     for (auto l : nodes_) {
@@ -335,15 +339,21 @@ class sequential : public nodes {
  private:
   friend class nodes;
 
-  std::vector<tensor_t> normalize_out(
-    const std::vector<const Tensor<> *> &out) {
-    // normalize indexing back to [sample][layer][feature]
-    std::vector<tensor_t> normalized_output;
+  /**
+   * normalize indexing back to [sample][layer][feature]
+   * @param out
+   * @return
+   */
+  Tensor<> normalize_out(const std::vector<const Tensor<> *> &out) {
     const size_t sample_count = out[0]->shape()[0];
-    normalized_output.resize(sample_count, tensor_t(1));
+    const size_t feature_size = out[0]->shape()[1];
+    Tensor<> normalized_output({sample_count, 1, feature_size});
 
     for (size_t sample = 0; sample < sample_count; ++sample) {
-      normalized_output[sample][0] = out[0]->lineToVec(sample);
+      auto from = out[0]->subView(TensorSingleIndex(sample), TensorAll());
+      auto to   = normalized_output.subView(TensorSingleIndex(sample),
+                                          TensorSingleIndex(0), TensorAll());
+      to.assign(from);
     }
 
     return normalized_output;
@@ -356,14 +366,13 @@ class sequential : public nodes {
  **/
 class graph : public nodes {
  public:
-  void backward(const std::vector<tensor_t> &out_grad) override {
-    size_t output_channel_count = out_grad[0].size();
-
+  void backward(const std::vector<Tensor<>> &out_grad) override {
+    size_t output_channel_count = out_grad[0].shape()[0];
     if (output_channel_count != output_layers_.size()) {
       throw nn_error("input size mismatch");
     }
 
-    std::vector<std::vector<const vec_t *>> reordered_grad;
+    std::vector<Tensor<>> reordered_grad;
     reorder_for_layerwise_processing(out_grad, reordered_grad);
     assert(reordered_grad.size() == output_channel_count);
 
@@ -376,14 +385,14 @@ class graph : public nodes {
     }
   }
 
-  std::vector<tensor_t> forward(const std::vector<tensor_t> &in_data) override {
-    size_t input_data_channel_count = in_data[0].size();
+  Tensor<> forward(const std::vector<Tensor<>> &in_data) override {
+    size_t input_data_channel_count = in_data[0].shape()[0];
 
     if (input_data_channel_count != input_layers_.size()) {
       throw nn_error("input size mismatch");
     }
 
-    std::vector<std::vector<const vec_t *>> reordered_data;
+    std::vector<Tensor<>> reordered_data;
     reorder_for_layerwise_processing(in_data, reordered_data);
     assert(reordered_data.size() == input_data_channel_count);
 
@@ -535,26 +544,33 @@ class graph : public nodes {
 #endif  // CNN_NO_SERIALIZATION
   }
 
-  // normalize indexing back to [sample][layer][feature]
-  std::vector<tensor_t> merge_outs() {
-    std::vector<tensor_t> merged;
+  /**
+   * normalize indexing back to [sample][layer][feature]
+   * @return
+   */
+  Tensor<> merge_outs() {
+    Tensor<> merged;
     std::vector<const Tensor<> *> out;
     size_t output_channel_count = output_layers_.size();
     for (size_t output_channel = 0; output_channel < output_channel_count;
          ++output_channel) {
       output_layers_[output_channel]->output(out);
 
-      size_t sample_count = out[0]->shape()[0];
+      const size_t sample_count = out[0]->shape()[0];
+      const size_t feature_size = out[0]->shape()[1];
       if (output_channel == 0) {
         assert(merged.empty());
-        merged.resize(sample_count, tensor_t(output_channel_count));
+        merged.reshape({sample_count, output_channel_count, feature_size});
       }
 
-      assert(merged.size() == sample_count);
+      assert(merged.shape()[0] == sample_count);
 
       for (size_t sample = 0; sample < sample_count; ++sample) {
-        merged[sample][output_channel] =
-          out[0]->subView(TensorSingleIndex(sample), TensorAll()).toVec();
+        auto to =
+          merged.subView(TensorSingleIndex(sample),
+                         TensorSingleIndex(output_channel), TensorAll());
+        auto from = out[0]->subView(TensorSingleIndex(sample), TensorAll());
+        to.assign(from);
       }
     }
     return merged;

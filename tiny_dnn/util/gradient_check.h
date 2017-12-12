@@ -16,20 +16,6 @@
 namespace tiny_dnn {
 
 /**
- * Auxiliary function to convert a vector of Tensors to a vector of Tensor
- * pointers.
- * @param input vector of Tensors.
- * @return vector of Tensor pointers.
- */
-std::vector<Tensor<> *> tensor2ptr(std::vector<Tensor<>> &input) {
-  std::vector<Tensor<> *> ret(input.size());
-  for (size_t i = 0; i < input.size(); i++) {
-    ret[i] = &input[i];
-  }
-  return ret;
-}
-
-/**
  * Computes the numeric gradient of a given layer
  * http://karpathy.github.io/neuralnets/
  * http://cs231n.github.io/neural-networks-3/#gradcheck
@@ -59,32 +45,40 @@ float_t numeric_gradient(layer &layer,
   // sqrt(machine epsilon) is assumed to be safe
   float_t h = std::sqrt(std::numeric_limits<float_t>::epsilon());
   // initialize input/output
-  std::vector<Tensor<>> in_tens, out_tens, out_grads_tens;
-  for (size_t i = 0; i < in_data.size(); i++) {
-    in_tens.push_back(Tensor<>(in_data[i]));
+  std::vector<Tensor<>> in_tenses, out_tenses, out_grads_tenses;
+  std::vector<Tensor<> *> in_tens_, out_tens_, out_grads_tens_;
+  for (auto &t : in_data) {
+    in_tenses.push_back(Tensor<>(t));
   }
-  for (size_t i = 0; i < out_data.size(); i++) {
-    Tensor<> out_data_i(out_data[i]), out_grads_i(out_grads[i]);
-    out_data_i.fill(0);
-    out_grads_i.fill(0);
-    out_tens.push_back(out_data_i);
-    out_grads_tens.push_back(out_grads_i);
+  for (auto &t : out_data) {
+    out_tenses.push_back(Tensor<>(t));
+    out_tenses.back().fill(0);
+  }
+  for (auto &t : out_grads) {
+    out_grads_tenses.push_back(Tensor<>(t));
+    out_grads_tenses.back().fill(0);
   }
 
-  std::vector<Tensor<> *> in_tens_(tensor2ptr(in_tens));
-  std::vector<Tensor<> *> out_tens_(tensor2ptr(out_tens));
-  std::vector<Tensor<> *> out_grads_tens_(tensor2ptr(out_grads_tens));
+  for (auto &t : in_tenses) {
+    in_tens_.push_back(&t);
+  }
+  for (auto &t : out_tenses) {
+    out_tens_.push_back(&t);
+  }
+  for (auto &t : out_grads_tenses) {
+    out_grads_tens_.push_back(&t);
+  }
 
   // Set output gradient to 1 so that input grad is 1*f'(x)
-  out_grads_tens_[out_edge]->host_at(0, out_pos) = 1.0;
+  out_grads_tenses[out_edge].host_at(0, out_pos) = 1.0;
   // Save current input value to perturb
-  float_t prev_in = in_tens[in_edge].host_at(0, in_pos);
+  float_t prev_in = in_tenses[in_edge].host_at(0, in_pos);
   // Perturb by a small amount (-h)
-  in_tens_[in_edge]->host_at(0, in_pos) = prev_in - h;
+  in_tenses[in_edge].host_at(0, in_pos) = prev_in - h;
   layer.forward_propagation(in_tens_, out_tens_);
   float_t out_1 = out_tens_[out_edge]->host_at(0, out_pos);
   // Perturb by a small amount (+h)
-  in_tens_[in_edge]->host_at(0, in_pos) = prev_in + h;
+  in_tenses[in_edge].host_at(0, in_pos) = prev_in + h;
   layer.forward_propagation(in_tens_, out_tens_);
   float_t out_2 = out_tens_[out_edge]->host_at(0, out_pos);
   // numerical gradient
@@ -113,31 +107,41 @@ float_t analytical_gradient(layer &layer,
                             const size_t out_edge,
                             const size_t out_pos) {
   // initialize input/output
-  std::vector<Tensor<>> in_tens, out_tens, out_grads_tens, in_grads_tens;
-  for (size_t i = 0; i < in_data.size(); i++) {
-    Tensor<> in_data_i(in_data[i]), in_grads_i(in_data[i]);
-    in_grads_i.fill(0);
-    in_tens.push_back(in_data_i);
-    in_grads_tens.push_back(in_grads_i);
+  std::vector<Tensor<>> in_tenses, in_grads_tenses, out_tenses,
+    out_grads_tenses;
+  std::vector<Tensor<> *> in_tens_, in_grads_tens_, out_tens_, out_grads_tens_;
+  for (auto &t : in_data) {
+    in_tenses.push_back(Tensor<>(t));
   }
-  for (size_t i = 0; i < out_data.size(); i++) {
-    Tensor<> out_data_i(out_data[i]), out_grads_i(out_grads[i]);
-    out_data_i.fill(0);
-    out_grads_i.fill(0);
-    out_tens.push_back(out_data_i);
-    out_grads_tens.push_back(out_grads_i);
+  in_grads_tenses = in_tenses;
+  for (auto &t : out_data) {
+    out_tenses.push_back(Tensor<>(t));
+    out_tenses.back().fill(0);
+  }
+  for (auto &t : out_grads) {
+    out_grads_tenses.push_back(Tensor<>(t));
+    out_grads_tenses.back().fill(0);
   }
 
-  std::vector<Tensor<> *> in_tens_(tensor2ptr(in_tens));
-  std::vector<Tensor<> *> in_grads_tens_(tensor2ptr(in_grads_tens));
-  std::vector<Tensor<> *> out_tens_(tensor2ptr(out_tens));
-  std::vector<Tensor<> *> out_grads_tens_(tensor2ptr(out_grads_tens));
+  for (auto &t : in_tenses) {
+    in_tens_.push_back(&t);
+  }
+  for (auto &t : in_grads_tenses) {
+    in_grads_tens_.push_back(&t);
+  }
+  for (auto &t : out_tenses) {
+    out_tens_.push_back(&t);
+  }
+  for (auto &t : out_grads_tenses) {
+    out_grads_tens_.push_back(&t);
+  }
 
-  out_grads_tens_[out_edge]->host_at(0, out_pos) = 1.0;  // set target grad 1
+  out_grads_tenses[out_edge].host_at(0, out_pos) =
+    1.0;  // set target grad to 1.
   // get gradient by plain backpropagation
   layer.forward_propagation(in_tens_, out_tens_);
   layer.back_propagation(in_tens_, out_tens_, out_grads_tens_, in_grads_tens_);
-  return in_grads_tens_[in_edge]->host_at(0, in_pos);
+  return in_grads_tenses[in_edge].host_at(0, in_pos);
 }
 
 /**
