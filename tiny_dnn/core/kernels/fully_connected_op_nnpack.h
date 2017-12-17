@@ -21,7 +21,7 @@ inline void fully_connected_op_nnpack(const tensor_t &in_data,
                                       const bool layer_parallelize) {
 #ifdef CNN_USE_NNPACK
   // call singleton to initialize NNPACK
-  NNPackInitializer::getInstance().initialize();
+  core::NNPackInitializer::getInstance().initialize();
 
   const float *kernel_ptr = W.data();
   const float *input_ptr  = in_data[0].data();
