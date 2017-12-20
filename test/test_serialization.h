@@ -870,7 +870,8 @@ TEST(serialization, serialize_elu) {
                     "width": 10,
                     "height" : 10,
                     "depth" : 3
-                }
+                },
+                "alpha" : 1.0
             }
         ]
     }
@@ -881,6 +882,7 @@ TEST(serialization, serialize_elu) {
   EXPECT_EQ(net[0]->layer_type(), "elu-activation");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(10, 10, 3));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(10, 10, 3));
+  EXPECT_FLOAT_EQ(net.at<elu_layer>(0).alpha_, float_t(1.0));
   check_sequential_network_model_serialization(net);
 }
 
@@ -1070,7 +1072,7 @@ TEST(serialization, graph_model_and_weights) {
   fully_connected_layer f2(2, 2);
   softmax_layer a2(2);
   fully_connected_layer f3(2, 2);
-  elu_layer a3(2);
+  elu_layer a3(size_t(2));
   elementwise_add_layer c4(2, 2);
 
   f1 << a1 << s1;

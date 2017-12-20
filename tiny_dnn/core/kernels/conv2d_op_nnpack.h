@@ -42,10 +42,10 @@ inline void conv2d_op_nnpack(const tensor_t &in_data,
   // we'll assume that padding is symmetric
 
   const nnp_padding padding = {
-    dy / 2),  // top
-    dx / 2),  // right
-    dy / 2),  // bottom
-    dx / 2)   // left
+    static_cast<size_t>(dy / 2),  // top
+    static_cast<size_t>(dx / 2),  // right
+    static_cast<size_t>(dy / 2),  // bottom
+    static_cast<size_t>(dx / 2)   // left
   };
 
   const nnp_size stride = {params.w_stride, params.h_stride};
