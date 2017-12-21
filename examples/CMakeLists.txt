@@ -51,7 +51,11 @@ add_executable(example_cifar_test cifar10/test.cpp ${tiny_dnn_headers})
 target_link_libraries(example_cifar_test
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-cotire(example_deconv_visual example_cifar_train example_cifar_test)
+add_executable(example_imagenet_test imagenet/test.cpp ${tiny_dnn_headers})
+target_link_libraries(example_imagenet_test
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
+cotire(example_deconv_visual example_cifar_train example_cifar_test example_imagenet_test)
 
 if(PROTO_CPP_AVAILABLE)
     include_directories(${PROTOBUF_INCLUDE_DIRS})
