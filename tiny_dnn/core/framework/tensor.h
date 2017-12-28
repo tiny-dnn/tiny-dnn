@@ -230,7 +230,7 @@ auto host_data() {
    return res;
  }*/
 
-  // TODO: when upgrading to xtensor 0.14.0 and beyond,
+  // TODO(blackccpie): when upgrading to xtensor 0.14.0 and beyond,
   // the std::make_unsigned_t trick will be useless.
   // for further details see :
   // http://github.com/QuantStack/xtensor/issues/594
