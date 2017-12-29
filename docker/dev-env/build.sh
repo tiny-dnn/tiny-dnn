@@ -1,5 +1,4 @@
 #!/bin/bash
-
 tag_prefix="tinydnn/tinydnn"
 
 docker_images=('dev-ubuntu17.04' 'dev-full-ubuntu17.04')

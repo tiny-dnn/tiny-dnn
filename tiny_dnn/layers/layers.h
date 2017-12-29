@@ -26,5 +26,5 @@
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
-#include "tiny_dnn/layers/recurrent_cell_layer.h"
+#include "tiny_dnn/layers/recurrent_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"

@@ -41,7 +41,6 @@ std::vector<tensor_t *> tensor2ptr(std::vector<tensor_t> &input) {
  *given edge.
  * @param out_data Output matrices (to calculate the increment after
  *perturbation).
- * @param out_grads Output gradients.
  * @param out_edge Output matrix index to calculate the increment after
  *perturbation).
  * @param out_pos Position in the matrix to calculate the increment after
@@ -52,8 +51,7 @@ float_t numeric_gradient(layer &layer,
                          std::vector<tensor_t> in_data,  //  copy is safer
                          const size_t in_edge,
                          const size_t in_pos,
-                         std::vector<tensor_t> &out_data,
-                         std::vector<tensor_t> &out_grads,
+                         std::vector<tensor_t> out_data,
                          const size_t out_edge,
                          const size_t out_pos) {
   // sqrt(machine epsilon) is assumed to be safe
@@ -61,11 +59,7 @@ float_t numeric_gradient(layer &layer,
   // initialize input/output
   std::vector<tensor_t *> in_data_  = tensor2ptr(in_data);
   std::vector<tensor_t *> out_data_ = tensor2ptr(out_data);
-  for (auto &tensor : out_grads) fill_tensor(tensor, 0.0);
   for (auto &tensor : out_data) fill_tensor(tensor, 0.0);
-  std::vector<tensor_t *> out_grads_ = tensor2ptr(out_grads);
-  // Set output gradient to 1 so that input grad is 1*f'(x)
-  out_grads[out_edge][0][out_pos] = 1.0;
   // Save current input value to perturb
   float_t prev_in = in_data[in_edge][0][in_pos];
   // Perturb by a small amount (-h)
@@ -97,8 +91,8 @@ float_t analytical_gradient(layer &layer,
                             std::vector<tensor_t> in_data,
                             const size_t in_edge,
                             const size_t in_pos,
-                            std::vector<tensor_t> &out_data,
-                            std::vector<tensor_t> &out_grads,
+                            std::vector<tensor_t> out_data,
+                            std::vector<tensor_t> out_grads,
                             const size_t out_edge,
                             const size_t out_pos) {
   // initialize input/output

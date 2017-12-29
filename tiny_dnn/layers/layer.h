@@ -666,6 +666,11 @@ class layer : public node {
       if (trainable() && is_trainable_weight(in_type_[i])) {
         vec_t &target = *get_weight_data(i);
         ith_in_node(i)->merge_grads(&diff);
+        float_t rcp_batch_size =
+          float_t(1.0) / float_t(ith_in_node(i)->get_data()->size());
+        for (size_t j = 0; j < diff.size(); ++j) {
+          diff[j] *= rcp_batch_size;
+        }
         // parallelize only when target size is big enough to mitigate
         // thread spawning overhead.
         bool parallelize = (target.size() >= 512);
