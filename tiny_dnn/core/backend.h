@@ -27,7 +27,7 @@ namespace core {
 // TODO(edgar): remove this
 class context;
 
-enum class backend_t { internal, nnpack, libdnn, avx, opencl };
+enum class backend_t { internal, nnpack, libdnn, avx, opencl, cblas };
 
 inline std::ostream &operator<<(std::ostream &os, backend_t type) {
   switch (type) {
