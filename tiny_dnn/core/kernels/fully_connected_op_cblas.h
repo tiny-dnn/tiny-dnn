@@ -11,7 +11,7 @@
 
 #ifdef CNN_USE_CBLAS
 extern "C" {
-  #include <cblas.h>
+#include <cblas.h>
 }
 #endif
 
@@ -19,17 +19,17 @@ namespace tiny_dnn {
 namespace kernels {
 
 inline void fully_connected_op_cblas(const tensor_t &in_data,
-                                        const vec_t &W,
-                                        const vec_t &bias,
-                                        tensor_t &out_data,
-                                        const core::fully_params &params,
-                                        const bool layer_parallelize) {
+                                     const vec_t &W,
+                                     const vec_t &bias,
+                                     tensor_t &out_data,
+                                     const core::fully_params &params,
+                                     const bool layer_parallelize) {
 #ifdef CNN_USE_CBLAS
   size_t out_size = params.out_size_;
-  size_t in_size = params.in_size_;
-  float_t alpha = 1;
-  float_t beta = 1;
-  float_t *input = reinterpret_cast<float_t *>(in_data[0].data());
+  size_t in_size  = params.in_size_;
+  float_t alpha   = 1;
+  float_t beta    = 1;
+  float_t *input  = reinterpret_cast<float_t *>(in_data[0].data());
   float_t *weight = reinterpret_cast<float_t *>(W.data());
   float_t *output = out_data[0].data();
   memcpy(output, bias.data(), sizeof(float_t) * out_size);
