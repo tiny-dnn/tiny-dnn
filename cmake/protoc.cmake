@@ -37,7 +37,7 @@ if(PROTOBUF_FOUND)
                                COMMAND ${CMAKE_COMMAND} -E copy
                                ${PROTO_HDRS} ${CMAKE_SOURCE_DIR}/tiny_dnn/io/caffe)
 
-            set (PROTO_CPP_AVAILABLE "YES")                
+            set (PROTO_CPP_AVAILABLE "YES")
             set (PROTO_CPP_GENERATE "YES")
         else()
             message(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
@@ -47,4 +47,42 @@ if(PROTOBUF_FOUND)
     endif()
 else(PROTOBUF_FOUND)
     message(STATUS "Cannot generate Caffe Importer. Please install Protobuf.")
+endif(PROTOBUF_FOUND)
+
+# Here we start to generate sources for Tensorflow
+
+if(PROTOBUF_FOUND)
+    set(proto_file_tf "${CMAKE_SOURCE_DIR}/tensorflow/core/framework/graph.pb.cc")
+    if(EXISTS ${proto_file_tf})
+        message(STATUS "Found proto-file: ${proto_file_tf}")
+        set (TF_PROTO_CPP_AVAILABLE "YES")
+# As of Ubuntu 14.04 protoc is no longer a part of libprotobuf-dev package
+# and should be installed separately as in: sudo apt-get install protobuf-compiler
+    elseif(EXISTS ${PROTOBUF_PROTOC_EXECUTABLE})
+        message(STATUS "Found PROTOBUF Compiler: ${PROTOBUF_PROTOC_EXECUTABLE}")
+        if(EXISTS ${CMAKE_SOURCE_DIR}/tensorflow/core/framework/graph.proto)
+            # Note that this line doesn't invoke protoc at configure time
+            PROTOBUF_GENERATE_CPP(TF_PROTO_SRCS TF_PROTO_HDRS
+                ${CMAKE_SOURCE_DIR}/tensorflow/core/framework/graph.proto)
+
+            add_custom_target(generated_proto_tf DEPENDS ${TF_PROTO_SRCS} ${TF_PROTO_HDRS})
+
+            # We need to invoke the copy after protoc compile finished
+            add_custom_command(TARGET generated_proto_tf PRE_BUILD
+                               COMMAND ${CMAKE_COMMAND} -E copy
+                               ${TF_PROTO_SRCS} ${CMAKE_SOURCE_DIR}/tensorflow/core/framework)
+            add_custom_command(TARGET generated_proto_tf PRE_BUILD
+                               COMMAND ${CMAKE_COMMAND} -E copy
+                               ${TF_PROTO_HDRS} ${CMAKE_SOURCE_DIR}/tensorflow/core/framework)
+
+            set (TF_PROTO_CPP_AVAILABLE "YES")
+            set (TF_PROTO_CPP_GENERATE "YES")
+        else()
+            message(STATUS "Cannot generate C++ proto files, please provide Protobuf file.")
+        endif()
+    else()
+        message(STATUS "Proto is not linked correctly, please make sure file exists.")
+    endif()
+else(PROTOBUF_FOUND)
+    message(STATUS "Cannot generate TensorFlow Importer. Please install Protobuf.")
 endif(PROTOBUF_FOUND)

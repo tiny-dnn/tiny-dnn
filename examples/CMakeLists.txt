@@ -76,6 +76,19 @@ if(PROTO_CPP_AVAILABLE)
     cotire(example_caffe_converter)
 endif()
 
+if(TF_PROTO_CPP_AVAILABLE)
+    set_source_files_properties(${proto_file_tf} PROPERTIES GENERATED TRUE)
+    add_executable(example_tensorflow_parser
+    tensorflow_converter/tensorflow_parser.cpp ${proto_file_tf} ${tiny_dnn_headers})
+    target_link_libraries(example_tensorflow_parser
+            ${project_library_target_name}
+            ${PROTOBUF_LIBRARIES} ${REQUIRED_LIBRARIES})
+endif()
+
 if(PROTO_CPP_GENERATE)
     add_dependencies(example_caffe_converter generated_proto)
+endif()
+
+if(TF_PROTO_CPP_GENERATE)
+    add_dependencies(example_tensorflow_parser generated_proto_tf)
 endif()
