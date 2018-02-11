@@ -12,6 +12,7 @@
 #include "tiny_dnn/core/kernels/fully_connected_op_avx.h"
 #include "tiny_dnn/core/kernels/fully_connected_op_internal.h"
 #include "tiny_dnn/core/kernels/fully_connected_op_nnpack.h"
+#include "tiny_dnn/core/kernels/fully_connected_op_cblas.h"
 
 namespace tiny_dnn {
 
@@ -48,7 +49,12 @@ class FullyConnectedOp : public core::OpKernel {
       kernels::fully_connected_op_avx(in_data, W[0],
                                       params.has_bias_ ? (*bias)[0] : vec_t(),
                                       out_data, params, context.parallelize());
-    } else {
+    } else if (engine == core::backend_t::cblas) {
+      kernels::fully_connected_op_cblas(
+        in_data, W[0], params.has_bias_ ? (*bias)[0] : vec_t(), out_data,
+        params, context.parallelize());
+    }
+    else {
       throw nn_error("Not supported engine: " + to_string(engine));
     }
   }
