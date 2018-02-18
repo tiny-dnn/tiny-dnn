@@ -7,6 +7,7 @@
 */
 #pragma once
 
+#include <memory>
 #include "tiny_dnn/activations/sigmoid_layer.h"
 #include "tiny_dnn/activations/tanh_layer.h"
 #include "tiny_dnn/core/params/params.h"
