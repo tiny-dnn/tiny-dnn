@@ -32,7 +32,7 @@ int main(int argc, char **argv) {
 
     tiny_dnn::vec_t input;
     for (size_t i = 0; i < SIZE; i++) {
-      input.push_back(rand() / RAND_MAX);
+      input.push_back(rand_r() / RAND_MAX);
     }
     auto output_internal = nn_internal.fprop(input);
     auto output_cblas    = nn_cblas.fprop(input);
