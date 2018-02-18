@@ -25,14 +25,17 @@ inline void fully_connected_op_cblas(const tensor_t &in_data,
                                      const core::fully_params &params,
                                      const bool layer_parallelize) {
 #ifdef CNN_USE_CBLAS
-  size_t out_size = params.out_size_;
-  size_t in_size  = params.in_size_;
-  float_t alpha   = 1;
-  float_t beta    = 1;
-  float_t *input  = reinterpret_cast<float_t *>(in_data[0].data());
-  float_t *weight = reinterpret_cast<float_t *>(W.data());
-  float_t *output = out_data[0].data();
-  memcpy(output, bias.data(), sizeof(float_t) * out_size);
+  size_t out_size       = params.out_size_;
+  size_t in_size        = params.in_size_;
+  float_t alpha         = 1;
+  float_t beta          = 1;
+  const float_t *input  = in_data[0].data();
+  const float_t *weight = W.data();
+  float_t *output       = out_data[0].data();
+  if (bias.empty())
+    memset(output, 0, sizeof(float_t) * out_size);
+  else
+    memcpy(output, bias.data(), sizeof(float_t) * out_size);
 #ifdef CNN_USE_DOUBLE
   cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1, out_size, in_size,
               alpha, input, in_size, weight, out_size, beta, output, out_size);

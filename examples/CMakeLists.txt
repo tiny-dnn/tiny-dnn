@@ -79,3 +79,9 @@ endif()
 if(PROTO_CPP_GENERATE)
     add_dependencies(example_caffe_converter generated_proto)
 endif()
+
+if(USE_CBLAS)
+    add_executable(example_cblas_mlp backends/cblas/test_mlp.cpp ${tiny_dnn_headers})
+    target_link_libraries(example_cblas_mlp
+            ${project_library_target_name} ${REQUIRED_LIBRARIES})
+endif()
