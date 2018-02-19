@@ -17,7 +17,7 @@ BASE=$(git rev-parse --show-toplevel)
 
 ALLFILES=$(git ls-tree --full-tree --name-only -r HEAD tiny_dnn test examples| grep -e ".*\.\(c\|h\|cc\|cpp\|hh\)\$")
 for FILE in $ALLFILES; do
-    $STYLE $BASE/$FILE | cmp -s $BASE/$FILE -
+    "$STYLE" "$BASE/$FILE" | cmp -s "$BASE/$FILE" -
     if [ $? -ne 0 ]; then
         echo -e "$RED$FILE does not respect the coding style.$COLOR_OFF" >&2
         RE=1
