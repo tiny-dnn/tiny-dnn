@@ -3,7 +3,7 @@ set -e
 
 if [ "$TRAVIS_OS_NAME" == "osx" ]; then
   brew update >/dev/null
-  [ -z $( brew tap | grep 'homebrew/science' ) ] && brew tap homebrew/science
+  [ -z $( brew tap | grep 'homebrew/core' ) ] && brew tap homebrew/core
   # TODO download homebrew-cache.tar.gz from s3 or similar to speed up the build
   # Travis OSX boxes don't provide caching unfortunately
   if [ -f "${HOME}/homebrew-cache/homebrew-cache.tar.gz" ]; then

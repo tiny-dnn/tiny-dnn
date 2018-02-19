@@ -42,6 +42,7 @@ void register_layers(T* h) {
   h->template register_layer<slice_layer>("slice");
 
   h->template register_layer<sigmoid_layer>("sigmoid");
+  h->template register_layer<asinh_layer>("asinh");
   h->template register_layer<tanh_layer>("tanh");
   h->template register_layer<relu_layer>("relu");
   h->template register_layer<softmax_layer>("softmax");
