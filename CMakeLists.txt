@@ -51,6 +51,7 @@ option(USE_AVX2       "Build tiny-dnn with AVX2 library support"   OFF)
 option(USE_TBB        "Build tiny-dnn with TBB library support"    OFF)
 option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
 option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
+option(USE_CBLAS      "Build tiny-dnn with CBLAS library support" OFF)
 option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
 option(USE_SERIALIZER "Build tiny-dnn with Serialization support"   ON)
@@ -155,6 +156,23 @@ elseif(USE_NNPACK AND NOT NNPACK_FOUND)
     # set the paths to headers and libs by hand.
     message(FATAL_ERROR "Can't find NNPACK. Please set NNPACK_INCLUDE_DIR "
             " & NNPACK_LIB")
+endif()
+
+# Find CBLAS: Acceleration package for linear algebra
+if(USE_CBLAS)
+    # In case the user sets the flag USE_CBLAS to ON, the CMake build-tree
+    # will require to find CBLAS in your system.
+    find_package(BLAS REQUIRED)
+    if(BLAS_FOUND)
+        if (NOT EXISTS "/usr/include/cblas.h" OR NOT EXISTS ${BLAS_LIBRARIES})
+            message(FATAL_ERROR "CBLAS path error.")
+        endif()
+        add_definitions(-DCNN_USE_CBLAS)
+        list(APPEND REQUIRED_LIBRARIES ${BLAS_LIBRARIES})
+    else()
+        message(FATAL_ERROR "Can't find CBLAS. On Ubunbu, you may want to "
+                "install it by:\n  sudo apt-get install libatlas-dev")
+    endif()
 endif()
 
 # in case that TBB and OMP are not enabled/found,
