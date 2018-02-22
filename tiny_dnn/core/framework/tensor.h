@@ -104,19 +104,19 @@ class Tensor {
    *
    * @return the tensor shape
    */
-  const auto shape() const { return storage_.shape(); }
+  auto shape() const { return storage_.shape(); }
 
   /**
    *
    * @return Tensor's number of dimensions
    */
-  const auto dim() const { return storage_.dimension(); }
+  auto dim() const { return storage_.dimension(); }
 
   /**
    *
    * @return the total number of elements in Tensor
    */
-  const size_t size() const { return storage_.size(); }
+  size_t size() const { return storage_.size(); }
 
   /**
    * Access to indexes in tensor
@@ -144,11 +144,11 @@ class Tensor {
    */
   auto host_begin() { return storage_.xbegin(); }
 
-  const auto host_begin() const { return storage_.cxbegin(); }
+  auto host_begin() const { return storage_.cxbegin(); }
 
   auto host_end() { return storage_.xend(); }
 
-  const auto host_end() const { return storage_.cxend(); }
+  auto host_end() const { return storage_.cxend(); }
 
 // TODO(Randl)
 /*
