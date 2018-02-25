@@ -29,32 +29,63 @@ static inline cereal::NameValuePair<T> make_nvp(const char *name, T &&value) {
   return cereal::make_nvp(name, value);
 }
 
-template <class Archive, typename T>
-void arc(Archive &ar, cereal::NameValuePair<T> &&arg) {
-  ar(arg);
-}
+template < typename T > struct is_binary_input_archive { static const bool value = false; };
+template < typename T > struct is_binary_output_archive { static const bool value = false; };
+template<> struct is_binary_input_archive<cereal::BinaryInputArchive> { static const bool value = true; };
+template<> struct is_binary_input_archive<cereal::PortableBinaryInputArchive> { static const bool value = true; };
+template<> struct is_binary_output_archive<cereal::BinaryOutputArchive> { static const bool value = true; };
+template<> struct is_binary_output_archive<cereal::PortableBinaryOutputArchive> { static const bool value = true; };
+
+template <class Archive, typename dummy = Archive>
+struct ArchiveWrapper {
+  ArchiveWrapper(Archive& ar) : ar(ar) {}
+  template <typename T>
+  void operator () (T& arg) {
+    ar(arg);
+  }
+  Archive& ar;
+};
+
+template <typename Archive>
+struct ArchiveWrapper<
+  Archive,
+  typename std::enable_if<is_binary_input_archive<Archive>::value, Archive>::type
+> {
+  ArchiveWrapper(Archive& ar) : ar(ar) {}
+  template <typename T>
+  void operator () (T& arg) {
+    ar(arg);
+  }
+  void operator () (cereal::NameValuePair<size_t&>& arg) {
+    cereal::NameValuePair<serial_size_t> arg2(arg.name, 0);
+    ar(arg2);
+    arg.value = arg2.value;
+  }
+  Archive& ar;
+};
+
+template <typename Archive>
+struct ArchiveWrapper<
+  Archive,
+  typename std::enable_if<is_binary_output_archive<Archive>::value, Archive>::type
+> {
+  ArchiveWrapper(Archive& ar) : ar(ar) {}
+  template <typename T>
+  void operator () (T& arg) {
+    ar(arg);
+  }
+  void operator () (cereal::NameValuePair<size_t&>& arg) {
+    cereal::NameValuePair<serial_size_t> arg2(arg.name, 0);
+    arg2.value = static_cast<serial_size_t>(arg.value);
+    ar(arg2);
+  }
+  Archive& ar;
+};
 
 template <class Archive, typename T>
 void arc(Archive &ar, T &&arg) {
-  ar(arg);
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryOutputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar, cereal::NameValuePair<size_t> &&arg) {
-  cereal::NameValuePair<serial_size_t> arg2(
-    arg.name, std::forward<cereal::NameValuePair<size_t>>(arg).value);
-  ar(arg2);
-}
-
-template <class Archive,
-          typename std::enable_if<std::is_base_of<cereal::BinaryInputArchive,
-                                                  Archive>::value>::type = 0>
-void arc(Archive &ar, cereal::NameValuePair<size_t> &&arg) {
-  cereal::NameValuePair<serial_size_t> arg2(arg.name, 0);
-  ar(arg2);
-  arg.value = arg2.value;
+  ArchiveWrapper<typename Archive> wa(ar);
+  wa(arg);
 }
 
 template <class Archive>
