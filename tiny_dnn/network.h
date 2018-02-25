@@ -35,11 +35,7 @@ enum class content_type {
   weights_and_model  ///< save/load both the weights and the architecture
 };
 
-enum class file_format {
-  binary,
-  portable_binary,
-  json
-};
+enum class file_format { binary, portable_binary, json };
 
 struct result {
   result() : num_success(0), num_total(0) {}
