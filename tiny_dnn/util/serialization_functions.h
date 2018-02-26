@@ -56,7 +56,7 @@ struct is_binary_output_archive<cereal::PortableBinaryOutputArchive> {
 
 template <class Archive, typename dummy = Archive>
 struct ArchiveWrapper {
-  ArchiveWrapper(Archive &ar) : ar(ar) {}
+  explicit ArchiveWrapper(Archive &ar) : ar(ar) {}
   template <typename T>
   void operator()(T &arg) {
     ar(arg);
@@ -69,7 +69,7 @@ struct ArchiveWrapper<
   Archive,
   typename std::enable_if<is_binary_input_archive<Archive>::value,
                           Archive>::type> {
-  ArchiveWrapper(Archive &ar) : ar(ar) {}
+  explicit ArchiveWrapper(Archive &ar) : ar(ar) {}
   template <typename T>
   void operator()(T &arg) {
     ar(arg);
@@ -87,7 +87,7 @@ struct ArchiveWrapper<
   Archive,
   typename std::enable_if<is_binary_output_archive<Archive>::value,
                           Archive>::type> {
-  ArchiveWrapper(Archive &ar) : ar(ar) {}
+  explicit ArchiveWrapper(Archive &ar) : ar(ar) {}
   template <typename T>
   void operator()(T &arg) {
     ar(arg);
