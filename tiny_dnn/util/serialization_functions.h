@@ -102,7 +102,7 @@ struct ArchiveWrapper<
 
 template <class Archive, typename T>
 void arc(Archive &ar, T &&arg) {
-  ArchiveWrapper<typename Archive> wa(ar);
+  ArchiveWrapper<Archive> wa(ar);
   wa(arg);
 }
 
