@@ -63,7 +63,11 @@ add_executable(example_test_char_rnn char_rnn/test_char_rnn.cpp ${tiny_dnn_heade
 target_link_libraries(example_test_char_rnn
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-cotire(example_deconv_visual example_cifar_train example_cifar_test example_recurrent_addition example_train_char_rnn example_test_char_rnn)
+add_executable(example_sinus_fit sinus_fit/sinus_fit.cpp ${tiny_dnn_headers})
+target_link_libraries(example_sinus_fit
+        ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
+cotire(example_deconv_visual example_cifar_train example_cifar_test example_recurrent_addition example_train_char_rnn example_test_char_rnn sinus_fit)
 
 if(PROTO_CPP_AVAILABLE)
     include_directories(${PROTOBUF_INCLUDE_DIRS})
