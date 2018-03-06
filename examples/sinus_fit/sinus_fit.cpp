@@ -20,13 +20,10 @@ int main() {
   net << tanh_layer();
   net << fully_connected_layer(10, 1);
 
-  // create learning data, X is the input set and sinX is the expected output
-  // set
+  // create input and desired output on a period
   vector<vec_t> X;
   vector<vec_t> sinusX;
-  for (float x = -3.1416f; x < 3.1416f;
-       x += 0.1f)  // learn and test on a period
-  {
+  for (float x = -3.1416f; x < 3.1416f; x += 0.2f) {
     vec_t vx    = {x};
     vec_t vsinx = {sinf(x)};
 
@@ -55,7 +52,7 @@ int main() {
 
   // compare prediction and desired output
   float dMaxError = 0.f;
-  for (float x = -3.1416f; x < 3.1416f; x += 0.1f) {
+  for (float x = -3.1416f; x < 3.1416f; x += 0.2f) {
     vec_t xv         = {x};
     float fPredicted = net.predict(xv)[0];
     float fDesired   = sinf(x);
@@ -63,6 +60,7 @@ int main() {
     cout << "x=" << x << " sinX=" << fDesired << " predicted=" << fPredicted
          << endl;
 
+    // compute max error= max(abs(desired-predicted))
     float dError = abs(fPredicted - fDesired);
     if (dMaxError < dError) dMaxError = dError;
   }
