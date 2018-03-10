@@ -235,11 +235,9 @@ auto host_data() {
    * @tparam Values index type
    */
   template <typename... Values>
-  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>
-  subView(std::initializer_list<Values>... lists) {
-    using SharedTensor =
-      Tensor<U,
-             xt::xview<Storage &, xt::xrange<Values>...>>;
+  Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>> subView(
+    std::initializer_list<Values>... lists) {
+    using SharedTensor = Tensor<U, xt::xview<Storage &, xt::xrange<Values>...>>;
     return SharedTensor(storage_,
                         xt::range(*(lists.begin()), *(lists.begin() + 1))...);
   }
