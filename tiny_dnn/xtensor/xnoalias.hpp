@@ -6,81 +6,105 @@
 * The full license is in the file LICENSE, distributed with this software. *
 ****************************************************************************/
 
-#ifndef XNOALIAS_HPP
-#define XNOALIAS_HPP
+#ifndef XTENSOR_NOALIAS_HPP
+#define XTENSOR_NOALIAS_HPP
 
 #include "xsemantic.hpp"
 
-namespace xt {
+namespace xt
+{
 
-template <class A>
-class noalias_proxy {
- public:
-  noalias_proxy(A& a) noexcept;
+    template <class A>
+    class noalias_proxy
+    {
 
-  template <class E>
-  A& operator=(const xexpression<E>& e);
+    public:
 
-  template <class E>
-  A& operator+=(const xexpression<E>& e);
+        noalias_proxy(A& a) noexcept;
 
-  template <class E>
-  A& operator-=(const xexpression<E>& e);
+        template <class E>
+        A& operator=(const xexpression<E>& e);
 
-  template <class E>
-  A& operator*=(const xexpression<E>& e);
+        template <class E>
+        A& operator+=(const xexpression<E>& e);
 
-  template <class E>
-  A& operator/=(const xexpression<E>& e);
+        template <class E>
+        A& operator-=(const xexpression<E>& e);
 
- private:
-  A& m_array;
-};
+        template <class E>
+        A& operator*=(const xexpression<E>& e);
 
-template <class A>
-noalias_proxy<A> noalias(A& a) noexcept;
+        template <class E>
+        A& operator/=(const xexpression<E>& e);
 
-/********************************
- * noalias_proxy implementation *
- ********************************/
+        template <class E>
+        A& operator%=(const xexpression<E>& e);
+        
+    private:
 
-template <class A>
-inline noalias_proxy<A>::noalias_proxy(A& a) noexcept : m_array(a) {}
+        A& m_array;
+    };
 
-template <class A>
-template <class E>
-inline A& noalias_proxy<A>::operator=(const xexpression<E>& e) {
-  return m_array.assign(e);
-}
+    template <class A>
+    noalias_proxy<A> noalias(A& a) noexcept;
 
-template <class A>
-template <class E>
-inline A& noalias_proxy<A>::operator+=(const xexpression<E>& e) {
-  return m_array.plus_assign(e);
-}
+    /********************************
+     * noalias_proxy implementation *
+     ********************************/
 
-template <class A>
-template <class E>
-inline A& noalias_proxy<A>::operator-=(const xexpression<E>& e) {
-  return m_array.minus_assign(e);
-}
+    template <class A>
+    inline noalias_proxy<A>::noalias_proxy(A& a) noexcept
+        : m_array(a)
+    {
+    }
 
-template <class A>
-template <class E>
-inline A& noalias_proxy<A>::operator*=(const xexpression<E>& e) {
-  return m_array.multiplies_assign(e);
-}
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator=(const xexpression<E>& e)
+    {
+        return m_array.assign(e);
+    }
 
-template <class A>
-template <class E>
-inline A& noalias_proxy<A>::operator/=(const xexpression<E>& e) {
-  return m_array.divides_assign(e);
-}
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator+=(const xexpression<E>& e)
+    {
+        return m_array.plus_assign(e);
+    }
 
-template <class A>
-inline noalias_proxy<A> noalias(A& a) noexcept {
-  return noalias_proxy<A>(a);
-}
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator-=(const xexpression<E>& e)
+    {
+        return m_array.minus_assign(e);
+    }
+
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator*=(const xexpression<E>& e)
+    {
+        return m_array.multiplies_assign(e);
+    }
+
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator/=(const xexpression<E>& e)
+    {
+        return m_array.divides_assign(e);
+    }
+
+    template <class A>
+    template <class E>
+    inline A& noalias_proxy<A>::operator%=(const xexpression<E>& e)
+    {
+        return m_array.modulus_assign(e);
+    }
+    
+    template <class A>
+    inline noalias_proxy<A> noalias(A& a) noexcept
+    {
+        return noalias_proxy<A>(a);
+    }
 }
 
 #endif
