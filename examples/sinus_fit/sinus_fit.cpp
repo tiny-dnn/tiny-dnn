@@ -11,7 +11,7 @@ using namespace std;
 using namespace tiny_dnn;
 
 int main() {
-  // create a simple network with 2 hidden layer of 10 neurons each
+  // create a simple network with 2 layer of 10 neurons each
   // input is x, output is sin(x)
   network<sequential> net;
   net << fully_connected_layer(1, 10);
@@ -39,8 +39,9 @@ int main() {
   // this lambda function will be called after each epoch
   int iEpoch              = 0;
   auto on_enumerate_epoch = [&]() {
+    // compute loss and disp 1/100 of the time
     iEpoch++;
-    if (iEpoch % 100) return;  // compute loss and disp 1/100 of the time
+    if (iEpoch % 100) return;
 
     double loss = net.get_loss<mse>(X, sinusX);
     cout << "epoch=" << iEpoch << "/" << epochs << " loss=" << loss << endl;
@@ -60,8 +61,9 @@ int main() {
     cout << "x=" << x << " sinX=" << fDesired << " predicted=" << fPredicted
          << endl;
 
-    // compute max error= max(abs(desired-predicted))
+    // update max error
     float dError = abs(fPredicted - fDesired);
+
     if (dMaxError < dError) dMaxError = dError;
   }
 
