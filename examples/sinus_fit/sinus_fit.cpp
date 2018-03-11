@@ -5,10 +5,10 @@
     in the LICENSE file.
 */
 
-// this example show how to use tiny-dnn library to fit data, by learning a
-// sinus function
+// this example shows how to use tiny-dnn library to fit data, by learning a
+// sinus function.
 
-// please see also at:
+// please also see:
 // https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/how_tos/How-Tos.md
 
 #include <iostream>
