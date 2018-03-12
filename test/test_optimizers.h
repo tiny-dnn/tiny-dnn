@@ -15,13 +15,17 @@ namespace tiny_dnn {
 TEST(optimizers, adagrad_update) {
   adagrad optimizer;
 
-  vec_t weights   = {0.20, 0.40, 0.006, -0.77, -0.010};
-  vec_t gradients = {1.00, -3.24, -0.600, 2.79, 1.820};
+  vec_t weights = {(float_t)0.20, (float_t)0.40, (float_t)0.006, (float_t)-0.77,
+                   (float_t)-0.010};
+  vec_t gradients = {(float_t)1.00, (float_t)-3.24, (float_t)-0.600,
+                     (float_t)2.79, (float_t)1.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.1900, 0.4100, 0.0160, -0.7800, -0.0200};
-  vec_t second_update = {0.1829, 0.4170, 0.0230, -0.7870, -0.0270};
+  vec_t first_update = {(float_t)0.1900, (float_t)0.4100, (float_t)0.0160,
+                        (float_t)-0.7800, (float_t)-0.0200};
+  vec_t second_update = {(float_t)0.1829, (float_t)0.4170, (float_t)0.0230,
+                         (float_t)-0.7870, (float_t)-0.0270};
 
   // Testing
 
@@ -41,13 +45,17 @@ TEST(optimizers, adagrad_update) {
 TEST(optimizers, rmsprop_update) {
   RMSprop optimizer;
 
-  vec_t weights   = {-0.021, 1.03, -0.05, -.749, 0.009};
-  vec_t gradients = {1.000, -3.24, -0.60, 2.79, 1.820};
+  vec_t weights = {(float_t)-0.021, (float_t)1.03, (float_t)-0.05,
+                   (float_t)-.749, (float_t)0.009};
+  vec_t gradients = {(float_t)1.000, (float_t)-3.24, (float_t)-0.60,
+                     (float_t)2.79, (float_t)1.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {-0.0220, 1.0310, -0.0490, -0.7500, 0.0080};
-  vec_t second_update = {-0.0227, 1.0317, -0.0482, -0.7507, 0.0072};
+  vec_t first_update = {(float_t)-0.0220, (float_t)1.0310, (float_t)-0.0490,
+                        (float_t)-0.7500, (float_t)0.0080};
+  vec_t second_update = {(float_t)-0.0227, (float_t)1.0317, (float_t)-0.0482,
+                         (float_t)-0.7507, (float_t)0.0072};
 
   // Testing
 
@@ -67,13 +75,17 @@ TEST(optimizers, rmsprop_update) {
 TEST(optimizers, adam_update) {
   adam optimizer;
 
-  vec_t weights   = {1.00, 0.081, -0.6201, 0.96, -0.007};
-  vec_t gradients = {6.45, -3.240, -0.6000, 2.79, 1.820};
+  vec_t weights = {(float_t)1.00, (float_t)0.081, (float_t)-0.6201,
+                   (float_t)0.96, (float_t)-0.007};
+  vec_t gradients = {(float_t)6.45, (float_t)-3.240, (float_t)-0.6000,
+                     (float_t)2.79, (float_t)1.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.9992, 0.0817, -0.6193, 0.9592, -0.0077};
-  vec_t second_update = {0.9983, 0.0826, -0.6184, 0.9583, -0.0086};
+  vec_t first_update = {(float_t)0.9992, (float_t)0.0817, (float_t)-0.6193,
+                        (float_t)0.9592, (float_t)-0.0077};
+  vec_t second_update = {(float_t)0.9983, (float_t)0.0826, (float_t)-0.6184,
+                         (float_t)0.9583, (float_t)-0.0086};
 
   // Testing
 
@@ -93,13 +105,17 @@ TEST(optimizers, adam_update) {
 TEST(optimizers, adamax_update) {
   adamax optimizer;
 
-  vec_t weights   = {1.00, 0.081, -0.6201, 0.96, -0.007};
-  vec_t gradients = {6.45, -3.240, -0.6000, 2.79, 1.820};
+  vec_t weights = {(float_t)1.00, (float_t)0.081, (float_t)-0.6201,
+                   (float_t)0.96, (float_t)-0.007};
+  vec_t gradients = {(float_t)6.45, (float_t)-3.240, (float_t)-0.6000,
+                     (float_t)2.79, (float_t)1.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.9980, 0.0830, -0.6181, 0.9580, -0.0090};
-  vec_t second_update = {0.9960, 0.0850, -0.6161, 0.9560, -0.0109};
+  vec_t first_update = {(float_t)0.9980, (float_t)0.0830, (float_t)-0.6181,
+                        (float_t)0.9580, (float_t)-0.0090};
+  vec_t second_update = {(float_t)0.9960, (float_t)0.0850, (float_t)-0.6161,
+                         (float_t)0.9560, (float_t)-0.0109};
 
   // Testing
 
@@ -119,13 +135,17 @@ TEST(optimizers, adamax_update) {
 TEST(optimizers, naive_sgd_update) {
   gradient_descent optimizer;
 
-  vec_t weights   = {-0.001, -0.90, 0.005, -0.74, 0.003};
-  vec_t gradients = {-2.240, -3.24, 0.600, 0.39, 0.820};
+  vec_t weights = {(float_t)-0.001, (float_t)-0.90, (float_t)0.005,
+                   (float_t)-0.74, (float_t)0.003};
+  vec_t gradients = {(float_t)-2.240, (float_t)-3.24, (float_t)0.600,
+                     (float_t)0.39, (float_t)0.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.0214, -0.8676, -0.0010, -0.7439, -0.0052};
-  vec_t second_update = {0.0438, -0.8352, -0.0070, -0.7478, -0.0134};
+  vec_t first_update = {(float_t)0.0214, (float_t)-0.8676, (float_t)-0.0010,
+                        (float_t)-0.7439, (float_t)-0.0052};
+  vec_t second_update = {(float_t)0.0438, (float_t)-0.8352, (float_t)-0.0070,
+                         (float_t)-0.7478, (float_t)-0.0134};
 
   // Testing
 
@@ -145,13 +165,17 @@ TEST(optimizers, naive_sgd_update) {
 TEST(optimizers, momentum_update) {
   momentum optimizer;
 
-  vec_t weights   = {-0.001, -0.90, 0.005, -0.74, 0.003};
-  vec_t gradients = {-2.240, -3.24, 0.600, 0.39, 0.820};
+  vec_t weights = {(float_t)-0.001, (float_t)-0.90, (float_t)0.005,
+                   (float_t)-0.74, (float_t)0.003};
+  vec_t gradients = {(float_t)-2.240, (float_t)-3.24, (float_t)0.600,
+                     (float_t)0.39, (float_t)0.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.0214, -0.8676, -0.0010, -0.7439, -0.0052};
-  vec_t second_update = {0.0639, -0.8060, -0.0124, -0.7513, -0.0207};
+  vec_t first_update = {(float_t)0.0214, (float_t)-0.8676, (float_t)-0.0010,
+                        (float_t)-0.7439, (float_t)-0.0052};
+  vec_t second_update = {(float_t)0.0639, (float_t)-0.8060, (float_t)-0.0124,
+                         (float_t)-0.7513, (float_t)-0.0207};
 
   // Testing
 
@@ -171,13 +195,17 @@ TEST(optimizers, momentum_update) {
 TEST(optimizers, nesterov_momentum_update) {
   nesterov_momentum optimizer;
 
-  vec_t weights   = {0.1, 0.30, 0.005, -0.74, -0.008};
-  vec_t gradients = {1.0, -3.24, -0.600, 2.79, 1.820};
+  vec_t weights = {(float_t)0.1, (float_t)0.30, (float_t)0.005, (float_t)-0.74,
+                   (float_t)-0.008};
+  vec_t gradients = {(float_t)1.0, (float_t)-3.24, (float_t)-0.600,
+                     (float_t)2.79, (float_t)1.820};
 
   // Defining the expected updates
 
-  vec_t first_update  = {0.0810, 0.3615, 0.0164, -0.7930, -0.0425};
-  vec_t second_update = {0.0539, 0.4493, 0.0326, -0.8686, -0.0919};
+  vec_t first_update = {(float_t)0.0810, (float_t)0.3615, (float_t)0.0164,
+                        (float_t)-0.7930, (float_t)-0.0425};
+  vec_t second_update = {(float_t)0.0539, (float_t)0.4493, (float_t)0.0326,
+                         (float_t)-0.8686, (float_t)-0.0919};
 
   // Testing
 
