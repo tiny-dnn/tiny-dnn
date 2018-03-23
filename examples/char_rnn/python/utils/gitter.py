@@ -6,7 +6,7 @@ from gitterpy.client import GitterClient, BaseApi
 def get_all_messages(gitter_token="",
                      chat="tiny-dnn/developers", out_path='messages.json'):
     gitter = GitterClient(gitter_token)
-
+    gitter.rooms.join(chat)
     messages = []
     ret = gitter.messages.list(chat)
     messages += ret
