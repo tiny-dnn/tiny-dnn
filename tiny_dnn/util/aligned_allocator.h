@@ -115,6 +115,8 @@ private:
         return ::memalign(align, size);
 #elif defined (__MINGW32__)
         return ::_mm_malloc(size, align);
+#elif defined (INTEGRITY)
+#error "TODO: Add Integrity support"
 #else // posix assumed
         void* p;
         if (::posix_memalign(&p, align, size) != 0) {
@@ -129,6 +131,8 @@ private:
         ::_aligned_free(ptr);
 #elif defined(__MINGW32__)
         ::_mm_free(ptr);
+#elif defined (INTEGRITY)
+#error "TODO: Add Integrity support"
 #else
         ::free(ptr);
 #endif
