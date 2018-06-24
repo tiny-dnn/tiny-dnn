@@ -401,6 +401,7 @@ if(BUILD_EXAMPLES)
 endif(BUILD_EXAMPLES)
 
 if(BUILD_TESTS)
+    enable_testing()
     add_subdirectory(test)
 endif(BUILD_TESTS)
 
