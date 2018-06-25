@@ -59,13 +59,14 @@ option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
 option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
 option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
 
-option(BUILD_TESTS      "Set to ON to build tests"              OFF)
-option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
-option(BUILD_DOCS       "Set to ON to build documentation"      OFF)
-option(BUILD_BENCHMARKS "Set to ON to build benchmarks"         OFF)
-option(COVERALLS        "Set to ON to build with code coverage" OFF)
-option(PROFILE          "Set to ON to build with profiling"     OFF)
-option(USE_ASAN         "Set to ON to build with ASan"          OFF)
+option(BUILD_TESTS      "Set to ON to build tests"                        OFF)
+option(USE_SYS_GTEST    "Set to ON to use a system installation of gtest" OFF)
+option(BUILD_EXAMPLES   "Set to ON to build examples"                     OFF)
+option(BUILD_DOCS       "Set to ON to build documentation"                OFF)
+option(BUILD_BENCHMARKS "Set to ON to build benchmarks"                   OFF)
+option(COVERALLS        "Set to ON to build with code coverage"           OFF)
+option(PROFILE          "Set to ON to build with profiling"               OFF)
+option(USE_ASAN         "Set to ON to build with ASan"                    OFF)
 
 ####
 # Create the library target
