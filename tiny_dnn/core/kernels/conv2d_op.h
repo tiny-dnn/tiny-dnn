@@ -25,10 +25,12 @@ class Conv2dOp : public core::OpKernel {
 
     // TODO(Randl): Remove once layers forward and backward by themself.
     Tensor<float_t> in_data_t(context.input(0));
-    const Tensor<float_t> weights_t(context.input(1)),
-      bias_t =
-        params.has_bias ? Tensor<float_t>(context.input(2)) : Tensor<float_t>();
     Tensor<float_t> out_data_t(context.output(0));
+
+    const Tensor<float_t> weights(*(context.ith_parameter(0)->data()));
+    const Tensor<float_t> bias(params.has_bias
+                                 ? *(context.ith_parameter(1)->data())
+                                 : Tensor<float_t>());
 
     // initialize outputs
     out_data_t.fill(0.0f);
@@ -39,19 +41,19 @@ class Conv2dOp : public core::OpKernel {
     const core::backend_t engine = context.engine();
 
     if (engine == core::backend_t::internal) {
-      kernels::conv2d_op_internal(in_data_t, weights_t, bias_t, out_data_t,
-                                  params, context.parallelize());
+      kernels::conv2d_op_internal(in_data_t, weights, bias, out_data_t, params,
+                                  context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::nnpack) {
-      kernels::conv2d_op_nnpack(in_data_t, weights_t, bias_t, out_data_t,
-                                params, context.parallelize());
+      kernels::conv2d_op_nnpack(in_data_t, weights, bias, out_data_t, params,
+                                context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
       context.output(0) = out_data_t.toTensor();
     } else if (engine == core::backend_t::avx) {
-      kernels::conv2d_op_avx(in_data_t, weights_t, bias_t, out_data_t, params,
+      kernels::conv2d_op_avx(in_data_t, weights, bias, out_data_t, params,
                              context.parallelize());
 
       // TODO(Randl): Remove once layers forward and backward by themself.
