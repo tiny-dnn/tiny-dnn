@@ -7,6 +7,7 @@
 [![Maintainers Wanted](https://img.shields.io/badge/maintainers-wanted-red.svg)](https://github.com/pickhardt/maintainers-wanted)
 
 ## The project may be abandoned since the maintainer(s) are just looking to move on. In the case anyone is interested in continuing the project, let us know so that we can discuss next steps.
+## Please visit https://github.com/tiny-dnn/tiny-dnn/issues/973
 
 -----------------
 
