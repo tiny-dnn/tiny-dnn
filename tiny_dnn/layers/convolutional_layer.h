@@ -67,6 +67,8 @@ class convolutional_layer : public layer {
                       bool has_bias                = true,
                       size_t w_stride              = 1,
                       size_t h_stride              = 1,
+                      size_t w_dilation            = 1,
+                      size_t h_dilation            = 1,
                       core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -79,6 +81,8 @@ class convolutional_layer : public layer {
                           has_bias,
                           w_stride,
                           h_stride,
+                          w_dilation,
+                          h_dilation,
                           backend_type) {}
 
   /**
@@ -116,6 +120,8 @@ class convolutional_layer : public layer {
                       bool has_bias                = true,
                       size_t w_stride              = 1,
                       size_t h_stride              = 1,
+                      size_t w_dilation            = 1,
+                      size_t h_dilation            = 1,
                       core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -128,6 +134,8 @@ class convolutional_layer : public layer {
                           has_bias,
                           w_stride,
                           h_stride,
+                          w_dilation,
+                          h_dilation,
                           backend_type) {}
 
   /**
@@ -166,6 +174,8 @@ class convolutional_layer : public layer {
                       bool has_bias                = true,
                       size_t w_stride              = 1,
                       size_t h_stride              = 1,
+                      size_t w_dilation            = 1,
+                      size_t h_dilation            = 1,
                       core::backend_t backend_type = core::default_engine())
     : convolutional_layer(in_width,
                           in_height,
@@ -178,6 +188,8 @@ class convolutional_layer : public layer {
                           has_bias,
                           w_stride,
                           h_stride,
+                          w_dilation,
+                          h_dilation,
                           backend_type) {}
 
   /**
@@ -218,11 +230,13 @@ class convolutional_layer : public layer {
                       bool has_bias                = true,
                       size_t w_stride              = 1,
                       size_t h_stride              = 1,
+                      size_t w_dilation            = 1,
+                      size_t h_dilation            = 1,
                       core::backend_t backend_type = core::default_engine())
     : layer(std_input_order(has_bias), {vector_type::data}) {
     conv_set_params(shape3d(in_width, in_height, in_channels), window_width,
                     window_height, out_channels, pad_type, has_bias, w_stride,
-                    h_stride, connection_table);
+                    h_stride, w_dilation, h_dilation, connection_table);
     init_backend(backend_type);
     layer::set_backend_type(backend_type);
   }
@@ -345,6 +359,8 @@ class convolutional_layer : public layer {
     ss << "#define CHANNELS " << params_.weight.depth_ << "\n";
     ss << "#define STRIDE_H " << params_.h_stride << "\n";
     ss << "#define STRIDE_W " << params_.w_stride << "\n";
+    ss << "#define DILATION_H " << params_.h_dilation << "\n";
+    ss << "#define DILATION_W " << params_.w_dilation << "\n";
     ss << "#define APPLY_BIAS " << params_.has_bias << "\n";
     ss << "#define OUTPUT_Z " << params_.out.depth_ << "\n";
     // TODO(edgar): REVISE THIS
@@ -409,20 +425,24 @@ class convolutional_layer : public layer {
     bool has_bias,
     size_t w_stride,
     size_t h_stride,
+    size_t w_dilation,
+    size_t h_dilation,
     const core::connection_table &tbl = core::connection_table()) {
     params_.in = in;
     params_.in_padded =
       shape3d(in_length(in.width_, w_width, ptype),
               in_length(in.height_, w_height, ptype), in.depth_);
     params_.out =
-      shape3d(conv_out_length(in.width_, w_width, w_stride, ptype),
-              conv_out_length(in.height_, w_height, h_stride, ptype), outc);
-    params_.weight   = shape3d(w_width, w_height, in.depth_ * outc);
-    params_.has_bias = has_bias;
-    params_.pad_type = ptype;
-    params_.w_stride = w_stride;
-    params_.h_stride = h_stride;
-    params_.tbl      = tbl;
+      shape3d(conv_out_length(in.width_, w_width, w_stride, w_dilation, ptype),
+              conv_out_length(in.height_, w_height, h_stride, h_dilation, ptype), outc);
+    params_.weight     = shape3d(w_width, w_height, in.depth_ * outc);
+    params_.has_bias   = has_bias;
+    params_.pad_type   = ptype;
+    params_.w_stride   = w_stride;
+    params_.h_stride   = h_stride;
+    params_.w_dilation = w_dilation;
+    params_.h_dilation = h_dilation;
+    params_.tbl        = tbl;
 
     // init padding buffer
     if (params_.pad_type == padding::same) {
@@ -446,9 +466,11 @@ class convolutional_layer : public layer {
                              size_t window_size,
                              size_t w_stride,
                              size_t h_stride,
+                             size_t w_dilation,
+                             size_t h_dilation,
                              padding pad_type) {
-    return conv_out_length(in_width, window_size, w_stride, pad_type) *
-           conv_out_length(in_height, window_size, h_stride, pad_type);
+    return conv_out_length(in_width, window_size, w_stride, w_dilation, pad_type) *
+           conv_out_length(in_height, window_size, h_stride, h_dilation, pad_type);
   }
 
   size_t conv_out_dim(size_t in_width,
@@ -457,9 +479,11 @@ class convolutional_layer : public layer {
                       size_t window_height,
                       size_t w_stride,
                       size_t h_stride,
+                      size_t w_dilation,
+                      size_t h_dilation,
                       padding pad_type) const {
-    return conv_out_length(in_width, window_width, w_stride, pad_type) *
-           conv_out_length(in_height, window_height, h_stride, pad_type);
+    return conv_out_length(in_width, window_width, w_stride, w_dilation, pad_type) *
+           conv_out_length(in_height, window_height, h_stride, h_dilation, pad_type);
   }
 
   void createOp() override { init_backend(layer::engine()); }

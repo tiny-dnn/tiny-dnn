@@ -94,8 +94,8 @@ class max_pooling_layer : public layer {
     : layer({vector_type::data}, {vector_type::data}) {
     set_maxpool_params(
       shape3d(in_width, in_height, in_channels),
-      shape3d(conv_out_length(in_width, pooling_size_x, stride_x, pad_type),
-              conv_out_length(in_height, pooling_size_y, stride_y, pad_type),
+      shape3d(conv_out_length(in_width, pooling_size_x, stride_x, 1, pad_type),
+              conv_out_length(in_height, pooling_size_y, stride_y, 1, pad_type),
               in_channels),
       pooling_size_x, pooling_size_y, stride_x, stride_y, pad_type);
 

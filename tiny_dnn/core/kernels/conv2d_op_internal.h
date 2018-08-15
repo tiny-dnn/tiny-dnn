@@ -26,6 +26,8 @@ inline void conv2d_op_internal(const tensor_t &in_data,
          size_t od          = params.out.depth_;
          size_t kw          = params.weight.width_;
          size_t kh          = params.weight.height_;
+         size_t w_dilation  = params.w_dilation;
+         size_t h_dilation  = params.h_dilation;
          size_t elem_stride = params.w_stride;
          size_t line_stride = iw * params.h_stride;
          for (size_t sample = r.begin(); sample < r.end(); sample++) {
@@ -50,10 +52,10 @@ inline void conv2d_op_internal(const tensor_t &in_data,
                    // should be optimized for small kernel(3x3,5x5)
                    for (size_t wy = 0; wy < kh; wy++) {    // NOLINT
                      for (size_t wx = 0; wx < kw; wx++) {  // NOLINT
-                       sum += pw_element[wx] * pin_element[wx];
+                       sum += pw_element[wx] * pin_element[wx * w_dilation];
                      }
                      pw_element += kw;
-                     pin_element += iw;
+                     pin_element += iw * h_dilation;
                    }
                    pout[x] += sum;
                    pin_line += elem_stride;
