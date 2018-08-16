@@ -54,8 +54,11 @@ class convolutional_layer : public layer {
    * @param w_stride     [in] specify the horizontal interval at which to apply
    *the filters to the input
    * @param h_stride     [in] specify the vertical interval at which to apply
-   *the
-   *filters to the input
+   *the filters to the input
+   * @param w_dilation   [in] specify the horizontal interval to control the spacing 
+   * between the kernel points
+   * @param h_dilation   [in] specify the vertical interval to control the spacing 
+   * between the kernel points
    * @param backend_type [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
@@ -108,6 +111,10 @@ class convolutional_layer : public layer {
    *the filters to the input
    * @param h_stride      [in] specify the vertical interval at which to apply
    *the filters to the input
+   * @param w_dilation   [in] specify the horizontal interval to control the spacing 
+   *between the kernel points
+   * @param h_dilation   [in] specify the vertical interval to control the spacing 
+   *between the kernel points
    * @param backend_type  [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
@@ -160,9 +167,12 @@ class convolutional_layer : public layer {
    * @param w_stride         [in] specify the horizontal interval at which to
    *apply the filters to the input
    * @param h_stride         [in] specify the vertical interval at which to
-   *apply
-   *the filters to the input
-   * @param backend_type [in] specify backend engine you use
+   *apply the filters to the input
+   * @param w_dilation       [in] specify the horizontal interval to control the spacing 
+   *between the kernel points
+   * @param h_dilation       [in] specify the vertical interval to control the spacing 
+   *between the kernel points
+   * @param backend_type     [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
                       size_t in_height,
@@ -215,9 +225,12 @@ class convolutional_layer : public layer {
   * @param w_stride         [in] specify the horizontal interval at which to
   *apply the filters to the input
   * @param h_stride         [in] specify the vertical interval at which to
-  *apply
-  *the filters to the input
-  * @param backend_type [in] specify backend engine you use
+  *apply the filters to the input
+  * @param w_dilation       [in] specify the horizontal interval to control the spacing 
+  *between the kernel points
+  * @param h_dilation       [in] specify the vertical interval to control the spacing 
+  *between the kernel points
+  * @param backend_type     [in] specify backend engine you use
   **/
   convolutional_layer(size_t in_width,
                       size_t in_height,
