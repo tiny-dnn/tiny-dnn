@@ -1,5 +1,4 @@
 include(CTest)
-enable_testing()
 
 if(USE_SYS_GTEST)
   find_path(GTEST_HDR "gtest/gtest.h")
