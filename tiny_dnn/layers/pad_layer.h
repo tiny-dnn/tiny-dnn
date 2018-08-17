@@ -15,8 +15,6 @@
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
-#include <iostream>
-
 namespace tiny_dnn {
 
 /**
