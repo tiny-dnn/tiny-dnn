@@ -29,6 +29,7 @@ void register_layers(T* h) {
   h->template register_layer<lrn_layer>("lrn");
   h->template register_layer<max_pooling_layer>("maxpool");
   h->template register_layer<max_unpooling_layer>("maxunpool");
+  h->template register_layer<pad_layer>("pad");
   h->template register_layer<power_layer>("power");
   h->template register_layer<quantized_convolutional_layer>("q_conv");
   h->template register_layer<quantized_deconvolutional_layer>("q_deconv");
