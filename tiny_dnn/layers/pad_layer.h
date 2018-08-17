@@ -15,11 +15,6 @@
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/util/util.h"
 
-<<<<<<< HEAD
-=======
-#include <iostream>
-
->>>>>>> Add padding layer.
 namespace tiny_dnn {
 
 /**
