@@ -173,10 +173,7 @@ TEST(convolutional, with_stride) {
   }
 
   float_t curr_delta[] = {
-    -1.0f,
-    2.0f,
-    3.0f,
-    0.0f,
+    -1.0f, 2.0f, 3.0f, 0.0f,
   };
 
   float_t expected_prev_delta[] = {-0.5f, -0.5f, 0.5f, 1.0f, 1.0f, -0.5f, -0.5f,
