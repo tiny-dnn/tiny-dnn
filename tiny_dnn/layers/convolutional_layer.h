@@ -55,10 +55,10 @@ class convolutional_layer : public layer {
    *the filters to the input
    * @param h_stride     [in] specify the vertical interval at which to apply
    *the filters to the input
-   * @param w_dilation   [in] specify the horizontal interval to control the spacing 
-   * between the kernel points
-   * @param h_dilation   [in] specify the vertical interval to control the spacing 
-   * between the kernel points
+   * @param w_dilation   [in] specify the horizontal interval to control the
+   *spacing between the kernel points
+   * @param h_dilation   [in] specify the vertical interval to control the
+   *spacing between the kernel points
    * @param backend_type [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
@@ -111,10 +111,10 @@ class convolutional_layer : public layer {
    *the filters to the input
    * @param h_stride      [in] specify the vertical interval at which to apply
    *the filters to the input
-   * @param w_dilation   [in] specify the horizontal interval to control the spacing 
-   *between the kernel points
-   * @param h_dilation   [in] specify the vertical interval to control the spacing 
-   *between the kernel points
+   * @param w_dilation   [in] specify the horizontal interval to control the
+   *spacing between the kernel points
+   * @param h_dilation   [in] specify the vertical interval to control the
+   *spacing between the kernel points
    * @param backend_type  [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
@@ -168,10 +168,10 @@ class convolutional_layer : public layer {
    *apply the filters to the input
    * @param h_stride         [in] specify the vertical interval at which to
    *apply the filters to the input
-   * @param w_dilation       [in] specify the horizontal interval to control the spacing 
-   *between the kernel points
-   * @param h_dilation       [in] specify the vertical interval to control the spacing 
-   *between the kernel points
+   * @param w_dilation       [in] specify the horizontal interval to control the
+   *spacing between the kernel points
+   * @param h_dilation       [in] specify the vertical interval to control the
+   *spacing between the kernel points
    * @param backend_type     [in] specify backend engine you use
    **/
   convolutional_layer(size_t in_width,
@@ -203,35 +203,35 @@ class convolutional_layer : public layer {
                           backend_type) {}
 
   /**
-  * constructing convolutional layer
-  *
-  * @param in_width         [in] input image width
-  * @param in_height        [in] input image height
-  * @param window_width     [in] window_width(kernel) size of convolution
-  * @param window_height    [in] window_height(kernel) size of convolution
-  * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
-  * @param out_channels     [in] output image channels
-  * @param connection_table [in] definition of connections between in-channels
-  *and out-channels
-  * @param pad_type         [in] rounding strategy
-  *                              - valid: use valid pixels of input only.
-  *```output-size = (in-width - window_width + 1)
-  ** (in-height - window_height + 1) * out_channels```
-  *                              - same: add zero-padding to keep same
-  *width/height. ```output-size = in-width *
-  *in-height * out_channels```
-  * @param has_bias         [in] whether to add a bias vector to the filter
-  *outputs
-  * @param w_stride         [in] specify the horizontal interval at which to
-  *apply the filters to the input
-  * @param h_stride         [in] specify the vertical interval at which to
-  *apply the filters to the input
-  * @param w_dilation       [in] specify the horizontal interval to control the spacing 
-  *between the kernel points
-  * @param h_dilation       [in] specify the vertical interval to control the spacing 
-  *between the kernel points
-  * @param backend_type     [in] specify backend engine you use
-  **/
+   * constructing convolutional layer
+   *
+   * @param in_width         [in] input image width
+   * @param in_height        [in] input image height
+   * @param window_width     [in] window_width(kernel) size of convolution
+   * @param window_height    [in] window_height(kernel) size of convolution
+   * @param in_channels      [in] input image channels (grayscale=1, rgb=3)
+   * @param out_channels     [in] output image channels
+   * @param connection_table [in] definition of connections between in-channels
+   *and out-channels
+   * @param pad_type         [in] rounding strategy
+   *                              - valid: use valid pixels of input only.
+   *```output-size = (in-width - window_width + 1)
+   ** (in-height - window_height + 1) * out_channels```
+   *                              - same: add zero-padding to keep same
+   *width/height. ```output-size = in-width *
+   *in-height * out_channels```
+   * @param has_bias         [in] whether to add a bias vector to the filter
+   *outputs
+   * @param w_stride         [in] specify the horizontal interval at which to
+   *apply the filters to the input
+   * @param h_stride         [in] specify the vertical interval at which to
+   *apply the filters to the input
+   * @param w_dilation       [in] specify the horizontal interval to control the
+   *spacing between the kernel points
+   * @param h_dilation       [in] specify the vertical interval to control the
+   *spacing between the kernel points
+   * @param backend_type     [in] specify backend engine you use
+   **/
   convolutional_layer(size_t in_width,
                       size_t in_height,
                       size_t window_width,
@@ -445,9 +445,9 @@ class convolutional_layer : public layer {
     params_.in_padded =
       shape3d(in_length(in.width_, w_width, ptype),
               in_length(in.height_, w_height, ptype), in.depth_);
-    params_.out =
-      shape3d(conv_out_length(in.width_, w_width, w_stride, w_dilation, ptype),
-              conv_out_length(in.height_, w_height, h_stride, h_dilation, ptype), outc);
+    params_.out = shape3d(
+      conv_out_length(in.width_, w_width, w_stride, w_dilation, ptype),
+      conv_out_length(in.height_, w_height, h_stride, h_dilation, ptype), outc);
     params_.weight     = shape3d(w_width, w_height, in.depth_ * outc);
     params_.has_bias   = has_bias;
     params_.pad_type   = ptype;
@@ -482,8 +482,10 @@ class convolutional_layer : public layer {
                              size_t w_dilation,
                              size_t h_dilation,
                              padding pad_type) {
-    return conv_out_length(in_width, window_size, w_stride, w_dilation, pad_type) *
-           conv_out_length(in_height, window_size, h_stride, h_dilation, pad_type);
+    return conv_out_length(in_width, window_size, w_stride, w_dilation,
+                           pad_type) *
+           conv_out_length(in_height, window_size, h_stride, h_dilation,
+                           pad_type);
   }
 
   size_t conv_out_dim(size_t in_width,
@@ -495,8 +497,10 @@ class convolutional_layer : public layer {
                       size_t w_dilation,
                       size_t h_dilation,
                       padding pad_type) const {
-    return conv_out_length(in_width, window_width, w_stride, w_dilation, pad_type) *
-           conv_out_length(in_height, window_height, h_stride, h_dilation, pad_type);
+    return conv_out_length(in_width, window_width, w_stride, w_dilation,
+                           pad_type) *
+           conv_out_length(in_height, window_height, h_stride, h_dilation,
+                           pad_type);
   }
 
   void createOp() override { init_backend(layer::engine()); }
