@@ -216,7 +216,8 @@ struct LoadAndConstruct<tiny_dnn::convolutional_layer> {
   template <class Archive>
   static void load_and_construct(
     Archive &ar, cereal::construct<tiny_dnn::convolutional_layer> &construct) {
-    size_t w_width, w_height, out_ch, w_stride, h_stride, w_dilation, h_dilation;
+    size_t w_width, w_height, out_ch, w_stride, h_stride, w_dilation,
+      h_dilation;
     bool has_bias;
     tiny_dnn::shape3d in;
     tiny_dnn::padding pad_type;
@@ -1035,4 +1036,3 @@ void serialize(Archive &ar, tiny_dnn::core::connection_table &tbl) {
 }  // namespace core
 
 }  // namespace tiny_dnn
-

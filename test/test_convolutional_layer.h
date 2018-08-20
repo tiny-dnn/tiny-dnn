@@ -173,7 +173,10 @@ TEST(convolutional, with_stride) {
   }
 
   float_t curr_delta[] = {
-    -1.0f, 2.0f, 3.0f, 0.0f,
+    -1.0f,
+    2.0f,
+    3.0f,
+    0.0f,
   };
 
   float_t expected_prev_delta[] = {-0.5f, -0.5f, 0.5f, 1.0f, 1.0f, -0.5f, -0.5f,
@@ -205,7 +208,8 @@ TEST(convolutional, with_stride) {
 }
 
 TEST(convolutional, with_dilation) {
-  convolutional_layer l(7, 7, 3, 3, 1, 1, tiny_dnn::padding::valid, false, 1, 1, 2, 2);
+  convolutional_layer l(7, 7, 3, 3, 1, 1, tiny_dnn::padding::valid, false, 1, 1,
+                        2, 2);
   tensor_buf buf(l, false);
 
   // short-hand references to the payload vectors
@@ -228,16 +232,16 @@ TEST(convolutional, with_dilation) {
   weight[3] = 13.0; weight[4] = 14.0;  weight[5] = 15.0;
   weight[6] = 16.0; weight[7] = 17.0;  weight[8] = 18.0;
 
-  in[0] = 0.0;   in[1] = 1.0;   in[2] = 2.0;   in[3] = 3.0;   in[4] = 4.0; 
-  in[5] = 5.0;   in[6] = 6.0;   in[7] = 7.0;   in[8] = 8.0;   in[9] = 9.0; 
+  in[0] = 0.0;   in[1] = 1.0;   in[2] = 2.0;   in[3] = 3.0;   in[4] = 4.0;
+  in[5] = 5.0;   in[6] = 6.0;   in[7] = 7.0;   in[8] = 8.0;   in[9] = 9.0;
   in[10] = 10.0; in[11] = 11.0; in[12] = 12.0; in[13] = 13.0; in[14] = 14.0;
-  in[15] = 15.0; in[16] = 16.0; in[17] = 17.0; in[18] = 18.0; in[19] = 19.0; 
-  in[20] = 20.0; in[21] = 21.0; in[22] = 22.0; in[23] = 23.0; in[24] = 24.0; 
+  in[15] = 15.0; in[16] = 16.0; in[17] = 17.0; in[18] = 18.0; in[19] = 19.0;
+  in[20] = 20.0; in[21] = 21.0; in[22] = 22.0; in[23] = 23.0; in[24] = 24.0;
   in[25] = 25.0; in[26] = 26.0; in[27] = 27.0; in[28] = 28.0; in[29] = 29.0;
   in[30] = 30.0; in[31] = 31.0; in[32] = 32.0; in[33] = 33.0; in[34] = 34.0;
-  in[35] = 35.0; in[36] = 36.0; in[37] = 37.0; in[38] = 38.0; in[39] = 39.0; 
+  in[35] = 35.0; in[36] = 36.0; in[37] = 37.0; in[38] = 38.0; in[39] = 39.0;
   in[40] = 40.0; in[41] = 41.0; in[42] = 42.0; in[43] = 43.0; in[44] = 44.0;
-  in[45] = 45.0; in[46] = 46.0; in[47] = 47.0; in[48] = 48.0; 
+  in[45] = 45.0; in[46] = 46.0; in[47] = 47.0; in[48] = 48.0;
   // clang-format on
 
   {

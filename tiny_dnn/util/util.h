@@ -122,10 +122,11 @@ template <typename Container>
 size_t max_size(const Container &c) {
   typedef typename Container::value_type value_t;
   const auto max_size =
-    std::max_element(c.begin(), c.end(), [](const value_t &left,
-                                            const value_t &right) {
-      return left.size() < right.size();
-    })->size();
+    std::max_element(c.begin(), c.end(),
+                     [](const value_t &left, const value_t &right) {
+                       return left.size() < right.size();
+                     })
+      ->size();
   assert(max_size <= std::numeric_limits<size_t>::max());
   return max_size;
 }

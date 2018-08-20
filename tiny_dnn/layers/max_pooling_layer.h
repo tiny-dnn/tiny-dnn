@@ -81,7 +81,7 @@ class max_pooling_layer : public layer {
    * @param pooling_size [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   max_pooling_layer(size_t in_width,
                     size_t in_height,
                     size_t in_channels,
@@ -192,7 +192,7 @@ class max_pooling_layer : public layer {
 
     for (size_t dy = 0; dy < dymax; dy++) {
       for (size_t dx = 0; dx < dxmax; dx++) {
-        size_t in_index = params_.in.get_index(outx * params_.stride_x + dx,
+        size_t in_index  = params_.in.get_index(outx * params_.stride_x + dx,
                                                outy * params_.stride_y + dy, c);
         size_t out_index = params_.out.get_index(outx, outy, c);
 

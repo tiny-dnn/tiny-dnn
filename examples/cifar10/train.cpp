@@ -23,15 +23,17 @@ void construct_net(N &nn, tiny_dnn::core::backend_t backend_type) {
   const size_t n_fmaps2 = 64;  // number of feature maps for lower layer
   const size_t n_fc     = 64;  // number of hidden units in fc layer
 
-  nn << conv(32, 32, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1, 1, 1, 
+  nn << conv(32, 32, 5, 3, n_fmaps, tiny_dnn::padding::same, true, 1, 1, 1, 1,
              backend_type)                      // C1
      << pool(32, 32, n_fmaps, 2, backend_type)  // P2
      << relu()                                  // activation
-     << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1, 1, 1, 
+     << conv(16, 16, 5, n_fmaps, n_fmaps, tiny_dnn::padding::same, true, 1, 1,
+             1, 1,
              backend_type)                      // C3
      << pool(16, 16, n_fmaps, 2, backend_type)  // P4
      << relu()                                  // activation
-     << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1, 1, 1, 
+     << conv(8, 8, 5, n_fmaps, n_fmaps2, tiny_dnn::padding::same, true, 1, 1, 1,
+             1,
              backend_type)                                // C5
      << pool(8, 8, n_fmaps2, 2, backend_type)             // P6
      << relu()                                            // activation
@@ -194,4 +196,3 @@ int main(int argc, char **argv) {
     std::cerr << "Exception: " << err.what() << std::endl;
   }
 }
-
