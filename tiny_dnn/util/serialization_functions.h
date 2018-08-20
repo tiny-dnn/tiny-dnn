@@ -773,7 +773,9 @@ struct serialization_buddy {
                   ::detail::make_nvp("pad_type", params_.pad_type),
                   ::detail::make_nvp("has_bias", params_.has_bias),
                   ::detail::make_nvp("w_stride", params_.w_stride),
-                  ::detail::make_nvp("h_stride", params_.h_stride));
+                  ::detail::make_nvp("h_stride", params_.w_stride),
+                  ::detail::make_nvp("w_dilation", params_.w_dilation),
+                  ::detail::make_nvp("h_dilation", params_.h_dilation));
   }
 
   template <class Archive>
