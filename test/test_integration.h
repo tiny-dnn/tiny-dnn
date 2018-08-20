@@ -231,7 +231,7 @@ TEST(integration, gradient_check9_pad_same) {  // sigmoid - mse - padding same
   network<sequential> nn;
 
   nn << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
-                            core::backend_t::internal)
+                            1, 1, core::backend_t::internal)
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -244,7 +244,7 @@ TEST(integration, gradient_check10_w_stride) {  // sigmoid - mse - w_stride > 1
   network<sequential> nn;
 
   nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 2, 1,
-                            core::backend_t::internal)
+                            1, 1, core::backend_t::internal)
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
@@ -257,7 +257,7 @@ TEST(integration, gradient_check11_h_stride) {  // sigmoid - mse - h_stride > 1
   network<sequential> nn;
 
   nn << convolutional_layer(3, 3, 1, 1, 1, padding::valid, true, 1, 2,
-                            core::backend_t::internal)
+                            1, 1, core::backend_t::internal)
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size(), 1);
@@ -274,7 +274,7 @@ TEST(integration,
   core::connection_table connections(tbl, 3, 3);
 
   nn << convolutional_layer(7, 7, 3, 3, 1, connections, padding::valid, true, 1,
-                            1, core::backend_t::internal)
+                            1, 1, 1, core::backend_t::internal)
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -288,7 +288,7 @@ TEST(integration, gradient_check13_pad_same) {  // sigmoid - mse - padding same
 
   nn << fully_connected_layer(10, 5 * 5)
      << convolutional_layer(5, 5, 3, 1, 1, padding::same, true, 1, 1,
-                            core::backend_t::internal)
+                            1, 1, core::backend_t::internal)
      << sigmoid();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
