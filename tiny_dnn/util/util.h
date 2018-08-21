@@ -329,13 +329,14 @@ inline void fill_tensor(tensor_t &tensor, float_t value, size_t size) {
 inline size_t conv_out_length(size_t in_length,
                               size_t window_size,
                               size_t stride,
+                              size_t dilation,
                               padding pad_type) {
   size_t output_length;
 
   if (pad_type == padding::same) {
     output_length = in_length;
   } else if (pad_type == padding::valid) {
-    output_length = in_length - window_size + 1;
+    output_length = in_length - dilation * window_size + dilation;
   } else {
     throw nn_error("Not recognized pad_type.");
   }
