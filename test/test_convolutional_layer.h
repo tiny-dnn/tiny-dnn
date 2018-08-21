@@ -205,7 +205,7 @@ TEST(convolutional, with_stride) {
 }
 
 TEST(convolutional, with_dilation) {
-  convolutional_layer l(7, 7, 3, 3, 1, 1, tiny_dnn::padding::valid, false, 1, 1,
+  convolutional_layer l(7, 7, 3, 3, 1, 1, tiny_dnn::padding::valid, true, 1, 1,
                         2, 2);
   tensor_buf buf(l, false);
 
