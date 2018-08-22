@@ -18,7 +18,7 @@
 namespace tiny_dnn {
 
 /**
- *
+ * Pad zeros around tensors.
  **/
 class pad_layer : public layer {
  public:
