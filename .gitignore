@@ -185,14 +185,15 @@ CMakeCache.txt
 CMakeFiles*
 ALL_BUILD*
 ZERO_CHECK*
-examples/*.cmake
-test/*.cmake
+cotire/
 Makefile
 cmake-uninstall.cmake
 cmake_install.cmake
 tinydnn-config-version.cmake
 tinydnn-config.cmake
 tinydnn-targets.cmake
+examples/*.cmake
+test/*.cmake
 
 #################
 ## Google Tests
