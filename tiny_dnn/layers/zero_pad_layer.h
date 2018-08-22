@@ -20,7 +20,7 @@ namespace tiny_dnn {
 /**
  * Pad zeros around tensors.
  **/
-class pad_layer : public layer {
+class zero_pad_layer : public layer {
  public:
   typedef layer Base;
 
@@ -30,7 +30,7 @@ class pad_layer : public layer {
    * @param w_pad_size  [in] width of padding size
    * @param h_pad_size  [in] height of padding size
    */
-  pad_layer(size_t in_width,
+  zero_pad_layer(size_t in_width,
             size_t in_height,
             size_t in_channels,
             size_t w_pad_size,
@@ -47,7 +47,7 @@ class pad_layer : public layer {
    * @param w_pad_size  [in] width of padding size
    * @param h_pad_size  [in] height of padding size
    */
-  pad_layer(const shape3d &in_shape, size_t w_pad_size, size_t h_pad_size)
+  zero_pad_layer(const shape3d &in_shape, size_t w_pad_size, size_t h_pad_size)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(in_shape),
       w_pad_size_(w_pad_size),
@@ -61,7 +61,7 @@ class pad_layer : public layer {
     out_shape_.depth_  = in_shape_.depth_;
   }
 
-  std::string layer_type() const override { return "pad"; }
+  std::string layer_type() const override { return "zero-pad"; }
 
   std::vector<shape3d> in_shape() const override { return {in_shape_}; }
 

@@ -44,12 +44,12 @@
 #include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 #include "tiny_dnn/layers/max_unpooling_layer.h"
-#include "tiny_dnn/layers/pad_layer.h"
 #include "tiny_dnn/layers/power_layer.h"
 #include "tiny_dnn/layers/quantized_convolutional_layer.h"
 #include "tiny_dnn/layers/quantized_deconvolutional_layer.h"
 #include "tiny_dnn/layers/recurrent_layer.h"
 #include "tiny_dnn/layers/slice_layer.h"
+#include "tiny_dnn/layers/zero_pad_layer.h"
 
 #ifdef CNN_USE_GEMMLOWP
 #include "tiny_dnn/layers/quantized_fully_connected_layer.h"
@@ -95,8 +95,6 @@ using conv = tiny_dnn::convolutional_layer;
 
 using q_conv = tiny_dnn::quantized_convolutional_layer;
 
-using pad = tiny_dnn::pad_layer;
-
 using max_pool = tiny_dnn::max_pooling_layer;
 
 using ave_pool = tiny_dnn::average_pooling_layer;
@@ -104,6 +102,8 @@ using ave_pool = tiny_dnn::average_pooling_layer;
 using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
+
+using zreo_pad = tiny_dnn::zero_pad_layer;
 
 // using rnn_cell = tiny_dnn::rnn_cell_layer;
 

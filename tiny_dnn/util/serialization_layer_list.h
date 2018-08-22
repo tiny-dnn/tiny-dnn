@@ -29,7 +29,6 @@ void register_layers(T* h) {
   h->template register_layer<lrn_layer>("lrn");
   h->template register_layer<max_pooling_layer>("maxpool");
   h->template register_layer<max_unpooling_layer>("maxunpool");
-  h->template register_layer<pad_layer>("pad");
   h->template register_layer<power_layer>("power");
   h->template register_layer<quantized_convolutional_layer>("q_conv");
   h->template register_layer<quantized_deconvolutional_layer>("q_deconv");
@@ -39,8 +38,8 @@ void register_layers(T* h) {
   h->template register_layer<gru_cell>("gru_cell");
   h->template register_layer<lstm_cell>("lstm_cell");
   h->template register_layer<rnn_cell>("rnn_cell");
-
   h->template register_layer<slice_layer>("slice");
+  h->template register_layer<zero_pad_layer>("zero_pad");
 
   h->template register_layer<sigmoid_layer>("sigmoid");
   h->template register_layer<asinh_layer>("asinh");

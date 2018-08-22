@@ -11,8 +11,8 @@
 
 namespace tiny_dnn {
 
-TEST(pad, forward) {
-  pad_layer pl(shape3d(5, 5, 2), 1, 2);
+TEST(zero_pad, forward) {
+  zero_pad_layer zpl(shape3d(5, 5, 2), 1, 2);
 
   // clang-format off
   vec_t in = {
@@ -54,12 +54,12 @@ TEST(pad, forward) {
   };
   // clang-format on
 
-  EXPECT_EQ(pl.in_shape()[0], shape3d(5, 5, 2));
-  EXPECT_EQ(pl.out_shape()[0], shape3d(7, 9, 2));
+  EXPECT_EQ(zpl.in_shape()[0], shape3d(5, 5, 2));
+  EXPECT_EQ(zpl.out_shape()[0], shape3d(7, 9, 2));
 
   {
     std::vector<const tensor_t*> out;
-    pl.forward({{in}}, out);
+    zpl.forward({{in}}, out);
 
     vec_t res = (*out[0])[0];
     EXPECT_EQ(out_expected.size(), res.size());
@@ -70,7 +70,7 @@ TEST(pad, forward) {
   }
 
   {
-    std::vector<tensor_t> out = pl.backward({{out_expected}});
+    std::vector<tensor_t> out = zpl.backward({{out_expected}});
 
     vec_t res = out[0][0];
     EXPECT_EQ(in.size(), res.size());

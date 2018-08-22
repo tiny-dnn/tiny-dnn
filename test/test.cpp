@@ -61,7 +61,6 @@ using namespace tiny_dnn::activation;
 #include "test_node.h"
 #include "test_nodes.h"
 #include "test_optimizers.h"
-#include "test_pad_layer.h"
 #include "test_power_layer.h"
 #include "test_quantization.h"
 #include "test_quantized_convolutional_layer.h"
@@ -69,6 +68,7 @@ using namespace tiny_dnn::activation;
 #include "test_slice_layer.h"
 #include "test_target_cost.h"
 #include "test_tensor.h"
+#include "test_zero_pad_layer.h"
 
 #include "test_gru_cell.h"
 #include "test_lstm_cell.h"
