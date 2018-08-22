@@ -18,6 +18,7 @@ namespace tiny_dnn {
 TEST(pad, forward) {
   pad_layer pl(shape3d(5, 5, 2), 1, 2);
 
+  // clang-format off
   vec_t in = {
       // Channel 0
       0, 1, 2, 3, 4, 
@@ -55,6 +56,7 @@ TEST(pad, forward) {
       0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0
   };
+  // clang-format on
 
   EXPECT_EQ(pl.in_shape()[0], shape3d(5, 5, 2));
   EXPECT_EQ(pl.out_shape()[0], shape3d(7, 9, 2));
@@ -65,8 +67,8 @@ TEST(pad, forward) {
 
     vec_t res = (*out[0])[0];
     EXPECT_EQ(out_expected.size(), res.size());
-    
-    for ( size_t i = 0 ; i < out_expected.size(); ++ i ) {
+
+    for (size_t i = 0; i < out_expected.size(); ++i) {
       EXPECT_EQ(out_expected[i], res[i]);
     }
   }
@@ -77,7 +79,7 @@ TEST(pad, forward) {
     vec_t res = out[0][0];
     EXPECT_EQ(in.size(), res.size());
 
-    for ( size_t i = 0 ; i < in.size(); ++ i ) {
+    for (size_t i = 0; i < in.size(); ++i) {
       EXPECT_EQ(in[i], res[i]);
     }
   }

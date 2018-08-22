@@ -397,8 +397,7 @@ template <>
 struct LoadAndConstruct<tiny_dnn::pad_layer> {
   template <class Archive>
   static void load_and_construct(
-    Archive &ar,
-    cereal::construct<tiny_dnn::pad_layer> &construct) {
+    Archive &ar, cereal::construct<tiny_dnn::pad_layer> &construct) {
     tiny_dnn::shape3d in_shape;
     size_t w_pad_size, h_pad_size;
 

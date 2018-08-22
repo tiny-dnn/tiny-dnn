@@ -839,9 +839,7 @@ class layer : public node {
     }
     return next()[i];
   }
-  edgeptr_t ith_out_node(size_t i) const { 
-    return next()[i]; 
-  }
+  edgeptr_t ith_out_node(size_t i) const { return next()[i]; }
 
   /* @brief Retrieves weight vector from incoming edge
    * @param i The position of incoming edge.
