@@ -65,6 +65,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
     - fully-connected
     - dropout
     - linear operation
+    - pad
     - power
 - convolution
     - convolutional
