@@ -874,6 +874,13 @@ struct serialization_buddy {
   }
 
   template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::pad_layer &layer) {
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape_),
+                  ::detail::make_nvp("w_pad_size", layer.w_pad_size_),
+                  ::detail::make_nvp("h_pad_size", layer.h_pad_size_));
+  }
+
+  template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::power_layer &layer) {
     ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape_),
                   ::detail::make_nvp("factor", layer.factor_),

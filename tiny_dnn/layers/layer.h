@@ -834,10 +834,14 @@ class layer : public node {
    */
   edgeptr_t ith_out_node(size_t i) {
     // in case that the  edge doesn't exist, we create it
-    if (!next_[i]) alloc_output(i);
+    if (!next_[i]) {
+      alloc_output(i);
+    }
     return next()[i];
   }
-  edgeptr_t ith_out_node(size_t i) const { return next()[i]; }
+  edgeptr_t ith_out_node(size_t i) const { 
+    return next()[i]; 
+  }
 
   /* @brief Retrieves weight vector from incoming edge
    * @param i The position of incoming edge.

@@ -18,7 +18,7 @@
 namespace tiny_dnn {
 
 /**
- * 
+ *
  **/
 class pad_layer : public layer {
  public:
@@ -27,8 +27,8 @@ class pad_layer : public layer {
   /**
    * @param in_width    [in] width of input tensor
    * @param in_height   [in] height of input tensor
-   * @param w_pad_size  [in] 
-   * @param h_pad_size  [in] 
+   * @param w_pad_size  [in] width of padding size
+   * @param h_pad_size  [in] height of padding size
    */
   pad_layer(size_t in_width,
             size_t in_height,
@@ -44,12 +44,10 @@ class pad_layer : public layer {
 
   /**
    * @param in_shape    [in] shape of input tensor
-   * @param w_pad_size  [in] 
-   * @param h_pad_size  [in] 
+   * @param w_pad_size  [in] width of padding size
+   * @param h_pad_size  [in] height of padding size
    */
-  pad_layer(const shape3d &in_shape,
-              size_t w_pad_size,
-              size_t h_pad_size)
+  pad_layer(const shape3d &in_shape, size_t w_pad_size, size_t h_pad_size)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(in_shape),
       w_pad_size_(w_pad_size),
@@ -58,7 +56,7 @@ class pad_layer : public layer {
   }
 
   void set_outshape() {
-    out_shape_.width_  = in_shape_.width_  + 2 * w_pad_size_;
+    out_shape_.width_  = in_shape_.width_ + 2 * w_pad_size_;
     out_shape_.height_ = in_shape_.height_ + 2 * h_pad_size_;
     out_shape_.depth_  = in_shape_.depth_;
   }
@@ -74,13 +72,14 @@ class pad_layer : public layer {
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
 
-    for (size_t i = 0; i < x.size(); ++ i) {
+    for (size_t i = 0; i < x.size(); ++i) {
       for (size_t j = 0; j < x[i].size(); j++) {
         size_t col_idx        = j % in_shape_.width_;
         size_t row_idx        = j / in_shape_.width_;
         size_t depth_idx      = j / in_shape_.width_ / in_shape_.height_;
         size_t n_rows_padding = h_pad_size_ + depth_idx * 2 * h_pad_size_;
-        size_t new_j = col_idx + w_pad_size_ + (row_idx + n_rows_padding) * out_shape_.width_;
+        size_t new_j          = col_idx + w_pad_size_ +
+                       (row_idx + n_rows_padding) * out_shape_.width_;
         y[i][new_j] = x[i][j];
       }
     }
@@ -93,7 +92,6 @@ class pad_layer : public layer {
     tensor_t &dx       = *in_grad[0];
     const tensor_t &dy = *out_grad[0];
     const tensor_t &x  = *in_data[0];
-    const tensor_t &y  = *out_data[0];
 
     for (size_t i = 0; i < x.size(); i++) {
       for (size_t j = 0; j < x[i].size(); j++) {
@@ -101,7 +99,8 @@ class pad_layer : public layer {
         size_t row_idx        = j / in_shape_.width_;
         size_t depth_idx      = j / in_shape_.width_ / in_shape_.height_;
         size_t n_rows_padding = h_pad_size_ + depth_idx * 2 * h_pad_size_;
-        size_t new_j = col_idx + w_pad_size_ + (row_idx + n_rows_padding) * out_shape_.width_;
+        size_t new_j          = col_idx + w_pad_size_ +
+                       (row_idx + n_rows_padding) * out_shape_.width_;
         dx[i][j] = dy[i][new_j];
       }
     }
