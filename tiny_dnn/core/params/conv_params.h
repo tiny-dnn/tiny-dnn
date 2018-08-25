@@ -71,6 +71,8 @@ class conv_params : public Params {
   padding pad_type;
   size_t w_stride;
   size_t h_stride;
+  size_t w_dilation;
+  size_t h_dilation;
 
   friend std::ostream &operator<<(std::ostream &o,
                                   const core::conv_params &param) {
@@ -81,6 +83,8 @@ class conv_params : public Params {
     o << "has_bias:  " << param.has_bias << "\n";
     o << "w_stride:  " << param.w_stride << "\n";
     o << "h_stride:  " << param.h_stride << "\n";
+    o << "w_dilation:  " << param.w_dilation << "\n";
+    o << "h_dilation:  " << param.h_dilation << "\n";
     return o;
   }
 };

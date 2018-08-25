@@ -142,7 +142,7 @@ class average_unpooling_layer : public partial_connected_layer {
    * @param pooling_size [in] factor by which to upscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   average_unpooling_layer(size_t in_width,
                           size_t in_height,
                           size_t in_channels,

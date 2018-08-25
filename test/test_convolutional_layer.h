@@ -204,6 +204,58 @@ TEST(convolutional, with_stride) {
   ASSERT_DOUBLE_EQ(actual_db[0], expected_db[0]);
 }
 
+TEST(convolutional, with_dilation) {
+  convolutional_layer l(7, 7, 3, 3, 1, 1, tiny_dnn::padding::valid, true, 1, 1,
+                        2, 2);
+  tensor_buf buf(l, false);
+
+  // short-hand references to the payload vectors
+  vec_t &in = buf.in_at(0)[0], &out = buf.out_at(0)[0],
+        &weight = buf.in_at(1)[0];
+
+  ASSERT_EQ(l.in_shape()[1].size(), size_t(9));  // weight
+
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+  l.setup(false);
+  {
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.0));
+  }
+
+  // clang-format off
+  weight[0] = 10.0; weight[1] = 11.0;  weight[2] = 12.0;
+  weight[3] = 13.0; weight[4] = 14.0;  weight[5] = 15.0;
+  weight[6] = 16.0; weight[7] = 17.0;  weight[8] = 18.0;
+
+  in[0] = 0.0;   in[1] = 1.0;   in[2] = 2.0;   in[3] = 3.0;   in[4] = 4.0;
+  in[5] = 5.0;   in[6] = 6.0;   in[7] = 7.0;   in[8] = 8.0;   in[9] = 9.0;
+  in[10] = 10.0; in[11] = 11.0; in[12] = 12.0; in[13] = 13.0; in[14] = 14.0;
+  in[15] = 15.0; in[16] = 16.0; in[17] = 17.0; in[18] = 18.0; in[19] = 19.0;
+  in[20] = 20.0; in[21] = 21.0; in[22] = 22.0; in[23] = 23.0; in[24] = 24.0;
+  in[25] = 25.0; in[26] = 26.0; in[27] = 27.0; in[28] = 28.0; in[29] = 29.0;
+  in[30] = 30.0; in[31] = 31.0; in[32] = 32.0; in[33] = 33.0; in[34] = 34.0;
+  in[35] = 35.0; in[36] = 36.0; in[37] = 37.0; in[38] = 38.0; in[39] = 39.0;
+  in[40] = 40.0; in[41] = 41.0; in[42] = 42.0; in[43] = 43.0; in[44] = 44.0;
+  in[45] = 45.0; in[46] = 46.0; in[47] = 47.0; in[48] = 48.0;
+  // clang-format on
+
+  {
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    EXPECT_NEAR(float_t(2280.0), out[0], 1E-5);
+    EXPECT_NEAR(float_t(2406.0), out[1], 1E-5);
+    EXPECT_NEAR(float_t(2532.0), out[2], 1E-5);
+    EXPECT_NEAR(float_t(3162.0), out[3], 1E-5);
+    EXPECT_NEAR(float_t(3288.0), out[4], 1E-5);
+    EXPECT_NEAR(float_t(3414.0), out[5], 1E-5);
+    EXPECT_NEAR(float_t(4044.0), out[6], 1E-5);
+    EXPECT_NEAR(float_t(4170.0), out[7], 1E-5);
+    EXPECT_NEAR(float_t(4296.0), out[8], 1E-5);
+  }
+}
+
 // test for AVX backends
 
 #ifdef CNN_USE_AVX

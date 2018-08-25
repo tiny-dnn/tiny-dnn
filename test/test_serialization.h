@@ -192,7 +192,9 @@ TEST(serialization, serialize_conv) {
                 "pad_type" : 1,
                 "has_bias" : true,
                 "w_stride" : 2,
-                "h_stride" : 2
+                "h_stride" : 2,
+                "w_dilation": 1,
+                "h_dilation": 1
             }
         ]
     }

@@ -15,7 +15,6 @@ using namespace tiny_dnn::activation;
 
 #include "test_activation_layer.h"
 #include "test_average_pooling_layer.h"
-#include "test_network.h"
 // TODO(yida): fix broken test
 // #include "test_average_unpooling_layer.h"
 #include "test_batch_norm_layer.h"
@@ -31,6 +30,7 @@ using namespace tiny_dnn::activation;
 #include "test_lrn_layer.h"
 #include "test_max_pooling_layer.h"
 #include "test_models.h"
+#include "test_network.h"
 #include "test_node.h"
 #include "test_nodes.h"
 #include "test_optimizers.h"

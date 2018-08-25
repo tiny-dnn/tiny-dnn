@@ -141,7 +141,7 @@ class average_pooling_layer : public partial_connected_layer {
    * @param pool_size    [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
-  **/
+   **/
   average_pooling_layer(size_t in_width,
                         size_t in_height,
                         size_t in_channels,
@@ -177,8 +177,8 @@ class average_pooling_layer : public partial_connected_layer {
                         size_t stride_y,
                         padding pad_type = padding::valid)
     : Base(in_width * in_height * in_channels,
-           conv_out_length(in_width, pool_size_x, stride_x, pad_type) *
-             conv_out_length(in_height, pool_size_y, stride_y, pad_type) *
+           conv_out_length(in_width, pool_size_x, stride_x, 1, pad_type) *
+             conv_out_length(in_height, pool_size_y, stride_y, 1, pad_type) *
              in_channels,
            in_channels,
            in_channels,
@@ -189,8 +189,8 @@ class average_pooling_layer : public partial_connected_layer {
       pool_size_y_(pool_size_y),
       pad_type_(pad_type),
       in_(in_width, in_height, in_channels),
-      out_(conv_out_length(in_width, pool_size_x, stride_x, pad_type),
-           conv_out_length(in_height, pool_size_y, stride_y, pad_type),
+      out_(conv_out_length(in_width, pool_size_x, stride_x, 1, pad_type),
+           conv_out_length(in_height, pool_size_y, stride_y, 1, pad_type),
            in_channels),
       w_(pool_size_x, pool_size_y, in_channels) {
     if ((in_width % pool_size_x) || (in_height % pool_size_y)) {

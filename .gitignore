@@ -185,6 +185,22 @@ CMakeCache.txt
 CMakeFiles*
 ALL_BUILD*
 ZERO_CHECK*
+cotire/
+Makefile
+cmake-uninstall.cmake
+cmake_install.cmake
+tinydnn-config-version.cmake
+tinydnn-config.cmake
+tinydnn-targets.cmake
+examples/*.cmake
+test/*.cmake
+
+#################
+## Google Tests
+#################
+googletest-build/
+googletest-download/
+googletest-src/
 
 #################
 ## Docs
@@ -203,3 +219,4 @@ docs/_build
 *.pb.h
 CMakeFiles*
 build*
+DartConfiguration.tcl
