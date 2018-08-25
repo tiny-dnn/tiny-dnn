@@ -1,19 +1,46 @@
 include(CTest)
-enable_testing()
 
+if(USE_SYS_GTEST)
+  find_path(GTEST_HDR "gtest/gtest.h")
+  if (GTEST_HDR)
+    message(STATUS "Found gtest/gtest.h in ${GTEST_HDR}")
+  else()
+    message(STATUS "Could not find gtest.h!")
+  endif()
+  find_path(GMOCK_HDR "gmock/gmock.h")
+  if (GMOCK_HDR)
+    message(STATUS "Found gmock/mock.h in ${GMOCK_HDR}")
+  else()
+    message(STATUS "Could not find gmock.h!")
+  endif()
+  find_library(GTEST_LIB "libgtest.so")
+  if (GTEST_LIB)
+    message(STATUS "Found libgtest: ${GTEST_LIB}")
+  else()
+    message(STATUS "Could not find libgtest!")
+  endif()
+  find_library(GMOCK_LIB "libgmock.so")
+  if (GMOCK_LIB)
+    message(STATUS "Found libgmock: ${GMOCK_LIB}")
+  else()
+    message(STATUS "Could not find libgmock!")
+  endif()
+endif()
 
-include(../cmake/DownloadProject/DownloadProject.cmake)
-#set(gtest_disable_pthreads on) #TODO(randl): Windows?
-download_project(
-    PROJ googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG master
-    UPDATE_DISCONNECTED 1
-)
-
-add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-
-enable_testing()
+if(USE_SYS_GTEST AND GTEST_HDR AND GMOCK_HDR AND GTEST_LIB AND GMOCK_LIB )
+  message(STATUS "Using system-wide installation of gtest and gmock")
+else()
+  message(STATUS "Using local copy of gtest and gmock")
+  include(../cmake/DownloadProject/DownloadProject.cmake)
+  #set(gtest_disable_pthreads on) #TODO(randl): Windows?
+  download_project(
+      PROJ googletest
+      GIT_REPOSITORY https://github.com/google/googletest.git
+      GIT_TAG master
+      UPDATE_DISCONNECTED 1
+  )
+  add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
+endif()
 
 # in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
 if(MSVC)
