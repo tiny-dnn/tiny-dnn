@@ -1,35 +1,17 @@
 include(CTest)
 enable_testing()
 
-
-include(../cmake/DownloadProject/DownloadProject.cmake)
-#set(gtest_disable_pthreads on) #TODO(randl): Windows?
-download_project(
-    PROJ googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG master
-    UPDATE_DISCONNECTED 1
-)
-
-add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-
-enable_testing()
-
-# in ../googletest-src/googletest/CMakeLists.txt, BUILD_SHARED_LIBS is set to OFF
-if(MSVC)
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
-    set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /MT")
-endif()
-
 add_executable(print_device print_device.cpp)
 target_link_libraries(print_device
     ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-add_executable(tiny_dnn_test test.cpp test_no_duplicate_symbols.cpp)
+add_executable(tiny_dnn_test test.cpp test_main.cpp)
+
+set_target_properties(tiny_dnn_test PROPERTIES LINKER_LANGUAGE CXX)
+
 target_link_libraries(tiny_dnn_test
-    ${project_library_target_name} ${REQUIRED_LIBRARIES} gtest gmock)
+    ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
 
 add_test(all_tests tiny_dnn_test)
 # workaround for https://gitlab.kitware.com/cmake/cmake/issues/8774

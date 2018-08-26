@@ -7,11 +7,6 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
-
 namespace tiny_dnn {
 
 TEST(models, alexnet) {

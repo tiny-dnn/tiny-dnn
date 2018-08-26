@@ -7,14 +7,9 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <vector>
 
 #include "tiny_dnn/core/framework/tensor_utils.h"
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 

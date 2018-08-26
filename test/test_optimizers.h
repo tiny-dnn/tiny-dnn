@@ -6,10 +6,6 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
-#include "tiny_dnn/tiny_dnn.h"
-
 namespace tiny_dnn {
 
 TEST(optimizers, adagrad_update) {

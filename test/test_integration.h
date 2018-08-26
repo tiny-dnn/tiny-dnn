@@ -7,13 +7,9 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <functional>
 #include <vector>
 
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 #include "tiny_dnn/util/gradient_check.h"
 
 namespace tiny_dnn {
