@@ -7,15 +7,10 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <map>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
 #if defined(USE_OPENCL) || defined(USE_CUDA)
 #include "third_party/CLCudaAPI/clpp11.h"

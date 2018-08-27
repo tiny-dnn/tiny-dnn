@@ -7,13 +7,8 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <cstdio>
 #include <string>
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -123,8 +118,8 @@ TEST(serialization, serialize_batchnorm) {
   EXPECT_EQ(net[0]->layer_type(), "batch-norm");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 2));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 2));
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), 0.001);
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), 0.8);
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), float_t(0.001));
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), float_t(0.8));
   check_sequential_network_model_serialization(net);
 }
 
