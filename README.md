@@ -1,6 +1,14 @@
 <div align="center">
   <img src="https://github.com/tiny-dnn/tiny-dnn/blob/master/docs/logo/TinyDNN-logo-letters-alpha-version.png"><br><br>
 </div>
+
+-----------------
+
+[![Maintainers Wanted](https://img.shields.io/badge/maintainers-wanted-red.svg)](https://github.com/pickhardt/maintainers-wanted)
+
+## The project may be abandoned since the maintainer(s) are just looking to move on. In the case anyone is interested in continuing the project, let us know so that we can discuss next steps.
+## Please visit: https://groups.google.com/forum/#!forum/tiny-dnn-dev
+
 -----------------
 
 [![Join the chat at https://gitter.im/tiny-dnn/users](https://badges.gitter.im/tiny-dnn/users.svg)](https://gitter.im/tiny-dnn/users) [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](http://tiny-dnn.readthedocs.io/) [![License](https://img.shields.io/badge/license-BSD--3--Clause-blue.svg)](https://raw.githubusercontent.com/tiny-dnn/tiny-dnn/master/LICENSE) [![Coverage Status](https://coveralls.io/repos/github/tiny-dnn/tiny-dnn/badge.svg?branch=master)](https://coveralls.io/github/tiny-dnn/tiny-dnn?branch=master)

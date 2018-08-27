@@ -40,8 +40,8 @@ addons:
 branches:
   only:
     - master
-    - feat/xtensor_integration
-    - feat/decouple_activations
+    #- feat/xtensor_integration
+    #- feat/decouple_activations
 
 env:
   global:
@@ -96,9 +96,9 @@ before_script:
             -DUSE_AVX=OFF
             -DBUILD_TESTS=$BUILD_TESTS .;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-      make test_lints;
-    fi
+  #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+  #    make test_lints;
+  #  fi
 
 script:
   - make -j2

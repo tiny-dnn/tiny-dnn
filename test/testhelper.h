@@ -7,8 +7,6 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <cstdio>
 #include <iostream>
 #include <limits>
@@ -24,6 +22,9 @@
 #define NOMINMAX
 #include <Windows.h>
 #endif
+
+#include <sys/types.h>
+#include <sys/stat.h>
 
 namespace tiny_dnn {
 

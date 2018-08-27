@@ -124,6 +124,26 @@ class xcontainer : private xiterable<D> {
   reference data_element(size_type i);
   const_reference data_element(size_type i) const;
 
+#if defined(_MSC_VER) && _MSC_VER >= 1910
+  // Workaround for compiler bug in Visual Studio 2017 with respect to alias templates with non-type parameters.
+  template <layout_type L>
+  using layout_iterator = xiterator<typename iterable_base::stepper, typename iterable_base::inner_shape_type*, L>;
+  template <layout_type L>
+  using const_layout_iterator = xiterator<typename iterable_base::const_stepper, typename iterable_base::inner_shape_type*, L>;
+  template <layout_type L>
+  using reverse_layout_iterator = std::reverse_iterator<layout_iterator<L>>;
+  template <layout_type L>
+  using const_reverse_layout_iterator = std::reverse_iterator<const_layout_iterator<L>>;
+
+  template <class S, layout_type L>
+  using broadcast_iterator = xiterator<typename iterable_base::stepper, S, L>;
+  template <class S, layout_type L>
+  using const_broadcast_iterator = xiterator<typename iterable_base::const_stepper, S, L>;
+  template <class S, layout_type L>
+  using reverse_broadcast_iterator = std::reverse_iterator<broadcast_iterator<S, L>>;
+  template <class S, layout_type L>
+  using const_reverse_broadcast_iterator = std::reverse_iterator<const_broadcast_iterator<S, L>>;
+#else
   template <layout_type L>
   using layout_iterator = typename iterable_base::template layout_iterator<L>;
   template <layout_type L>
@@ -148,6 +168,7 @@ class xcontainer : private xiterable<D> {
   template <class S, layout_type L>
   using const_reverse_broadcast_iterator =
     typename iterable_base::template const_reverse_broadcast_iterator<S, L>;
+#endif
 
   using storage_iterator         = typename container_type::iterator;
   using const_storage_iterator   = typename container_type::const_iterator;

@@ -11,6 +11,9 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     brew link --force tbb cmake
     brew install pkg-config
   else
+    # Fix errors on Travis CI with macOS due to the conflict of python@2 
+    brew unlink python
+    # Install tbb and its dependencies
     [ -z "$( brew ls --versions tbb )" ] && brew install --c++11 tbb
     [ -z "$( brew ls --versions cmake )" ] && brew install cmake
     mkdir "${HOME}/homebrew-cache"

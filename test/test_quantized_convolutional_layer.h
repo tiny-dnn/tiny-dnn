@@ -7,12 +7,7 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <vector>
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
@@ -93,24 +88,24 @@ TEST(quantized_convolutional, fprop) {
     {
         l.forward_propagation(in_data, out_data);
 
-        EXPECT_NEAR(-0.043426, out[0], 2e-2);
-        EXPECT_NEAR(1.6769816, out[1], 2e-2);
-        EXPECT_NEAR(1.4731820, out[2], 2e-2);
-        EXPECT_NEAR(1.0822733, out[3], 2e-2);
-        EXPECT_NEAR(0.0415336, out[4], 2e-2);
-        EXPECT_NEAR(-1.997466, out[5], 2e-2);
-        EXPECT_NEAR(0.4238461, out[6], 2e-2);
-        EXPECT_NEAR(1.1756143, out[7], 2e-2);
-        EXPECT_NEAR(0.8273983, out[8], 2e-2);
-        EXPECT_NEAR(-0.192101, out[9], 2e-2);
-        EXPECT_NEAR(1.2309504, out[10], 2e-2);
-        EXPECT_NEAR(2.2292108, out[11], 2e-2);
-        EXPECT_NEAR(0.5300441, out[12], 2e-2);
-        EXPECT_NEAR(1.7407004, out[13], 2e-2);
-        EXPECT_NEAR(1.6345025, out[14], 2e-2);
-        EXPECT_NEAR(0.6362420, out[15], 2e-2);
-        EXPECT_NEAR(3.4186277, out[16], 2e-2);
-        EXPECT_NEAR(-0.489455, out[17], 2e-2);
+        EXPECT_NEAR(-0.043426, out[0], 5e-2);
+        EXPECT_NEAR(1.6769816, out[1], 5e-2);
+        EXPECT_NEAR(1.4731820, out[2], 5e-2);
+        EXPECT_NEAR(1.0822733, out[3], 5e-2);
+        EXPECT_NEAR(0.0415336, out[4], 5e-2);
+        EXPECT_NEAR(-1.997466, out[5], 5e-2);
+        EXPECT_NEAR(0.4238461, out[6], 5e-2);
+        EXPECT_NEAR(1.1756143, out[7], 5e-2);
+        EXPECT_NEAR(0.8273983, out[8], 5e-2);
+        EXPECT_NEAR(-0.192101, out[9], 5e-2);
+        EXPECT_NEAR(1.2309504, out[10], 5e-2);
+        EXPECT_NEAR(2.2292108, out[11], 5e-2);
+        EXPECT_NEAR(0.5300441, out[12], 5e-2);
+        EXPECT_NEAR(1.7407004, out[13], 5e-2);
+        EXPECT_NEAR(1.6345025, out[14], 5e-2);
+        EXPECT_NEAR(0.6362420, out[15], 5e-2);
+        EXPECT_NEAR(3.4186277, out[16], 5e-2);
+        EXPECT_NEAR(-0.489455, out[17], 5e-2);
     }
   // clang-format on
 }

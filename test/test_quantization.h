@@ -7,13 +7,8 @@
 */
 #pragma once
 
-#include <gtest/gtest.h>
-
 #include <limits>
 #include <vector>
-
-#include "test/testhelper.h"
-#include "tiny_dnn/tiny_dnn.h"
 
 namespace tiny_dnn {
 
