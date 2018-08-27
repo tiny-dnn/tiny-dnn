@@ -103,7 +103,7 @@ using fc = tiny_dnn::fully_connected_layer;
 
 using dense = tiny_dnn::fully_connected_layer;
 
-using zreo_pad = tiny_dnn::zero_pad_layer;
+using zero_pad = tiny_dnn::zero_pad_layer;
 
 // using rnn_cell = tiny_dnn::rnn_cell_layer;
 
