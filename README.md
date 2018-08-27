@@ -62,9 +62,10 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 ## Supported networks
 ### layer-types
 - core
-    - fully-connected
+    - fully connected
     - dropout
     - linear operation
+    - zero padding
     - power
 - convolution
     - convolutional

@@ -68,6 +68,7 @@ using namespace tiny_dnn::activation;
 #include "test_slice_layer.h"
 #include "test_target_cost.h"
 #include "test_tensor.h"
+#include "test_zero_pad_layer.h"
 
 #include "test_gru_cell.h"
 #include "test_lstm_cell.h"

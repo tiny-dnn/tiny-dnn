@@ -500,6 +500,36 @@ TEST(serialization, serialize_maxpool) {
   check_sequential_network_model_serialization(net);
 }
 
+TEST(serialization, serialize_zero_pad) {
+  network<sequential> net;
+
+  std::string json = R"(  
+    {
+        "nodes": [
+            {
+                "type": "zero_pad",
+                "in_size": {
+                    "width": 5,
+                    "height": 5,
+                    "depth": 2
+                },
+                "w_pad_size": 1,
+                "h_pad_size": 2
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "zero-pad");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 5, 2));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(7, 9, 2));
+  EXPECT_FLOAT_EQ(net.at<zero_pad_layer>(0).w_pad_size(), 1);
+  EXPECT_FLOAT_EQ(net.at<zero_pad_layer>(0).h_pad_size(), 2);
+  check_sequential_network_model_serialization(net);
+}
+
 TEST(serialization, serialize_power) {
   network<sequential> net;
 

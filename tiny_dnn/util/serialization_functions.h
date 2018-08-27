@@ -394,6 +394,21 @@ struct LoadAndConstruct<tiny_dnn::max_unpooling_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::zero_pad_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::zero_pad_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+    size_t w_pad_size, h_pad_size;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape),
+                  ::detail::make_nvp("w_pad_size", w_pad_size),
+                  ::detail::make_nvp("h_pad_size", h_pad_size));
+    construct(in_shape, w_pad_size, h_pad_size);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::power_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -855,6 +870,13 @@ struct serialization_buddy {
     ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_),
                   ::detail::make_nvp("unpool_size", layer.unpool_size_),
                   ::detail::make_nvp("stride", layer.stride_));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::zero_pad_layer &layer) {
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape_),
+                  ::detail::make_nvp("w_pad_size", layer.w_pad_size_),
+                  ::detail::make_nvp("h_pad_size", layer.h_pad_size_));
   }
 
   template <class Archive>
