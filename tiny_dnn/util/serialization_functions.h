@@ -325,6 +325,23 @@ struct LoadAndConstruct<tiny_dnn::input_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::l2_normalization_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar,
+    cereal::construct<tiny_dnn::l2_normalization_layer> &construct) {
+    size_t in_spatial_size, in_channels;
+    tiny_dnn::float_t eps, scale;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_spatial_size", in_spatial_size),
+                  ::detail::make_nvp("in_channels", in_channels),
+                  ::detail::make_nvp("epsilon", eps),
+                  ::detail::make_nvp("scale", scale));
+    construct(in_spatial_size, in_channels, eps, scale);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::linear_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -834,6 +851,16 @@ struct serialization_buddy {
   template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::input_layer &layer) {
     ::detail::arc(ar, ::detail::make_nvp("shape", layer.shape_));
+  }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::l2_normalization_layer &layer) {
+    ::detail::arc(ar,
+                  ::detail::make_nvp("in_spatial_size", layer.in_spatial_size_),
+                  ::detail::make_nvp("in_channels", layer.in_channels_),
+                  ::detail::make_nvp("epsilon", layer.eps_),
+                  ::detail::make_nvp("scale", layer.scale_));
   }
 
   template <class Archive>
