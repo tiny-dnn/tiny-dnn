@@ -751,6 +751,7 @@ struct serialization_buddy {
                   ::detail::make_nvp("pool_size_y", layer.pool_size_y_),
                   ::detail::make_nvp("stride_x", layer.stride_x_),
                   ::detail::make_nvp("stride_y", layer.stride_y_),
+                  ::detail::make_nvp("ceil_mode", layer.ceil_mode_),
                   ::detail::make_nvp("pad_type", layer.pad_type_));
   }
 
@@ -865,6 +866,7 @@ struct serialization_buddy {
                   ::detail::make_nvp("pool_size_y", params_.pool_size_y),
                   ::detail::make_nvp("stride_x", params_.stride_x),
                   ::detail::make_nvp("stride_y", params_.stride_y),
+                  ::detail::make_nvp("ceil_mode", params_.ceil_mode),
                   ::detail::make_nvp("pad_type", params_.pad_type));
   }
 
