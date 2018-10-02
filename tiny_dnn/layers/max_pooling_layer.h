@@ -82,14 +82,35 @@ class max_pooling_layer : public layer {
                         padding::valid,
                         backend_type) {}
 
+  max_pooling_layer(size_t in_width,
+                    size_t in_height,
+                    size_t in_channels,
+                    size_t pooling_size_x,
+                    size_t pooling_size_y,
+                    size_t stride_x,
+                    size_t stride_y,
+                    padding pad_type             = padding::valid,
+                    core::backend_t backend_type = core::default_engine())
+    : max_pooling_layer(in_width,
+                        in_height,
+                        in_channels,
+                        pooling_size_x,
+                        pooling_size_y,
+                        stride_x,
+                        stride_y,
+                        false,
+                        padding::valid,
+                        backend_type) {}
+
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels(depth)
    * @param pooling_size [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
+   *input
    * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
-   *compute the output shape input
+   *compute the output shape
    **/
   max_pooling_layer(size_t in_width,
                     size_t in_height,
