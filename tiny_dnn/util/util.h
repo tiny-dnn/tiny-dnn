@@ -343,6 +343,28 @@ inline size_t conv_out_length(size_t in_length,
   return (output_length + stride - 1) / stride;
 }
 
+inline size_t pool_out_length(size_t in_length,
+                              size_t window_size,
+                              size_t stride,
+                              bool ceil_mode,
+                              padding pad_type) {
+  size_t output_length;
+
+  if (pad_type == padding::same) {
+    output_length = in_length;
+  } else if (pad_type == padding::valid) {
+    output_length = in_length - window_size + 1;
+  } else {
+    throw nn_error("Not recognized pad_type.");
+  }
+
+  if ( ceil_mode ) {
+    return static_cast<int>(ceil(static_cast<float>((output_length + stride - 1)) / stride));
+  } else {
+    return static_cast<int>(floor(static_cast<float>((output_length + stride - 1)) / stride));
+  }
+}
+
 // get all platforms (drivers), e.g. NVIDIA
 // https://github.com/CNugteren/CLCudaAPI/blob/master/samples/device_info.cc
 

@@ -22,6 +22,7 @@ class maxpool_params : public Params {
   size_t pool_size_y;
   size_t stride_x;
   size_t stride_y;
+  bool ceil_mode;
   padding pad_type;
 
   /* mapping out => max_index(in) (1:1) */

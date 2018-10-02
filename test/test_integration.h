@@ -375,7 +375,7 @@ TEST(integration, gradient_check19) {  // padding-same
   using network    = network<sequential>;
 
   network nn;
-  nn << average_pooling_layer(4, 2, 1, 2, 2, 1, 1, padding::same)
+  nn << average_pooling_layer(4, 2, 1, 2, 2, 1, 1, false, padding::same)
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
