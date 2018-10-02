@@ -91,7 +91,7 @@ class l2_normalization_layer : public layer {
       for (size_t j = 0; j < in_spatial_size_; ++j) {
         float sum_of_square = 0;
         for (size_t k = 0; k < in_channels_; ++k) {
-          float value = (*inptr) + k * in_spatial_size_;
+          float value = *(inptr + k * in_spatial_size_);
           sum_of_square += value * value;
         }
         if ( sum_of_square < eps_ ) {
@@ -100,10 +100,12 @@ class l2_normalization_layer : public layer {
         sum_of_square = sqrt(sum_of_square);
 
         for (size_t k = 0; k < in_channels_; ++k) {
-          *outptr = *inptr / sum_of_square * scale_;
+          const float_t *inptr_c = inptr + k * in_spatial_size_;
+          float_t *outptr_c = outptr + k * in_spatial_size_;
+          *outptr_c = *inptr_c / sum_of_square * scale_;
         }
-        ++ inptr;
-        ++ outptr;
+        ++inptr;
+        ++outptr;
       }
     });
   }
