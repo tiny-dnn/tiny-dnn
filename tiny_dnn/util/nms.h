@@ -16,6 +16,7 @@ struct bounding_box {
   float y_min;
   float x_max;
   float y_max;
+  float score;
 
   inline float area() const { return (x_max - x_min) * (y_max - y_min); }
 };
@@ -34,14 +35,14 @@ float iou(const bounding_box &b1, const bounding_box &b2) {
 
 std::vector<int> nms(std::vector<bounding_box> &proposals,
                      const float threshold) {
-  std::vector<float> areas;
+  std::vector<float> scores;
   std::vector<int> indexes;
   for (size_t i = 0; i < proposals.size(); ++i) {
-    areas.push_back(proposals[i].area());
+    scores.push_back(proposals[i].score);
     indexes.push_back(i);
   }
   sort(indexes.begin(), indexes.end(),
-       [&](int a, int b) { return areas[a] > areas[b]; });
+       [&](int a, int b) { return scores[a] > scores[b]; });
 
   std::vector<bool> is_keeped(proposals.size(), true);
   for (size_t i = 0; i < proposals.size(); ++i) {
