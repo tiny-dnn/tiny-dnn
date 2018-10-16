@@ -27,7 +27,7 @@ get_bm_global_avepool_data() {
   return std::make_tuple(input_data, output_data, params);
 }
 
-void bm_global_avepool_forward_internal(const benchmark::State& state) {
+void bm_global_avepool_forward_internal(benchmark::State& state) {
   tensor_t input_data, output_data;
   core::global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
@@ -38,7 +38,7 @@ void bm_global_avepool_forward_internal(const benchmark::State& state) {
 }
 
 #ifdef CNN_USE_AVX
-void bm_global_avepool_forward_avx(const benchmark::State& state) {
+void bm_global_avepool_forward_avx(benchmark::State& state) {
   tensor_t input_data, output_data;
   core::global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
@@ -50,10 +50,10 @@ void bm_global_avepool_forward_avx(const benchmark::State& state) {
 #endif
 
 // Register the function as a benchmarks
-BENCHMARK(bm_global_avepool_forward_internal)->Iterations(1000);
+BENCHMARK(bm_global_avepool_forward_internal)->Repetitions(1000);
 
 #ifdef CNN_USE_AVX
-BENCHMARK(bm_global_avepool_forward_avx)->Iterations(1000);
+BENCHMARK(bm_global_avepool_forward_avx)->Repetitions(1000);
 #endif
 
 }  // namespace benchmarks
