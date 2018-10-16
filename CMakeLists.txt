@@ -45,19 +45,20 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 ####
 # Define user options
-option(USE_SSE        "Build tiny-dnn with SSE library support"     ON)
-option(USE_AVX        "Build tiny-dnn with AVX library support"     ON)
-option(USE_AVX2       "Build tiny-dnn with AVX2 library support"   OFF)
-option(USE_TBB        "Build tiny-dnn with TBB library support"    OFF)
-option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
-option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
-option(USE_CBLAS      "Build tiny-dnn with CBLAS library support" OFF)
-option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
+option(USE_SSE        "Build tiny-dnn with SSE library support"            ON)
+option(USE_AVX        "Build tiny-dnn with AVX library support"            ON)
+option(USE_AVX2       "Build tiny-dnn with AVX2 library support"           OFF)
+option(USE_TBB        "Build tiny-dnn with TBB library support"            OFF)
+option(USE_OMP        "Build tiny-dnn with OMP library support"            OFF)
+option(USE_NNPACK     "Build tiny-dnn with NNPACK library support"         OFF)
+option(USE_CBLAS      "Build tiny-dnn with CBLAS library support"          OFF)
+option(USE_INTEL_MKL  "Build tiny-dnn with Intel MKL library support"      OFF)
+option(USE_OPENCL     "Build tiny-dnn with OpenCL library support"         OFF)
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
-option(USE_SERIALIZER "Build tiny-dnn with Serialization support"   ON)
+option(USE_SERIALIZER "Build tiny-dnn with Serialization support"          ON)
 option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
-option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
-option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
+option(USE_IMAGE_API  "Build tiny-dnn with Image API support"              ON)
+option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"               OFF)
 
 option(BUILD_TESTS      "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
@@ -172,6 +173,19 @@ if(USE_CBLAS)
     else()
         message(FATAL_ERROR "Can't find CBLAS. On Ubunbu, you may want to "
                 "install it by:\n  sudo apt-get install libatlas-dev")
+    endif()
+endif()
+
+# Find CBLAS: Acceleration package for linear algebra
+if(USE_INTEL_MKL)
+    # In case the user sets the flag USE_CBLAS to ON, the CMake build-tree
+    # will require to find CBLAS in your system.
+    find_package(MKL REQUIRED)
+    if(MKL_FOUND)
+        add_definitions(-DCNN_USE_INTEL_MKL)
+        list(APPEND REQUIRED_LIBRARIES ${MKL_LIBRARIES})
+    else()
+        message(FATAL_ERROR "Can't find Intel MKL libraries.")
     endif()
 endif()
 
@@ -385,6 +399,7 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindNNPACK.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake"
     DESTINATION ${config_install_dir} COMPONENT cmake)
 
 # Install headers
