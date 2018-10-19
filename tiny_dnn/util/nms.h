@@ -12,30 +12,30 @@
 namespace tiny_dnn {
 
 struct bounding_box {
-  float x_min;
-  float y_min;
-  float x_max;
-  float y_max;
-  float score;
+  float_t x_min;
+  float_t y_min;
+  float_t x_max;
+  float_t y_max;
+  float_t score;
 
-  inline float area() const { return (x_max - x_min) * (y_max - y_min); }
+  inline float_t area() const { return (x_max - x_min) * (y_max - y_min); }
 };
 
-float iou(const bounding_box &b1, const bounding_box &b2) {
-  float x1           = std::max(b1.x_min, b2.x_min);
-  float y1           = std::max(b1.y_min, b2.y_min);
-  float x2           = std::min(b1.x_max, b2.x_max);
-  float y2           = std::min(b1.y_max, b2.y_max);
-  float width        = std::max(0.0f, (x2 - x1 + 1));
-  float height       = std::max(0.0f, (y2 - y1 + 1));
-  float intersection = width * height;
-  float _iou         = intersection / (b1.area() + b2.area() - intersection);
+inline float_t iou(const bounding_box &b1, const bounding_box &b2) {
+  float_t x1           = std::max(b1.x_min, b2.x_min);
+  float_t y1           = std::max(b1.y_min, b2.y_min);
+  float_t x2           = std::min(b1.x_max, b2.x_max);
+  float_t y2           = std::min(b1.y_max, b2.y_max);
+  float_t width        = std::max(0.0f, (x2 - x1 + 1));
+  float_t height       = std::max(0.0f, (y2 - y1 + 1));
+  float_t intersection = width * height;
+  float_t _iou         = intersection / (b1.area() + b2.area() - intersection);
   return _iou >= 0 ? _iou : 0;
 }
 
-std::vector<int> nms(std::vector<bounding_box> &proposals,
-                     const float threshold) {
-  std::vector<float> scores;
+inline std::vector<int> nms(std::vector<bounding_box> &proposals,
+                     const float_t threshold) {
+  std::vector<float_t> scores;
   std::vector<int> indexes;
   for (size_t i = 0; i < proposals.size(); ++i) {
     scores.push_back(proposals[i].score);
