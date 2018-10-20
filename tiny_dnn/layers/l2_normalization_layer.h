@@ -33,12 +33,12 @@ class l2_normalization_layer : public layer {
    * @param scale           [in] scale factor to multiply after normalization
    **/
   l2_normalization_layer(const layer &prev_layer,
-                            float_t epsilon  = 1e-10,
+                            float_t epsilon  = 1e-12,
                             float_t scale = 20)
     : Base({vector_type::data}, {vector_type::data}),
       in_channels_(prev_layer.out_shape()[0].depth_),
       in_spatial_size_(prev_layer.out_shape()[0].area()),
-      eps_(epsilon),
+      eps_(std::max(epsilon, std::numeric_limits<float_t>::epsilon())),
       scale_(scale) {
   }
 
@@ -50,12 +50,12 @@ class l2_normalization_layer : public layer {
    **/
   l2_normalization_layer(size_t in_spatial_size,
                             size_t in_channels,
-                            float_t epsilon = 1e-10,
+                            float_t epsilon = 1e-12,
                             float_t scale = 20)
     : Base({vector_type::data}, {vector_type::data}),
       in_channels_(in_channels),
       in_spatial_size_(in_spatial_size),
-      eps_(epsilon),
+      eps_(std::max(epsilon, std::numeric_limits<float_t>::epsilon())),
       scale_(scale) {
   }
 
@@ -90,10 +90,7 @@ class l2_normalization_layer : public layer {
           float_t value = *(inptr + k * in_spatial_size_);
           sum_of_square += value * value;
         }
-        if ( sum_of_square < eps_ ) {
-          sum_of_square = eps_;
-        }
-        sum_of_square = sqrt(sum_of_square);
+        sum_of_square = std::max<float_t>(sqrt(sum_of_square), eps_);
 
         for (size_t k = 0; k < in_channels_; ++k) {
           const float_t *inptr_c = inptr + k * in_spatial_size_;
