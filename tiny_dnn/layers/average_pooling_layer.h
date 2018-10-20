@@ -169,24 +169,6 @@ class average_pooling_layer : public partial_connected_layer {
                             ceil_mode,
                             padding::valid) {}
 
-  average_pooling_layer(size_t in_width,
-                        size_t in_height,
-                        size_t in_channels,
-                        size_t pool_size_x,
-                        size_t pool_size_y,
-                        size_t stride_x,
-                        size_t stride_y,
-                        padding pad_type = padding::valid) 
-    : average_pooling_layer(in_width,
-                            in_height,
-                            in_channels,
-                            pool_size_x,
-                            pool_size_y,
-                            stride_x,
-                            stride_y,
-                            false,
-                            padding::valid) {}
-
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image

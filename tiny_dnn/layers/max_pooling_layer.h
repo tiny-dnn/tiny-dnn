@@ -82,26 +82,6 @@ class max_pooling_layer : public layer {
                         padding::valid,
                         backend_type) {}
 
-  max_pooling_layer(size_t in_width,
-                    size_t in_height,
-                    size_t in_channels,
-                    size_t pooling_size_x,
-                    size_t pooling_size_y,
-                    size_t stride_x,
-                    size_t stride_y,
-                    padding pad_type             = padding::valid,
-                    core::backend_t backend_type = core::default_engine())
-    : max_pooling_layer(in_width,
-                        in_height,
-                        in_channels,
-                        pooling_size_x,
-                        pooling_size_y,
-                        stride_x,
-                        stride_y,
-                        false,
-                        padding::valid,
-                        backend_type) {}
-
   /**
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
