@@ -358,11 +358,8 @@ inline size_t pool_out_length(size_t in_length,
     throw nn_error("Not recognized pad_type.");
   }
 
-  if ( ceil_mode ) {
-    return static_cast<int>(ceil(static_cast<float>((output_length + stride - 1)) / stride));
-  } else {
-    return static_cast<int>(floor(static_cast<float>((output_length + stride - 1)) / stride));
-  }
+  float tmp = static_cast<float>((output_length + stride - 1)) / stride;
+  return static_cast<int>(ceil_mode ? ceil(tmp) : floor(tmp));
 }
 
 // get all platforms (drivers), e.g. NVIDIA
