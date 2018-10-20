@@ -74,6 +74,8 @@ using namespace tiny_dnn::activation;
 #include "test_lstm_cell.h"
 #include "test_rnn_cell.h"
 
+#include "test_nms.h"
+
 #ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
 #endif  // CNN_NO_SERIALIZATION
