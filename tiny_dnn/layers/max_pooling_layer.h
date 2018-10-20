@@ -33,29 +33,35 @@ class max_pooling_layer : public layer {
    * @param in_width     [in] width of input image
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels(depth)
+   * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
+   *compute the output shape
    * @param pooling_size [in] factor by which to downscale
    **/
   max_pooling_layer(size_t in_width,
                     size_t in_height,
                     size_t in_channels,
                     size_t pooling_size,
+                    bool ceil_mode               = false,
                     core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_width,
                         in_height,
                         in_channels,
                         pooling_size,
                         (in_height == 1 ? 1 : pooling_size),
+                        ceil_mode,
                         backend_type) {}
 
   max_pooling_layer(const shape3d &in_shape,
                     size_t pooling_size,
                     size_t stride,
+                    bool ceil_mode               = false,
                     core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_shape.width_,
                         in_shape.height_,
                         in_shape.depth_,
                         pooling_size,
                         stride,
+                        ceil_mode,
                         backend_type) {}
 
   max_pooling_layer(size_t in_width,
@@ -63,6 +69,7 @@ class max_pooling_layer : public layer {
                     size_t in_channels,
                     size_t pooling_size,
                     size_t stride,
+                    bool ceil_mode               = false,
                     core::backend_t backend_type = core::default_engine())
     : max_pooling_layer(in_width,
                         in_height,
@@ -71,6 +78,7 @@ class max_pooling_layer : public layer {
                         (in_height == 1 ? 1 : pooling_size),
                         stride,
                         stride,
+                        ceil_mode,
                         padding::valid,
                         backend_type) {}
 
@@ -81,6 +89,8 @@ class max_pooling_layer : public layer {
    * @param pooling_size [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
+   * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
+   *compute the output shape
    **/
   max_pooling_layer(size_t in_width,
                     size_t in_height,
@@ -89,15 +99,18 @@ class max_pooling_layer : public layer {
                     size_t pooling_size_y,
                     size_t stride_x,
                     size_t stride_y,
+                    bool ceil_mode               = false,
                     padding pad_type             = padding::valid,
                     core::backend_t backend_type = core::default_engine())
     : layer({vector_type::data}, {vector_type::data}) {
-    set_maxpool_params(
-      shape3d(in_width, in_height, in_channels),
-      shape3d(conv_out_length(in_width, pooling_size_x, stride_x, 1, pad_type),
-              conv_out_length(in_height, pooling_size_y, stride_y, 1, pad_type),
-              in_channels),
-      pooling_size_x, pooling_size_y, stride_x, stride_y, pad_type);
+    set_maxpool_params(shape3d(in_width, in_height, in_channels),
+                       shape3d(pool_out_length(in_width, pooling_size_x,
+                                               stride_x, ceil_mode, pad_type),
+                               pool_out_length(in_height, pooling_size_y,
+                                               stride_y, ceil_mode, pad_type),
+                               in_channels),
+                       pooling_size_x, pooling_size_y, stride_x, stride_y,
+                       ceil_mode, pad_type);
 
     init_connection();
     init_backend(backend_type);
@@ -192,7 +205,7 @@ class max_pooling_layer : public layer {
 
     for (size_t dy = 0; dy < dymax; dy++) {
       for (size_t dx = 0; dx < dxmax; dx++) {
-        size_t in_index = params_.in.get_index(outx * params_.stride_x + dx,
+        size_t in_index  = params_.in.get_index(outx * params_.stride_x + dx,
                                                outy * params_.stride_y + dy, c);
         size_t out_index = params_.out.get_index(outx, outy, c);
 
@@ -242,6 +255,7 @@ class max_pooling_layer : public layer {
                           size_t pooling_size_y,
                           size_t stride_x,
                           size_t stride_y,
+                          bool ceil_mode,
                           padding pad_type) {
     params_.in          = in;
     params_.out         = out;
@@ -249,6 +263,7 @@ class max_pooling_layer : public layer {
     params_.pool_size_y = pooling_size_y;
     params_.stride_x    = stride_x;
     params_.stride_y    = stride_y;
+    params_.ceil_mode   = ceil_mode;
     params_.pad_type    = pad_type;
   }
 };

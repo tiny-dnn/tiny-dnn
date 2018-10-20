@@ -41,7 +41,7 @@ TEST(ave_pool, forward) {
 }
 
 TEST(ave_pool, forward_stride) {
-  average_pooling_layer l(4, 4, 1, 2, 1);
+  average_pooling_layer l(4, 4, 1, 2, 1, false);
   // clang-format off
     vec_t in = {
         0,  1,  2,  3,

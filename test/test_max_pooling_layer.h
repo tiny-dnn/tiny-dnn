@@ -85,7 +85,7 @@ TEST(max_pool, forward_stride_internal) {
 }
 
 TEST(max_pool, forward_padding_same) {
-  max_pooling_layer l(4, 4, 1, 2, 2, 1, 1, padding::same,
+  max_pooling_layer l(4, 4, 1, 2, 2, 1, 1, false, padding::same,
                       core::backend_t::internal);
 
   // clang-format off
@@ -114,7 +114,7 @@ TEST(max_pool, forward_padding_same) {
 }
 
 TEST(max_pool, forward_stride_x) {
-  max_pooling_layer l(4, 4, 1, 2, 1, 2, 1, padding::valid);
+  max_pooling_layer l(4, 4, 1, 2, 1, 2, 1, false, padding::valid);
   // clang-format off
     vec_t in = {
         0,  1,  2,  3,
@@ -144,7 +144,7 @@ TEST(max_pool, forward_stride_x) {
 }
 
 TEST(max_pool, forward_stride_y) {
-  max_pooling_layer l(4, 4, 1, 1, 2, 1, 2, padding::valid);
+  max_pooling_layer l(4, 4, 1, 1, 2, 1, 2, false, padding::valid);
   // clang-format off
     vec_t in = {
         0,  1,  2,  3,
@@ -223,7 +223,7 @@ TEST(max_pool, forward_stride_nnp_not_2x2) {
 #endif
 
 TEST(max_pool, forward_stride) {
-  max_pooling_layer l(4, 4, 1, 2, 1);
+  max_pooling_layer l(4, 4, 1, 2, 1, false);
   // clang-format off
     vec_t in = {
         0,  1,  2,  3,
@@ -312,7 +312,7 @@ TEST(max_pool, serialization) {
 }
 
 TEST(max_pool, serialization_stride) {
-  max_pooling_layer src(4, 4, 1, 2, 1, 1, 2, padding::valid);
+  max_pooling_layer src(4, 4, 1, 2, 1, 1, 2, false, padding::valid);
 
   std::string str = layer_to_json(src);
 
@@ -342,7 +342,7 @@ TEST(max_pool, serialization_stride) {
 }
 
 TEST(max_pool, serialization_padding) {
-  max_pooling_layer src(4, 4, 1, 2, 2, 1, 1, padding::same);
+  max_pooling_layer src(4, 4, 1, 2, 2, 1, 1, false, padding::same);
 
   std::string str = layer_to_json(src);
 
