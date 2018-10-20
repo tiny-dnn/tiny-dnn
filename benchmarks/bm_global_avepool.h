@@ -17,17 +17,18 @@ namespace benchmarks {
 
 std::tuple<tensor_t, tensor_t, core::global_avepool_params>
 get_bm_global_avepool_data() {
-  vec_t input_one(100 * 100 * 100, 10000);
-  vec_t output_one(100, 0);
+  static constexpr size_t SIZE_IN = 100;
+  vec_t input_one(SIZE_IN * SIZE_IN * SIZE_IN, SIZE_IN * SIZE_IN);
+  vec_t output_one(SIZE_IN, 0);
   tensor_t input_data(1, input_one);
   tensor_t output_data(1, output_one);
   core::global_avepool_params params;
-  params.in  = {100, 100, 100};
-  params.out = {100, 1, 1};
+  params.in  = {SIZE_IN, SIZE_IN, SIZE_IN};
+  params.out = {SIZE_IN, 1, 1};
   return std::make_tuple(input_data, output_data, params);
 }
 
-void bm_global_avepool_forward_internal(const benchmark::State& state) {
+void bm_global_avepool_forward_internal(benchmark::State& state) {
   tensor_t input_data, output_data;
   core::global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
@@ -38,7 +39,7 @@ void bm_global_avepool_forward_internal(const benchmark::State& state) {
 }
 
 #ifdef CNN_USE_AVX
-void bm_global_avepool_forward_avx(const benchmark::State& state) {
+void bm_global_avepool_forward_avx(benchmark::State& state) {
   tensor_t input_data, output_data;
   core::global_avepool_params params;
   std::tie(input_data, output_data, params) = get_bm_global_avepool_data();
@@ -50,10 +51,10 @@ void bm_global_avepool_forward_avx(const benchmark::State& state) {
 #endif
 
 // Register the function as a benchmarks
-BENCHMARK(bm_global_avepool_forward_internal)->Iterations(1000);
+BENCHMARK(bm_global_avepool_forward_internal)->Repetitions(1000);
 
 #ifdef CNN_USE_AVX
-BENCHMARK(bm_global_avepool_forward_avx)->Iterations(1000);
+BENCHMARK(bm_global_avepool_forward_avx)->Repetitions(1000);
 #endif
 
 }  // namespace benchmarks
