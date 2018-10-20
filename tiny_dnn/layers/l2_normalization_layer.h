@@ -30,9 +30,7 @@ class l2_normalization_layer : public layer {
   /**
    * @param prev_layer      [in] previous layer to be connected with this layer
    * @param epsilon         [in] small positive value to avoid zero-division
-   * @param momentum        [in] momentum in the computation of the exponential
-   *average of the mean/stddev of the data
-   * @param phase           [in] specify the current context (train/test)
+   * @param scale           [in] scale factor to multiply after normalization
    **/
   l2_normalization_layer(const layer &prev_layer,
                             float_t epsilon  = 1e-10,
@@ -48,9 +46,7 @@ class l2_normalization_layer : public layer {
    * @param in_spatial_size [in] spatial size (WxH) of the input data
    * @param in_channels     [in] channels of the input data
    * @param epsilon         [in] small positive value to avoid zero-division
-   * @param momentum        [in] momentum in the computation of the exponential
-   *average of the mean/stddev of the data
-   * @param phase           [in] specify the current context (train/test)
+   * @param scale           [in] scale factor to multiply after normalization
    **/
   l2_normalization_layer(size_t in_spatial_size,
                             size_t in_channels,
@@ -89,9 +85,9 @@ class l2_normalization_layer : public layer {
       float_t *outptr      = &out[i][0];
 
       for (size_t j = 0; j < in_spatial_size_; ++j) {
-        float sum_of_square = 0;
+        float_t sum_of_square = 0;
         for (size_t k = 0; k < in_channels_; ++k) {
-          float value = *(inptr + k * in_spatial_size_);
+          float_t value = *(inptr + k * in_spatial_size_);
           sum_of_square += value * value;
         }
         if ( sum_of_square < eps_ ) {
