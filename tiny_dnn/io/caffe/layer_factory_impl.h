@@ -264,6 +264,10 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
     //     if such a type existed
   }
 
+  if (pool_param.has_ceil_mode()) {
+    ceil_mode = pool_param.ceil_mode();
+  }
+
   if (pool_param.has_pool()) {
     auto type = pool_param.pool();
 
