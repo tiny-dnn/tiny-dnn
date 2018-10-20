@@ -342,7 +342,7 @@ TEST(integration, gradient_check17) {  // x-stride
 
   network nn;
   nn << fully_connected_layer(3, 8) << activation()
-     << average_pooling_layer(4, 2, 1, 2, 1, 2, 1)  // 4x2 => 2x2
+     << average_pooling_layer(4, 2, 1, 2, 1, 2, 1, false)  // 4x2 => 2x2
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -359,7 +359,7 @@ TEST(integration, gradient_check18) {  // y-stride
 
   network nn;
   nn << fully_connected_layer(3, 8) << activation()
-     << average_pooling_layer(4, 2, 1, 1, 2, 1, 2)  // 4x2 => 4x1
+     << average_pooling_layer(4, 2, 1, 1, 2, 1, 2, false)  // 4x2 => 4x1
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());
@@ -375,7 +375,7 @@ TEST(integration, gradient_check19) {  // padding-same
   using network    = network<sequential>;
 
   network nn;
-  nn << average_pooling_layer(4, 2, 1, 2, 2, 1, 1, padding::same)
+  nn << average_pooling_layer(4, 2, 1, 2, 2, 1, 1, false, padding::same)
      << activation();
 
   const auto test_data = generate_gradient_check_data(nn.in_data_size());

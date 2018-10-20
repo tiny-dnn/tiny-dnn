@@ -13,8 +13,8 @@
 namespace tiny_dnn {
 
 TEST(layer_tuple, comma_operator_layer_layer1) {
-  max_pooling_layer maxpool(4, 4, 1, 2, 1);
-  average_pooling_layer avepool(4, 4, 1, 2, 1);
+  max_pooling_layer maxpool(4, 4, 1, 2, 1, false);
+  average_pooling_layer avepool(4, 4, 1, 2, 1, false);
   sigmoid_layer sgm(4, 4, 1);
 
   layer_tuple<layer *> tuple_1 = (maxpool, avepool);
@@ -27,8 +27,8 @@ TEST(layer_tuple, comma_operator_layer_layer1) {
 }
 
 TEST(layer_tuple, comma_operator_layer_layer2) {
-  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1);
-  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1);
+  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1, false);
+  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1, false);
   auto sgm     = std::make_shared<sigmoid_layer>(4, 4, 1);
 
   layer_tuple<std::shared_ptr<layer>> tuple_1 = (maxpool, avepool);
@@ -41,8 +41,8 @@ TEST(layer_tuple, comma_operator_layer_layer2) {
 }
 
 TEST(layer_tuple, comma_operator_tuple_layer1) {
-  max_pooling_layer maxpool(4, 4, 1, 2, 1);
-  average_pooling_layer avepool(4, 4, 1, 2, 1);
+  max_pooling_layer maxpool(4, 4, 1, 2, 1, false);
+  average_pooling_layer avepool(4, 4, 1, 2, 1, false);
   sigmoid_layer sgm(4, 4, 1);
 
   layer_tuple<layer *> tuple_1 = (maxpool, avepool);
@@ -54,8 +54,8 @@ TEST(layer_tuple, comma_operator_tuple_layer1) {
 }
 
 TEST(layer_tuple, comma_operator_tuple_layer2) {
-  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1);
-  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1);
+  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1, false);
+  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1, false);
   auto sgm     = std::make_shared<sigmoid_layer>(4, 4, 1);
 
   layer_tuple<std::shared_ptr<layer>> tuple_1 = (maxpool, avepool);
@@ -67,8 +67,8 @@ TEST(layer_tuple, comma_operator_tuple_layer2) {
 }
 
 TEST(layer_tuple, comma_operator_layer_tuple1) {
-  max_pooling_layer maxpool(4, 4, 1, 2, 1);
-  average_pooling_layer avepool(4, 4, 1, 2, 1);
+  max_pooling_layer maxpool(4, 4, 1, 2, 1, false);
+  average_pooling_layer avepool(4, 4, 1, 2, 1, false);
   sigmoid_layer sgm(4, 4, 1);
 
   layer_tuple<layer *> tuple_1 = (maxpool, avepool);
@@ -80,8 +80,8 @@ TEST(layer_tuple, comma_operator_layer_tuple1) {
 }
 
 TEST(layer_tuple, comma_operator_layer_tuple2) {
-  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1);
-  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1);
+  auto maxpool = std::make_shared<max_pooling_layer>(4, 4, 1, 2, 1, false);
+  auto avepool = std::make_shared<average_pooling_layer>(4, 4, 1, 2, 1, false);
   auto sgm     = std::make_shared<sigmoid_layer>(4, 4, 1);
 
   layer_tuple<std::shared_ptr<layer>> tuple_1 = (maxpool, avepool);
