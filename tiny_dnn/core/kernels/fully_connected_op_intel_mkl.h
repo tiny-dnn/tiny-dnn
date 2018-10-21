@@ -11,7 +11,7 @@
 
 #ifdef CNN_USE_INTEL_MKL
 extern "C" {
-#include <cblas.h>
+#include <mkl_cblas.h>
 }
 #endif
 
