@@ -64,7 +64,7 @@ TEST(fully_connected, forward) {
 }
 
 void test_fully_connected_forward(core::backend_t backend) {
-  fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
+  fully_connected_layer l(4, 2, true, backend);
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));

@@ -109,7 +109,8 @@ class fully_connected_layer : public layer {
     if (backend_type == core::backend_t::internal ||
         backend_type == core::backend_t::avx ||
         backend_type == core::backend_t::nnpack ||
-        backend_type == core::backend_t::cblas) {
+        backend_type == core::backend_t::cblas ||
+        backend_type == core::backend_t::intel_mkl) {
       kernel_fwd_.reset(new FullyConnectedOp(ctx));
       kernel_back_.reset(new FullyConnectedGradOp(ctx));
     } else {

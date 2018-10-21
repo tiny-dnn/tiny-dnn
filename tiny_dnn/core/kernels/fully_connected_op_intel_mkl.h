@@ -49,7 +49,7 @@ inline void fully_connected_op_intel_mkl(const tensor_t &in_data,
   }
 #endif
 #else
-  throw nn_error("Compiled without CBLAS support");
+  throw nn_error("Compiled without Intel MKL support");
 #endif  // CNN_USE_INTEL_MKL
 }
 

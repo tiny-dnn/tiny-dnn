@@ -176,19 +176,21 @@ if(USE_CBLAS)
     endif()
 endif()
 
-# Find Intel MKL: Acceleration package for neural networks on multi-core CPUs
-find_package(INTEL_MKL QUIET)
-if(USE_INTEL_MKL AND INTEL_MKL_FOUND)
-    message(STATUS "Found Intel MKL: ${INTEL_MKL_INCLUDE_DIR}")
-    add_definitions(-DCNN_USE_INTEL_MKL)
-    include_directories(SYSTEM ${INTEL_MKL_INCLUDE_DIR})
-    list(APPEND REQUIRED_LIBRARIES ${INTEL_MKL_LIB})
-elseif(USE_INTEL_MKL AND NOT INTEL_MKL_FOUND)
-    # In case the user sets the flag USE_INTEL_MKL to ON, the CMake build-tree
-    # will require to find Intel MKL in your system. Otherwise, the user can
-    # set the paths to headers and libs by hand.
-    message(FATAL_ERROR "Can't find Intel MKL. Please set MKLROOT")
-endif()
+# Find Intel MKL: CBLAS implementation from Intel
+if(USE_INTEL_MKL)
+    find_package(INTELMKL REQUIRED)
+    if(INTELMKL_FOUND)
+        message(STATUS "Found Intel MKL: ${INTEL_MKL_INCLUDE_DIR}")
+        add_definitions(-DCNN_USE_INTEL_MKL)
+        include_directories(SYSTEM ${INTEL_MKL_INCLUDE_DIR})
+        list(APPEND REQUIRED_LIBRARIES "-Wl,--start-group ${INTEL_MKL_LIB_1} ${INTEL_MKL_LIB_2} ${INTEL_MKL_LIB_3} -Wl,--end-group -ldl")
+    else(INTELMKL_FOUND)
+        # In case the user sets the flag USE_INTEL_MKL to ON, the CMake build-tree
+        # will require to find Intel MKL in your system. Otherwise, the user can
+        # set the paths to headers and libs by hand.
+        message(FATAL_ERROR "Can't find Intel MKL. Please set MKLROOT")
+    endif()
+endif(USE_INTEL_MKL)
 
 # in case that TBB and OMP are not enabled/found,
 # we enable standard C++11 multithread support.
@@ -400,7 +402,7 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindNNPACK.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindINTEL_MKL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindINTELMKL.cmake"
     DESTINATION ${config_install_dir} COMPONENT cmake)
 
 # Install headers
