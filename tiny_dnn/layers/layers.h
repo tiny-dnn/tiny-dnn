@@ -16,6 +16,7 @@
 #include "tiny_dnn/layers/dropout_layer.h"
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/layers/global_average_pooling_layer.h"
+#include "tiny_dnn/layers/l2_normalization_layer.h"
 #include "tiny_dnn/layers/layer.h"
 #include "tiny_dnn/layers/linear_layer.h"
 #include "tiny_dnn/layers/lrn_layer.h"
