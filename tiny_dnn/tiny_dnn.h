@@ -40,7 +40,8 @@
 #include "tiny_dnn/layers/fully_connected_layer.h"
 #include "tiny_dnn/layers/global_average_pooling_layer.h"
 #include "tiny_dnn/layers/input_layer.h"
-#include "tiny_dnn/layers/linear_layer.h"
+#include "tiny_dnn/layers/l2_normalization_layer.h"
+#include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/lrn_layer.h"
 #include "tiny_dnn/layers/max_pooling_layer.h"
 #include "tiny_dnn/layers/max_unpooling_layer.h"
@@ -163,6 +164,8 @@ using softsign = tiny_dnn::softsign_layer;
 #include "tiny_dnn/models/alexnet.h"
 
 using batch_norm = tiny_dnn::batch_normalization_layer;
+
+using l2_norm = tiny_dnn::l2_normalization_layer;
 
 using slice = tiny_dnn::slice_layer;
 

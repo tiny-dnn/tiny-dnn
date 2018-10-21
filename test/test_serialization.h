@@ -119,8 +119,10 @@ TEST(serialization, serialize_batchnorm) {
   EXPECT_EQ(net[0]->layer_type(), "batch-norm");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 2));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 2));
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(), float_t(0.001));
-  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(), float_t(0.8));
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).epsilon(),
+                  float_t(0.001));
+  EXPECT_FLOAT_EQ(net.at<batch_normalization_layer>(0).momentum(),
+                  float_t(0.8));
   check_sequential_network_model_serialization(net);
 }
 
@@ -437,6 +439,35 @@ TEST(serialization, serialize_input) {
   EXPECT_EQ(net[0]->layer_type(), "input");
   EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 4, 6));
   EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 4, 6));
+  check_sequential_network_model_serialization(net);
+}
+
+TEST(serialization, serialize_l2norm) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "l2norm",
+                "in_spatial_size": 3,
+                "in_channels": 2,
+                "epsilon": 1e-10,
+                "scale": 20
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "l2-norm");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(3, 1, 2));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(3, 1, 2));
+  EXPECT_FLOAT_EQ(
+    net.at<l2_normalization_layer>(0).epsilon(),
+    std::max(float_t(1e-10), std::numeric_limits<float_t>::epsilon()));
+  EXPECT_FLOAT_EQ(net.at<l2_normalization_layer>(0).scale(), float_t(20));
   check_sequential_network_model_serialization(net);
 }
 
