@@ -130,13 +130,14 @@ inline std::shared_ptr<layer> create_max_pool(layer_size_t pool_size_w,
                                               layer_size_t pool_size_h,
                                               layer_size_t stride_w,
                                               layer_size_t stride_h,
+                                              bool ceil_mode,
                                               padding pad_type,
                                               const shape_t &bottom_shape,
                                               shape_t *top_shape) {
   using max_pool = max_pooling_layer;
   auto mp        = std::make_shared<max_pool>(
     bottom_shape.width_, bottom_shape.height_, bottom_shape.depth_, pool_size_w,
-    pool_size_h, stride_w, stride_h, pad_type);
+    pool_size_h, stride_w, stride_h, ceil_mode, pad_type);
 
   *top_shape = mp->out_shape()[0];
   mp->init_weight();
@@ -148,13 +149,14 @@ inline std::shared_ptr<layer> create_ave_pool(layer_size_t pool_size_w,
                                               layer_size_t pool_size_h,
                                               layer_size_t stride_w,
                                               layer_size_t stride_h,
+                                              bool ceil_mode,
                                               padding pad_type,
                                               const shape_t &bottom_shape,
                                               shape_t *top_shape) {
   using ave_pool = average_pooling_layer;
   auto ap        = std::make_shared<ave_pool>(
     bottom_shape.width_, bottom_shape.height_, bottom_shape.depth_, pool_size_w,
-    pool_size_h, stride_w, stride_h, pad_type);
+    pool_size_h, stride_w, stride_h, ceil_mode, pad_type);
 
   // tiny-dnn has trainable parameter in average-pooling layer
   float_t weight = 1.0 / (pool_size_w * pool_size_h);
@@ -217,6 +219,7 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
   layer_size_t pool_size_h = 0;
   layer_size_t h_pad       = 0;
   layer_size_t w_pad       = 0;
+  bool ceil_mode           = false;
   padding pad_type         = padding::valid;
 
   if (!get_kernel_size_2d(pool_param, &pool_size_w, &pool_size_h)) {
@@ -261,23 +264,27 @@ inline std::shared_ptr<layer> create_pooling(const caffe::LayerParameter &layer,
     //     if such a type existed
   }
 
+  if (pool_param.has_ceil_mode()) {
+    ceil_mode = pool_param.ceil_mode();
+  }
+
   if (pool_param.has_pool()) {
     auto type = pool_param.pool();
 
     switch (type) {
       case caffe::PoolingParameter_PoolMethod_MAX:
         return create_max_pool(pool_size_w, pool_size_h, w_stride, h_stride,
-                               pad_type, bottom_shape, top_shape);
+                               ceil_mode, pad_type, bottom_shape, top_shape);
       case caffe::PoolingParameter_PoolMethod_AVE:
         return create_ave_pool(pool_size_w, pool_size_h, w_stride, h_stride,
-                               pad_type, bottom_shape, top_shape);
+                               ceil_mode, pad_type, bottom_shape, top_shape);
       default: throw nn_error("unsupported layer type");
     }
   }
 
   // default: max-pool
-  return create_max_pool(pool_size_w, pool_size_h, w_stride, h_stride, pad_type,
-                         bottom_shape, top_shape);
+  return create_max_pool(pool_size_w, pool_size_h, w_stride, h_stride, ceil_mode,
+                         pad_type, bottom_shape, top_shape);
 }
 
 inline std::shared_ptr<layer> create_relu(const caffe::LayerParameter &layer,

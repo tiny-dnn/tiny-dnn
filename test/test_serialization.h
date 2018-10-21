@@ -45,6 +45,7 @@ TEST(serialization, serialize_avepool) {
                 "pool_size_y": 2,
                 "stride_x": 2,
                 "stride_y": 2,
+                "ceil_mode": false,
                 "pad_type": 0
             }
         ]
@@ -517,6 +518,7 @@ TEST(serialization, serialize_maxpool) {
                 "pool_size_y": 2,
                 "stride_x": 1,
                 "stride_y": 1,
+                "ceil_mode": false,
                 "pad_type": 1
             }
         ]
