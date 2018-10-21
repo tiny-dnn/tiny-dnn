@@ -176,17 +176,18 @@ if(USE_CBLAS)
     endif()
 endif()
 
-# Find CBLAS: Acceleration package for linear algebra
-if(USE_INTEL_MKL)
-    # In case the user sets the flag USE_CBLAS to ON, the CMake build-tree
-    # will require to find CBLAS in your system.
-    find_package(MKL REQUIRED)
-    if(MKL_FOUND)
-        add_definitions(-DCNN_USE_INTEL_MKL)
-        list(APPEND REQUIRED_LIBRARIES ${MKL_LIBRARIES})
-    else()
-        message(FATAL_ERROR "Can't find Intel MKL libraries.")
-    endif()
+# Find Intel MKL: Acceleration package for neural networks on multi-core CPUs
+find_package(INTEL_MKL QUIET)
+if(USE_INTEL_MKL AND INTEL_MKL_FOUND)
+    message(STATUS "Found Intel MKL: ${INTEL_MKL_INCLUDE_DIR}")
+    add_definitions(-DUSE_INTEL_MKL)
+    include_directories(SYSTEM ${INTEL_MKL_INCLUDE_DIR})
+    list(APPEND REQUIRED_LIBRARIES ${INTEL_MKL_LIB})
+elseif(USE_INTEL_MKL AND NOT INTEL_MKL_FOUND)
+    # In case the user sets the flag USE_INTEL_MKL to ON, the CMake build-tree
+    # will require to find Intel MKL in your system. Otherwise, the user can
+    # set the paths to headers and libs by hand.
+    message(FATAL_ERROR "Can't find Intel MKL. Please set MKLROOT")
 endif()
 
 # in case that TBB and OMP are not enabled/found,
