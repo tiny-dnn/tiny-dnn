@@ -400,7 +400,7 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindNNPACK.cmake"
-    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindMKL.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindINTEL_MKL.cmake"
     DESTINATION ${config_install_dir} COMPONENT cmake)
 
 # Install headers
