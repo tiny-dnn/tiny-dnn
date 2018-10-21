@@ -147,6 +147,7 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
     cereal::construct<tiny_dnn::average_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    bool ceil_mode;
     tiny_dnn::padding pad_type;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in),
@@ -154,9 +155,10 @@ struct LoadAndConstruct<tiny_dnn::average_pooling_layer> {
                   ::detail::make_nvp("pool_size_y", pool_size_y),
                   ::detail::make_nvp("stride_x", stride_x),
                   ::detail::make_nvp("stride_y", stride_y),
+                  ::detail::make_nvp("ceil_mode", ceil_mode),
                   ::detail::make_nvp("pad_type", pad_type));
     construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-              stride_x, stride_y, pad_type);
+              stride_x, stride_y, ceil_mode, pad_type);
   }
 };
 
@@ -325,6 +327,23 @@ struct LoadAndConstruct<tiny_dnn::input_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::l2_normalization_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar,
+    cereal::construct<tiny_dnn::l2_normalization_layer> &construct) {
+    size_t in_spatial_size, in_channels;
+    tiny_dnn::float_t eps, scale;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_spatial_size", in_spatial_size),
+                  ::detail::make_nvp("in_channels", in_channels),
+                  ::detail::make_nvp("epsilon", eps),
+                  ::detail::make_nvp("scale", scale));
+    construct(in_spatial_size, in_channels, eps, scale);
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::linear_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -365,6 +384,7 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
     Archive &ar, cereal::construct<tiny_dnn::max_pooling_layer> &construct) {
     tiny_dnn::shape3d in;
     size_t stride_x, stride_y, pool_size_x, pool_size_y;
+    bool ceil_mode;
     tiny_dnn::padding pad_type;
 
     ::detail::arc(ar, ::detail::make_nvp("in_size", in),
@@ -372,9 +392,10 @@ struct LoadAndConstruct<tiny_dnn::max_pooling_layer> {
                   ::detail::make_nvp("pool_size_y", pool_size_y),
                   ::detail::make_nvp("stride_x", stride_x),
                   ::detail::make_nvp("stride_y", stride_y),
+                  ::detail::make_nvp("ceil_mode", ceil_mode),
                   ::detail::make_nvp("pad_type", pad_type));
     construct(in.width_, in.height_, in.depth_, pool_size_x, pool_size_y,
-              stride_x, stride_y, pad_type);
+              stride_x, stride_y, ceil_mode, pad_type);
   }
 };
 
@@ -747,6 +768,7 @@ struct serialization_buddy {
                   ::detail::make_nvp("pool_size_y", layer.pool_size_y_),
                   ::detail::make_nvp("stride_x", layer.stride_x_),
                   ::detail::make_nvp("stride_y", layer.stride_y_),
+                  ::detail::make_nvp("ceil_mode", layer.ceil_mode_),
                   ::detail::make_nvp("pad_type", layer.pad_type_));
   }
 
@@ -837,6 +859,16 @@ struct serialization_buddy {
   }
 
   template <class Archive>
+  static inline void serialize(Archive &ar,
+                               tiny_dnn::l2_normalization_layer &layer) {
+    ::detail::arc(ar,
+                  ::detail::make_nvp("in_spatial_size", layer.in_spatial_size_),
+                  ::detail::make_nvp("in_channels", layer.in_channels_),
+                  ::detail::make_nvp("epsilon", layer.eps_),
+                  ::detail::make_nvp("scale", layer.scale_));
+  }
+
+  template <class Archive>
   static inline void serialize(Archive &ar, tiny_dnn::linear_layer &layer) {
     ::detail::arc(ar, ::detail::make_nvp("in_size", layer.dim_),
                   ::detail::make_nvp("scale", layer.scale_),
@@ -861,6 +893,7 @@ struct serialization_buddy {
                   ::detail::make_nvp("pool_size_y", params_.pool_size_y),
                   ::detail::make_nvp("stride_x", params_.stride_x),
                   ::detail::make_nvp("stride_y", params_.stride_y),
+                  ::detail::make_nvp("ceil_mode", params_.ceil_mode),
                   ::detail::make_nvp("pad_type", params_.pad_type));
   }
 

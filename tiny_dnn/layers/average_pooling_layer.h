@@ -117,22 +117,31 @@ class average_pooling_layer : public partial_connected_layer {
    * @param in_height    [in] height of input image
    * @param in_channels  [in] the number of input image channels(depth)
    * @param pool_size    [in] factor by which to downscale
+   * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
+   *compute the output shape
    **/
   average_pooling_layer(size_t in_width,
                         size_t in_height,
                         size_t in_channels,
-                        size_t pool_size)
+                        size_t pool_size,
+                        bool ceil_mode = false)
     : average_pooling_layer(in_width,
                             in_height,
                             in_channels,
                             pool_size,
-                            (in_height == 1 ? 1 : pool_size)) {}
+                            (in_height == 1 ? 1 : pool_size),
+                            ceil_mode) {}
 
   average_pooling_layer(const shape3d &in_shape,
                         size_t pool_size,
-                        size_t stride)
-    : average_pooling_layer(
-        in_shape.width_, in_shape.width_, in_shape.depth_, pool_size, stride) {}
+                        size_t stride,
+                        bool ceil_mode = false)
+    : average_pooling_layer(in_shape.width_,
+                            in_shape.width_,
+                            in_shape.depth_,
+                            pool_size,
+                            stride,
+                            ceil_mode) {}
 
   /**
    * @param in_width     [in] width of input image
@@ -141,12 +150,15 @@ class average_pooling_layer : public partial_connected_layer {
    * @param pool_size    [in] factor by which to downscale
    * @param stride       [in] interval at which to apply the filters to the
    *input
+   * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
+   *compute the output shape
    **/
   average_pooling_layer(size_t in_width,
                         size_t in_height,
                         size_t in_channels,
                         size_t pool_size,
-                        size_t stride)
+                        size_t stride,
+                        bool ceil_mode = false)
     : average_pooling_layer(in_width,
                             in_height,
                             in_channels,
@@ -154,6 +166,7 @@ class average_pooling_layer : public partial_connected_layer {
                             (in_height == 1 ? 1 : pool_size),
                             stride,
                             stride,
+                            ceil_mode,
                             padding::valid) {}
 
   /**
@@ -166,6 +179,8 @@ class average_pooling_layer : public partial_connected_layer {
    *input
    * @param stride_y     [in] interval at which to apply the filters to the
    *input
+   * @param ceil_mode    [in] when True, will use `ceil` instead of `floor` to
+   *compute the output shape
    * @param pad_type     [in] padding mode(same/valid)
    **/
   average_pooling_layer(size_t in_width,
@@ -175,23 +190,28 @@ class average_pooling_layer : public partial_connected_layer {
                         size_t pool_size_y,
                         size_t stride_x,
                         size_t stride_y,
+                        bool ceil_mode   = false,
                         padding pad_type = padding::valid)
-    : Base(in_width * in_height * in_channels,
-           conv_out_length(in_width, pool_size_x, stride_x, 1, pad_type) *
-             conv_out_length(in_height, pool_size_y, stride_y, 1, pad_type) *
-             in_channels,
-           in_channels,
-           in_channels,
-           float_t(1) / (pool_size_x * pool_size_y)),
+    : Base(
+        in_width * in_height * in_channels,
+        pool_out_length(in_width, pool_size_x, stride_x, ceil_mode, pad_type) *
+          pool_out_length(
+            in_height, pool_size_y, stride_y, ceil_mode, pad_type) *
+          in_channels,
+        in_channels,
+        in_channels,
+        float_t(1) / (pool_size_x * pool_size_y)),
       stride_x_(stride_x),
       stride_y_(stride_y),
       pool_size_x_(pool_size_x),
       pool_size_y_(pool_size_y),
       pad_type_(pad_type),
+      ceil_mode_(ceil_mode),
       in_(in_width, in_height, in_channels),
-      out_(conv_out_length(in_width, pool_size_x, stride_x, 1, pad_type),
-           conv_out_length(in_height, pool_size_y, stride_y, 1, pad_type),
-           in_channels),
+      out_(
+        pool_out_length(in_width, pool_size_x, stride_x, ceil_mode, pad_type),
+        pool_out_length(in_height, pool_size_y, stride_y, ceil_mode, pad_type),
+        in_channels),
       w_(pool_size_x, pool_size_y, in_channels) {
     if ((in_width % pool_size_x) || (in_height % pool_size_y)) {
       pooling_size_mismatch(in_width, in_height, pool_size_x, pool_size_y);
@@ -235,6 +255,7 @@ class average_pooling_layer : public partial_connected_layer {
   size_t pool_size_x_;
   size_t pool_size_y_;
   padding pad_type_;
+  bool ceil_mode_;
   shape3d in_;
   shape3d out_;
   shape3d w_;

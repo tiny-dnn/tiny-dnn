@@ -53,6 +53,7 @@ using namespace tiny_dnn::activation;
 #include "test_fully_connected_layer.h"
 #include "test_global_average_pooling_layer.h"
 #include "test_integration.h"
+#include "test_l2_norm_layer.h"
 #include "test_large_thread_count.h"
 #include "test_lrn_layer.h"
 #include "test_max_pooling_layer.h"
@@ -73,6 +74,8 @@ using namespace tiny_dnn::activation;
 #include "test_gru_cell.h"
 #include "test_lstm_cell.h"
 #include "test_rnn_cell.h"
+
+#include "test_nms.h"
 
 #ifndef CNN_NO_SERIALIZATION
 #include "test_serialization.h"
