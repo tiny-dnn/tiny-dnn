@@ -250,7 +250,7 @@ void construct_nets(std::vector<tiny_dnn::network<tiny_dnn::sequential>>& nets,
     modelPath << modelFolder << std::setfill('0') << std::setw(2) << i + 1
               << ".weights";
     std::ifstream ifs(modelPath.str());
-    if (ifs.bad()) {
+    if (ifs.fail()) {
       std::cout << "Failed to load weights from " << modelPath.str()
                 << std::endl;
     } else {
