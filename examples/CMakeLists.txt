@@ -36,7 +36,11 @@ if(USE_SERIALIZER)
     target_link_libraries(example_deconv_train
         ${project_library_target_name} ${REQUIRED_LIBRARIES})
 
-    cotire(example_mnist_train example_mnist_test example_mnist_quantized_train example_deconv_train)
+    add_executable(example_ssd_test ssd_detection/test.cpp ${tiny_dnn_headers})
+    target_link_libraries(example_ssd_test
+            ${project_library_target_name} ${REQUIRED_LIBRARIES})
+
+    cotire(example_mnist_train example_mnist_test example_mnist_quantized_train example_deconv_train example_ssd_test)
 endif()
 
 add_executable(example_deconv_visual deconv/visual.cpp ${tiny_dnn_headers})
