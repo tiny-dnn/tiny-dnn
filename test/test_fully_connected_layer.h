@@ -63,22 +63,40 @@ TEST(fully_connected, forward) {
   }
 }
 
-#ifdef CNN_USE_NNPACK
-TEST(fully_connected, forward_nnp) {
-  nnp_initialize();
-  fully_connected_layer l(4, 2, true, core::backend_t::nnpack);
+void test_fully_connected_forward(core::backend_t backend) {
+  fully_connected_layer l(4, 2, true, backend);
   EXPECT_EQ(l.in_channels(), 3u);  // in, W and b
 
   l.weight_init(weight_init::constant(1.0));
   l.bias_init(weight_init::constant(0.5));
 
-  vec_t in           = {0, 1, 2, 3};
-  vec_t out          = l.forward({{in}})[0][0];
-  vec_t out_expected = {6.5, 6.5};  // 0+1+2+3+0.5
+  vec_t in                  = {0, 1, 2, 3};
+  std::vector<const tensor_t*> tout;
+  l.forward({{in}}, tout);
+  vec_t out                 = (*tout[0])[0];
+  vec_t out_expected        = {6.5, 6.5};  // 0+1+2+3+0.5
 
   for (size_t i = 0; i < out_expected.size(); i++) {
     EXPECT_FLOAT_EQ(out_expected[i], out[i]);
   }
+}
+
+#ifdef CNN_USE_NNPACK
+TEST(fully_connected, forward_nnp) {
+  nnp_initialize();
+  test_fully_connected_forward(core::backend_t::nnpack);
+}
+#endif
+
+#ifdef CNN_USE_INTEL_MKL
+TEST(fully_connected, forward_intel_mkl) {
+  test_fully_connected_forward(core::backend_t::intel_mkl);
+}
+#endif
+
+#ifdef CNN_USE_AVX
+TEST(fully_connected, forward_avx) {
+  test_fully_connected_forward(core::backend_t::avx);
 }
 #endif
 

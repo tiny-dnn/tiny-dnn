@@ -43,7 +43,8 @@ inline void fully_connected_op_cblas(const tensor_t &in_data,
   cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 1, out_size, in_size,
               alpha, input, in_size, weight, out_size, beta, output, out_size);
 #endif
-
+#else
+  throw nn_error("Compiled without CBLAS support");
 #endif  // CNN_USE_CBLAS
 }
 

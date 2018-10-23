@@ -45,19 +45,20 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 ####
 # Define user options
-option(USE_SSE        "Build tiny-dnn with SSE library support"     ON)
-option(USE_AVX        "Build tiny-dnn with AVX library support"     ON)
-option(USE_AVX2       "Build tiny-dnn with AVX2 library support"   OFF)
-option(USE_TBB        "Build tiny-dnn with TBB library support"    OFF)
-option(USE_OMP        "Build tiny-dnn with OMP library support"    OFF)
-option(USE_NNPACK     "Build tiny-dnn with NNPACK library support" OFF)
-option(USE_CBLAS      "Build tiny-dnn with CBLAS library support" OFF)
-option(USE_OPENCL     "Build tiny-dnn with OpenCL library support" OFF) 
+option(USE_SSE        "Build tiny-dnn with SSE library support"            ON)
+option(USE_AVX        "Build tiny-dnn with AVX library support"            ON)
+option(USE_AVX2       "Build tiny-dnn with AVX2 library support"           OFF)
+option(USE_TBB        "Build tiny-dnn with TBB library support"            OFF)
+option(USE_OMP        "Build tiny-dnn with OMP library support"            OFF)
+option(USE_NNPACK     "Build tiny-dnn with NNPACK library support"         OFF)
+option(USE_CBLAS      "Build tiny-dnn with CBLAS library support"          OFF)
+option(USE_INTEL_MKL  "Build tiny-dnn with Intel MKL library support"      OFF)
+option(USE_OPENCL     "Build tiny-dnn with OpenCL library support"         OFF)
 option(USE_LIBDNN     "Build tiny-dnn with GreenteaLibDNN library support" OFF)
-option(USE_SERIALIZER "Build tiny-dnn with Serialization support"   ON)
+option(USE_SERIALIZER "Build tiny-dnn with Serialization support"          ON)
 option(USE_DOUBLE     "Build tiny-dnn with double precision computations"  OFF)
-option(USE_IMAGE_API  "Build tiny-dnn with Image API support"       ON)
-option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"       OFF)
+option(USE_IMAGE_API  "Build tiny-dnn with Image API support"              ON)
+option(USE_GEMMLOWP   "Build tiny-dnn with gemmlowp support"               OFF)
 
 option(BUILD_TESTS      "Set to ON to build tests"              OFF)
 option(BUILD_EXAMPLES   "Set to ON to build examples"           OFF)
@@ -174,6 +175,22 @@ if(USE_CBLAS)
                 "install it by:\n  sudo apt-get install libatlas-dev")
     endif()
 endif()
+
+# Find Intel MKL: CBLAS implementation from Intel
+if(USE_INTEL_MKL)
+    find_package(INTELMKL REQUIRED)
+    if(INTELMKL_FOUND)
+        message(STATUS "Found Intel MKL: ${INTEL_MKL_INCLUDE_DIR}")
+        add_definitions(-DCNN_USE_INTEL_MKL)
+        include_directories(SYSTEM ${INTEL_MKL_INCLUDE_DIR})
+        list(APPEND REQUIRED_LIBRARIES "-Wl,--start-group ${INTEL_MKL_LIB_1} ${INTEL_MKL_LIB_2} ${INTEL_MKL_LIB_3} -Wl,--end-group -ldl")
+    else(INTELMKL_FOUND)
+        # In case the user sets the flag USE_INTEL_MKL to ON, the CMake build-tree
+        # will require to find Intel MKL in your system. Otherwise, the user can
+        # set the paths to headers and libs by hand.
+        message(FATAL_ERROR "Can't find Intel MKL. Please set MKLROOT")
+    endif()
+endif(USE_INTEL_MKL)
 
 # in case that TBB and OMP are not enabled/found,
 # we enable standard C++11 multithread support.
@@ -385,6 +402,7 @@ install(FILES
     "${CMAKE_CURRENT_BINARY_DIR}/${cmake_conf_version_file}"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindTBB.cmake"
     "${PROJECT_SOURCE_DIR}/cmake/Modules/FindNNPACK.cmake"
+    "${PROJECT_SOURCE_DIR}/cmake/Modules/FindINTELMKL.cmake"
     DESTINATION ${config_install_dir} COMPONENT cmake)
 
 # Install headers
