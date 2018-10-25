@@ -1,7 +1,7 @@
 #!/bin/bash
 tag_prefix="tinydnn/tinydnn"
 
-docker_images=('dev-ubuntu17.04' 'dev-full-ubuntu17.04')
+docker_images=('dev-ubuntu18.04' 'dev-full-ubuntu18.04')
 
 if [ $# -eq 0 ] ; then
     docker_tag=$tag_prefix/${docker_images[0]}
