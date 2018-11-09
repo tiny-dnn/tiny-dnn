@@ -53,13 +53,17 @@ if __name__ == '__main__':
 
     preprocessor = Preprocessor()
     print("Preprocessing...")
+    messages_ = []
     for idx, message in enumerate(messages):
-        messages[idx]['text'] = preprocessor.process_text(message['text'])
-        messages[idx]['fromUser']['username'] = preprocessor.process_text(message['fromUser']['username'],
-                                                                          newline=False)
+        if "fromUser" in message:
+            messages[idx]['text'] = preprocessor.process_text(message['text'])
+            messages[idx]['fromUser']['username'] = preprocessor.process_text(message['fromUser']['username'],
+                                                                              newline=False)
+            messages_.append(message)
+    messages = messages_
 
     encoder = Encoder()
-    if args.encoding_file is None:
+    if not os.path.isfile(args.encoding_file):
         print("Generating encoding dictionary...")
         encoder.gen_dict(msg2txt(messages))
         encoder.save_enc_dict_json(path='../data/encoding.json')
