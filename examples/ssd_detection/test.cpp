@@ -103,8 +103,8 @@ void init_default_boxes(tiny_dnn::vec_t& default_boxes) {
 
     for (size_t h = 0; h < fm_size; ++h) {
       for (size_t w = 0; w < fm_size; ++w) {
-        float cx = (w + 0.5) * steps[i];
-        float cy = (h + 0.5) * steps[i];
+        float cx = (w + float_t(0.5)) * steps[i];
+        float cy = (h + float_t(0.5)) * steps[i];
 
         float s = sizes[i];
         save_default_boxes(default_boxes, box_index++, cx, cy, s, s);
@@ -315,12 +315,12 @@ void detect(std::vector<tiny_dnn::network<tiny_dnn::sequential>>& nets,
   for (size_t i = 0; i < N_ANCHORS; ++i) {
     // regress center x and center y for bounding boxes
     float cx =
-      locations[i * 4] * 0.1 * default_boxes[i * 4 + 2] + default_boxes[i * 4];
-    float cy = locations[i * 4 + 1] * 0.1 * default_boxes[i * 4 + 3] +
+      locations[i * 4] * float_t(0.1) * default_boxes[i * 4 + 2] + default_boxes[i * 4];
+    float cy = locations[i * 4 + 1] * float_t(0.1) * default_boxes[i * 4 + 3] +
                default_boxes[i * 4 + 1];
     // regress width and height for bounding boxes
-    float width  = exp(locations[i * 4 + 2] * 0.2) * default_boxes[i * 4 + 2];
-    float height = exp(locations[i * 4 + 3] * 0.2) * default_boxes[i * 4 + 3];
+    float width  = exp(locations[i * 4 + 2] * float_t(0.2)) * default_boxes[i * 4 + 2];
+    float height = exp(locations[i * 4 + 3] * float_t(0.2)) * default_boxes[i * 4 + 3];
 
     bounding_boxes[i * 4]     = cx - width / 2;
     bounding_boxes[i * 4 + 1] = cy - height / 2;

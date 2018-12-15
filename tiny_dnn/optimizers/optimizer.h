@@ -159,7 +159,7 @@ struct adamax : public stateful_optimizer<2> {
       ut[i] = std::max(b2 * ut[i], std::abs(dW[i]));
 
       // Lp norm based update rule
-      W[i] -= (alpha / (1.0 - b1_t)) * (mt[i] / (ut[i] + eps));
+      W[i] -= (alpha / (float_t(1) - b1_t)) * (mt[i] / (ut[i] + eps));
     });
 
     b1_t *= b1;
