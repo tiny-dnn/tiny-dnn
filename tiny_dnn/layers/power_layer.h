@@ -89,7 +89,7 @@ class power_layer : public layer {
           dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
         } else {
           dx[i][j] = dy[i][j] * scale_ * factor_ *
-                     std::pow(scale_ * x[i][j], factor_ - 1.0);
+                     std::pow(scale_ * x[i][j], factor_ - float_t(1.0));
         }
       }
     }
