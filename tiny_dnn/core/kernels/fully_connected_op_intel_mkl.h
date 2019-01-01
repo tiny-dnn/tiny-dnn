@@ -49,6 +49,13 @@ inline void fully_connected_op_intel_mkl(const tensor_t &in_data,
   }
 #endif
 #else
+    (void)in_data;
+    (void)W;
+    (void)bias;
+    (void)out_data;
+    (void)params;
+    (void)layer_parallelize;
+
   throw nn_error("Compiled without Intel MKL support");
 #endif  // CNN_USE_INTEL_MKL
 }

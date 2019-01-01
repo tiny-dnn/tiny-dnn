@@ -44,6 +44,13 @@ inline void fully_connected_op_cblas(const tensor_t &in_data,
               alpha, input, in_size, weight, out_size, beta, output, out_size);
 #endif
 #else
+    (void)in_data;
+    (void)W;
+    (void)bias;
+    (void)out_data;
+    (void)params;
+    (void)layer_parallelize;
+
   throw nn_error("Compiled without CBLAS support");
 #endif  // CNN_USE_CBLAS
 }
