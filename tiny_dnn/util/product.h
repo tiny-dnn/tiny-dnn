@@ -59,7 +59,9 @@ struct scalar_generic {
     return x;
   }
 
-  static CNN_MUST_INLINE bool is_aligned(value_type *p) { return true; }
+  static CNN_MUST_INLINE bool is_aligned(value_type *p) {
+      (void)p;
+      return true; }
 };
 
 #ifdef CNN_USE_SSE
