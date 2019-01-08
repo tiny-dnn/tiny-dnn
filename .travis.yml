@@ -1,12 +1,12 @@
 sudo: required
 dist: trusty
-osx_image: xcode8
+#osx_image: xcode8
 
 language: cpp
 
 os:
   - linux
-  - osx
+  #- osx
 
 compiler:
   - gcc
@@ -55,10 +55,10 @@ env:
     - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=OFF
     - USE_SSE=ON  USE_AVX=ON USE_DOUBLE=ON
 
-matrix:
-  exclude: # On OSX g++ is a symlink to clang++ by default
-    - os: osx
-      compiler: gcc
+#matrix:
+#  exclude: # On OSX g++ is a symlink to clang++ by default
+#    - os: osx
+#      compiler: gcc
 
 before_install:
   - if [ "$TRAVIS_OS_NAME" == "linux" ] && [ "$CXX" == "g++" ]; then
@@ -91,11 +91,11 @@ before_script:
             -DBUILD_TESTS=$BUILD_TESTS
             -DBUILD_EXAMPLES=$BUILD_EXAMPLES .;
     fi
-  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then
-      cmake -DUSE_TBB=$USE_TBB
-            -DUSE_AVX=OFF
-            -DBUILD_TESTS=$BUILD_TESTS .;
-    fi
+  #- if [ "$TRAVIS_OS_NAME" == "osx" ]; then
+  #    cmake -DUSE_TBB=$USE_TBB
+  #          -DUSE_AVX=OFF
+  #          -DBUILD_TESTS=$BUILD_TESTS .;
+  #  fi
   #- if [ "$TRAVIS_OS_NAME" == "linux" ]; then
   #    make test_lints;
   #  fi
