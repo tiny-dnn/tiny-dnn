@@ -14,7 +14,7 @@ template <typename Allocator>
 class Stack {
 public:
 	Stack(Allocator* allocator, size_t stack_capacity) : allocator_(allocator), own_allocator_(0), stack_(0), stack_top_(0), stack_end_(0), stack_capacity_(stack_capacity) {
-		RAPIDJSON_ASSERT(stack_capacity_ > 0);
+		RAPIDJSON_ASSERT(stack_capacity_ > 0)
 		if (!allocator_)
 			own_allocator_ = allocator_ = new Allocator();
 		stack_top_ = stack_ = (char*)allocator_->Malloc(stack_capacity_);
@@ -49,14 +49,14 @@ public:
 
 	template<typename T>
 	T* Pop(size_t count) {
-		RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T));
+		RAPIDJSON_ASSERT(GetSize() >= count * sizeof(T))
 		stack_top_ -= count * sizeof(T);
 		return (T*)stack_top_;
 	}
 
 	template<typename T>
 	T* Top() { 
-		RAPIDJSON_ASSERT(GetSize() >= sizeof(T));
+		RAPIDJSON_ASSERT(GetSize() >= sizeof(T))
 		return (T*)(stack_top_ - sizeof(T));
 	}
 

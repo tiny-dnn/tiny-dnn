@@ -266,7 +266,7 @@ private:
 	// Parse object: { string : value, ... }
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseObject(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == '{');
+		RAPIDJSON_ASSERT(stream.Peek() == '{')
 		stream.Take();	// Skip '{'
 		handler.StartObject();
 		SkipWhitespace(stream);
@@ -308,7 +308,7 @@ private:
 	// Parse array: [ value, ... ]
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseArray(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == '[');
+		RAPIDJSON_ASSERT(stream.Peek() == '[')
 		stream.Take();	// Skip '['
 		handler.StartArray();
 		SkipWhitespace(stream);
@@ -335,7 +335,7 @@ private:
   // Parses for null or NaN
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseNaNNull_(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == 'n');
+		RAPIDJSON_ASSERT(stream.Peek() == 'n')
 		stream.Take();
 
     if( stream.Peek() == 'a' && stream.Take() == 'a' && stream.Take() == 'n' )
@@ -349,7 +349,7 @@ private:
   // Parses for infinity
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseInfinity(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == 'i');
+		RAPIDJSON_ASSERT(stream.Peek() == 'i')
 		stream.Take();
 
     if (stream.Take() == 'n' && stream.Take() == 'f')
@@ -360,7 +360,7 @@ private:
 
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseTrue(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == 't');
+		RAPIDJSON_ASSERT(stream.Peek() == 't')
 		stream.Take();
 
 		if (stream.Take() == 'r' && stream.Take() == 'u' && stream.Take() == 'e')
@@ -371,7 +371,7 @@ private:
 
 	template<unsigned parseFlags, typename Stream, typename Handler>
 	void ParseFalse(Stream& stream, Handler& handler) {
-		RAPIDJSON_ASSERT(stream.Peek() == 'f');
+		RAPIDJSON_ASSERT(stream.Peek() == 'f')
 		stream.Take();
 
 		if (stream.Take() == 'a' && stream.Take() == 'l' && stream.Take() == 's' && stream.Take() == 'e')
@@ -448,7 +448,7 @@ private:
 #undef Z16
 
 		Stream s = stream;	// Use a local copy for optimization
-		RAPIDJSON_ASSERT(s.Peek() == '\"');
+		RAPIDJSON_ASSERT(s.Peek() == '\"')
 		s.Take();	// Skip '\"'
 		Ch *head;
 		SizeType len;
@@ -507,7 +507,7 @@ private:
 			else if (c == '"') {	// Closing double quote
 				if (parseFlags & kParseInsituFlag) {
 					size_t length = s.PutEnd(head);
-					RAPIDJSON_ASSERT(length <= 0xFFFFFFFF);
+					RAPIDJSON_ASSERT(length <= 0xFFFFFFFF)
 					RAPIDJSON_PUT('\0');	// null-terminate the string
 					handler.String(head, SizeType(length), false);
 				}

@@ -247,7 +247,7 @@ class Device {
   bool IsCPU() const { return Type() == "CPU"; }
   bool IsGPU() const { return Type() == "GPU"; }
   bool IsAMD() const { return Vendor() == "AMD" || Vendor() == "Advanced Micro Devices, Inc." ||
-                              Vendor() == "AuthenticAMD";; }
+                              Vendor() == "AuthenticAMD"; }
   bool IsNVIDIA() const { return Vendor() == "NVIDIA" || Vendor() == "NVIDIA Corporation"; }
   bool IsIntel() const { return Vendor() == "INTEL" || Vendor() == "Intel" ||
                                 Vendor() == "GenuineIntel"; }
