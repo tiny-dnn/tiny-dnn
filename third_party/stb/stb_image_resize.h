@@ -2106,7 +2106,7 @@ static void stbir__buffer_loop_upsample(stbir__info* stbir_info)
         // Now all buffers should be ready to write a row of vertical sampling.
         stbir__resample_vertical_upsample(stbir_info, y);
 
-        STBIR_PROGRESS_REPORT((float)y / stbir_info->output_h);
+        STBIR_PROGRESS_REPORT((float)y / stbir_info->output_h)
     }
 }
 
@@ -2134,7 +2134,7 @@ static void stbir__empty_ring_buffer(stbir__info* stbir_info, int first_necessar
                 int output_row_start = stbir_info->ring_buffer_first_scanline * output_stride_bytes;
                 float* ring_buffer_entry = stbir__get_ring_buffer_entry(ring_buffer, stbir_info->ring_buffer_begin_index, ring_buffer_length);
                 stbir__encode_scanline(stbir_info, output_w, (char *) output_data + output_row_start, ring_buffer_entry, channels, alpha_channel, decode);
-                STBIR_PROGRESS_REPORT((float)stbir_info->ring_buffer_first_scanline / stbir_info->output_h);
+                STBIR_PROGRESS_REPORT((float)stbir_info->ring_buffer_first_scanline / stbir_info->output_h)
             }
 
             if (stbir_info->ring_buffer_first_scanline == stbir_info->ring_buffer_last_scanline)
@@ -2397,14 +2397,14 @@ static int stbir__resize_allocated(stbir__info *info,
     stbir__calculate_filters(info->horizontal_contributors, info->horizontal_coefficients, info->horizontal_filter, info->horizontal_scale, info->horizontal_shift, info->input_w, info->output_w);
     stbir__calculate_filters(info->vertical_contributors, info->vertical_coefficients, info->vertical_filter, info->vertical_scale, info->vertical_shift, info->input_h, info->output_h);
 
-    STBIR_PROGRESS_REPORT(0);
+    STBIR_PROGRESS_REPORT(0)
 
     if (stbir__use_height_upsampling(info))
         stbir__buffer_loop_upsample(info);
     else
         stbir__buffer_loop_downsample(info);
 
-    STBIR_PROGRESS_REPORT(1);
+    STBIR_PROGRESS_REPORT(1)
 
 #ifdef STBIR_DEBUG_OVERWRITE_TEST
     STBIR_ASSERT(memcmp(overwrite_output_before_pre, &((unsigned char*)output_data)[-OVERWRITE_ARRAY_SIZE], OVERWRITE_ARRAY_SIZE) == 0);

@@ -82,8 +82,8 @@ public:
 
 	Writer& EndObject(SizeType memberCount = 0) {
 		(void)memberCount;
-		RAPIDJSON_ASSERT(level_stack_.GetSize() >= sizeof(Level));
-		RAPIDJSON_ASSERT(!level_stack_.template Top<Level>()->inArray);
+		RAPIDJSON_ASSERT(level_stack_.GetSize() >= sizeof(Level))
+		RAPIDJSON_ASSERT(!level_stack_.template Top<Level>()->inArray)
 		level_stack_.template Pop<Level>(1);
 		WriteEndObject();
 		return *this;
@@ -98,8 +98,8 @@ public:
 
 	Writer& EndArray(SizeType elementCount = 0) {
 		(void)elementCount;
-		RAPIDJSON_ASSERT(level_stack_.GetSize() >= sizeof(Level));
-		RAPIDJSON_ASSERT(level_stack_.template Top<Level>()->inArray);
+		RAPIDJSON_ASSERT(level_stack_.GetSize() >= sizeof(Level))
+		RAPIDJSON_ASSERT(level_stack_.template Top<Level>()->inArray)
 		level_stack_.template Pop<Level>(1);
 		WriteEndArray();
 		return *this;
@@ -216,7 +216,7 @@ protected:
 #else
 		int ret = snprintf(buffer, sizeof(buffer), double_format, d);
 #endif
-		RAPIDJSON_ASSERT(ret >= 1);
+		RAPIDJSON_ASSERT(ret >= 1)
 		for (int i = 0; i < ret; i++)
 			stream_.Put(buffer[i]);
 	}
@@ -228,7 +228,7 @@ protected:
 #else
 		int ret = snprintf(buffer, sizeof(buffer), long_double_format, d);
 #endif
-		RAPIDJSON_ASSERT(ret >= 1);
+		RAPIDJSON_ASSERT(ret >= 1)
 		for (int i = 0; i < ret; i++)
 			stream_.Put(buffer[i]);
 	}
@@ -240,7 +240,7 @@ protected:
 #else
 		int ret = snprintf(buffer, sizeof(buffer), "%lld", d);
 #endif
-		RAPIDJSON_ASSERT(ret >= 1);
+		RAPIDJSON_ASSERT(ret >= 1)
 		for (int i = 0; i < ret; i++)
 			stream_.Put(buffer[i]);
 	}
@@ -252,7 +252,7 @@ protected:
 #else
 		int ret = snprintf(buffer, sizeof(buffer), "%llu", d);
 #endif
-		RAPIDJSON_ASSERT(ret >= 1);
+		RAPIDJSON_ASSERT(ret >= 1)
 		for (int i = 0; i < ret; i++)
 			stream_.Put(buffer[i]);
 	}
@@ -306,11 +306,11 @@ protected:
 					stream_.Put((level->valueCount % 2 == 0) ? ',' : ':');
 			}
 			if (!level->inArray && level->valueCount % 2 == 0)
-				RAPIDJSON_ASSERT(type == kStringType);  // if it's in object, then even number should be a name
+				RAPIDJSON_ASSERT(type == kStringType)  // if it's in object, then even number should be a name
 			level->valueCount++;
 		}
 		else
-			RAPIDJSON_ASSERT(type == kObjectType || type == kArrayType);
+			RAPIDJSON_ASSERT(type == kObjectType || type == kArrayType)
 	}
 
 	Stream& stream_;

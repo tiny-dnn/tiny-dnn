@@ -1700,8 +1700,8 @@ CEREAL_RAPIDJSON_MULTILINEMACRO_END
                                     { CEREAL_RAPIDJSON_SCHEMA_HANDLE_VALUE_(String, (CurrentContext(), str, length, copy), (str, length, copy)); }
 
     bool StartObject() {
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartObject, (CurrentContext()));
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartObject, ());
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartObject, (CurrentContext()))
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartObject, ())
         return valid_ = outputHandler_.StartObject();
     }
     
@@ -1709,26 +1709,26 @@ CEREAL_RAPIDJSON_MULTILINEMACRO_END
         if (!valid_) return false;
         AppendToken(str, len);
         if (!CurrentSchema().Key(CurrentContext(), str, len, copy)) return valid_ = false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(Key, (str, len, copy));
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(Key, (str, len, copy))
         return valid_ = outputHandler_.Key(str, len, copy);
     }
     
     bool EndObject(SizeType memberCount) { 
         if (!valid_) return false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndObject, (memberCount));
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndObject, (memberCount))
         if (!CurrentSchema().EndObject(CurrentContext(), memberCount)) return valid_ = false;
         CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndObject, (memberCount));
     }
 
     bool StartArray() {
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartArray, (CurrentContext()));
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartArray, ());
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_BEGIN_(StartArray, (CurrentContext()))
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(StartArray, ())
         return valid_ = outputHandler_.StartArray();
     }
     
     bool EndArray(SizeType elementCount) {
         if (!valid_) return false;
-        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndArray, (elementCount));
+        CEREAL_RAPIDJSON_SCHEMA_HANDLE_PARALLEL_(EndArray, (elementCount))
         if (!CurrentSchema().EndArray(CurrentContext(), elementCount)) return valid_ = false;
         CEREAL_RAPIDJSON_SCHEMA_HANDLE_END_(EndArray, (elementCount));
     }

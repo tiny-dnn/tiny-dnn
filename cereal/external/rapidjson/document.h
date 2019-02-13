@@ -65,7 +65,7 @@ public:
 			kNull_Flag, kFalseFlag, kTrueFlag, kObjectFlag, kArrayFlag, kConstStringFlag,
 			kNumberFlag | kIntFlag | kUintFlag | kInt64Flag | kUint64Flag | kDoubleFlag
 		};
-		RAPIDJSON_ASSERT(type <= kNumberType);
+		RAPIDJSON_ASSERT(type <= kNumberType)
 		flags_ = defaultFlags[type];
 		memset(&data_, 0, sizeof(data_));
 	}
@@ -117,7 +117,7 @@ public:
 
 	//! Constructor for constant string (i.e. do not make a copy of string)
 	GenericValue(const Ch* s, SizeType length) {
-		RAPIDJSON_ASSERT(s != NULL);
+		RAPIDJSON_ASSERT(s != NULL)
 		flags_ = kConstStringFlag;
 		data_.s.str = s;
 		data_.s.length = length;
@@ -168,7 +168,7 @@ public:
 	/*! \param rhs Source of the assignment. It will become a null value after assignment.
 	*/
 	GenericValue& operator=(GenericValue& rhs) {
-		RAPIDJSON_ASSERT(this != &rhs);
+		RAPIDJSON_ASSERT(this != &rhs)
 		this->~GenericValue();
 		memcpy(this, &rhs, sizeof(GenericValue));
 		rhs.flags_ = kNull_Flag;
@@ -217,7 +217,7 @@ public:
 	//!@name Bool_
 	//@{
 
-	bool GetBool_() const { RAPIDJSON_ASSERT(IsBool_()); return flags_ == kTrueFlag; }
+	bool GetBool_() const { RAPIDJSON_ASSERT(IsBool_()) return flags_ == kTrueFlag; }
 	GenericValue& SetBool_(bool b) { this->~GenericValue(); new (this) GenericValue(b); return *this; }
 
 	//@}
@@ -240,10 +240,10 @@ public:
 	const GenericValue& operator[](const Ch* name) const { return const_cast<GenericValue&>(*this)[name]; }
 
 	//! Member iterators.
-	ConstMemberIterator MemberBegin() const	{ RAPIDJSON_ASSERT(IsObject()); return data_.o.members; }
-	ConstMemberIterator MemberEnd()	const	{ RAPIDJSON_ASSERT(IsObject()); return data_.o.members + data_.o.size; }
-	MemberIterator MemberBegin()			{ RAPIDJSON_ASSERT(IsObject()); return data_.o.members; }
-	MemberIterator MemberEnd()				{ RAPIDJSON_ASSERT(IsObject()); return data_.o.members + data_.o.size; }
+	ConstMemberIterator MemberBegin() const	{ RAPIDJSON_ASSERT(IsObject()) return data_.o.members; }
+	ConstMemberIterator MemberEnd()	const	{ RAPIDJSON_ASSERT(IsObject()) return data_.o.members + data_.o.size; }
+	MemberIterator MemberBegin()			{ RAPIDJSON_ASSERT(IsObject()) return data_.o.members; }
+	MemberIterator MemberEnd()				{ RAPIDJSON_ASSERT(IsObject()) return data_.o.members + data_.o.size; }
 
 	//! Check whether a member exists in the object.
 	bool HasMember(const Ch* name) const { return FindMember(name) != 0; }
@@ -256,8 +256,8 @@ public:
 	    \note The ownership of name and value will be transfered to this object if success.
 	*/
 	GenericValue& AddMember(GenericValue& name, GenericValue& value, Allocator& allocator) {
-		RAPIDJSON_ASSERT(IsObject());
-		RAPIDJSON_ASSERT(name.IsString());
+		RAPIDJSON_ASSERT(IsObject())
+		RAPIDJSON_ASSERT(name.IsString())
 		Object& o = data_.o;
 		if (o.size >= o.capacity) {
 			if (o.capacity == 0) {
@@ -299,10 +299,10 @@ public:
 	    \note Removing member is implemented by moving the last member. So the ordering of members is changed.
 	*/
 	bool RemoveMember(const Ch* name) {
-		RAPIDJSON_ASSERT(IsObject());
+		RAPIDJSON_ASSERT(IsObject())
 		if (Member* m = FindMember(name)) {
-			RAPIDJSON_ASSERT(data_.o.size > 0);
-			RAPIDJSON_ASSERT(data_.o.members != 0);
+			RAPIDJSON_ASSERT(data_.o.size > 0)
+			RAPIDJSON_ASSERT(data_.o.members != 0)
 
 			Member* last = data_.o.members + (data_.o.size - 1);
 			if (data_.o.size > 1 && m != last) {
@@ -330,19 +330,19 @@ public:
 	GenericValue& SetArray() {	this->~GenericValue(); new (this) GenericValue(kArrayType); return *this; }
 
 	//! Get the number of elements in array.
-	SizeType Size() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.size; }
+	SizeType Size() const { RAPIDJSON_ASSERT(IsArray()) return data_.a.size; }
 
 	//! Get the capacity of array.
-	SizeType Capacity() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.capacity; }
+	SizeType Capacity() const { RAPIDJSON_ASSERT(IsArray()) return data_.a.capacity; }
 
 	//! Check whether the array is empty.
-	bool Empty() const { RAPIDJSON_ASSERT(IsArray()); return data_.a.size == 0; }
+	bool Empty() const { RAPIDJSON_ASSERT(IsArray()) return data_.a.size == 0; }
 
 	//! Remove all elements in the array.
 	/*! This function do not deallocate memory in the array, i.e. the capacity is unchanged.
 	*/
 	void Clear() {
-		RAPIDJSON_ASSERT(IsArray());
+		RAPIDJSON_ASSERT(IsArray())
 		for (SizeType i = 0; i < data_.a.size; ++i)
 			data_.a.elements[i].~GenericValue();
 		data_.a.size = 0;
@@ -360,15 +360,15 @@ int z = a[0u].GetInt();				// This works too.
 \endcode
 	*/
 	GenericValue& operator[](SizeType index) {
-		RAPIDJSON_ASSERT(IsArray());
-		RAPIDJSON_ASSERT(index < data_.a.size);
+		RAPIDJSON_ASSERT(IsArray())
+		RAPIDJSON_ASSERT(index < data_.a.size)
 		return data_.a.elements[index];
 	}
 	const GenericValue& operator[](SizeType index) const { return const_cast<GenericValue&>(*this)[index]; }
 
 	//! Element iterator
-	ValueIterator Begin() { RAPIDJSON_ASSERT(IsArray()); return data_.a.elements; }
-	ValueIterator End() { RAPIDJSON_ASSERT(IsArray()); return data_.a.elements + data_.a.size; }
+	ValueIterator Begin() { RAPIDJSON_ASSERT(IsArray()) return data_.a.elements; }
+	ValueIterator End() { RAPIDJSON_ASSERT(IsArray()) return data_.a.elements + data_.a.size; }
 	ConstValueIterator Begin() const { return const_cast<GenericValue&>(*this).Begin(); }
 	ConstValueIterator End() const { return const_cast<GenericValue&>(*this).End(); }
 
@@ -378,7 +378,7 @@ int z = a[0u].GetInt();				// This works too.
 		\return The value itself for fluent API.
 	*/
 	GenericValue& Reserve(SizeType newCapacity, Allocator &allocator) {
-		RAPIDJSON_ASSERT(IsArray());
+		RAPIDJSON_ASSERT(IsArray())
 		if (newCapacity > data_.a.capacity) {
 			data_.a.elements = (GenericValue*)allocator.Realloc(data_.a.elements, data_.a.capacity * sizeof(GenericValue), newCapacity * sizeof(GenericValue));
 			data_.a.capacity = newCapacity;
@@ -394,7 +394,7 @@ int z = a[0u].GetInt();				// This works too.
 	    \note If the number of elements to be appended is known, calls Reserve() once first may be more efficient.
 	*/
 	GenericValue& PushBack(GenericValue& value, Allocator& allocator) {
-		RAPIDJSON_ASSERT(IsArray());
+		RAPIDJSON_ASSERT(IsArray())
 		if (data_.a.size >= data_.a.capacity)
 			Reserve(data_.a.capacity == 0 ? kDefaultArrayCapacity : data_.a.capacity * 2, allocator);
 		data_.a.elements[data_.a.size++].RawAssign(value);
@@ -409,8 +409,8 @@ int z = a[0u].GetInt();				// This works too.
 
 	//! Remove the last element in the array.
 	GenericValue& PopBack() {
-		RAPIDJSON_ASSERT(IsArray());
-		RAPIDJSON_ASSERT(!Empty());
+		RAPIDJSON_ASSERT(IsArray())
+		RAPIDJSON_ASSERT(!Empty())
 		data_.a.elements[--data_.a.size].~GenericValue();
 		return *this;
 	}
@@ -419,18 +419,18 @@ int z = a[0u].GetInt();				// This works too.
 	//!@name Number
 	//@{
 
-	int GetInt() const			{ RAPIDJSON_ASSERT(flags_ & kIntFlag);   return data_.n.i.i;   }
-	unsigned GetUint() const	{ RAPIDJSON_ASSERT(flags_ & kUintFlag);  return data_.n.u.u;   }
-	int64_t GetInt64() const	{ RAPIDJSON_ASSERT(flags_ & kInt64Flag); return data_.n.i64; }
-	uint64_t GetUint64() const	{ RAPIDJSON_ASSERT(flags_ & kUint64Flag); return data_.n.u64; }
+	int GetInt() const			{ RAPIDJSON_ASSERT(flags_ & kIntFlag)    return data_.n.i.i; }
+	unsigned GetUint() const	{ RAPIDJSON_ASSERT(flags_ & kUintFlag)   return data_.n.u.u; }
+	int64_t GetInt64() const	{ RAPIDJSON_ASSERT(flags_ & kInt64Flag)  return data_.n.i64; }
+	uint64_t GetUint64() const	{ RAPIDJSON_ASSERT(flags_ & kUint64Flag) return data_.n.u64; }
 
 	double GetDouble() const {
-		RAPIDJSON_ASSERT(IsNumber());
+		RAPIDJSON_ASSERT(IsNumber())
 		if ((flags_ & kDoubleFlag) != 0)				return data_.n.d;	// exact type, no conversion.
 		if ((flags_ & kIntFlag) != 0)					return data_.n.i.i;	// int -> double
 		if ((flags_ & kUintFlag) != 0)					return data_.n.u.u;	// unsigned -> double
 		if ((flags_ & kInt64Flag) != 0)					return (double)data_.n.i64; // int64_t -> double (may lose precision)
-		RAPIDJSON_ASSERT((flags_ & kUint64Flag) != 0);	return (double)data_.n.u64;	// uint64_t -> double (may lose precision)
+		RAPIDJSON_ASSERT((flags_ & kUint64Flag) != 0)	return (double)data_.n.u64;	// uint64_t -> double (may lose precision)
 	}
 
 	GenericValue& SetInt(int i)				{ this->~GenericValue(); new (this) GenericValue(i);	return *this; }
@@ -444,12 +444,12 @@ int z = a[0u].GetInt();				// This works too.
 	//!@name String
 	//@{
 
-	const Ch* GetString() const { RAPIDJSON_ASSERT(IsString()); return data_.s.str; }
+	const Ch* GetString() const { RAPIDJSON_ASSERT(IsString()) return data_.s.str; }
 
 	//! Get the length of string.
 	/*! Since rapidjson permits "\u0000" in the json string, strlen(v.GetString()) may not equal to v.GetStringLength().
 	*/
-	SizeType GetStringLength() const { RAPIDJSON_ASSERT(IsString()); return data_.s.length; }
+	SizeType GetStringLength() const { RAPIDJSON_ASSERT(IsString()) return data_.s.length; }
 
 	//! Set this value as a string without copying source string.
 	/*! This version has better performance with supplied length, and also support string containing null character.
@@ -616,8 +616,8 @@ private:
 
 	//! Find member by name.
 	Member* FindMember(const Ch* name) {
-		RAPIDJSON_ASSERT(name);
-		RAPIDJSON_ASSERT(IsObject());
+		RAPIDJSON_ASSERT(name)
+		RAPIDJSON_ASSERT(IsObject())
 
 		SizeType length = internal::StrLen(name);
 
@@ -648,7 +648,7 @@ private:
 
 	//! Initialize this value as constant string, without calling destructor.
 	void SetStringRaw(const Ch* s, SizeType length) {
-		RAPIDJSON_ASSERT(s != NULL);
+		RAPIDJSON_ASSERT(s != NULL)
 		flags_ = kConstStringFlag;
 		data_.s.str = s;
 		data_.s.length = length;
@@ -656,7 +656,7 @@ private:
 
 	//! Initialize this value as copy string with initial data, without calling destructor.
 	void SetStringRaw(const Ch* s, SizeType length, Allocator& allocator) {
-		RAPIDJSON_ASSERT(s != NULL);
+		RAPIDJSON_ASSERT(s != NULL)
 		flags_ = kCopyStringFlag;
 		data_.s.str = (Ch *)allocator.Malloc((length + 1) * sizeof(Ch));
 		data_.s.length = length;
@@ -710,7 +710,7 @@ public:
 		ValueType::SetNull_(); // Remove existing root if exist
 		GenericReader<Encoding, Allocator> reader;
 		if (reader.template Parse<parseFlags>(stream, *this)) {
-			RAPIDJSON_ASSERT(stack_.GetSize() == sizeof(ValueType)); // Got one and only one root object
+			RAPIDJSON_ASSERT(stack_.GetSize() == sizeof(ValueType)) // Got one and only one root object
 			this->RawAssign(*stack_.template Pop<ValueType>(1));	// Add this-> to prevent issue 13.
 			parseError_ = 0;
 			errorOffset_ = 0;
@@ -740,7 +740,7 @@ public:
 	*/
 	template <unsigned parseFlags>
 	GenericDocument& Parse(const Ch* str) {
-		RAPIDJSON_ASSERT(!(parseFlags & kParseInsituFlag));
+		RAPIDJSON_ASSERT(!(parseFlags & kParseInsituFlag))
 		GenericStringStream<Encoding> s(str);
 		return ParseStream<parseFlags>(s);
 	}

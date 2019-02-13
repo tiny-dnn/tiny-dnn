@@ -186,8 +186,8 @@ public:
 	MemoryPoolAllocator(char *buffer, size_t size, size_t chunkSize = kDefaultChunkCapacity, BaseAllocator* baseAllocator = 0) :
 		chunkHead_(0), chunk_capacity_(chunkSize), userBuffer_(buffer), baseAllocator_(baseAllocator), ownBaseAllocator_(0)
 	{
-		RAPIDJSON_ASSERT(buffer != 0);
-		RAPIDJSON_ASSERT(size > sizeof(ChunkHeader));
+		RAPIDJSON_ASSERT(buffer != 0)
+		RAPIDJSON_ASSERT(size > sizeof(ChunkHeader))
 		chunkHead_ = (ChunkHeader*)buffer;
 		chunkHead_->capacity = size - sizeof(ChunkHeader);
 		chunkHead_->size = 0;
@@ -239,7 +239,7 @@ public:
 			AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size);
 
 		char *buffer = (char *)(chunkHead_ + 1) + chunkHead_->size;
-		RAPIDJSON_ASSERT(((uintptr_t)buffer & 3) == 0);	// returned buffer is aligned to 4
+		RAPIDJSON_ASSERT(((uintptr_t)buffer & 3) == 0)	// returned buffer is aligned to 4
 		chunkHead_->size += size;
 
 		return buffer;
@@ -260,14 +260,14 @@ public:
 			increment = (increment + 3) & ~3;	// Force aligning size to 4
 			if (chunkHead_->size + increment <= chunkHead_->capacity) {
 				chunkHead_->size += increment;
-				RAPIDJSON_ASSERT(((uintptr_t)originalPtr & 3) == 0);	// returned buffer is aligned to 4
+				RAPIDJSON_ASSERT(((uintptr_t)originalPtr & 3) == 0)	// returned buffer is aligned to 4
 				return originalPtr;
 			}
 		}
 
 		// Realloc process: allocate and copy memory, do not free original buffer.
 		void* newBuffer = Malloc(newSize);
-		RAPIDJSON_ASSERT(newBuffer != 0);	// Do not handle out-of-memory explicitly.
+		RAPIDJSON_ASSERT(newBuffer != 0)	// Do not handle out-of-memory explicitly.
 		return memcpy(newBuffer, originalPtr, originalSize);
 	}
 
@@ -348,7 +348,7 @@ struct UTF8 {
 			*buffer++ = 0x80 | (codepoint & 0x3F);
 		}
 		else {
-			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF)
 			*buffer++ = 0xF0 | ((codepoint >> 18) & 0xFF);
 			*buffer++ = 0x80 | ((codepoint >> 12) & 0x3F);
 			*buffer++ = 0x80 | ((codepoint >> 6) & 0x3F);
@@ -372,11 +372,11 @@ struct UTF16 {
 
 	static Ch* Encode(Ch* buffer, unsigned codepoint) {
 		if (codepoint <= 0xFFFF) {
-			RAPIDJSON_ASSERT(codepoint < 0xD800 || codepoint > 0xDFFF); // Code point itself cannot be surrogate pair 
+			RAPIDJSON_ASSERT(codepoint < 0xD800 || codepoint > 0xDFFF) // Code point itself cannot be surrogate pair
 			*buffer++ = static_cast<Ch>(codepoint);
 		}
 		else {
-			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+			RAPIDJSON_ASSERT(codepoint <= 0x10FFFF)
 			unsigned v = codepoint - 0x10000;
 			*buffer++ = static_cast<Ch>((v >> 10) + 0xD800);
 			*buffer++ = (v & 0x3FF) + 0xDC00;
@@ -398,7 +398,7 @@ struct UTF32 {
 	typedef CharType Ch;
 
 	static Ch *Encode(Ch* buffer, unsigned codepoint) {
-		RAPIDJSON_ASSERT(codepoint <= 0x10FFFF);
+		RAPIDJSON_ASSERT(codepoint <= 0x10FFFF)
 		*buffer++ = codepoint;
 		return buffer;
 	}
@@ -466,9 +466,9 @@ struct GenericStringStream {
 	Ch Take() { return *src_++; }
 	size_t Tell() const { return src_ - head_; }
 
-	Ch* PutBegin() { RAPIDJSON_ASSERT(false); return 0; }
-	void Put(Ch) { RAPIDJSON_ASSERT(false); }
-	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+	Ch* PutBegin() { RAPIDJSON_ASSERT(false) return 0; }
+	void Put(Ch) { RAPIDJSON_ASSERT(false) }
+	size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false) return 0; }
 
 	const Ch* src_;		//!< Current read position.
 	const Ch* head_;	//!< Original head of the string.
@@ -496,7 +496,7 @@ struct GenericInsituStringStream {
 
 	// Write
 	Ch* PutBegin() { return dst_ = src_; }
-	void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0); *dst_++ = c; }
+	void Put(Ch c) { RAPIDJSON_ASSERT(dst_ != 0) *dst_++ = c; }
 	size_t PutEnd(Ch* begin) { return dst_ - begin; }
 
 	Ch* src_;

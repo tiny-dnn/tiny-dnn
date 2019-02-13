@@ -42,10 +42,10 @@ namespace rapidjson {
       }
 
       // Not implemented
-      void Put(Ch)       { RAPIDJSON_ASSERT(false); }
-      void Flush()       { RAPIDJSON_ASSERT(false); }
-      Ch* PutBegin()     { RAPIDJSON_ASSERT(false); return 0; }
-      size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false); return 0; }
+      void Put(Ch)       { RAPIDJSON_ASSERT(false) }
+      void Flush()       { RAPIDJSON_ASSERT(false) }
+      Ch* PutBegin()     { RAPIDJSON_ASSERT(false) return 0; }
+      size_t PutEnd(Ch*) { RAPIDJSON_ASSERT(false) return 0; }
 
       std::istream * is_;
   };
@@ -82,10 +82,10 @@ namespace rapidjson {
       }
 
       // Not implemented
-      char Peek() const    { RAPIDJSON_ASSERT(false); }
-      char Take()          { RAPIDJSON_ASSERT(false); }
-      char* PutBegin()     { RAPIDJSON_ASSERT(false); return 0; }
-      size_t PutEnd(char*) { RAPIDJSON_ASSERT(false); return 0; }
+      char Peek() const    { RAPIDJSON_ASSERT(false) }
+      char Take()          { RAPIDJSON_ASSERT(false) }
+      char* PutBegin()     { RAPIDJSON_ASSERT(false) return 0; }
+      size_t PutEnd(char*) { RAPIDJSON_ASSERT(false) return 0; }
 
     private:
       std::ostream& os_;
