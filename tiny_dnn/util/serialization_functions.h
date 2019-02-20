@@ -710,6 +710,21 @@ struct LoadAndConstruct<tiny_dnn::tanh_p1m2_layer> {
 };
 
 template <>
+struct LoadAndConstruct<tiny_dnn::softclip_layer> {
+  template <class Archive>
+  static void load_and_construct(
+    Archive &ar, cereal::construct<tiny_dnn::softclip_layer> &construct) {
+    tiny_dnn::shape3d in_shape;
+    tiny_dnn::float_t alpha;
+
+    ::detail::arc(ar, ::detail::make_nvp("in_size", in_shape),
+                      ::detail::make_nvp("alpha", alpha));
+
+    construct(in_shape, alpha );
+  }
+};
+
+template <>
 struct LoadAndConstruct<tiny_dnn::softplus_layer> {
   template <class Archive>
   static void load_and_construct(
@@ -1056,6 +1071,13 @@ struct serialization_buddy {
   static inline void serialize(Archive &ar, tiny_dnn::softsign_layer &layer) {
     ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]));
   }
+
+  template <class Archive>
+  static inline void serialize(Archive &ar, tiny_dnn::softclip_layer &layer) {
+    ::detail::arc(ar, ::detail::make_nvp("in_size", layer.in_shape()[0]),
+                  ::detail::make_nvp("alpha", layer.alpha_));
+  }
+
 
 #endif  // #ifndef CNN_NO_SERIALIZATION
 };      // struct serialization_buddy
