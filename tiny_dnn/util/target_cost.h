@@ -58,7 +58,7 @@ inline float_t get_sample_weight_for_balanced_target_cost(
 //    function)
 //    * use a value between 0 and 1 to have something between the two extremes
 inline std::vector<vec_t> create_balanced_target_cost(
-  const std::vector<label_t> &t, float_t w = 1.0) {
+  const std::vector<label_t> &t, float_t w = float_t(1)) {
   const auto label_counts         = calculate_label_counts(t);
   const size_t total_sample_count = t.size();
   const size_t class_count        = label_counts.size();

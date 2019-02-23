@@ -24,8 +24,8 @@ class lrn_layer : public layer {
  public:
   lrn_layer(const shape3d &in_shape,
             size_t local_size,
-            float_t alpha      = 1.0,
-            float_t beta       = 5.0,
+            float_t alpha      = float_t( 1 ),
+            float_t beta       = float_t( 5 ),
             norm_region region = norm_region::across_channels)
     : layer({vector_type::data}, {vector_type::data}),
       in_shape_(in_shape),
@@ -44,8 +44,8 @@ class lrn_layer : public layer {
    **/
   lrn_layer(layer *prev,
             size_t local_size,
-            float_t alpha      = 1.0,
-            float_t beta       = 5.0,
+            float_t alpha      = float_t( 1 ),
+            float_t beta       = float_t( 5 ),
             norm_region region = norm_region::across_channels)
     : lrn_layer(prev->out_data_shape()[0], local_size, alpha, beta, region) {}
 
@@ -61,8 +61,8 @@ class lrn_layer : public layer {
             size_t in_height,
             size_t local_size,
             size_t in_channels,
-            float_t alpha      = 1.0,
-            float_t beta       = 5.0,
+            float_t alpha      = float_t( 1 ),
+            float_t beta       = float_t( 5 ),
             norm_region region = norm_region::across_channels)
     : lrn_layer(shape3d{in_width, in_height, in_channels},
                 local_size,

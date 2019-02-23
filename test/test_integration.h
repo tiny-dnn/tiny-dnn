@@ -40,7 +40,7 @@ TEST(integration, train1) {
     train.push_back(t);
     train.push_back(t2);
   }
-  optimizer.alpha = 0.1;
+  optimizer.alpha = float_t(0.1);
   nn.train<mse>(optimizer, data, train, 1, 10);
 
   vec_t predicted = nn.predict(a);
@@ -83,7 +83,7 @@ TEST(integration, train_different_batches1) {
       train.push_back(t);
       train.push_back(t2);
     }
-    optimizer.alpha = 0.1;
+    optimizer.alpha = float_t(0.1);
     nn.train<mse>(optimizer, data, train, batch_sz, 10);
 
     vec_t predicted = nn.predict(a);

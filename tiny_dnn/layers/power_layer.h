@@ -85,11 +85,11 @@ class power_layer : public layer {
         //      = dy * scale * factor * (scale * x)^factor * (scale *
         //      x)^(-1)
         //      = dy * factor * y / x
-        if (std::abs(x[i][j]) > 1e-10) {
+        if (std::abs(x[i][j]) > float_t(1e-10) ) {
           dx[i][j] = dy[i][j] * factor_ * y[i][j] / x[i][j];
         } else {
           dx[i][j] = dy[i][j] * scale_ * factor_ *
-                     std::pow(scale_ * x[i][j], factor_ - 1.0);
+                     std::pow(scale_ * x[i][j], factor_ - float_t(1));
         }
       }
     }
