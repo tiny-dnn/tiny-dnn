@@ -85,6 +85,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 ### activation functions
 * tanh
 * asinh
+* soft clipping(softclip)
 * sigmoid
 * softmax
 * softplus

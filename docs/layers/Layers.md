@@ -148,8 +148,8 @@ Batch Normalization
 - **momentum** momentum in the computation of the exponential average of the mean/stddev of the data
 
 ```cpp
-    batch_normalization_layer(size_t in_spatial_size, 
-                              size_t in_channels,                        
+    batch_normalization_layer(size_t in_spatial_size,
+                              size_t in_channels,
                               float_t epsilon = 1e-5,
                               float_t momentum = 0.999,
                               net_phase phase = net_phase::train)
@@ -172,7 +172,7 @@ concat N layers along depth
 
  ```cpp
  // in: [3,1,1],[3,1,1] out: [3,1,2] (in W,H,K order)
- concat_layer l1(2,3); 
+ concat_layer l1(2,3);
 
  // in: [3,2,2],[3,2,5] out: [3,2,7] (in W,H,K order)
  concat_layer l2({shape3d(3,2,2),shape3d(3,2,5)});
@@ -1092,5 +1092,48 @@ slice an input data into multiple outputs along a given slice dimension.
   output[2]: 4x2x2x2
 
 - **slice_type** target axis of slicing
+
+
+<span style="float:right;">[[source]](https://github.com/tiny-dnn/tiny-dnn/blob/master/tiny_dnn/layers/softclip_layer.h#L42)</span>
+## softclip_layer
+
+softclip_clip an input data by using SoftClipping formula. (1/alpha)*log( ( 1 + e^( alpha * x ) )/( 1 + e^( alpha*(x-1))))
+
+### Constructors
+
+```cpp
+    softclip_layer(const shape3d& in_shape, float_t alpha = 1.0f )
+```
+
+- **in_shape** shape of input tensor
+
+- **alpha** floating-point number that specifies alpha value
+
+
+```cpp
+    softclip_layer(const layer& prev_layer, float_t alpha = 1.0f )
+```
+
+- **prev_layer** previous layer to be connected
+
+- **alpha** floating-point number that specifies alpha value
+
+### Example:
+  Here is modified version of NN given in $\examples\mnist\train.cpp
+```cpp
+
+    nn << conv(32, 32, 5, 1, 6,  padding::valid, true, 1, 1, 1, 1, backend_type)
+       << softclip( 8.9 )
+       << ave_pool(28, 28, 6, 2)  
+       << conv(14, 14, 5, 6, 16,  padding::valid, true, 1, 1, 1, 1, backend_type)
+       << softclip( 8.9 )
+       << ave_pool(10, 10, 16, 2)  
+       << conv(5, 5, 5, 16, 120,   padding::valid, true, 1, 1, 1, 1, backend_type)
+       << tanh()
+       << fc(120, 10, true, backend_type) 
+       << tanh();
+```
+  Original code after 30 epochs will give: accuracy:98.99% (9899/10000). The highest value is accuracy:99.00% (9900/10000)
+  Above example will give : accuracy:99.26% (9926/10000). After adding connection table accuracy:99.35% (9935/10000)
 
 

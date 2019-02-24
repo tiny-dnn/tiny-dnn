@@ -998,6 +998,34 @@ TEST(serialization, serialize_tanh_p1m2) {
   check_sequential_network_model_serialization(net);
 }
 
+TEST(serialization, serialize_softclip) {
+  network<sequential> net;
+
+  std::string json = R"(
+    {
+        "nodes": [
+            {
+                "type": "softclip",
+                "in_size" : {
+                    "width": 5,
+                    "height" : 10,
+                    "depth" : 1
+                },
+                "alpha": 1
+            }
+        ]
+    }
+    )";
+
+  net.from_json(json);
+
+  EXPECT_EQ(net[0]->layer_type(), "softclip-activation");
+  EXPECT_EQ(net[0]->in_shape()[0], shape3d(5, 10, 1));
+  EXPECT_EQ(net[0]->out_shape()[0], shape3d(5, 10, 1));
+  EXPECT_FLOAT_EQ(net.at<softclip_layer>(0).alpha_value(), 1.0);
+  check_sequential_network_model_serialization(net);
+}
+
 TEST(serialization, serialize_softplus) {
   network<sequential> net;
 
