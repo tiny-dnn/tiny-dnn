@@ -22,6 +22,7 @@
 #include "tiny_dnn/activations/relu_layer.h"
 #include "tiny_dnn/activations/selu_layer.h"
 #include "tiny_dnn/activations/sigmoid_layer.h"
+#include "tiny_dnn/activations/softclip_layer.h"
 #include "tiny_dnn/activations/softmax_layer.h"
 #include "tiny_dnn/activations/softplus_layer.h"
 #include "tiny_dnn/activations/softsign_layer.h"
@@ -82,6 +83,7 @@ CEREAL_REGISTER_TYPE(tiny_dnn::elu_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::leaky_relu_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::relu_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::sigmoid_layer)
+CEREAL_REGISTER_TYPE(tiny_dnn::softclip_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::softmax_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::softplus_layer)
 CEREAL_REGISTER_TYPE(tiny_dnn::softsign_layer)
@@ -158,6 +160,8 @@ using tanh_p1m2 = tiny_dnn::tanh_p1m2_layer;
 using softplus = tiny_dnn::softplus_layer;
 
 using softsign = tiny_dnn::softsign_layer;
+
+using softclip = tiny_dnn::softclip_layer;
 
 }  // namespace activation
 

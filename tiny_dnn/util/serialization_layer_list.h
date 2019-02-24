@@ -50,6 +50,7 @@ void register_layers(T* h) {
   h->template register_layer<leaky_relu_layer>("leaky_relu");
   h->template register_layer<elu_layer>("elu");
   h->template register_layer<tanh_p1m2_layer>("tanh_scaled");
+  h->template register_layer<softclip_layer>("softclip");
   h->template register_layer<softplus_layer>("softplus");
   h->template register_layer<softsign_layer>("softsign");
   h->template register_layer<selu_layer>("selu");
