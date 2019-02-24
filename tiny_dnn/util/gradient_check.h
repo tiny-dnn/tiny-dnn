@@ -122,7 +122,7 @@ float_t analytical_gradient(layer &layer,
 float_t relative_error(const float_t analytical_grad,
                        const float_t numeric_grad) {
   float_t max = std::max(std::abs(analytical_grad), std::abs(numeric_grad));
-  return (max == 0) ? 0.0 : std::abs(analytical_grad - numeric_grad) / max;
+  return (max == 0) ? float_t(0) : std::abs(analytical_grad - numeric_grad) / max;
 }
 
 }  // namespace tiny_dnn

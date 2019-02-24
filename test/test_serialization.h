@@ -1057,7 +1057,7 @@ TEST(serialization, sequential_to_json) {
   network<sequential> net1, net2;
 
   net1 << fully_connected_layer(10, 100) << tanh_layer()
-       << dropout_layer(100, 0.3, net_phase::test)
+       << dropout_layer(100, float_t(0.3), net_phase::test)
        << fully_connected_layer(100, 9) << softmax()
        << recurrent_layer(gru(9, 9), 1) << recurrent_layer(lstm(9, 9), 1)
        << recurrent_layer(rnn(9, 9), 1) << convolutional_layer(3, 3, 3, 1, 1)
@@ -1111,7 +1111,7 @@ TEST(serialization, sequential_weights) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+  EXPECT_TRUE(net1.has_same_weights(net2, float_t(1e-3)));
 
   for (int i = 0; i < 2; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);
@@ -1123,9 +1123,9 @@ TEST(serialization, sequential_weights2) {
   network<sequential> net1, net2;
   vec_t data = {1, 2, 3, 4, 5, 0};
 
-  net1 << batch_normalization_layer(3, 2, 0.01, 0.99, net_phase::train)
-       << linear_layer(3 * 2, 2.0, 0.5) << elu()
-       << power_layer(shape3d(3, 2, 1), 2.0, 1.5) << leaky_relu();
+  net1 << batch_normalization_layer(3, 2, float_t(0.01), float_t(0.99), net_phase::train)
+       << linear_layer(3 * 2, float_t(2.0), float_t(0.5) ) << elu()
+       << power_layer(shape3d(3, 2, 1), float_t(2.0), float_t(1.5)) << leaky_relu();
 
   net1.init_weight();
   net1.at<batch_normalization_layer>(0).update_immidiately(true);
@@ -1140,7 +1140,7 @@ TEST(serialization, sequential_weights2) {
   auto res1 = net1.predict(data);
   auto res2 = net2.predict(data);
 
-  EXPECT_TRUE(net1.has_same_weights(net2, 1e-3));
+  EXPECT_TRUE(net1.has_same_weights(net2, float_t(1e-3)));
 
   for (int i = 0; i < 6; i++) {
     EXPECT_FLOAT_EQ(res1[i], res2[i]);

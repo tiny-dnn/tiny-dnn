@@ -12,7 +12,7 @@
 namespace tiny_dnn {
 
 TEST(l2norm, forward) {
-  l2_normalization_layer l2_norm(4, 3, 1e-10, 20);
+  l2_normalization_layer l2_norm(4, 3, float_t(1e-10), 20);
   
   // clang-format off
   tensor_t in = {
@@ -29,13 +29,13 @@ TEST(l2norm, forward) {
 
   tensor_t expect = {
       {
-          0.0000,   0.0000,    0.0000,   0.0000,  // ch-0 of data#0
-        -19.4029,   0.0000,  -14.1421,  11.0940,  // ch-1 of data#0
-          4.8507,   0.0000,   14.1421,  16.6410,  // ch-2 of data#0
-      }, {
-          0.0000,   0.0000,   0.0000,   0.0000,   // ch-0 of data#1
-         14.1421,   0.0000, -19.4029,  -5.7470,   // ch-1 of data#1
-         14.1421,  20.0000,   4.8507,  19.1565    // ch-2 of data#1
+          0.0000f,   0.0000f,    0.0000f,    0.0000f,  // ch-0 of data#0
+        -19.4029f,   0.0000f,  -14.1421f,   11.0940f,  // ch-1 of data#0
+          4.8507f,   0.0000f,   14.1421f,   16.6410f,  // ch-2 of data#0
+      }, {                            
+          0.0000f,   0.0000f,    0.0000f,    0.0000f,   // ch-0 of data#1
+         14.1421f,   0.0000f,  -19.4029f,   -5.7470f,   // ch-1 of data#1
+         14.1421f,  20.0000f,    4.8507f,   19.1565f    // ch-2 of data#1
       }
   };
   // clang-format on

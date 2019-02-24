@@ -94,7 +94,7 @@ class selu_layer : public activation_layer {
     // dx = dy * (gradient of selu)
     for (size_t j = 0; j < x.size(); j++) {
       dx[j] =
-        dy[j] * lambda_ * (x[j] > float_t(0) ? 1.0 : alpha_ * std::exp(x[j]));
+        dy[j] * lambda_ * (x[j] > float_t(0) ?  float_t(1) : alpha_ * std::exp(x[j]));
     }
   }
 

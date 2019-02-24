@@ -17,22 +17,22 @@ namespace tiny_dnn {
 
 class elu_layer : public activation_layer {
  public:
-  explicit elu_layer(const float_t alpha = 1.0)
+  explicit elu_layer(const float_t alpha = float_t(1))
     : elu_layer(shape3d(0, 0, 0), alpha) {}
 
-  explicit elu_layer(size_t in_dim, const float_t alpha = 1.0)
+  explicit elu_layer(size_t in_dim, const float_t alpha = float_t(1))
     : elu_layer(shape3d(in_dim, 1, 1), alpha) {}
 
   elu_layer(size_t in_width,
             size_t in_height,
             size_t in_channels,
-            const float_t alpha = 1.0)
+            const float_t alpha = float_t(1))
     : elu_layer(shape3d(in_width, in_height, in_channels), alpha) {}
 
-  explicit elu_layer(const shape3d &in_shape, const float_t alpha = 1.0)
+  explicit elu_layer(const shape3d &in_shape, const float_t alpha = float_t(1))
     : activation_layer(in_shape), alpha_(alpha) {}
 
-  explicit elu_layer(const layer &prev_layer, const float_t alpha = 1.0)
+  explicit elu_layer(const layer &prev_layer, const float_t alpha = float_t(1))
     : activation_layer(prev_layer), alpha_(alpha) {}
 
   std::string layer_type() const override { return "elu-activation"; }
