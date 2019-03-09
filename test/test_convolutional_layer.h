@@ -130,6 +130,57 @@ TEST(convolutional, fprop) {
   }
 }
 
+TEST(convolutional, fprop_no_bias) {
+  convolutional_layer l(5, 5, 3, 1, 2, padding::valid, false);
+
+  tensor_buf buf(l, false);
+
+  // short-hand references to the payload vectors
+  vec_t &in = buf.in_at(0)[0], &out = buf.out_at(0)[0],
+        &weight = buf.in_at(1)[0];
+
+  ASSERT_EQ(l.in_shape()[1].size(), serial_size_t(18));  // weight
+
+  uniform_rand(in.begin(), in.end(), -1.0, 1.0);
+
+  l.setup(false);
+  {
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    for (auto o : out) EXPECT_DOUBLE_EQ(o, tiny_dnn::float_t(0.0));
+  }
+
+  // clang-format off
+  weight[0] = 0.3f;  weight[1] = 0.1f;   weight[2] = 0.2f;
+  weight[3] = 0.0f;  weight[4] = -0.1f;  weight[5] = -0.1f;
+  weight[6] = 0.05f; weight[7] = -0.2f;  weight[8] = 0.05f;
+
+  weight[9]  = 0.0f; weight[10] = -0.1f; weight[11] = 0.1f;
+  weight[12] = 0.1f; weight[13] = -0.2f; weight[14] = 0.3f;
+  weight[15] = 0.2f; weight[16] = -0.3f; weight[17] = 0.2f;
+
+  in[0]  = 3; in[1]  = 2;  in[2]  = 1; in[3]  = 5; in[4]  = 2;
+  in[5]  = 3; in[6]  = 0;  in[7]  = 2; in[8]  = 0; in[9]  = 1;
+  in[10] = 0; in[11] = 6;  in[12] = 1; in[13] = 1; in[14] = 10;
+  in[15] = 3; in[16] = -1; in[17] = 2; in[18] = 9; in[19] = 0;
+  in[20] = 1; in[21] = 2;  in[22] = 1; in[23] = 5; in[24] = 5;
+  // clang-format on
+
+  {
+    l.forward_propagation(buf.in_buf(), buf.out_buf());
+
+    EXPECT_NEAR(float_t(-0.05), out[0], 1E-5);
+    EXPECT_NEAR(float_t(1.65), out[1], 1E-5);
+    EXPECT_NEAR(float_t(1.45), out[2], 1E-5);
+    EXPECT_NEAR(float_t(1.05), out[3], 1E-5);
+    EXPECT_NEAR(float_t(0.00), out[4], 1E-5);
+    EXPECT_NEAR(float_t(-2.0), out[5], 1E-5);
+    EXPECT_NEAR(float_t(0.40), out[6], 1E-5);
+    EXPECT_NEAR(float_t(1.15), out[7], 1E-5);
+    EXPECT_NEAR(float_t(0.80), out[8], 1E-5);
+  }
+}
+
 TEST(convolutional, with_stride) {
   /*
     forward - pass:
