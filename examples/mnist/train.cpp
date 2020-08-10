@@ -76,13 +76,13 @@ static void train_lenet(const std::string &data_dir_path,
   std::vector<tiny_dnn::label_t> train_labels, test_labels;
   std::vector<tiny_dnn::vec_t> train_images, test_images;
 
-  tiny_dnn::parse_mnist_labels(data_dir_path + "/train-labels.idx1-ubyte",
+  tiny_dnn::parse_mnist_labels(data_dir_path + "/train-labels-idx1-ubyte",
                                &train_labels);
-  tiny_dnn::parse_mnist_images(data_dir_path + "/train-images.idx3-ubyte",
+  tiny_dnn::parse_mnist_images(data_dir_path + "/train-images-idx3-ubyte",
                                &train_images, -1.0, 1.0, 2, 2);
-  tiny_dnn::parse_mnist_labels(data_dir_path + "/t10k-labels.idx1-ubyte",
+  tiny_dnn::parse_mnist_labels(data_dir_path + "/t10k-labels-idx1-ubyte",
                                &test_labels);
-  tiny_dnn::parse_mnist_images(data_dir_path + "/t10k-images.idx3-ubyte",
+  tiny_dnn::parse_mnist_images(data_dir_path + "/t10k-images-idx3-ubyte",
                                &test_images, -1.0, 1.0, 2, 2);
 
   std::cout << "start training" << std::endl;
