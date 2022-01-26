@@ -98,10 +98,8 @@ class hubert{
       else
         d[i] = delta;
     }
-
     return d;
   }
-
 };
 
 // absolute loss with epsilon range for regression
