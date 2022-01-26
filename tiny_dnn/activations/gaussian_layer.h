@@ -16,15 +16,15 @@
 
 namespace tiny_dnn {
 
-class gelu_layer : public activation_layer {
+class gaussian_layer : public activation_layer {
  public:
   using activation_layer::activation_layer;
 
-  std::string layer_type() const override { return "gelu-activation"; }
+  std::string layer_type() const override { return "gaussian-activation"; }
 
   void forward_activation(const vec_t &x, vec_t &y) override {
     for (size_t j = 0; j < x.size(); j++) {
-      y[j] = x[j] * ( 1 + std::erf(x[j]/sqrt(2))/2 );
+      y[j] = 1+exp(-x[j]*x[j]);
     }
   }
 
@@ -33,8 +33,8 @@ class gelu_layer : public activation_layer {
                            vec_t &dx,
                            const vec_t &dy) override {
     for (size_t j = 0; j < x.size(); j++) {
-      // dx = dy * (gradient of gelu)
-      dx[j] = dy[j] * ( 0.5 + 0.5*std::erf(y[j]/sqrt(2)) + sqrt(2*3.141592653)*exp(-pow(y[j], 2)));
+      // dx = dy * (gradient of gaussian)
+      dx[j] = dy[j] + -2*y[j]*exp(y[j]*y[j]);
     }
   }
 
