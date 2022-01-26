@@ -68,7 +68,7 @@ class absolute {
 };
 
 class hubert{
-   public:
+  public:
   static float_t f(const vec_t &y, const vec_t &t, const float &delta) {
     assert(y.size() == t.size());
     float_t d{0};
@@ -84,19 +84,19 @@ class hubert{
     return d / static_cast<float_t>(y.size());
   }
 
-  static vec_t df(const vec_t &y, const vec_t &t) {
+  static vec_t df(const vec_t &y, const vec_t &t, const float &delta) {
     assert(y.size() == t.size());
     vec_t d(t.size());
     float_t factor = float_t(1) / static_cast<float_t>(t.size());
 
     for (size_t i = 0; i < y.size(); ++i) {
-      float_t sign = y[i] - t[i];
-      if (sign < float_t{0.f})
-        d[i] = -factor;
-      else if (sign > float_t{0.f})
-        d[i] = factor;
+      float_t R = y[i] - t[i];
+      if (R < -delta)
+        d[i] = -delta;
+      else if (R > -delta && R < delta)
+        d[i] = R;
       else
-        d[i] = {0};
+        d[i] = delta;
     }
 
     return d;
