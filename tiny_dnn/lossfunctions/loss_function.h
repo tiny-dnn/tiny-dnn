@@ -67,6 +67,41 @@ class absolute {
   }
 };
 
+class hubert{
+  public:
+  static float_t f(const vec_t &y, const vec_t &t, const float &delta) {
+    assert(y.size() == t.size());
+    float_t d{0};
+
+    for (size_t i = 0; i < y.size(); ++i){
+      if( abs(y[i] - t[i]) <= delta){
+        d += pow(y[i]-t[i],2);
+      }else{
+        d += delta*abs(y[i]-t[i]) - 0.5*delta;
+      }
+    } 
+
+    return d / static_cast<float_t>(y.size());
+  }
+
+  static vec_t df(const vec_t &y, const vec_t &t, const float &delta) {
+    assert(y.size() == t.size());
+    vec_t d(t.size());
+    float_t factor = float_t(1) / static_cast<float_t>(t.size());
+
+    for (size_t i = 0; i < y.size(); ++i) {
+      float_t R = y[i] - t[i];
+      if (R < -delta)
+        d[i] = -delta;
+      else if (R > -delta && R < delta)
+        d[i] = R;
+      else
+        d[i] = delta;
+    }
+    return d;
+  }
+};
+
 // absolute loss with epsilon range for regression
 // epsilon range [-eps, eps] with eps = 1./fraction
 template <int fraction>

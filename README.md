@@ -84,6 +84,7 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 
 ### activation functions
 * tanh
+* binary step
 * asinh
 * sigmoid
 * softmax
@@ -95,6 +96,9 @@ Please see [wiki page](https://github.com/tiny-dnn/tiny-dnn/wiki/Comparison-with
 * scaled tanh
 * exponential linear units(elu)
 * scaled exponential linear units (selu)
+* Gaussian Error Linear Units (gelu)
+* Gaussian
+* Sigmoid Linear Units (silu)
 
 ### loss functions
 * cross-entropy
