@@ -457,6 +457,35 @@ inline image<T> vec2image(const vec_t &vec, const index3d<size_t> &maps) {
   return img;
 }
 
+/**
+ * visualize 1d-vector into rgb image
+ *   image<float> img = vec2rgbimage<float>(vec,50,50);
+ * 
+ *  input vec format::
+ * vec:[r,g,b,r,g,b......] 
+ *
+ **/
+template <typename T>
+inline image<T> vec2rgbimage(const vec_t &vec, int width, int height) {
+  index3d<size_t> maps(width, height,3);
+  if (vec.empty()) throw nn_error("failed to visualize image: vector is empty");
+  if (vec.size() != maps.size())
+    throw nn_error("failed to visualize image: vector size invalid");
+  image<T> img(maps, image_type::rgb);
+  auto minmax = std::minmax_element(vec.begin(), vec.end());
+  for (size_t c = 0; c < maps.depth_; ++c) {
+    for (size_t y = 0; y < maps.height_; ++y) {
+      for (size_t x = 0; x < maps.width_; ++x) {
+        const float_t val = vec[maps.get_index(x, y, c)];
+
+        img.at(x,y,c) = static_cast<typename image<T>::intensity_t>(
+          rescale(val, *minmax.first, *minmax.second, 0, 255));
+      }
+    }
+  }
+  return img;
+}
+
 }  // namespace tiny_dnn
 
 #ifdef _MSC_VER
